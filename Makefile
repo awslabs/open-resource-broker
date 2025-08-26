@@ -408,7 +408,7 @@ docs-clean:  ## Clean documentation build files
 version-show:  ## Show current version from project config
 	@echo "Current version: $(VERSION)"
 
-get-version:  ## Generate version for current context (supports IS_RELEASE=true, FORMAT=container, PYTHON_VERSION=3.x)
+get-version:  ## Generate version for current context (supports IS_RELEASE=true, FORMAT=container|container-base)
 	@if [ "$${IS_RELEASE:-false}" = "true" ]; then \
 		echo "$(VERSION)"; \
 	else \
@@ -416,6 +416,8 @@ get-version:  ## Generate version for current context (supports IS_RELEASE=true,
 		if [ "$${FORMAT}" = "container" ]; then \
 			python_ver=$${PYTHON_VERSION:-$(DEFAULT_PYTHON_VERSION)}; \
 			echo "$(VERSION).dev-$${commit}-python$${python_ver}"; \
+		elif [ "$${FORMAT}" = "container-base" ]; then \
+			echo "$(VERSION).dev-$${commit}"; \
 		else \
 			echo "$(VERSION).dev+$${commit}"; \
 		fi; \

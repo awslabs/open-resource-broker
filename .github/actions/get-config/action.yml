@@ -13,9 +13,15 @@ outputs:
   container-image:
     description: 'Container image name'
     value: ${{ steps.config.outputs.container-image }}
-  version:
-    description: 'Project version'
-    value: ${{ steps.config.outputs.version }}
+  pypi-version:
+    description: 'PEP 440 compliant version for PyPI/TestPyPI'
+    value: ${{ steps.config.outputs.pypi-version }}
+  container-version-base:
+    description: 'Docker-safe base version for containers (without python suffix)'
+    value: ${{ steps.config.outputs.container-version-base }}
+  is-release:
+    description: 'Whether this is a release build'
+    value: ${{ steps.config.outputs.is-release }}
 runs:
   using: 'composite'
   steps:
@@ -30,18 +36,34 @@ runs:
         PYTHON_VERSIONS=$(make print-json-PYTHON_VERSIONS)
         CONTAINER_REGISTRY=$(make print-CONTAINER_REGISTRY || echo "ghcr.io")
         CONTAINER_IMAGE=$(make print-CONTAINER_IMAGE || echo "awslabs/open-hostfactory-plugin")
-        VERSION=$(make print-VERSION || echo "0.1.0")
+        
+        # Centralized version generation using Makefile infrastructure
+        if [[ "${{ github.event_name }}" == "release" ]] || [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ github.event.inputs.environment }}" == "pypi" ]]; then
+          # Release build
+          PYPI_VERSION=$(IS_RELEASE=true make -s get-version)
+          CONTAINER_VERSION_BASE=$(IS_RELEASE=true make -s get-version)
+          IS_RELEASE="true"
+        else
+          # Development build
+          PYPI_VERSION=$(make -s get-version)
+          CONTAINER_VERSION_BASE=$(FORMAT=container-base make -s get-version)
+          IS_RELEASE="false"
+        fi
         
         {
           echo "default-python-version=$DEFAULT_PYTHON_VERSION"
           echo "python-versions=$PYTHON_VERSIONS"
           echo "container-registry=$CONTAINER_REGISTRY"
           echo "container-image=$CONTAINER_IMAGE"
-          echo "version=$VERSION"
+          echo "pypi-version=$PYPI_VERSION"
+          echo "container-version-base=$CONTAINER_VERSION_BASE"
+          echo "is-release=$IS_RELEASE"
         } >> "$GITHUB_OUTPUT"
         
         echo "Default Python version: $DEFAULT_PYTHON_VERSION"
         echo "Python versions: $PYTHON_VERSIONS"
         echo "Container registry: $CONTAINER_REGISTRY"
         echo "Container image: $CONTAINER_IMAGE"
-        echo "Version: $VERSION"
+        echo "PyPI version: $PYPI_VERSION"
+        echo "Container base version: $CONTAINER_VERSION_BASE"
+        echo "Is release: $IS_RELEASE"

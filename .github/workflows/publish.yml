@@ -87,23 +87,16 @@ jobs:
 
     - name: Determine version and target
       run: |
-        if [[ "${{ github.event_name }}" == "release" ]]; then
+        if [[ "${{ needs.get-config.outputs.is-release }}" == "true" ]]; then
           {
-            echo "VERSION=${{ github.ref_name }}"
-            echo "TARGET=pypi"
-            echo "IS_RELEASE=true"
-          } >> "$GITHUB_ENV"
-        elif [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ github.event.inputs.environment }}" == "pypi" ]]; then
-          {
-            echo "VERSION=${{ github.ref_name }}"
+            echo "VERSION=${{ needs.get-config.outputs.pypi-version }}"
             echo "TARGET=pypi"
             echo "IS_RELEASE=true"
           } >> "$GITHUB_ENV"
         else
-          # Dev version for TestPyPI - use Makefile infrastructure
-          VERSION=$(make -s get-version)
+          # Dev version for TestPyPI - use centralized version
           {
-            echo "VERSION=$VERSION"
+            echo "VERSION=${{ needs.get-config.outputs.pypi-version }}"
             echo "TARGET=testpypi"
           } >> "$GITHUB_ENV"
         fi
