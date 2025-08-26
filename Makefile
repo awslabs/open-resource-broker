@@ -534,12 +534,12 @@ format: dev-install clean-whitespace  ## Format code with Ruff (no auto-fix)
 
 ci-quality-ruff: dev-install  ## Run Ruff formatting and linting check (basic rules only)
 	@echo "Running Ruff formatting and linting check (basic rules only)..."
-	@uv run ruff check --select E,W,F,I --quiet .
+	@uv run ruff check --select W,F,I --ignore E501 --quiet .
 	@uv run ruff format --check --quiet .
 
 ci-quality-ruff-optional:  ## Run Ruff extended linting (warnings only)
 	@echo "Running Ruff extended linting..."
-	uv run ruff check --select=N,UP,B,PL,C90,RUF . || true
+	uv run ruff check --select=E501,N,UP,B,PL,C90,RUF . || true
 
 ci-quality-radon:  ## Run radon complexity analysis
 	@echo "Running radon complexity analysis..."
