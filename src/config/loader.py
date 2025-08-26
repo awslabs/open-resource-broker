@@ -126,7 +126,9 @@ class ConfigurationLoader:
 
         # Load main config.json with correct precedence (scheduler config dir first,
         # then config/)
-        main_config = cls._load_config_file("conf", "config.json", required=False)
+        main_config = cls._load_config_file(
+            "conf", "config.json", required=False, config_manager=config_manager
+        )
         if main_config:
             cls._merge_config(config, main_config)
             get_config_logger().info("Loaded main configuration")
@@ -139,7 +141,11 @@ class ConfigurationLoader:
             filename = os.path.basename(config_path) if config_path else "config.json"
 
             file_config = cls._load_config_file(
-                "conf", filename, explicit_path=config_path, required=False
+                "conf",
+                filename,
+                explicit_path=config_path,
+                required=False,
+                config_manager=config_manager,
             )
             if file_config:
                 cls._merge_config(config, file_config)
@@ -170,7 +176,9 @@ class ConfigurationLoader:
         get_config_logger().debug("Loading default configuration")
 
         # Use file loading method
-        config = cls._load_config_file("conf", cls.DEFAULT_CONFIG_FILENAME, required=False)
+        config = cls._load_config_file(
+            "conf", cls.DEFAULT_CONFIG_FILENAME, required=False, config_manager=None
+        )
 
         if config:
             get_config_logger().info("Loaded default configuration successfully")
@@ -244,6 +252,7 @@ class ConfigurationLoader:
         filename: str,
         explicit_path: Optional[str] = None,
         required: bool = False,
+        config_manager: Optional[ConfigurationManager] = None,
     ) -> Optional[Dict[str, Any]]:
         """
         Centralized method for loading any configuration file with consistent priority:
