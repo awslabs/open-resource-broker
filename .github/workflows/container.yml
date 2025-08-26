@@ -162,7 +162,7 @@ jobs:
       env:
         REGISTRY: ${{ needs.get-config.outputs.container-registry }}
         IMAGE_NAME: ${{ needs.get-config.outputs.container-image }}
-        VERSION: ${{ env.PYPI_VERSION }}
+        VERSION: ${{ needs.get-config.outputs.container-version-base }}
         PYTHON_VERSION: ${{ matrix.python-version }}
         PLATFORMS: linux/amd64,linux/arm64
         PUSH: ${{ github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.event_name == 'release' || github.event.inputs.push_images == 'true') }}

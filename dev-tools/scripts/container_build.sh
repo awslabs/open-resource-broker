@@ -29,7 +29,8 @@ REGISTRY="${REGISTRY:-}"
 
 # Use VERSION as provided (already in correct format from Makefile)
 VERSION="${VERSION:-0.1.0}"
-CONTAINER_VERSION="$VERSION"
+# Ensure Docker-safe format (convert + to - if present)
+CONTAINER_VERSION="${VERSION//+/-}"
 
 BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
 VCS_REF=$(git rev-parse --short HEAD 2>/dev/null || echo 'unknown')
