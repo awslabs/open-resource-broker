@@ -192,7 +192,7 @@ quality-check-files: dev-install  ## Run quality checks on specific files (usage
 	@echo "Running professional quality checks on specified files..."
 	./dev-tools/scripts/quality_check.py --strict --files $(FILES)
 
-format-fix: dev-install clean-whitespace  ## Auto-fix code formatting with Ruff
+format-fix: clean-whitespace  ## Auto-fix code formatting with Ruff
 	@uv run ruff format --quiet .
 	@uv run ruff check --fix --exit-zero --quiet .
 
