@@ -43,7 +43,7 @@ jobs:
 
       - name: Setup Python and UV
         if: contains('bandit,safety,codeql', inputs.scan-type)
-        uses: ./.github/actions/setup-python-uv
+        uses: ./.github/actions/setup-uv-cached
         with:
           python-version: ${{ inputs.python-version || needs.get-config.outputs.default-python-version }}
           cache-key-suffix: security-${{ inputs.scan-type }}

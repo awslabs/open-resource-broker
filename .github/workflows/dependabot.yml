@@ -39,7 +39,7 @@ jobs:
           fetch-depth: 0
 
       - name: Setup Python and UV
-        uses: ./.github/actions/setup-python-uv
+        uses: ./.github/actions/setup-uv-cached
         with:
           python-version: ${{ needs.get-config.outputs.default-python-version }}
           cache-key-suffix: dependabot-update
@@ -177,7 +177,7 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Setup Python and UV
-        uses: ./.github/actions/setup-python-uv
+        uses: ./.github/actions/setup-uv-cached
         with:
           python-version: ${{ needs.get-config.outputs.default-python-version }}
           cache-key-suffix: dependabot-maintenance

@@ -47,7 +47,7 @@ jobs:
           fetch-depth: 0
 
       - name: Setup Python and UV
-        uses: ./.github/actions/setup-python-uv
+        uses: ./.github/actions/setup-uv-cached
         with:
           python-version: ${{ needs.get-config.outputs.default-python-version }}
           cache-key-suffix: docs
