@@ -598,21 +598,24 @@ class ConfigurationLoader:
 
             # Get current scheduler strategy
             registry = get_scheduler_registry()
-            
+
             # Try to determine scheduler type from context
             scheduler_type = None
-            
+
             # First try environment variable (explicit override)
             scheduler_type = os.environ.get("SCHEDULER_TYPE")
-            
+
             # If no explicit override, try to detect from context
             if not scheduler_type:
                 # Check if we're in a HostFactory environment
-                if any(os.environ.get(var) for var in ["HF_PROVIDER_CONFDIR", "HF_PROVIDER_WORKDIR", "HF_PROVIDER_LOGDIR"]):
+                if any(
+                    os.environ.get(var)
+                    for var in ["HF_PROVIDER_CONFDIR", "HF_PROVIDER_WORKDIR", "HF_PROVIDER_LOGDIR"]
+                ):
                     scheduler_type = "hostfactory"
                 else:
                     scheduler_type = "default"
-            
+
             # Ensure scheduler type is registered
             registry.ensure_type_registered(scheduler_type)
 
