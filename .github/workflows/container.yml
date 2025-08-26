@@ -156,8 +156,6 @@ jobs:
         password: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Build package wheel
-      env:
-        VERSION: ${{ env.PYPI_PACKAGE_VERSION }}
       run: |
         make build
 

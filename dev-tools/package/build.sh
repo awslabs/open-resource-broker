@@ -71,7 +71,7 @@ if [ "$QUIET" = true ]; then
     # Show essential info even in quiet mode
     echo "SUCCESS: Package built successfully!"
     echo "INFO: Files created:"
-    ls -1 dist/
+    ls -1 dist/*
 else
     echo "SUCCESS: Package built successfully!"
     echo "INFO: Files created:"
