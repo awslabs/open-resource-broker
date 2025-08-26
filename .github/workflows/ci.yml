@@ -136,6 +136,7 @@ jobs:
         uses: ./.github/actions/setup-uv-cached
         with:
           cache-key: ${{ needs.setup-dependencies.outputs.cache-key }}
+          fail-on-cache-miss: false
 
       - name: Auto-format (no checks)
         run: make format-fix
@@ -161,6 +162,7 @@ jobs:
         uses: ./.github/actions/setup-uv-cached
         with:
           cache-key: ${{ needs.setup-dependencies.outputs.cache-key }}
+          fail-on-cache-miss: false
 
       - name: Check code quality
         run: make ci-quality-ruff
