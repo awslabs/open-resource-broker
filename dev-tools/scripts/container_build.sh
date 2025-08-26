@@ -27,16 +27,9 @@ log_error() {
 IMAGE_NAME="${IMAGE_NAME:-open-hostfactory-plugin}"  # Will be overridden by Makefile with $(CONTAINER_IMAGE)
 REGISTRY="${REGISTRY:-}"
 
-# Unified versioning strategy (PEP 440 compliant)
-if [[ "${IS_RELEASE:-false}" == "true" ]]; then
-    VERSION="${VERSION:-0.1.0}"  # Release version from .project.yml
-else
-    COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo 'unknown')
-    VERSION="${VERSION:-0.1.0+${COMMIT}}"  # PEP 440 compliant development version
-fi
-
-# Docker-safe version (replace + with -)
-CONTAINER_VERSION="${VERSION//+/-}"
+# Use VERSION as provided (already in correct format from Makefile)
+VERSION="${VERSION:-0.1.0}"
+CONTAINER_VERSION="$VERSION"
 
 BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
 VCS_REF=$(git rev-parse --short HEAD 2>/dev/null || echo 'unknown')
