@@ -199,6 +199,35 @@ jobs:
         # Stop test container
         docker stop test-container
 
+  container-cleanup:
+    name: Cleanup Old Container Images
+    runs-on: ubuntu-latest
+    needs: [get-config, container-manifest]
+    if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.event_name == 'release')
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - name: Delete old untagged container images (keep 5 most recent)
+      uses: actions/delete-package-versions@v5
+      continue-on-error: true
+      with:
+        package-name: ${{ needs.get-config.outputs.container-image }}
+        package-type: container
+        min-versions-to-keep: 5
+        delete-only-untagged-versions: true
+
+    - name: Delete old tagged versions (preserve releases and special tags)
+      uses: actions/delete-package-versions@v5
+      continue-on-error: true
+      with:
+        package-name: ${{ needs.get-config.outputs.container-image }}
+        package-type: container
+        min-versions-to-keep: 5
+        ignore-versions: '^(latest|main|dev|develop|v\d+\.\d+\.\d+.*|.*\.dev-[a-f0-9]+)$'
+
   container-manifest:
     name: Create Multi-Architecture Manifests
     runs-on: ubuntu-latest
