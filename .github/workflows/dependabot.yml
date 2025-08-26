@@ -43,7 +43,6 @@ jobs:
         with:
           cache-key: deps-${{ needs.get-config.outputs.default-python-version }}-${{ hashFiles('.project.yml', 'pyproject.toml.template', 'requirements*.txt') }}
           fail-on-cache-miss: false
-          install-deps: false
 
       - name: Update UV lock file
         env:
@@ -181,7 +180,6 @@ jobs:
         with:
           cache-key: deps-${{ needs.get-config.outputs.default-python-version }}-${{ hashFiles('.project.yml', 'pyproject.toml.template', 'requirements*.txt') }}
           fail-on-cache-miss: false
-          install-deps: false
 
       - name: Update all dependencies
         run: |

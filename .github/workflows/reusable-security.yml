@@ -11,6 +11,11 @@ on:
         description: 'Python version for scans that need it'
         required: false
         type: string
+      default-python-version:
+        description: 'Default Python version (fallback)'
+        required: false
+        type: string
+        default: '3.13'
 
 jobs:
   get-config:
@@ -45,7 +50,7 @@ jobs:
         if: contains('bandit,safety,codeql', inputs.scan-type)
         uses: ./.github/actions/setup-uv-cached
         with:
-          cache-key: deps-${{ inputs.python-version || needs.get-config.outputs.default-python-version }}-${{ hashFiles('.project.yml', 'pyproject.toml.template', 'requirements*.txt') }}
+          cache-key: deps-${{ inputs.python-version || inputs.default-python-version }}-${{ hashFiles('.project.yml', 'pyproject.toml.template', 'requirements*.txt') }}
           fail-on-cache-miss: false
 
       # Bandit Security Scan

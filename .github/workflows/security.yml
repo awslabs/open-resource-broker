@@ -73,6 +73,7 @@ jobs:
     uses: ./.github/workflows/reusable-security.yml
     with:
       scan-type: bandit
+      default-python-version: ${{ needs.get-config.outputs.default-python-version }}
       python-version: ${{ needs.get-config.outputs.default-python-version }}
 
   security-safety:
@@ -81,6 +82,7 @@ jobs:
     uses: ./.github/workflows/reusable-security.yml
     with:
       scan-type: safety
+      default-python-version: ${{ needs.get-config.outputs.default-python-version }}
       python-version: ${{ needs.get-config.outputs.default-python-version }}
 
   security-hadolint:
@@ -89,6 +91,7 @@ jobs:
     uses: ./.github/workflows/reusable-security.yml
     with:
       scan-type: hadolint
+      default-python-version: ${{ needs.get-config.outputs.default-python-version }}
 
   security-semgrep:
     name: Semgrep (Static Analysis)
@@ -96,6 +99,7 @@ jobs:
     uses: ./.github/workflows/reusable-security.yml
     with:
       scan-type: semgrep
+      default-python-version: ${{ needs.get-config.outputs.default-python-version }}
 
   security-trivy-fs:
     name: Trivy (Filesystem Scan)
@@ -103,6 +107,7 @@ jobs:
     uses: ./.github/workflows/reusable-security.yml
     with:
       scan-type: trivy-fs
+      default-python-version: ${{ needs.get-config.outputs.default-python-version }}
 
   security-trufflehog:
     name: TruffleHog (Secrets Scan)
@@ -153,6 +158,7 @@ jobs:
     uses: ./.github/workflows/reusable-security.yml
     with:
       scan-type: codeql
+      default-python-version: ${{ needs.get-config.outputs.default-python-version }}
       python-version: ${{ needs.get-config.outputs.default-python-version }}
 
   container-security:
@@ -178,7 +184,6 @@ jobs:
       with:
         cache-key: deps-${{ matrix.python-version }}-${{ hashFiles('.project.yml', 'pyproject.toml.template', 'requirements*.txt') }}
         fail-on-cache-miss: false
-        install-deps: false
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3

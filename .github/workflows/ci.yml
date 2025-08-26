@@ -303,6 +303,7 @@ jobs:
     with:
       test-type: unit
       python-version: ${{ needs.get-config.outputs.default-python-version }}
+      default-python-version: ${{ needs.get-config.outputs.default-python-version }}
       continue-on-error: true  # TODO: Remove once tests are stable
 
   integration-tests:
@@ -312,6 +313,7 @@ jobs:
     with:
       test-type: integration
       python-version: ${{ needs.get-config.outputs.default-python-version }}
+      default-python-version: ${{ needs.get-config.outputs.default-python-version }}
       continue-on-error: true  # TODO: Remove once tests are stable
 
   e2e-tests:
@@ -321,6 +323,7 @@ jobs:
     with:
       test-type: e2e
       python-version: ${{ needs.get-config.outputs.default-python-version }}
+      default-python-version: ${{ needs.get-config.outputs.default-python-version }}
       continue-on-error: true  # TODO: Remove once tests are stable
 
   performance-tests:
@@ -331,6 +334,7 @@ jobs:
     with:
       test-type: performance
       python-version: ${{ needs.get-config.outputs.default-python-version }}
+      default-python-version: ${{ needs.get-config.outputs.default-python-version }}
       continue-on-error: true  # TODO: Remove once tests are stable
 
   build-and-package:
