@@ -106,13 +106,13 @@ jobs:
           CONTAINER_TAGS="latest,${{ github.ref_name }}"
         elif [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/main" ]]; then
           # Main branch: use dev version and push
-          VERSION="0.1.0.dev$(date +%Y%m%d%H%M%S)+$(git rev-parse --short HEAD)"
+          VERSION=$(FORMAT=container PYTHON_VERSION=${{ matrix.python-version }} make -s get-version)
           CONTAINER_VERSION="$VERSION"
           PUSH_IMAGES="true"
           CONTAINER_TAGS="dev,$VERSION"
         else
           # PR/comment triggers: use dev version but don't push (security)
-          VERSION="0.1.0.dev$(date +%Y%m%d%H%M%S)+$(git rev-parse --short HEAD)"
+          VERSION=$(FORMAT=container PYTHON_VERSION=${{ matrix.python-version }} make -s get-version)
           CONTAINER_VERSION="$VERSION"
           PUSH_IMAGES="false"
           CONTAINER_TAGS="$VERSION"
@@ -164,7 +164,7 @@ jobs:
         CACHE: true
         SKIP_BUILD: true
       run: |
-        make container-build-single PYTHON_VERSION=${{ matrix.python-version }}
+        PYTHON_VERSION=${{ matrix.python-version }} make container-build-single
 
     - name: Test container image
       if: matrix.python-version == needs.get-config.outputs.default-python-version

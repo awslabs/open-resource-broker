@@ -408,6 +408,19 @@ docs-clean:  ## Clean documentation build files
 version-show:  ## Show current version from project config
 	@echo "Current version: $(VERSION)"
 
+get-version:  ## Generate version for current context (supports IS_RELEASE=true, FORMAT=container, PYTHON_VERSION=3.x)
+	@if [ "$${IS_RELEASE:-false}" = "true" ]; then \
+		echo "$(VERSION)"; \
+	else \
+		commit=$$(git rev-parse --short HEAD 2>/dev/null || echo 'unknown'); \
+		if [ "$${FORMAT}" = "container" ]; then \
+			python_ver=$${PYTHON_VERSION:-$(DEFAULT_PYTHON_VERSION)}; \
+			echo "$(VERSION).dev-$${commit}-python$${python_ver}"; \
+		else \
+			echo "$(VERSION).dev+$${commit}"; \
+		fi; \
+	fi
+
 version-bump-patch:  ## Bump patch version (1.0.0 -> 1.0.1)
 	@./dev-tools/package/version_bump.sh patch
 
