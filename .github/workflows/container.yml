@@ -64,7 +64,9 @@ jobs:
       default-python-version: ${{ steps.config.outputs.default-python-version }}
       container-registry: ${{ steps.config.outputs.container-registry }}
       container-image: ${{ steps.config.outputs.container-image }}
-      version: ${{ steps.config.outputs.version }}
+      pypi-version: ${{ steps.config.outputs.pypi-version }}
+      container-version-base: ${{ steps.config.outputs.container-version-base }}
+      is-release: ${{ steps.config.outputs.is-release }}
     steps:
     - name: Checkout code
       uses: actions/checkout@v5
