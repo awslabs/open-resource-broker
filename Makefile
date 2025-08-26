@@ -408,15 +408,12 @@ docs-clean:  ## Clean documentation build files
 version-show:  ## Show current version from project config
 	@echo "Current version: $(VERSION)"
 
-get-version:  ## Generate version for current context (supports IS_RELEASE=true, FORMAT=container|container-base)
+get-version:  ## Generate version (supports FORMAT=container for Docker-safe prefix)
 	@if [ "$${IS_RELEASE:-false}" = "true" ]; then \
 		echo "$(VERSION)"; \
 	else \
 		commit=$$(git rev-parse --short HEAD 2>/dev/null || echo 'unknown'); \
 		if [ "$${FORMAT}" = "container" ]; then \
-			python_ver=$${PYTHON_VERSION:-$(DEFAULT_PYTHON_VERSION)}; \
-			echo "$(VERSION).dev-$${commit}-python$${python_ver}"; \
-		elif [ "$${FORMAT}" = "container-base" ]; then \
 			echo "$(VERSION).dev-$${commit}"; \
 		else \
 			echo "$(VERSION).dev+$${commit}"; \
@@ -812,6 +809,7 @@ container-build-single: dev-install  ## Build container image for single Python 
 	fi
 	REGISTRY=$(CONTAINER_REGISTRY) \
 	VERSION=$${VERSION:-$$(make -s get-version)} \
+	CONTAINER_TAG_PREFIX=$${CONTAINER_TAG_PREFIX:-} \
 	IMAGE_NAME=$(CONTAINER_IMAGE) \
 	PYTHON_VERSION=$(PYTHON_VERSION) \
 	MULTI_PYTHON=true \

@@ -64,8 +64,8 @@ jobs:
       default-python-version: ${{ steps.config.outputs.default-python-version }}
       container-registry: ${{ steps.config.outputs.container-registry }}
       container-image: ${{ steps.config.outputs.container-image }}
-      pypi-version: ${{ steps.config.outputs.pypi-version }}
-      container-version-base: ${{ steps.config.outputs.container-version-base }}
+      pypi-package-version: ${{ steps.config.outputs.pypi-package-version }}
+      container-tag-prefix: ${{ steps.config.outputs.container-tag-prefix }}
       is-release: ${{ steps.config.outputs.is-release }}
     steps:
     - name: Checkout code
@@ -99,37 +99,40 @@ jobs:
       with:
         ref: ${{ needs.check-container-comment.outputs.pr_ref || github.sha }}
 
-    - name: Determine container version and push policy
+    - name: Set versions for matrix job
       run: |
-        # Use centralized version from get-config
-        PYPI_VERSION="${{ needs.get-config.outputs.pypi-version }}"
-        CONTAINER_VERSION="${{ needs.get-config.outputs.container-version-base }}-python${{ matrix.python-version }}"
+        # Use centralized versions from get-config (DRY approach)
+        PYPI_PACKAGE_VERSION="${{ needs.get-config.outputs.pypi-package-version }}"
+        CONTAINER_TAG_PREFIX="${{ needs.get-config.outputs.container-tag-prefix }}"
+        CONTAINER_URI="${{ needs.get-config.outputs.container-registry }}/${{ needs.get-config.outputs.container-image }}:${{ needs.get-config.outputs.container-tag-prefix }}-python${{ matrix.python-version }}"
         
         if [[ "${{ github.event_name }}" == "release" ]]; then
           # Release: push to registry
           PUSH_IMAGES="true"
-          CONTAINER_TAGS="latest,${{ needs.get-config.outputs.pypi-version }}"
+          CONTAINER_TAGS="latest,${{ needs.get-config.outputs.pypi-package-version }}"
         elif [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/main" ]]; then
           # Main branch: push with dev tags
           PUSH_IMAGES="true"
-          CONTAINER_TAGS="dev,$CONTAINER_VERSION"
+          CONTAINER_TAGS="dev,$CONTAINER_TAG_PREFIX-python${{ matrix.python-version }}"
         else
           # PR/comment triggers: don't push (security)
           PUSH_IMAGES="false"
-          CONTAINER_TAGS="$CONTAINER_VERSION"
+          CONTAINER_TAGS="$CONTAINER_TAG_PREFIX-python${{ matrix.python-version }}"
         fi
         
         # Export to environment for subsequent steps
         {
-          echo "PYPI_VERSION=$PYPI_VERSION"
-          echo "CONTAINER_VERSION=$CONTAINER_VERSION"
+          echo "PYPI_PACKAGE_VERSION=$PYPI_PACKAGE_VERSION"
+          echo "CONTAINER_TAG_PREFIX=$CONTAINER_TAG_PREFIX"
+          echo "CONTAINER_URI=$CONTAINER_URI"
           echo "PUSH_IMAGES=$PUSH_IMAGES"
           echo "CONTAINER_TAGS=$CONTAINER_TAGS"
         } >> "$GITHUB_ENV"
         
         # Display values for debugging
-        echo "PyPI version: $PYPI_VERSION"
-        echo "Container version: $CONTAINER_VERSION"
+        echo "PyPI package version: $PYPI_PACKAGE_VERSION"
+        echo "Container tag prefix: $CONTAINER_TAG_PREFIX"
+        echo "Container URI: $CONTAINER_URI"
         echo "Push images: $PUSH_IMAGES"
         echo "Tags: $CONTAINER_TAGS"
 
@@ -154,7 +157,7 @@ jobs:
 
     - name: Build package wheel
       env:
-        VERSION: ${{ env.PYPI_VERSION }}
+        VERSION: ${{ env.PYPI_PACKAGE_VERSION }}
       run: |
         make build
 
@@ -162,7 +165,8 @@ jobs:
       env:
         REGISTRY: ${{ needs.get-config.outputs.container-registry }}
         IMAGE_NAME: ${{ needs.get-config.outputs.container-image }}
-        VERSION: ${{ needs.get-config.outputs.container-version-base }}
+        VERSION: ${{ env.PYPI_PACKAGE_VERSION }}
+        CONTAINER_TAG_PREFIX: ${{ env.CONTAINER_TAG_PREFIX }}
         PYTHON_VERSION: ${{ matrix.python-version }}
         PLATFORMS: linux/amd64,linux/arm64
         PUSH: ${{ github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.event_name == 'release' || github.event.inputs.push_images == 'true') }}
@@ -175,7 +179,7 @@ jobs:
       if: matrix.python-version == needs.get-config.outputs.default-python-version
       run: |
         # Test that the container starts and responds to health check
-        IMAGE_TAG="${{ needs.get-config.outputs.container-registry }}/${{ needs.get-config.outputs.container-image }}:${{ env.CONTAINER_VERSION }}-python${{ matrix.python-version }}"
+        IMAGE_TAG="${{ env.CONTAINER_URI }}"
 
         echo "Testing container image: $IMAGE_TAG"
 
@@ -220,17 +224,17 @@ jobs:
         DEFAULT_PYTHON_VERSION: ${{ needs.get-config.outputs.default-python-version }}
         REGISTRY: ${{ needs.get-config.outputs.container-registry }}
         IMAGE: ${{ needs.get-config.outputs.container-image }}
-        PYPI_VERSION: ${{ needs.get-config.outputs.pypi-version }}
-        CONTAINER_BASE_VERSION: ${{ needs.get-config.outputs.container-version-base }}
+        PYPI_PACKAGE_VERSION: ${{ needs.get-config.outputs.pypi-package-version }}
+        CONTAINER_TAG_PREFIX: ${{ needs.get-config.outputs.container-tag-prefix }}
       run: |
         if [ "${{ github.ref }}" = "refs/heads/main" ]; then
           # Create manifest for latest using default Python version
           echo "Creating latest tag from default Python version: $DEFAULT_PYTHON_VERSION"
-          docker buildx imagetools create -t "$REGISTRY/$IMAGE:latest" "$REGISTRY/$IMAGE:$CONTAINER_BASE_VERSION-python$DEFAULT_PYTHON_VERSION"
+          docker buildx imagetools create -t "$REGISTRY/$IMAGE:latest" "$REGISTRY/$IMAGE:$CONTAINER_TAG_PREFIX-python$DEFAULT_PYTHON_VERSION"
         fi
 
         if [ "${{ github.event_name }}" = "release" ]; then
           # Create manifest for release version using default Python version
-          echo "Creating release tag $PYPI_VERSION from default Python version: $DEFAULT_PYTHON_VERSION"
-          docker buildx imagetools create -t "$REGISTRY/$IMAGE:$PYPI_VERSION" "$REGISTRY/$IMAGE:$PYPI_VERSION-python$DEFAULT_PYTHON_VERSION"
+          echo "Creating release tag $PYPI_PACKAGE_VERSION from default Python version: $DEFAULT_PYTHON_VERSION"
+          docker buildx imagetools create -t "$REGISTRY/$IMAGE:$PYPI_PACKAGE_VERSION" "$REGISTRY/$IMAGE:$PYPI_PACKAGE_VERSION-python$DEFAULT_PYTHON_VERSION"
         fi

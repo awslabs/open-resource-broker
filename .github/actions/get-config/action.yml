@@ -13,12 +13,12 @@ outputs:
   container-image:
     description: 'Container image name'
     value: ${{ steps.config.outputs.container-image }}
-  pypi-version:
-    description: 'PEP 440 compliant version for PyPI/TestPyPI'
-    value: ${{ steps.config.outputs.pypi-version }}
-  container-version-base:
-    description: 'Docker-safe base version for containers (without python suffix)'
-    value: ${{ steps.config.outputs.container-version-base }}
+  pypi-package-version:
+    description: 'PEP 440 compliant version for Python packages'
+    value: ${{ steps.config.outputs.pypi-package-version }}
+  container-tag-prefix:
+    description: 'Docker-safe base version for container tags'
+    value: ${{ steps.config.outputs.container-tag-prefix }}
   is-release:
     description: 'Whether this is a release build'
     value: ${{ steps.config.outputs.is-release }}
@@ -40,13 +40,13 @@ runs:
         # Centralized version generation using Makefile infrastructure
         if [[ "${{ github.event_name }}" == "release" ]] || [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ github.event.inputs.environment }}" == "pypi" ]]; then
           # Release build
-          PYPI_VERSION=$(IS_RELEASE=true make -s get-version)
-          CONTAINER_VERSION_BASE=$(IS_RELEASE=true make -s get-version)
+          PYPI_PACKAGE_VERSION=$(IS_RELEASE=true make -s get-version)
+          CONTAINER_TAG_PREFIX=$(IS_RELEASE=true make -s get-version)
           IS_RELEASE="true"
         else
           # Development build
-          PYPI_VERSION=$(make -s get-version)
-          CONTAINER_VERSION_BASE=$(FORMAT=container-base make -s get-version)
+          PYPI_PACKAGE_VERSION=$(make -s get-version)
+          CONTAINER_TAG_PREFIX=$(FORMAT=container make -s get-version)
           IS_RELEASE="false"
         fi
         
@@ -55,8 +55,8 @@ runs:
           echo "python-versions=$PYTHON_VERSIONS"
           echo "container-registry=$CONTAINER_REGISTRY"
           echo "container-image=$CONTAINER_IMAGE"
-          echo "pypi-version=$PYPI_VERSION"
-          echo "container-version-base=$CONTAINER_VERSION_BASE"
+          echo "pypi-package-version=$PYPI_PACKAGE_VERSION"
+          echo "container-tag-prefix=$CONTAINER_TAG_PREFIX"
           echo "is-release=$IS_RELEASE"
         } >> "$GITHUB_OUTPUT"
         
@@ -64,6 +64,6 @@ runs:
         echo "Python versions: $PYTHON_VERSIONS"
         echo "Container registry: $CONTAINER_REGISTRY"
         echo "Container image: $CONTAINER_IMAGE"
-        echo "PyPI version: $PYPI_VERSION"
-        echo "Container base version: $CONTAINER_VERSION_BASE"
+        echo "PyPI package version: $PYPI_PACKAGE_VERSION"
+        echo "Container tag prefix: $CONTAINER_TAG_PREFIX"
         echo "Is release: $IS_RELEASE"
