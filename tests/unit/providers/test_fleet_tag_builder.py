@@ -26,7 +26,9 @@ class TestFleetTagBuilder:
     def test_build_base_tags(self):
         """Test building base tags."""
         package_name = "test-package"
-        tags = FleetTagBuilder.build_base_tags(self.mock_request, self.mock_template, package_name)
+        tags = FleetTagBuilder.build_base_tags(
+            self.mock_request, self.mock_template, package_name
+        )
 
         assert len(tags) == 4
         assert tags["RequestId"] == str(self.mock_request.request_id)
@@ -64,7 +66,8 @@ class TestFleetTagBuilder:
         self.mock_template.tags = {"Environment": "test", "Owner": "team"}
 
         with patch(
-            "infrastructure.utilities.common.resource_naming.get_resource_prefix", return_value=""
+            "infrastructure.utilities.common.resource_naming.get_resource_prefix",
+            return_value="",
         ):
             tags = FleetTagBuilder.build_resource_tags(
                 self.mock_request, self.mock_template, "instance"
@@ -98,10 +101,14 @@ class TestFleetTagBuilder:
         fleet_spec = next(spec for spec in tag_specs if spec["ResourceType"] == "fleet")
         assert fleet_spec is not None
         fleet_name_tag = next(tag for tag in fleet_spec["Tags"] if tag["Key"] == "Name")
-        assert fleet_name_tag["Value"] == str(self.mock_request.request_id)  # Empty prefix
+        assert fleet_name_tag["Value"] == str(
+            self.mock_request.request_id
+        )  # Empty prefix
 
         # Check instance tag specification
-        instance_spec = next(spec for spec in tag_specs if spec["ResourceType"] == "instance")
+        instance_spec = next(
+            spec for spec in tag_specs if spec["ResourceType"] == "instance"
+        )
         assert instance_spec is not None
 
     def test_build_tag_specifications_with_custom_prefix(self):
@@ -140,7 +147,9 @@ class TestFleetTagBuilder:
     def test_build_fleet_tags_legacy(self):
         """Test legacy build_fleet_tags method."""
         fleet_name = "test-fleet"
-        tags = FleetTagBuilder.build_fleet_tags(self.mock_request, self.mock_template, fleet_name)
+        tags = FleetTagBuilder.build_fleet_tags(
+            self.mock_request, self.mock_template, fleet_name
+        )
 
         assert len(tags) == 5
         # Fleet tags should have specified fleet name
@@ -149,11 +158,15 @@ class TestFleetTagBuilder:
 
     def test_build_instance_tags_legacy(self):
         """Test legacy build_instance_tags method."""
-        tags = FleetTagBuilder.build_instance_tags(self.mock_request, self.mock_template)
+        tags = FleetTagBuilder.build_instance_tags(
+            self.mock_request, self.mock_template
+        )
 
         assert len(tags) == 5
         # Should be same as build_common_tags
-        common_tags = FleetTagBuilder.build_common_tags(self.mock_request, self.mock_template)
+        common_tags = FleetTagBuilder.build_common_tags(
+            self.mock_request, self.mock_template
+        )
         # Compare without CreatedAt since it may differ by microseconds
         tags_without_time = [tag for tag in tags if tag["Key"] != "CreatedAt"]
         common_without_time = [tag for tag in common_tags if tag["Key"] != "CreatedAt"]

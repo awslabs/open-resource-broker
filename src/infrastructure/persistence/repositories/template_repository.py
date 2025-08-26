@@ -30,7 +30,9 @@ class TemplateSerializer:
                 container = get_container()
                 self.defaults_service = container.get(TemplateDefaultsPort)
             except Exception as e:
-                self.logger.debug("Could not get defaults service from container: %s", e)
+                self.logger.debug(
+                    "Could not get defaults service from container: %s", e
+                )
 
     @handle_infrastructure_exceptions(context="template_serialization")
     def to_dict(self, template: Template) -> dict[str, Any]:
@@ -81,13 +83,19 @@ class TemplateSerializer:
                 "key_name": template.key_name,
                 # Status and timestamps
                 "is_active": template.is_active,
-                "created_at": (template.created_at.isoformat() if template.created_at else None),
-                "updated_at": (template.updated_at.isoformat() if template.updated_at else None),
+                "created_at": (
+                    template.created_at.isoformat() if template.created_at else None
+                ),
+                "updated_at": (
+                    template.updated_at.isoformat() if template.updated_at else None
+                ),
                 # Schema version for migration support
                 "schema_version": "2.0.0",
             }
         except Exception as e:
-            self.logger.error("Failed to serialize template %s: %s", template.template_id, e)
+            self.logger.error(
+                "Failed to serialize template %s: %s", template.template_id, e
+            )
             raise
 
     @handle_infrastructure_exceptions(context="template_deserialization")
@@ -105,7 +113,9 @@ class TemplateSerializer:
                     )
                     self.logger.debug("Applied configuration defaults to template data")
                 except Exception as e:
-                    self.logger.warning("Failed to apply defaults, using original data: %s", e)
+                    self.logger.warning(
+                        "Failed to apply defaults, using original data: %s", e
+                    )
                     processed_data = data
 
             # Parse datetime fields with defaults for legacy data
@@ -122,9 +132,13 @@ class TemplateSerializer:
             )
 
             # Convert legacy format to new format
-            template_id = processed_data.get("templateId", processed_data.get("template_id"))
+            template_id = processed_data.get(
+                "templateId", processed_data.get("template_id")
+            )
             if not template_id:
-                raise ValueError(f"No template_id found in data: {list(processed_data.keys())}")
+                raise ValueError(
+                    f"No template_id found in data: {list(processed_data.keys())}"
+                )
 
             # Build template data with complete field support
             template_data = {
@@ -132,8 +146,12 @@ class TemplateSerializer:
                 "template_id": template_id,
                 "name": processed_data.get("name", template_id),
                 "description": processed_data.get("description"),
-                "image_id": processed_data.get("imageId", processed_data.get("image_id")),
-                "instance_type": processed_data.get("vmType", processed_data.get("instance_type")),
+                "image_id": processed_data.get(
+                    "imageId", processed_data.get("image_id")
+                ),
+                "instance_type": processed_data.get(
+                    "vmType", processed_data.get("instance_type")
+                ),
                 "max_instances": processed_data.get(
                     "maxNumber", processed_data.get("max_instances", 1)
                 ),
@@ -185,7 +203,9 @@ class TemplateSerializer:
                 "updated_at": updated_at,
             }
 
-            self.logger.debug("Converted template_data keys: %s", list(template_data.keys()))
+            self.logger.debug(
+                "Converted template_data keys: %s", list(template_data.keys())
+            )
 
             # Create template using model_validate to handle all fields correctly
             template = Template.model_validate(template_data)
@@ -219,7 +239,9 @@ class TemplateRepositoryImpl(TemplateRepositoryInterface):
             template.clear_domain_events()
 
             self.logger.debug(
-                "Saved template %s and extracted %s events", template.template_id, len(events)
+                "Saved template %s and extracted %s events",
+                template.template_id,
+                len(events),
             )
             return events
 
@@ -250,7 +272,9 @@ class TemplateRepositoryImpl(TemplateRepositoryInterface):
         try:
             return self.get_by_id(TemplateId(value=template_id))
         except Exception as e:
-            self.logger.error("Failed to find template by template_id %s: %s", template_id, e)
+            self.logger.error(
+                "Failed to find template by template_id %s: %s", template_id, e
+            )
             raise
 
     @handle_infrastructure_exceptions(context="template_search")
@@ -285,7 +309,9 @@ class TemplateRepositoryImpl(TemplateRepositoryInterface):
             data_list = self.storage_strategy.find_by_criteria(criteria)
             return [self.serializer.from_dict(data) for data in data_list]
         except Exception as e:
-            self.logger.error("Failed to find templates by provider_api %s: %s", provider_api, e)
+            self.logger.error(
+                "Failed to find templates by provider_api %s: %s", provider_api, e
+            )
             raise
 
     @handle_infrastructure_exceptions(context="template_search")
@@ -309,7 +335,9 @@ class TemplateRepositoryImpl(TemplateRepositoryInterface):
             data_list = self.storage_strategy.find_by_criteria(criteria)
             return [self.serializer.from_dict(data) for data in data_list]
         except Exception as e:
-            self.logger.error("Failed to search templates with criteria %s: %s", criteria, e)
+            self.logger.error(
+                "Failed to search templates with criteria %s: %s", criteria, e
+            )
             raise
 
     @handle_infrastructure_exceptions(context="template_deletion")
@@ -328,5 +356,7 @@ class TemplateRepositoryImpl(TemplateRepositoryInterface):
         try:
             return self.storage_strategy.exists(str(template_id.value))
         except Exception as e:
-            self.logger.error("Failed to check if template %s exists: %s", template_id, e)
+            self.logger.error(
+                "Failed to check if template %s exists: %s", template_id, e
+            )
             raise

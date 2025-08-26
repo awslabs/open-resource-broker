@@ -30,7 +30,10 @@ class TestJinjaAdvancedRendering:
             "LaunchTemplateData": {
                 "InstanceType": "{{ instance_type }}",
                 "NetworkInterfaces": [
-                    {"SubnetId": "{{ subnet_id }}", "SecurityGroupIds": ["{{ security_group }}"]}
+                    {
+                        "SubnetId": "{{ subnet_id }}",
+                        "SecurityGroupIds": ["{{ security_group }}"],
+                    }
                 ],
             }
         }
@@ -43,7 +46,10 @@ class TestJinjaAdvancedRendering:
         result = self.renderer.render_spec(spec, context)
 
         assert result["LaunchTemplateData"]["InstanceType"] == "t3.medium"
-        assert result["LaunchTemplateData"]["NetworkInterfaces"][0]["SubnetId"] == "subnet-12345"
+        assert (
+            result["LaunchTemplateData"]["NetworkInterfaces"][0]["SubnetId"]
+            == "subnet-12345"
+        )
         assert (
             result["LaunchTemplateData"]["NetworkInterfaces"][0]["SecurityGroupIds"][0]
             == "sg-67890"
@@ -80,7 +86,11 @@ class TestJinjaAdvancedRendering:
         assert result1["SpotPrice"] == "0.05"
 
         # Test with spot disabled
-        context2 = {"instance_type": "t3.micro", "use_spot": False, "spot_price": "0.05"}
+        context2 = {
+            "instance_type": "t3.micro",
+            "use_spot": False,
+            "spot_price": "0.05",
+        }
         result2 = self.renderer.render_spec(spec, context2)
         assert result2["SpotPrice"] == ""
 
@@ -183,7 +193,9 @@ class TestJinjaAdvancedRendering:
         result = self.renderer.render_spec(spec, context)
 
         lt_config = result["LaunchTemplateConfigs"][0]
-        assert lt_config["LaunchTemplateSpecification"]["LaunchTemplateId"] == "lt-12345"
+        assert (
+            lt_config["LaunchTemplateSpecification"]["LaunchTemplateId"] == "lt-12345"
+        )
         assert lt_config["LaunchTemplateSpecification"]["Version"] == "$Latest"
         assert lt_config["Overrides"][0]["InstanceType"] == "t3.medium"
         assert lt_config["Overrides"][0]["SubnetId"] == "subnet-1a"
@@ -233,7 +245,10 @@ class TestJinjaAdvancedRendering:
 
     def test_empty_context(self):
         """Test rendering with empty context."""
-        spec = {"StaticValue": "static", "DefaultValue": "{{ missing_var | default('default') }}"}
+        spec = {
+            "StaticValue": "static",
+            "DefaultValue": "{{ missing_var | default('default') }}",
+        }
         context = {}
 
         result = self.renderer.render_spec(spec, context)
@@ -259,7 +274,9 @@ class TestJinjaAdvancedRendering:
 
     def test_recursive_rendering_depth(self):
         """Test deeply nested structure rendering."""
-        spec = {"Level1": {"Level2": {"Level3": {"Level4": {"Value": "{{ deep_value }}"}}}}}
+        spec = {
+            "Level1": {"Level2": {"Level3": {"Level4": {"Value": "{{ deep_value }}"}}}}
+        }
         context = {"deep_value": "deep-content"}
 
         result = self.renderer.render_spec(spec, context)
@@ -268,7 +285,14 @@ class TestJinjaAdvancedRendering:
 
     def test_mixed_data_types_in_lists(self):
         """Test lists containing mixed data types."""
-        spec = {"MixedList": ["{{ string_var }}", 42, True, {"NestedKey": "{{ nested_var }}"}]}
+        spec = {
+            "MixedList": [
+                "{{ string_var }}",
+                42,
+                True,
+                {"NestedKey": "{{ nested_var }}"},
+            ]
+        }
         context = {"string_var": "string-value", "nested_var": "nested-value"}
 
         result = self.renderer.render_spec(spec, context)

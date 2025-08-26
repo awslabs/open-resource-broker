@@ -79,7 +79,9 @@ class InstanceManagerPort(Protocol):
         """Terminate cloud instances."""
         ...
 
-    def get_instance_status(self, instance_ids: list[InstanceId]) -> InstanceStatusResponse:
+    def get_instance_status(
+        self, instance_ids: list[InstanceId]
+    ) -> InstanceStatusResponse:
         """Get status of specific instances."""
         ...
 
@@ -87,7 +89,9 @@ class InstanceManagerPort(Protocol):
         """Create instances based on specification."""
         ...
 
-    def list_instances(self, filters: Optional[dict[str, Any]] = None) -> list[Instance]:
+    def list_instances(
+        self, filters: Optional[dict[str, Any]] = None
+    ) -> list[Instance]:
         """List instances with optional filters."""
         ...
 
@@ -99,7 +103,9 @@ class InstanceManagerPort(Protocol):
         """Start stopped cloud instances (if supported by provider)."""
         ...
 
-    def get_instance_details(self, instance_ids: list[InstanceId]) -> list[dict[str, Any]]:
+    def get_instance_details(
+        self, instance_ids: list[InstanceId]
+    ) -> list[dict[str, Any]]:
         """Get detailed information about cloud instances."""
         ...
 

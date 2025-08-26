@@ -12,7 +12,9 @@ from infrastructure.logging.logger import get_logger
 class LoggingMiddleware(BaseHTTPMiddleware):
     """Logging middleware for FastAPI requests."""
 
-    def __init__(self, app, log_requests: bool = True, log_responses: bool = True) -> None:
+    def __init__(
+        self, app, log_requests: bool = True, log_responses: bool = True
+    ) -> None:
         """
         Initialize logging middleware.
 
@@ -81,7 +83,9 @@ class LoggingMiddleware(BaseHTTPMiddleware):
 
         # Log query parameters if present
         if request.query_params:
-            self.logger.debug("Request %s query params: %s", request_id, dict(request.query_params))
+            self.logger.debug(
+                "Request %s query params: %s", request_id, dict(request.query_params)
+            )
 
     def _log_response(
         self, request: Request, response: Response, request_id: str, duration: float

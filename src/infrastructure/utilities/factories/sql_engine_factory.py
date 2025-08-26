@@ -77,7 +77,9 @@ class SQLEngineFactory:
                     Path(db_dir).mkdir(parents=True, exist_ok=True)
 
             connection_string = f"sqlite:///{db_path}"
-            logger.debug("Creating SQLite engine with connection string: %s", connection_string)
+            logger.debug(
+                "Creating SQLite engine with connection string: %s", connection_string
+            )
 
             # SQLite-specific settings
             engine_kwargs["connect_args"] = {
@@ -93,9 +95,14 @@ class SQLEngineFactory:
             database = config.name
 
             # Build connection string
-            connection_string = f"postgresql://{username}:{password}@{host}:{port}/{database}"
+            connection_string = (
+                f"postgresql://{username}:{password}@{host}:{port}/{database}"
+            )
             logger.debug(
-                "Creating PostgreSQL engine with connection to %s:%s/%s", host, port, database
+                "Creating PostgreSQL engine with connection to %s:%s/%s",
+                host,
+                port,
+                database,
             )
 
             # Add pooling configuration
@@ -117,8 +124,15 @@ class SQLEngineFactory:
             database = config.name
 
             # Build connection string
-            connection_string = f"mysql+pymysql://{username}:{password}@{host}:{port}/{database}"
-            logger.debug("Creating MySQL engine with connection to %s:%s/%s", host, port, database)
+            connection_string = (
+                f"mysql+pymysql://{username}:{password}@{host}:{port}/{database}"
+            )
+            logger.debug(
+                "Creating MySQL engine with connection to %s:%s/%s",
+                host,
+                port,
+                database,
+            )
 
             # Add pooling configuration
             engine_kwargs.update(
@@ -140,8 +154,15 @@ class SQLEngineFactory:
             database = config.name
 
             # Build connection string
-            connection_string = f"mysql+pymysql://{username}:{password}@{host}:{port}/{database}"
-            logger.debug("Creating Aurora engine with connection to %s:%s/%s", host, port, database)
+            connection_string = (
+                f"mysql+pymysql://{username}:{password}@{host}:{port}/{database}"
+            )
+            logger.debug(
+                "Creating Aurora engine with connection to %s:%s/%s",
+                host,
+                port,
+                database,
+            )
 
             # Add pooling configuration
             engine_kwargs.update(

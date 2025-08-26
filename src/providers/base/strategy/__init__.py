@@ -165,7 +165,9 @@ def create_provider_context(logger=None) -> ProviderContext:
         for instance_name in registered_instances:
             try:
                 # Get the registration to find the provider type
-                registration = registry.get_provider_instance_registration(instance_name)
+                registration = registry.get_provider_instance_registration(
+                    instance_name
+                )
                 if registration:
                     # Get the actual provider config from configuration manager
                     from config.manager import get_config_manager
@@ -197,7 +199,9 @@ def create_provider_context(logger=None) -> ProviderContext:
             except Exception as e:
                 if logger:
                     logger.warning(
-                        "Failed to load strategy for provider instance %s: %s", instance_name, e
+                        "Failed to load strategy for provider instance %s: %s",
+                        instance_name,
+                        e,
                     )
 
     except Exception as e:

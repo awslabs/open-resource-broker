@@ -53,7 +53,9 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         except Exception as e:
             self._logger.error("Failed to determine templates file path: %s", e)
             # Fallback to aws for backward compatibility
-            return self.config_manager.resolve_file("template", "awsprov_templates.json")
+            return self.config_manager.resolve_file(
+                "template", "awsprov_templates.json"
+            )
 
     def get_template_paths(self) -> list[str]:
         """Get template file paths."""
@@ -87,7 +89,9 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
                 except Exception as e:
                     # Skip invalid templates but log the issue
                     self._logger.warning(
-                        "Skipping invalid template %s: %s", template.get("id", "unknown"), e
+                        "Skipping invalid template %s: %s",
+                        template.get("id", "unknown"),
+                        e,
                     )
                     continue
 
@@ -145,8 +149,8 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
 
         # Set provider API using defaults service if available, otherwise fallback
         if self.template_defaults_service:
-            mapped["provider_api"] = self.template_defaults_service.resolve_provider_api_default(
-                template
+            mapped["provider_api"] = (
+                self.template_defaults_service.resolve_provider_api_default(template)
             )
         else:
             # Fallback to template value or default
@@ -188,10 +192,14 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
             self._logger.debug("Active provider type: %s", provider_type)
             return provider_type
         except Exception as e:
-            self._logger.warning("Failed to get active provider type, defaulting to 'aws': %s", e)
+            self._logger.warning(
+                "Failed to get active provider type, defaulting to 'aws': %s", e
+            )
             return "aws"  # Default fallback
 
-    def convert_cli_args_to_hostfactory_input(self, operation: str, args: Any) -> dict[str, Any]:
+    def convert_cli_args_to_hostfactory_input(
+        self, operation: str, args: Any
+    ) -> dict[str, Any]:
         """Convert CLI arguments to HostFactory JSON input format.
 
         This method handles the conversion from CLI arguments to the expected
@@ -217,7 +225,8 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
             machine_ids = getattr(args, "machine_ids", [])
             return {
                 "machines": [
-                    {"name": machine_id, "machineId": machine_id} for machine_id in machine_ids
+                    {"name": machine_id, "machineId": machine_id}
+                    for machine_id in machine_ids
                 ]
             }
         else:
@@ -309,8 +318,12 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
                 }
             elif isinstance(data, dict):
                 # Handle dict format (fallback)
-                machines = self._format_machines_for_hostfactory(data.get("machines", []))
-                status = self._map_domain_status_to_hostfactory(data.get("status", "unknown"))
+                machines = self._format_machines_for_hostfactory(
+                    data.get("machines", [])
+                )
+                status = self._map_domain_status_to_hostfactory(
+                    data.get("status", "unknown")
+                )
                 message = self._generate_status_message(
                     data.get("status", "unknown"), len(machines)
                 )
@@ -318,7 +331,9 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
                 return {
                     "requests": [
                         {
-                            "requestId": data.get("request_id", data.get("requestId", "")),
+                            "requestId": data.get(
+                                "request_id", data.get("requestId", "")
+                            ),
                             "status": status,
                             "message": message,
                             "machines": machines,
@@ -343,8 +358,12 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
 
         # Convert to HostFactory format with HF attributes
         hf_template = {
-            "templateId": template_dict.get("template_id", template_dict.get("templateId", "")),
-            "maxNumber": template_dict.get("max_instances", template_dict.get("maxNumber", 1)),
+            "templateId": template_dict.get(
+                "template_id", template_dict.get("templateId", "")
+            ),
+            "maxNumber": template_dict.get(
+                "max_instances", template_dict.get("maxNumber", 1)
+            ),
             "attributes": self._create_hf_attributes(template_dict),
         }
 
@@ -513,7 +532,8 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
             requests = raw_data["requests"]
             requests_list = requests if isinstance(requests, list) else [requests]
             return [
-                {"request_id": req.get("requestId", req.get("request_id"))} for req in requests_list
+                {"request_id": req.get("requestId", req.get("request_id"))}
+                for req in requests_list
             ]
 
         # Request Machines
@@ -531,7 +551,9 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         # Also handle request status format: {"requestId": ...}
         return {
             "template_id": raw_data.get("templateId"),
-            "requested_count": raw_data.get("maxNumber", raw_data.get("machineCount", 1)),
+            "requested_count": raw_data.get(
+                "maxNumber", raw_data.get("machineCount", 1)
+            ),
             "request_type": raw_data.get("requestType", "provision"),
             "request_id": raw_data.get("requestId", raw_data.get("request_id")),
             "metadata": raw_data.get("metadata", {}),
@@ -589,7 +611,8 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
             "requests": [
                 {
                     # Domain -> HostFactory field mapping using consistent serialization
-                    "requestId": serialize_enum(request.request_id) or str(request.request_id),
+                    "requestId": serialize_enum(request.request_id)
+                    or str(request.request_id),
                     "requestType": serialize_enum(request.request_type)
                     or str(request.request_type),
                     "templateId": str(request.template_id),
@@ -598,7 +621,8 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
                     "status": serialize_enum(request.status) or str(request.status),
                     "statusMessage": request.status_message,
                     "instanceIds": [
-                        serialize_enum(inst_id) or str(inst_id) for inst_id in request.instance_ids
+                        serialize_enum(inst_id) or str(inst_id)
+                        for inst_id in request.instance_ids
                     ],
                     "createdAt": request.created_at,
                     "startedAt": request.started_at,
@@ -619,10 +643,12 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
             "machines": [
                 {
                     # Domain -> HostFactory field mapping using consistent serialization
-                    "instanceId": serialize_enum(machine.instance_id) or str(machine.instance_id),
+                    "instanceId": serialize_enum(machine.instance_id)
+                    or str(machine.instance_id),
                     "templateId": str(machine.template_id),
                     "requestId": str(machine.request_id),
-                    "vmType": serialize_enum(machine.instance_type) or str(machine.instance_type),
+                    "vmType": serialize_enum(machine.instance_type)
+                    or str(machine.instance_type),
                     "imageId": str(machine.image_id),
                     "privateIp": machine.private_ip,
                     "publicIp": machine.public_ip,

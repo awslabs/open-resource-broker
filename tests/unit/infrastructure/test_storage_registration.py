@@ -57,7 +57,9 @@ class TestJSONStorageRegistration:
         assert result == mock_config
         mock_config_class.assert_called_once_with(**data)
 
-    @patch("src.infrastructure.persistence.repositories.request_repository.RequestRepository")
+    @patch(
+        "src.infrastructure.persistence.repositories.request_repository.RequestRepository"
+    )
     @patch("src.infrastructure.persistence.json.registration.JSONStorageStrategy")
     def test_create_json_request_repository(self, mock_strategy_class, mock_repo_class):
         """Test creating JSON request repository."""
@@ -68,7 +70,9 @@ class TestJSONStorageRegistration:
         mock_config = Mock()
         mock_config.json_strategy.base_path = "test_data"
         mock_config.json_strategy.storage_type = "split_files"
-        mock_config.json_strategy.filenames = {"split_files": {"requests": "requests.json"}}
+        mock_config.json_strategy.filenames = {
+            "split_files": {"requests": "requests.json"}
+        }
 
         mock_strategy = Mock()
         mock_strategy_class.return_value = mock_strategy
@@ -93,7 +97,9 @@ class TestJSONStorageRegistration:
 
         # Mock the imports to avoid dependency issues
         with (
-            patch("src.infrastructure.persistence.json.registration.JSONStorageStrategy"),
+            patch(
+                "src.infrastructure.persistence.json.registration.JSONStorageStrategy"
+            ),
             patch(
                 "src.infrastructure.persistence.repositories.request_repository.RequestRepository"
             ),
@@ -232,7 +238,9 @@ class TestDynamoDBStorageRegistration:
         """Clean up after tests."""
         reset_storage_registry()
 
-    @patch("src.providers.aws.persistence.dynamodb.registration.DynamoDBStorageStrategy")
+    @patch(
+        "src.providers.aws.persistence.dynamodb.registration.DynamoDBStorageStrategy"
+    )
     def test_create_dynamodb_strategy(self, mock_strategy_class):
         """Test creating DynamoDB storage strategy."""
         from providers.aws.persistence.dynamodb.registration import (
@@ -285,7 +293,9 @@ class TestDynamoDBStorageRegistration:
 
         # Mock the imports to avoid dependency issues
         with (
-            patch("src.providers.aws.persistence.dynamodb.registration.DynamoDBStorageStrategy"),
+            patch(
+                "src.providers.aws.persistence.dynamodb.registration.DynamoDBStorageStrategy"
+            ),
             patch(
                 "src.infrastructure.persistence.repositories.request_repository.RequestRepository"
             ),
@@ -295,7 +305,9 @@ class TestDynamoDBStorageRegistration:
             patch(
                 "src.infrastructure.persistence.repositories.template_repository.TemplateRepository"
             ),
-            patch("src.providers.aws.persistence.dynamodb.registration.DynamoDBUnitOfWork"),
+            patch(
+                "src.providers.aws.persistence.dynamodb.registration.DynamoDBUnitOfWork"
+            ),
         ):
             register_dynamodb_storage()
 
@@ -322,7 +334,9 @@ class TestCentralStorageRegistration:
     @patch("src.infrastructure.persistence.registration.register_json_storage")
     @patch("src.infrastructure.persistence.registration.register_sql_storage")
     @patch("src.infrastructure.persistence.registration.register_dynamodb_storage")
-    def test_register_all_storage_types_success(self, mock_dynamodb, mock_sql, mock_json):
+    def test_register_all_storage_types_success(
+        self, mock_dynamodb, mock_sql, mock_json
+    ):
         """Test successful registration of all storage types."""
         from infrastructure.persistence.registration import register_all_storage_types
 
@@ -342,7 +356,9 @@ class TestCentralStorageRegistration:
     @patch("src.infrastructure.persistence.registration.register_json_storage")
     @patch("src.infrastructure.persistence.registration.register_sql_storage")
     @patch("src.infrastructure.persistence.registration.register_dynamodb_storage")
-    def test_register_all_storage_types_partial_failure(self, mock_dynamodb, mock_sql, mock_json):
+    def test_register_all_storage_types_partial_failure(
+        self, mock_dynamodb, mock_sql, mock_json
+    ):
         """Test registration with some failures."""
         from infrastructure.persistence.registration import register_all_storage_types
 
@@ -362,7 +378,9 @@ class TestCentralStorageRegistration:
     @patch("src.infrastructure.persistence.registration.register_json_storage")
     @patch("src.infrastructure.persistence.registration.register_sql_storage")
     @patch("src.infrastructure.persistence.registration.register_dynamodb_storage")
-    def test_register_all_storage_types_complete_failure(self, mock_dynamodb, mock_sql, mock_json):
+    def test_register_all_storage_types_complete_failure(
+        self, mock_dynamodb, mock_sql, mock_json
+    ):
         """Test registration with complete failure."""
         from infrastructure.persistence.registration import register_all_storage_types
 
@@ -383,7 +401,9 @@ class TestCentralStorageRegistration:
         with (
             patch("src.infrastructure.persistence.registration.JSONStorageStrategy"),
             patch("src.infrastructure.persistence.registration.SQLStorageStrategy"),
-            patch("src.infrastructure.persistence.registration.DynamoDBStorageStrategy"),
+            patch(
+                "src.infrastructure.persistence.registration.DynamoDBStorageStrategy"
+            ),
         ):
             available_types = get_available_storage_types()
 

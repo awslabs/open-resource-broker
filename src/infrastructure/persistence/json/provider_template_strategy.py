@@ -88,15 +88,21 @@ class ProviderTemplateStrategy(JSONStorageStrategy):
                     provider_types.add(provider_instance.type)
 
             for provider_type in provider_types:
-                type_file = os.path.join(base_dir, f"{provider_type}prov_templates.json")
+                type_file = os.path.join(
+                    base_dir, f"{provider_type}prov_templates.json"
+                )
                 if os.path.exists(type_file):
                     template_files.append(type_file)
-                    self.logger.debug("Found provider type template file: %s", type_file)
+                    self.logger.debug(
+                        "Found provider type template file: %s", type_file
+                    )
 
             # 3. Main templates file
             if os.path.exists(self.file_manager.file_path):
                 template_files.append(str(self.file_manager.file_path))
-                self.logger.debug("Found main template file: %s", self.file_manager.file_path)
+                self.logger.debug(
+                    "Found main template file: %s", self.file_manager.file_path
+                )
 
             # 4. Legacy templates file (lowest priority)
             legacy_file = os.path.join(base_dir, "awsprov_templates.json")
@@ -132,11 +138,16 @@ class ProviderTemplateStrategy(JSONStorageStrategy):
                     if isinstance(file_data, list):
                         # Array format: [{"template_id": "...", ...}, ...]
                         for template_data in file_data:
-                            if isinstance(template_data, dict) and "template_id" in template_data:
+                            if (
+                                isinstance(template_data, dict)
+                                and "template_id" in template_data
+                            ):
                                 template_id = template_data["template_id"]
                                 merged_templates[template_id] = template_data
                                 self.logger.debug(
-                                    "Loaded template '%s' from %s", template_id, file_path
+                                    "Loaded template '%s' from %s",
+                                    template_id,
+                                    file_path,
                                 )
 
                     elif isinstance(file_data, dict):
@@ -147,7 +158,9 @@ class ProviderTemplateStrategy(JSONStorageStrategy):
                                 template_data["template_id"] = template_id
                                 merged_templates[template_id] = template_data
                                 self.logger.debug(
-                                    "Loaded template '%s' from %s", template_id, file_path
+                                    "Loaded template '%s' from %s",
+                                    template_id,
+                                    file_path,
                                 )
 
                     self.logger.info(
@@ -256,7 +269,9 @@ class ProviderTemplateStrategy(JSONStorageStrategy):
             self.logger.info("Saved template '%s' to %s", template_id, target_file)
 
         except Exception as e:
-            self.logger.error("Error saving template '%s' to %s: %s", template_id, target_file, e)
+            self.logger.error(
+                "Error saving template '%s' to %s: %s", template_id, target_file, e
+            )
             raise
 
     def _determine_target_file(self, entity_data: dict[str, Any]) -> str:
@@ -308,13 +323,17 @@ class ProviderTemplateStrategy(JSONStorageStrategy):
                 if isinstance(file_data, list):
                     # Array format
                     original_length = len(file_data)
-                    file_data = [t for t in file_data if t.get("template_id") != entity_id]
+                    file_data = [
+                        t for t in file_data if t.get("template_id") != entity_id
+                    ]
 
                     if len(file_data) < original_length:
                         with open(file_path, "w", encoding="utf-8") as f:
                             json.dump(file_data, f, indent=2, ensure_ascii=False)
                         deleted = True
-                        self.logger.info("Deleted template '%s' from %s", entity_id, file_path)
+                        self.logger.info(
+                            "Deleted template '%s' from %s", entity_id, file_path
+                        )
 
                 elif isinstance(file_data, dict) and entity_id in file_data:
                     # Object format
@@ -322,7 +341,9 @@ class ProviderTemplateStrategy(JSONStorageStrategy):
                     with open(file_path, "w", encoding="utf-8") as f:
                         json.dump(file_data, f, indent=2, ensure_ascii=False)
                     deleted = True
-                    self.logger.info("Deleted template '%s' from %s", entity_id, file_path)
+                    self.logger.info(
+                        "Deleted template '%s' from %s", entity_id, file_path
+                    )
 
             except Exception as e:
                 self.logger.error(
@@ -357,7 +378,9 @@ class ProviderTemplateStrategy(JSONStorageStrategy):
                 # Check if template exists in this file
                 template_found = False
                 if isinstance(file_data, list):
-                    template_found = any(t.get("template_id") == template_id for t in file_data)
+                    template_found = any(
+                        t.get("template_id") == template_id for t in file_data
+                    )
                 elif isinstance(file_data, dict):
                     template_found = template_id in file_data
 
@@ -369,7 +392,9 @@ class ProviderTemplateStrategy(JSONStorageStrategy):
                     }
 
             except Exception as e:
-                self.logger.error("Error checking template source in %s: %s", file_path, e)
+                self.logger.error(
+                    "Error checking template source in %s: %s", file_path, e
+                )
                 continue
 
         return None

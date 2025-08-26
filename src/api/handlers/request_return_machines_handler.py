@@ -51,7 +51,9 @@ class RequestReturnMachinesRESTHandler(
         self._scheduler_strategy = scheduler_strategy
         self._metrics = metrics
 
-    async def validate_api_request(self, request: dict[str, Any], context: RequestContext) -> None:
+    async def validate_api_request(
+        self, request: dict[str, Any], context: RequestContext
+    ) -> None:
         """
         Validate API request for returning machines.
 
@@ -94,7 +96,9 @@ class RequestReturnMachinesRESTHandler(
 
         context.metadata["machine_ids"] = machine_ids
 
-    @handle_interface_exceptions(context="request_return_machines_api", interface_type="api")
+    @handle_interface_exceptions(
+        context="request_return_machines_api", interface_type="api"
+    )
     async def execute_api_request(
         self, request: dict[str, Any], context: RequestContext
     ) -> RequestReturnMachinesResponse:
@@ -125,7 +129,9 @@ class RequestReturnMachinesRESTHandler(
                     )
 
                 # Create response DTO
-                return CleanupResourcesResponse(metadata={"correlation_id": correlation_id})
+                return CleanupResourcesResponse(
+                    metadata={"correlation_id": correlation_id}
+                )
 
             if all_flag:
                 # Create metadata for request
@@ -198,7 +204,9 @@ class RequestReturnMachinesRESTHandler(
                 }
 
                 # Create return request using CQRS command
-                command = CreateReturnRequestCommand(machine_ids=machine_ids, metadata=metadata)
+                command = CreateReturnRequestCommand(
+                    machine_ids=machine_ids, metadata=metadata
+                )
                 request_id = await self._command_bus.execute(command)
 
                 # Record metrics if available
@@ -258,8 +266,8 @@ class RequestReturnMachinesRESTHandler(
         if self._scheduler_strategy and hasattr(
             self._scheduler_strategy, "format_return_request_response"
         ):
-            formatted_response = await self._scheduler_strategy.format_return_request_response(
-                response
+            formatted_response = (
+                await self._scheduler_strategy.format_return_request_response(response)
             )
             return formatted_response
 

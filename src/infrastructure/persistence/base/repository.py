@@ -176,7 +176,9 @@ class StrategyBasedRepository(Repository[T], Generic[T]):
                 event_bus = get_event_bus()
 
                 # Handle both new EventBus and legacy publisher
-                if hasattr(event_bus, "publish") and asyncio.iscoroutinefunction(event_bus.publish):
+                if hasattr(event_bus, "publish") and asyncio.iscoroutinefunction(
+                    event_bus.publish
+                ):
                     # New EventBus (async)
                     for event in events:
                         try:
@@ -460,7 +462,9 @@ class StrategyBasedRepository(Repository[T], Generic[T]):
                 self.storage_strategy.save_batch(entity_batch)
 
                 self.logger.debug(
-                    "Saved batch of %s %s entities", len(entity_batch), self.entity_class.__name__
+                    "Saved batch of %s %s entities",
+                    len(entity_batch),
+                    self.entity_class.__name__,
                 )
         except PydanticValidationError as e:
             # Convert Pydantic validation error to ValueError
@@ -495,7 +499,9 @@ class StrategyBasedRepository(Repository[T], Generic[T]):
                 del self._version_map[entity_id_str]
 
         self.logger.debug(
-            "Deleted batch of %s %s entities", len(entity_id_strs), self.entity_class.__name__
+            "Deleted batch of %s %s entities",
+            len(entity_id_strs),
+            self.entity_class.__name__,
         )
 
     def clear_cache(self) -> None:

@@ -166,7 +166,9 @@ class TestMultiInstanceProviderSupport:
                 "src.infrastructure.di.provider_services.get_config_manager",
                 return_value=mock_config_manager,
             ),
-            patch("src.providers.aws.registration.register_aws_provider") as mock_aws_register,
+            patch(
+                "src.providers.aws.registration.register_aws_provider"
+            ) as mock_aws_register,
             patch("src.infrastructure.di.provider_services.get_logger"),
         ):
             from infrastructure.di.provider_services import _register_providers
@@ -179,7 +181,9 @@ class TestMultiInstanceProviderSupport:
 
             # Verify instance names were passed
             call_args_list = mock_aws_register.call_args_list
-            instance_names = [call.kwargs.get("instance_name") for call in call_args_list]
+            instance_names = [
+                call.kwargs.get("instance_name") for call in call_args_list
+            ]
             assert "aws-us-east-1" in instance_names
             assert "aws-eu-west-1" in instance_names
             assert "aws-ap-south-1" not in instance_names  # Disabled
@@ -217,7 +221,9 @@ class TestMultiInstanceProviderSupport:
             strategy = factory._create_provider_strategy(provider_config)
 
             # Verify instance-based creation was used
-            mock_registry.is_provider_instance_registered.assert_called_once_with("aws-us-east-1")
+            mock_registry.is_provider_instance_registered.assert_called_once_with(
+                "aws-us-east-1"
+            )
             mock_registry.create_strategy_from_instance.assert_called_once_with(
                 "aws-us-east-1", provider_config
             )
@@ -246,7 +252,9 @@ class TestMultiInstanceProviderSupport:
         # Mock registry and strategy
         mock_strategy = Mock()
         mock_registry = Mock()
-        mock_registry.is_provider_instance_registered.return_value = False  # No named instance
+        mock_registry.is_provider_instance_registered.return_value = (
+            False  # No named instance
+        )
         mock_registry.create_strategy.return_value = mock_strategy
 
         with patch(
@@ -256,7 +264,11 @@ class TestMultiInstanceProviderSupport:
             strategy = factory._create_provider_strategy(provider_config)
 
             # Verify fallback to type-based creation
-            mock_registry.is_provider_instance_registered.assert_called_once_with("aws-legacy")
-            mock_registry.create_strategy.assert_called_once_with("aws", provider_config)
+            mock_registry.is_provider_instance_registered.assert_called_once_with(
+                "aws-legacy"
+            )
+            mock_registry.create_strategy.assert_called_once_with(
+                "aws", provider_config
+            )
 
             assert strategy == mock_strategy

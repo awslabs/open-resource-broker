@@ -35,7 +35,9 @@ class PersistenceError(InfrastructureError):
 class ConnectionError(PersistenceError):
     """Exception for connection errors."""
 
-    def __init__(self, message: str, connection_details: Optional[dict[str, Any]] = None) -> None:
+    def __init__(
+        self, message: str, connection_details: Optional[dict[str, Any]] = None
+    ) -> None:
         """
         Initialize connection error.
 

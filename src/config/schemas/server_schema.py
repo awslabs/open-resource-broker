@@ -22,7 +22,9 @@ class AuthConfig(BaseModel):
     )
 
     # AWS IAM configuration
-    iam: Optional[dict[str, Any]] = Field(None, description="AWS IAM strategy configuration")
+    iam: Optional[dict[str, Any]] = Field(
+        None, description="AWS IAM strategy configuration"
+    )
 
     # AWS Cognito configuration
     cognito: Optional[dict[str, Any]] = Field(
@@ -30,7 +32,9 @@ class AuthConfig(BaseModel):
     )
 
     # OAuth configuration
-    oauth: Optional[dict[str, Any]] = Field(None, description="OAuth strategy configuration")
+    oauth: Optional[dict[str, Any]] = Field(
+        None, description="OAuth strategy configuration"
+    )
 
     # Provider-specific auth configurations
     provider_auth: Optional[dict[str, Any]] = Field(
@@ -71,7 +75,9 @@ class ServerConfig(BaseModel):
     openapi_url: str = Field("/openapi.json", description="OpenAPI schema URL")
 
     # Authentication and CORS
-    auth: AuthConfig = Field(default=AuthConfig(), description="Authentication configuration")
+    auth: AuthConfig = Field(
+        default=AuthConfig(), description="Authentication configuration"
+    )
     cors: CORSConfig = Field(default=CORSConfig(), description="CORS configuration")
 
     # Security
@@ -80,7 +86,11 @@ class ServerConfig(BaseModel):
 
     # Performance
     request_timeout: int = Field(30, description="Request timeout in seconds")
-    max_request_size: int = Field(16 * 1024 * 1024, description="Maximum request size in bytes")
+    max_request_size: int = Field(
+        16 * 1024 * 1024, description="Maximum request size in bytes"
+    )
 
     # Rate limiting (for future implementation)
-    rate_limiting: Optional[dict[str, Any]] = Field(None, description="Rate limiting configuration")
+    rate_limiting: Optional[dict[str, Any]] = Field(
+        None, description="Rate limiting configuration"
+    )

@@ -55,7 +55,11 @@ if not config:
             "version": "0.1.0.dev0",
             "description": "Cloud provider integration plugin for IBM Spectrum Symphony Host Factory",
         },
-        "repository": {"org": "awslabs", "name": "open-hostfactory-plugin", "registry": "ghcr.io"},
+        "repository": {
+            "org": "awslabs",
+            "name": "open-hostfactory-plugin",
+            "registry": "ghcr.io",
+        },
     }
 
 # Export the same interface

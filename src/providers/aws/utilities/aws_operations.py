@@ -71,7 +71,9 @@ class AWSOperations:
             Termination result
         """
         if not instance_ids:
-            self._logger.warning("No instance IDs provided for %s termination", operation_context)
+            self._logger.warning(
+                "No instance IDs provided for %s termination", operation_context
+            )
             return {"terminated_instances": []}
 
         self._logger.info(
@@ -80,21 +82,29 @@ class AWSOperations:
 
         try:
             if request_adapter:
-                self._logger.info("Using request adapter for %s termination", operation_context)
+                self._logger.info(
+                    "Using request adapter for %s termination", operation_context
+                )
                 result = request_adapter.terminate_instances(instance_ids)
                 self._logger.info("Request adapter termination result: %s", result)
                 return result
             else:
-                self._logger.info("Using EC2 client directly for %s termination", operation_context)
+                self._logger.info(
+                    "Using EC2 client directly for %s termination", operation_context
+                )
                 if not self._retry_with_backoff:
-                    raise ValueError("Retry method not set. Call set_retry_method first.")
+                    raise ValueError(
+                        "Retry method not set. Call set_retry_method first."
+                    )
 
                 result = self._retry_with_backoff(
                     self.aws_client.ec2_client.terminate_instances,
                     operation_type="critical",
                     InstanceIds=instance_ids,
                 )
-                self._logger.info("Successfully terminated %s: %s", operation_context, instance_ids)
+                self._logger.info(
+                    "Successfully terminated %s: %s", operation_context, instance_ids
+                )
                 return result
 
         except Exception as e:
@@ -138,7 +148,9 @@ class AWSOperations:
             if not self._retry_with_backoff:
                 raise ValueError("Retry method not set. Call set_retry_method first.")
 
-            result = self._retry_with_backoff(operation, operation_type=operation_type, **kwargs)
+            result = self._retry_with_backoff(
+                operation, operation_type=operation_type, **kwargs
+            )
 
             if success_message:
                 self._logger.info(success_message)
@@ -222,7 +234,9 @@ class AWSOperations:
     ) -> None:
         """Standardized operation start logging."""
         if resource_id:
-            self._logger.info("Starting %s for %s: %s", operation, resource_type, resource_id)
+            self._logger.info(
+                "Starting %s for %s: %s", operation, resource_type, resource_id
+            )
         else:
             self._logger.info("Starting %s for %s", operation, resource_type)
 
@@ -234,7 +248,10 @@ class AWSOperations:
     ) -> None:
         """Standardized operation success logging."""
         self._logger.info(
-            "Successfully completed %s for %s: %s", operation, resource_type, resource_id
+            "Successfully completed %s for %s: %s",
+            operation,
+            resource_type,
+            resource_id,
         )
 
         if context:
@@ -250,10 +267,16 @@ class AWSOperations:
         """Standardized operation failure logging."""
         if resource_id:
             self._logger.error(
-                "Failed %s for %s %s: %s", operation, resource_type, resource_id, str(error)
+                "Failed %s for %s %s: %s",
+                operation,
+                resource_type,
+                resource_id,
+                str(error),
             )
         else:
-            self._logger.error("Failed %s for %s: %s", operation, resource_type, str(error))
+            self._logger.error(
+                "Failed %s for %s: %s", operation, resource_type, str(error)
+            )
 
     def check_resource_status(
         self,
@@ -295,7 +318,9 @@ class AWSOperations:
                     current_status = current_status[0]  # Take first item for lists
                 current_status = current_status.get(path_part, "unknown")
 
-            self._logger.debug("%s %s status: %s", resource_type, resource_id, current_status)
+            self._logger.debug(
+                "%s %s status: %s", resource_type, resource_id, current_status
+            )
 
             if expected_status and current_status != expected_status:
                 self._logger.warning(
@@ -336,7 +361,9 @@ class AWSOperations:
             List of instance IDs
         """
         try:
-            self._logger.debug("Getting instances for %s: %s", resource_type, resource_id)
+            self._logger.debug(
+                "Getting instances for %s: %s", resource_type, resource_id
+            )
 
             if not self._retry_with_backoff:
                 raise ValueError("Retry method not set. Call set_retry_method first.")
@@ -357,13 +384,19 @@ class AWSOperations:
                     instance_ids.append(instance)
 
             self._logger.debug(
-                "Found %s instances for %s %s", len(instance_ids), resource_type, resource_id
+                "Found %s instances for %s %s",
+                len(instance_ids),
+                resource_type,
+                resource_id,
             )
             return instance_ids
 
         except Exception as e:
             self._logger.error(
-                "Failed to get instances for %s %s: %s", resource_type, resource_id, str(e)
+                "Failed to get instances for %s %s: %s",
+                resource_type,
+                resource_id,
+                str(e),
             )
             return []
 
@@ -476,8 +509,12 @@ class AWSOperations:
             tags = FleetTagBuilder.build_base_tags(request, template, package_name)
             aws_tags = FleetTagBuilder.format_for_aws(tags)
 
-            self.aws_client.ec2_client.create_tags(Resources=[resource_id], Tags=aws_tags)
-            self._logger.debug(f"Successfully tagged resource {resource_id} with base tags")
+            self.aws_client.ec2_client.create_tags(
+                Resources=[resource_id], Tags=aws_tags
+            )
+            self._logger.debug(
+                f"Successfully tagged resource {resource_id} with base tags"
+            )
             return True
 
         except Exception as e:
@@ -505,7 +542,9 @@ class AWSOperations:
             elif provider_api.lower() == "spot_fleet":
                 instance_ids = self._get_spot_fleet_instances(fleet_id)
             else:
-                self._logger.warning(f"Unknown provider_api for fleet tagging: {provider_api}")
+                self._logger.warning(
+                    f"Unknown provider_api for fleet tagging: {provider_api}"
+                )
                 return 0
 
             if not instance_ids:
@@ -524,14 +563,21 @@ class AWSOperations:
             return tagged_count
 
         except Exception as e:
-            self._logger.error(f"Failed to discover and tag fleet instances for {fleet_id}: {e}")
+            self._logger.error(
+                f"Failed to discover and tag fleet instances for {fleet_id}: {e}"
+            )
             return 0
 
     def _get_ec2_fleet_instances(self, fleet_id: str) -> list[str]:
         """Get instance IDs from EC2 Fleet."""
         try:
-            response = self.aws_client.ec2_client.describe_fleet_instances(FleetId=fleet_id)
-            return [instance["InstanceId"] for instance in response.get("ActiveInstances", [])]
+            response = self.aws_client.ec2_client.describe_fleet_instances(
+                FleetId=fleet_id
+            )
+            return [
+                instance["InstanceId"]
+                for instance in response.get("ActiveInstances", [])
+            ]
         except Exception as e:
             self._logger.error(f"Failed to get EC2Fleet instances for {fleet_id}: {e}")
             return []
@@ -542,9 +588,14 @@ class AWSOperations:
             response = self.aws_client.ec2_client.describe_spot_fleet_instances(
                 SpotFleetRequestId=spot_fleet_id
             )
-            return [instance["InstanceId"] for instance in response.get("ActiveInstances", [])]
+            return [
+                instance["InstanceId"]
+                for instance in response.get("ActiveInstances", [])
+            ]
         except Exception as e:
-            self._logger.error(f"Failed to get SpotFleet instances for {spot_fleet_id}: {e}")
+            self._logger.error(
+                f"Failed to get SpotFleet instances for {spot_fleet_id}: {e}"
+            )
             return []
 
     def _get_package_name(self) -> str:

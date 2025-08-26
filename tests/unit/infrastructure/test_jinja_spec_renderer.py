@@ -31,7 +31,12 @@ class TestJinjaSpecRenderer:
 
     def test_render_nested_dict(self, renderer):
         """Test rendering nested dictionary structures."""
-        spec = {"config": {"instance": "{{ instance_type }}", "count": "{{ requested_count }}"}}
+        spec = {
+            "config": {
+                "instance": "{{ instance_type }}",
+                "count": "{{ requested_count }}",
+            }
+        }
         context = {"instance_type": "t2.micro", "requested_count": 5}
 
         result = renderer.render_spec(spec, context)

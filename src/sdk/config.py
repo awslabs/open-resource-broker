@@ -98,7 +98,9 @@ class SDKConfig:
 
                         data = yaml.safe_load(f)
                     except ImportError:
-                        raise ConfigurationError("YAML support requires PyYAML: pip install PyYAML")
+                        raise ConfigurationError(
+                            "YAML support requires PyYAML: pip install PyYAML"
+                        )
                 else:
                     data = json.load(f)
 

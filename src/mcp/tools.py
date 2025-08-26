@@ -109,7 +109,9 @@ class OpenHFPluginMCPTools:
 
         if name not in self.tools:
             available_tools = list(self.tools.keys())
-            raise ValueError(f"Unknown tool: {name}. Available tools: {available_tools}")
+            raise ValueError(
+                f"Unknown tool: {name}. Available tools: {available_tools}"
+            )
 
         tool_def = self.tools[name]
 
@@ -167,7 +169,10 @@ class OpenHFPluginMCPTools:
 
         tools = []
         for tool_name, tool_def in self.tools.items():
-            if tool_def.method_info and tool_def.method_info.handler_type == handler_type:
+            if (
+                tool_def.method_info
+                and tool_def.method_info.handler_type == handler_type
+            ):
                 tools.append(tool_name)
 
         return tools

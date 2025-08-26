@@ -109,7 +109,9 @@ class BaseHandler(ABC):
                     duration = time.time() - start_time
 
                     if self.logger:
-                        self.logger.info("Completed operation: %s in %.3fs", operation_id, duration)
+                        self.logger.info(
+                            "Completed operation: %s in %.3fs", operation_id, duration
+                        )
 
                     self._metrics[operation_id] = {
                         "duration": duration,
@@ -124,7 +126,10 @@ class BaseHandler(ABC):
 
                     if self.logger:
                         self.logger.error(
-                            "Failed operation: %s in %.3fs - %s", operation_id, duration, str(e)
+                            "Failed operation: %s in %.3fs - %s",
+                            operation_id,
+                            duration,
+                            str(e),
                         )
 
                     self._metrics[operation_id] = {
@@ -154,7 +159,9 @@ class BaseHandler(ABC):
 
                         if self.logger:
                             self.logger.info(
-                                "Completed operation: %s in %.3fs", operation_id, duration
+                                "Completed operation: %s in %.3fs",
+                                operation_id,
+                                duration,
                             )
 
                         return result
@@ -164,7 +171,10 @@ class BaseHandler(ABC):
 
                         if self.logger:
                             self.logger.error(
-                                "Failed operation: %s in %.3fs - %s", operation_id, duration, str(e)
+                                "Failed operation: %s in %.3fs - %s",
+                                operation_id,
+                                duration,
+                                str(e),
                             )
 
                         raise
@@ -177,7 +187,9 @@ class BaseHandler(ABC):
         """Get handler performance metrics."""
         return self._metrics.copy()
 
-    def handle_error(self, error: Exception, context: str) -> InfrastructureErrorResponse:
+    def handle_error(
+        self, error: Exception, context: str
+    ) -> InfrastructureErrorResponse:
         """
         Centralized error handling for all handlers.
 
@@ -324,7 +336,9 @@ class BaseQueryHandler(BaseHandler, QueryHandler[TQuery, TResult]):
         except Exception as e:
             duration = time.time() - start_time
             if self.logger:
-                self.logger.error("Failed query: %s in %.3fs - %s", operation_id, duration, str(e))
+                self.logger.error(
+                    "Failed query: %s in %.3fs - %s", operation_id, duration, str(e)
+                )
             raise
 
     def get_cache_key(self, query: TQuery) -> Optional[str]:
@@ -389,7 +403,9 @@ class BaseProviderHandler(BaseHandler):
                 duration = time.time() - start_time
                 if self.logger:
                     self.logger.info(
-                        "Completed provider operation: %s in %.3fs", operation_id, duration
+                        "Completed provider operation: %s in %.3fs",
+                        operation_id,
+                        duration,
                     )
 
                 return result
@@ -408,7 +424,9 @@ class BaseProviderHandler(BaseHandler):
                 else:
                     if self.logger:
                         self.logger.warning(
-                            "Provider operation failed (attempt %s): %s", attempt + 1, str(e)
+                            "Provider operation failed (attempt %s): %s",
+                            attempt + 1,
+                            str(e),
                         )
                     await asyncio.sleep(self.retry_delay * (attempt + 1))
 

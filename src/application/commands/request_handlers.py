@@ -66,16 +66,21 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
 
     async def execute_command(self, command: CreateRequestCommand) -> str:
         """Handle machine request creation command."""
-        self.logger.info("Creating machine request for template: %s", command.template_id)
+        self.logger.info(
+            "Creating machine request for template: %s", command.template_id
+        )
 
         # CRITICAL VALIDATION: Ensure providers are available
         if not self._provider_context.available_strategies:
-            error_msg = "No provider strategies available - cannot create machine requests"
+            error_msg = (
+                "No provider strategies available - cannot create machine requests"
+            )
             self.logger.error(error_msg)
             raise ValueError(error_msg)
 
         self.logger.debug(
-            "Available provider strategies: %s", self._provider_context.available_strategies
+            "Available provider strategies: %s",
+            self._provider_context.available_strategies,
         )
 
         # Initialize request variable
@@ -95,8 +100,8 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
                 raise EntityNotFoundError("Template", command.template_id)
 
             # Select provider based on template requirements
-            selection_result = self._provider_selection_service.select_provider_for_template(
-                template
+            selection_result = (
+                self._provider_selection_service.select_provider_for_template(template)
             )
             self.logger.info(
                 "Selected provider: %s (%s)",
@@ -105,8 +110,10 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
             )
 
             # Validate template compatibility with selected provider
-            validation_result = self._provider_capability_service.validate_template_requirements(
-                template, selection_result.provider_instance, ValidationLevel.STRICT
+            validation_result = (
+                self._provider_capability_service.validate_template_requirements(
+                    template, selection_result.provider_instance, ValidationLevel.STRICT
+                )
             )
 
             if not validation_result.is_valid:
@@ -114,7 +121,9 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
                 self.logger.error(error_msg)
                 raise ValueError(error_msg)
 
-            self.logger.info("Template validation passed: %s", validation_result.supported_features)
+            self.logger.info(
+                "Template validation passed: %s", validation_result.supported_features
+            )
 
             # Create request aggregate with selected provider
             from domain.request.aggregate import Request
@@ -140,7 +149,8 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
             if is_dry_run:
                 # In dry-run mode, skip actual provisioning
                 self.logger.info(
-                    "Skipping actual provisioning for request %s (dry-run mode)", request.request_id
+                    "Skipping actual provisioning for request %s (dry-run mode)",
+                    request.request_id,
                 )
                 from domain.request.value_objects import RequestStatus
 
@@ -168,7 +178,9 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
                         # Store provider API information for later handler selection
                         if not hasattr(request, "metadata"):
                             request.metadata = {}
-                        request.metadata["provider_api"] = template.provider_api or "RunInstances"
+                        request.metadata["provider_api"] = (
+                            template.provider_api or "RunInstances"
+                        )
                         request.metadata["handler_used"] = provisioning_result.get(
                             "provider_data", {}
                         ).get("handler_used", "RunInstancesHandler")
@@ -236,7 +248,9 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
                         # Handle provisioning failure
                         from domain.request.value_objects import RequestStatus
 
-                        error_message = provisioning_result.get("error_message", "Unknown error")
+                        error_message = provisioning_result.get(
+                            "error_message", "Unknown error"
+                        )
                         request = request.update_status(
                             RequestStatus.FAILED,
                             f"Provisioning failed: {error_message}",
@@ -278,7 +292,9 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
                     f"Provisioning failed: {provisioning_error!s}",
                 )
                 self.logger.error(
-                    "Provisioning failed for request %s: %s", request.request_id, provisioning_error
+                    "Provisioning failed for request %s: %s",
+                    request.request_id,
+                    provisioning_error,
                 )
 
                 # Save failed request for audit trail
@@ -309,7 +325,9 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
         self.logger.info("Machine request created successfully: %s", request.request_id)
         return str(request.request_id)
 
-    def _create_machine_aggregate(self, instance_data: dict[str, Any], request, template_id: str):
+    def _create_machine_aggregate(
+        self, instance_data: dict[str, Any], request, template_id: str
+    ):
         """Create machine aggregate from instance data."""
         from datetime import datetime
 
@@ -330,7 +348,9 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
             request_id=str(request.request_id),
             template_id=template_id,
             provider_type="aws",
-            instance_type=InstanceType(value=instance_data.get("instance_type", "t2.micro")),
+            instance_type=InstanceType(
+                value=instance_data.get("instance_type", "t2.micro")
+            ),
             image_id=instance_data.get("image_id", "unknown"),
             status=MachineStatus.PENDING,
             private_ip=instance_data.get("private_ip"),
@@ -339,7 +359,9 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
             metadata=instance_data.get("metadata", {}),
         )
 
-    async def _execute_provisioning(self, template, request, selection_result) -> dict[str, Any]:
+    async def _execute_provisioning(
+        self, template, request, selection_result
+    ) -> dict[str, Any]:
         """Execute actual provisioning via selected provider using existing ProviderContext."""
         try:
             # Import required types (using existing imports)
@@ -387,7 +409,9 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
                 instances = result.data.get("instances", [])
 
                 self.logger.info(
-                    "Extracted resource_ids: %s (type: %s)", resource_ids, type(resource_ids)
+                    "Extracted resource_ids: %s (type: %s)",
+                    resource_ids,
+                    type(resource_ids),
                 )
                 self.logger.info("Extracted instances: %s instances", len(instances))
 
@@ -395,7 +419,10 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
                 if resource_ids:
                     for i, resource_id in enumerate(resource_ids):
                         self.logger.info(
-                            "Resource ID %s: %s (type: %s)", i + 1, resource_id, type(resource_id)
+                            "Resource ID %s: %s (type: %s)",
+                            i + 1,
+                            resource_id,
+                            type(resource_id),
                         )
 
                 return {
@@ -452,7 +479,9 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
 
     async def execute_command(self, command: CreateReturnRequestCommand) -> str:
         """Handle return request creation command."""
-        self.logger.info("Creating return request for machines: %s", command.machine_ids)
+        self.logger.info(
+            "Creating return request for machines: %s", command.machine_ids
+        )
 
         try:
             # Create return request aggregate
@@ -470,7 +499,9 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
             if command.machine_ids:
                 # Try to get template from first machine
                 try:
-                    machine = self._machine_repository.find_by_id(command.machine_ids[0])
+                    machine = self._machine_repository.find_by_id(
+                        command.machine_ids[0]
+                    )
                     if machine and machine.template_id:
                         template_id = f"return-{machine.template_id}"
                 except Exception as e:
@@ -530,7 +561,9 @@ class UpdateRequestStatusHandler(BaseCommandHandler[UpdateRequestStatusCommand, 
 
     async def execute_command(self, command: UpdateRequestStatusCommand) -> None:
         """Handle request status update command."""
-        self.logger.info("Updating request status: %s -> %s", command.request_id, command.status)
+        self.logger.info(
+            "Updating request status: %s -> %s", command.request_id, command.status
+        )
 
         try:
             # Get request
@@ -551,10 +584,14 @@ class UpdateRequestStatusHandler(BaseCommandHandler[UpdateRequestStatusCommand, 
             for event in events:
                 self.event_publisher.publish(event)
 
-            self.logger.info("Request status updated: %s -> %s", command.request_id, command.status)
+            self.logger.info(
+                "Request status updated: %s -> %s", command.request_id, command.status
+            )
 
         except EntityNotFoundError:
-            self.logger.error("Request not found for status update: %s", command.request_id)
+            self.logger.error(
+                "Request not found for status update: %s", command.request_id
+            )
             raise
         except Exception as e:
             self.logger.error("Failed to update request status: %s", e)
@@ -603,7 +640,9 @@ class CancelRequestHandler(BaseCommandHandler[CancelRequestCommand, None]):
             self.logger.info("Request canceled: %s", command.request_id)
 
         except EntityNotFoundError:
-            self.logger.error("Request not found for cancellation: %s", command.request_id)
+            self.logger.error(
+                "Request not found for cancellation: %s", command.request_id
+            )
             raise
         except Exception as e:
             self.logger.error("Failed to cancel request: %s", e)
@@ -652,7 +691,9 @@ class CompleteRequestHandler(BaseCommandHandler[CompleteRequestCommand, None]):
             self.logger.info("Request completed: %s", command.request_id)
 
         except EntityNotFoundError:
-            self.logger.error("Request not found for completion: %s", command.request_id)
+            self.logger.error(
+                "Request not found for completion: %s", command.request_id
+            )
             raise
         except Exception as e:
             self.logger.error("Failed to complete request: %s", e)

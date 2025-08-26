@@ -66,8 +66,9 @@ class TestNativeSpecValidation:
                 launch_template_spec_file="test-file.json",
             )
 
-        assert "Cannot specify both launch_template_spec and launch_template_spec_file" in str(
-            exc_info.value
+        assert (
+            "Cannot specify both launch_template_spec and launch_template_spec_file"
+            in str(exc_info.value)
         )
 
     def test_aws_template_mutual_exclusion_provider_api(self):
@@ -81,8 +82,9 @@ class TestNativeSpecValidation:
                 provider_api_spec_file="test-file.json",
             )
 
-        assert "Cannot specify both provider_api_spec and provider_api_spec_file" in str(
-            exc_info.value
+        assert (
+            "Cannot specify both provider_api_spec and provider_api_spec_file"
+            in str(exc_info.value)
         )
 
     def test_aws_template_valid_spec_combinations(self):
@@ -123,7 +125,9 @@ class TestNativeSpecValidation:
     def test_aws_template_no_native_specs(self):
         """Test template without any native specs."""
         template = AWSTemplate(
-            template_id="legacy-template", image_id="ami-12345", instance_type="t3.micro"
+            template_id="legacy-template",
+            image_id="ami-12345",
+            instance_type="t3.micro",
         )
 
         assert template.launch_template_spec is None

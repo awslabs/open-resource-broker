@@ -17,7 +17,9 @@ class FleetTagBuilder:
 
     @staticmethod
     def build_base_tags(
-        request: Request, template: Template, package_name: str = "open-hostfactory-plugin"
+        request: Request,
+        template: Template,
+        package_name: str = "open-hostfactory-plugin",
     ) -> dict[str, str]:
         """Build base tags used across all AWS resources.
 
@@ -108,7 +110,10 @@ class FleetTagBuilder:
                 tags = FleetTagBuilder.build_base_tags(request, template, package_name)
 
             tag_specifications.append(
-                {"ResourceType": resource_type, "Tags": FleetTagBuilder.format_for_aws(tags)}
+                {
+                    "ResourceType": resource_type,
+                    "Tags": FleetTagBuilder.format_for_aws(tags),
+                }
             )
 
         return tag_specifications
@@ -131,7 +136,9 @@ class FleetTagBuilder:
         return FleetTagBuilder.format_for_aws(tags)
 
     @staticmethod
-    def build_instance_tags(request: Request, template: Template) -> list[dict[str, str]]:
+    def build_instance_tags(
+        request: Request, template: Template
+    ) -> list[dict[str, str]]:
         """Legacy method for backward compatibility."""
         return FleetTagBuilder.build_common_tags(request, template)
 

@@ -9,7 +9,9 @@ from infrastructure.logging.logger import get_logger
 logger = get_logger(__name__)
 
 
-def paginate(client_method: Callable, result_key: str, **kwargs) -> list[dict[str, Any]]:
+def paginate(
+    client_method: Callable, result_key: str, **kwargs
+) -> list[dict[str, Any]]:
     """
     Handle paginated responses from Boto3 client methods.
 
@@ -43,7 +45,9 @@ def list_all_instances(ec2_client, filters=None) -> list[dict[str, Any]]:
     Returns:
         List of instances
     """
-    reservations = paginate(ec2_client.describe_instances, "Reservations", Filters=filters or [])
+    reservations = paginate(
+        ec2_client.describe_instances, "Reservations", Filters=filters or []
+    )
 
     instances = []
     for reservation in reservations:
@@ -77,4 +81,6 @@ def list_all_security_groups(ec2_client, filters=None) -> list[dict[str, Any]]:
     Returns:
         List of security groups
     """
-    return paginate(ec2_client.describe_security_groups, "SecurityGroups", Filters=filters or [])
+    return paginate(
+        ec2_client.describe_security_groups, "SecurityGroups", Filters=filters or []
+    )

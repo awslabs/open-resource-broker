@@ -36,7 +36,9 @@ class TestBaseContextMixin:
 
     def test_prepare_base_context(self):
         """Test base context preparation."""
-        with patch("providers.aws.infrastructure.handlers.base_context_mixin.datetime") as mock_dt:
+        with patch(
+            "providers.aws.infrastructure.handlers.base_context_mixin.datetime"
+        ) as mock_dt:
             mock_dt.utcnow.return_value.isoformat.return_value = "2025-01-15T10:30:00Z"
 
             context = self.mixin._prepare_base_context(self.template, self.request)
@@ -83,7 +85,9 @@ class TestBaseContextMixin:
         """Test capacity distribution for on-demand only."""
         self.template.price_type = "ondemand"
 
-        result = self.mixin._calculate_capacity_distribution(self.template, self.request)
+        result = self.mixin._calculate_capacity_distribution(
+            self.template, self.request
+        )
 
         assert result["total_capacity"] == 5
         assert result["target_capacity"] == 5
@@ -98,7 +102,9 @@ class TestBaseContextMixin:
         """Test capacity distribution for spot only."""
         self.template.price_type = "spot"
 
-        result = self.mixin._calculate_capacity_distribution(self.template, self.request)
+        result = self.mixin._calculate_capacity_distribution(
+            self.template, self.request
+        )
 
         assert result["total_capacity"] == 5
         assert result["on_demand_count"] == 0
@@ -111,7 +117,9 @@ class TestBaseContextMixin:
         self.template.price_type = "heterogeneous"
         self.template.percent_on_demand = 40
 
-        result = self.mixin._calculate_capacity_distribution(self.template, self.request)
+        result = self.mixin._calculate_capacity_distribution(
+            self.template, self.request
+        )
 
         assert result["total_capacity"] == 5
         assert result["on_demand_count"] == 2  # 40% of 5
@@ -123,7 +131,9 @@ class TestBaseContextMixin:
         self.template.price_type = "heterogeneous"
         self.template.percent_on_demand = None  # Should default to 0
 
-        result = self.mixin._calculate_capacity_distribution(self.template, self.request)
+        result = self.mixin._calculate_capacity_distribution(
+            self.template, self.request
+        )
 
         assert result["on_demand_count"] == 0
         assert result["spot_count"] == 5
@@ -134,7 +144,9 @@ class TestBaseContextMixin:
             with patch(
                 "providers.aws.infrastructure.handlers.base_context_mixin.datetime"
             ) as mock_dt:
-                mock_dt.utcnow.return_value.isoformat.return_value = "2025-01-15T10:30:00Z"
+                mock_dt.utcnow.return_value.isoformat.return_value = (
+                    "2025-01-15T10:30:00Z"
+                )
 
                 result = self.mixin._prepare_standard_tags(self.template, self.request)
 
@@ -144,7 +156,10 @@ class TestBaseContextMixin:
                 assert {"key": "RequestId", "value": "req-test-456"} in base_tags
                 assert {"key": "TemplateId", "value": "test-template-123"} in base_tags
                 assert {"key": "CreatedBy", "value": "test-package"} in base_tags
-                assert {"key": "CreatedAt", "value": "2025-01-15T10:30:00Z"} in base_tags
+                assert {
+                    "key": "CreatedAt",
+                    "value": "2025-01-15T10:30:00Z",
+                } in base_tags
 
                 # Check custom tags
                 custom_tags = result["custom_tags"]

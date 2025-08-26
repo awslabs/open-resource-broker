@@ -63,7 +63,9 @@ def format_timestamp(timestamp: float, format_str: str = "%Y-%m-%d %H:%M:%S") ->
     return dt.strftime(format_str)
 
 
-def format_datetime(dt: datetime.datetime, format_str: str = "%Y-%m-%d %H:%M:%S") -> str:
+def format_datetime(
+    dt: datetime.datetime, format_str: str = "%Y-%m-%d %H:%M:%S"
+) -> str:
     """
     Format a datetime as a string.
 
@@ -77,7 +79,9 @@ def format_datetime(dt: datetime.datetime, format_str: str = "%Y-%m-%d %H:%M:%S"
     return dt.strftime(format_str)
 
 
-def parse_datetime(date_str: str, format_str: str = "%Y-%m-%d %H:%M:%S") -> datetime.datetime:
+def parse_datetime(
+    date_str: str, format_str: str = "%Y-%m-%d %H:%M:%S"
+) -> datetime.datetime:
     """
     Parse a string as a datetime.
 
@@ -193,7 +197,9 @@ def add_seconds(dt: datetime.datetime, seconds: int) -> datetime.datetime:
     return dt + datetime.timedelta(seconds=seconds)
 
 
-def get_time_difference(dt1: datetime.datetime, dt2: datetime.datetime) -> datetime.timedelta:
+def get_time_difference(
+    dt1: datetime.datetime, dt2: datetime.datetime
+) -> datetime.timedelta:
     """
     Get the time difference between two datetimes.
 
@@ -207,7 +213,9 @@ def get_time_difference(dt1: datetime.datetime, dt2: datetime.datetime) -> datet
     return dt1 - dt2
 
 
-def get_time_difference_seconds(dt1: datetime.datetime, dt2: datetime.datetime) -> float:
+def get_time_difference_seconds(
+    dt1: datetime.datetime, dt2: datetime.datetime
+) -> float:
     """
     Get the time difference between two datetimes in seconds.
 
@@ -221,7 +229,9 @@ def get_time_difference_seconds(dt1: datetime.datetime, dt2: datetime.datetime) 
     return (dt1 - dt2).total_seconds()
 
 
-def get_time_difference_minutes(dt1: datetime.datetime, dt2: datetime.datetime) -> float:
+def get_time_difference_minutes(
+    dt1: datetime.datetime, dt2: datetime.datetime
+) -> float:
     """
     Get the time difference between two datetimes in minutes.
 
@@ -382,10 +392,14 @@ def get_end_of_year(dt: datetime.datetime) -> datetime.datetime:
     Returns:
         Datetime at the end of the year
     """
-    return dt.replace(month=12, day=31, hour=23, minute=59, second=59, microsecond=999999)
+    return dt.replace(
+        month=12, day=31, hour=23, minute=59, second=59, microsecond=999999
+    )
 
 
-def get_date_range(start_date: datetime.date, end_date: datetime.date) -> list[datetime.date]:
+def get_date_range(
+    start_date: datetime.date, end_date: datetime.date
+) -> list[datetime.date]:
     """
     Get a list of dates in a range.
 

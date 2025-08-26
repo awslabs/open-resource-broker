@@ -30,11 +30,17 @@ def run_command(cmd: list[str], description: str) -> bool:
 
 def main():
     """Main test runner function."""
-    parser = argparse.ArgumentParser(description="Run tests for Open Host Factory Plugin")
+    parser = argparse.ArgumentParser(
+        description="Run tests for Open Host Factory Plugin"
+    )
     parser.add_argument("--unit", action="store_true", help="Run unit tests only")
-    parser.add_argument("--integration", action="store_true", help="Run integration tests only")
+    parser.add_argument(
+        "--integration", action="store_true", help="Run integration tests only"
+    )
     parser.add_argument("--e2e", action="store_true", help="Run end-to-end tests only")
-    parser.add_argument("--coverage", action="store_true", help="Run tests with coverage")
+    parser.add_argument(
+        "--coverage", action="store_true", help="Run tests with coverage"
+    )
     parser.add_argument(
         "--html-coverage", action="store_true", help="Generate HTML coverage report"
     )
@@ -45,13 +51,17 @@ def main():
     parser.add_argument("--path", type=str, help="Run tests in specific path")
     parser.add_argument("--keyword", "-k", type=str, help="Run tests matching keyword")
     parser.add_argument(
-        "--ci", action="store_true", help="Enable CI-specific outputs (XML reports, coverage)"
+        "--ci",
+        action="store_true",
+        help="Enable CI-specific outputs (XML reports, coverage)",
     )
     parser.add_argument("--junit-xml", type=str, help="Generate JUnit XML report")
     parser.add_argument("--cov-xml", type=str, help="Generate coverage XML report")
     parser.add_argument("--all", action="store_true", help="Run all test types")
     parser.add_argument("--maxfail", type=int, default=5, help="Stop after N failures")
-    parser.add_argument("--timeout", type=int, default=300, help="Test timeout in seconds")
+    parser.add_argument(
+        "--timeout", type=int, default=300, help="Test timeout in seconds"
+    )
     parser.add_argument(
         "extra_args", nargs="*", help="Additional paths, patterns, or pytest options"
     )
@@ -66,7 +76,11 @@ def main():
         if arg.startswith("-"):
             # Pytest option (e.g., -v, -s, --tb=short, -x)
             extra_pytest_args.append(arg)
-        elif "/" in arg or arg.endswith(".py") or arg in ["tests", "unit", "integration", "e2e"]:
+        elif (
+            "/" in arg
+            or arg.endswith(".py")
+            or arg in ["tests", "unit", "integration", "e2e"]
+        ):
             # Path or directory
             extra_paths.append(arg)
         else:
@@ -105,7 +119,12 @@ def main():
     # Add coverage options
     if args.coverage or args.html_coverage or args.ci:
         pytest_cmd.extend(
-            ["--cov=src", "--cov-report=term-missing", "--cov-branch", "--no-cov-on-fail"]
+            [
+                "--cov=src",
+                "--cov-report=term-missing",
+                "--cov-branch",
+                "--no-cov-on-fail",
+            ]
         )
 
         if args.html_coverage:

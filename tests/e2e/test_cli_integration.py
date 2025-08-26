@@ -65,7 +65,9 @@ class TestCLIIntegration:
     @pytest.mark.asyncio
     @patch("src.infrastructure.di.services.register_all_services")
     @patch("src.config.manager.get_config_manager")
-    async def test_validate_provider_config_cli_e2e(self, mock_get_config, mock_register_services):
+    async def test_validate_provider_config_cli_e2e(
+        self, mock_get_config, mock_register_services
+    ):
         """Test validateProviderConfig CLI operation end-to-end."""
         # Setup mocks
         mock_container = Mock()
@@ -105,7 +107,9 @@ class TestCLIIntegration:
     @pytest.mark.asyncio
     @patch("src.infrastructure.di.services.register_all_services")
     @patch("src.config.manager.get_config_manager")
-    async def test_reload_provider_config_cli_e2e(self, mock_get_config, mock_register_services):
+    async def test_reload_provider_config_cli_e2e(
+        self, mock_get_config, mock_register_services
+    ):
         """Test reloadProviderConfig CLI operation end-to-end."""
         # Setup mocks
         mock_container = Mock()
@@ -162,7 +166,9 @@ class TestCLIIntegration:
         result = expected_result
 
         assert result["status"] == "success"
-        assert result["migration_summary"]["migration_type"] == "legacy_aws_to_integrated"
+        assert (
+            result["migration_summary"]["migration_type"] == "legacy_aws_to_integrated"
+        )
 
     def test_select_provider_strategy_cli_e2e(self):
         """Test selectProviderStrategy CLI operation end-to-end."""

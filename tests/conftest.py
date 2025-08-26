@@ -337,7 +337,9 @@ def sample_template() -> Template:
             updated_at=datetime.now(timezone.utc),
         )
     else:
-        return Template(id="template-001", name="test-template", provider_api="ec2_fleet")
+        return Template(
+            id="template-001", name="test-template", provider_api="ec2_fleet"
+        )
 
 
 @pytest.fixture
@@ -352,7 +354,9 @@ def sample_request() -> Request:
             tags={"Environment": "test"},
         )
     else:
-        return Request(template_id="template-001", machine_count=2, requester_id="test-user")
+        return Request(
+            template_id="template-001", machine_count=2, requester_id="test-user"
+        )
 
 
 @pytest.fixture
@@ -469,7 +473,9 @@ def repository_type(request):
     return request.param
 
 
-@pytest.fixture(params=["ec2_fleet", "auto_scaling_group", "spot_fleet", "run_instances"])
+@pytest.fixture(
+    params=["ec2_fleet", "auto_scaling_group", "spot_fleet", "run_instances"]
+)
 def provider_api_type(request):
     """Parametrized fixture for different AWS provider API types."""
     return request.param

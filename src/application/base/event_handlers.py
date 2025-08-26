@@ -82,7 +82,9 @@ class BaseEventHandler(Generic[TEvent], EventHandler[TEvent], ABC):
             self._record_success_metrics(event_type, duration)
 
             if self.logger:
-                self.logger.info("Event processed successfully: %s (%.3fs)", event_type, duration)
+                self.logger.info(
+                    "Event processed successfully: %s (%.3fs)", event_type, duration
+                )
 
         except Exception as e:
             # Record failure metrics
@@ -101,7 +103,9 @@ class BaseEventHandler(Generic[TEvent], EventHandler[TEvent], ABC):
                 )
 
             if self.logger:
-                self.logger.error("Event processing failed: %s - %s", event_type, str(e))
+                self.logger.error(
+                    "Event processing failed: %s - %s", event_type, str(e)
+                )
 
             # Re-raise for upstream handling
             raise
@@ -156,7 +160,8 @@ class BaseEventHandler(Generic[TEvent], EventHandler[TEvent], ABC):
                     await self.event_publisher.publish(cascading_event)
                     if self.logger:
                         self.logger.debug(
-                            "Published cascading event: %s", cascading_event.__class__.__name__
+                            "Published cascading event: %s",
+                            cascading_event.__class__.__name__,
                         )
                 except Exception as e:
                     if self.logger:
@@ -180,7 +185,9 @@ class BaseEventHandler(Generic[TEvent], EventHandler[TEvent], ABC):
             metrics["total_duration"] / total_count if total_count > 0 else 0.0
         )
 
-    def _record_failure_metrics(self, event_type: str, duration: float, error: Exception) -> None:
+    def _record_failure_metrics(
+        self, event_type: str, duration: float, error: Exception
+    ) -> None:
         """Record failure metrics for monitoring."""
         if event_type not in self._metrics:
             self._metrics[event_type] = {

@@ -48,12 +48,16 @@ class TemplateJSONStorageStrategy(JSONStorageStrategy):
             self.logger.debug("Templates file: %s", self.file_path)
             self.logger.debug("Legacy templates file: %s", self.legacy_file_path)
         elif self.legacy_file_path and os.path.exists(self.legacy_file_path):
-            self.logger.info("Found only legacy templates file: %s", self.legacy_file_path)
+            self.logger.info(
+                "Found only legacy templates file: %s", self.legacy_file_path
+            )
         elif os.path.exists(self.file_path):
             self.logger.info("Found only templates.json: %s", self.file_path)
         else:
             self.logger.warning(
-                "No template files found at %s or %s", self.file_path, self.legacy_file_path
+                "No template files found at %s or %s",
+                self.file_path,
+                self.legacy_file_path,
             )
 
     def find_by_id(self, entity_id: str) -> Optional[dict[str, Any]]:
@@ -79,14 +83,19 @@ class TemplateJSONStorageStrategy(JSONStorageStrategy):
 
                 if isinstance(legacy_data, list):
                     for item in legacy_data:
-                        if isinstance(item, dict) and item.get("template_id") == entity_id:
+                        if (
+                            isinstance(item, dict)
+                            and item.get("template_id") == entity_id
+                        ):
                             return item
                 elif isinstance(legacy_data, dict) and entity_id in legacy_data:
                     return legacy_data[entity_id]
 
             except Exception as e:
                 self.logger.error(
-                    "Error reading legacy templates file %s: %s", self.legacy_file_path, e
+                    "Error reading legacy templates file %s: %s",
+                    self.legacy_file_path,
+                    e,
                 )
 
         return None
@@ -118,7 +127,9 @@ class TemplateJSONStorageStrategy(JSONStorageStrategy):
 
             except Exception as e:
                 self.logger.error(
-                    "Error reading legacy templates file %s: %s", self.legacy_file_path, e
+                    "Error reading legacy templates file %s: %s",
+                    self.legacy_file_path,
+                    e,
                 )
 
         # Load from main file (higher priority, will override legacy)
@@ -149,7 +160,9 @@ class TemplateJSONRepository(StrategyBasedRepository, TemplateRepository):
         # Get template file paths from configuration
         app_config = config_manager.get_app_config()
         templates_file_path = app_config.templates_file_path
-        legacy_templates_file_path = getattr(app_config, "legacy_templates_file_path", None)
+        legacy_templates_file_path = getattr(
+            app_config, "legacy_templates_file_path", None
+        )
 
         # Choose strategy based on configuration
         if use_provider_strategy:
@@ -185,7 +198,9 @@ class TemplateJSONRepository(StrategyBasedRepository, TemplateRepository):
                 return self._data_to_aggregate(template_data)
             except Exception as e:
                 self.logger.error(
-                    "Error converting template data to aggregate for '%s': %s", template_id, e
+                    "Error converting template data to aggregate for '%s': %s",
+                    template_id,
+                    e,
                 )
                 return None
         return None
@@ -207,7 +222,9 @@ class TemplateJSONRepository(StrategyBasedRepository, TemplateRepository):
             except Exception as e:
                 template_id = template_data.get("template_id", "unknown")
                 self.logger.error(
-                    "Error converting template data to aggregate for '%s': %s", template_id, e
+                    "Error converting template data to aggregate for '%s': %s",
+                    template_id,
+                    e,
                 )
                 continue
 
@@ -246,7 +263,11 @@ class TemplateJSONRepository(StrategyBasedRepository, TemplateRepository):
             List of templates for the specified provider type
         """
         all_templates = self.find_all()
-        return [template for template in all_templates if template.provider_type == provider_type]
+        return [
+            template
+            for template in all_templates
+            if template.provider_type == provider_type
+        ]
 
     def find_by_provider_name(self, provider_name: str) -> list[Template]:
         """
@@ -259,7 +280,11 @@ class TemplateJSONRepository(StrategyBasedRepository, TemplateRepository):
             List of templates for the specified provider name
         """
         all_templates = self.find_all()
-        return [template for template in all_templates if template.provider_name == provider_name]
+        return [
+            template
+            for template in all_templates
+            if template.provider_name == provider_name
+        ]
 
     def get_template_source_info(self, template_id: str) -> Optional[dict[str, Any]]:
         """
@@ -306,7 +331,9 @@ class TemplateJSONRepository(StrategyBasedRepository, TemplateRepository):
 
         max_instances = data.get("max_instances", 1)
         if max_instances <= 0:
-            raise ValueError(f"Template '{template_id}' max_instances must be greater than 0")
+            raise ValueError(
+                f"Template '{template_id}' max_instances must be greater than 0"
+            )
 
         # Create Template aggregate with all fields
         return Template(

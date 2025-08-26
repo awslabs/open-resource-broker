@@ -35,7 +35,9 @@ def run_hook(name, command, warning_only=False, debug=False):
     if debug:
         logger.info(f"Running {name}...", end=" ", flush=True)
         start_time = time.time()
-        result = subprocess.run(cmd_args, check=False, shell=False, capture_output=True, text=True)
+        result = subprocess.run(
+            cmd_args, check=False, shell=False, capture_output=True, text=True
+        )
         duration = time.time() - start_time
         exit_code = result.returncode
         output = result.stdout + result.stderr
@@ -45,7 +47,11 @@ def run_hook(name, command, warning_only=False, debug=False):
 
         # Start subprocess
         process = subprocess.Popen(
-            cmd_args, shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+            cmd_args,
+            shell=False,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
         )
 
         # Show dots while running
@@ -81,7 +87,9 @@ def main():
     """Run pre-commit checks with configurable options."""
     parser = argparse.ArgumentParser(description="Run pre-commit checks")
     parser.add_argument("--debug", "-d", action="store_true", help="Show debug output")
-    parser.add_argument("--extended", "-e", action="store_true", help="Show extended info")
+    parser.add_argument(
+        "--extended", "-e", action="store_true", help="Show extended info"
+    )
     parser.add_argument(
         "--required-only",
         "-r",
@@ -91,18 +99,43 @@ def main():
     args = parser.parse_args()
 
     # Check for yq
-    if subprocess.run(["which", "yq"], check=False, capture_output=True).returncode != 0:
+    if (
+        subprocess.run(["which", "yq"], check=False, capture_output=True).returncode
+        != 0
+    ):
         logger.info(f"{Colors.RED}ERROR: yq not found. Install with:{Colors.NC}")
-        if subprocess.run(["which", "apt"], check=False, capture_output=True).returncode == 0:
+        if (
+            subprocess.run(
+                ["which", "apt"], check=False, capture_output=True
+            ).returncode
+            == 0
+        ):
             logger.info(f"{Colors.BLUE}  Ubuntu/Debian: sudo apt install yq{Colors.NC}")
-        elif subprocess.run(["which", "dnf"], check=False, capture_output=True).returncode == 0:
+        elif (
+            subprocess.run(
+                ["which", "dnf"], check=False, capture_output=True
+            ).returncode
+            == 0
+        ):
             logger.info(f"{Colors.BLUE}  RHEL/Fedora: sudo dnf install yq{Colors.NC}")
-        elif subprocess.run(["which", "yum"], check=False, capture_output=True).returncode == 0:
+        elif (
+            subprocess.run(
+                ["which", "yum"], check=False, capture_output=True
+            ).returncode
+            == 0
+        ):
             logger.info(f"{Colors.BLUE}  CentOS/RHEL: sudo yum install yq{Colors.NC}")
-        elif subprocess.run(["which", "brew"], check=False, capture_output=True).returncode == 0:
+        elif (
+            subprocess.run(
+                ["which", "brew"], check=False, capture_output=True
+            ).returncode
+            == 0
+        ):
             logger.info(f"{Colors.BLUE}  macOS: brew install yq{Colors.NC}")
         else:
-            logger.info(f"{Colors.BLUE}  See: https://github.com/mikefarah/yq#install{Colors.NC}")
+            logger.info(
+                f"{Colors.BLUE}  See: https://github.com/mikefarah/yq#install{Colors.NC}"
+            )
         return 1
 
     # Load pre-commit config

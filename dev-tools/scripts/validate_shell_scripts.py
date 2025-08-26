@@ -64,7 +64,10 @@ def validate_shell_script(file_path: Path):
 
     try:
         result = subprocess.run(
-            ["shellcheck", "-x", str(file_path)], capture_output=True, text=True, check=False
+            ["shellcheck", "-x", str(file_path)],
+            capture_output=True,
+            text=True,
+            check=False,
         )
 
         if result.returncode == 0:

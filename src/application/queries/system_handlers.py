@@ -28,10 +28,14 @@ if TYPE_CHECKING:
 
 
 @query_handler(GetConfigurationQuery)
-class GetConfigurationHandler(BaseQueryHandler[GetConfigurationQuery, ConfigurationValueResponse]):
+class GetConfigurationHandler(
+    BaseQueryHandler[GetConfigurationQuery, ConfigurationValueResponse]
+):
     """Handler for getting configuration values."""
 
-    async def execute_query(self, query: GetConfigurationQuery) -> ConfigurationValueResponse:
+    async def execute_query(
+        self, query: GetConfigurationQuery
+    ) -> ConfigurationValueResponse:
         """
         Execute configuration value query.
 
@@ -97,7 +101,9 @@ class GetConfigurationSectionHandler(
 
 
 @query_handler(GetProviderConfigQuery)
-class GetProviderConfigHandler(BaseQueryHandler[GetProviderConfigQuery, ProviderConfigDTO]):
+class GetProviderConfigHandler(
+    BaseQueryHandler[GetProviderConfigQuery, ProviderConfigDTO]
+):
     """Handler for getting provider configuration information."""
 
     def __init__(
@@ -318,7 +324,9 @@ class GetSystemStatusHandler(BaseQueryHandler[GetSystemStatusQuery, SystemStatus
 
 
 @query_handler(GetProviderMetricsQuery)
-class GetProviderMetricsHandler(BaseQueryHandler[GetProviderMetricsQuery, ProviderMetricsDTO]):
+class GetProviderMetricsHandler(
+    BaseQueryHandler[GetProviderMetricsQuery, ProviderMetricsDTO]
+):
     """Handler for getting provider metrics information."""
 
     def __init__(
@@ -384,13 +392,19 @@ class GetProviderMetricsHandler(BaseQueryHandler[GetProviderMetricsQuery, Provid
                         for provider in active_providers:
                             metrics["providers"][provider.name] = {
                                 "status": "active",
-                                "type": (provider.type if hasattr(provider, "type") else "unknown"),
+                                "type": (
+                                    provider.type
+                                    if hasattr(provider, "type")
+                                    else "unknown"
+                                ),
                                 "requests": 0,
                                 "errors": 0,
                                 "avg_response_time": 0.0,
                             }
             except Exception as provider_error:
-                self.logger.warning("Could not get provider-specific metrics: %s", provider_error)
+                self.logger.warning(
+                    "Could not get provider-specific metrics: %s", provider_error
+                )
                 metrics["providers"]["default"] = {
                     "status": "unknown",
                     "type": "unknown",

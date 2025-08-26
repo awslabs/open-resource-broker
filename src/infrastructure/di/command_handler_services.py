@@ -118,7 +118,9 @@ def register_command_handlers_with_bus(container: DIContainer) -> None:
             container.get(ValidateProviderStateCommandHandler),
         )
 
-        command_bus.register(UpdateMachineStatusCommand, container.get(UpdateMachineStatusHandler))
+        command_bus.register(
+            UpdateMachineStatusCommand, container.get(UpdateMachineStatusHandler)
+        )
 
         command_bus.register(
             CleanupMachineResourcesCommand,
@@ -141,7 +143,9 @@ def register_command_handlers_with_bus(container: DIContainer) -> None:
                 UpdateRequestStatusCommand,
             )
 
-            command_bus.register(CreateRequestCommand, container.get(CreateMachineRequestHandler))
+            command_bus.register(
+                CreateRequestCommand, container.get(CreateMachineRequestHandler)
+            )
 
             command_bus.register(
                 CreateReturnRequestCommand, container.get(CreateReturnRequestHandler)
@@ -151,7 +155,9 @@ def register_command_handlers_with_bus(container: DIContainer) -> None:
                 UpdateRequestStatusCommand, container.get(UpdateRequestStatusHandler)
             )
 
-            command_bus.register(CancelRequestCommand, container.get(CancelRequestHandler))
+            command_bus.register(
+                CancelRequestCommand, container.get(CancelRequestHandler)
+            )
 
             # Register CleanupOldRequestsCommand if handler exists
             try:
@@ -168,7 +174,9 @@ def register_command_handlers_with_bus(container: DIContainer) -> None:
                 logger.debug("CleanupOldRequestsHandler not available: %s", e)
 
         except Exception as e:
-            logger.warning("Failed to register request command handlers with bus: %s", e)
+            logger.warning(
+                "Failed to register request command handlers with bus: %s", e
+            )
 
     except Exception as e:
         logger = container.get(LoggingPort)

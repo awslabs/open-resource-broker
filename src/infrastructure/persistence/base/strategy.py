@@ -245,7 +245,8 @@ class BaseStorageStrategy(StorageStrategy[T], Generic[T]):
             # Rollback transaction if an exception occurred
             if exc_type is not None and self._in_transaction:
                 self.logger.warning(
-                    "Exception in context manager, rolling back transaction: %s", exc_val
+                    "Exception in context manager, rolling back transaction: %s",
+                    exc_val,
                 )
                 self.rollback_transaction()
 
@@ -409,7 +410,9 @@ class BaseStorageStrategy(StorageStrategy[T], Generic[T]):
 
         return matching_entities
 
-    def _matches_criteria(self, entity_data: dict[str, Any], criteria: dict[str, Any]) -> bool:
+    def _matches_criteria(
+        self, entity_data: dict[str, Any], criteria: dict[str, Any]
+    ) -> bool:
         """
         Check if entity matches criteria.
 
@@ -433,7 +436,9 @@ class BaseStorageStrategy(StorageStrategy[T], Generic[T]):
                 if parts[-1] not in current or current[parts[-1]] != value:
                     return False
             # Handle list fields
-            elif isinstance(entity_data.get(field), list) and not isinstance(value, list):
+            elif isinstance(entity_data.get(field), list) and not isinstance(
+                value, list
+            ):
                 if value not in entity_data.get(field, []):
                     return False
             # Handle regular fields

@@ -94,7 +94,9 @@ def retry(
                     # Log successful retry if this wasn't the first attempt
                     if attempt > 0:
                         logger.info(
-                            "Operation succeeded after %s attempts: %s", attempt + 1, func.__name__
+                            "Operation succeeded after %s attempts: %s",
+                            attempt + 1,
+                            func.__name__,
                         )
 
                     return result
@@ -113,7 +115,9 @@ def retry(
                             )
                             raise MaxRetriesExceededError(attempt + 1, e)
                         else:
-                            logger.error("Non-retryable error in %s: %s", func.__name__, e)
+                            logger.error(
+                                "Non-retryable error in %s: %s", func.__name__, e
+                            )
                             raise
 
                     # Calculate delay

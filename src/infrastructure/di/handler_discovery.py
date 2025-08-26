@@ -86,7 +86,9 @@ class HandlerDiscoveryService:
         os.makedirs(cache_dir, exist_ok=True)
         return os.path.join(cache_dir, "handler_discovery.json")
 
-    def discover_and_register_handlers(self, base_package: str = "src.application") -> None:
+    def discover_and_register_handlers(
+        self, base_package: str = "src.application"
+    ) -> None:
         """
         Discover all handlers and register them with the DI container.
         Uses caching to improve performance on subsequent runs.
@@ -100,7 +102,8 @@ class HandlerDiscoveryService:
         cached_result = self._try_load_from_cache(base_package)
         if cached_result:
             logger.info(
-                "Using cached handler discovery (%s handlers)", cached_result["total_handlers"]
+                "Using cached handler discovery (%s handlers)",
+                cached_result["total_handlers"],
             )
             self._register_handlers_from_cache(cached_result["handlers"])
             return
@@ -120,7 +123,9 @@ class HandlerDiscoveryService:
         stats = get_handler_registry_stats()
         self._save_to_cache(base_package, stats, discovery_time)
 
-        logger.info("Handler discovery complete: %s (took %.3fs)", stats, discovery_time)
+        logger.info(
+            "Handler discovery complete: %s (took %.3fs)", stats, discovery_time
+        )
 
     def _discover_handlers(self, base_package: str) -> None:
         """
@@ -135,13 +140,17 @@ class HandlerDiscoveryService:
             package_path = Path(package.__file__).parent
 
             # Walk through all modules in the package
-            for module_info in pkgutil.walk_packages([str(package_path)], f"{base_package}."):
+            for module_info in pkgutil.walk_packages(
+                [str(package_path)], f"{base_package}."
+            ):
                 try:
                     # Import the module to trigger decorator registration
                     importlib.import_module(module_info.name)
                     logger.debug("Imported module: %s", module_info.name)
                 except Exception as e:
-                    logger.warning("Failed to import module %s: %s", module_info.name, e)
+                    logger.warning(
+                        "Failed to import module %s: %s", module_info.name, e
+                    )
                     continue
 
         except Exception as e:
@@ -170,7 +179,9 @@ class HandlerDiscoveryService:
                     query_type.__name__,
                 )
             except Exception as e:
-                logger.error("Failed to register query handler %s: %s", handler_class.__name__, e)
+                logger.error(
+                    "Failed to register query handler %s: %s", handler_class.__name__, e
+                )
 
         # Register command handlers
         command_handlers = get_registered_command_handlers()
@@ -185,14 +196,24 @@ class HandlerDiscoveryService:
                     command_type.__name__,
                 )
             except Exception as e:
-                logger.error("Failed to register command handler %s: %s", handler_class.__name__, e)
+                logger.error(
+                    "Failed to register command handler %s: %s",
+                    handler_class.__name__,
+                    e,
+                )
 
         total_registered = len(query_handlers) + len(command_handlers)
-        logger.info("Handler registration complete. Registered %s handlers", total_registered)
+        logger.info(
+            "Handler registration complete. Registered %s handlers", total_registered
+        )
 
     def _try_load_from_cache(self, base_package: str) -> Optional[dict[str, Any]]:
         """Try to load handler discovery results from cache if valid."""
-        if not self.cache_enabled or not self.cache_file or not os.path.exists(self.cache_file):
+        if (
+            not self.cache_enabled
+            or not self.cache_file
+            or not os.path.exists(self.cache_file)
+        ):
             return None
 
         try:
@@ -254,7 +275,8 @@ class HandlerDiscoveryService:
             os.rename(temp_file, self.cache_file)
 
             logger.debug(
-                "Cached handler discovery results (%s handlers)", stats.get("total_handlers", 0)
+                "Cached handler discovery results (%s handlers)",
+                stats.get("total_handlers", 0),
             )
 
         except Exception as e:
@@ -275,7 +297,9 @@ class HandlerDiscoveryService:
 
                     # Register with DI container
                     self.container.register_singleton(handler_class)
-                    logger.debug("Registered cached query handler: %s", handler_class.__name__)
+                    logger.debug(
+                        "Registered cached query handler: %s", handler_class.__name__
+                    )
 
                 except Exception as e:
                     logger.warning(
@@ -298,7 +322,9 @@ class HandlerDiscoveryService:
 
                     # Register with DI container
                     self.container.register_singleton(handler_class)
-                    logger.debug("Registered cached command handler: %s", handler_class.__name__)
+                    logger.debug(
+                        "Registered cached command handler: %s", handler_class.__name__
+                    )
 
                 except Exception as e:
                     logger.warning(
@@ -312,7 +338,8 @@ class HandlerDiscoveryService:
 
             total_registered = len(query_handlers_data) + len(command_handlers_data)
             logger.info(
-                "Handler registration from cache complete. Registered %s handlers", total_registered
+                "Handler registration from cache complete. Registered %s handlers",
+                total_registered,
             )
 
         except Exception as e:
@@ -345,7 +372,9 @@ class HandlerDiscoveryService:
 
         return mtimes
 
-    def _serialize_handlers(self, handlers: dict[type, type]) -> dict[str, dict[str, str]]:
+    def _serialize_handlers(
+        self, handlers: dict[type, type]
+    ) -> dict[str, dict[str, str]]:
         """Serialize handler information for caching."""
         serialized = {}
 
@@ -355,10 +384,14 @@ class HandlerDiscoveryService:
                     "class_name": handler_class.__name__,
                     "module": handler_class.__module__,
                     "query_type_name": (
-                        handled_type.__name__ if "Query" in handled_type.__name__ else None
+                        handled_type.__name__
+                        if "Query" in handled_type.__name__
+                        else None
                     ),
                     "command_type_name": (
-                        handled_type.__name__ if "Command" in handled_type.__name__ else None
+                        handled_type.__name__
+                        if "Command" in handled_type.__name__
+                        else None
                     ),
                 }
             except Exception as e:

@@ -118,7 +118,9 @@ class TestContextFieldSupport:
 
         # Create handler with mocked dependencies
         aws_client = Mock()
-        aws_client.sts_client.get_caller_identity.return_value = {"Account": "123456789012"}
+        aws_client.sts_client.get_caller_identity.return_value = {
+            "Account": "123456789012"
+        }
         handler = SpotFleetHandler(aws_client, Mock(), Mock(), Mock(), Mock())
 
         # Test _create_spot_fleet_config method
@@ -208,7 +210,10 @@ class TestEC2FleetHandler:
 
         # Create handler
         handler = EC2FleetHandler(
-            aws_client=aws_client, aws_ops=aws_ops, logger=Mock(), launch_template_manager=Mock()
+            aws_client=aws_client,
+            aws_ops=aws_ops,
+            logger=Mock(),
+            launch_template_manager=Mock(),
         )
 
         # Create test request and template
@@ -257,7 +262,10 @@ class TestEC2FleetHandler:
         aws_ops = AWSOperations(aws_client=aws_client, logger=Mock())
 
         handler = EC2FleetHandler(
-            aws_client=aws_client, aws_ops=aws_ops, logger=Mock(), launch_template_manager=Mock()
+            aws_client=aws_client,
+            aws_ops=aws_ops,
+            logger=Mock(),
+            launch_template_manager=Mock(),
         )
 
         # Create test request and template with invalid configuration
@@ -306,7 +314,10 @@ class TestEC2FleetHandler:
         aws_ops = AWSOperations(aws_client=aws_client, logger=Mock())
 
         handler = EC2FleetHandler(
-            aws_client=aws_client, aws_ops=aws_ops, logger=Mock(), launch_template_manager=Mock()
+            aws_client=aws_client,
+            aws_ops=aws_ops,
+            logger=Mock(),
+            launch_template_manager=Mock(),
         )
 
         # Create test request

@@ -219,7 +219,9 @@ class BaseAPIHandler(BaseHandler, Generic[T, R]):
                 # Handle ValueError specifically for better error messages
                 error_message = str(e)
                 self.logger.error(
-                    "Validation error: %s", error_message, extra={"error": error_message}
+                    "Validation error: %s",
+                    error_message,
+                    extra={"error": error_message},
                 )
                 return {
                     "error": "ValidationError",
@@ -273,7 +275,9 @@ class BaseAPIHandler(BaseHandler, Generic[T, R]):
 
             except Exception as e:
                 # Handle unexpected errors
-                self.logger.error("Unexpected error", exc_info=True, extra={"error": str(e)})
+                self.logger.error(
+                    "Unexpected error", exc_info=True, extra={"error": str(e)}
+                )
 
                 # Return standardized error response for unexpected errors
                 return {
@@ -339,7 +343,10 @@ class BaseAPIHandler(BaseHandler, Generic[T, R]):
         def wrapper(request: T) -> R:
             """Wrapper function for validation middleware."""
             # Import jsonschema directly - it's a required dependency
-            from jsonschema import ValidationError as JsonSchemaValidationError, validate
+            from jsonschema import (
+                ValidationError as JsonSchemaValidationError,
+                validate,
+            )
 
             try:
                 # Validate input against schema

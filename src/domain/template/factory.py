@@ -79,7 +79,9 @@ class TemplateFactory(BaseTemplateFactory):
                 self._logger.debug("Registered AWS template class")
         except ImportError:
             if self._logger:
-                self._logger.warning("AWS template class not available for registration")
+                self._logger.warning(
+                    "AWS template class not available for registration"
+                )
 
         # Future providers can be registered here or via register_provider_template_class
         # noqa:COMMENTED section-start
@@ -90,7 +92,9 @@ class TemplateFactory(BaseTemplateFactory):
         #     pass
         # noqa:COMMENTED section-end
 
-    def register_provider_template_class(self, provider_type: str, template_class: type) -> None:
+    def register_provider_template_class(
+        self, provider_type: str, template_class: type
+    ) -> None:
         """Register a provider-specific template class.
 
         Args:
@@ -98,12 +102,16 @@ class TemplateFactory(BaseTemplateFactory):
             template_class: The template class for this provider
         """
         if not issubclass(template_class, Template):
-            raise ValueError(f"Template class must inherit from Template, got {template_class}")
+            raise ValueError(
+                f"Template class must inherit from Template, got {template_class}"
+            )
 
         self._provider_template_classes[provider_type] = template_class
 
         if self._logger:
-            self._logger.debug("Registered template class for provider: %s", provider_type)
+            self._logger.debug(
+                "Registered template class for provider: %s", provider_type
+            )
 
     def create_template(
         self, template_data: dict[str, Any], provider_type: Optional[str] = None
@@ -139,7 +147,9 @@ class TemplateFactory(BaseTemplateFactory):
                 return template
             except Exception as e:
                 if self._logger:
-                    self._logger.error("Failed to create %s template: %s", provider_type, e)
+                    self._logger.error(
+                        "Failed to create %s template: %s", provider_type, e
+                    )
                 # Fall back to core template
 
         # Fall back to core template

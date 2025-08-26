@@ -18,7 +18,9 @@ logger = get_logger(__name__)
 class ValidationException(Exception):
     """Exception raised for validation errors."""
 
-    def __init__(self, message: str, errors: Optional[list[dict[str, Any]]] = None) -> None:
+    def __init__(
+        self, message: str, errors: Optional[list[dict[str, Any]]] = None
+    ) -> None:
         """
         Initialize validation exception.
 
@@ -32,7 +34,9 @@ class ValidationException(Exception):
 
 
 @handle_interface_exceptions(context="request_body_validation", interface_type="api")
-def validate_request_body(model_class: type[T], request_body: Union[str, dict[str, Any]]) -> T:
+def validate_request_body(
+    model_class: type[T], request_body: Union[str, dict[str, Any]]
+) -> T:
     """
     Validate request body against a Pydantic model.
 

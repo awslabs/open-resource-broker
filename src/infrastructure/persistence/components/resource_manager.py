@@ -98,7 +98,9 @@ class QueryManager(ABC):
         """
 
     @abstractmethod
-    def execute_query(self, query: str, parameters: Optional[dict[str, Any]] = None) -> Any:
+    def execute_query(
+        self, query: str, parameters: Optional[dict[str, Any]] = None
+    ) -> Any:
         """
         Execute a query with optional parameters.
 

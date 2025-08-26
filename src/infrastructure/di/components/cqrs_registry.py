@@ -22,7 +22,9 @@ class CQRSHandlerRegistry:
         with self._lock:
             self._command_handlers[command_type] = handler_type
             logger.debug(
-                "Registered command handler: %s -> %s", command_type.__name__, handler_type.__name__
+                "Registered command handler: %s -> %s",
+                command_type.__name__,
+                handler_type.__name__,
             )
 
     def register_query_handler(self, query_type: type, handler_type: type) -> None:
@@ -30,7 +32,9 @@ class CQRSHandlerRegistry:
         with self._lock:
             self._query_handlers[query_type] = handler_type
             logger.debug(
-                "Registered query handler: %s -> %s", query_type.__name__, handler_type.__name__
+                "Registered query handler: %s -> %s",
+                query_type.__name__,
+                handler_type.__name__,
             )
 
     def register_event_handler(self, event_type: type, handler_type: type) -> None:
@@ -42,7 +46,9 @@ class CQRSHandlerRegistry:
             if handler_type not in self._event_handlers[event_type]:
                 self._event_handlers[event_type].append(handler_type)
                 logger.debug(
-                    "Registered event handler: %s -> %s", event_type.__name__, handler_type.__name__
+                    "Registered event handler: %s -> %s",
+                    event_type.__name__,
+                    handler_type.__name__,
                 )
 
     def get_command_handler_type(self, command_type: type) -> Optional[type]:
@@ -73,7 +79,10 @@ class CQRSHandlerRegistry:
     def has_event_handlers(self, event_type: type) -> bool:
         """Check if event handlers are registered."""
         with self._lock:
-            return event_type in self._event_handlers and len(self._event_handlers[event_type]) > 0
+            return (
+                event_type in self._event_handlers
+                and len(self._event_handlers[event_type]) > 0
+            )
 
     def clear(self) -> None:
         """Clear all CQRS handler registrations."""

@@ -82,7 +82,9 @@ class ResourceManagerPort(Protocol):
     to this interface.
     """
 
-    async def provision_resources(self, specification: ResourceSpecification) -> ResourceAllocation:
+    async def provision_resources(
+        self, specification: ResourceSpecification
+    ) -> ResourceAllocation:
         """
         Provision resources according to specification.
 

@@ -80,7 +80,9 @@ class LifecycleManager:
 
         # Check if component type is already registered
         if component_type in self._component_types:
-            self._logger.debug("Component type %s already registered", component_type.__name__)
+            self._logger.debug(
+                "Component type %s already registered", component_type.__name__
+            )
             return
 
         self._components.append(component)
@@ -100,14 +102,20 @@ class LifecycleManager:
         for component in self._components:
             try:
                 component.initialize()
-                self._logger.debug("Initialized component: %s", component.__class__.__name__)
+                self._logger.debug(
+                    "Initialized component: %s", component.__class__.__name__
+                )
             except Exception as e:
                 self._logger.error(
-                    "Error initializing component %s: %s", component.__class__.__name__, str(e)
+                    "Error initializing component %s: %s",
+                    component.__class__.__name__,
+                    str(e),
                 )
                 import traceback
 
-                self._logger.error("Initialization error details: %s", traceback.format_exc())
+                self._logger.error(
+                    "Initialization error details: %s", traceback.format_exc()
+                )
 
     def shutdown_all(self) -> None:
         """
@@ -120,10 +128,14 @@ class LifecycleManager:
         for component in reversed(self._components):
             try:
                 component.shutdown()
-                self._logger.debug("Shut down component: %s", component.__class__.__name__)
+                self._logger.debug(
+                    "Shut down component: %s", component.__class__.__name__
+                )
             except Exception as e:
                 self._logger.error(
-                    "Error shutting down component %s: %s", component.__class__.__name__, str(e)
+                    "Error shutting down component %s: %s",
+                    component.__class__.__name__,
+                    str(e),
                 )
                 import traceback
 

@@ -43,7 +43,10 @@ class TestDeepMerge:
         }
 
         override = {
-            "TargetCapacitySpecification": {"TotalTargetCapacity": 10, "OnDemandTargetCapacity": 3},
+            "TargetCapacitySpecification": {
+                "TotalTargetCapacity": 10,
+                "OnDemandTargetCapacity": 3,
+            },
             "SpotOptions": {"AllocationStrategy": "diversified"},
         }
 
@@ -54,7 +57,10 @@ class TestDeepMerge:
         assert result["TargetCapacitySpecification"]["OnDemandTargetCapacity"] == 3
 
         # Default values should be preserved
-        assert result["TargetCapacitySpecification"]["DefaultTargetCapacityType"] == "on-demand"
+        assert (
+            result["TargetCapacitySpecification"]["DefaultTargetCapacityType"]
+            == "on-demand"
+        )
         assert result["Type"] == "maintain"
         assert result["LaunchTemplateConfigs"] == [{"LaunchTemplateSpecification": {}}]
 

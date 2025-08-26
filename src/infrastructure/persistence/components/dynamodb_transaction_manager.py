@@ -55,7 +55,9 @@ class DynamoDBTransactionManager(TransactionManager):
             raise RuntimeError("No active transaction")
 
         if len(self.transaction_items) >= self.max_transaction_items:
-            raise RuntimeError(f"Transaction cannot exceed {self.max_transaction_items} items")
+            raise RuntimeError(
+                f"Transaction cannot exceed {self.max_transaction_items} items"
+            )
 
         put_request = {"Put": {"TableName": table_name, "Item": item}}
 
@@ -87,7 +89,9 @@ class DynamoDBTransactionManager(TransactionManager):
             raise RuntimeError("No active transaction")
 
         if len(self.transaction_items) >= self.max_transaction_items:
-            raise RuntimeError(f"Transaction cannot exceed {self.max_transaction_items} items")
+            raise RuntimeError(
+                f"Transaction cannot exceed {self.max_transaction_items} items"
+            )
 
         update_request = {
             "Update": {
@@ -122,7 +126,9 @@ class DynamoDBTransactionManager(TransactionManager):
             raise RuntimeError("No active transaction")
 
         if len(self.transaction_items) >= self.max_transaction_items:
-            raise RuntimeError(f"Transaction cannot exceed {self.max_transaction_items} items")
+            raise RuntimeError(
+                f"Transaction cannot exceed {self.max_transaction_items} items"
+            )
 
         delete_request = {"Delete": {"TableName": table_name, "Key": key}}
 
@@ -146,7 +152,9 @@ class DynamoDBTransactionManager(TransactionManager):
             # Execute transaction using TransactWrite
             dynamodb_client = self.client_manager.get_client()
 
-            response = dynamodb_client.transact_write_items(TransactItems=self.transaction_items)
+            response = dynamodb_client.transact_write_items(
+                TransactItems=self.transaction_items
+            )
 
             # Validate response and log transaction details
             if response.get("ResponseMetadata", {}).get("HTTPStatusCode") == 200:
@@ -154,7 +162,11 @@ class DynamoDBTransactionManager(TransactionManager):
                 self.logger.debug(
                     "DynamoDB transaction committed successfully with %s operations",
                     len(self.transaction_items),
-                    extra={"request_id": response.get("ResponseMetadata", {}).get("RequestId")},
+                    extra={
+                        "request_id": response.get("ResponseMetadata", {}).get(
+                            "RequestId"
+                        )
+                    },
                 )
             else:
                 self.state = TransactionState.FAILED
@@ -171,7 +183,9 @@ class DynamoDBTransactionManager(TransactionManager):
             if error_code == "TransactionCanceledException":
                 # Handle transaction cancellation reasons
                 cancellation_reasons = e.response.get("CancellationReasons", [])
-                self.logger.error("DynamoDB transaction cancelled: %s", cancellation_reasons)
+                self.logger.error(
+                    "DynamoDB transaction cancelled: %s", cancellation_reasons
+                )
             else:
                 self.logger.error(
                     "DynamoDB transaction failed: %s - %s",
@@ -197,9 +211,13 @@ class DynamoDBTransactionManager(TransactionManager):
         # We just need to clean up our state
         self.state = TransactionState.ROLLED_BACK
         self.transaction_items.clear()
-        self.logger.debug("DynamoDB transaction rolled back (cleared pending operations)")
+        self.logger.debug(
+            "DynamoDB transaction rolled back (cleared pending operations)"
+        )
 
-    def execute_read_transaction(self, read_items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    def execute_read_transaction(
+        self, read_items: list[dict[str, Any]]
+    ) -> list[dict[str, Any]]:
         """
         Execute a read transaction.
 
@@ -226,7 +244,9 @@ class DynamoDBTransactionManager(TransactionManager):
                 if item:
                     results.append(item)
 
-            self.logger.debug("Executed read transaction with %s operations", len(read_items))
+            self.logger.debug(
+                "Executed read transaction with %s operations", len(read_items)
+            )
             return results
 
         except ClientError as e:

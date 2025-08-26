@@ -74,13 +74,17 @@ class ProviderStrategyFactory:
             elif mode == ProviderMode.MULTI:
                 return self._create_multi_provider_context(provider_config)
             else:
-                raise ConfigurationError("Provider", "No valid provider configuration found")
+                raise ConfigurationError(
+                    "Provider", "No valid provider configuration found"
+                )
 
         except Exception as e:
             self._logger.error("Failed to create provider context: %s", str(e))
             raise ProviderCreationError(f"Provider context creation failed: {e!s}")
 
-    def _create_single_provider_context(self, config: ProviderConfig) -> ProviderContext:
+    def _create_single_provider_context(
+        self, config: ProviderConfig
+    ) -> ProviderContext:
         """
         Create single provider context.
 
@@ -114,7 +118,8 @@ class ProviderStrategyFactory:
         self._configure_context_settings(context, config)
 
         self._logger.info(
-            "Single provider context created successfully with provider: %s", provider_config.name
+            "Single provider context created successfully with provider: %s",
+            provider_config.name,
         )
         return context
 
@@ -148,10 +153,14 @@ class ProviderStrategyFactory:
             try:
                 strategy = self._create_provider_strategy(provider_config)
                 context.register_strategy(strategy, provider_config.name)
-                self._logger.debug("Registered provider strategy: %s", provider_config.name)
+                self._logger.debug(
+                    "Registered provider strategy: %s", provider_config.name
+                )
             except Exception as e:
                 self._logger.error(
-                    "Failed to create provider strategy %s: %s", provider_config.name, str(e)
+                    "Failed to create provider strategy %s: %s",
+                    provider_config.name,
+                    str(e),
                 )
                 # Continue with other providers, but log the error
                 continue
@@ -165,7 +174,8 @@ class ProviderStrategyFactory:
 
         registered_strategies = context.get_available_strategies()
         self._logger.info(
-            "Multi-provider context created with %s strategies", len(registered_strategies)
+            "Multi-provider context created with %s strategies",
+            len(registered_strategies),
         )
 
         return context
@@ -205,8 +215,12 @@ class ProviderStrategyFactory:
                 )
             else:
                 # Fallback to provider type (backward compatibility)
-                strategy = registry.create_strategy(provider_config.type, provider_config)
-                self._logger.debug("Created provider strategy from type: %s", provider_config.type)
+                strategy = registry.create_strategy(
+                    provider_config.type, provider_config
+                )
+                self._logger.debug(
+                    "Created provider strategy from type: %s", provider_config.type
+                )
 
             # Set provider name for identification
             if hasattr(strategy, "name"):
@@ -216,7 +230,9 @@ class ProviderStrategyFactory:
             self._provider_cache[cache_key] = strategy
 
             self._logger.debug(
-                "Created provider strategy: %s (%s)", provider_config.name, provider_config.type
+                "Created provider strategy: %s (%s)",
+                provider_config.name,
+                provider_config.type,
             )
             return strategy
 
@@ -263,7 +279,9 @@ class ProviderStrategyFactory:
 
         return policy_mapping[policy_name]
 
-    def _configure_context_settings(self, context: ProviderContext, config: ProviderConfig) -> None:
+    def _configure_context_settings(
+        self, context: ProviderContext, config: ProviderConfig
+    ) -> None:
         """
         Configure provider context with global settings.
 
@@ -277,7 +295,10 @@ class ProviderStrategyFactory:
                 context.set_health_check_interval(config.health_check_interval)
 
             # Configure circuit breaker
-            if hasattr(context, "configure_circuit_breaker") and config.circuit_breaker.enabled:
+            if (
+                hasattr(context, "configure_circuit_breaker")
+                and config.circuit_breaker.enabled
+            ):
                 context.configure_circuit_breaker(
                     failure_threshold=config.circuit_breaker.failure_threshold,
                     recovery_timeout=config.circuit_breaker.recovery_timeout,
@@ -287,7 +308,9 @@ class ProviderStrategyFactory:
             self._logger.debug("Provider context settings configured successfully")
 
         except Exception as e:
-            self._logger.warning("Failed to configure some context settings: %s", str(e))
+            self._logger.warning(
+                "Failed to configure some context settings: %s", str(e)
+            )
             # Don't fail the entire creation for optional settings
 
     def get_provider_info(self) -> dict[str, Any]:
@@ -350,7 +373,9 @@ class ProviderStrategyFactory:
 
             # Validate based on mode
             if mode == ProviderMode.NONE:
-                validation_result["errors"].append("No valid provider configuration found")
+                validation_result["errors"].append(
+                    "No valid provider configuration found"
+                )
             elif mode == ProviderMode.SINGLE:
                 if len(active_providers) == 0:
                     validation_result["errors"].append(
@@ -380,7 +405,9 @@ class ProviderStrategyFactory:
             validation_result["valid"] = len(validation_result["errors"]) == 0
 
         except Exception as e:
-            validation_result["errors"].append(f"Configuration validation failed: {e!s}")
+            validation_result["errors"].append(
+                f"Configuration validation failed: {e!s}"
+            )
 
         return validation_result
 

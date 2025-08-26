@@ -47,16 +47,23 @@ class TestNativeSpecAllProviders:
         )
 
         request = Request(
-            request_id=RequestId.generate(), requested_count=3, template_id="ec2fleet-test"
+            request_id=RequestId.generate(),
+            requested_count=3,
+            template_id="ec2fleet-test",
         )
 
         # Process provider API spec
-        result = self.aws_native_spec_service.process_provider_api_spec(template, request)
+        result = self.aws_native_spec_service.process_provider_api_spec(
+            template, request
+        )
 
         assert result is not None
         assert result["Type"] == "instant"
         assert result["TargetCapacitySpecification"]["TotalTargetCapacity"] == "3"
-        assert result["TargetCapacitySpecification"]["DefaultTargetCapacityType"] == "on-demand"
+        assert (
+            result["TargetCapacitySpecification"]["DefaultTargetCapacityType"]
+            == "on-demand"
+        )
 
         # Check that template variables were rendered
         fleet_tags = result["TagSpecifications"][0]["Tags"]
@@ -98,10 +105,14 @@ class TestNativeSpecAllProviders:
         )
 
         request = Request(
-            request_id=RequestId.generate(), requested_count=5, template_id="spotfleet-test"
+            request_id=RequestId.generate(),
+            requested_count=5,
+            template_id="spotfleet-test",
         )
 
-        result = self.aws_native_spec_service.process_provider_api_spec(template, request)
+        result = self.aws_native_spec_service.process_provider_api_spec(
+            template, request
+        )
 
         assert result is not None
         assert result["AllocationStrategy"] == "lowestPrice"
@@ -151,7 +162,9 @@ class TestNativeSpecAllProviders:
             request_id=RequestId.generate(), requested_count=4, template_id="asg-test"
         )
 
-        result = self.aws_native_spec_service.process_provider_api_spec(template, request)
+        result = self.aws_native_spec_service.process_provider_api_spec(
+            template, request
+        )
 
         assert result is not None
         assert str(request.request_id) in result["AutoScalingGroupName"]
@@ -193,9 +206,13 @@ class TestNativeSpecAllProviders:
             },
         )
 
-        request = Request(request_id=RequestId.generate(), requested_count=2, template_id="lt-test")
+        request = Request(
+            request_id=RequestId.generate(), requested_count=2, template_id="lt-test"
+        )
 
-        result = self.aws_native_spec_service.process_launch_template_spec(template, request)
+        result = self.aws_native_spec_service.process_launch_template_spec(
+            template, request
+        )
 
         assert result is not None
         assert str(request.request_id) in result["LaunchTemplateName"]
@@ -242,28 +259,38 @@ class TestNativeSpecAllProviders:
         )
 
         request = Request(
-            request_id=RequestId.generate(), requested_count=10, template_id="mixed-test"
+            request_id=RequestId.generate(),
+            requested_count=10,
+            template_id="mixed-test",
         )
 
         # Test launch template spec processing
-        lt_result = self.aws_native_spec_service.process_launch_template_spec(template, request)
+        lt_result = self.aws_native_spec_service.process_launch_template_spec(
+            template, request
+        )
         assert lt_result is not None
         assert str(request.request_id) in lt_result["LaunchTemplateName"]
         assert lt_result["LaunchTemplateData"]["ImageId"] == "ami-mixed789"
         assert lt_result["LaunchTemplateData"]["InstanceType"] == "c5.xlarge"
 
         # Test provider API spec processing
-        api_result = self.aws_native_spec_service.process_provider_api_spec(template, request)
+        api_result = self.aws_native_spec_service.process_provider_api_spec(
+            template, request
+        )
         assert api_result is not None
         assert api_result["Type"] == "maintain"
         assert api_result["TargetCapacitySpecification"]["TotalTargetCapacity"] == "10"
         # 10 * 0.7
-        assert api_result["TargetCapacitySpecification"]["OnDemandTargetCapacity"] == "7"
+        assert (
+            api_result["TargetCapacitySpecification"]["OnDemandTargetCapacity"] == "7"
+        )
         # 10 * 0.3
         assert api_result["TargetCapacitySpecification"]["SpotTargetCapacity"] == "3"
         assert api_result["ReplaceUnhealthyInstances"] is True
 
-    @patch("providers.aws.infrastructure.services.aws_native_spec_service.read_json_file")
+    @patch(
+        "providers.aws.infrastructure.services.aws_native_spec_service.read_json_file"
+    )
     def test_file_based_native_specs_integration(self, mock_read_file):
         """Test template with file-based native specs."""
         # Mock file contents
@@ -277,7 +304,9 @@ class TestNativeSpecAllProviders:
 
         api_spec_content = {
             "Type": "instant",
-            "TargetCapacitySpecification": {"TotalTargetCapacity": "{{ requested_count }}"},
+            "TargetCapacitySpecification": {
+                "TotalTargetCapacity": "{{ requested_count }}"
+            },
         }
 
         def mock_read_side_effect(file_path):
@@ -303,13 +332,17 @@ class TestNativeSpecAllProviders:
         )
 
         # Test launch template spec from file
-        lt_result = self.aws_native_spec_service.process_launch_template_spec(template, request)
+        lt_result = self.aws_native_spec_service.process_launch_template_spec(
+            template, request
+        )
         assert lt_result is not None
         assert str(request.request_id) in lt_result["LaunchTemplateName"]
         assert lt_result["LaunchTemplateData"]["ImageId"] == "ami-file123"
 
         # Test provider API spec from file
-        api_result = self.aws_native_spec_service.process_provider_api_spec(template, request)
+        api_result = self.aws_native_spec_service.process_provider_api_spec(
+            template, request
+        )
         assert api_result is not None
         assert api_result["Type"] == "instant"
         assert api_result["TargetCapacitySpecification"]["TotalTargetCapacity"] == "6"
@@ -322,12 +355,16 @@ class TestNativeSpecAllProviders:
             instance_type="t3.micro",
             provider_api_spec={
                 "Type": "instant",
-                "TargetCapacitySpecification": {"TotalTargetCapacity": "{{ requested_count }}"},
+                "TargetCapacitySpecification": {
+                    "TotalTargetCapacity": "{{ requested_count }}"
+                },
             },
         )
 
         request = Request(
-            request_id=RequestId.generate(), requested_count=1, template_id="disabled-test"
+            request_id=RequestId.generate(),
+            requested_count=1,
+            template_id="disabled-test",
         )
 
         # Mock native spec service to return disabled
@@ -336,8 +373,12 @@ class TestNativeSpecAllProviders:
             "is_native_spec_enabled",
             return_value=False,
         ):
-            lt_result = self.aws_native_spec_service.process_launch_template_spec(template, request)
-            api_result = self.aws_native_spec_service.process_provider_api_spec(template, request)
+            lt_result = self.aws_native_spec_service.process_launch_template_spec(
+                template, request
+            )
+            api_result = self.aws_native_spec_service.process_provider_api_spec(
+                template, request
+            )
 
             assert lt_result is None
             assert api_result is None
@@ -364,14 +405,18 @@ class TestNativeSpecAllProviders:
 
         # Test with small request count
         request_small = Request(
-            request_id=RequestId.generate(), requested_count=4, template_id="complex-test"
+            request_id=RequestId.generate(),
+            requested_count=4,
+            template_id="complex-test",
         )
 
         result_small = self.aws_native_spec_service.process_provider_api_spec(
             template, request_small
         )
         # max(1, 4*0.5)
-        assert result_small["TargetCapacitySpecification"]["OnDemandTargetCapacity"] == "2"
+        assert (
+            result_small["TargetCapacitySpecification"]["OnDemandTargetCapacity"] == "2"
+        )
         # 4 - 2
         assert result_small["TargetCapacitySpecification"]["SpotTargetCapacity"] == "2"
         # 4 <= 10
@@ -379,14 +424,19 @@ class TestNativeSpecAllProviders:
 
         # Test with large request count
         request_large = Request(
-            request_id=RequestId.generate(), requested_count=20, template_id="complex-test"
+            request_id=RequestId.generate(),
+            requested_count=20,
+            template_id="complex-test",
         )
 
         result_large = self.aws_native_spec_service.process_provider_api_spec(
             template, request_large
         )
         # max(1, 20*0.5)
-        assert result_large["TargetCapacitySpecification"]["OnDemandTargetCapacity"] == "10"
+        assert (
+            result_large["TargetCapacitySpecification"]["OnDemandTargetCapacity"]
+            == "10"
+        )
         # 20 - 10
         assert result_large["TargetCapacitySpecification"]["SpotTargetCapacity"] == "10"
         # 20 > 10
@@ -406,12 +456,18 @@ class TestNativeSpecAllProviders:
         )
 
         request = Request(
-            request_id=RequestId.generate(), requested_count=1, template_id="invalid-test"
+            request_id=RequestId.generate(),
+            requested_count=1,
+            template_id="invalid-test",
         )
 
         # Should handle template syntax errors gracefully
-        with pytest.raises(Exception):  # Specific exception type depends on implementation
-            self.aws_native_spec_service.process_provider_api_spec(template_invalid, request)
+        with pytest.raises(
+            Exception
+        ):  # Specific exception type depends on implementation
+            self.aws_native_spec_service.process_provider_api_spec(
+                template_invalid, request
+            )
 
     def test_context_variable_availability(self):
         """Test that all expected context variables are available."""
@@ -434,10 +490,14 @@ class TestNativeSpecAllProviders:
         )
 
         request = Request(
-            request_id=RequestId.generate(), requested_count=3, template_id="context-test"
+            request_id=RequestId.generate(),
+            requested_count=3,
+            template_id="context-test",
         )
 
-        result = self.aws_native_spec_service.process_provider_api_spec(template, request)
+        result = self.aws_native_spec_service.process_provider_api_spec(
+            template, request
+        )
 
         context_test = result["ContextTest"]
         assert context_test["RequestId"] == str(request.request_id)
