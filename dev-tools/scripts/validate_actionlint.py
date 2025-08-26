@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 def find_github_action_files():
     """Find all GitHub Actions workflow and action files."""
     github_dir = Path(".github")
-    
+
     if not github_dir.exists():
         logger.error(".github directory not found")
         return [], []
@@ -29,7 +29,9 @@ def find_github_action_files():
     actions_dir = github_dir / "actions"
     action_files = []
     if actions_dir.exists():
-        action_files = list(actions_dir.glob("*/action.yml")) + list(actions_dir.glob("*/action.yaml"))
+        action_files = list(actions_dir.glob("*/action.yml")) + list(
+            actions_dir.glob("*/action.yaml")
+        )
 
     return sorted(workflow_files), sorted(action_files)
 
@@ -39,7 +41,7 @@ def validate_files_with_actionlint(files, file_type):
     if not files:
         logger.info(f"No {file_type} files found")
         return True
-        
+
     logger.info(f"Running actionlint on {len(files)} {file_type} file(s)...")
 
     try:
@@ -99,7 +101,7 @@ def main():
 
     # For action files, we already validated YAML syntax in validate_workflows.py
     if action_files:
-        logger.info(f"INFO: Action files validated for YAML syntax only")
+        logger.info("INFO: Action files validated for YAML syntax only")
         logger.info("      (actionlint doesn't validate action.yml files - only workflows)")
 
     return 0 if all_valid else 1

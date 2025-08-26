@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
 """Virtual environment setup script."""
 
+import logging
 import shutil
 import subprocess
 import sys
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+logger = logging.getLogger(__name__)
 from pathlib import Path
 
 
@@ -14,7 +19,7 @@ def main() -> int:
 
     # Create venv if it doesn't exist
     if not venv_dir.exists():
-        print("Creating virtual environment...")
+        logger.info("Creating virtual environment...")
         subprocess.run([python_exe, "-m", "venv", str(venv_dir)], check=True)
 
     # Determine pip path
@@ -25,10 +30,10 @@ def main() -> int:
 
     # Upgrade pip using uv or pip
     if shutil.which("uv"):
-        print("INFO: Using uv for virtual environment setup...")
+        logger.info("INFO: Using uv for virtual environment setup...")
         subprocess.run(["uv", "pip", "install", "--upgrade", "pip"], check=True)
     else:
-        print("INFO: Using pip for virtual environment setup...")
+        logger.info("INFO: Using pip for virtual environment setup...")
         subprocess.run([str(pip_path), "install", "--upgrade", "pip"], check=True)
 
     # Touch activate file
@@ -38,7 +43,7 @@ def main() -> int:
         activate_file = venv_dir / "bin" / "activate"
 
     activate_file.touch()
-    print("Virtual environment setup complete!")
+    logger.info("Virtual environment setup complete!")
     return 0
 
 

@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
 """Hadolint Dockerfile checker script."""
 
+import logging
 import shutil
 import subprocess
 import sys
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+logger = logging.getLogger(__name__)
 from pathlib import Path
 
 
@@ -15,15 +20,15 @@ def check_hadolint_available() -> bool:
 def run_hadolint(dockerfile: Path) -> int:
     """Run hadolint on a Dockerfile."""
     if not dockerfile.exists():
-        print(f"Warning: {dockerfile} not found, skipping")
+        logger.warning("Warning: {dockerfile} not found, skipping")
         return 0
 
-    print(f"Checking {dockerfile} with hadolint...")
+    logger.info(f"Checking {dockerfile} with hadolint...")
     try:
         result = subprocess.run(["hadolint", str(dockerfile)], check=True)
         return result.returncode
     except subprocess.CalledProcessError as e:
-        print(f"Hadolint found issues in {dockerfile}")
+        logger.info(f"Hadolint found issues in {dockerfile}")
         return e.returncode
 
 
@@ -38,15 +43,15 @@ def main() -> int:
     args = parser.parse_args()
 
     if args.install_help:
-        print("Install hadolint:")
-        print("  macOS: brew install hadolint")
-        print("  Linux: See https://github.com/hadolint/hadolint#install")
+        logger.info("Install hadolint:")
+        logger.info("  macOS: brew install hadolint")
+        logger.info("  Linux: See https://github.com/hadolint/hadolint#install")
         return 0
 
     if not check_hadolint_available():
-        print("Error: hadolint not found")
-        print("Install with: brew install hadolint")
-        print("Or run: python dev-tools/scripts/hadolint_check.py --install-help")
+        logger.error("Error: hadolint not found")
+        logger.info("Install with: brew install hadolint")
+        logger.info("Or run: python dev-tools/scripts/hadolint_check.py --install-help")
         return 1
 
     # Default files to check
@@ -60,7 +65,7 @@ def main() -> int:
             exit_code = result
 
     if exit_code == 0:
-        print("All Dockerfiles passed hadolint checks!")
+        logger.info("All Dockerfiles passed hadolint checks!")
 
     return exit_code
 

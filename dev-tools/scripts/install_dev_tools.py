@@ -417,9 +417,16 @@ class DevToolsInstaller:
 
     def _install_act_generic(self):
         """Install act using GitHub releases."""
-        return self._run_command([
-            "curl", "-s", "https://raw.githubusercontent.com/nektos/act/master/install.sh", "|", "sudo", "bash"
-        ])
+        return self._run_command(
+            [
+                "curl",
+                "-s",
+                "https://raw.githubusercontent.com/nektos/act/master/install.sh",
+                "|",
+                "sudo",
+                "bash",
+            ]
+        )
 
     def _install_pip_audit_python(self):
         """Install pip-audit using Python package manager."""

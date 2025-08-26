@@ -1,7 +1,12 @@
 #!/usr/bin/env python3
 """Container health check script."""
 
+import logging
 import sys
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+logger = logging.getLogger(__name__)
 import time
 import urllib.error
 import urllib.request
@@ -11,21 +16,21 @@ def check_health(
     url: str = "http://localhost:8000/health", timeout: int = 30, interval: int = 2
 ) -> bool:
     """Check container health endpoint with timeout and retry logic."""
-    print("Testing container health endpoint...")
+    logger.info("Testing container health endpoint...")
 
     start_time = time.time()
     while time.time() - start_time < timeout:
         try:
             with urllib.request.urlopen(url, timeout=5) as response:
                 if response.status == 200:
-                    print("Container health check passed!")
+                    logger.info("Container health check passed!")
                     return True
         except (urllib.error.URLError, urllib.error.HTTPError, OSError):
             pass
 
         time.sleep(interval)
 
-    print("Health check failed")
+    logger.error("Health check failed")
     return False
 
 

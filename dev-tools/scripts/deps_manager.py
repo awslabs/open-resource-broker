@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
 """Dependency management script."""
 
+import logging
 import subprocess
 import sys
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+logger = logging.getLogger(__name__)
 from typing import List
 
 
@@ -14,15 +19,15 @@ def run_command(cmd: List[str]) -> int:
     except subprocess.CalledProcessError as e:
         return e.returncode
     except FileNotFoundError:
-        print(f"Error: Command not found: {cmd[0]}")
+        logger.error("Command not found: %s", cmd[0])
         return 1
 
 
 def add_dependency(package: str, dev: bool = False) -> int:
     """Add a dependency using uv."""
     if not package:
-        print("Error: Package name is required")
-        print(f"Usage: {sys.argv[0]} add [--dev] PACKAGE_NAME")
+        logger.error("Error: Package name is required")
+        logger.info("Usage: %s add [--dev] PACKAGE_NAME", sys.argv[0])
         return 1
 
     cmd = ["uv", "add"]
@@ -30,7 +35,7 @@ def add_dependency(package: str, dev: bool = False) -> int:
         cmd.append("--dev")
     cmd.append(package)
 
-    print(f"Adding {'dev ' if dev else ''}dependency: {package}")
+    logger.info("Adding %sdependency: %s", "dev " if dev else "", package)
     return run_command(cmd)
 
 

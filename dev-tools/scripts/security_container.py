@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
 """Container security scanning script."""
 
+import logging
 import subprocess
 import sys
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+logger = logging.getLogger(__name__)
 
 
 def run_command(cmd: list[str]) -> int:
@@ -13,16 +18,16 @@ def run_command(cmd: list[str]) -> int:
     except subprocess.CalledProcessError as e:
         return e.returncode
     except FileNotFoundError:
-        print(f"Error: Command not found: {cmd[0]}")
+        logger.error("Command not found: %s", cmd[0])
         return 1
 
 
 def main() -> int:
     """Run container security scans."""
-    print("Running container security scans...")
+    logger.info("Running container security scans...")
 
     # Ensure required tools are installed
-    print("Ensuring required tools are installed...")
+    logger.info("Ensuring required tools are installed...")
     if (
         run_command(
             ["./dev-tools/scripts/install_dev_tools.py", "--tool", "trivy", "--tool", "hadolint"]
@@ -32,13 +37,13 @@ def main() -> int:
         return 1
 
     # Build Docker image for security scan
-    print("Building Docker image for security scan...")
+    logger.info("Building Docker image for security scan...")
     project_name = "open-hostfactory-plugin"  # Could be made configurable
     if run_command(["docker", "build", "-t", f"{project_name}:security-scan", "."]) != 0:
         return 1
 
     # Run Trivy vulnerability scan
-    print("Running Trivy vulnerability scan...")
+    logger.info("Running Trivy vulnerability scan...")
     exit_code = 0
 
     # SARIF output
@@ -72,18 +77,18 @@ def main() -> int:
         exit_code = result
 
     # Run Hadolint Dockerfile scan
-    print("Running Hadolint Dockerfile scan...")
+    logger.info("Running Hadolint Dockerfile scan...")
     try:
         with open("hadolint-results.sarif", "w") as f:
             subprocess.run(["hadolint", "Dockerfile", "--format", "sarif"], stdout=f, check=True)
     except subprocess.CalledProcessError:
-        print("Dockerfile issues found")
+        logger.info("Dockerfile issues found")
         # Don't fail the whole process for hadolint issues
 
     if exit_code == 0:
-        print("Container security scans completed successfully!")
+        logger.info("Container security scans completed successfully!")
     else:
-        print("Some security scans found issues")
+        logger.info("Some security scans found issues")
 
     return exit_code
 

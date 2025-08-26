@@ -105,7 +105,7 @@ def validate_workflow(file_path: Path):
 def main():
     """Main validation function."""
     github_dir = Path(".github")
-    
+
     if not github_dir.exists():
         logger.error(".github directory not found")
         sys.exit(1)
@@ -114,7 +114,7 @@ def main():
     yaml_files = []
     yaml_files.extend(github_dir.glob("**/*.yml"))
     yaml_files.extend(github_dir.glob("**/*.yaml"))
-    
+
     if not yaml_files:
         logger.error("No YAML files found in .github directory")
         sys.exit(1)
@@ -128,7 +128,7 @@ def main():
     for yaml_file in sorted(yaml_files):
         # Get relative path for cleaner output
         rel_path = yaml_file.relative_to(github_dir)
-        
+
         # Only do structure validation for workflow files
         if yaml_file.parent.name == "workflows":
             if validate_workflow(yaml_file):

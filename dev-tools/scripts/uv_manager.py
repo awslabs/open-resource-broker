@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
 """UV package manager operations."""
 
+import logging
 import shutil
 import subprocess
 import sys
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+logger = logging.getLogger(__name__)
 import time
 from pathlib import Path
 from typing import List
@@ -19,21 +24,21 @@ def run_command(cmd: List[str], capture_output: bool = False) -> subprocess.Comp
     try:
         return subprocess.run(cmd, check=True, capture_output=capture_output, text=True)
     except subprocess.CalledProcessError as e:
-        print(f"Error running command: {' '.join(cmd)}")
+        logger.info(f"Error running command: {' '.join(cmd)}")
         if capture_output and e.stdout:
-            print(f"stdout: {e.stdout}")
+            logger.info(f"stdout: {e.stdout}")
         if capture_output and e.stderr:
-            print(f"stderr: {e.stderr}")
+            logger.info(f"stderr: {e.stderr}")
         raise
 
 
 def uv_lock() -> int:
     """Generate uv lock files for reproducible builds."""
     if not check_uv_available():
-        print("ERROR: uv not available. Install with: pip install uv")
+        logger.error(" uv not available. Install with: pip install uv")
         return 1
 
-    print("INFO: Generating uv lock files...")
+    logger.info("INFO: Generating uv lock files...")
     try:
         run_command(
             ["uv", "pip", "compile", "pyproject.toml", "--output-file", "requirements.lock"]
@@ -50,7 +55,7 @@ def uv_lock() -> int:
                 "requirements-dev.lock",
             ]
         )
-        print("SUCCESS: Lock files generated: requirements.lock, requirements-dev.lock")
+        logger.info("SUCCESS: Lock files generated: requirements.lock, requirements-dev.lock")
         return 0
     except subprocess.CalledProcessError:
         return 1
@@ -59,18 +64,18 @@ def uv_lock() -> int:
 def uv_sync(dev: bool = False) -> int:
     """Sync environment with uv lock files."""
     if not check_uv_available():
-        print("ERROR: uv not available. Install with: pip install uv")
+        logger.error(" uv not available. Install with: pip install uv")
         return 1
 
     lock_file = "requirements-dev.lock" if dev else "requirements.lock"
 
     if not Path(lock_file).exists():
-        print(f"ERROR: No lock file found: {lock_file}")
-        print("Run 'make uv-lock' first.")
+        logger.info(f"ERROR: No lock file found: {lock_file}")
+        logger.info("Run 'make uv-lock' first.")
         return 1
 
     env_type = "development environment" if dev else "environment"
-    print(f"INFO: Syncing {env_type} with uv lock file...")
+    logger.info(f"INFO: Syncing {env_type} with uv lock file...")
 
     try:
         run_command(["uv", "pip", "sync", lock_file])
@@ -84,30 +89,30 @@ def uv_check() -> int:
     if check_uv_available():
         try:
             result = run_command(["uv", "--version"], capture_output=True)
-            print(f"SUCCESS: uv is available: {result.stdout.strip()}")
-            print("INFO: Performance comparison:")
-            print("  • uv is typically 10-100x faster than pip")
-            print("  • Better dependency resolution and error messages")
-            print("  • Use 'make dev-install' for faster development setup")
+            logger.info(f"SUCCESS: uv is available: {result.stdout.strip()}")
+            logger.info("INFO: Performance comparison:")
+            logger.info("  • uv is typically 10-100x faster than pip")
+            logger.info("  • Better dependency resolution and error messages")
+            logger.info("  • Use 'make dev-install' for faster development setup")
             return 0
         except subprocess.CalledProcessError:
-            print("ERROR: uv found but not working properly")
+            logger.error(" uv found but not working properly")
             return 1
     else:
-        print("ERROR: uv not available")
-        print("INFO: Install with: pip install uv")
-        print("INFO: Or use system package manager: brew install uv")
+        logger.error(" uv not available")
+        logger.info("INFO: Install with: pip install uv")
+        logger.info("INFO: Or use system package manager: brew install uv")
         return 1
 
 
 def uv_benchmark() -> int:
     """Benchmark uv vs pip installation speed."""
-    print("INFO: Benchmarking uv vs pip installation speed...")
-    print("This will create temporary virtual environments for testing.")
-    print("")
+    logger.info("INFO: Benchmarking uv vs pip installation speed...")
+    logger.info("This will create temporary virtual environments for testing.")
+    logger.info("")
 
     if not check_uv_available():
-        print("ERROR: uv not available for benchmarking")
+        logger.error(" uv not available for benchmarking")
         return 1
 
     # Clean up any existing test environments
@@ -116,14 +121,14 @@ def uv_benchmark() -> int:
             shutil.rmtree(venv_dir)
 
     try:
-        print("INFO: Testing pip installation speed...")
+        logger.info("INFO: Testing pip installation speed...")
         start_time = time.time()
         run_command(["python", "-m", "venv", ".venv-pip-test"])
         run_command([".venv-pip-test/bin/pip", "install", "-e", ".[dev]"], capture_output=True)
         pip_time = time.time() - start_time
 
-        print("")
-        print("INFO: Testing uv installation speed...")
+        logger.info("")
+        logger.info("INFO: Testing uv installation speed...")
         start_time = time.time()
         run_command(["python", "-m", "venv", ".venv-uv-test"])
         run_command(
@@ -132,25 +137,25 @@ def uv_benchmark() -> int:
         )
         uv_time = time.time() - start_time
 
-        print("")
-        print("Results:")
-        print(f"  pip: {pip_time:.2f}s")
-        print(f"  uv:  {uv_time:.2f}s")
+        logger.info("")
+        logger.info("Results:")
+        logger.info(f"  pip: {pip_time:.2f}s")
+        logger.info(f"  uv:  {uv_time:.2f}s")
         if uv_time > 0:
             speedup = pip_time / uv_time
-            print(f"  uv is {speedup:.1f}x faster!")
+            logger.info(f"  uv is {speedup:.1f}x faster!")
 
         return 0
 
     except subprocess.CalledProcessError:
         return 1
     finally:
-        print("")
-        print("INFO: Cleaning up test environments...")
+        logger.info("")
+        logger.info("INFO: Cleaning up test environments...")
         for venv_dir in [".venv-pip-test", ".venv-uv-test"]:
             if Path(venv_dir).exists():
                 shutil.rmtree(venv_dir)
-        print("SUCCESS: Benchmark complete!")
+        logger.info("SUCCESS: Benchmark complete!")
 
 
 def main() -> int:
