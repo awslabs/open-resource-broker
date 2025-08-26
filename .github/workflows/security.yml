@@ -69,7 +69,10 @@ jobs:
   # Security Scan Jobs (using reusable workflow)
   security-bandit:
     name: Bandit (Security Scan)
-    needs: get-config
+    needs: [get-config, check-security-comment]
+    if: |
+      github.event_name != 'issue_comment' || 
+      needs.check-security-comment.outputs.triggered == 'true'
     uses: ./.github/workflows/reusable-security.yml
     with:
       scan-type: bandit
@@ -78,7 +81,10 @@ jobs:
 
   security-safety:
     name: Safety (Dependency Scan)
-    needs: get-config
+    needs: [get-config, check-security-comment]
+    if: |
+      github.event_name != 'issue_comment' || 
+      needs.check-security-comment.outputs.triggered == 'true'
     uses: ./.github/workflows/reusable-security.yml
     with:
       scan-type: safety
@@ -87,7 +93,10 @@ jobs:
 
   security-hadolint:
     name: Hadolint (Dockerfile Scan)
-    needs: get-config
+    needs: [get-config, check-security-comment]
+    if: |
+      github.event_name != 'issue_comment' || 
+      needs.check-security-comment.outputs.triggered == 'true'
     uses: ./.github/workflows/reusable-security.yml
     with:
       scan-type: hadolint
@@ -95,7 +104,10 @@ jobs:
 
   security-semgrep:
     name: Semgrep (Static Analysis)
-    needs: get-config
+    needs: [get-config, check-security-comment]
+    if: |
+      github.event_name != 'issue_comment' || 
+      needs.check-security-comment.outputs.triggered == 'true'
     uses: ./.github/workflows/reusable-security.yml
     with:
       scan-type: semgrep
@@ -103,7 +115,10 @@ jobs:
 
   security-trivy-fs:
     name: Trivy (Filesystem Scan)
-    needs: get-config
+    needs: [get-config, check-security-comment]
+    if: |
+      github.event_name != 'issue_comment' || 
+      needs.check-security-comment.outputs.triggered == 'true'
     uses: ./.github/workflows/reusable-security.yml
     with:
       scan-type: trivy-fs
