@@ -41,7 +41,7 @@ env:
 
 jobs:
   test:
-    name: ${{ inputs.test-type }} Tests
+    name: ${{ inputs.test-type == 'unit' && 'Unit Tests' || inputs.test-type == 'integration' && 'Integration Tests' || inputs.test-type == 'e2e' && 'End-to-End Tests' || format('{0} Tests', inputs.test-type) }}
     runs-on: ${{ inputs.os }}
     continue-on-error: ${{ inputs.continue-on-error }}
 
