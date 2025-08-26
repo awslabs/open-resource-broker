@@ -7,14 +7,14 @@ interface layer patterns and error handling conventions.
 
 import json
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 from infrastructure.error.decorators import handle_interface_exceptions
 from mcp.tools import OpenHFPluginMCPTools
 
 
 @handle_interface_exceptions(context="mcp_tools_list", interface_type="cli")
-async def handle_mcp_tools_list(args) -> Dict[str, Any]:
+async def handle_mcp_tools_list(args) -> dict[str, Any]:
     """
     Handle 'ohfp mcp tools list' command.
 
@@ -47,7 +47,7 @@ async def handle_mcp_tools_list(args) -> Dict[str, Any]:
 
 
 @handle_interface_exceptions(context="mcp_tools_call", interface_type="cli")
-async def handle_mcp_tools_call(args) -> Dict[str, Any]:
+async def handle_mcp_tools_call(args) -> dict[str, Any]:
     """
     Handle 'ohfp mcp tools call' command.
 
@@ -92,7 +92,7 @@ async def handle_mcp_tools_call(args) -> Dict[str, Any]:
 
 
 @handle_interface_exceptions(context="mcp_tools_info", interface_type="cli")
-async def handle_mcp_tools_info(args) -> Dict[str, Any]:
+async def handle_mcp_tools_info(args) -> dict[str, Any]:
     """
     Handle 'ohfp mcp tools info' command.
 
@@ -131,7 +131,7 @@ async def handle_mcp_tools_info(args) -> Dict[str, Any]:
 
 
 @handle_interface_exceptions(context="mcp_validate", interface_type="cli")
-async def handle_mcp_validate(args) -> Dict[str, Any]:
+async def handle_mcp_validate(args) -> dict[str, Any]:
     """
     Handle 'ohfp mcp validate' command.
 
@@ -229,7 +229,7 @@ async def handle_mcp_validate(args) -> Dict[str, Any]:
         return validation_result
 
 
-def _format_tools_table(tools: list) -> Dict[str, Any]:
+def _format_tools_table(tools: list) -> dict[str, Any]:
     """Format tools list as table."""
     if not tools:
         return {"message": "No MCP tools found"}
@@ -260,7 +260,7 @@ def _format_tools_table(tools: list) -> Dict[str, Any]:
     }
 
 
-def _format_result_table(result: Dict[str, Any], tool_name: str) -> Dict[str, Any]:
+def _format_result_table(result: dict[str, Any], tool_name: str) -> dict[str, Any]:
     """Format tool execution result as table."""
     if "error" in result:
         return {
@@ -294,7 +294,7 @@ def _format_result_table(result: Dict[str, Any], tool_name: str) -> Dict[str, An
     return result
 
 
-def _format_tool_info_table(info: Dict[str, Any]) -> Dict[str, Any]:
+def _format_tool_info_table(info: dict[str, Any]) -> dict[str, Any]:
     """Format tool information as table."""
     headers = ["Property", "Value"]
     rows = [
@@ -317,7 +317,7 @@ def _format_tool_info_table(info: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-def _format_validation_table(result: Dict[str, Any]) -> Dict[str, Any]:
+def _format_validation_table(result: dict[str, Any]) -> dict[str, Any]:
     """Format validation result as table."""
     headers = ["Check", "Status", "Details"]
     rows = []

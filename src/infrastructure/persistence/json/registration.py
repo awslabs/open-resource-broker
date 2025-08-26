@@ -6,7 +6,7 @@ enabling the storage registry pattern for JSON persistence.
 CLEAN ARCHITECTURE: Only handles storage strategies, no repository knowledge.
 """
 
-from typing import Any, Dict
+from typing import Any
 
 from infrastructure.logging.logger import get_logger
 from infrastructure.registry.storage_registry import get_storage_registry
@@ -43,7 +43,7 @@ def create_json_strategy(config: Any) -> Any:
     return JSONStorageStrategy(file_path=file_path, create_dirs=True, entity_type="generic")
 
 
-def create_json_config(data: Dict[str, Any]) -> Any:
+def create_json_config(data: dict[str, Any]) -> Any:
     """
     Create JSON storage configuration from data.
 

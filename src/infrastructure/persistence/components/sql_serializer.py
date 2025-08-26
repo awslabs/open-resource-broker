@@ -3,7 +3,7 @@
 import json
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from infrastructure.logging.logger import get_logger
 from infrastructure.persistence.components.resource_manager import DataConverter
@@ -27,21 +27,21 @@ class SQLSerializer(DataConverter):
         self.id_column = id_column
         self.logger = get_logger(__name__)
 
-    def to_storage_format(self, domain_data: Dict[str, Any]) -> Any:
+    def to_storage_format(self, domain_data: dict[str, Any]) -> Any:
         """Convert domain data to SQL format (implements DataConverter interface)."""
         # Extract entity_id from domain_data if present
         entity_id = domain_data.get(self.id_column, domain_data.get("id", "unknown"))
         return self.serialize_for_insert(entity_id, domain_data)
 
-    def from_storage_format(self, storage_data: Any) -> Dict[str, Any]:
+    def from_storage_format(self, storage_data: Any) -> dict[str, Any]:
         """Convert SQL data to domain format (implements DataConverter interface)."""
         return self.deserialize_from_row(storage_data)
 
-    def prepare_for_query(self, criteria: Dict[str, Any]) -> Any:
+    def prepare_for_query(self, criteria: dict[str, Any]) -> Any:
         """Prepare domain criteria for SQL query (implements DataConverter interface)."""
         return self.prepare_criteria(criteria)
 
-    def serialize_for_insert(self, entity_id: str, data: Dict[str, Any]) -> Dict[str, Any]:
+    def serialize_for_insert(self, entity_id: str, data: dict[str, Any]) -> dict[str, Any]:
         """
         Serialize domain data for database INSERT.
 
@@ -74,7 +74,7 @@ class SQLSerializer(DataConverter):
             self.logger.error("Failed to serialize data for INSERT: %s", e)
             raise
 
-    def serialize_for_update(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def serialize_for_update(self, data: dict[str, Any]) -> dict[str, Any]:
         """
         Serialize domain data for database UPDATE.
 
@@ -103,7 +103,7 @@ class SQLSerializer(DataConverter):
             self.logger.error("Failed to serialize data for UPDATE: %s", e)
             raise
 
-    def deserialize_from_row(self, row: Dict[str, Any]) -> Dict[str, Any]:
+    def deserialize_from_row(self, row: dict[str, Any]) -> dict[str, Any]:
         """
         Deserialize database row to domain data.
 
@@ -129,7 +129,7 @@ class SQLSerializer(DataConverter):
             self.logger.error("Failed to deserialize row data: %s", e)
             raise
 
-    def deserialize_from_rows(self, rows: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def deserialize_from_rows(self, rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """
         Deserialize multiple database rows.
 
@@ -212,7 +212,7 @@ class SQLSerializer(DataConverter):
         # Return other types as-is
         return value
 
-    def get_entity_id(self, data: Dict[str, Any]) -> Optional[str]:
+    def get_entity_id(self, data: dict[str, Any]) -> Optional[str]:
         """
         Extract entity ID from data.
 
@@ -224,7 +224,7 @@ class SQLSerializer(DataConverter):
         """
         return data.get(self.id_column)
 
-    def prepare_criteria(self, criteria: Dict[str, Any]) -> Dict[str, Any]:
+    def prepare_criteria(self, criteria: dict[str, Any]) -> dict[str, Any]:
         """
         Prepare search criteria for database query.
 
@@ -254,7 +254,7 @@ class SQLSerializer(DataConverter):
 
         return prepared
 
-    def serialize_batch(self, entities: Dict[str, Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def serialize_batch(self, entities: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
         """
         Serialize multiple entities for batch operations.
 

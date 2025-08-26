@@ -7,7 +7,7 @@ sending notifications, updating caches, triggering workflows, etc.
 """
 
 from abc import abstractmethod
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from .event_handler import EventHandler
 
@@ -148,7 +148,7 @@ class ActionEventHandler(EventHandler):
             aggregate_id = getattr(event, "aggregate_id", "unknown")
             self.logger.error("Action failed for %s (%s): %s", event_type, aggregate_id, str(error))
 
-    def extract_action_data(self, event: DomainEvent) -> Dict[str, Any]:
+    def extract_action_data(self, event: DomainEvent) -> dict[str, Any]:
         """
         Extract data needed for action execution.
 

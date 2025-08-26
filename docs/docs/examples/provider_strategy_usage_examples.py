@@ -523,7 +523,7 @@ def example_multi_provider_composition():
     # Show merged results
     if result.success and isinstance(result.data, dict):
         total_templates = 0
-        for key, value in result.data.items():
+        for _key, value in result.data.items():
             if isinstance(value, list):
                 total_templates += len(value)
         logger.info(f"  Total templates from all providers: {total_templates}")

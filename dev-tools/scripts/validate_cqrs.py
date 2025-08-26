@@ -10,7 +10,6 @@ import ast
 import logging
 import sys
 from pathlib import Path
-from typing import List
 
 # Setup logging
 logging.basicConfig(
@@ -29,7 +28,7 @@ class CQRSValidator:
         self.query_handlers = []
         self.event_handlers = []
 
-    def find_handler_files(self) -> List[Path]:
+    def find_handler_files(self) -> list[Path]:
         """Find all handler files in the project."""
         handler_files = []
 

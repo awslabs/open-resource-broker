@@ -1,6 +1,5 @@
 """Command handlers for machine operations."""
 
-from typing import List
 
 from application.base.handlers import BaseCommandHandler
 from application.decorators import command_handler
@@ -35,7 +34,7 @@ class ConvertMachineStatusResponse(BaseResponse):
 class ConvertBatchMachineStatusResponse(BaseResponse):
     """Response for batch machine status conversion."""
 
-    statuses: List[MachineStatus]
+    statuses: list[MachineStatus]
     count: int
 
 

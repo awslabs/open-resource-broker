@@ -1,7 +1,7 @@
 """DynamoDB transaction management components."""
 
 from contextlib import contextmanager
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Optional
 
 from botocore.exceptions import ClientError
 
@@ -25,7 +25,7 @@ class DynamoDBTransactionManager(TransactionManager):
         """
         super().__init__()
         self.client_manager = client_manager
-        self.transaction_items: List[Dict[str, Any]] = []
+        self.transaction_items: list[dict[str, Any]] = []
         self.max_transaction_items = 25  # DynamoDB limit
 
     def begin_transaction(self) -> None:
@@ -40,7 +40,7 @@ class DynamoDBTransactionManager(TransactionManager):
     def add_put_item(
         self,
         table_name: str,
-        item: Dict[str, Any],
+        item: dict[str, Any],
         condition_expression: Optional[str] = None,
     ) -> None:
         """
@@ -68,9 +68,9 @@ class DynamoDBTransactionManager(TransactionManager):
     def add_update_item(
         self,
         table_name: str,
-        key: Dict[str, Any],
+        key: dict[str, Any],
         update_expression: str,
-        expression_attribute_values: Dict[str, Any],
+        expression_attribute_values: dict[str, Any],
         condition_expression: Optional[str] = None,
     ) -> None:
         """
@@ -107,7 +107,7 @@ class DynamoDBTransactionManager(TransactionManager):
     def add_delete_item(
         self,
         table_name: str,
-        key: Dict[str, Any],
+        key: dict[str, Any],
         condition_expression: Optional[str] = None,
     ) -> None:
         """
@@ -199,7 +199,7 @@ class DynamoDBTransactionManager(TransactionManager):
         self.transaction_items.clear()
         self.logger.debug("DynamoDB transaction rolled back (cleared pending operations)")
 
-    def execute_read_transaction(self, read_items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def execute_read_transaction(self, read_items: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """
         Execute a read transaction.
 

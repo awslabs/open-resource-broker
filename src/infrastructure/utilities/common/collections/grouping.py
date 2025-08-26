@@ -2,13 +2,13 @@
 
 from collections import Counter, defaultdict
 from collections.abc import Iterable
-from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar
+from typing import Any, Callable, Optional, TypeVar
 
 T = TypeVar("T")
 K = TypeVar("K")
 
 
-def group_by(collection: Iterable[T], key_func: Callable[[T], K]) -> Dict[K, List[T]]:
+def group_by(collection: Iterable[T], key_func: Callable[[T], K]) -> dict[K, list[T]]:
     """
     Group collection elements by key function.
 
@@ -26,7 +26,7 @@ def group_by(collection: Iterable[T], key_func: Callable[[T], K]) -> Dict[K, Lis
     return dict(groups)
 
 
-def partition(collection: Iterable[T], predicate: Callable[[T], bool]) -> Tuple[List[T], List[T]]:
+def partition(collection: Iterable[T], predicate: Callable[[T], bool]) -> tuple[list[T], list[T]]:
     """
     Partition collection into two lists based on predicate.
 
@@ -49,7 +49,7 @@ def partition(collection: Iterable[T], predicate: Callable[[T], bool]) -> Tuple[
     return true_items, false_items
 
 
-def count_by(collection: Iterable[T], key_func: Callable[[T], K]) -> Dict[K, int]:
+def count_by(collection: Iterable[T], key_func: Callable[[T], K]) -> dict[K, int]:
     """
     Count occurrences by key function.
 
@@ -67,7 +67,7 @@ def count_by(collection: Iterable[T], key_func: Callable[[T], K]) -> Dict[K, int
     return dict(counts)
 
 
-def count_occurrences(collection: Iterable[T]) -> Dict[T, int]:
+def count_occurrences(collection: Iterable[T]) -> dict[T, int]:
     """
     Count occurrences of each element.
 
@@ -80,7 +80,7 @@ def count_occurrences(collection: Iterable[T]) -> Dict[T, int]:
     return dict(Counter(collection))
 
 
-def frequency_map(collection: Iterable[T]) -> Dict[T, float]:
+def frequency_map(collection: Iterable[T]) -> dict[T, float]:
     """
     Get frequency map of elements (count / total).
 
@@ -99,7 +99,7 @@ def frequency_map(collection: Iterable[T]) -> Dict[T, float]:
     return {item: count / total for item, count in counts.items()}
 
 
-def most_common(collection: Iterable[T], n: Optional[int] = None) -> List[Tuple[T, int]]:
+def most_common(collection: Iterable[T], n: Optional[int] = None) -> list[tuple[T, int]]:
     """
     Get most common elements.
 
@@ -114,7 +114,7 @@ def most_common(collection: Iterable[T], n: Optional[int] = None) -> List[Tuple[
     return counter.most_common(n)
 
 
-def least_common(collection: Iterable[T], n: Optional[int] = None) -> List[Tuple[T, int]]:
+def least_common(collection: Iterable[T], n: Optional[int] = None) -> list[tuple[T, int]]:
     """
     Get least common elements.
 

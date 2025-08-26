@@ -1,9 +1,9 @@
 """YAML file operations utilities."""
 
-from typing import Any, Dict
+from typing import Any
 
 
-def read_yaml_file(file_path: str, encoding: str = "utf-8") -> Dict[str, Any]:
+def read_yaml_file(file_path: str, encoding: str = "utf-8") -> dict[str, Any]:
     """
     Read a YAML file and return parsed data.
 
@@ -29,7 +29,7 @@ def read_yaml_file(file_path: str, encoding: str = "utf-8") -> Dict[str, Any]:
         raise yaml.YAMLError(f"Failed to parse YAML file {file_path}: {e!s}")
 
 
-def write_yaml_file(file_path: str, data: Dict[str, Any], encoding: str = "utf-8") -> None:
+def write_yaml_file(file_path: str, data: dict[str, Any], encoding: str = "utf-8") -> None:
     """
     Write data to a YAML file.
 

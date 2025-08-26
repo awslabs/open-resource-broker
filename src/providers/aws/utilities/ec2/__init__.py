@@ -5,8 +5,8 @@ from providers.aws.utilities.ec2.instances import *
 
 # Re-export commonly used functions
 __all__: list[str] = [
+    "create_instance",
     # Instance management functions
     "get_instance_by_id",
-    "create_instance",
     "terminate_instance",
 ]

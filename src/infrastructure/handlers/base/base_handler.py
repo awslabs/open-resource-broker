@@ -2,7 +2,7 @@
 
 import time
 from functools import wraps
-from typing import Any, Callable, Dict, Optional, TypeVar
+from typing import Any, Callable, Optional, TypeVar
 
 from infrastructure.logging.logger import get_logger
 
@@ -120,7 +120,7 @@ class BaseHandler:
     def with_error_handling(
         self,
         func: Callable[..., T],
-        error_map: Optional[Dict[type, Callable[[Exception], Any]]] = None,
+        error_map: Optional[dict[type, Callable[[Exception], Any]]] = None,
     ) -> Callable[..., T]:
         """
         Provide standardized error handling.

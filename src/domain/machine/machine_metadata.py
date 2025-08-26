@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import field_validator, model_validator
 
@@ -57,9 +57,9 @@ class MachineConfiguration(ValueObject):
     private_ip: IPAddress
     provider_api: str
     resource_id: str
-    public_ip: Optional[IPAddress] = None
+    public_ip: IPAddress | None = None
     price_type: PriceType = PriceType.ON_DEMAND
-    cloud_host_id: Optional[str] = None
+    cloud_host_id: str | None = None
 
     @model_validator(mode="after")
     def validate_configuration(self) -> MachineConfiguration:
@@ -72,7 +72,7 @@ class MachineConfiguration(ValueObject):
             raise ValueError("Resource ID is required")
         return self
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert configuration to dictionary."""
         result = {
             "instanceType": self.instance_type,
@@ -90,7 +90,7 @@ class MachineConfiguration(ValueObject):
         return result
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> MachineConfiguration:
+    def from_dict(cls, data: dict[str, Any]) -> MachineConfiguration:
         """Create configuration from dictionary."""
         return cls(
             instance_type=data["instanceType"],
@@ -110,9 +110,9 @@ class MachineEvent(ValueObject):
 
     timestamp: datetime
     event_type: str
-    old_state: Optional[str]
-    new_state: Optional[str]
-    details: Optional[Dict[str, Any]] = None
+    old_state: str | None
+    new_state: str | None
+    details: dict[str, Any] | None = None
 
     @model_validator(mode="after")
     def validate_event(self) -> MachineEvent:
@@ -121,7 +121,7 @@ class MachineEvent(ValueObject):
             raise ValueError("Event type is required")
         return self
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert event to dictionary."""
         return {
             "timestamp": self.timestamp.isoformat(),
@@ -138,7 +138,7 @@ class HealthCheck(ValueObject):
     check_type: str
     status: bool
     timestamp: datetime
-    details: Optional[Dict[str, Any]] = None
+    details: dict[str, Any] | None = None
 
     @model_validator(mode="after")
     def validate_health_check(self) -> HealthCheck:
@@ -147,7 +147,7 @@ class HealthCheck(ValueObject):
             raise ValueError("Health check type is required")
         return self
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert health check to dictionary."""
         return {
             "checkType": self.check_type,
@@ -236,7 +236,7 @@ class MachineMetadata(ValueObject):
     ami_id: str
     ebs_optimized: bool = False
     monitoring: str = "disabled"
-    tags: Dict[str, str] = {}
+    tags: dict[str, str] = {}
 
     @model_validator(mode="after")
     def validate_metadata(self) -> MachineMetadata:
@@ -251,7 +251,7 @@ class MachineMetadata(ValueObject):
             raise ValueError("AMI ID is required")
         return self
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert metadata to dictionary."""
         return {
             "availability_zone": self.availability_zone,
@@ -264,7 +264,7 @@ class MachineMetadata(ValueObject):
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> MachineMetadata:
+    def from_dict(cls, data: dict[str, Any]) -> MachineMetadata:
         """Create metadata from dictionary."""
         return cls(
             availability_zone=data["availability_zone"],
@@ -290,15 +290,15 @@ class HealthCheckResult(ValueObject):
     system_status: bool
     instance_status: bool
     timestamp: datetime
-    system_details: Optional[Dict[str, Any]] = None
-    instance_details: Optional[Dict[str, Any]] = None
+    system_details: dict[str, Any] | None = None
+    instance_details: dict[str, Any] | None = None
 
     @property
     def is_healthy(self) -> bool:
         """Check if machine is healthy."""
         return self.system_status and self.instance_status
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert health check result to dictionary."""
         return {
             "system": {
@@ -313,7 +313,7 @@ class HealthCheckResult(ValueObject):
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> HealthCheckResult:
+    def from_dict(cls, data: dict[str, Any]) -> HealthCheckResult:
         """Create health check result from dictionary."""
         return cls(
             system_status=data["system"]["status"],
@@ -351,12 +351,12 @@ class ResourceTag(ValueObject):
             raise ValueError("Tag value cannot exceed 256 characters")
         return self
 
-    def to_dict(self) -> Dict[str, str]:
+    def to_dict(self) -> dict[str, str]:
         """Convert tag to dictionary."""
         return {"Key": self.key, "Value": self.value}
 
     @classmethod
-    def from_dict(cls, data: Dict[str, str]) -> ResourceTag:
+    def from_dict(cls, data: dict[str, str]) -> ResourceTag:
         """Create tag from dictionary."""
         if "Key" in data and "Value" in data:
             return cls(key=data["Key"], value=data["Value"])
@@ -365,7 +365,7 @@ class ResourceTag(ValueObject):
             return [cls(key=k, value=v) for k, v in data.items()]
 
     @classmethod
-    def get_default_tags(cls) -> List[ResourceTag]:
+    def get_default_tags(cls) -> list[ResourceTag]:
         """Get basic default tags.
 
         Returns:

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any
 
 from domain.base.ports.scheduler_port import SchedulerPort
 from infrastructure.di.buses import QueryBus
@@ -11,7 +11,7 @@ from infrastructure.error.decorators import handle_interface_exceptions
 
 
 @handle_interface_exceptions(context="list_scheduler_strategies", interface_type="cli")
-async def handle_list_scheduler_strategies(args) -> Dict[str, Any]:
+async def handle_list_scheduler_strategies(args) -> dict[str, Any]:
     """
     Handle list scheduler strategies operations.
 
@@ -38,7 +38,7 @@ async def handle_list_scheduler_strategies(args) -> Dict[str, Any]:
 
 
 @handle_interface_exceptions(context="show_scheduler_config", interface_type="cli")
-async def handle_show_scheduler_config(args) -> Dict[str, Any]:
+async def handle_show_scheduler_config(args) -> dict[str, Any]:
     """
     Handle show scheduler configuration operations.
 
@@ -63,7 +63,7 @@ async def handle_show_scheduler_config(args) -> Dict[str, Any]:
 
 
 @handle_interface_exceptions(context="validate_scheduler_config", interface_type="cli")
-async def handle_validate_scheduler_config(args) -> Dict[str, Any]:
+async def handle_validate_scheduler_config(args) -> dict[str, Any]:
     """
     Handle validate scheduler configuration operations.
 

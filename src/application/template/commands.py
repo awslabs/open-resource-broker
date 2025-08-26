@@ -1,6 +1,6 @@
 """Template commands - template use case commands."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from pydantic import Field
 
@@ -16,10 +16,10 @@ class CreateTemplateCommand(BaseCommand):
     provider_api: str
     instance_type: Optional[str] = None
     image_id: str
-    subnet_ids: List[str] = Field(default_factory=list)
-    security_group_ids: List[str] = Field(default_factory=list)
-    tags: Dict[str, str] = Field(default_factory=dict)
-    configuration: Dict[str, Any] = Field(default_factory=dict)
+    subnet_ids: list[str] = Field(default_factory=list)
+    security_group_ids: list[str] = Field(default_factory=list)
+    tags: dict[str, str] = Field(default_factory=dict)
+    configuration: dict[str, Any] = Field(default_factory=dict)
 
 
 class UpdateTemplateCommand(BaseCommand):
@@ -28,7 +28,7 @@ class UpdateTemplateCommand(BaseCommand):
     template_id: str
     name: Optional[str] = None
     description: Optional[str] = None
-    configuration: Dict[str, Any] = Field(default_factory=dict)
+    configuration: dict[str, Any] = Field(default_factory=dict)
 
 
 class DeleteTemplateCommand(BaseCommand):
@@ -41,11 +41,11 @@ class ValidateTemplateCommand(BaseCommand):
     """Command to validate a template configuration."""
 
     template_id: str
-    configuration: Dict[str, Any]
+    configuration: dict[str, Any]
 
 
 class TemplateCommandResponse(BaseResponse):
     """Response for template commands."""
 
     template_id: Optional[str] = None
-    validation_errors: List[str] = Field(default_factory=list)
+    validation_errors: list[str] = Field(default_factory=list)

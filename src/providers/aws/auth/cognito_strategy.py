@@ -1,6 +1,6 @@
 """AWS Cognito authentication strategy."""
 
-from typing import List, Optional
+from typing import Optional
 
 import boto3
 import jwt
@@ -268,7 +268,7 @@ class CognitoAuthStrategy(AuthPort):
             self._logger.error("Failed to get public key: %s", e)
             return None
 
-    def _map_groups_to_roles(self, groups: List[str]) -> List[str]:
+    def _map_groups_to_roles(self, groups: list[str]) -> list[str]:
         """
         Map Cognito groups to application roles.
 
@@ -295,7 +295,7 @@ class CognitoAuthStrategy(AuthPort):
 
         return roles
 
-    def _generate_permissions(self, roles: List[str]) -> List[str]:
+    def _generate_permissions(self, roles: list[str]) -> list[str]:
         """
         Generate permissions based on roles.
 

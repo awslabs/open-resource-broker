@@ -3,7 +3,7 @@
 import json
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Callable, Dict, Optional, Union
+from typing import Any, Callable, Optional, Union
 
 from _package import PACKAGE_NAME, __version__
 from infrastructure.logging.logger import get_logger
@@ -24,9 +24,9 @@ class MCPMessage:
     jsonrpc: str = "2.0"
     id: Optional[Union[str, int]] = None
     method: Optional[str] = None
-    params: Optional[Dict[str, Any]] = None
+    params: Optional[dict[str, Any]] = None
     result: Optional[Any] = None
-    error: Optional[Dict[str, Any]] = None
+    error: Optional[dict[str, Any]] = None
 
 
 class OpenHFPluginMCPServer:
@@ -41,11 +41,11 @@ class OpenHFPluginMCPServer:
         """Initialize MCP server with application instance."""
         self.app = app
         self.logger = get_logger(__name__)
-        self.tools: Dict[str, Callable] = {}
-        self.resources: Dict[str, Callable] = {}
-        self.prompts: Dict[str, Dict[str, Any]] = {}
+        self.tools: dict[str, Callable] = {}
+        self.resources: dict[str, Callable] = {}
+        self.prompts: dict[str, dict[str, Any]] = {}
         self.session_id: Optional[str] = None
-        self.client_info: Optional[Dict[str, Any]] = None
+        self.client_info: Optional[dict[str, Any]] = None
 
         # Register built-in tools and resources
         self._register_core_tools()
@@ -210,7 +210,7 @@ class OpenHFPluginMCPServer:
                 error={"code": -32603, "message": f"Internal error: {e!s}"},
             )
 
-    async def _handle_initialize(self, params: Dict[str, Any]) -> Dict[str, Any]:
+    async def _handle_initialize(self, params: dict[str, Any]) -> dict[str, Any]:
         """Handle MCP initialize request."""
         self.client_info = params.get("clientInfo", {})
         self.session_id = params.get("sessionId")
@@ -229,7 +229,7 @@ class OpenHFPluginMCPServer:
             },
         }
 
-    async def _handle_tools_list(self, params: Dict[str, Any]) -> Dict[str, Any]:
+    async def _handle_tools_list(self, params: dict[str, Any]) -> dict[str, Any]:
         """Handle tools/list request."""
         tools_list = []
 
@@ -254,7 +254,7 @@ class OpenHFPluginMCPServer:
 
         return {"tools": tools_list}
 
-    async def _handle_tools_call(self, params: Dict[str, Any]) -> Dict[str, Any]:
+    async def _handle_tools_call(self, params: dict[str, Any]) -> dict[str, Any]:
         """Handle tools/call request."""
         tool_name = params.get("name")
         arguments = params.get("arguments", {})
@@ -271,7 +271,7 @@ class OpenHFPluginMCPServer:
 
         return {"content": [{"type": "text", "text": json.dumps(result, indent=2, default=str)}]}
 
-    async def _handle_resources_list(self, params: Dict[str, Any]) -> Dict[str, Any]:
+    async def _handle_resources_list(self, params: dict[str, Any]) -> dict[str, Any]:
         """Handle resources/list request."""
         resources_list = [
             {
@@ -302,7 +302,7 @@ class OpenHFPluginMCPServer:
 
         return {"resources": resources_list}
 
-    async def _handle_resources_read(self, params: Dict[str, Any]) -> Dict[str, Any]:
+    async def _handle_resources_read(self, params: dict[str, Any]) -> dict[str, Any]:
         """Handle resources/read request."""
         uri = params.get("uri", "")
 
@@ -327,7 +327,7 @@ class OpenHFPluginMCPServer:
             ]
         }
 
-    async def _handle_prompts_list(self, params: Dict[str, Any]) -> Dict[str, Any]:
+    async def _handle_prompts_list(self, params: dict[str, Any]) -> dict[str, Any]:
         """Handle prompts/list request."""
         prompts_list = [
             {
@@ -340,7 +340,7 @@ class OpenHFPluginMCPServer:
 
         return {"prompts": prompts_list}
 
-    async def _handle_prompts_get(self, params: Dict[str, Any]) -> Dict[str, Any]:
+    async def _handle_prompts_get(self, params: dict[str, Any]) -> dict[str, Any]:
         """Handle prompts/get request."""
         prompt_name = params.get("name")
         arguments = params.get("arguments", {})
@@ -363,7 +363,7 @@ class OpenHFPluginMCPServer:
             "messages": [{"role": "user", "content": {"type": "text", "text": content}}],
         }
 
-    def _get_tool_schema(self, tool_name: str) -> Dict[str, Any]:
+    def _get_tool_schema(self, tool_name: str) -> dict[str, Any]:
         """Get JSON schema for tool parameters."""
         # Basic schema - could be improved with actual parameter introspection
         common_props = {
@@ -385,31 +385,31 @@ class OpenHFPluginMCPServer:
         else:
             return {"provider": common_props["provider"]}
 
-    async def _get_templates_resource(self, uri: str) -> Dict[str, Any]:
+    async def _get_templates_resource(self, uri: str) -> dict[str, Any]:
         """Get templates resource data."""
         # Use the list_templates tool to get data
         args = type("Args", (), {})()
         result = await self.tools["list_templates"](args, self.app)
         return result
 
-    async def _get_requests_resource(self, uri: str) -> Dict[str, Any]:
+    async def _get_requests_resource(self, uri: str) -> dict[str, Any]:
         """Get requests resource data."""
         args = type("Args", (), {})()
         result = await self.tools["list_return_requests"](args, self.app)
         return result
 
-    async def _get_machines_resource(self, uri: str) -> Dict[str, Any]:
+    async def _get_machines_resource(self, uri: str) -> dict[str, Any]:
         """Get machines resource data."""
         # For now, return empty list - would need actual machine listing
         return {"machines": [], "message": "Machine listing not yet implemented"}
 
-    async def _get_providers_resource(self, uri: str) -> Dict[str, Any]:
+    async def _get_providers_resource(self, uri: str) -> dict[str, Any]:
         """Get providers resource data."""
         args = type("Args", (), {})()
         result = await self.tools["list_providers"](args, self.app)
         return result
 
-    def _generate_provision_prompt(self, arguments: Dict[str, Any]) -> str:
+    def _generate_provision_prompt(self, arguments: dict[str, Any]) -> str:
         """Generate infrastructure provisioning prompt."""
         template_type = arguments.get("template_type", "ec2")
         instance_count = arguments.get("instance_count", 1)
@@ -424,7 +424,7 @@ Please help me:
 
 Use the available MCP tools to accomplish this task."""
 
-    def _generate_troubleshoot_prompt(self, arguments: Dict[str, Any]) -> str:
+    def _generate_troubleshoot_prompt(self, arguments: dict[str, Any]) -> str:
         """Generate troubleshooting prompt."""
         request_id = arguments.get("request_id", "unknown")
 
@@ -438,7 +438,7 @@ Please help me:
 
 Use the available MCP tools to diagnose the issue."""
 
-    def _generate_best_practices_prompt(self, arguments: Dict[str, Any]) -> str:
+    def _generate_best_practices_prompt(self, arguments: dict[str, Any]) -> str:
         """Generate best practices prompt."""
         provider = arguments.get("provider", "aws")
 

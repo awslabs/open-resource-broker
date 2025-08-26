@@ -3,7 +3,7 @@
 import secrets
 import time
 from enum import Enum
-from typing import Any, Dict
+from typing import Any
 
 from infrastructure.logging.logger import get_logger
 from infrastructure.resilience.exceptions import CircuitBreakerOpenError
@@ -31,7 +31,7 @@ class CircuitBreakerStrategy(RetryStrategy):
     """
 
     # Class-level storage for circuit states (shared across instances)
-    _circuit_states: Dict[str, Dict[str, Any]] = {}
+    _circuit_states: dict[str, dict[str, Any]] = {}
 
     def __init__(
         self,
@@ -348,7 +348,7 @@ class CircuitBreakerStrategy(RetryStrategy):
 
         return max(0.0, delay)
 
-    def get_circuit_info(self) -> Dict[str, Any]:
+    def get_circuit_info(self) -> dict[str, Any]:
         """
         Get current circuit breaker information.
 

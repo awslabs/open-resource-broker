@@ -7,7 +7,7 @@ to functions while preserving domain semantics and following SOLID principles.
 
 import inspect
 from functools import wraps
-from typing import Any, Callable, Dict, List, Optional, Type
+from typing import Any, Callable, Optional
 
 from infrastructure.error.exception_handler import (
     ExceptionContext,
@@ -19,8 +19,8 @@ from infrastructure.error.exception_handler import (
 def handle_exceptions(
     context: str,
     layer: str = "application",
-    preserve_types: Optional[List[Type[Exception]]] = None,
-    additional_context: Optional[Dict[str, Any]] = None,
+    preserve_types: Optional[list[type[Exception]]] = None,
+    additional_context: Optional[dict[str, Any]] = None,
     handler: Optional[ExceptionHandler] = None,
 ) -> None:
     """
@@ -99,7 +99,7 @@ def handle_exceptions(
     return decorator
 
 
-def handle_domain_exceptions(context: str, additional_context: Optional[Dict[str, Any]] = None):
+def handle_domain_exceptions(context: str, additional_context: Optional[dict[str, Any]] = None):
     """
     Specialized decorator for domain layer exception handling.
 
@@ -119,7 +119,7 @@ def handle_domain_exceptions(context: str, additional_context: Optional[Dict[str
 
 
 def handle_application_exceptions(
-    context: str, additional_context: Optional[Dict[str, Any]] = None
+    context: str, additional_context: Optional[dict[str, Any]] = None
 ):
     """
     Specialized decorator for application layer exception handling.
@@ -142,7 +142,7 @@ def handle_application_exceptions(
 
 
 def handle_infrastructure_exceptions(
-    context: str, additional_context: Optional[Dict[str, Any]] = None
+    context: str, additional_context: Optional[dict[str, Any]] = None
 ):
     """
     Specialized decorator for infrastructure layer exception handling.
@@ -165,7 +165,7 @@ def handle_infrastructure_exceptions(
 
 
 def handle_provider_exceptions(
-    context: str, provider: str, additional_context: Optional[Dict[str, Any]] = None
+    context: str, provider: str, additional_context: Optional[dict[str, Any]] = None
 ) -> None:
     """
     Specialized decorator for provider-specific exception handling.
@@ -195,7 +195,7 @@ def handle_provider_exceptions(
 def handle_interface_exceptions(
     context: str,
     interface_type: str = "api",
-    additional_context: Optional[Dict[str, Any]] = None,
+    additional_context: Optional[dict[str, Any]] = None,
 ):
     """
     Specialized decorator for interface layer exception handling.
@@ -226,8 +226,8 @@ def _build_context_data(
     func: Callable,
     args: tuple,
     kwargs: dict,
-    additional_context: Optional[Dict[str, Any]],
-) -> Dict[str, Any]:
+    additional_context: Optional[dict[str, Any]],
+) -> dict[str, Any]:
     """
     Build rich context data for exception handling.
 
@@ -296,7 +296,7 @@ def _build_context_data(
 def handle_rest_exceptions(
     endpoint: str,
     method: str = "GET",
-    additional_context: Optional[Dict[str, Any]] = None,
+    additional_context: Optional[dict[str, Any]] = None,
 ):
     """
     Specialized decorator for REST API exception handling.

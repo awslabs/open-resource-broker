@@ -1,6 +1,6 @@
 """Adapter to bridge ProviderContext with ProviderPort interface."""
 
-from typing import Any, Dict, List
+from typing import Any
 
 from domain.base.ports.provider_port import ProviderPort
 from domain.machine.aggregate import Machine
@@ -16,17 +16,17 @@ class ProviderContextAdapter(ProviderPort):
         """Initialize adapter with existing ProviderContext."""
         self.provider_context = provider_context
 
-    def provision_resources(self, request: Request) -> List[Machine]:
+    def provision_resources(self, request: Request) -> list[Machine]:
         """Provision resources using existing ProviderContext."""
         # This would need to be implemented based on existing ProviderContext methods
         # For now, return empty list to maintain interface compliance
         return []
 
-    def terminate_resources(self, machine_ids: List[str]) -> None:
+    def terminate_resources(self, machine_ids: list[str]) -> None:
         """Terminate resources using existing ProviderContext."""
         # Implementation would delegate to ProviderContext
 
-    def get_available_templates(self) -> List[Template]:
+    def get_available_templates(self) -> list[Template]:
         """Get available templates using existing ProviderContext."""
         # Implementation would delegate to ProviderContext
         return []
@@ -36,16 +36,16 @@ class ProviderContextAdapter(ProviderPort):
         # Implementation would delegate to ProviderContext
         return True
 
-    def get_resource_status(self, machine_ids: List[str]) -> Dict[str, Any]:
+    def get_resource_status(self, machine_ids: list[str]) -> dict[str, Any]:
         """Get resource status using existing ProviderContext."""
         # Implementation would delegate to ProviderContext
         return {}
 
-    def available_strategies(self) -> List[str]:
+    def available_strategies(self) -> list[str]:
         """Get available strategies from the wrapped ProviderContext."""
         return self.provider_context.available_strategies
 
-    def get_provider_info(self) -> Dict[str, Any]:
+    def get_provider_info(self) -> dict[str, Any]:
         """Get provider information using existing ProviderContext."""
         return {
             "type": "ProviderContextAdapter",

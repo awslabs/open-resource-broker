@@ -1,7 +1,7 @@
 """Single machine repository implementation using storage strategy composition."""
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from domain.base.ports.storage_port import StoragePort
 from domain.base.value_objects import InstanceId
@@ -19,7 +19,7 @@ class MachineSerializer:
         """Initialize the instance."""
         self.logger = get_logger(__name__)
 
-    def to_dict(self, machine: Machine) -> Dict[str, Any]:
+    def to_dict(self, machine: Machine) -> dict[str, Any]:
         """Convert Machine aggregate to dictionary with additional fields."""
         try:
             return {
@@ -61,7 +61,7 @@ class MachineSerializer:
             self.logger.error("Failed to serialize machine %s: %s", machine.instance_id, e)
             raise
 
-    def from_dict(self, data: Dict[str, Any]) -> Machine:
+    def from_dict(self, data: dict[str, Any]) -> Machine:
         """Convert dictionary to Machine aggregate with field support."""
         try:
             from domain.base.value_objects import InstanceType, Tags
@@ -136,7 +136,7 @@ class MachineRepositoryImpl(MachineRepositoryInterface):
         self.logger = get_logger(__name__)
 
     @handle_infrastructure_exceptions(context="machine_repository_save")
-    def save(self, machine: Machine) -> List[Any]:
+    def save(self, machine: Machine) -> list[Any]:
         """Save machine using storage strategy and return extracted events."""
         try:
             # Save the machine using instance_id as the key
@@ -187,7 +187,7 @@ class MachineRepositoryImpl(MachineRepositoryInterface):
             raise
 
     @handle_infrastructure_exceptions(context="machine_repository_find_by_template_id")
-    def find_by_template_id(self, template_id: str) -> List[Machine]:
+    def find_by_template_id(self, template_id: str) -> list[Machine]:
         """Find machines by template ID."""
         try:
             criteria = {"template_id": template_id}
@@ -198,7 +198,7 @@ class MachineRepositoryImpl(MachineRepositoryInterface):
             raise
 
     @handle_infrastructure_exceptions(context="machine_repository_find_by_status")
-    def find_by_status(self, status: MachineStatus) -> List[Machine]:
+    def find_by_status(self, status: MachineStatus) -> list[Machine]:
         """Find machines by status."""
         try:
             criteria = {"status": status.value}
@@ -209,7 +209,7 @@ class MachineRepositoryImpl(MachineRepositoryInterface):
             raise
 
     @handle_infrastructure_exceptions(context="machine_repository_find_by_request_id")
-    def find_by_request_id(self, request_id: str) -> List[Machine]:
+    def find_by_request_id(self, request_id: str) -> list[Machine]:
         """Find machines by request ID."""
         try:
             criteria = {"request_id": request_id}
@@ -224,7 +224,7 @@ class MachineRepositoryImpl(MachineRepositoryInterface):
             raise
 
     @handle_infrastructure_exceptions(context="machine_repository_find_active_machines")
-    def find_active_machines(self) -> List[Machine]:
+    def find_active_machines(self) -> list[Machine]:
         """Find all active (non-terminated) machines."""
         try:
             from domain.machine.value_objects import MachineStatus
@@ -246,7 +246,7 @@ class MachineRepositoryImpl(MachineRepositoryInterface):
             raise
 
     @handle_infrastructure_exceptions(context="machine_repository_find_all")
-    def find_all(self) -> List[Machine]:
+    def find_all(self) -> list[Machine]:
         """Find all machines."""
         try:
             all_data = self.storage_port.find_all()

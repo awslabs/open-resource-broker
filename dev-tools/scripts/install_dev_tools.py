@@ -277,7 +277,7 @@ class DevToolsInstaller:
         ]
 
         try:
-            result = subprocess.run(powershell_cmd, check=True, capture_output=True, text=True)
+            subprocess.run(powershell_cmd, check=True, capture_output=True, text=True)
             logger.info("Chocolatey installed successfully")
             return True
         except subprocess.CalledProcessError as e:
@@ -298,7 +298,7 @@ class DevToolsInstaller:
 
         logger.info(f"Running: {cmd_str}")
         try:
-            result = subprocess.run(cmd, check=True, capture_output=True, text=True, shell=shell)
+            subprocess.run(cmd, check=True, capture_output=True, text=True, shell=shell)
             return True
         except subprocess.CalledProcessError as e:
             logger.error(f"Failed to run {cmd_str}: {e}")

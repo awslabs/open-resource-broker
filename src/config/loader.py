@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
-from typing import Any, Dict, Optional, TypeVar
+from typing import Any, TypeVar
 
 from config.schemas import AppConfig, validate_config
 from domain.base.exceptions import ConfigurationError
@@ -106,7 +106,7 @@ class ConfigurationLoader:
     DEFAULT_CONFIG_FILENAME = "default_config.json"
 
     @classmethod
-    def load(cls, config_path: Optional[str] = None) -> Dict[str, Any]:
+    def load(cls, config_path: str | None = None) -> dict[str, Any]:
         """
         Load configuration from multiple sources with correct precedence.
 
@@ -164,7 +164,7 @@ class ConfigurationLoader:
         return config
 
     @classmethod
-    def _load_default_config(cls) -> Dict[str, Any]:
+    def _load_default_config(cls) -> dict[str, Any]:
         """
         Load default configuration from file.
 
@@ -188,7 +188,7 @@ class ConfigurationLoader:
             return {}
 
     @classmethod
-    def create_app_config(cls, config: Dict[str, Any]) -> AppConfig:
+    def create_app_config(cls, config: dict[str, Any]) -> AppConfig:
         """
         Create typed AppConfig from configuration dictionary using Pydantic.
 
@@ -216,7 +216,7 @@ class ConfigurationLoader:
             raise ConfigurationError("App", f"Failed to create typed configuration: {e!s}")
 
     @classmethod
-    def _load_from_file(cls, config_path: str) -> Optional[Dict[str, Any]]:
+    def _load_from_file(cls, config_path: str) -> dict[str, Any] | None:
         """
         Load configuration from file.
 
@@ -248,9 +248,9 @@ class ConfigurationLoader:
         cls,
         file_type: str,
         filename: str,
-        explicit_path: Optional[str] = None,
+        explicit_path: str | None = None,
         required: bool = False,
-    ) -> Optional[Dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """
         Centralized method for loading any configuration file with consistent priority:
         1. Explicit path (if provided and contains directory)
@@ -296,8 +296,8 @@ class ConfigurationLoader:
 
     @classmethod
     def _resolve_file_path(
-        cls, file_type: str, filename: str, explicit_path: Optional[str] = None
-    ) -> Optional[str]:
+        cls, file_type: str, filename: str, explicit_path: str | None = None
+    ) -> str | None:
         """
         Resolve file path using centralized logic (static version of ConfigurationManager.resolve_file).
 
@@ -380,7 +380,7 @@ class ConfigurationLoader:
         return fallback_path
 
     @classmethod
-    def _load_from_env(cls, config: Dict[str, Any]) -> None:
+    def _load_from_env(cls, config: dict[str, Any]) -> None:
         """
         Load configuration from environment variables.
 
@@ -421,7 +421,7 @@ class ConfigurationLoader:
         get_config_logger().debug("Loaded configuration from environment variables")
 
     @classmethod
-    def _process_hf_env_vars(cls, config: Dict[str, Any]) -> None:
+    def _process_hf_env_vars(cls, config: dict[str, Any]) -> None:
         """
         Process Host Factory environment variables.
 
@@ -563,7 +563,7 @@ class ConfigurationLoader:
         return value
 
     @classmethod
-    def _merge_config(cls, base: Dict[str, Any], update: Dict[str, Any]) -> None:
+    def _merge_config(cls, base: dict[str, Any], update: dict[str, Any]) -> None:
         """
         Merge update configuration into base configuration.
 
@@ -582,7 +582,7 @@ class ConfigurationLoader:
                 base[key] = value
 
     @classmethod
-    def _deep_copy(cls, obj: Dict[str, Any]) -> Dict[str, Any]:
+    def _deep_copy(cls, obj: dict[str, Any]) -> dict[str, Any]:
         """
         Create a deep copy of a dictionary.
 

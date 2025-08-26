@@ -3,7 +3,7 @@
 import json
 import os
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -24,7 +24,7 @@ class TestConfigurationManager:
         assert manager._config_file_path is None
         assert manager._legacy_config is None
 
-    def test_load_from_dict(self, test_config_dict: Dict[str, Any]):
+    def test_load_from_dict(self, test_config_dict: dict[str, Any]):
         """Test loading configuration from dictionary."""
         manager = ConfigurationManager()
         manager.load_from_dict(test_config_dict)

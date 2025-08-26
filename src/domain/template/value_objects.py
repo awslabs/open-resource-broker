@@ -1,7 +1,7 @@
 """Template value objects - provider-agnostic domain logic."""
 
 # Import core domain value objects
-from typing import Any, Dict, List, Protocol
+from typing import Any, Protocol
 
 from domain.base.value_objects import ResourceId
 
@@ -19,7 +19,7 @@ class TemplateId(ResourceId):
 class FleetTypePort(Protocol):
     """Contract for provider-specific fleet type implementations."""
 
-    def get_valid_types_for_handler(self, handler_type: "ProviderHandlerTypePort") -> List[str]:
+    def get_valid_types_for_handler(self, handler_type: "ProviderHandlerTypePort") -> list[str]:
         """Get valid fleet types for a specific handler type."""
         ...
 
@@ -39,7 +39,7 @@ class ProviderHandlerTypePort(Protocol):
         """Validate if the handler type value is supported."""
         ...
 
-    def get_supported_types(self) -> List[str]:
+    def get_supported_types(self) -> list[str]:
         """Get all supported handler type values."""
         ...
 
@@ -48,7 +48,7 @@ class ProviderHandlerTypePort(Protocol):
 class ProviderConfiguration:
     """Provider-agnostic configuration container."""
 
-    def __init__(self, config_data: Dict[str, Any]) -> None:
+    def __init__(self, config_data: dict[str, Any]) -> None:
         """Initialize the instance."""
         self.config_data = config_data
 
@@ -56,6 +56,6 @@ class ProviderConfiguration:
         """Get configuration value."""
         return self.config_data.get(key, default)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return self.config_data.copy()

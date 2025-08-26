@@ -4,7 +4,7 @@ Event Handler Decorators - CQRS-aligned event handler registration.
 Following the same pattern as CommandHandler and QueryHandler decorators.
 """
 
-from typing import TYPE_CHECKING, Dict, Type
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from application.events.base.event_handler import EventHandler
@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 class EventHandlerRegistry:
     """Registry for automatic event handler discovery - CQRS pattern."""
 
-    _handlers: Dict[str, Type["EventHandler"]] = {}
+    _handlers: dict[str, type["EventHandler"]] = {}
 
     @classmethod
     def register(cls, event_type: str):
@@ -40,7 +40,7 @@ class EventHandlerRegistry:
             event_type: The event type this handler processes
         """
 
-        def decorator(handler_class: Type["EventHandler"]):
+        def decorator(handler_class: type["EventHandler"]):
             """Apply event handler registration to the class."""
             cls._handlers[event_type] = handler_class
             # Add event_type as class attribute for introspection
@@ -50,12 +50,12 @@ class EventHandlerRegistry:
         return decorator
 
     @classmethod
-    def get_handlers(cls) -> Dict[str, Type["EventHandler"]]:
+    def get_handlers(cls) -> dict[str, type["EventHandler"]]:
         """Get all registered handlers."""
         return cls._handlers.copy()
 
     @classmethod
-    def get_handler_for_event(cls, event_type: str) -> Type["EventHandler"]:
+    def get_handler_for_event(cls, event_type: str) -> type["EventHandler"]:
         """Get handler class for specific event type."""
         return cls._handlers.get(event_type)
 

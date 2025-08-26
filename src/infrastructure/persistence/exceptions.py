@@ -1,6 +1,6 @@
 """Persistence layer exceptions."""
 
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from domain.base.exceptions import InfrastructureError
 
@@ -19,14 +19,14 @@ class PersistenceError(InfrastructureError):
         super().__init__("Persistence", message)
         self.cause = cause
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Convert exception to dictionary.
 
         Returns:
             Dictionary representation of exception
         """
-        result: Dict[str, Any] = super().to_dict()
+        result: dict[str, Any] = super().to_dict()
         if self.cause:
             result["cause"] = str(self.cause)
         return result
@@ -35,7 +35,7 @@ class PersistenceError(InfrastructureError):
 class ConnectionError(PersistenceError):
     """Exception for connection errors."""
 
-    def __init__(self, message: str, connection_details: Optional[Dict[str, Any]] = None) -> None:
+    def __init__(self, message: str, connection_details: Optional[dict[str, Any]] = None) -> None:
         """
         Initialize connection error.
 
@@ -46,7 +46,7 @@ class ConnectionError(PersistenceError):
         super().__init__(message)
         self.connection_details = connection_details or {}
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Convert exception to dictionary.
 
@@ -85,7 +85,7 @@ class DataIntegrityError(PersistenceError):
         self.entity_type = entity_type
         self.entity_id = entity_id
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Convert exception to dictionary.
 
@@ -114,7 +114,7 @@ class StorageError(PersistenceError):
         super().__init__(message)
         self.storage_type = storage_type
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Convert exception to dictionary.
 
@@ -141,7 +141,7 @@ class TransactionError(PersistenceError):
         super().__init__(message)
         self.transaction_id = transaction_id
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Convert exception to dictionary.
 

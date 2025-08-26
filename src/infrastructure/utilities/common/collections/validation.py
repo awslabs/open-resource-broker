@@ -1,7 +1,7 @@
 """Collection validation utility functions."""
 
 from collections.abc import Iterable
-from typing import Callable, Dict, List, Protocol, Set, Tuple, TypeVar, Union
+from typing import Callable, Protocol, TypeVar, Union
 
 
 class Comparable(Protocol):
@@ -17,7 +17,7 @@ T = TypeVar("T")
 C = TypeVar("C", bound=Comparable)
 
 
-def is_empty(collection: Union[List, Dict, Set, Tuple, str]) -> bool:
+def is_empty(collection: Union[list, dict, set, tuple, str]) -> bool:
     """
     Check if a collection is empty.
 
@@ -30,7 +30,7 @@ def is_empty(collection: Union[List, Dict, Set, Tuple, str]) -> bool:
     return len(collection) == 0
 
 
-def is_not_empty(collection: Union[List, Dict, Set, Tuple, str]) -> bool:
+def is_not_empty(collection: Union[list, dict, set, tuple, str]) -> bool:
     """
     Check if a collection is not empty.
 
@@ -43,7 +43,7 @@ def is_not_empty(collection: Union[List, Dict, Set, Tuple, str]) -> bool:
     return not is_empty(collection)
 
 
-def is_sorted(collection: List[C], reverse: bool = False) -> bool:
+def is_sorted(collection: list[C], reverse: bool = False) -> bool:
     """
     Check if list is sorted.
 
@@ -105,7 +105,7 @@ def none_match(collection: Iterable[T], predicate: Callable[[T], bool]) -> bool:
     return not any_match(collection, predicate)
 
 
-def is_subset(collection1: Set[T], collection2: Set[T]) -> bool:
+def is_subset(collection1: set[T], collection2: set[T]) -> bool:
     """
     Check if collection1 is subset of collection2.
 
@@ -119,7 +119,7 @@ def is_subset(collection1: Set[T], collection2: Set[T]) -> bool:
     return collection1.issubset(collection2)
 
 
-def is_superset(collection1: Set[T], collection2: Set[T]) -> bool:
+def is_superset(collection1: set[T], collection2: set[T]) -> bool:
     """
     Check if collection1 is superset of collection2.
 
@@ -133,7 +133,7 @@ def is_superset(collection1: Set[T], collection2: Set[T]) -> bool:
     return collection1.issuperset(collection2)
 
 
-def is_disjoint(collection1: Set[T], collection2: Set[T]) -> bool:
+def is_disjoint(collection1: set[T], collection2: set[T]) -> bool:
     """
     Check if collections are disjoint (no common elements).
 

@@ -12,7 +12,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, List, Optional
+from typing import Optional
 
 from domain.base.dependency_injection import injectable
 from domain.base.ports import LoggingPort
@@ -106,7 +106,7 @@ class CompositeProviderStrategy(ProviderStrategy):
     def __init__(
         self,
         logger: LoggingPort,
-        strategies: List[ProviderStrategy],
+        strategies: list[ProviderStrategy],
         config: CompositionConfig = None,
     ) -> None:
         """
@@ -132,7 +132,7 @@ class CompositeProviderStrategy(ProviderStrategy):
         self._config = config or CompositionConfig()
         self._logger = logger
         self._executor = ThreadPoolExecutor(max_workers=self._config.max_concurrent_operations)
-        self._strategy_weights: Dict[str, float] = {}
+        self._strategy_weights: dict[str, float] = {}
 
         # Initialize equal weights for load balancing
         weight = 1.0 / len(self._strategies)
@@ -146,7 +146,7 @@ class CompositeProviderStrategy(ProviderStrategy):
         return f"composite({'+'.join(strategy_types)})"
 
     @property
-    def composed_strategies(self) -> Dict[str, ProviderStrategy]:
+    def composed_strategies(self) -> dict[str, ProviderStrategy]:
         """Get the composed strategies."""
         return self._strategies.copy()
 
@@ -155,7 +155,7 @@ class CompositeProviderStrategy(ProviderStrategy):
         """Get the composition configuration."""
         return self._config
 
-    def add_strategy(self, strategy: ProviderStrategy, weight: float = None) -> None:
+    def add_strategy(self, strategy: ProviderStrategy, weight: Optional[float] = None) -> None:
         """
         Add a new strategy to the composition.
 
@@ -351,7 +351,7 @@ class CompositeProviderStrategy(ProviderStrategy):
 
     def _filter_capable_strategies(
         self, operation: ProviderOperation
-    ) -> Dict[str, ProviderStrategy]:
+    ) -> dict[str, ProviderStrategy]:
         """Filter strategies that can handle the operation."""
         capable = {}
 
@@ -368,8 +368,8 @@ class CompositeProviderStrategy(ProviderStrategy):
         return capable
 
     def _execute_parallel(
-        self, strategies: Dict[str, ProviderStrategy], operation: ProviderOperation
-    ) -> List[StrategyExecutionResult]:
+        self, strategies: dict[str, ProviderStrategy], operation: ProviderOperation
+    ) -> list[StrategyExecutionResult]:
         """Execute operation on all strategies in parallel."""
         futures = {}
 
@@ -401,8 +401,8 @@ class CompositeProviderStrategy(ProviderStrategy):
         return results
 
     async def _execute_sequential(
-        self, strategies: Dict[str, ProviderStrategy], operation: ProviderOperation
-    ) -> List[StrategyExecutionResult]:
+        self, strategies: dict[str, ProviderStrategy], operation: ProviderOperation
+    ) -> list[StrategyExecutionResult]:
         """Execute operation on strategies sequentially."""
         results = []
 
@@ -420,8 +420,8 @@ class CompositeProviderStrategy(ProviderStrategy):
         return results
 
     async def _execute_load_balanced(
-        self, strategies: Dict[str, ProviderStrategy], operation: ProviderOperation
-    ) -> List[StrategyExecutionResult]:
+        self, strategies: dict[str, ProviderStrategy], operation: ProviderOperation
+    ) -> list[StrategyExecutionResult]:
         """Execute operation using load balancing."""
         # For now, select strategy based on weights and execute on single strategy
         # In a more advanced implementation, this could distribute load across
@@ -434,7 +434,7 @@ class CompositeProviderStrategy(ProviderStrategy):
         )
         return [result]
 
-    def _select_strategy_by_weight(self, strategies: Dict[str, ProviderStrategy]) -> str:
+    def _select_strategy_by_weight(self, strategies: dict[str, ProviderStrategy]) -> str:
         """Select a strategy based on configured weights."""
         # Filter weights for available strategies
         available_weights = {k: v for k, v in self._strategy_weights.items() if k in strategies}
@@ -500,7 +500,7 @@ class CompositeProviderStrategy(ProviderStrategy):
 
     def _aggregate_results(
         self,
-        execution_results: List[StrategyExecutionResult],
+        execution_results: list[StrategyExecutionResult],
         operation: ProviderOperation,
     ) -> ProviderResult:
         """Aggregate results from multiple strategy executions."""
@@ -540,7 +540,7 @@ class CompositeProviderStrategy(ProviderStrategy):
         else:
             return self._aggregate_merge_all(successful_results)
 
-    def _aggregate_first_success(self, results: List[StrategyExecutionResult]) -> ProviderResult:
+    def _aggregate_first_success(self, results: list[StrategyExecutionResult]) -> ProviderResult:
         """Return the first successful result."""
         if not results:
             return ProviderResult.error_result("No successful results to aggregate", "NO_RESULTS")
@@ -550,7 +550,7 @@ class CompositeProviderStrategy(ProviderStrategy):
         first_result.result.metadata["selected_strategy"] = first_result.strategy_type
         return first_result.result
 
-    def _aggregate_merge_all(self, results: List[StrategyExecutionResult]) -> ProviderResult:
+    def _aggregate_merge_all(self, results: list[StrategyExecutionResult]) -> ProviderResult:
         """Merge all successful results."""
         if not results:
             return ProviderResult.error_result("No successful results to aggregate", "NO_RESULTS")
@@ -576,7 +576,7 @@ class CompositeProviderStrategy(ProviderStrategy):
 
         return ProviderResult.success_result(merged_data, all_metadata)
 
-    def _aggregate_best_performance(self, results: List[StrategyExecutionResult]) -> ProviderResult:
+    def _aggregate_best_performance(self, results: list[StrategyExecutionResult]) -> ProviderResult:
         """Return result from best performing strategy."""
         if not results:
             return ProviderResult.error_result("No successful results to aggregate", "NO_RESULTS")

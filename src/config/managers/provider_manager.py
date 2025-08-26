@@ -1,7 +1,7 @@
 """Provider configuration management."""
 
 import logging
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 if TYPE_CHECKING:
     from config.schemas.provider_strategy_schema import (
@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 class ProviderConfigManager:
     """Manages provider-specific configuration."""
 
-    def __init__(self, raw_config: Dict[str, Any]) -> None:
+    def __init__(self, raw_config: dict[str, Any]) -> None:
         """Initialize the instance."""
         self._raw_config = raw_config
 
@@ -66,7 +66,7 @@ class ProviderConfigManager:
         """Get current provider mode."""
         return self._get_nested_value("provider.mode", ProviderMode.LEGACY.value)
 
-    def get_active_provider_names(self) -> List[str]:
+    def get_active_provider_names(self) -> list[str]:
         """Get list of active provider names."""
         provider_config = self.get_provider_config()
         if not provider_config:

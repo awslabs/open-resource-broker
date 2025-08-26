@@ -1,6 +1,6 @@
 """AWS Resource Manager implementation using integrated base hierarchy."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from domain.base.dependency_injection import injectable
 from domain.base.ports import LoggingPort
@@ -75,7 +75,7 @@ class AWSResourceManagerImpl(CloudProviderResourceManager[AWSClient]):
 
     async def fetch_resource_list(
         self, resource_type: Optional[ResourceType] = None
-    ) -> List[ResourceAllocation]:
+    ) -> list[ResourceAllocation]:
         """Fetch list of resources from AWS."""
         resources = []
 
@@ -96,7 +96,7 @@ class AWSResourceManagerImpl(CloudProviderResourceManager[AWSClient]):
 
     async def fetch_resource_quota(
         self, resource_type: ResourceType, region: Optional[str] = None
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Fetch resource quota from AWS."""
         try:
             if resource_type == ResourceType.COMPUTE_INSTANCE:
@@ -162,22 +162,22 @@ class AWSResourceManagerImpl(CloudProviderResourceManager[AWSClient]):
         # Implementation would call AWS EBS delete APIs
         self.logger.info("Deleting EBS volume: %s", allocation.resource_id)
 
-    async def _list_compute_instances(self) -> List[ResourceAllocation]:
+    async def _list_compute_instances(self) -> list[ResourceAllocation]:
         """List EC2 compute instances."""
         # Implementation would call AWS EC2 describe APIs
         return []
 
-    async def _list_storage_volumes(self) -> List[ResourceAllocation]:
+    async def _list_storage_volumes(self) -> list[ResourceAllocation]:
         """List EBS storage volumes."""
         # Implementation would call AWS EBS describe APIs
         return []
 
-    async def _get_compute_quota(self, region: Optional[str] = None) -> Dict[str, Any]:
+    async def _get_compute_quota(self, region: Optional[str] = None) -> dict[str, Any]:
         """Get EC2 compute quota."""
         # Implementation would call AWS Service Quotas APIs
         return {"used": 5, "limit": 100, "available": 95}
 
-    async def _get_storage_quota(self, region: Optional[str] = None) -> Dict[str, Any]:
+    async def _get_storage_quota(self, region: Optional[str] = None) -> dict[str, Any]:
         """Get EBS storage quota."""
         # Implementation would call AWS Service Quotas APIs
         return {"used": 10, "limit": 1000, "available": 990}

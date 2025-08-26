@@ -28,7 +28,7 @@ import re
 import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
-from typing import List, Optional
+from typing import Optional
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format="%(message)s")
@@ -258,7 +258,7 @@ class DebugStatementViolation(Violation):
 class FileChecker:
     """Base class for file-based checkers."""
 
-    def check_file(self, file_path: str) -> List[Violation]:
+    def check_file(self, file_path: str) -> list[Violation]:
         """Check a file for violations."""
         violations = []
         try:
@@ -273,7 +273,7 @@ class FileChecker:
 
         return violations
 
-    def check_content(self, file_path: str, content: str) -> List[Violation]:
+    def check_content(self, file_path: str, content: str) -> list[Violation]:
         """Check file content for violations."""
         return []
 
@@ -281,7 +281,7 @@ class FileChecker:
 class EmojiChecker(FileChecker):
     """Check for emojis in files."""
 
-    def check_content(self, file_path: str, content: str) -> List[Violation]:
+    def check_content(self, file_path: str, content: str) -> list[Violation]:
         violations = []
         for line_num, line in enumerate(content.splitlines(), 1):
             matches = EMOJI_PATTERN.findall(line)
@@ -296,7 +296,7 @@ class EmojiChecker(FileChecker):
 class LanguageChecker(FileChecker):
     """Check for unprofessional language and hyperbolic terms."""
 
-    def check_content(self, file_path: str, content: str) -> List[Violation]:
+    def check_content(self, file_path: str, content: str) -> list[Violation]:
         violations = []
         for line_num, line in enumerate(content.splitlines(), 1):
             # Check for unprofessional language
@@ -341,7 +341,7 @@ class LanguageChecker(FileChecker):
 class DocstringChecker(FileChecker):
     """Check for docstring coverage and format."""
 
-    def check_content(self, file_path: str, content: str) -> List[Violation]:
+    def check_content(self, file_path: str, content: str) -> list[Violation]:
         if not file_path.endswith(".py"):
             return []
 
@@ -417,7 +417,7 @@ class DocstringChecker(FileChecker):
 class ImportChecker(FileChecker):
     """Check for unused imports using autoflake."""
 
-    def check_content(self, file_path: str, content: str) -> List[Violation]:
+    def check_content(self, file_path: str, content: str) -> list[Violation]:
         if not file_path.endswith(".py"):
             return []
 
@@ -465,7 +465,7 @@ class CommentChecker(FileChecker):
         # noqa:COMMENTED section-end
     """
 
-    def check_content(self, file_path: str, content: str) -> List[Violation]:
+    def check_content(self, file_path: str, content: str) -> list[Violation]:
         violations = []
 
         # Regex for commented code (simple heuristic)
@@ -579,7 +579,7 @@ class QualityChecker:
         except Exception:
             return False
 
-    def check_files(self, file_paths: List[str]) -> List[Violation]:
+    def check_files(self, file_paths: list[str]) -> list[Violation]:
         """Run all checks on the given files."""
         all_violations = []
 
@@ -630,7 +630,7 @@ class QualityChecker:
 
         return all_violations
 
-    def get_modified_files(self) -> List[str]:
+    def get_modified_files(self) -> list[str]:
         """Get list of modified files from git."""
         import os
         import subprocess

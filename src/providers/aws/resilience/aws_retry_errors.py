@@ -1,9 +1,8 @@
 """AWS-specific retry error definitions."""
 
-from typing import Dict, List
 
 # AWS service-specific retryable errors
-AWS_RETRYABLE_ERRORS: Dict[str, List[str]] = {
+AWS_RETRYABLE_ERRORS: dict[str, list[str]] = {
     "ec2": [
         "RequestLimitExceeded",
         "InsufficientInstanceCapacity",
@@ -74,7 +73,7 @@ def is_retryable_aws_error(exception: Exception, service: str = "ec2") -> bool:
     return False
 
 
-def get_aws_error_info(exception: Exception) -> Dict[str, str]:
+def get_aws_error_info(exception: Exception) -> dict[str, str]:
     """
     Extract AWS error information from exception.
 

@@ -1,6 +1,6 @@
 """Command handlers for request operations."""
 
-from typing import Any, Dict
+from typing import Any
 
 from application.base.handlers import BaseCommandHandler
 from application.decorators import command_handler
@@ -309,7 +309,7 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
         self.logger.info("Machine request created successfully: %s", request.request_id)
         return str(request.request_id)
 
-    def _create_machine_aggregate(self, instance_data: Dict[str, Any], request, template_id: str):
+    def _create_machine_aggregate(self, instance_data: dict[str, Any], request, template_id: str):
         """Create machine aggregate from instance data."""
         from datetime import datetime
 
@@ -339,7 +339,7 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
             metadata=instance_data.get("metadata", {}),
         )
 
-    async def _execute_provisioning(self, template, request, selection_result) -> Dict[str, Any]:
+    async def _execute_provisioning(self, template, request, selection_result) -> dict[str, Any]:
         """Execute actual provisioning via selected provider using existing ProviderContext."""
         try:
             # Import required types (using existing imports)

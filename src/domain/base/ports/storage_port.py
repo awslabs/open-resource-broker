@@ -1,7 +1,7 @@
 """Domain port for storage operations."""
 
 from abc import ABC, abstractmethod
-from typing import Generic, List, Optional, TypeVar
+from typing import Generic, Optional, TypeVar
 
 T = TypeVar("T")
 
@@ -18,7 +18,7 @@ class StoragePort(ABC, Generic[T]):
         """Find entity by ID."""
 
     @abstractmethod
-    def find_all(self) -> List[T]:
+    def find_all(self) -> list[T]:
         """Find all entities."""
 
     @abstractmethod

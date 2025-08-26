@@ -10,7 +10,7 @@ import asyncio
 import time
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Any, Dict, Generic, List, Optional, TypeVar
+from typing import Any, Generic, Optional, TypeVar
 
 from domain.base.ports import LoggingPort
 from domain.base.resource_manager import (
@@ -44,7 +44,7 @@ class BaseResourceManager(ResourceManagerPort, ABC):
     def __init__(self, logger: Optional[LoggingPort] = None) -> None:
         """Initialize base resource manager."""
         self.logger = logger
-        self._metrics: Dict[str, Any] = {}
+        self._metrics: dict[str, Any] = {}
         self.max_retries = 3
         self.retry_delay = 2.0
 
@@ -168,7 +168,7 @@ class BaseResourceManager(ResourceManagerPort, ABC):
 
     async def list_resources(
         self, resource_type: Optional[ResourceType] = None
-    ) -> List[ResourceAllocation]:
+    ) -> list[ResourceAllocation]:
         """List resources with filtering and monitoring."""
         operation_id = f"{self.__class__.__name__}.list_resources"
         start_time = time.time()
@@ -190,7 +190,7 @@ class BaseResourceManager(ResourceManagerPort, ABC):
 
     async def get_resource_quota(
         self, resource_type: ResourceType, region: Optional[str] = None
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Get resource quota with caching."""
         operation_id = f"{self.__class__.__name__}.get_resource_quota"
         start_time = time.time()
@@ -299,7 +299,7 @@ class BaseResourceManager(ResourceManagerPort, ABC):
     @abstractmethod
     async def fetch_resource_list(
         self, resource_type: Optional[ResourceType] = None
-    ) -> List[ResourceAllocation]:
+    ) -> list[ResourceAllocation]:
         """
         Fetch list of resources from provider.
 
@@ -309,7 +309,7 @@ class BaseResourceManager(ResourceManagerPort, ABC):
     @abstractmethod
     async def fetch_resource_quota(
         self, resource_type: ResourceType, region: Optional[str] = None
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Fetch resource quota information from provider.
 
@@ -362,7 +362,7 @@ class BaseResourceManager(ResourceManagerPort, ABC):
             "error": error,
         }
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """Get performance metrics."""
         return self._metrics.copy()
 

@@ -207,7 +207,7 @@ class TestProviderErrorHandling:
         # Configure to fail initialization
         provider.set_response("initialize", False)
 
-        config = ProviderConfig(provider_type="mock")
+        ProviderConfig(provider_type="mock")
         # Note: Mock provider doesn't actually use the response for initialize
         # This is just to demonstrate the pattern
 
@@ -220,7 +220,6 @@ class TestProviderErrorHandling:
         # Configure to return errors
         provider.set_response("create_instances", Exception("Provider error"))
 
-        template_config = {"image_id": "test", "instance_type": "test"}
 
         # The mock provider should handle this gracefully
         # In a real implementation, this would raise an exception

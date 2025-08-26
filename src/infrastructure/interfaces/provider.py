@@ -1,6 +1,6 @@
 """Core provider interfaces - contracts that all providers must implement."""
 
-from typing import Any, Dict, List, Optional, Protocol, runtime_checkable
+from typing import Any, Optional, Protocol, runtime_checkable
 
 from pydantic import BaseModel, ConfigDict
 
@@ -33,22 +33,22 @@ class ProviderPort(Protocol):
         """Initialize the provider with configuration."""
         ...
 
-    def create_instances(self, template_config: Dict[str, Any], count: int) -> List[InstanceId]:
+    def create_instances(self, template_config: dict[str, Any], count: int) -> list[InstanceId]:
         """Create instances based on template configuration."""
         ...
 
-    def terminate_instances(self, instance_ids: List[InstanceId]) -> bool:
+    def terminate_instances(self, instance_ids: list[InstanceId]) -> bool:
         """Terminate the specified instances."""
         ...
 
-    def get_instance_status(self, instance_ids: List[InstanceId]) -> Dict[InstanceId, str]:
+    def get_instance_status(self, instance_ids: list[InstanceId]) -> dict[InstanceId, str]:
         """Get the current status of the specified instances."""
         ...
 
-    def validate_template(self, template_config: Dict[str, Any]) -> Dict[str, Any]:
+    def validate_template(self, template_config: dict[str, Any]) -> dict[str, Any]:
         """Validate a template configuration for this provider."""
         ...
 
-    def get_available_templates(self) -> List[Dict[str, Any]]:
+    def get_available_templates(self) -> list[dict[str, Any]]:
         """Get available templates for this provider."""
         ...

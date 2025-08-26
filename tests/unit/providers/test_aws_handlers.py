@@ -239,7 +239,7 @@ class TestEC2FleetHandler:
         # Test acquire_hosts method
         result = handler.acquire_hosts(request, template)
 
-        assert result["success"] == True
+        assert result["success"]
         assert "resource_ids" in result
         assert "fleet-12345" in result["resource_ids"]
 
@@ -289,7 +289,7 @@ class TestEC2FleetHandler:
 
         # Should handle failure gracefully - the handler catches exceptions and returns error result
         result = handler.acquire_hosts(request, template)
-        assert result["success"] == False
+        assert not result["success"]
         assert "error_message" in result
 
     @mock_aws
@@ -342,7 +342,7 @@ class TestASGHandler:
         subnet = ec2.create_subnet(VpcId=vpc["Vpc"]["VpcId"], CidrBlock="10.0.1.0/24")
 
         # Create launch template
-        lt_response = ec2.create_launch_template(
+        ec2.create_launch_template(
             LaunchTemplateName="test-lt",
             LaunchTemplateData={"ImageId": "ami-12345678", "InstanceType": "t2.micro"},
         )

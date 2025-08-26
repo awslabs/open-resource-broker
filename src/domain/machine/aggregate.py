@@ -1,7 +1,7 @@
 """Machine aggregate - core machine domain logic."""
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from pydantic import ConfigDict, Field
 
@@ -34,7 +34,7 @@ class Machine(AggregateRoot):
     private_ip: Optional[str] = None
     public_ip: Optional[str] = None
     subnet_id: Optional[str] = None
-    security_group_ids: List[str] = Field(default_factory=list)
+    security_group_ids: list[str] = Field(default_factory=list)
 
     # Machine state
     status: MachineStatus = Field(default=MachineStatus.PENDING)
@@ -46,10 +46,10 @@ class Machine(AggregateRoot):
 
     # Tags and metadata
     tags: Tags = Field(default_factory=lambda: Tags(tags={}))
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
     # Provider-specific data
-    provider_data: Dict[str, Any] = Field(default_factory=dict)
+    provider_data: dict[str, Any] = Field(default_factory=dict)
 
     # Versioning
     version: int = Field(default=0)
@@ -140,7 +140,7 @@ class Machine(AggregateRoot):
         data["version"] = self.version + 1
         return Machine.model_validate(data)
 
-    def set_provider_data(self, provider_data: Dict[str, Any]) -> "Machine":
+    def set_provider_data(self, provider_data: dict[str, Any]) -> "Machine":
         """Set provider-specific data."""
         data = self.model_dump()
         data["provider_data"] = provider_data
@@ -173,7 +173,7 @@ class Machine(AggregateRoot):
             return int((datetime.utcnow() - self.launch_time).total_seconds())
         return None
 
-    def to_provider_format(self, provider_type: str) -> Dict[str, Any]:
+    def to_provider_format(self, provider_type: str) -> dict[str, Any]:
         """Convert machine to provider-specific format."""
         base_format = {
             "instance_id": self.instance_id.value,
@@ -204,7 +204,7 @@ class Machine(AggregateRoot):
         return base_format
 
     @classmethod
-    def from_provider_format(cls, data: Dict[str, Any], provider_type: str) -> "Machine":
+    def from_provider_format(cls, data: dict[str, Any], provider_type: str) -> "Machine":
         """Create machine from provider-specific format."""
         core_data = {
             "instance_id": InstanceId(value=data.get("instance_id")),

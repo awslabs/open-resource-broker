@@ -8,7 +8,7 @@ This module handles presentation formatting for the CLI, including:
 - Pure dynamic field handling - no hardcoded field mappings
 """
 
-from typing import Any, Dict, List
+from typing import Any
 
 
 def format_output(data: Any, format_type: str) -> str:
@@ -60,7 +60,7 @@ def format_list_output(data: Any) -> str:
     return json.dumps(data, indent=2, default=str)
 
 
-def format_generic_table(items: List[Dict], title: str = "Items") -> str:
+def format_generic_table(items: list[dict], title: str = "Items") -> str:
     """Format any list of dictionaries as a table - pure dynamic, no hardcoding."""
     if not items:
         return f"No {title.lower()} found."
@@ -97,7 +97,7 @@ def format_generic_table(items: List[Dict], title: str = "Items") -> str:
         return _format_generic_ascii_table(items, title)
 
 
-def format_generic_list(items: List[Dict], title: str = "Items") -> str:
+def format_generic_list(items: list[dict], title: str = "Items") -> str:
     """Format any list of dictionaries as a detailed list - pure dynamic, no hardcoding."""
     if not items:
         return f"No {title.lower()} found."
@@ -118,7 +118,7 @@ def format_generic_list(items: List[Dict], title: str = "Items") -> str:
     return "\n".join(lines)
 
 
-def _format_generic_ascii_table(items: List[Dict], title: str) -> str:
+def _format_generic_ascii_table(items: list[dict], title: str) -> str:
     """Fallback ASCII table formatter when Rich is not available - pure dynamic."""
     if not items:
         return f"No {title.lower()} found."

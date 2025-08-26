@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Optional
-
 from pydantic import BaseModel, ConfigDict
 
 from application.interfaces.command_query import Query
@@ -37,8 +35,8 @@ class ListReturnRequestsQuery(Query, BaseModel):
 
     model_config = ConfigDict(frozen=True)
 
-    status: Optional[str] = None
-    requester_id: Optional[str] = None
+    status: str | None = None
+    requester_id: str | None = None
 
 
 class GetTemplateQuery(Query, BaseModel):
@@ -54,7 +52,7 @@ class ListTemplatesQuery(Query, BaseModel):
 
     model_config = ConfigDict(frozen=True)
 
-    provider_api: Optional[str] = None
+    provider_api: str | None = None
     active_only: bool = True
     include_configuration: bool = False
 
@@ -80,8 +78,8 @@ class ListMachinesQuery(Query, BaseModel):
 
     model_config = ConfigDict(frozen=True)
 
-    request_id: Optional[str] = None
-    status: Optional[str] = None
+    request_id: str | None = None
+    status: str | None = None
     active_only: bool = False
 
 

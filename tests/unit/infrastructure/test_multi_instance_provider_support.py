@@ -167,7 +167,7 @@ class TestMultiInstanceProviderSupport:
                 return_value=mock_config_manager,
             ),
             patch("src.providers.aws.registration.register_aws_provider") as mock_aws_register,
-            patch("src.infrastructure.di.provider_services.get_logger") as mock_logger,
+            patch("src.infrastructure.di.provider_services.get_logger"),
         ):
             from infrastructure.di.provider_services import _register_providers
 

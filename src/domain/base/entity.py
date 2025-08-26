@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Any, List, Optional, TypeVar
+from typing import Any, Optional, TypeVar
 
 from pydantic import BaseModel, ConfigDict
 
@@ -39,7 +39,7 @@ class AggregateRoot(Entity):
     def __init__(self, **data) -> None:
         """Initialize the instance."""
         super().__init__(**data)
-        self._domain_events: List[Any] = []
+        self._domain_events: list[Any] = []
 
     def add_domain_event(self, event: Any) -> None:
         """Add a domain event to be published."""
@@ -49,7 +49,7 @@ class AggregateRoot(Entity):
         """Clear all domain events."""
         self._domain_events.clear()
 
-    def get_domain_events(self) -> List[Any]:
+    def get_domain_events(self) -> list[Any]:
         """Get all domain events."""
         return self._domain_events.copy()
 

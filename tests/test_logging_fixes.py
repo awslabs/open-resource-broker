@@ -11,7 +11,7 @@ This test suite ensures that all the logging issues we fixed remain fixed:
 
 import logging
 import re
-from typing import List
+from typing import Optional
 from unittest.mock import Mock, patch
 
 import pytest
@@ -27,7 +27,7 @@ class LogCapture:
 
     def __init__(self):
         """Initialize the instance."""
-        self.log_records: List[logging.LogRecord] = []
+        self.log_records: list[logging.LogRecord] = []
         self.handler = None
 
     def __enter__(self):
@@ -46,7 +46,7 @@ class LogCapture:
         if self.handler:
             logging.getLogger().removeHandler(self.handler)
 
-    def get_messages(self, level: str = None) -> List[str]:
+    def get_messages(self, level: Optional[str] = None) -> list[str]:
         """Get all log messages, optionally filtered by level."""
         messages = []
         for record in self.log_records:
@@ -54,7 +54,7 @@ class LogCapture:
                 messages.append(record.getMessage())
         return messages
 
-    def count_messages_containing(self, text: str, level: str = None) -> int:
+    def count_messages_containing(self, text: str, level: Optional[str] = None) -> int:
         """Count messages containing specific text."""
         messages = self.get_messages(level)
         return sum(1 for msg in messages if text in msg)
@@ -64,7 +64,7 @@ class LogCapture:
         error_messages = self.get_messages("ERROR")
         return any(text in msg for msg in error_messages)
 
-    def get_messages_matching_pattern(self, pattern: str, level: str = None) -> List[str]:
+    def get_messages_matching_pattern(self, pattern: str, level: Optional[str] = None) -> list[str]:
         """Get messages matching a regex pattern."""
         messages = self.get_messages(level)
         regex = re.compile(pattern)
@@ -135,7 +135,7 @@ class TestLoggingFixes:
 
     def test_no_duplicate_ssm_resolution(self, mock_ami_resolver):
         """Test that SSM parameters are resolved only once."""
-        with LogCapture() as log_capture:
+        with LogCapture():
             # Mock template configuration manager
             config_manager = Mock()
             scheduler_strategy = Mock()
@@ -179,7 +179,7 @@ class TestLoggingFixes:
 
     def test_correct_provider_mode_detection(self, mock_provider_context):
         """Test that provider mode is correctly detected as 'multi'."""
-        with LogCapture() as log_capture:
+        with LogCapture():
             # Mock application service
             app_service = Mock(spec=ProviderCapabilityService)
             app_service._provider_context = mock_provider_context
@@ -249,7 +249,7 @@ class TestLoggingFixes:
 
     def test_ssm_resolution_logging_pattern(self, mock_ami_resolver):
         """Test that SSM resolution produces expected log pattern."""
-        with LogCapture() as log_capture:
+        with LogCapture():
             # Mock logger to capture actual log calls
             logger = Mock()
 
@@ -346,7 +346,7 @@ class TestLoggingFixes:
 
     def test_no_ami_resolution_duplicate_calls_in_template_conversion(self, mock_ami_resolver):
         """Test that template conversion doesn't duplicate AMI resolution."""
-        with LogCapture() as log_capture:
+        with LogCapture():
             # Mock template configuration manager
             config_manager = Mock()
             scheduler_strategy = Mock()

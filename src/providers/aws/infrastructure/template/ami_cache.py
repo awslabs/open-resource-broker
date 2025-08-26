@@ -5,7 +5,7 @@ import logging
 import os
 import time
 from contextlib import suppress
-from typing import Dict, Optional, Set
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -36,9 +36,9 @@ class RuntimeAMICache:
             ttl_minutes: Time-to-live for cached entries in minutes
         """
         # In-memory cache
-        self._cache: Dict[str, str] = {}  # SSM parameter -> resolved AMI ID
-        self._failed: Set[str] = set()  # Failed SSM parameters
-        self._cache_metadata: Dict[str, float] = {}  # SSM parameter -> timestamp
+        self._cache: dict[str, str] = {}  # SSM parameter -> resolved AMI ID
+        self._failed: set[str] = set()  # Failed SSM parameters
+        self._cache_metadata: dict[str, float] = {}  # SSM parameter -> timestamp
 
         # Persistence settings
         self._persistent_file = persistent_file
@@ -127,7 +127,7 @@ class RuntimeAMICache:
             with suppress(Exception):
                 os.remove(self._persistent_file)
 
-    def get_stats(self) -> Dict[str, int]:
+    def get_stats(self) -> dict[str, int]:
         """
         Get cache statistics including TTL information.
 

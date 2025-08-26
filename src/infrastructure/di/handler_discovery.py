@@ -22,7 +22,7 @@ import pkgutil
 import time
 from contextlib import suppress
 from pathlib import Path
-from typing import Any, Dict, Optional, Type
+from typing import Any, Optional
 
 from application.decorators import (
     get_handler_registry_stats,
@@ -190,7 +190,7 @@ class HandlerDiscoveryService:
         total_registered = len(query_handlers) + len(command_handlers)
         logger.info("Handler registration complete. Registered %s handlers", total_registered)
 
-    def _try_load_from_cache(self, base_package: str) -> Optional[Dict[str, Any]]:
+    def _try_load_from_cache(self, base_package: str) -> Optional[dict[str, Any]]:
         """Try to load handler discovery results from cache if valid."""
         if not self.cache_enabled or not self.cache_file or not os.path.exists(self.cache_file):
             return None
@@ -219,7 +219,7 @@ class HandlerDiscoveryService:
             return None
 
     def _save_to_cache(
-        self, base_package: str, stats: Dict[str, Any], discovery_time: float
+        self, base_package: str, stats: dict[str, Any], discovery_time: float
     ) -> None:
         """Save handler discovery results to cache."""
         if not self.cache_enabled or not self.cache_file:
@@ -261,7 +261,7 @@ class HandlerDiscoveryService:
             logger.debug("Failed to save cache: %s", e)
             # Continue without caching - not critical for functionality
 
-    def _register_handlers_from_cache(self, cached_handlers: Dict[str, Any]) -> None:
+    def _register_handlers_from_cache(self, cached_handlers: dict[str, Any]) -> None:
         """Register handlers from cached information."""
         try:
             # Import and register query handlers
@@ -325,7 +325,7 @@ class HandlerDiscoveryService:
         self._discover_handlers("src.application")
         self._register_handlers()
 
-    def _get_source_file_mtimes(self, base_package: str) -> Dict[str, float]:
+    def _get_source_file_mtimes(self, base_package: str) -> dict[str, float]:
         """Get modification times of all source files in the package."""
         mtimes = {}
 
@@ -345,7 +345,7 @@ class HandlerDiscoveryService:
 
         return mtimes
 
-    def _serialize_handlers(self, handlers: Dict[Type, Type]) -> Dict[str, Dict[str, str]]:
+    def _serialize_handlers(self, handlers: dict[type, type]) -> dict[str, dict[str, str]]:
         """Serialize handler information for caching."""
         serialized = {}
 

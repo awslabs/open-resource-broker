@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 
 class UserRole(Enum):
@@ -24,13 +24,13 @@ class User:
     username: Optional[str] = None
     email: Optional[str] = None
     full_name: Optional[str] = None
-    roles: List[UserRole] = field(default_factory=list)
-    permissions: List[str] = field(default_factory=list)
+    roles: list[UserRole] = field(default_factory=list)
+    permissions: list[str] = field(default_factory=list)
     is_active: bool = True
     is_service_account: bool = False
     created_at: Optional[int] = None  # Unix timestamp
     last_login: Optional[int] = None  # Unix timestamp
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def has_role(self, role: UserRole) -> bool:
         """Check if user has specific role."""
@@ -125,8 +125,8 @@ class UserPort(ABC):
         self,
         limit: Optional[int] = None,
         offset: Optional[int] = None,
-        filters: Optional[Dict[str, Any]] = None,
-    ) -> List[User]:
+        filters: Optional[dict[str, Any]] = None,
+    ) -> list[User]:
         """
         List users with optional filtering and pagination.
 

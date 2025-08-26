@@ -3,7 +3,7 @@
 from datetime import datetime
 from decimal import Decimal
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from boto3.dynamodb.conditions import Attr
 
@@ -30,21 +30,21 @@ class DynamoDBConverter(DataConverter):
         self.sort_key = sort_key
         self.logger = get_logger(__name__)
 
-    def to_storage_format(self, domain_data: Dict[str, Any]) -> Any:
+    def to_storage_format(self, domain_data: dict[str, Any]) -> Any:
         """Convert domain data to DynamoDB format (implements DataConverter interface)."""
         # Extract entity_id from domain_data if present
         entity_id = domain_data.get(self.partition_key, domain_data.get("id", "unknown"))
         return self.to_dynamodb_item(entity_id, domain_data)
 
-    def from_storage_format(self, storage_data: Any) -> Dict[str, Any]:
+    def from_storage_format(self, storage_data: Any) -> dict[str, Any]:
         """Convert DynamoDB data to domain format (implements DataConverter interface)."""
         return self.from_dynamodb_item(storage_data)
 
-    def prepare_for_query(self, criteria: Dict[str, Any]) -> Any:
+    def prepare_for_query(self, criteria: dict[str, Any]) -> Any:
         """Prepare domain criteria for DynamoDB query (implements DataConverter interface)."""
         return self.build_filter_expression(criteria)
 
-    def to_dynamodb_item(self, entity_id: str, data: Dict[str, Any]) -> Dict[str, Any]:
+    def to_dynamodb_item(self, entity_id: str, data: dict[str, Any]) -> dict[str, Any]:
         """
         Convert domain data to DynamoDB item.
 
@@ -64,7 +64,7 @@ class DynamoDBConverter(DataConverter):
 
             # Convert all other fields
             for key, value in data.items():
-                if key == self.partition_key or key == self.sort_key:
+                if key in (self.partition_key, self.sort_key):
                     continue  # Already handled
 
                 item[key] = self._convert_to_dynamodb_type(value)
@@ -82,7 +82,7 @@ class DynamoDBConverter(DataConverter):
             self.logger.error("Failed to convert to DynamoDB item: %s", e)
             raise
 
-    def from_dynamodb_item(self, item: Dict[str, Any]) -> Dict[str, Any]:
+    def from_dynamodb_item(self, item: dict[str, Any]) -> dict[str, Any]:
         """
         Convert DynamoDB item to domain data.
 
@@ -108,7 +108,7 @@ class DynamoDBConverter(DataConverter):
             self.logger.error("Failed to convert from DynamoDB item: %s", e)
             raise
 
-    def from_dynamodb_items(self, items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def from_dynamodb_items(self, items: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """
         Convert multiple DynamoDB items to domain data.
 
@@ -214,7 +214,7 @@ class DynamoDBConverter(DataConverter):
         # Return other types as-is
         return value
 
-    def get_key(self, entity_id: str, sort_key_value: Optional[str] = None) -> Dict[str, Any]:
+    def get_key(self, entity_id: str, sort_key_value: Optional[str] = None) -> dict[str, Any]:
         """
         Get DynamoDB key for entity.
 
@@ -232,7 +232,7 @@ class DynamoDBConverter(DataConverter):
 
         return key
 
-    def build_filter_expression(self, criteria: Dict[str, Any]):
+    def build_filter_expression(self, criteria: dict[str, Any]):
         """
         Build DynamoDB filter expression from criteria.
 
@@ -287,7 +287,7 @@ class DynamoDBConverter(DataConverter):
 
         return filter_expression, expression_attribute_values
 
-    def prepare_batch_items(self, entities: Dict[str, Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def prepare_batch_items(self, entities: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
         """
         Prepare multiple entities for batch operations.
 
@@ -311,7 +311,7 @@ class DynamoDBConverter(DataConverter):
             self.logger.error("Failed to prepare batch items: %s", e)
             raise
 
-    def extract_entity_id(self, item: Dict[str, Any]) -> Optional[str]:
+    def extract_entity_id(self, item: dict[str, Any]) -> Optional[str]:
         """
         Extract entity ID from DynamoDB item.
 

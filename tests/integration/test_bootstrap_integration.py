@@ -230,5 +230,5 @@ class TestBootstrapIntegration:
 
         # Execute & Verify
         with pytest.raises(RuntimeError, match="Failed to initialize application"):
-            with Application() as app:
+            with Application():
                 pass

@@ -1,6 +1,6 @@
 """Configuration adapter implementing domain ConfigurationPort."""
 
-from typing import Any, Dict
+from typing import Any, Optional
 
 from config import NamingConfig, RequestConfig, TemplateConfig
 from config.manager import ConfigurationManager
@@ -14,11 +14,11 @@ class ConfigurationAdapter(ConfigurationPort):
         """Initialize with configuration manager."""
         self._config_manager = config_manager
 
-    def get_app_config(self) -> Dict[str, Any]:
+    def get_app_config(self) -> dict[str, Any]:
         """Get structured application configuration."""
         return self._config_manager.get_app_config()
 
-    def get_naming_config(self) -> Dict[str, Any]:
+    def get_naming_config(self) -> dict[str, Any]:
         """Get naming configuration for domain layer."""
         try:
             config = self._config_manager.get_typed(NamingConfig)
@@ -56,7 +56,7 @@ class ConfigurationAdapter(ConfigurationPort):
                 "prefixes": {"request": "req-", "return": "ret-"},
             }
 
-    def get_validation_config(self) -> Dict[str, Any]:
+    def get_validation_config(self) -> dict[str, Any]:
         """Get validation configuration for domain layer."""
         try:
             request_config = self._config_manager.get_typed(RequestConfig)
@@ -81,7 +81,7 @@ class ConfigurationAdapter(ConfigurationPort):
         """Get provider configuration - delegate to ConfigurationManager."""
         return self._config_manager.get_provider_config()
 
-    def get_request_config(self) -> Dict[str, Any]:
+    def get_request_config(self) -> dict[str, Any]:
         """Get request configuration for domain layer."""
         try:
             request_config = self._config_manager.get_typed(RequestConfig)
@@ -101,7 +101,7 @@ class ConfigurationAdapter(ConfigurationPort):
                 "max_timeout": 3600,
             }
 
-    def get_template_config(self) -> Dict[str, Any]:
+    def get_template_config(self) -> dict[str, Any]:
         """Get template configuration."""
         try:
             template_config = self._config_manager.get_typed(TemplateConfig)
@@ -119,7 +119,7 @@ class ConfigurationAdapter(ConfigurationPort):
                 "default_instance_type": "t2.micro",
             }
 
-    def get_storage_config(self) -> Dict[str, Any]:
+    def get_storage_config(self) -> dict[str, Any]:
         """Get storage configuration."""
         try:
             storage_config = self._config_manager.get("storage", {})
@@ -131,7 +131,7 @@ class ConfigurationAdapter(ConfigurationPort):
         except Exception:
             return {"type": "json", "path": "data", "backup_enabled": True}
 
-    def get_events_config(self) -> Dict[str, Any]:
+    def get_events_config(self) -> dict[str, Any]:
         """Get events configuration."""
         try:
             events_config = self._config_manager.get("events", {})
@@ -143,7 +143,7 @@ class ConfigurationAdapter(ConfigurationPort):
         except Exception:
             return {"enabled": True, "mode": "logging", "batch_size": 10}
 
-    def get_logging_config(self) -> Dict[str, Any]:
+    def get_logging_config(self) -> dict[str, Any]:
         """Get logging configuration."""
         try:
             logging_config = self._config_manager.get("logging", {})
@@ -173,7 +173,7 @@ class ConfigurationAdapter(ConfigurationPort):
         """Get typed configuration for compatibility with ConfigurationManager."""
         return self._config_manager.get_typed(config_type)
 
-    def resolve_file(self, file_type: str, filename: str, explicit_path: str = None) -> str:
+    def resolve_file(self, file_type: str, filename: str, explicit_path: Optional[str] = None) -> str:
         """Resolve file path for compatibility with ConfigurationManager."""
         return self._config_manager.resolve_file(file_type, filename, explicit_path)
 
@@ -181,19 +181,19 @@ class ConfigurationAdapter(ConfigurationPort):
         """Get provider type - delegate to ConfigurationManager."""
         return self._config_manager.get_provider_type()
 
-    def get_work_dir(self, default_path: str = None, config_path: str = None) -> str:
+    def get_work_dir(self, default_path: Optional[str] = None, config_path: Optional[str] = None) -> str:
         """Get work directory - delegate to ConfigurationManager."""
         return self._config_manager.get_work_dir(default_path, config_path)
 
-    def get_conf_dir(self, default_path: str = None, config_path: str = None) -> str:
+    def get_conf_dir(self, default_path: Optional[str] = None, config_path: Optional[str] = None) -> str:
         """Get config directory - delegate to ConfigurationManager."""
         return self._config_manager.get_conf_dir(default_path, config_path)
 
-    def get_log_dir(self, default_path: str = None, config_path: str = None) -> str:
+    def get_log_dir(self, default_path: Optional[str] = None, config_path: Optional[str] = None) -> str:
         """Get log directory - delegate to ConfigurationManager."""
         return self._config_manager.get_log_dir(default_path, config_path)
 
-    def get_native_spec_config(self) -> Dict[str, Any]:
+    def get_native_spec_config(self) -> dict[str, Any]:
         """Get native spec configuration."""
         try:
             from config.schemas.native_spec_schema import NativeSpecConfig
@@ -204,7 +204,7 @@ class ConfigurationAdapter(ConfigurationPort):
             # Fallback configuration if config not available
             return {"enabled": False, "merge_mode": "merge"}
 
-    def get_package_info(self) -> Dict[str, Any]:
+    def get_package_info(self) -> dict[str, Any]:
         """Get package metadata information."""
         try:
             from _package import AUTHOR, DESCRIPTION, PACKAGE_NAME, __version__

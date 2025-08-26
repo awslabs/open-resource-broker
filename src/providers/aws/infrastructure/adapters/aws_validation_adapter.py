@@ -1,6 +1,6 @@
 """AWS Validation Adapter - AWS-specific implementation of provider validation."""
 
-from typing import Any, Dict, List
+from typing import Any
 
 from domain.base.dependency_injection import injectable
 from domain.base.ports.logging_port import LoggingPort
@@ -80,7 +80,7 @@ class AWSValidationAdapter(BaseProviderValidationAdapter):
             # Fallback to hardcoded list for safety
             return api in ["EC2Fleet", "SpotFleet", "ASG", "RunInstances"]
 
-    def get_supported_provider_apis(self) -> List[str]:
+    def get_supported_provider_apis(self) -> list[str]:
         """
         Get list of all supported AWS provider APIs.
 
@@ -143,7 +143,7 @@ class AWSValidationAdapter(BaseProviderValidationAdapter):
             self._logger.error("Error getting default fleet type for AWS API %s: %s", api, e)
             return "request"  # Safe fallback
 
-    def get_valid_fleet_types_for_api(self, api: str) -> List[str]:
+    def get_valid_fleet_types_for_api(self, api: str) -> list[str]:
         """
         Get valid fleet types for a specific AWS provider API.
 
@@ -225,7 +225,7 @@ class AWSValidationAdapter(BaseProviderValidationAdapter):
             )
             return False
 
-    def validate_template_configuration(self, template_config: Dict[str, Any]) -> Dict[str, Any]:
+    def validate_template_configuration(self, template_config: dict[str, Any]) -> dict[str, Any]:
         """
         Validate a complete AWS template configuration.
 
@@ -272,10 +272,10 @@ class AWSValidationAdapter(BaseProviderValidationAdapter):
 
     def _validate_aws_specific_fields(
         self,
-        template_config: Dict[str, Any],
-        errors: List[str],
-        warnings: List[str],
-        validated_fields: List[str],
+        template_config: dict[str, Any],
+        errors: list[str],
+        warnings: list[str],
+        validated_fields: list[str],
     ) -> None:
         """
         Validate AWS-specific template fields.

@@ -6,7 +6,7 @@ It follows the Port-Adapter pattern from Hexagonal Architecture (Ports and Adapt
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 
 class CloudResourceManagerPort(ABC):
@@ -20,7 +20,7 @@ class CloudResourceManagerPort(ABC):
     @abstractmethod
     def get_resource_quota(
         self, resource_type: str, region: Optional[str] = None
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Get quota information for a specific resource type.
 
@@ -55,7 +55,7 @@ class CloudResourceManagerPort(ABC):
         """
 
     @abstractmethod
-    def get_resource_types(self) -> List[str]:
+    def get_resource_types(self) -> list[str]:
         """
         Get a list of available resource types.
 
@@ -69,7 +69,7 @@ class CloudResourceManagerPort(ABC):
     @abstractmethod
     def get_resource_pricing(
         self, resource_type: str, region: Optional[str] = None
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Get pricing information for a specific resource type.
 

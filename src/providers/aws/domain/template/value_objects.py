@@ -2,7 +2,7 @@
 
 import re
 from enum import Enum
-from typing import Any, ClassVar, Dict, List, Optional
+from typing import Any, ClassVar, Optional
 
 from pydantic import ConfigDict, field_validator, model_validator
 
@@ -129,7 +129,7 @@ class AWSTags(Tags):
 
     @field_validator("tags")
     @classmethod
-    def validate_aws_tags(cls, v: Dict[str, str]) -> Dict[str, str]:
+    def validate_aws_tags(cls, v: dict[str, str]) -> dict[str, str]:
         """Validate AWS tags format and constraints."""
         # Get AWS tag validation rules from configuration
         from providers.aws.configuration.config import get_aws_config_manager
@@ -156,7 +156,7 @@ class AWSTags(Tags):
                 raise ValueError(f"Invalid AWS tag key format: {key}")
         return v
 
-    def to_aws_format(self) -> List[Dict[str, str]]:
+    def to_aws_format(self) -> list[dict[str, str]]:
         """Convert to AWS API format."""
         return [{"Key": k, "Value": v} for k, v in self.values.items()]
 
@@ -366,8 +366,8 @@ class AWSConfiguration(ValueObject):
     # Use core enum, not wrapper
     allocation_strategy: Optional[AllocationStrategy] = None
     price_type: Optional[PriceType] = None
-    subnet_ids: List[AWSSubnetId] = []
-    security_group_ids: List[AWSSecurityGroupId] = []
+    subnet_ids: list[AWSSubnetId] = []
+    security_group_ids: list[AWSSecurityGroupId] = []
 
     @model_validator(mode="after")
     def validate_aws_configuration(self) -> "AWSConfiguration":
@@ -387,7 +387,7 @@ class AWSConfiguration(ValueObject):
 
         return self
 
-    def to_aws_api_format(self) -> Dict[str, Any]:
+    def to_aws_api_format(self) -> dict[str, Any]:
         """Convert to AWS API format."""
         return {
             "handler_type": self.handler_type.value,

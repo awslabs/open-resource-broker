@@ -1,7 +1,7 @@
 """AWS client wrapper with additional functionality."""
 
 import threading
-from typing import TYPE_CHECKING, Any, Dict, Optional, TypeVar
+from typing import TYPE_CHECKING, Any, Optional, TypeVar
 
 import boto3
 from botocore.config import Config
@@ -223,7 +223,7 @@ class AWSClient:
 
         return None
 
-    def _load_performance_config(self, config_manager) -> Dict[str, Any]:
+    def _load_performance_config(self, config_manager) -> dict[str, Any]:
         """
         Load performance configuration from ConfigurationManager.
 

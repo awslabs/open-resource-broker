@@ -243,7 +243,7 @@ def is_file_empty(file_path: str) -> bool:
     return get_file_size(file_path) == 0
 
 
-def create_temp_file(suffix: str = "", prefix: str = "", dir: str = None) -> str:
+def create_temp_file(suffix: str = "", prefix: str = "", dir: Optional[str] = None) -> str:
     """
     Create a temporary file.
 
@@ -266,7 +266,7 @@ def create_temp_file(suffix: str = "", prefix: str = "", dir: str = None) -> str
         raise OSError(f"Failed to create temporary file: {e!s}")
 
 
-def with_temp_file(suffix: str = "", prefix: str = "", dir: str = None) -> ContextManager[str]:
+def with_temp_file(suffix: str = "", prefix: str = "", dir: Optional[str] = None) -> ContextManager[str]:
     """
     Context manager for temporary file.
 

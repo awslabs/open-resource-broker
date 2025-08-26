@@ -1,7 +1,6 @@
 """Event publisher port for domain events."""
 
 from abc import ABC, abstractmethod
-from typing import List
 
 from domain.base.events import DomainEvent
 
@@ -14,7 +13,7 @@ class EventPublisherPort(ABC):
         """Publish a single domain event."""
 
     @abstractmethod
-    def publish_batch(self, events: List[DomainEvent]) -> None:
+    def publish_batch(self, events: list[DomainEvent]) -> None:
         """Publish multiple domain events."""
 
     @abstractmethod

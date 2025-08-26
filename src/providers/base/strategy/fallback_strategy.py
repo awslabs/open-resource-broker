@@ -10,7 +10,7 @@ import time
 from dataclasses import dataclass
 from enum import Enum
 from threading import Lock
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from domain.base.dependency_injection import injectable
 from domain.base.ports import LoggingPort
@@ -126,7 +126,7 @@ class FallbackProviderStrategy(ProviderStrategy):
         self,
         logger: LoggingPort,
         primary_strategy: ProviderStrategy,
-        fallback_strategies: List[ProviderStrategy],
+        fallback_strategies: list[ProviderStrategy],
         config: FallbackConfig = None,
     ) -> None:
         """
@@ -180,7 +180,7 @@ class FallbackProviderStrategy(ProviderStrategy):
         return self._primary_strategy
 
     @property
-    def fallback_strategies(self) -> List[ProviderStrategy]:
+    def fallback_strategies(self) -> list[ProviderStrategy]:
         """Get the fallback strategies."""
         return self._fallback_strategies.copy()
 
@@ -195,7 +195,7 @@ class FallbackProviderStrategy(ProviderStrategy):
         return self._circuit_state.state
 
     @property
-    def circuit_metrics(self) -> Dict[str, Any]:
+    def circuit_metrics(self) -> dict[str, Any]:
         """Get circuit breaker metrics."""
         with self._lock:
             return {

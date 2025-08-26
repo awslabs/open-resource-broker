@@ -5,7 +5,7 @@ This module provides an adapter for AWS-specific request operations.
 It extracts AWS-specific logic from the domain layer.
 """
 
-from typing import Any, Dict, List
+from typing import Any
 
 from domain.base.dependency_injection import injectable
 from domain.base.ports import LoggingPort
@@ -31,8 +31,8 @@ class AWSRequestAdapter(RequestAdapterPort):
         self._logger = logger
 
     def create_launch_template(
-        self, request: Request, template_data: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self, request: Request, template_data: dict[str, Any]
+    ) -> dict[str, Any]:
         """
         Create AWS launch template for request.
 
@@ -103,7 +103,7 @@ class AWSRequestAdapter(RequestAdapterPort):
             self._logger.error("Failed to create launch template: %s", str(e))
             raise ValueError(f"Failed to create launch template: {e!s}")
 
-    def get_request_status(self, request: Request) -> Dict[str, Any]:
+    def get_request_status(self, request: Request) -> dict[str, Any]:
         """
         Get AWS-specific status for request.
 
@@ -134,7 +134,7 @@ class AWSRequestAdapter(RequestAdapterPort):
                 "message": f"Failed to get request status: {e!s}",
             }
 
-    def _get_acquire_request_status(self, request: Request) -> Dict[str, Any]:
+    def _get_acquire_request_status(self, request: Request) -> dict[str, Any]:
         """
         Get status for acquire request.
 
@@ -158,7 +158,7 @@ class AWSRequestAdapter(RequestAdapterPort):
                 "message": f"Unknown provider API: {request.provider_api}",
             }
 
-    def _get_ec2_fleet_status(self, request: Request) -> Dict[str, Any]:
+    def _get_ec2_fleet_status(self, request: Request) -> dict[str, Any]:
         """
         Get status for EC2 Fleet request.
 
@@ -209,7 +209,7 @@ class AWSRequestAdapter(RequestAdapterPort):
                 "message": f"Failed to get EC2 Fleet status: {e!s}",
             }
 
-    def _get_spot_fleet_status(self, request: Request) -> Dict[str, Any]:
+    def _get_spot_fleet_status(self, request: Request) -> dict[str, Any]:
         """
         Get status for Spot Fleet request.
 
@@ -260,7 +260,7 @@ class AWSRequestAdapter(RequestAdapterPort):
                 "message": f"Failed to get Spot Fleet status: {e!s}",
             }
 
-    def _get_asg_status(self, request: Request) -> Dict[str, Any]:
+    def _get_asg_status(self, request: Request) -> dict[str, Any]:
         """
         Get status for Auto Scaling Group request.
 
@@ -302,7 +302,7 @@ class AWSRequestAdapter(RequestAdapterPort):
             self._logger.error("Failed to get ASG status: %s", str(e))
             return {"status": "error", "message": f"Failed to get ASG status: {e!s}"}
 
-    def _get_run_instances_status(self, request: Request) -> Dict[str, Any]:
+    def _get_run_instances_status(self, request: Request) -> dict[str, Any]:
         """
         Get status for RunInstances request.
 
@@ -347,7 +347,7 @@ class AWSRequestAdapter(RequestAdapterPort):
                 "message": f"Failed to get RunInstances status: {e!s}",
             }
 
-    def _get_return_request_status(self, request: Request) -> Dict[str, Any]:
+    def _get_return_request_status(self, request: Request) -> dict[str, Any]:
         """
         Get status for return request.
 
@@ -393,7 +393,7 @@ class AWSRequestAdapter(RequestAdapterPort):
                 "message": f"Failed to get return request status: {e!s}",
             }
 
-    def terminate_instances(self, instance_ids: List[str]) -> Dict[str, Any]:
+    def terminate_instances(self, instance_ids: list[str]) -> dict[str, Any]:
         """
         Terminate EC2 instances.
 
@@ -425,7 +425,7 @@ class AWSRequestAdapter(RequestAdapterPort):
                 "message": f"Failed to terminate instances: {e!s}",
             }
 
-    def cancel_fleet_request(self, request: Request) -> Dict[str, Any]:
+    def cancel_fleet_request(self, request: Request) -> dict[str, Any]:
         """
         Cancel fleet request.
 

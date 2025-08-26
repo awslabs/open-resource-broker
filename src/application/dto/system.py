@@ -6,7 +6,7 @@ replacing Dict[str, Any] returns with appropriate type safety.
 """
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from pydantic import Field
 
@@ -17,7 +17,7 @@ class ProviderConfigDTO(BaseDTO):
     """DTO for provider configuration information."""
 
     provider_mode: str = Field(description="Current provider mode (e.g., 'legacy', 'strategy')")
-    active_providers: List[str] = Field(description="List of active provider names")
+    active_providers: list[str] = Field(description="List of active provider names")
     provider_count: int = Field(description="Number of active providers")
     default_provider: Optional[str] = Field(None, description="Default provider name")
     configuration_source: str = Field(
@@ -30,10 +30,10 @@ class ValidationResultDTO(BaseDTO):
     """DTO for provider configuration validation results."""
 
     is_valid: bool = Field(description="Whether the configuration is valid")
-    validation_errors: List[str] = Field(
+    validation_errors: list[str] = Field(
         default_factory=list, description="List of validation errors"
     )
-    warnings: List[str] = Field(default_factory=list, description="List of validation warnings")
+    warnings: list[str] = Field(default_factory=list, description="List of validation warnings")
 
 
 class StorageStrategyDTO(BaseDTO):
@@ -43,13 +43,13 @@ class StorageStrategyDTO(BaseDTO):
     active: bool = Field(description="Whether this strategy is currently active")
     registered: bool = Field(description="Whether this strategy is registered")
     description: Optional[str] = Field(None, description="Strategy description")
-    capabilities: List[str] = Field(default_factory=list, description="Strategy capabilities")
+    capabilities: list[str] = Field(default_factory=list, description="Strategy capabilities")
 
 
 class StorageStrategyListResponse(BaseDTO):
     """Response DTO for storage strategies list."""
 
-    strategies: List[StorageStrategyDTO] = Field(description="List of available storage strategies")
+    strategies: list[StorageStrategyDTO] = Field(description="List of available storage strategies")
     current_strategy: str = Field(description="Currently active storage strategy")
     total_count: int = Field(description="Total number of strategies")
 
@@ -61,13 +61,13 @@ class SchedulerStrategyDTO(BaseDTO):
     active: bool = Field(description="Whether this strategy is currently active")
     registered: bool = Field(description="Whether this strategy is registered")
     description: Optional[str] = Field(None, description="Strategy description")
-    capabilities: List[str] = Field(default_factory=list, description="Strategy capabilities")
+    capabilities: list[str] = Field(default_factory=list, description="Strategy capabilities")
 
 
 class SchedulerStrategyListResponse(BaseDTO):
     """Response DTO for scheduler strategies list."""
 
-    strategies: List[SchedulerStrategyDTO] = Field(
+    strategies: list[SchedulerStrategyDTO] = Field(
         description="List of available scheduler strategies"
     )
     current_strategy: str = Field(description="Currently active scheduler strategy")
@@ -78,7 +78,7 @@ class SchedulerConfigurationResponse(BaseDTO):
     """Response DTO for scheduler configuration."""
 
     scheduler_name: str = Field(description="Scheduler strategy name")
-    configuration: Dict[str, Any] = Field(description="Scheduler configuration details")
+    configuration: dict[str, Any] = Field(description="Scheduler configuration details")
     active: bool = Field(description="Whether this scheduler is currently active")
     valid: bool = Field(description="Whether the configuration is valid")
     found: bool = Field(description="Whether the scheduler configuration was found")
@@ -90,7 +90,7 @@ class StorageHealthResponse(BaseDTO):
     strategy_name: str = Field(description="Storage strategy name")
     healthy: bool = Field(description="Whether storage is healthy")
     status: str = Field(description="Storage status description")
-    details: Dict[str, Any] = Field(default_factory=dict, description="Additional health details")
+    details: dict[str, Any] = Field(default_factory=dict, description="Additional health details")
 
 
 class StorageMetricsResponse(BaseDTO):
@@ -101,7 +101,7 @@ class StorageMetricsResponse(BaseDTO):
     operations_count: int = Field(description="Total number of operations")
     average_latency: float = Field(description="Average operation latency in ms")
     error_rate: float = Field(description="Error rate as percentage")
-    details: Dict[str, Any] = Field(default_factory=dict, description="Additional metric details")
+    details: dict[str, Any] = Field(default_factory=dict, description="Additional metric details")
 
 
 class ConfigurationValueResponse(BaseDTO):
@@ -117,12 +117,12 @@ class ConfigurationSectionResponse(BaseDTO):
     """Response DTO for configuration section queries."""
 
     section: str = Field(description="Configuration section name")
-    config: Dict[str, Any] = Field(description="Configuration section data")
+    config: dict[str, Any] = Field(description="Configuration section data")
     found: bool = Field(description="Whether the configuration section was found")
-    validated_providers: List[str] = Field(
+    validated_providers: list[str] = Field(
         default_factory=list, description="List of successfully validated providers"
     )
-    failed_providers: List[str] = Field(
+    failed_providers: list[str] = Field(
         default_factory=list, description="List of providers that failed validation"
     )
     validation_timestamp: datetime = Field(
@@ -146,7 +146,7 @@ class SystemStatusDTO(BaseDTO):
     last_health_check: datetime = Field(
         default_factory=datetime.utcnow, description="Last health check timestamp"
     )
-    components: Dict[str, str] = Field(
+    components: dict[str, str] = Field(
         default_factory=dict, description="Status of individual components"
     )
 
@@ -179,16 +179,16 @@ class ProviderHealthDTO(BaseDTO):
     response_time_ms: float = Field(description="Last response time in milliseconds")
     error_count: int = Field(description="Number of recent errors")
     status_message: str = Field(description="Human-readable status message")
-    capabilities: List[str] = Field(default_factory=list, description="Provider capabilities")
+    capabilities: list[str] = Field(default_factory=list, description="Provider capabilities")
 
 
 class ProviderCapabilitiesDTO(BaseDTO):
     """DTO for provider capabilities information."""
 
     provider_name: str = Field(description="Name of the provider")
-    supported_operations: List[str] = Field(description="List of supported operations")
-    supported_instance_types: List[str] = Field(description="List of supported instance types")
-    supported_regions: List[str] = Field(description="List of supported regions")
+    supported_operations: list[str] = Field(description="List of supported operations")
+    supported_instance_types: list[str] = Field(description="List of supported instance types")
+    supported_regions: list[str] = Field(description="List of supported regions")
     max_instances: Optional[int] = Field(None, description="Maximum number of instances")
     supports_spot_instances: bool = Field(description="Whether spot instances are supported")
     supports_auto_scaling: bool = Field(description="Whether auto scaling is supported")
@@ -203,8 +203,8 @@ class ProviderStrategyConfigDTO(BaseDTO):
 
     strategy_name: str = Field(description="Name of the strategy")
     strategy_type: str = Field(description="Type of strategy (e.g., 'round_robin', 'weighted')")
-    enabled_providers: List[str] = Field(description="List of enabled providers")
-    provider_weights: Dict[str, float] = Field(
+    enabled_providers: list[str] = Field(description="List of enabled providers")
+    provider_weights: dict[str, float] = Field(
         default_factory=dict, description="Provider weights for weighted strategies"
     )
     failover_enabled: bool = Field(description="Whether failover is enabled")
@@ -220,10 +220,10 @@ class ValidationDTO(BaseDTO):
     """DTO for template validation results."""
 
     is_valid: bool = Field(description="Whether the template is valid")
-    validation_errors: List[str] = Field(
+    validation_errors: list[str] = Field(
         default_factory=list, description="List of validation errors"
     )
-    warnings: List[str] = Field(default_factory=list, description="List of validation warnings")
+    warnings: list[str] = Field(default_factory=list, description="List of validation warnings")
     template_id: str = Field(description="ID of the validated template")
     validation_timestamp: datetime = Field(
         default_factory=datetime.utcnow, description="When validation was performed"

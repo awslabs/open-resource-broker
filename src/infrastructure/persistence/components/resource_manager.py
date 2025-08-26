@@ -1,7 +1,7 @@
 """Base storage resource manager interface for persistence components."""
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict
+from typing import Any, Optional
 
 from infrastructure.logging.logger import get_logger
 
@@ -60,7 +60,7 @@ class StorageResourceManager(ABC):
             True if all managed resources are healthy, False otherwise
         """
 
-    def get_status(self) -> Dict[str, Any]:
+    def get_status(self) -> dict[str, Any]:
         """
         Get status information about managed resources.
 
@@ -86,7 +86,7 @@ class QueryManager(ABC):
         self.logger = get_logger(__name__)
 
     @abstractmethod
-    def build_query(self, query_spec: Dict[str, Any]) -> str:
+    def build_query(self, query_spec: dict[str, Any]) -> str:
         """
         Build a query string from specification.
 
@@ -98,7 +98,7 @@ class QueryManager(ABC):
         """
 
     @abstractmethod
-    def execute_query(self, query: str, parameters: Dict[str, Any] = None) -> Any:
+    def execute_query(self, query: str, parameters: Optional[dict[str, Any]] = None) -> Any:
         """
         Execute a query with optional parameters.
 

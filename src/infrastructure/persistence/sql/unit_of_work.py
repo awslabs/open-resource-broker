@@ -1,6 +1,6 @@
 """SQL Unit of Work implementation using simplified repositories."""
 
-from typing import Dict, Optional
+from typing import Optional
 
 from sqlalchemy import Engine
 from sqlalchemy.orm import Session
@@ -83,7 +83,7 @@ class SQLUnitOfWork(BaseUnitOfWork):
         """Get template repository."""
         return self.template_repository
 
-    def _get_machine_columns(self) -> Dict[str, str]:
+    def _get_machine_columns(self) -> dict[str, str]:
         """Get machine table column definitions."""
         return {
             "machine_id": "VARCHAR(255) PRIMARY KEY",
@@ -103,7 +103,7 @@ class SQLUnitOfWork(BaseUnitOfWork):
             "updated_at": "TIMESTAMP",
         }
 
-    def _get_request_columns(self) -> Dict[str, str]:
+    def _get_request_columns(self) -> dict[str, str]:
         """Get request table column definitions."""
         return {
             "request_id": "VARCHAR(255) PRIMARY KEY",
@@ -121,7 +121,7 @@ class SQLUnitOfWork(BaseUnitOfWork):
             "completed_at": "TIMESTAMP",
         }
 
-    def _get_template_columns(self) -> Dict[str, str]:
+    def _get_template_columns(self) -> dict[str, str]:
         """Get template table column definitions."""
         return {
             "template_id": "VARCHAR(255) PRIMARY KEY",

@@ -5,7 +5,7 @@ integrating the existing provider strategy ecosystem with the CQRS architecture.
 """
 
 import time
-from typing import Any, Dict
+from typing import Any
 
 from application.base.handlers import BaseCommandHandler
 from application.decorators import command_handler
@@ -33,7 +33,7 @@ from providers.base.strategy import (
 
 @command_handler(SelectProviderStrategyCommand)
 class SelectProviderStrategyHandler(
-    BaseCommandHandler[SelectProviderStrategyCommand, Dict[str, Any]]
+    BaseCommandHandler[SelectProviderStrategyCommand, dict[str, Any]]
 ):
     """Handler for selecting optimal provider strategy."""
 
@@ -54,7 +54,7 @@ class SelectProviderStrategyHandler(
         if not command.operation_type:
             raise ValueError("operation_type is required")
 
-    async def execute_command(self, command: SelectProviderStrategyCommand) -> Dict[str, Any]:
+    async def execute_command(self, command: SelectProviderStrategyCommand) -> dict[str, Any]:
         """Handle provider strategy selection command."""
         self.logger.info("Selecting provider strategy for operation: %s", command.operation_type)
 
@@ -181,7 +181,7 @@ class ExecuteProviderOperationHandler(
 
 @command_handler(RegisterProviderStrategyCommand)
 class RegisterProviderStrategyHandler(
-    BaseCommandHandler[RegisterProviderStrategyCommand, Dict[str, Any]]
+    BaseCommandHandler[RegisterProviderStrategyCommand, dict[str, Any]]
 ):
     """Handler for registering new provider strategies."""
 
@@ -203,7 +203,7 @@ class RegisterProviderStrategyHandler(
         if not command.provider_type:
             raise ValueError("provider_type is required")
 
-    async def execute_command(self, command: RegisterProviderStrategyCommand) -> Dict[str, Any]:
+    async def execute_command(self, command: RegisterProviderStrategyCommand) -> dict[str, Any]:
         """Handle provider strategy registration command."""
         self.logger.info("Registering provider strategy: %s", command.strategy_name)
 
@@ -215,7 +215,7 @@ class RegisterProviderStrategyHandler(
 
             # Create a mock provider config for strategy creation
             from dataclasses import dataclass
-            from typing import Any, Dict
+            from typing import Any
 
             @dataclass
             class MockProviderConfig:
@@ -223,7 +223,7 @@ class RegisterProviderStrategyHandler(
 
                 type: str
                 name: str
-                config: Dict[str, Any]
+                config: dict[str, Any]
 
             provider_config = MockProviderConfig(
                 type=command.provider_type.lower(),
@@ -260,7 +260,7 @@ class RegisterProviderStrategyHandler(
 
 
 @command_handler(UpdateProviderHealthCommand)
-class UpdateProviderHealthHandler(BaseCommandHandler[UpdateProviderHealthCommand, Dict[str, Any]]):
+class UpdateProviderHealthHandler(BaseCommandHandler[UpdateProviderHealthCommand, dict[str, Any]]):
     """Handler for updating provider health status."""
 
     def __init__(
@@ -281,7 +281,7 @@ class UpdateProviderHealthHandler(BaseCommandHandler[UpdateProviderHealthCommand
         if not command.health_status:
             raise ValueError("health_status is required")
 
-    async def execute_command(self, command: UpdateProviderHealthCommand) -> Dict[str, Any]:
+    async def execute_command(self, command: UpdateProviderHealthCommand) -> dict[str, Any]:
         """Handle provider health status update command."""
         self.logger.debug("Updating health for provider: %s", command.provider_name)
 
@@ -320,7 +320,7 @@ class UpdateProviderHealthHandler(BaseCommandHandler[UpdateProviderHealthCommand
 
 @command_handler(ConfigureProviderStrategyCommand)
 class ConfigureProviderStrategyHandler(
-    BaseCommandHandler[ConfigureProviderStrategyCommand, Dict[str, Any]]
+    BaseCommandHandler[ConfigureProviderStrategyCommand, dict[str, Any]]
 ):
     """Handler for configuring provider strategy policies."""
 
@@ -339,7 +339,7 @@ class ConfigureProviderStrategyHandler(
         await super().validate_command(command)
         # Configuration commands can have optional parameters, so minimal validation
 
-    async def execute_command(self, command: ConfigureProviderStrategyCommand) -> Dict[str, Any]:
+    async def execute_command(self, command: ConfigureProviderStrategyCommand) -> dict[str, Any]:
         """Handle provider strategy configuration command."""
         self.logger.info("Configuring provider strategy policies")
 

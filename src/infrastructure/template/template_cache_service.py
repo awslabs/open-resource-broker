@@ -3,7 +3,7 @@
 import threading
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
-from typing import Callable, List, Optional
+from typing import Callable, Optional
 
 from domain.base.ports import LoggingPort
 
@@ -19,7 +19,7 @@ class TemplateCacheService(ABC):
     """
 
     @abstractmethod
-    def get_or_load(self, loader_func: Callable[[], List[TemplateDTO]]) -> List[TemplateDTO]:
+    def get_or_load(self, loader_func: Callable[[], list[TemplateDTO]]) -> list[TemplateDTO]:
         """
         Get templates from cache or load using the provided function.
 
@@ -55,12 +55,12 @@ class NoOpTemplateCacheService(TemplateCacheService):
         """
         self._logger = logger
 
-    def get_or_load(self, loader_func: Callable[[], List[TemplateDTO]]) -> List[TemplateDTO]:
+    def get_or_load(self, loader_func: Callable[[], list[TemplateDTO]]) -> list[TemplateDTO]:
         """Load fresh data, no caching."""
         self._logger.debug("NoOpTemplateCacheService: Loading fresh templates")
         return loader_func()
 
-    def get_all(self) -> Optional[List[TemplateDTO]]:
+    def get_all(self) -> Optional[list[TemplateDTO]]:
         """Return None as nothing is cached."""
         return None
 
@@ -93,11 +93,11 @@ class TTLTemplateCacheService(TemplateCacheService):
         """
         self._ttl_seconds = ttl_seconds
         self._logger = logger
-        self._cached_templates: Optional[List[TemplateDTO]] = None
+        self._cached_templates: Optional[list[TemplateDTO]] = None
         self._cache_time: Optional[datetime] = None
         self._lock = threading.Lock()
 
-    def get_or_load(self, loader_func: Callable[[], List[TemplateDTO]]) -> List[TemplateDTO]:
+    def get_or_load(self, loader_func: Callable[[], list[TemplateDTO]]) -> list[TemplateDTO]:
         """
         Get templates from cache or load if expired.
 
@@ -196,9 +196,9 @@ class AutoRefreshTemplateCacheService(TTLTemplateCacheService):
         super().__init__(ttl_seconds, logger)
         self._auto_refresh = auto_refresh
         self._refresh_timer: Optional[threading.Timer] = None
-        self._loader_func: Optional[Callable[[], List[TemplateDTO]]] = None
+        self._loader_func: Optional[Callable[[], list[TemplateDTO]]] = None
 
-    def get_or_load(self, loader_func: Callable[[], List[TemplateDTO]]) -> List[TemplateDTO]:
+    def get_or_load(self, loader_func: Callable[[], list[TemplateDTO]]) -> list[TemplateDTO]:
         """
         Get templates from cache with auto-refresh capability.
 

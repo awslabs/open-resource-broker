@@ -1,7 +1,6 @@
 """Bearer token authentication strategy."""
 
 import time
-from typing import List
 
 import jwt
 
@@ -194,7 +193,7 @@ class BearerTokenStrategy(AuthPort):
         """
         return self.enabled
 
-    def _create_access_token(self, user_id: str, roles: List[str], permissions: List[str]) -> str:
+    def _create_access_token(self, user_id: str, roles: list[str], permissions: list[str]) -> str:
         """
         Create a new access token.
 
@@ -219,7 +218,7 @@ class BearerTokenStrategy(AuthPort):
 
         return jwt.encode(payload, self.secret_key, algorithm=self.algorithm)
 
-    def create_refresh_token(self, user_id: str, roles: List[str], permissions: List[str]) -> str:
+    def create_refresh_token(self, user_id: str, roles: list[str], permissions: list[str]) -> str:
         """
         Create a refresh token.
 

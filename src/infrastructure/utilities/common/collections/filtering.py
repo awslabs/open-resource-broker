@@ -1,13 +1,13 @@
 """Collection filtering utility functions."""
 
 from collections.abc import Iterable
-from typing import Callable, List, Optional, TypeVar
+from typing import Callable, Optional, TypeVar
 
 T = TypeVar("T")
 K = TypeVar("K")
 
 
-def filter_by(collection: Iterable[T], predicate: Callable[[T], bool]) -> List[T]:
+def filter_by(collection: Iterable[T], predicate: Callable[[T], bool]) -> list[T]:
     """
     Filter collection by predicate.
 
@@ -38,7 +38,7 @@ def find(collection: Iterable[T], predicate: Callable[[T], bool]) -> Optional[T]
     return None
 
 
-def find_index(collection: List[T], predicate: Callable[[T], bool]) -> int:
+def find_index(collection: list[T], predicate: Callable[[T], bool]) -> int:
     """
     Find index of first element matching predicate.
 
@@ -99,7 +99,7 @@ def contains_any(collection: Iterable[T], items: Iterable[T]) -> bool:
     return any(item in collection_set for item in items)
 
 
-def distinct(collection: Iterable[T]) -> List[T]:
+def distinct(collection: Iterable[T]) -> list[T]:
     """
     Get distinct elements from collection.
 
@@ -118,7 +118,7 @@ def distinct(collection: Iterable[T]) -> List[T]:
     return result
 
 
-def distinct_by(collection: Iterable[T], key_func: Callable[[T], K]) -> List[T]:
+def distinct_by(collection: Iterable[T], key_func: Callable[[T], K]) -> list[T]:
     """
     Get distinct elements by key function.
 
@@ -139,7 +139,7 @@ def distinct_by(collection: Iterable[T], key_func: Callable[[T], K]) -> List[T]:
     return result
 
 
-def remove_duplicates(collection: List[T]) -> List[T]:
+def remove_duplicates(collection: list[T]) -> list[T]:
     """
     Remove duplicates from list while preserving order.
 
@@ -152,7 +152,7 @@ def remove_duplicates(collection: List[T]) -> List[T]:
     return distinct(collection)
 
 
-def find_duplicates(collection: Iterable[T]) -> List[T]:
+def find_duplicates(collection: Iterable[T]) -> list[T]:
     """
     Find duplicate elements in collection.
 

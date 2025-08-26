@@ -1,6 +1,6 @@
 """System command handlers for administrative operations."""
 
-from typing import Any, Dict
+from typing import Any
 
 from application.base.handlers import BaseCommandHandler
 from application.commands.system import ReloadProviderConfigCommand
@@ -18,7 +18,7 @@ from domain.base.ports import (
 
 
 @command_handler(ReloadProviderConfigCommand)
-class ReloadProviderConfigHandler(BaseCommandHandler[ReloadProviderConfigCommand, Dict[str, Any]]):
+class ReloadProviderConfigHandler(BaseCommandHandler[ReloadProviderConfigCommand, dict[str, Any]]):
     """Handler for reloading provider configuration."""
 
     def __init__(
@@ -36,7 +36,7 @@ class ReloadProviderConfigHandler(BaseCommandHandler[ReloadProviderConfigCommand
         """Validate reload provider config command."""
         await super().validate_command(command)
 
-    async def execute_command(self, command: ReloadProviderConfigCommand) -> Dict[str, Any]:
+    async def execute_command(self, command: ReloadProviderConfigCommand) -> dict[str, Any]:
         """Execute provider configuration reload command."""
         self.logger.info(
             "Reloading provider configuration from: %s", command.config_path or "default location"

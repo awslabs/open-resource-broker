@@ -23,7 +23,6 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
-from typing import List
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
@@ -57,7 +56,7 @@ class CIChecker:
         self.temp_file.flush()
         return self.temp_file.name
 
-    def run_command(self, cmd: List[str], description: str, allow_failure: bool = False) -> bool:
+    def run_command(self, cmd: list[str], description: str, allow_failure: bool = False) -> bool:
         """Run a command and return success status."""
         if self.verbose:
             self.log(f"Running: {' '.join(cmd)}")
@@ -335,9 +334,9 @@ class CIChecker:
 
         # Tests
         if not quick:
-            tests_passed = self.run_tests(quick=quick)
+            self.run_tests(quick=quick)
         else:
-            tests_passed = True  # Skip tests in quick mode
+            pass  # Skip tests in quick mode
 
         # Summary
         self.log("\n=== CI Check Summary ===")

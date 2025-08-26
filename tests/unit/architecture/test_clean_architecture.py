@@ -10,7 +10,6 @@ This module validates that the codebase properly implements Clean Architecture p
 import ast
 import os
 from pathlib import Path
-from typing import List
 from unittest.mock import Mock, patch
 
 import pytest
@@ -43,7 +42,7 @@ class TestCleanArchitecture:
             f"Application layer has invalid dependencies: {app_violations}"
         )
 
-    def _check_layer_dependencies(self, layer_name: str, layers: dict) -> List[str]:
+    def _check_layer_dependencies(self, layer_name: str, layers: dict) -> list[str]:
         """Check if a layer has invalid dependencies."""
         violations = []
         layer_paths = layers[layer_name]
@@ -60,7 +59,7 @@ class TestCleanArchitecture:
 
         return violations
 
-    def _check_file_imports(self, file_path: str, current_layer: str, layers: dict) -> List[str]:
+    def _check_file_imports(self, file_path: str, current_layer: str, layers: dict) -> list[str]:
         """Check imports in a specific file for layer violations."""
         violations = []
 
@@ -119,7 +118,7 @@ class TestCleanArchitecture:
 
         return False
 
-    def _check_application_dependencies(self, layers: dict) -> List[str]:
+    def _check_application_dependencies(self, layers: dict) -> list[str]:
         """Specific check for application layer dependencies."""
         violations = []
         app_paths = layers["application"]
@@ -145,7 +144,7 @@ class TestCleanArchitecture:
 
         return violations
 
-    def _check_forbidden_imports(self, file_path: str, forbidden: List[str]) -> List[str]:
+    def _check_forbidden_imports(self, file_path: str, forbidden: list[str]) -> list[str]:
         """Check for forbidden imports in a file."""
         violations = []
 

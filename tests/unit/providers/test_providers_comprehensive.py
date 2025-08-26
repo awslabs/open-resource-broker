@@ -90,7 +90,7 @@ class TestAWSProviderComprehensive:
                             "create_instances",
                             "terminate_instances",
                         ]
-                        has_handler_method = any(
+                        any(
                             hasattr(handler, method) for method in common_methods
                         )
 

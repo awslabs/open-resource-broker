@@ -7,7 +7,7 @@ import logging
 import logging.handlers
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 from config import LoggingConfig
 
@@ -71,7 +71,7 @@ class ContextLogger(logging.Logger):
     def __init__(self, name: str, level: int = logging.NOTSET) -> None:
         """Initialize context logger with name and level."""
         super().__init__(name, level)
-        self._context: Dict[str, Any] = {}
+        self._context: dict[str, Any] = {}
 
     def bind(self, **kwargs: Any) -> None:
         """Bind context values to logger."""
@@ -87,8 +87,8 @@ class ContextLogger(logging.Logger):
         level: int,
         msg: str,
         args: tuple,
-        exc_info: Optional[Exception] = None,
-        extra: Optional[Dict[str, Any]] = None,
+        exc_info: Exception | None = None,
+        extra: dict[str, Any] | None = None,
         stack_info: bool = False,
         stacklevel: int = 1,
     ) -> None:
@@ -204,7 +204,7 @@ def get_logger(name: str) -> ContextLogger:
 class LoggerAdapter(logging.LoggerAdapter):
     """Adapter that adds context to log records."""
 
-    def process(self, msg: str, kwargs: Dict[str, Any]) -> tuple[str, Dict[str, Any]]:
+    def process(self, msg: str, kwargs: dict[str, Any]) -> tuple[str, dict[str, Any]]:
         """Process log record to add context."""
         if "extra" not in kwargs:
             kwargs["extra"] = {}
@@ -229,7 +229,7 @@ def with_context(**context: Any) -> LoggerAdapter:
 class RequestLogger:
     """Logger for request-specific logging."""
 
-    def __init__(self, request_id: str, correlation_id: Optional[str] = None) -> None:
+    def __init__(self, request_id: str, correlation_id: str | None = None) -> None:
         self.logger = with_context(
             request_id=request_id, correlation_id=correlation_id or request_id
         )
@@ -238,7 +238,7 @@ class RequestLogger:
         """Log info message."""
         self.logger.info(msg, extra=kwargs)
 
-    def error(self, msg: str, exc_info: Optional[Exception] = None, **kwargs: Any) -> None:
+    def error(self, msg: str, exc_info: Exception | None = None, **kwargs: Any) -> None:
         """Log error message."""
         self.logger.error(msg, exc_info=exc_info, extra=kwargs)
 
@@ -264,7 +264,7 @@ class AuditLogger:
         action: str,
         resource: str,
         status: str,
-        details: Optional[Dict[str, Any]] = None,
+        details: dict[str, Any] | None = None,
     ) -> None:
         """
         Log an audit event.

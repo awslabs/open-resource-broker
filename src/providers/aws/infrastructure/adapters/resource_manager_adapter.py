@@ -6,7 +6,7 @@ interface with the new resource manager hierarchy, maintaining
 backward compatibility while using the improved architecture.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from domain.base.dependency_injection import injectable
 from domain.base.ports import ConfigurationPort, LoggingPort
@@ -56,7 +56,7 @@ class AWSResourceManagerAdapter(CloudResourceManagerPort):
 
     def get_resource_quota(
         self, resource_type: str, region: Optional[str] = None
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Get resource quota (legacy interface).
 
@@ -81,7 +81,7 @@ class AWSResourceManagerAdapter(CloudResourceManagerPort):
 
     def list_available_resources(
         self, resource_type: Optional[str] = None, region: Optional[str] = None
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         List available resources (legacy interface).
 
@@ -107,7 +107,7 @@ class AWSResourceManagerAdapter(CloudResourceManagerPort):
             self._logger.error("Failed to list resources: %s", str(e))
             raise InfrastructureError(f"Failed to list resources: {e!s}")
 
-    def create_resource(self, resource_config: Dict[str, Any]) -> str:
+    def create_resource(self, resource_config: dict[str, Any]) -> str:
         """
         Create resource (legacy interface).
 
@@ -151,7 +151,7 @@ class AWSResourceManagerAdapter(CloudResourceManagerPort):
             self._logger.error("Failed to delete resource: %s", str(e))
             return False
 
-    def get_resource_status(self, resource_id: str) -> Dict[str, Any]:
+    def get_resource_status(self, resource_id: str) -> dict[str, Any]:
         """
         Get resource status (legacy interface).
 
@@ -191,7 +191,7 @@ class AWSResourceManagerAdapter(CloudResourceManagerPort):
 
         return mapping.get(legacy_type.lower(), ResourceType.COMPUTE_INSTANCE)
 
-    def _legacy_config_to_specification(self, config: Dict[str, Any]) -> ResourceSpecification:
+    def _legacy_config_to_specification(self, config: dict[str, Any]) -> ResourceSpecification:
         """Convert legacy resource config to new ResourceSpecification."""
         resource_type = self._map_legacy_resource_type(config.get("type", "instances"))
 
@@ -203,7 +203,7 @@ class AWSResourceManagerAdapter(CloudResourceManagerPort):
             region=config.get("region"),
         )
 
-    def _allocation_to_legacy_format(self, allocation: ResourceAllocation) -> Dict[str, Any]:
+    def _allocation_to_legacy_format(self, allocation: ResourceAllocation) -> dict[str, Any]:
         """Convert ResourceAllocation to legacy format."""
         return {
             "id": str(allocation.resource_id),

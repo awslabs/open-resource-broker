@@ -6,8 +6,8 @@ from infrastructure.utilities.factories.repository_factory import RepositoryFact
 from infrastructure.utilities.factories.sql_engine_factory import SQLEngineFactory
 
 __all__: list[str] = [
+    "APIHandlerFactory",
     # Factories (legacy ProviderFactory removed)
     "RepositoryFactory",
-    "APIHandlerFactory",
     "SQLEngineFactory",
 ]

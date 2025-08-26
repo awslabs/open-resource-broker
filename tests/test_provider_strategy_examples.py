@@ -658,7 +658,7 @@ class TestIntegrationScenarios:
         # Create providers with different characteristics
         fast_provider = MockProvider1Strategy(response_time_ms=50)
         slow_provider = MockProvider2Strategy(response_time_ms=300)
-        unreliable_provider = MockProvider1Strategy(should_fail=True)
+        MockProvider1Strategy(should_fail=True)
 
         # Create load balancer
         lb_config = LoadBalancingConfig(algorithm=LoadBalancingAlgorithm.LEAST_RESPONSE_TIME)

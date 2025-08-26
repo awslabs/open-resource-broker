@@ -478,11 +478,6 @@ def test_import_consistency():
         ]
 
         # Required imports for all handlers
-        required_imports = {
-            "src.domain.request.aggregate.Request",
-            "src.providers.aws.domain.template.aggregate.AWSTemplate",
-            "src.providers.aws.infrastructure.handlers.base_handler.AWSHandler",
-        }
 
         for handler_file in handler_files:
             if not os.path.exists(handler_file):

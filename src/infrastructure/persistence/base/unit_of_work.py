@@ -1,7 +1,7 @@
 """Base unit of work interfaces and implementations."""
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, TypeVar
+from typing import Any, TypeVar
 
 from domain.base.domain_interfaces import UnitOfWork
 from infrastructure.logging.logger import get_logger
@@ -87,7 +87,7 @@ class BaseUnitOfWork(UnitOfWork, ABC):
 class StrategyUnitOfWork(BaseUnitOfWork):
     """Unit of work implementation for strategy-based repositories."""
 
-    def __init__(self, repositories: List[StrategyBasedRepository]) -> None:
+    def __init__(self, repositories: list[StrategyBasedRepository]) -> None:
         """
         Initialize unit of work.
 
@@ -96,7 +96,7 @@ class StrategyUnitOfWork(BaseUnitOfWork):
         """
         super().__init__()
         self.repositories = repositories
-        self._snapshots: Dict[StrategyBasedRepository, Dict[str, Any]] = {}
+        self._snapshots: dict[StrategyBasedRepository, dict[str, Any]] = {}
 
     def _begin_transaction(self) -> None:
         """Begin transaction by delegating to storage strategies."""

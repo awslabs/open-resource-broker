@@ -1,11 +1,11 @@
 """OpenAPI security schemes for different authentication strategies."""
 
-from typing import Any, Dict
+from typing import Any
 
 from config.schemas.server_schema import AuthConfig
 
 
-def get_security_schemes(auth_config: AuthConfig) -> Dict[str, Any]:
+def get_security_schemes(auth_config: AuthConfig) -> dict[str, Any]:
     """
     Get OpenAPI security schemes based on authentication configuration.
 
@@ -68,7 +68,7 @@ def get_security_schemes(auth_config: AuthConfig) -> Dict[str, Any]:
     return schemes
 
 
-def get_auth_examples() -> Dict[str, Any]:
+def get_auth_examples() -> dict[str, Any]:
     """
     Get authentication examples for documentation.
 

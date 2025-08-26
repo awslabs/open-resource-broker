@@ -8,7 +8,7 @@ This module coordinates the registration of all services across different layers
 - Server services (FastAPI, REST API handlers)
 """
 
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from infrastructure.di.container import DIContainer, get_container
 
@@ -192,7 +192,7 @@ def _register_lazy_service_factories(container: DIContainer) -> None:
     logger.debug("Lazy service factories registered")
 
 
-def create_handler(handler_class, config: Optional[Dict[str, Any]] = None) -> Any:
+def create_handler(handler_class, config: Optional[dict[str, Any]] = None) -> Any:
     """
     Create an API handler with dependencies.
 

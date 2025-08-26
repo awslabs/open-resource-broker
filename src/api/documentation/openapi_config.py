@@ -1,6 +1,6 @@
 """OpenAPI configuration and customization."""
 
-from typing import Any, Dict
+from typing import Any
 
 from fastapi import FastAPI
 from fastapi.openapi.utils import get_openapi
@@ -148,7 +148,7 @@ def _get_security_scheme_name(strategy: str) -> str:
     return scheme_mapping.get(strategy)
 
 
-def _add_examples_to_schema(openapi_schema: Dict[str, Any]) -> None:
+def _add_examples_to_schema(openapi_schema: dict[str, Any]) -> None:
     """Add examples to the OpenAPI schema."""
     examples = get_api_examples()
 

@@ -5,20 +5,19 @@ import argparse
 import logging
 import subprocess
 import sys
-from typing import List
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
 
-def run_command(cmd: List[str], description: str) -> bool:
+def run_command(cmd: list[str], description: str) -> bool:
     """Run a command and return success status."""
     logger.info(f"Running: {description}")
     logger.debug(f"Command: {' '.join(cmd)}")
 
     try:
-        result = subprocess.run(cmd, check=True, capture_output=False)
+        subprocess.run(cmd, check=True, capture_output=False)
         logger.info(f"PASS {description}")
         return True
     except subprocess.CalledProcessError as e:
@@ -125,7 +124,7 @@ def main():
 
     # Use centralized tool runner
     run_tool_script = "./dev-tools/scripts/run_tool.sh"
-    final_cmd = [run_tool_script] + pytest_cmd
+    final_cmd = [run_tool_script, *pytest_cmd]
     test_paths = []
     markers = []
 
@@ -166,7 +165,7 @@ def main():
 
     # Add specific path if provided
     if args.path:
-        pytest_cmd = ["python", "-m", "pytest"] + [args.path]
+        pytest_cmd = ["python", "-m", "pytest", args.path]
         if args.verbose:
             pytest_cmd.append("-v")
         # Re-add markers for specific path
@@ -183,7 +182,7 @@ def main():
 
     # Use centralized tool runner
     run_tool_script = "./dev-tools/scripts/run_tool.sh"
-    final_cmd = [run_tool_script] + pytest_cmd
+    final_cmd = [run_tool_script, *pytest_cmd]
 
     # Run the tests
     success = run_command(final_cmd, "Running Tests")

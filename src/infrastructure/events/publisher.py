@@ -1,6 +1,6 @@
 """Configurable Event Publisher - Simple, mode-based event publishing."""
 
-from typing import Callable, Dict, List
+from typing import Callable
 
 from domain.base.events import DomainEvent, EventPublisher
 from infrastructure.logging.logger import get_logger
@@ -19,7 +19,7 @@ class ConfigurableEventPublisher(EventPublisher):
     def __init__(self, mode: str = "logging") -> None:
         """Initialize with publishing mode."""
         self.mode = mode
-        self._handlers: Dict[str, List[Callable]] = {}
+        self._handlers: dict[str, list[Callable]] = {}
         self._logger = get_logger(__name__)
 
         # Validate mode
@@ -78,7 +78,7 @@ class ConfigurableEventPublisher(EventPublisher):
         # Future implementation for message queue publishing
         self._logger.info("Would publish to queue: %s", event.event_type)
 
-    def get_registered_handlers(self) -> Dict[str, int]:
+    def get_registered_handlers(self) -> dict[str, int]:
         """Get count of registered handlers by event type (for debugging)."""
         return {event_type: len(handlers) for event_type, handlers in self._handlers.items()}
 

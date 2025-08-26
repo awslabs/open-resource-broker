@@ -4,7 +4,7 @@ This factory creates scheduler strategies using the scheduler registry pattern,
 eliminating hard-coded scheduler conditionals and maintaining clean architecture.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from infrastructure.logging.logger import get_logger
 from infrastructure.registry.scheduler_registry import get_scheduler_registry
@@ -18,7 +18,7 @@ class SchedulerStrategyFactory:
         self.logger = get_logger(__name__)
         self.config_manager = config_manager
         self._scheduler_registry = None
-        self._strategy_cache: Dict[str, Any] = {}
+        self._strategy_cache: dict[str, Any] = {}
 
     @property
     def scheduler_registry(self):

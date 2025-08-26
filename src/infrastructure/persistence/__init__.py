@@ -11,9 +11,9 @@ from infrastructure.persistence.base import (
 # (No imports needed from repository_factory to avoid circular dependencies)
 
 __all__: list[str] = [
+    "BaseUnitOfWork",
     # Base
     "StrategyBasedRepository",
-    "BaseUnitOfWork",
     "StrategyUnitOfWork",
     # Factory functions
 ]

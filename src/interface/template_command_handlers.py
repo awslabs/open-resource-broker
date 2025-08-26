@@ -10,7 +10,7 @@ following the same pattern as other entities in the system.
 from __future__ import annotations
 
 import argparse
-from typing import Any, Dict
+from typing import Any
 
 from application.dto.queries import (
     GetTemplateQuery,
@@ -29,7 +29,7 @@ from infrastructure.error.decorators import handle_interface_exceptions
 
 
 @handle_interface_exceptions(context="list_templates", interface_type="cli")
-async def handle_list_templates(args: argparse.Namespace) -> Dict[str, Any]:
+async def handle_list_templates(args: argparse.Namespace) -> dict[str, Any]:
     """
     Handle list templates operations using CQRS QueryBus.
 
@@ -106,7 +106,7 @@ async def handle_list_templates(args: argparse.Namespace) -> Dict[str, Any]:
 
 
 @handle_interface_exceptions(context="get_template", interface_type="cli")
-async def handle_get_template(args: argparse.Namespace) -> Dict[str, Any]:
+async def handle_get_template(args: argparse.Namespace) -> dict[str, Any]:
     """
     Handle get template operations using CQRS QueryBus.
 
@@ -162,7 +162,7 @@ async def handle_get_template(args: argparse.Namespace) -> Dict[str, Any]:
 
 
 @handle_interface_exceptions(context="create_template", interface_type="cli")
-async def handle_create_template(args: argparse.Namespace) -> Dict[str, Any]:
+async def handle_create_template(args: argparse.Namespace) -> dict[str, Any]:
     """
     Handle create template operations using CQRS CommandBus.
 
@@ -240,7 +240,7 @@ async def handle_create_template(args: argparse.Namespace) -> Dict[str, Any]:
 
 
 @handle_interface_exceptions(context="update_template", interface_type="cli")
-async def handle_update_template(args: argparse.Namespace) -> Dict[str, Any]:
+async def handle_update_template(args: argparse.Namespace) -> dict[str, Any]:
     """
     Handle update template operations using CQRS CommandBus.
 
@@ -309,7 +309,7 @@ async def handle_update_template(args: argparse.Namespace) -> Dict[str, Any]:
 
 
 @handle_interface_exceptions(context="delete_template", interface_type="cli")
-async def handle_delete_template(args: argparse.Namespace) -> Dict[str, Any]:
+async def handle_delete_template(args: argparse.Namespace) -> dict[str, Any]:
     """
     Handle delete template operations using CQRS CommandBus.
 
@@ -366,7 +366,7 @@ async def handle_delete_template(args: argparse.Namespace) -> Dict[str, Any]:
 
 
 @handle_interface_exceptions(context="validate_template", interface_type="cli")
-async def handle_validate_template(args: argparse.Namespace) -> Dict[str, Any]:
+async def handle_validate_template(args: argparse.Namespace) -> dict[str, Any]:
     """
     Handle validate template operations using CQRS buses.
 
@@ -474,7 +474,7 @@ async def handle_validate_template(args: argparse.Namespace) -> Dict[str, Any]:
 
 
 @handle_interface_exceptions(context="refresh_templates", interface_type="cli")
-async def handle_refresh_templates(args: argparse.Namespace) -> Dict[str, Any]:
+async def handle_refresh_templates(args: argparse.Namespace) -> dict[str, Any]:
     """
     Handle refresh templates operations using CQRS QueryBus.
 

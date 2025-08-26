@@ -2,7 +2,7 @@
 
 import json
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from config.managers.configuration_manager import ConfigurationManager
 from domain.base.exceptions import ConfigurationError
@@ -56,7 +56,7 @@ class TemplateJSONStorageStrategy(JSONStorageStrategy):
                 "No template files found at %s or %s", self.file_path, self.legacy_file_path
             )
 
-    def find_by_id(self, entity_id: str) -> Optional[Dict[str, Any]]:
+    def find_by_id(self, entity_id: str) -> Optional[dict[str, Any]]:
         """
         Find entity by ID, checking both main and legacy files.
 
@@ -91,7 +91,7 @@ class TemplateJSONStorageStrategy(JSONStorageStrategy):
 
         return None
 
-    def find_all(self) -> List[Dict[str, Any]]:
+    def find_all(self) -> list[dict[str, Any]]:
         """
         Find all entities from both main and legacy files.
 
@@ -190,7 +190,7 @@ class TemplateJSONRepository(StrategyBasedRepository, TemplateRepository):
                 return None
         return None
 
-    def find_all(self) -> List[Template]:
+    def find_all(self) -> list[Template]:
         """
         Find all templates.
 
@@ -235,7 +235,7 @@ class TemplateJSONRepository(StrategyBasedRepository, TemplateRepository):
         """
         return self.strategy.delete(template_id)
 
-    def find_by_provider_type(self, provider_type: str) -> List[Template]:
+    def find_by_provider_type(self, provider_type: str) -> list[Template]:
         """
         Find templates by provider type.
 
@@ -248,7 +248,7 @@ class TemplateJSONRepository(StrategyBasedRepository, TemplateRepository):
         all_templates = self.find_all()
         return [template for template in all_templates if template.provider_type == provider_type]
 
-    def find_by_provider_name(self, provider_name: str) -> List[Template]:
+    def find_by_provider_name(self, provider_name: str) -> list[Template]:
         """
         Find templates by provider name/instance.
 
@@ -261,7 +261,7 @@ class TemplateJSONRepository(StrategyBasedRepository, TemplateRepository):
         all_templates = self.find_all()
         return [template for template in all_templates if template.provider_name == provider_name]
 
-    def get_template_source_info(self, template_id: str) -> Optional[Dict[str, Any]]:
+    def get_template_source_info(self, template_id: str) -> Optional[dict[str, Any]]:
         """
         Get information about which file a template was loaded from.
 
@@ -281,7 +281,7 @@ class TemplateJSONRepository(StrategyBasedRepository, TemplateRepository):
             self.strategy.refresh_cache()
             self.logger.info("Refreshed template cache")
 
-    def _data_to_aggregate(self, data: Dict[str, Any]) -> Template:
+    def _data_to_aggregate(self, data: dict[str, Any]) -> Template:
         """
         Convert template data to Template aggregate.
 
@@ -326,7 +326,7 @@ class TemplateJSONRepository(StrategyBasedRepository, TemplateRepository):
             is_active=data.get("is_active", True),
         )
 
-    def _aggregate_to_data(self, template: Template) -> Dict[str, Any]:
+    def _aggregate_to_data(self, template: Template) -> dict[str, Any]:
         """
         Convert Template aggregate to data dictionary.
 

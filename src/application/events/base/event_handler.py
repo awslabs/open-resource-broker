@@ -9,7 +9,7 @@ of concerns and DRY compliance.
 import asyncio
 import time
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 # Import types - using string imports to avoid circular dependencies
 try:
@@ -204,7 +204,7 @@ class EventHandler(ABC):
             )
         # Future: Implement actual dead letter queue integration
 
-    def extract_fields(self, event: DomainEvent, field_mapping: Dict[str, Any]) -> Dict[str, Any]:
+    def extract_fields(self, event: DomainEvent, field_mapping: dict[str, Any]) -> dict[str, Any]:
         """
         Extract and map fields from event data.
 

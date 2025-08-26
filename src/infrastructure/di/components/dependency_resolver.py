@@ -5,7 +5,7 @@ import logging
 import threading
 import typing
 from contextlib import suppress
-from typing import Any, Callable, Dict, Optional, Set, Type, TypeVar, get_type_hints
+from typing import Any, Callable, Optional, TypeVar, get_type_hints
 
 from domain.base.dependency_injection import get_injectable_metadata, is_injectable
 from domain.base.di_contracts import DependencyRegistration, DILifecycle, DIScope
@@ -30,13 +30,13 @@ class DependencyResolver:
         self._service_registry = service_registry
         self._cqrs_registry = cqrs_registry
         self._lock = threading.RLock()
-        self._resolution_cache: Dict[Type, Any] = {}
+        self._resolution_cache: dict[type, Any] = {}
 
     def resolve(
         self,
-        cls: Type[T],
-        parent_type: Optional[Type] = None,
-        dependency_chain: Optional[Set[Type]] = None,
+        cls: type[T],
+        parent_type: Optional[type] = None,
+        dependency_chain: Optional[set[type]] = None,
     ) -> T:
         """
         Resolve a dependency and create an instance.
@@ -88,7 +88,7 @@ class DependencyResolver:
             else:
                 raise DependencyResolutionError(cls, f"Failed to resolve {cls.__name__}: {e!s}")
 
-    def _create_instance(self, cls: Type[T], dependency_chain: Set[Type]) -> T:
+    def _create_instance(self, cls: type[T], dependency_chain: set[type]) -> T:
         """Create an instance of the specified type."""
         try:
             # Get registration
@@ -107,7 +107,7 @@ class DependencyResolver:
                 raise InstantiationError(cls, f"Failed to create instance of {cls.__name__}: {e!s}")
 
     def _create_from_registration(
-        self, registration: DependencyRegistration, dependency_chain: Set[Type]
+        self, registration: DependencyRegistration, dependency_chain: set[type]
     ) -> Any:
         """Create instance from registration."""
         if registration.instance is not None:
@@ -132,7 +132,7 @@ class DependencyResolver:
         # Fallback to dependency type
         return self._create_direct_instance(registration.dependency_type, dependency_chain)
 
-    def _create_direct_instance(self, cls: Type[T], dependency_chain: Set[Type]) -> T:
+    def _create_direct_instance(self, cls: type[T], dependency_chain: set[type]) -> T:
         """Create instance directly from class."""
         try:
             # Check if class is injectable and auto-register if needed
@@ -154,7 +154,7 @@ class DependencyResolver:
             else:
                 raise InstantiationError(cls, f"Failed to instantiate {cls.__name__}: {e!s}")
 
-    def _auto_register_injectable_class(self, cls: Type) -> None:
+    def _auto_register_injectable_class(self, cls: type) -> None:
         """Auto-register an injectable class."""
         try:
             metadata = get_injectable_metadata(cls)
@@ -179,8 +179,8 @@ class DependencyResolver:
             logger.warning("Failed to auto-register injectable class %s: %s", cls.__name__, e)
 
     def _resolve_constructor_parameters(
-        self, cls: Type, dependency_chain: Set[Type]
-    ) -> Dict[str, Any]:
+        self, cls: type, dependency_chain: set[type]
+    ) -> dict[str, Any]:
         """Resolve constructor parameters for a class."""
         try:
             # Get constructor signature
@@ -257,8 +257,8 @@ class DependencyResolver:
                 )
 
     def _resolve_function_parameters(
-        self, func: Callable, dependency_chain: Set[Type]
-    ) -> Dict[str, Any]:
+        self, func: Callable, dependency_chain: set[type]
+    ) -> dict[str, Any]:
         """Resolve function parameters for factory functions."""
         try:
             signature = inspect.signature(func)
@@ -312,7 +312,7 @@ class DependencyResolver:
                     type(func), f"Failed to resolve factory parameters: {e!s}"
                 )
 
-    def _resolve_string_annotation(self, annotation: str, context_class: Type) -> Type:
+    def _resolve_string_annotation(self, annotation: str, context_class: type) -> type:
         """Resolve string type annotations to actual types."""
         try:
             # Get the module where the context class is defined
@@ -372,7 +372,7 @@ class DependencyResolver:
                 f"Failed to resolve string annotation '{annotation}': {e!s}",
             )
 
-    def _is_primitive_type(self, param_type: Type) -> bool:
+    def _is_primitive_type(self, param_type: type) -> bool:
         """Check if a type is a primitive type that can't be resolved as a dependency."""
         primitive_types = {
             str,

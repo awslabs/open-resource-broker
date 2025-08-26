@@ -1,6 +1,6 @@
 """Storage configuration schemas."""
 
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
@@ -10,7 +10,7 @@ class JsonStrategyConfig(BaseModel):
 
     storage_type: str = Field("single_file", description="Storage type (single_file, split_files)")
     base_path: str = Field("data", description="Base path for JSON files")
-    filenames: Dict[str, Any] = Field(
+    filenames: dict[str, Any] = Field(
         default_factory=lambda: {
             "single_file": "request_database.json",
             "split_files": {
@@ -130,7 +130,7 @@ class RetryConfig(BaseModel):
     jitter: bool = Field(True, description="Add jitter to delays")
 
     # Service-specific settings
-    service_configs: Dict[str, Dict[str, Any]] = Field(
+    service_configs: dict[str, dict[str, Any]] = Field(
         default_factory=lambda: {
             "ec2": {"max_attempts": 3, "base_delay": 1.0, "max_delay": 30.0},
             "dynamodb": {"max_attempts": 5, "base_delay": 0.5, "max_delay": 20.0},

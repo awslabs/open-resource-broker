@@ -4,7 +4,7 @@ This factory creates provider strategies and contexts based on integrated config
 integrating the existing provider strategy ecosystem with the CQRS architecture.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from config.schemas.provider_strategy_schema import (
     ProviderConfig,
@@ -45,7 +45,7 @@ class ProviderStrategyFactory:
         """
         self._config_manager = config_manager
         self._logger = logger
-        self._provider_cache: Dict[str, ProviderStrategy] = {}
+        self._provider_cache: dict[str, ProviderStrategy] = {}
 
     @handle_infrastructure_exceptions(context="provider_context_creation")
     def create_provider_context(self) -> ProviderContext:
@@ -290,7 +290,7 @@ class ProviderStrategyFactory:
             self._logger.warning("Failed to configure some context settings: %s", str(e))
             # Don't fail the entire creation for optional settings
 
-    def get_provider_info(self) -> Dict[str, Any]:
+    def get_provider_info(self) -> dict[str, Any]:
         """
         Get information about current provider configuration.
 
@@ -320,7 +320,7 @@ class ProviderStrategyFactory:
             self._logger.error("Failed to get provider info: %s", str(e))
             return {"mode": "error", "error": str(e)}
 
-    def validate_configuration(self) -> Dict[str, Any]:
+    def validate_configuration(self) -> dict[str, Any]:
         """
         Validate current provider configuration.
 

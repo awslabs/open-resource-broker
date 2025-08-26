@@ -1,7 +1,7 @@
 """Provider strategy configuration schemas."""
 
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -31,13 +31,13 @@ class HandlerConfig(BaseModel):
 class ProviderDefaults(BaseModel):
     """Default configuration for a provider type."""
 
-    handlers: Dict[str, HandlerConfig] = Field(
+    handlers: dict[str, HandlerConfig] = Field(
         default_factory=dict, description="Default handler configurations"
     )
-    template_defaults: Dict[str, Any] = Field(
+    template_defaults: dict[str, Any] = Field(
         default_factory=dict, description="Template defaults for this provider type"
     )
-    extensions: Optional[Dict[str, Any]] = Field(
+    extensions: Optional[dict[str, Any]] = Field(
         None, description="Provider-specific extensions configuration"
     )
 
@@ -95,25 +95,25 @@ class ProviderInstanceConfig(BaseModel):
     enabled: bool = Field(True, description="Whether this provider is enabled")
     priority: int = Field(0, description="Provider priority (lower = higher priority)")
     weight: int = Field(100, description="Provider weight for load balancing")
-    config: Dict[str, Any] = Field(
+    config: dict[str, Any] = Field(
         default_factory=dict, description="Provider-specific configuration"
     )
 
     # Handler configuration with inheritance support
-    handlers: Optional[Dict[str, HandlerConfig]] = Field(
+    handlers: Optional[dict[str, HandlerConfig]] = Field(
         None, description="Full handler override (ignores defaults)"
     )
-    handler_overrides: Optional[Dict[str, Optional[HandlerConfig]]] = Field(
+    handler_overrides: Optional[dict[str, Optional[HandlerConfig]]] = Field(
         None, description="Partial handler overrides (null to disable)"
     )
 
     # Template defaults for this provider instance
-    template_defaults: Optional[Dict[str, Any]] = Field(
+    template_defaults: Optional[dict[str, Any]] = Field(
         None, description="Template defaults for this provider instance"
     )
 
     # Provider instance extensions
-    extensions: Optional[Dict[str, Any]] = Field(
+    extensions: Optional[dict[str, Any]] = Field(
         None, description="Instance-specific extension overrides"
     )
 
@@ -123,7 +123,7 @@ class ProviderInstanceConfig(BaseModel):
 
     def get_effective_handlers(
         self, provider_defaults: Optional[ProviderDefaults] = None
-    ) -> Dict[str, HandlerConfig]:
+    ) -> dict[str, HandlerConfig]:
         """Get effective handlers after applying defaults and overrides."""
 
         # If full handlers override is specified, use it directly
@@ -209,10 +209,10 @@ class ProviderConfig(BaseModel):
     )
 
     # Provider defaults and instances
-    provider_defaults: Dict[str, ProviderDefaults] = Field(
+    provider_defaults: dict[str, ProviderDefaults] = Field(
         default_factory=dict, description="Default configurations by provider type"
     )
-    providers: List[ProviderInstanceConfig] = Field(
+    providers: list[ProviderInstanceConfig] = Field(
         default_factory=list, description="List of provider instances"
     )
 
@@ -284,7 +284,7 @@ class ProviderConfig(BaseModel):
             else:
                 return ProviderMode.NONE
 
-    def get_active_providers(self) -> List[ProviderInstanceConfig]:
+    def get_active_providers(self) -> list[ProviderInstanceConfig]:
         """Get active providers based on selection policy."""
 
         # Multi-provider policies should return ALL enabled providers

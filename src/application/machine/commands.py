@@ -1,6 +1,6 @@
 """Machine-related commands for CQRS implementation."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from application.dto.base import BaseCommand
 
@@ -10,15 +10,15 @@ class UpdateMachineStatusCommand(BaseCommand):
 
     machine_id: str
     status: str
-    metadata: Dict[str, Any] = {}
+    metadata: dict[str, Any] = {}
 
 
 class CleanupMachineResourcesCommand(BaseCommand):
     """Command to cleanup machine resources."""
 
-    machine_ids: List[str]
+    machine_ids: list[str]
     force_cleanup: bool = False
-    metadata: Dict[str, Any] = {}
+    metadata: dict[str, Any] = {}
 
 
 class ConvertMachineStatusCommand(BaseCommand):
@@ -26,15 +26,15 @@ class ConvertMachineStatusCommand(BaseCommand):
 
     provider_state: str
     provider_type: str
-    metadata: Dict[str, Any] = {}
+    metadata: dict[str, Any] = {}
 
 
 class ConvertBatchMachineStatusCommand(BaseCommand):
     """Command to convert multiple provider states to domain statuses."""
 
     # List of {'state': str, 'provider_type': str}
-    provider_states: List[Dict[str, str]]
-    metadata: Dict[str, Any] = {}
+    provider_states: list[dict[str, str]]
+    metadata: dict[str, Any] = {}
 
 
 class ValidateProviderStateCommand(BaseCommand):
@@ -42,7 +42,7 @@ class ValidateProviderStateCommand(BaseCommand):
 
     provider_state: str
     provider_type: str
-    metadata: Dict[str, Any] = {}
+    metadata: dict[str, Any] = {}
 
 
 class RegisterMachineCommand(BaseCommand):
@@ -51,8 +51,8 @@ class RegisterMachineCommand(BaseCommand):
     machine_id: str
     instance_id: str
     template_id: str
-    provider_data: Dict[str, Any]
-    metadata: Dict[str, Any] = {}
+    provider_data: dict[str, Any]
+    metadata: dict[str, Any] = {}
 
 
 class DeregisterMachineCommand(BaseCommand):
@@ -60,4 +60,4 @@ class DeregisterMachineCommand(BaseCommand):
 
     machine_id: str
     reason: Optional[str] = None
-    metadata: Dict[str, Any] = {}
+    metadata: dict[str, Any] = {}

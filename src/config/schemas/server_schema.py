@@ -1,6 +1,6 @@
 """Server configuration schema for REST API server."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -17,23 +17,23 @@ class AuthConfig(BaseModel):
     )
 
     # Bearer token configuration
-    bearer_token: Optional[Dict[str, Any]] = Field(
+    bearer_token: Optional[dict[str, Any]] = Field(
         None, description="Bearer token strategy configuration"
     )
 
     # AWS IAM configuration
-    iam: Optional[Dict[str, Any]] = Field(None, description="AWS IAM strategy configuration")
+    iam: Optional[dict[str, Any]] = Field(None, description="AWS IAM strategy configuration")
 
     # AWS Cognito configuration
-    cognito: Optional[Dict[str, Any]] = Field(
+    cognito: Optional[dict[str, Any]] = Field(
         None, description="AWS Cognito strategy configuration"
     )
 
     # OAuth configuration
-    oauth: Optional[Dict[str, Any]] = Field(None, description="OAuth strategy configuration")
+    oauth: Optional[dict[str, Any]] = Field(None, description="OAuth strategy configuration")
 
     # Provider-specific auth configurations
-    provider_auth: Optional[Dict[str, Any]] = Field(
+    provider_auth: Optional[dict[str, Any]] = Field(
         None, description="Provider-specific auth configuration"
     )
 
@@ -42,11 +42,11 @@ class CORSConfig(BaseModel):
     """CORS configuration."""
 
     enabled: bool = Field(True, description="Enable CORS")
-    origins: List[str] = Field(["*"], description="Allowed origins")
-    methods: List[str] = Field(
+    origins: list[str] = Field(["*"], description="Allowed origins")
+    methods: list[str] = Field(
         ["GET", "POST", "PUT", "DELETE", "OPTIONS"], description="Allowed methods"
     )
-    headers: List[str] = Field(["*"], description="Allowed headers")
+    headers: list[str] = Field(["*"], description="Allowed headers")
     credentials: bool = Field(False, description="Allow credentials")
 
 
@@ -76,11 +76,11 @@ class ServerConfig(BaseModel):
 
     # Security
     require_https: bool = Field(False, description="Require HTTPS for all requests")
-    trusted_hosts: List[str] = Field(["*"], description="Trusted host headers")
+    trusted_hosts: list[str] = Field(["*"], description="Trusted host headers")
 
     # Performance
     request_timeout: int = Field(30, description="Request timeout in seconds")
     max_request_size: int = Field(16 * 1024 * 1024, description="Maximum request size in bytes")
 
     # Rate limiting (for future implementation)
-    rate_limiting: Optional[Dict[str, Any]] = Field(None, description="Rate limiting configuration")
+    rate_limiting: Optional[dict[str, Any]] = Field(None, description="Rate limiting configuration")

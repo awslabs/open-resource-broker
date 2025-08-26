@@ -11,7 +11,7 @@ implementations and storage strategies:
 import json
 import os
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from domain.base.domain_interfaces import Repository
 from domain.base.ports.configuration_port import ConfigurationPort
@@ -52,7 +52,7 @@ class RepositoryMigrator:
         target_type: str,
         batch_size: int = 100,
         create_backup: bool = True,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Migrate data between repository types.
 
@@ -118,7 +118,7 @@ class RepositoryMigrator:
 
         return stats
 
-    def _create_repositories_for_storage_type(self, storage_type: str) -> Dict[str, Repository]:
+    def _create_repositories_for_storage_type(self, storage_type: str) -> dict[str, Repository]:
         """
         Create repositories for a specific storage type.
 
@@ -249,7 +249,7 @@ class RepositoryMigrator:
             # No need to restore config since we didn't modify it
             pass
 
-    def _create_backup(self, repos: Dict[str, Repository]) -> str:
+    def _create_backup(self, repos: dict[str, Repository]) -> str:
         """
         Create backup of current data.
 
@@ -297,7 +297,7 @@ class RepositoryMigrator:
         source_repo: Repository,
         target_repo: Repository,
         batch_size: int,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Migrate a single collection.
 

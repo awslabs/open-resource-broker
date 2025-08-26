@@ -6,7 +6,7 @@ import threading
 import time
 from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Any, Dict, List, Optional, Set, Type, TypeVar
+from typing import Any, Optional, TypeVar
 
 from domain.base.dependency_injection import is_injectable
 from domain.base.di_contracts import (
@@ -35,7 +35,7 @@ logger = get_logger(__name__)
 class LazyLoadingConfig:
     """Configuration for lazy loading behavior."""
 
-    def __init__(self, config_dict: Optional[Dict[str, Any]] = None) -> None:
+    def __init__(self, config_dict: Optional[dict[str, Any]] = None) -> None:
         """Initialize lazy loading configuration with provided settings."""
         if config_dict is None:
             config_dict = {}
@@ -94,33 +94,33 @@ class DIContainer(DIContainerPort, CQRSHandlerRegistrationPort, ContainerPort):
 
         # Lazy loading support
         self._lazy_config = LazyLoadingConfig.from_config_manager()
-        self._lazy_factories: Dict[Type, Any] = {}
-        self._on_demand_registrations: Dict[Type, Any] = {}
+        self._lazy_factories: dict[type, Any] = {}
+        self._on_demand_registrations: dict[type, Any] = {}
 
         logger.info(
             "DI Container initialized (lazy_loading=%s)",
             "enabled" if self._lazy_config.enabled else "disabled",
         )
 
-    def is_registered(self, cls: Type) -> bool:
+    def is_registered(self, cls: type) -> bool:
         """Check if a class is registered."""
         return self._service_registry.is_registered(cls)
 
-    def has(self, service_type: Type[T]) -> bool:
+    def has(self, service_type: type[T]) -> bool:
         """Check if service type is registered."""
         return self._service_registry.has(service_type)
 
-    def register_singleton(self, cls: Type[T], instance_or_factory: Any = None) -> None:
+    def register_singleton(self, cls: type[T], instance_or_factory: Any = None) -> None:
         """Register a singleton service."""
         with timed_operation(f"register_singleton({cls.__name__})"):
             self._service_registry.register_singleton(cls, instance_or_factory)
 
-    def register_factory(self, cls: Type[T], factory) -> None:
+    def register_factory(self, cls: type[T], factory) -> None:
         """Register a factory for creating instances."""
         with timed_operation(f"register_factory({cls.__name__})"):
             self._service_registry.register_factory(cls, factory)
 
-    def register_instance(self, cls: Type[T], instance: T) -> None:
+    def register_instance(self, cls: type[T], instance: T) -> None:
         """Register a specific instance."""
         with timed_operation(f"register_instance({cls.__name__})"):
             self._service_registry.register_instance(cls, instance)
@@ -131,27 +131,27 @@ class DIContainer(DIContainerPort, CQRSHandlerRegistrationPort, ContainerPort):
 
     def register_type(
         self,
-        interface_type: Type[T],
-        implementation_type: Type[T],
+        interface_type: type[T],
+        implementation_type: type[T],
         registration_type=None,
     ) -> None:
         """Register an interface to implementation mapping."""
         scope = registration_type or DIScope.TRANSIENT
         self._service_registry.register_type(interface_type, implementation_type, scope)
 
-    def unregister(self, dependency_type: Type[T]) -> bool:
+    def unregister(self, dependency_type: type[T]) -> bool:
         """Unregister a dependency type."""
         return self._service_registry.unregister(dependency_type)
 
-    def get_registrations(self) -> Dict[Type, DependencyRegistration]:
+    def get_registrations(self) -> dict[type, DependencyRegistration]:
         """Get all registrations."""
         return self._service_registry.get_registrations()
 
     def get(
         self,
-        cls: Type[T],
-        parent_type: Optional[Type] = None,
-        dependency_chain: Optional[Set[Type]] = None,
+        cls: type[T],
+        parent_type: Optional[type] = None,
+        dependency_chain: Optional[set[type]] = None,
     ) -> T:
         """Get an instance of the specified type with lazy loading support."""
         try:
@@ -174,37 +174,37 @@ class DIContainer(DIContainerPort, CQRSHandlerRegistrationPort, ContainerPort):
             else:
                 raise DependencyResolutionError(cls, f"Failed to resolve {cls.__name__}: {e!s}")
 
-    def get_optional(self, dependency_type: Type[T]) -> Optional[T]:
+    def get_optional(self, dependency_type: type[T]) -> Optional[T]:
         """Get an optional instance of the specified type."""
         try:
             return self.get(dependency_type)
         except (DependencyResolutionError, UnregisteredDependencyError):
             return None
 
-    def get_all(self, dependency_type: Type[T]) -> List[T]:
+    def get_all(self, dependency_type: type[T]) -> list[T]:
         """Get all instances of the specified type."""
         instance = self.get_optional(dependency_type)
         return [instance] if instance is not None else []
 
-    def register_command_handler(self, command_type: Type, handler_type: Type) -> None:
+    def register_command_handler(self, command_type: type, handler_type: type) -> None:
         """Register a command handler."""
         self._cqrs_registry.register_command_handler(command_type, handler_type)
         if not self._service_registry.is_registered(handler_type):
             self._service_registry.register_type(handler_type, handler_type)
 
-    def register_query_handler(self, query_type: Type, handler_type: Type) -> None:
+    def register_query_handler(self, query_type: type, handler_type: type) -> None:
         """Register a query handler."""
         self._cqrs_registry.register_query_handler(query_type, handler_type)
         if not self._service_registry.is_registered(handler_type):
             self._service_registry.register_type(handler_type, handler_type)
 
-    def register_event_handler(self, event_type: Type, handler_type: Type) -> None:
+    def register_event_handler(self, event_type: type, handler_type: type) -> None:
         """Register an event handler."""
         self._cqrs_registry.register_event_handler(event_type, handler_type)
         if not self._service_registry.is_registered(handler_type):
             self._service_registry.register_type(handler_type, handler_type)
 
-    def get_command_handler(self, command_type: Type) -> Any:
+    def get_command_handler(self, command_type: type) -> Any:
         """Get command handler for a command type."""
         handler_type = self._cqrs_registry.get_command_handler_type(command_type)
         if handler_type is None:
@@ -214,7 +214,7 @@ class DIContainer(DIContainerPort, CQRSHandlerRegistrationPort, ContainerPort):
             )
         return self.get(handler_type)
 
-    def get_query_handler(self, query_type: Type) -> Any:
+    def get_query_handler(self, query_type: type) -> Any:
         """Get query handler for a query type."""
         handler_type = self._cqrs_registry.get_query_handler_type(query_type)
         if handler_type is None:
@@ -223,12 +223,12 @@ class DIContainer(DIContainerPort, CQRSHandlerRegistrationPort, ContainerPort):
             )
         return self.get(handler_type)
 
-    def get_event_handlers(self, event_type: Type) -> List[Any]:
+    def get_event_handlers(self, event_type: type) -> list[Any]:
         """Get event handlers for an event type."""
         handler_types = self._cqrs_registry.get_event_handler_types(event_type)
         return [self.get(handler_type) for handler_type in handler_types]
 
-    def register_injectable_class(self, cls: Type[T]) -> None:
+    def register_injectable_class(self, cls: type[T]) -> None:
         """Register a class as injectable."""
         self._service_registry.register_injectable_class(cls)
 
@@ -241,7 +241,7 @@ class DIContainer(DIContainerPort, CQRSHandlerRegistrationPort, ContainerPort):
 
     # ========== LAZY LOADING METHODS ==========
 
-    def register_lazy_factory(self, cls: Type[T], factory) -> None:
+    def register_lazy_factory(self, cls: type[T], factory) -> None:
         """Register a lazy factory that creates instances on first access."""
         if self._lazy_config.enabled:
             with self._lock:
@@ -251,7 +251,7 @@ class DIContainer(DIContainerPort, CQRSHandlerRegistrationPort, ContainerPort):
             # Fallback to immediate registration
             self.register_factory(cls, factory)
 
-    def register_on_demand(self, cls: Type[T], registration_func) -> None:
+    def register_on_demand(self, cls: type[T], registration_func) -> None:
         """Register a function that will register the service on first access."""
         if self._lazy_config.enabled:
             with self._lock:
@@ -261,7 +261,7 @@ class DIContainer(DIContainerPort, CQRSHandlerRegistrationPort, ContainerPort):
             # Immediate registration
             registration_func(self)
 
-    def _register_on_demand(self, cls: Type[T]) -> None:
+    def _register_on_demand(self, cls: type[T]) -> None:
         """Register a service on-demand if lazy registration is available."""
         if not self._lazy_config.enabled:
             return
@@ -287,7 +287,7 @@ class DIContainer(DIContainerPort, CQRSHandlerRegistrationPort, ContainerPort):
                 logger.debug("Auto-registered injectable class %s", cls.__name__)
                 return
 
-    def _create_and_cache(self, cls: Type[T]) -> T:
+    def _create_and_cache(self, cls: type[T]) -> T:
         """Create an instance and cache it if caching is enabled."""
         # This method is called by the get() method
         # For now, delegate to the dependency resolver
@@ -309,7 +309,7 @@ class DIContainer(DIContainerPort, CQRSHandlerRegistrationPort, ContainerPort):
             self._dependency_resolver.clear_cache()
             logger.info("DI Container cleared")
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get container statistics."""
         with self._lock:
             return {

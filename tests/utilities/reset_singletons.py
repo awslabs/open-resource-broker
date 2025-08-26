@@ -1,7 +1,7 @@
 """Utilities for resetting singletons during testing."""
 
 import importlib
-from typing import Any, Type
+from typing import Any
 
 
 # Define a fallback registry class
@@ -88,7 +88,7 @@ def reset_all_singletons() -> None:
     _safe_reset_class_instance("src.infrastructure.logging.logger_singleton", "LoggerSingleton")
 
 
-def reset_singleton(singleton_class: Type[Any]) -> None:
+def reset_singleton(singleton_class: type[Any]) -> None:
     """
     Reset a specific singleton for testing.
 

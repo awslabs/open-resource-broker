@@ -8,10 +8,9 @@ import sys
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
-from typing import List
 
 
-def run_command(cmd: List[str]) -> int:
+def run_command(cmd: list[str]) -> int:
     """Run command and return exit code."""
     try:
         result = subprocess.run(cmd, check=True)

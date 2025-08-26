@@ -1,14 +1,14 @@
 """CLI command handler for REST API server."""
 
 import signal
-from typing import Any, Dict
+from typing import Any
 
 from infrastructure.error.decorators import handle_interface_exceptions
 from infrastructure.logging.logger import get_logger
 
 
 @handle_interface_exceptions(context="serve_api", interface_type="cli")
-async def handle_serve_api(args) -> Dict[str, Any]:
+async def handle_serve_api(args) -> dict[str, Any]:
     """
     Handle serve API operations.
 

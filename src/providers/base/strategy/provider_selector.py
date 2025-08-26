@@ -10,7 +10,7 @@ import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
-from typing import Callable, Dict, List, Optional
+from typing import Callable, Optional
 
 from domain.base.dependency_injection import injectable
 from domain.base.ports import LoggingPort
@@ -41,12 +41,12 @@ class SelectionPolicy(str, Enum):
 class SelectionCriteria:
     """Criteria for strategy selection."""
 
-    required_capabilities: List[str] = None
+    required_capabilities: list[str] = None
     min_success_rate: float = 0.0
     max_response_time_ms: float = float("inf")
     require_healthy: bool = True
-    exclude_strategies: List[str] = None
-    prefer_strategies: List[str] = None
+    exclude_strategies: list[str] = None
+    prefer_strategies: list[str] = None
     custom_filter: Optional[Callable[[ProviderStrategy, StrategyMetrics], bool]] = None
 
     def __post_init__(self) -> None:
@@ -65,7 +65,7 @@ class SelectionResult:
 
     selected_strategy: Optional[ProviderStrategy]
     selection_reason: str
-    alternatives: List[ProviderStrategy] = None
+    alternatives: list[ProviderStrategy] = None
     selection_time_ms: float = 0.0
 
     def __post_init__(self) -> None:
@@ -96,8 +96,8 @@ class ProviderSelector(ABC):
     @abstractmethod
     def select_strategy(
         self,
-        strategies: Dict[str, ProviderStrategy],
-        metrics: Dict[str, StrategyMetrics],
+        strategies: dict[str, ProviderStrategy],
+        metrics: dict[str, StrategyMetrics],
         operation: ProviderOperation,
         criteria: SelectionCriteria = None,
     ) -> SelectionResult:
@@ -121,8 +121,8 @@ class FirstAvailableSelector(ProviderSelector):
 
     def select_strategy(
         self,
-        strategies: Dict[str, ProviderStrategy],
-        metrics: Dict[str, StrategyMetrics],
+        strategies: dict[str, ProviderStrategy],
+        metrics: dict[str, StrategyMetrics],
         operation: ProviderOperation,
         criteria: SelectionCriteria = None,
     ) -> SelectionResult:
@@ -201,8 +201,8 @@ class RoundRobinSelector(ProviderSelector):
 
     def select_strategy(
         self,
-        strategies: Dict[str, ProviderStrategy],
-        metrics: Dict[str, StrategyMetrics],
+        strategies: dict[str, ProviderStrategy],
+        metrics: dict[str, StrategyMetrics],
         operation: ProviderOperation,
         criteria: SelectionCriteria = None,
     ) -> SelectionResult:
@@ -252,8 +252,8 @@ class PerformanceBasedSelector(ProviderSelector):
 
     def select_strategy(
         self,
-        strategies: Dict[str, ProviderStrategy],
-        metrics: Dict[str, StrategyMetrics],
+        strategies: dict[str, ProviderStrategy],
+        metrics: dict[str, StrategyMetrics],
         operation: ProviderOperation,
         criteria: SelectionCriteria = None,
     ) -> SelectionResult:
@@ -326,8 +326,8 @@ class RandomSelector(ProviderSelector):
 
     def select_strategy(
         self,
-        strategies: Dict[str, ProviderStrategy],
-        metrics: Dict[str, StrategyMetrics],
+        strategies: dict[str, ProviderStrategy],
+        metrics: dict[str, StrategyMetrics],
         operation: ProviderOperation,
         criteria: SelectionCriteria = None,
     ) -> SelectionResult:
@@ -411,6 +411,6 @@ class SelectorFactory:
         cls._selectors[policy] = selector_class
 
     @classmethod
-    def get_supported_policies(cls) -> List[SelectionPolicy]:
+    def get_supported_policies(cls) -> list[SelectionPolicy]:
         """Get list of supported selection policies."""
         return list(cls._selectors.keys())

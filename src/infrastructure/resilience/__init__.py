@@ -17,20 +17,20 @@ from .strategy import (
 )
 
 __all__: list[str] = [
-    # Main retry decorator
-    "retry",
-    "get_retry_config_for_service",
-    # Configuration
-    "RetryConfig",
-    # Exceptions
-    "RetryError",
-    "MaxRetriesExceededError",
-    "InvalidRetryStrategyError",
-    "RetryConfigurationError",
     "CircuitBreakerOpenError",
-    # Strategies
-    "RetryStrategy",
-    "ExponentialBackoffStrategy",
     "CircuitBreakerStrategy",
     "CircuitState",
+    "ExponentialBackoffStrategy",
+    "InvalidRetryStrategyError",
+    "MaxRetriesExceededError",
+    # Configuration
+    "RetryConfig",
+    "RetryConfigurationError",
+    # Exceptions
+    "RetryError",
+    # Strategies
+    "RetryStrategy",
+    "get_retry_config_for_service",
+    # Main retry decorator
+    "retry",
 ]

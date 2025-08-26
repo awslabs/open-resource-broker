@@ -9,12 +9,12 @@ from .template_cache_service import (
 from .template_repository_impl import TemplateRepositoryImpl
 
 __all__: list[str] = [
+    "NoOpTemplateCacheService",
+    # Caching components
+    "TemplateCacheService",
     # Core template system
     "TemplateConfigurationManager",
     # Repository implementation
     "TemplateRepositoryImpl",
-    # Caching components
-    "TemplateCacheService",
-    "NoOpTemplateCacheService",
     "create_template_cache_service",
 ]

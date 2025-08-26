@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 
 @dataclass
@@ -17,11 +17,11 @@ class TemplateContract:
     template_id: str
     name: str
     provider_api: str
-    configuration: Dict[str, Any]
+    configuration: dict[str, Any]
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
     version: Optional[str] = None
-    tags: Optional[Dict[str, str]] = None
+    tags: Optional[dict[str, str]] = None
 
     def __post_init__(self) -> None:
         """Validate required fields."""
@@ -38,8 +38,8 @@ class TemplateValidationResult:
     """Template validation result contract."""
 
     is_valid: bool
-    errors: List[str]
-    warnings: List[str]
+    errors: list[str]
+    warnings: list[str]
     template_id: str
 
     def has_errors(self) -> bool:
@@ -56,7 +56,7 @@ class TemplateMetadata:
     """Template metadata contract."""
 
     template_id: str
-    provider_apis: List[str]
+    provider_apis: list[str]
     last_modified: datetime
     version: str
     is_active: bool

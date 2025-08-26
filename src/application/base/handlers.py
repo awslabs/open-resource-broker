@@ -11,7 +11,7 @@ import time
 from abc import ABC, abstractmethod
 from datetime import datetime
 from functools import wraps
-from typing import Any, Callable, Dict, Optional, TypeVar
+from typing import Any, Callable, Optional, TypeVar
 
 from application.dto.base import BaseCommand, BaseResponse
 from application.interfaces.command_handler import CommandHandler
@@ -43,7 +43,7 @@ class BaseHandler(ABC):
         """Initialize base handler with optional logger and error handler."""
         self.logger = logger
         self.error_handler = error_handler
-        self._metrics: Dict[str, Any] = {}
+        self._metrics: dict[str, Any] = {}
 
     async def handle_with_error_management(
         self, operation: Callable[[], Any], context: str = ""
@@ -173,7 +173,7 @@ class BaseHandler(ABC):
 
         return decorator
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """Get handler performance metrics."""
         return self._metrics.copy()
 
@@ -284,7 +284,7 @@ class BaseQueryHandler(BaseHandler, QueryHandler[TQuery, TResult]):
     ) -> None:
         """Initialize query handler with logging and error handling."""
         super().__init__(logger, error_handler)
-        self._cache: Dict[str, Any] = {}
+        self._cache: dict[str, Any] = {}
 
     async def handle(self, query: TQuery) -> TResult:
         """

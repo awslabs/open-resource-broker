@@ -1,6 +1,6 @@
 """Base models for API requests and responses."""
 
-from typing import Any, Dict, Generic, List, Optional, Type, TypeVar
+from typing import Any, Generic, Optional, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field, create_model
 
@@ -31,7 +31,7 @@ class APIResponse(APIBaseModel):
 class PaginatedResponse(APIResponse, Generic[T]):
     """Base model for paginated responses."""
 
-    items: List[T]
+    items: list[T]
     total_count: int
     page: int = 1
     page_size: int
@@ -44,10 +44,10 @@ class ErrorDetail(APIBaseModel):
     code: str
     message: str
     category: str
-    details: Dict[str, Any] = Field(default_factory=dict)
+    details: dict[str, Any] = Field(default_factory=dict)
 
 
-def format_api_error_response(error_detail: ErrorDetail, status: int) -> Dict[str, Any]:
+def format_api_error_response(error_detail: ErrorDetail, status: int) -> dict[str, Any]:
     """
     Format API error response.
 
@@ -67,10 +67,10 @@ def format_api_error_response(error_detail: ErrorDetail, status: int) -> Dict[st
 
 def create_request_model(
     name: str,
-    fields: Dict[str, Any],
+    fields: dict[str, Any],
     description: Optional[str] = None,
-    base_class: Type = APIRequest,
-) -> Type[APIRequest]:
+    base_class: type = APIRequest,
+) -> type[APIRequest]:
     """
     Create a request model dynamically.
 
@@ -94,10 +94,10 @@ def create_request_model(
 
 def create_response_model(
     name: str,
-    fields: Dict[str, Any],
+    fields: dict[str, Any],
     description: Optional[str] = None,
-    base_class: Type = APIResponse,
-) -> Type[APIResponse]:
+    base_class: type = APIResponse,
+) -> type[APIResponse]:
     """
     Create a response model dynamically.
 

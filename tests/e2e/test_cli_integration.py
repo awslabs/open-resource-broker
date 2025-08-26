@@ -157,7 +157,6 @@ class TestCLIIntegration:
         }
 
         # Test migration logic directly since migration module doesn't have the expected function
-        legacy_config = {"provider": {"type": "aws", "aws": {"region": "us-east-1"}}}
 
         # Simulate migration result
         result = expected_result

@@ -8,7 +8,7 @@ types in the CQRS system.
 
 import time
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Generic, Optional, TypeVar
+from typing import Any, Generic, Optional, TypeVar
 
 from application.interfaces.event_handler import EventHandler
 from domain.base.events import DomainEvent
@@ -53,7 +53,7 @@ class BaseEventHandler(Generic[TEvent], EventHandler[TEvent], ABC):
         self.logger = logger
         self.error_handler = error_handler
         self.event_publisher = event_publisher
-        self._metrics: Dict[str, Any] = {}
+        self._metrics: dict[str, Any] = {}
 
     async def handle(self, event: TEvent) -> None:
         """
@@ -200,7 +200,7 @@ class BaseEventHandler(Generic[TEvent], EventHandler[TEvent], ABC):
             metrics["total_duration"] / total_count if total_count > 0 else 0.0
         )
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """Get handler performance metrics."""
         return self._metrics.copy()
 

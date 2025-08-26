@@ -8,7 +8,7 @@ clean separation of concerns and SOLID principles compliance.
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel, ConfigDict
 
@@ -32,8 +32,8 @@ class ProviderOperation:
     """Value object representing a provider operation to be executed."""
 
     operation_type: ProviderOperationType
-    parameters: Dict[str, Any]
-    context: Optional[Dict[str, Any]] = None
+    parameters: dict[str, Any]
+    context: Optional[dict[str, Any]] = None
 
     def __post_init__(self) -> None:
         """Validate operation parameters after initialization."""
@@ -53,16 +53,16 @@ class ProviderResult(BaseModel):
     data: Any = None
     error_message: Optional[str] = None
     error_code: Optional[str] = None
-    metadata: Dict[str, Any] = {}
+    metadata: dict[str, Any] = {}
 
     @classmethod
-    def success_result(cls, data: Any = None, metadata: Dict[str, Any] = None) -> "ProviderResult":
+    def success_result(cls, data: Any = None, metadata: Optional[dict[str, Any]] = None) -> "ProviderResult":
         """Create a successful result."""
         return cls(success=True, data=data, metadata=metadata or {})
 
     @classmethod
     def error_result(
-        cls, error_message: str, error_code: str = None, metadata: Dict[str, Any] = None
+        cls, error_message: str, error_code: Optional[str] = None, metadata: Optional[dict[str, Any]] = None
     ) -> "ProviderResult":
         """Create an error result."""
         return cls(
@@ -77,10 +77,10 @@ class ProviderCapabilities(BaseModel):
     """Value object representing provider capabilities and features."""
 
     provider_type: str
-    supported_operations: List[ProviderOperationType]
-    features: Dict[str, Any] = {}
-    limitations: Dict[str, Any] = {}
-    performance_metrics: Dict[str, Any] = {}
+    supported_operations: list[ProviderOperationType]
+    features: dict[str, Any] = {}
+    limitations: dict[str, Any] = {}
+    performance_metrics: dict[str, Any] = {}
 
     def supports_operation(self, operation: ProviderOperationType) -> bool:
         """Check if provider supports a specific operation."""
@@ -98,18 +98,18 @@ class ProviderHealthStatus(BaseModel):
     status_message: str
     last_check_time: Optional[str] = None
     response_time_ms: Optional[float] = None
-    error_details: Optional[Dict[str, Any]] = None
+    error_details: Optional[dict[str, Any]] = None
 
     @classmethod
     def healthy(
-        cls, message: str = "Provider is healthy", response_time_ms: float = None
+        cls, message: str = "Provider is healthy", response_time_ms: Optional[float] = None
     ) -> "ProviderHealthStatus":
         """Create a healthy status."""
         return cls(is_healthy=True, status_message=message, response_time_ms=response_time_ms)
 
     @classmethod
     def unhealthy(
-        cls, message: str, error_details: Dict[str, Any] = None
+        cls, message: str, error_details: Optional[dict[str, Any]] = None
     ) -> "ProviderHealthStatus":
         """Create an unhealthy status."""
         return cls(is_healthy=False, status_message=message, error_details=error_details or {})

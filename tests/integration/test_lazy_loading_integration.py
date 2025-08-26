@@ -194,7 +194,7 @@ class TestLazyLoadingCompatibility:
         for cmd in commands_to_test:
             try:
                 result = subprocess.run(
-                    [sys.executable, "src/run.py"] + cmd,
+                    [sys.executable, "src/run.py", *cmd],
                     check=False,
                     capture_output=True,
                     text=True,

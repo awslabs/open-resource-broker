@@ -11,18 +11,18 @@ from providers.aws.domain.template.value_objects import (
 
 # Re-export all base machine value objects with AWS extensions
 __all__: list[str] = [
+    "AWSImageId",
+    # AWS-specific extensions
+    "AWSInstanceType",
+    "AWSSecurityGroupId",
+    "AWSSubnetId",
+    "AWSTags",
+    "InstanceType",
+    "MachineHealth",
     # Base machine value objects
     "MachineId",
     "MachineStatus",
-    "MachineHealth",
-    "InstanceType",
     "PrivateIpAddress",
     "PublicIpAddress",
     "Tags",
-    # AWS-specific extensions
-    "AWSInstanceType",
-    "AWSTags",
-    "AWSImageId",
-    "AWSSubnetId",
-    "AWSSecurityGroupId",
 ]

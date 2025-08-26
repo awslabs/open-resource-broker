@@ -7,7 +7,7 @@ This module contains utility functions for working with strings.
 import hashlib
 import re
 import uuid
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 
 def is_empty(value: Optional[str]) -> bool:
@@ -175,7 +175,7 @@ def mask_sensitive_data(value: str, mask_char: str = "*", visible_chars: int = 4
     return mask_char * masked_length + value[-visible_chars:]
 
 
-def split_by_case(value: str) -> List[str]:
+def split_by_case(value: str) -> list[str]:
     """
     Split a string by case changes.
 
@@ -212,7 +212,7 @@ def convert_case(value: str, case_type: str) -> str:
         raise ValueError(f"Unsupported case type: {case_type}")
 
 
-def convert_dict_keys(data: Dict[str, Any], case_type: str) -> Dict[str, Any]:
+def convert_dict_keys(data: dict[str, Any], case_type: str) -> dict[str, Any]:
     """
     Convert all dictionary keys to the specified case type.
 

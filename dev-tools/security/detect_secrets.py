@@ -45,7 +45,7 @@ def detect_secrets(source_dir: str = "src") -> bool:
 
             for line_num, line in enumerate(content.split("\n"), 1):
                 matches = secret_pattern.findall(line)
-                for match in matches:
+                for _match in matches:
                     # Check if this is an exception
                     if not any(exc in line for exc in exceptions):
                         found_secrets.append(f"{py_file}:{line_num}: {line.strip()}")

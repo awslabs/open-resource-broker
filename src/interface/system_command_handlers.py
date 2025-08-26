@@ -1,6 +1,6 @@
 """System-related command handlers for the interface layer."""
 
-from typing import Any, Dict
+from typing import Any
 
 from infrastructure.di.buses import QueryBus
 from infrastructure.di.container import get_container
@@ -8,7 +8,7 @@ from infrastructure.error.decorators import handle_interface_exceptions
 
 
 @handle_interface_exceptions(context="provider_health", interface_type="cli")
-async def handle_provider_health(args) -> Dict[str, Any]:
+async def handle_provider_health(args) -> dict[str, Any]:
     """Handle provider health operations."""
     container = get_container()
     query_bus = container.get(QueryBus)
@@ -25,7 +25,7 @@ async def handle_provider_health(args) -> Dict[str, Any]:
 
 
 @handle_interface_exceptions(context="list_providers", interface_type="cli")
-async def handle_list_providers(args) -> Dict[str, Any]:
+async def handle_list_providers(args) -> dict[str, Any]:
     """Handle list available providers with real capabilities from configuration."""
     container = get_container()
 
@@ -83,7 +83,7 @@ async def handle_list_providers(args) -> Dict[str, Any]:
 
 
 @handle_interface_exceptions(context="provider_config", interface_type="cli")
-async def handle_provider_config(args) -> Dict[str, Any]:
+async def handle_provider_config(args) -> dict[str, Any]:
     """Handle get provider config operations."""
     container = get_container()
     query_bus = container.get(QueryBus)
@@ -100,7 +100,7 @@ async def handle_provider_config(args) -> Dict[str, Any]:
 
 
 @handle_interface_exceptions(context="validate_provider_config", interface_type="cli")
-async def handle_validate_provider_config(args) -> Dict[str, Any]:
+async def handle_validate_provider_config(args) -> dict[str, Any]:
     """Handle validate provider config operations."""
     return {
         "validation": {"status": "valid", "errors": []},
@@ -109,7 +109,7 @@ async def handle_validate_provider_config(args) -> Dict[str, Any]:
 
 
 @handle_interface_exceptions(context="reload_provider_config", interface_type="cli")
-async def handle_reload_provider_config(args) -> Dict[str, Any]:
+async def handle_reload_provider_config(args) -> dict[str, Any]:
     """Handle reload provider config operations."""
     return {
         "result": {"status": "reloaded"},
@@ -118,7 +118,7 @@ async def handle_reload_provider_config(args) -> Dict[str, Any]:
 
 
 @handle_interface_exceptions(context="select_provider_strategy", interface_type="cli")
-async def handle_select_provider_strategy(args) -> Dict[str, Any]:
+async def handle_select_provider_strategy(args) -> dict[str, Any]:
     """Handle select provider strategy operations."""
     provider = getattr(args, "provider", "aws")
     return {
@@ -128,7 +128,7 @@ async def handle_select_provider_strategy(args) -> Dict[str, Any]:
 
 
 @handle_interface_exceptions(context="execute_provider_operation", interface_type="cli")
-async def handle_execute_provider_operation(args) -> Dict[str, Any]:
+async def handle_execute_provider_operation(args) -> dict[str, Any]:
     """Handle execute provider operation operations."""
     operation = getattr(args, "operation", "status")
     return {
@@ -138,7 +138,7 @@ async def handle_execute_provider_operation(args) -> Dict[str, Any]:
 
 
 @handle_interface_exceptions(context="provider_metrics", interface_type="cli")
-async def handle_provider_metrics(args) -> Dict[str, Any]:
+async def handle_provider_metrics(args) -> dict[str, Any]:
     """Handle get provider metrics operations."""
     container = get_container()
     query_bus = container.get(QueryBus)

@@ -27,7 +27,7 @@ Note:
 """
 
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import Any
 
 from botocore.exceptions import ClientError
 
@@ -99,7 +99,7 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin):
             self.config_port = None
 
     @handle_infrastructure_exceptions(context="ec2_fleet_creation")
-    def acquire_hosts(self, request: Request, aws_template: AWSTemplate) -> Dict[str, Any]:
+    def acquire_hosts(self, request: Request, aws_template: AWSTemplate) -> dict[str, Any]:
         """
         Create an EC2 Fleet to acquire hosts.
         Returns structured result with resource IDs and instance data.
@@ -223,8 +223,8 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin):
         return fleet_id
 
     def _format_instance_data(
-        self, instance_details: List[Dict[str, Any]], resource_id: str
-    ) -> List[Dict[str, Any]]:
+        self, instance_details: list[dict[str, Any]], resource_id: str
+    ) -> list[dict[str, Any]]:
         """Format AWS instance details to standard structure."""
         return [
             {
@@ -238,7 +238,7 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin):
             for inst in instance_details
         ]
 
-    def _prepare_template_context(self, template: AWSTemplate, request: Request) -> Dict[str, Any]:
+    def _prepare_template_context(self, template: AWSTemplate, request: Request) -> dict[str, Any]:
         """Prepare context with all computed values for template rendering."""
 
         # Start with base context
@@ -261,7 +261,7 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin):
 
     def _prepare_ec2fleet_specific_context(
         self, template: AWSTemplate, request: Request
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Prepare EC2Fleet-specific context."""
 
         # Instance overrides computation
@@ -339,7 +339,7 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin):
         request: Request,
         launch_template_id: str,
         launch_template_version: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Create EC2 Fleet configuration with native spec support."""
         # Try native spec processing with merge support
         if self.aws_native_spec_service:
@@ -381,7 +381,7 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin):
         request: Request,
         launch_template_id: str,
         launch_template_version: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Create EC2 Fleet configuration using legacy logic."""
         # Get package name for CreatedBy tag
         created_by = "open-hostfactory-plugin"  # fallback
@@ -564,7 +564,7 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin):
 
         return strategy_map.get(strategy, "lowest-price")
 
-    async def check_hosts_status(self, request: Request) -> List[Dict[str, Any]]:
+    async def check_hosts_status(self, request: Request) -> list[dict[str, Any]]:
         """Check the status of instances in the fleet."""
         try:
             if not request.resource_ids:

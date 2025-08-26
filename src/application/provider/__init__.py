@@ -21,16 +21,16 @@ from .queries import (
 )
 
 __all__: list[str] = [
-    # Commands
-    "SelectProviderStrategyCommand",
-    "ExecuteProviderOperationCommand",
-    "RegisterProviderStrategyCommand",
-    "UpdateProviderHealthCommand",
     "ConfigureProviderStrategyCommand",
+    "ExecuteProviderOperationCommand",
+    "GetProviderCapabilitiesQuery",
     # Queries
     "GetProviderHealthQuery",
-    "ListAvailableProvidersQuery",
-    "GetProviderCapabilitiesQuery",
     "GetProviderMetricsQuery",
     "GetProviderStrategyConfigQuery",
+    "ListAvailableProvidersQuery",
+    "RegisterProviderStrategyCommand",
+    # Commands
+    "SelectProviderStrategyCommand",
+    "UpdateProviderHealthCommand",
 ]

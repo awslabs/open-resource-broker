@@ -1,6 +1,6 @@
 """Template management API routes."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from fastapi import APIRouter, Body, HTTPException, Query
 from fastapi.responses import JSONResponse
@@ -38,10 +38,10 @@ class TemplateCreateRequest(BaseModel):
     image_id: Optional[str] = None
     instance_type: Optional[str] = None
     key_name: Optional[str] = None
-    security_group_ids: Optional[List[str]] = None
-    subnet_ids: Optional[List[str]] = None
+    security_group_ids: Optional[list[str]] = None
+    subnet_ids: Optional[list[str]] = None
     user_data: Optional[str] = None
-    tags: Optional[Dict[str, str]] = None
+    tags: Optional[dict[str, str]] = None
     version: Optional[str] = "1.0"
 
 
@@ -53,10 +53,10 @@ class TemplateUpdateRequest(BaseModel):
     image_id: Optional[str] = None
     instance_type: Optional[str] = None
     key_name: Optional[str] = None
-    security_group_ids: Optional[List[str]] = None
-    subnet_ids: Optional[List[str]] = None
+    security_group_ids: Optional[list[str]] = None
+    subnet_ids: Optional[list[str]] = None
     user_data: Optional[str] = None
-    tags: Optional[Dict[str, str]] = None
+    tags: Optional[dict[str, str]] = None
     version: Optional[str] = None
 
 
@@ -301,7 +301,7 @@ async def delete_template(template_id: str) -> JSONResponse:
     description="Validate template configuration",
 )
 @handle_rest_exceptions(endpoint="/api/v1/templates/validate", method="POST")
-async def validate_template(template_data: Dict[str, Any] = TEMPLATE_DATA_BODY) -> JSONResponse:
+async def validate_template(template_data: dict[str, Any] = TEMPLATE_DATA_BODY) -> JSONResponse:
     """
     Validate template configuration.
 

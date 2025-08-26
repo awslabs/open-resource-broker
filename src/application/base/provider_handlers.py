@@ -8,7 +8,7 @@ patterns as other base handlers while enabling multi-provider extensibility.
 import asyncio
 import time
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Generic, Optional, TypeVar
+from typing import Any, Generic, Optional, TypeVar
 
 from application.interfaces.provider_handler import ProviderHandler
 from domain.base.ports import ErrorHandlingPort, LoggingPort
@@ -20,13 +20,13 @@ TResponse = TypeVar("TResponse")
 class ProviderContext:
     """Context for provider operations."""
 
-    def __init__(self, provider_type: str, region: str = None) -> None:
+    def __init__(self, provider_type: str, region: Optional[str] = None) -> None:
         """Initialize provider context."""
         self.provider_type = provider_type
         self.region = region
         self.correlation_id = f"{provider_type}-{int(time.time())}"
         self.start_time = time.time()
-        self.metadata: Dict[str, Any] = {}
+        self.metadata: dict[str, Any] = {}
 
 
 class BaseProviderHandler(Generic[TRequest, TResponse], ProviderHandler[TRequest, TResponse], ABC):
@@ -68,7 +68,7 @@ class BaseProviderHandler(Generic[TRequest, TResponse], ProviderHandler[TRequest
         self.provider_type = provider_type
         self.logger = logger
         self.error_handler = error_handler
-        self._metrics: Dict[str, Any] = {}
+        self._metrics: dict[str, Any] = {}
 
     async def handle(
         self, request: TRequest, context: Optional[ProviderContext] = None
@@ -219,7 +219,7 @@ class BaseProviderHandler(Generic[TRequest, TResponse], ProviderHandler[TRequest
             metrics["total_duration"] / total_count if total_count > 0 else 0.0
         )
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """Get handler performance metrics."""
         return self._metrics.copy()
 
@@ -237,7 +237,7 @@ class BaseAWSHandler(BaseProviderHandler[TRequest, TResponse]):
         aws_client,  # Type hint avoided to prevent circular imports
         logger: Optional[LoggingPort] = None,
         error_handler: Optional[ErrorHandlingPort] = None,
-        region: str = None,
+        region: Optional[str] = None,
     ) -> None:
         """Initialize base AWS handler."""
         super().__init__("aws", logger, error_handler)

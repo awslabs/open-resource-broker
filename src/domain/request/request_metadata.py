@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import field_validator, model_validator
 
@@ -94,7 +94,7 @@ class MachineCount(ValueObject):
     """
 
     value: int
-    max_allowed: Optional[int] = None
+    max_allowed: int | None = None
 
     @model_validator(mode="after")
     def validate_machine_count(self) -> MachineCount:
@@ -152,7 +152,7 @@ class MachineCount(ValueObject):
         return self.value
 
     @classmethod
-    def from_int(cls, value: int, max_allowed: Optional[int] = None) -> MachineCount:
+    def from_int(cls, value: int, max_allowed: int | None = None) -> MachineCount:
         """Create count from integer."""
         return cls(value=value, max_allowed=max_allowed)
 
@@ -253,10 +253,10 @@ class RequestConfiguration(ValueObject):
     template_id: str
     machine_count: int
     timeout: int = 3600  # Default 1 hour
-    tags: Dict[str, str] = {}
-    provider_config: Dict[str, Any] = {}
-    retry_config: Dict[str, Any] = {}
-    notification_config: Dict[str, Any] = {}
+    tags: dict[str, str] = {}
+    provider_config: dict[str, Any] = {}
+    retry_config: dict[str, Any] = {}
+    notification_config: dict[str, Any] = {}
 
     @field_validator("template_id")
     @classmethod
@@ -330,7 +330,7 @@ class RequestConfiguration(ValueObject):
         """Get machine count as MachineCount object."""
         return MachineCount(value=self.machine_count)
 
-    def get_tags_list(self) -> List[RequestTag]:
+    def get_tags_list(self) -> list[RequestTag]:
         """Get tags as list of RequestTag objects."""
         return [RequestTag(key=k, value=v) for k, v in self.tags.items()]
 
@@ -349,7 +349,7 @@ class RequestConfiguration(ValueObject):
             notification_config=self.notification_config.copy(),
         )
 
-    def with_provider_config(self, config: Dict[str, Any]) -> RequestConfiguration:
+    def with_provider_config(self, config: dict[str, Any]) -> RequestConfiguration:
         """Set provider config and return new configuration."""
         return RequestConfiguration(
             template_id=self.template_id,
@@ -377,9 +377,9 @@ class LaunchTemplateInfo(ValueObject):
     """
 
     template_id: str
-    template_name: Optional[str] = None
+    template_name: str | None = None
     version: str = "$Latest"
-    configuration: Dict[str, Any] = {}
+    configuration: dict[str, Any] = {}
 
     @field_validator("template_id")
     @classmethod
@@ -428,7 +428,7 @@ class RequestHistoryEvent(ValueObject):
     event_type: str
     timestamp: str  # ISO format datetime string
     message: str
-    details: Dict[str, Any] = {}
+    details: dict[str, Any] = {}
     source: str = "system"
 
     @field_validator("event_type")
@@ -473,7 +473,7 @@ class RequestHistoryEvent(ValueObject):
         cls,
         event_type: str,
         message: str,
-        details: Optional[Dict[str, Any]] = None,
+        details: dict[str, Any] | None = None,
         source: str = "system",
     ) -> RequestHistoryEvent:
         """Create a new event with current timestamp."""

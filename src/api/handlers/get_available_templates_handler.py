@@ -1,7 +1,7 @@
 """API handler for retrieving available templates."""
 
 import time
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from application.base.infrastructure_handlers import BaseAPIHandler
 from application.dto.queries import ListTemplatesQuery
@@ -16,7 +16,7 @@ from monitoring.metrics import MetricsCollector
 
 
 @injectable
-class GetAvailableTemplatesRESTHandler(BaseAPIHandler[Dict[str, Any], Dict[str, Any]]):
+class GetAvailableTemplatesRESTHandler(BaseAPIHandler[dict[str, Any], dict[str, Any]]):
     """API handler for retrieving available templates - CQRS-aligned implementation."""
 
     def __init__(
@@ -50,7 +50,7 @@ class GetAvailableTemplatesRESTHandler(BaseAPIHandler[Dict[str, Any], Dict[str, 
         self._scheduler_strategy = scheduler_strategy
         self._metrics = metrics
 
-    async def validate_api_request(self, request: Dict[str, Any], context) -> None:
+    async def validate_api_request(self, request: dict[str, Any], context) -> None:
         """
         Validate API request for getting available templates.
 
@@ -64,7 +64,7 @@ class GetAvailableTemplatesRESTHandler(BaseAPIHandler[Dict[str, Any], Dict[str, 
             raise ValueError(f"Invalid format: {request['format']}")
 
     @handle_interface_exceptions
-    async def execute_api_request(self, request: Dict[str, Any], context) -> Dict[str, Any]:
+    async def execute_api_request(self, request: dict[str, Any], context) -> dict[str, Any]:
         """
         Execute the core API logic for retrieving available templates.
 
@@ -123,7 +123,7 @@ class GetAvailableTemplatesRESTHandler(BaseAPIHandler[Dict[str, Any], Dict[str, 
 
             raise
 
-    async def post_process_response(self, response: Dict[str, Any], context) -> Dict[str, Any]:
+    async def post_process_response(self, response: dict[str, Any], context) -> dict[str, Any]:
         """
         Post-process the template list response.
 

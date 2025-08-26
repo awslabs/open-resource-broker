@@ -6,7 +6,7 @@ with appropriate JSON schemas for AI assistant integration.
 """
 
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from sdk.client import OpenHFPluginSDK
 from sdk.discovery import MethodInfo
@@ -18,7 +18,7 @@ class MCPToolDefinition:
 
     name: str
     description: str
-    input_schema: Dict[str, Any]
+    input_schema: dict[str, Any]
     method_name: str
     method_info: Optional[MethodInfo] = None
 
@@ -33,9 +33,9 @@ class MCPToolDiscovery:
 
     def __init__(self) -> None:
         """Initialize the instance."""
-        self._tool_definitions: Dict[str, MCPToolDefinition] = {}
+        self._tool_definitions: dict[str, MCPToolDefinition] = {}
 
-    def discover_mcp_tools(self, sdk: OpenHFPluginSDK) -> Dict[str, MCPToolDefinition]:
+    def discover_mcp_tools(self, sdk: OpenHFPluginSDK) -> dict[str, MCPToolDefinition]:
         """
         Auto-discover MCP tools from SDK methods.
 
@@ -72,11 +72,11 @@ class MCPToolDiscovery:
         """Get MCP tool definition by name."""
         return self._tool_definitions.get(tool_name)
 
-    def list_tool_names(self) -> List[str]:
+    def list_tool_names(self) -> list[str]:
         """List all discovered tool names."""
         return list(self._tool_definitions.keys())
 
-    def get_tools_list(self) -> List[Dict[str, Any]]:
+    def get_tools_list(self) -> list[dict[str, Any]]:
         """
         Get MCP tools list in the format expected by MCP protocol.
 
@@ -112,7 +112,7 @@ class MCPToolDiscovery:
 
     def _generate_schema(
         self, method_name: str, method_info: Optional[MethodInfo]
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Generate JSON schema for MCP tool from method signature.
 
@@ -157,8 +157,8 @@ class MCPToolDiscovery:
         return schema
 
     def _convert_param_to_schema(
-        self, param_name: str, param_info: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self, param_name: str, param_info: dict[str, Any]
+    ) -> dict[str, Any]:
         """
         Convert parameter information to JSON schema property.
 
@@ -197,7 +197,7 @@ class MCPToolDiscovery:
             # Default to string for unknown types
             return {"type": "string", "description": description}
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get discovery statistics."""
         return {
             "tools_discovered": len(self._tool_definitions),

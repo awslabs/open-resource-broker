@@ -10,7 +10,6 @@ import argparse
 import logging
 import sys
 from pathlib import Path
-from typing import List, Tuple
 
 # Setup logging
 logging.basicConfig(
@@ -63,7 +62,7 @@ def check_large_files(warn_only: bool = False, threshold: int = 600) -> None:
         logger.info(f"All files are appropriately sized (< {threshold} lines).")
 
 
-def get_file_size_report() -> List[Tuple[str, int]]:
+def get_file_size_report() -> list[tuple[str, int]]:
     """Get a report of all Python file sizes."""
     file_sizes = []
 

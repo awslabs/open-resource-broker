@@ -1,6 +1,6 @@
 """Main configuration validator orchestrator."""
 
-from typing import Any, Dict, List
+from typing import Any, Optional
 
 from config.schemas import AppConfig, validate_config
 
@@ -8,7 +8,7 @@ from config.schemas import AppConfig, validate_config
 class ValidationResult:
     """Configuration validation result."""
 
-    def __init__(self, errors: List[str] = None, warnings: List[str] = None) -> None:
+    def __init__(self, errors: Optional[list[str]] = None, warnings: Optional[list[str]] = None) -> None:
         """Initialize the instance."""
         self.errors = errors or []
         self.warnings = warnings or []
@@ -30,7 +30,7 @@ class ConfigValidator:
     def __init__(self) -> None:
         """Initialize the configuration validator."""
 
-    def validate_config(self, config_data: Dict[str, Any]) -> ValidationResult:
+    def validate_config(self, config_data: dict[str, Any]) -> ValidationResult:
         """
         Validate complete configuration.
 
@@ -100,7 +100,7 @@ class ConfigValidator:
                 result.add_warning("Large SQL connection pool size may consume excessive resources")
 
     def validate_provider_config(
-        self, provider_type: str, provider_config: Dict[str, Any]
+        self, provider_type: str, provider_config: dict[str, Any]
     ) -> ValidationResult:
         """
         Validate provider-specific configuration.

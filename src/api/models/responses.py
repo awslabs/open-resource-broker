@@ -1,13 +1,13 @@
 """Response models and formatters for API handlers."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel
 
 from infrastructure.error.exception_handler import InfrastructureErrorResponse
 
 
-def format_error_for_api(error_response: InfrastructureErrorResponse) -> Dict[str, Any]:
+def format_error_for_api(error_response: InfrastructureErrorResponse) -> dict[str, Any]:
     """
     Format infrastructure error response for API consumption.
 
@@ -28,7 +28,7 @@ def format_error_for_api(error_response: InfrastructureErrorResponse) -> Dict[st
     }
 
 
-def format_success_for_api(message: str, data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+def format_success_for_api(message: str, data: Optional[dict[str, Any]] = None) -> dict[str, Any]:
     """Format success response for API consumption."""
     response = {"status": "success", "message": message}
     if data is not None:
@@ -41,12 +41,12 @@ class SuccessResponse(BaseModel):
 
     status: str = "success"
     message: str
-    data: Optional[Dict[str, Any]] = None
+    data: Optional[dict[str, Any]] = None
 
 
 # Backward compatibility - create error response using formatter
 def create_error_response(
-    message: str, errors: Optional[List[Dict[str, Any]]] = None
-) -> Dict[str, Any]:
+    message: str, errors: Optional[list[dict[str, Any]]] = None
+) -> dict[str, Any]:
     """Create error response for backward compatibility."""
     return {"status": "error", "message": message, "errors": errors or []}

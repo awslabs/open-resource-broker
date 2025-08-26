@@ -1,7 +1,7 @@
 """Helper functions for serializing and deserializing domain objects."""
 
 from enum import Enum
-from typing import Any, Optional, Type, TypeVar
+from typing import Any, Optional, TypeVar
 
 E = TypeVar("E", bound=Enum)
 
@@ -21,7 +21,7 @@ def serialize_enum(enum_value: Optional[Enum]) -> Optional[str]:
     return enum_value.value if hasattr(enum_value, "value") else str(enum_value)
 
 
-def deserialize_enum(enum_class: Type[E], value: Any, default: Optional[E] = None) -> Optional[E]:
+def deserialize_enum(enum_class: type[E], value: Any, default: Optional[E] = None) -> Optional[E]:
     """
     Deserialize string to enum value.
 

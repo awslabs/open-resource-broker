@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 
 class TokenType(Enum):
@@ -25,9 +25,9 @@ class TokenResult:
     expires_in: Optional[int] = None  # Seconds until expiration
     expires_at: Optional[int] = None  # Unix timestamp
     refresh_token: Optional[str] = None
-    scope: List[str] = None
+    scope: list[str] = None
     error_message: Optional[str] = None
-    metadata: Dict[str, Any] = None
+    metadata: dict[str, Any] = None
 
     def __post_init__(self) -> None:
         if self.scope is None:
@@ -43,11 +43,11 @@ class TokenValidationResult:
     valid: bool
     user_id: Optional[str] = None
     client_id: Optional[str] = None
-    scope: List[str] = None
+    scope: list[str] = None
     expires_at: Optional[int] = None
     issued_at: Optional[int] = None
     error_message: Optional[str] = None
-    metadata: Dict[str, Any] = None
+    metadata: dict[str, Any] = None
 
     def __post_init__(self) -> None:
         if self.scope is None:
@@ -74,10 +74,10 @@ class TokenPort(ABC):
         self,
         user_id: str,
         client_id: Optional[str] = None,
-        scope: List[str] = None,
+        scope: Optional[list[str]] = None,
         expires_in: Optional[int] = None,
         token_type: TokenType = TokenType.ACCESS,
-        metadata: Dict[str, Any] = None,
+        metadata: Optional[dict[str, Any]] = None,
     ) -> TokenResult:
         """
         Create a new token.
@@ -131,7 +131,7 @@ class TokenPort(ABC):
         """
 
     @abstractmethod
-    async def introspect_token(self, token: str) -> Dict[str, Any]:
+    async def introspect_token(self, token: str) -> dict[str, Any]:
         """
         Get detailed information about a token.
 

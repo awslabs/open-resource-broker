@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict
 
@@ -16,16 +16,16 @@ class CreateRequestCommand(BaseCommand):
 
     template_id: str
     requested_count: int
-    timeout: Optional[int] = 3600
-    tags: Optional[Dict[str, Any]] = None
+    timeout: int | None = 3600
+    tags: dict[str, Any] | None = None
 
 
 class CreateReturnRequestCommand(BaseCommand):
     """Command to create a return request."""
 
-    machine_ids: List[str]
-    timeout: Optional[int] = 3600
-    force_return: Optional[bool] = False
+    machine_ids: list[str]
+    timeout: int | None = 3600
+    force_return: bool | None = False
 
 
 class UpdateRequestStatusCommand(Command, BaseModel):
@@ -35,7 +35,7 @@ class UpdateRequestStatusCommand(Command, BaseModel):
 
     request_id: str
     status: RequestStatus
-    message: Optional[str] = None
+    message: str | None = None
 
 
 class CancelRequestCommand(Command, BaseModel):
@@ -75,5 +75,5 @@ class CompleteRequestCommand(Command, BaseModel):
     model_config = ConfigDict(frozen=True)
 
     request_id: str
-    result_data: Optional[Dict[str, Any]] = None
-    metadata: Optional[Dict[str, Any]] = None
+    result_data: dict[str, Any] | None = None
+    metadata: dict[str, Any] | None = None

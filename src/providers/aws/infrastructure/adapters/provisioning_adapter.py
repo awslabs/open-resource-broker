@@ -5,7 +5,7 @@ This module provides an adapter for AWS-specific resource provisioning operation
 It implements the ResourceProvisioningPort interface from the domain layer.
 """
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from domain.base.dependency_injection import injectable
 from domain.base.exceptions import EntityNotFoundError
@@ -170,7 +170,7 @@ class AWSProvisioningAdapter(ResourceProvisioningPort):
             self._logger.error("Error during resource provisioning: %s", str(e))
             raise InfrastructureError(f"Failed to provision resources: {e!s}")
 
-    def check_resources_status(self, request: Request) -> List[Dict[str, Any]]:
+    def check_resources_status(self, request: Request) -> list[dict[str, Any]]:
         """
         Check the status of provisioned AWS resources.
 
@@ -276,7 +276,7 @@ class AWSProvisioningAdapter(ResourceProvisioningPort):
             self._logger.error("Error during resource release: %s", str(e))
             raise InfrastructureError(f"Failed to release resources: {e!s}")
 
-    def get_resource_health(self, resource_id: str) -> Dict[str, Any]:
+    def get_resource_health(self, resource_id: str) -> dict[str, Any]:
         """
         Get health information for a specific AWS resource.
 

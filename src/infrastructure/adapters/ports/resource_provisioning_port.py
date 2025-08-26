@@ -6,7 +6,7 @@ It follows the Port-Adapter pattern from Hexagonal Architecture (Ports and Adapt
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List
+from typing import Any
 
 from domain.request.aggregate import Request
 from domain.template.aggregate import Template
@@ -39,7 +39,7 @@ class ResourceProvisioningPort(ABC):
         """
 
     @abstractmethod
-    def check_resources_status(self, request: Request) -> List[Dict[str, Any]]:
+    def check_resources_status(self, request: Request) -> list[dict[str, Any]]:
         """
         Check the status of provisioned resources.
 
@@ -68,7 +68,7 @@ class ResourceProvisioningPort(ABC):
         """
 
     @abstractmethod
-    def get_resource_health(self, resource_id: str) -> Dict[str, Any]:
+    def get_resource_health(self, resource_id: str) -> dict[str, Any]:
         """
         Get health information for a specific resource.
 

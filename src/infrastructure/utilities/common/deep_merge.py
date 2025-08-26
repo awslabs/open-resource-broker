@@ -1,9 +1,9 @@
 """Deep merge utility for combining dictionaries."""
 
-from typing import Any, Dict
+from typing import Any
 
 
-def deep_merge(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any]:
+def deep_merge(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
     """
     Deep merge two dictionaries, with override values taking precedence.
 

@@ -1,6 +1,6 @@
 """Machine-related queries for CQRS implementation."""
 
-from typing import List, Optional
+from typing import Optional
 
 from application.dto.base import BaseQuery
 
@@ -8,7 +8,7 @@ from application.dto.base import BaseQuery
 class GetMachineStatusQuery(BaseQuery):
     """Query to get machine status."""
 
-    machine_ids: List[str]
+    machine_ids: list[str]
     include_metadata: bool = True
 
 
@@ -31,5 +31,5 @@ class GetMachineDetailsQuery(BaseQuery):
 class GetMachineHealthQuery(BaseQuery):
     """Query to get machine health status."""
 
-    machine_ids: List[str]
+    machine_ids: list[str]
     check_connectivity: bool = True

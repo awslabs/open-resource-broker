@@ -13,7 +13,7 @@ import subprocess
 import sys
 import time
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 # Configure logging
 log = logging.getLogger("hfmock")
@@ -65,7 +65,7 @@ signal.signal(signal.SIGINT, signal_handler)
 signal.signal(signal.SIGTERM, signal_handler)
 
 
-def write_request_json_to_a_tmp_file(data: Dict[str, Any]) -> str:
+def write_request_json_to_a_tmp_file(data: dict[str, Any]) -> str:
     """
     Writes JSON data to a temporary file with random hex name.
 
@@ -89,7 +89,7 @@ def write_request_json_to_a_tmp_file(data: Dict[str, Any]) -> str:
         raise
 
 
-def run_bash_script(script_path: str, argument: str, timeout: int = 300) -> Dict[str, Any]:
+def run_bash_script(script_path: str, argument: str, timeout: int = 300) -> dict[str, Any]:
     """
     Run a bash script with timeout and error handling.
 
@@ -158,7 +158,7 @@ class HostFactoryMock:
         )
         self.get_return_requests_script = os.path.join(hf_scripts_location, "getReturnRequests.sh")
 
-    def get_available_templates(self) -> Dict[str, Any]:
+    def get_available_templates(self) -> dict[str, Any]:
         """Get available templates."""
         request = {}
         log.debug(f"input_request: {json.dumps(request, indent=4)}")
@@ -212,7 +212,7 @@ class HostFactoryMock:
 
             return {"error": "Invalid response format", "message": str(e)}
 
-    def request_machines(self, template_name: str, machine_count: int) -> Dict[str, Any]:
+    def request_machines(self, template_name: str, machine_count: int) -> dict[str, Any]:
         """Request machines using specified template."""
         request = {"template": {"templateId": template_name, "machineCount": machine_count}}
         log.debug(f"input_request: {json.dumps(request, indent=4)}")
@@ -266,7 +266,7 @@ class HostFactoryMock:
 
             return {"error": "Invalid response format", "message": str(e)}
 
-    def get_request_status(self, request_id: str) -> Dict[str, Any]:
+    def get_request_status(self, request_id: str) -> dict[str, Any]:
         """Get status of a request."""
         request = {"requests": [{"requestId": f"{request_id}"}]}
         log.debug(f"input_request: {json.dumps(request, indent=4)}")
@@ -320,7 +320,7 @@ class HostFactoryMock:
 
             return {"error": "Invalid response format", "message": str(e)}
 
-    def request_return_machines(self, machine_names: List[str]) -> Dict[str, Any]:
+    def request_return_machines(self, machine_names: list[str]) -> dict[str, Any]:
         """Request machines to be returned."""
         mn_list = [{"name": machine_name} for machine_name in machine_names]
         request = {"machines": mn_list}
@@ -375,7 +375,7 @@ class HostFactoryMock:
 
             return {"error": "Invalid response format", "message": str(e)}
 
-    def get_return_requests(self, machine_names: List[str]) -> Dict[str, Any]:
+    def get_return_requests(self, machine_names: list[str]) -> dict[str, Any]:
         """Get return requests for specified machines."""
         mn_list = [{"name": machine_name} for machine_name in machine_names]
         request = {"machines": mn_list}

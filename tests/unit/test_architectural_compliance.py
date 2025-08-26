@@ -149,12 +149,6 @@ class TestDDDCompliance:
     def test_ubiquitous_language_consistency(self):
         """Validate consistent terminology across layers."""
         # Check that key domain terms are used consistently
-        domain_terms = {
-            "template_id": "templateId",  # Should use snake_case internally, camelCase in API
-            "machine_count": "machineCount",
-            "request_id": "requestId",
-            "provider_api": "providerApi",  # Not aws_handler
-        }
 
         # This test validates that we use consistent terminology
         # The actual validation would require more sophisticated AST analysis

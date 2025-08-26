@@ -1,6 +1,5 @@
 """Scheduler query handlers for administrative operations."""
 
-from typing import List
 
 from application.base.handlers import BaseQueryHandler
 from application.decorators import query_handler
@@ -84,7 +83,7 @@ class ListSchedulerStrategiesHandler(
         }
         return descriptions.get(scheduler_type, f"Scheduler strategy: {scheduler_type}")
 
-    def _get_scheduler_capabilities(self, scheduler_type: str) -> List[str]:
+    def _get_scheduler_capabilities(self, scheduler_type: str) -> list[str]:
         """Get capabilities for scheduler type."""
         capabilities = {
             "default": [

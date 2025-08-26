@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 
 @dataclass(frozen=True)
@@ -16,7 +16,7 @@ class DomainError:
 
     code: str
     message: str
-    details: Dict[str, Any]
+    details: dict[str, Any]
     category: str = "domain"
 
     def __post_init__(self) -> None:

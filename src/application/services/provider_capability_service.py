@@ -6,7 +6,7 @@ following Clean Architecture and Single Responsibility Principle.
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from domain.base.ports import LoggingPort
 from domain.template.aggregate import Template
@@ -23,10 +23,10 @@ class ValidationResult:
 
     is_valid: bool
     provider_instance: str
-    errors: List[str]
-    warnings: List[str]
-    supported_features: List[str]
-    unsupported_features: List[str]
+    errors: list[str]
+    warnings: list[str]
+    supported_features: list[str]
+    unsupported_features: list[str]
 
     def __post_init__(self) -> None:
         if self.errors is None:
@@ -324,7 +324,7 @@ class ProviderCapabilityService:
                 f"Instance count: {template.max_instances} (within limit)"
             )
 
-    def get_provider_api_capabilities(self, provider_instance: str, api: str) -> Dict[str, Any]:
+    def get_provider_api_capabilities(self, provider_instance: str, api: str) -> dict[str, Any]:
         """Get detailed capabilities for specific provider API."""
         capabilities = self._get_provider_capabilities(provider_instance)
         if not capabilities:
@@ -333,7 +333,7 @@ class ProviderCapabilityService:
         api_capabilities = capabilities.get_feature("api_capabilities", {})
         return api_capabilities.get(api, {})
 
-    def list_supported_apis(self, provider_instance: str) -> List[str]:
+    def list_supported_apis(self, provider_instance: str) -> list[str]:
         """List all APIs supported by provider instance."""
         capabilities = self._get_provider_capabilities(provider_instance)
         if not capabilities:
@@ -342,8 +342,8 @@ class ProviderCapabilityService:
         return capabilities.get_feature("supported_apis", [])
 
     def check_api_compatibility(
-        self, template: Template, provider_instances: List[str]
-    ) -> Dict[str, ValidationResult]:
+        self, template: Template, provider_instances: list[str]
+    ) -> dict[str, ValidationResult]:
         """Check template compatibility across multiple provider instances."""
         results = {}
 

@@ -1,6 +1,6 @@
 """Template configuration adapter implementing TemplateConfigurationPort."""
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from domain.base.ports.logging_port import LoggingPort
 from domain.base.ports.template_configuration_port import TemplateConfigurationPort
@@ -29,18 +29,18 @@ class TemplateConfigurationAdapter(TemplateConfigurationPort):
         """Get template configuration manager."""
         return self._template_manager
 
-    def load_templates(self) -> List["Template"]:
+    def load_templates(self) -> list["Template"]:
         """Load all templates from configuration."""
         return self._template_manager.get_all_templates_sync()
 
-    def get_template_config(self, template_id: str) -> Optional[Dict[str, Any]]:
+    def get_template_config(self, template_id: str) -> Optional[dict[str, Any]]:
         """Get configuration for specific template."""
         template = self._template_manager.get_template(template_id)
         if template:
             return template.model_dump()
         return None
 
-    def validate_template_config(self, config: Dict[str, Any]) -> List[str]:
+    def validate_template_config(self, config: dict[str, Any]) -> list[str]:
         """Validate template configuration and return errors."""
         errors = []
 
@@ -82,7 +82,7 @@ class TemplateConfigurationAdapter(TemplateConfigurationPort):
 
         return errors
 
-    def _determine_provider_type(self, config: Dict[str, Any]) -> Optional[str]:
+    def _determine_provider_type(self, config: dict[str, Any]) -> Optional[str]:
         """Determine provider type from configuration."""
         provider_api = config.get("provider_api", "")
 
@@ -121,7 +121,7 @@ class TemplateConfigurationAdapter(TemplateConfigurationPort):
         """
         return self._template_manager.get_template(template_id)
 
-    def get_templates_by_provider(self, provider_api: str) -> List["Template"]:
+    def get_templates_by_provider(self, provider_api: str) -> list["Template"]:
         """
         Get templates by provider API as domain objects.
 
@@ -141,7 +141,7 @@ class TemplateConfigurationAdapter(TemplateConfigurationPort):
             if self._logger:
                 self._logger.debug("Cleared template cache via adapter")
 
-    def get_cache_stats(self) -> Dict[str, Any]:
+    def get_cache_stats(self) -> dict[str, Any]:
         """Get cache statistics."""
         if hasattr(self._template_manager, "get_cache_stats"):
             return self._template_manager.get_cache_stats()

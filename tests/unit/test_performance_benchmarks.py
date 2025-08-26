@@ -37,7 +37,7 @@ class TestPerformanceBenchmarks:
         for i in range(iterations):
             start_time = time.perf_counter()
 
-            request = Request.create_new_request(
+            Request.create_new_request(
                 template_id=f"template-{i}", machine_count=2, requester_id=f"user-{i}"
             )
 
@@ -79,7 +79,7 @@ class TestPerformanceBenchmarks:
             start_time = time.perf_counter()
 
             # Simulate template loading operation
-            loaded_templates = [t for t in templates if t.template_id.startswith("template-")]
+            [t for t in templates if t.template_id.startswith("template-")]
 
             end_time = time.perf_counter()
             times.append(end_time - start_time)
@@ -109,7 +109,7 @@ class TestPerformanceBenchmarks:
             )
 
             # Get events
-            events = request.get_domain_events()
+            request.get_domain_events()
 
             end_time = time.perf_counter()
             times.append(end_time - start_time)
@@ -293,7 +293,7 @@ class TestConcurrentPerformance:
             for i in range(requests_per_thread):
                 start_time = time.perf_counter()
 
-                request = Request.create_new_request(
+                Request.create_new_request(
                     template_id=f"template-{thread_id}-{i}",
                     machine_count=2,
                     requester_id=f"user-{thread_id}-{i}",
@@ -459,7 +459,7 @@ class TestScalabilityLimits:
         def create_request_thread():
             nonlocal successful_threads, failed_threads
             try:
-                request = Request.create_new_request(
+                Request.create_new_request(
                     template_id=f"template-{threading.current_thread().ident}",
                     machine_count=1,
                     requester_id=f"user-{threading.current_thread().ident}",

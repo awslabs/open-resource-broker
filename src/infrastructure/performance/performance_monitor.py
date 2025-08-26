@@ -3,7 +3,7 @@
 import functools
 import time
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Callable, Dict, Optional
+from typing import TYPE_CHECKING, Any, Callable, Optional
 
 if TYPE_CHECKING:
     from domain.base.ports import LoggingPort
@@ -15,7 +15,7 @@ class PerformanceMonitor:
     def __init__(self, logger: Optional["LoggingPort"] = None) -> None:
         """Initialize performance monitor."""
         self.logger = logger
-        self._metrics: Dict[str, Dict[str, Any]] = {}
+        self._metrics: dict[str, dict[str, Any]] = {}
 
     @contextmanager
     def measure(self, operation_name: str) -> None:
@@ -49,11 +49,11 @@ class PerformanceMonitor:
         if self.logger and duration > 1.0:  # Log slow operations (>1 second)
             self.logger.warning("Slow operation detected: %s took %.2fs", operation_name, duration)
 
-    def get_metrics(self) -> Dict[str, Dict[str, Any]]:
+    def get_metrics(self) -> dict[str, dict[str, Any]]:
         """Get all recorded metrics."""
         return self._metrics.copy()
 
-    def get_slowest_operations(self, limit: int = 10) -> Dict[str, Dict[str, Any]]:
+    def get_slowest_operations(self, limit: int = 10) -> dict[str, dict[str, Any]]:
         """Get the slowest operations by average time."""
         sorted_ops = sorted(self._metrics.items(), key=lambda x: x[1]["avg_time"], reverse=True)
         return dict(sorted_ops[:limit])
@@ -122,7 +122,7 @@ def measure_performance(operation_name: str):
     return get_global_monitor().measure(operation_name)
 
 
-def get_performance_report() -> Dict[str, Any]:
+def get_performance_report() -> dict[str, Any]:
     """Get performance report from global monitor."""
     monitor = get_global_monitor()
     return {

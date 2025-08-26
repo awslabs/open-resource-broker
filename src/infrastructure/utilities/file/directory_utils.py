@@ -2,7 +2,7 @@
 
 import glob
 import os
-from typing import List, Optional
+from typing import Optional
 
 
 def ensure_directory_exists(directory_path: str) -> None:
@@ -77,7 +77,7 @@ def delete_directory(directory_path: str, recursive: bool = False) -> None:
 
 def list_files(
     directory_path: str, pattern: Optional[str] = None, recursive: bool = False
-) -> List[str]:
+) -> list[str]:
     """
     List files in a directory.
 
@@ -116,7 +116,7 @@ def list_files(
         return files
 
 
-def list_directories(directory_path: str, recursive: bool = False) -> List[str]:
+def list_directories(directory_path: str, recursive: bool = False) -> list[str]:
     """
     List directories in a directory.
 
@@ -151,7 +151,7 @@ def find_files(
     name_pattern: Optional[str] = None,
     content_pattern: Optional[str] = None,
     recursive: bool = True,
-) -> List[str]:
+) -> list[str]:
     """
     Find files matching criteria.
 
@@ -237,7 +237,7 @@ def get_home_directory() -> str:
     return os.path.expanduser("~")
 
 
-def create_temp_directory(suffix: str = "", prefix: str = "", dir: str = None) -> str:
+def create_temp_directory(suffix: str = "", prefix: str = "", dir: Optional[str] = None) -> str:
     """
     Create a temporary directory.
 

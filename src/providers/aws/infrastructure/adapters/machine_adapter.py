@@ -5,7 +5,7 @@ This module provides an adapter for AWS-specific machine operations.
 It extracts AWS-specific logic from the domain layer.
 """
 
-from typing import Any, Dict
+from typing import Any
 
 from domain.base.dependency_injection import injectable
 from domain.base.ports import LoggingPort
@@ -40,11 +40,11 @@ class AWSMachineAdapter:
 
     def create_machine_from_aws_instance(
         self,
-        aws_instance_data: Dict[str, Any],
+        aws_instance_data: dict[str, Any],
         request_id: str,
         provider_api: str,
         resource_id: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Convert AWS instance data to machine domain data.
 
@@ -135,7 +135,7 @@ class AWSMachineAdapter:
             self._logger.error("Failed to create machine from AWS instance: %s", str(e))
             raise AWSError(f"Failed to create machine from AWS instance: {e!s}")
 
-    def perform_health_check(self, machine: Machine) -> Dict[str, Any]:
+    def perform_health_check(self, machine: Machine) -> dict[str, Any]:
         """
         Perform health check on AWS instance.
 
@@ -241,7 +241,7 @@ class AWSMachineAdapter:
             self._logger.error("Unexpected error during health check: %s", str(e))
             raise AWSError(f"Unexpected error during health check: {e!s}")
 
-    def cleanup_machine_resources(self, machine: Machine) -> Dict[str, Any]:
+    def cleanup_machine_resources(self, machine: Machine) -> dict[str, Any]:
         """
         Clean up AWS resources associated with machine.
 
@@ -429,7 +429,7 @@ class AWSMachineAdapter:
                 "EC2Instance",
             )
 
-    def get_machine_details(self, machine: Machine) -> Dict[str, Any]:
+    def get_machine_details(self, machine: Machine) -> dict[str, Any]:
         """
         Get detailed AWS information for a machine.
 

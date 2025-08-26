@@ -15,7 +15,7 @@ Key Principles:
 
 import inspect
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, Generic, List, Optional, Type, TypeVar, Union
+from typing import Any, Callable, Generic, Optional, TypeVar, Union
 
 T = TypeVar("T")
 
@@ -29,7 +29,7 @@ class DependencyInjectionPort(ABC):
     """
 
     @abstractmethod
-    def get(self, cls: Type[T]) -> T:
+    def get(self, cls: type[T]) -> T:
         """
         Resolve dependency by type.
 
@@ -44,7 +44,7 @@ class DependencyInjectionPort(ABC):
         """
 
     @abstractmethod
-    def register(self, cls: Type[T], instance_or_factory: Union[T, Callable[[], T]]) -> None:
+    def register(self, cls: type[T], instance_or_factory: Union[T, Callable[[], T]]) -> None:
         """
         Register dependency in container.
 
@@ -55,7 +55,7 @@ class DependencyInjectionPort(ABC):
 
     @abstractmethod
     def register_singleton(
-        self, cls: Type[T], instance_or_factory: Union[T, Callable[[], T]]
+        self, cls: type[T], instance_or_factory: Union[T, Callable[[], T]]
     ) -> None:
         """
         Register dependency as singleton.
@@ -66,7 +66,7 @@ class DependencyInjectionPort(ABC):
         """
 
     @abstractmethod
-    def is_registered(self, cls: Type[T]) -> bool:
+    def is_registered(self, cls: type[T]) -> bool:
         """
         Check if type is registered in container.
 
@@ -92,7 +92,7 @@ class InjectableMetadata:
         self,
         auto_wire: bool = True,
         singleton: bool = False,
-        dependencies: Optional[List[Type]] = None,
+        dependencies: Optional[list[type]] = None,
         factory: Optional[Callable] = None,
         lazy: bool = False,
     ) -> None:
@@ -103,7 +103,7 @@ class InjectableMetadata:
         self.factory = factory
         self.lazy = lazy
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert metadata to dictionary."""
         return {
             "auto_wire": self.auto_wire,
@@ -117,7 +117,7 @@ class InjectableMetadata:
 # Core DI Decorators
 
 
-def injectable(cls: Type[T]) -> Type[T]:
+def injectable(cls: type[T]) -> type[T]:
     """
     Domain decorator for marking classes as injectable.
 
@@ -174,7 +174,7 @@ def injectable(cls: Type[T]) -> Type[T]:
     return cls
 
 
-def singleton(cls: Type[T]) -> Type[T]:
+def singleton(cls: type[T]) -> type[T]:
     """
     Mark class as singleton for DI container.
 
@@ -197,7 +197,7 @@ def singleton(cls: Type[T]) -> Type[T]:
     return cls
 
 
-def requires(*dependencies: Type) -> Callable[[Type[T]], Type[T]]:
+def requires(*dependencies: type) -> Callable[[type[T]], type[T]]:
     """
     Specify explicit dependencies.
 
@@ -217,7 +217,7 @@ def requires(*dependencies: Type) -> Callable[[Type[T]], Type[T]]:
             pass
     """
 
-    def decorator(cls: Type[T]) -> Type[T]:
+    def decorator(cls: type[T]) -> type[T]:
         """Apply requires decorator to the class."""
         cls._dependencies = list(dependencies)
         return cls
@@ -225,7 +225,7 @@ def requires(*dependencies: Type) -> Callable[[Type[T]], Type[T]]:
     return decorator
 
 
-def factory(factory_func: Callable[[], T]) -> Callable[[Type[T]], Type[T]]:
+def factory(factory_func: Callable[[], T]) -> Callable[[type[T]], type[T]]:
     """
     Specify custom factory function for dependency creation.
 
@@ -245,7 +245,7 @@ def factory(factory_func: Callable[[], T]) -> Callable[[Type[T]], Type[T]]:
             pass
     """
 
-    def decorator(cls: Type[T]) -> Type[T]:
+    def decorator(cls: type[T]) -> type[T]:
         """Attach factory function to class."""
         cls._factory = factory_func
         return cls
@@ -253,7 +253,7 @@ def factory(factory_func: Callable[[], T]) -> Callable[[Type[T]], Type[T]]:
     return decorator
 
 
-def lazy(cls: Type[T]) -> Type[T]:
+def lazy(cls: type[T]) -> type[T]:
     """
     Mark dependency for lazy initialization.
 
@@ -273,7 +273,7 @@ def lazy(cls: Type[T]) -> Type[T]:
 # CQRS-Specific Decorators
 
 
-def command_handler(command_type: Type) -> Callable[[Type[T]], Type[T]]:
+def command_handler(command_type: type) -> Callable[[type[T]], type[T]]:
     """
     Mark class as CQRS command handler.
 
@@ -293,7 +293,7 @@ def command_handler(command_type: Type) -> Callable[[Type[T]], Type[T]]:
                 pass
     """
 
-    def decorator(cls: Type[T]) -> Type[T]:
+    def decorator(cls: type[T]) -> type[T]:
         """Register class as command handler."""
         cls._command_type = command_type
         cls._handler_type = "command"
@@ -303,7 +303,7 @@ def command_handler(command_type: Type) -> Callable[[Type[T]], Type[T]]:
     return decorator
 
 
-def query_handler(query_type: Type) -> Callable[[Type[T]], Type[T]]:
+def query_handler(query_type: type) -> Callable[[type[T]], type[T]]:
     """
     Mark class as CQRS query handler.
 
@@ -323,7 +323,7 @@ def query_handler(query_type: Type) -> Callable[[Type[T]], Type[T]]:
                 pass
     """
 
-    def decorator(cls: Type[T]) -> Type[T]:
+    def decorator(cls: type[T]) -> type[T]:
         """Register class as query handler."""
         cls._query_type = query_type
         cls._handler_type = "query"
@@ -333,7 +333,7 @@ def query_handler(query_type: Type) -> Callable[[Type[T]], Type[T]]:
     return decorator
 
 
-def event_handler(event_type: Type) -> Callable[[Type[T]], Type[T]]:
+def event_handler(event_type: type) -> Callable[[type[T]], type[T]]:
     """
     Mark class as domain event handler.
 
@@ -353,7 +353,7 @@ def event_handler(event_type: Type) -> Callable[[Type[T]], Type[T]]:
                 pass
     """
 
-    def decorator(cls: Type[T]) -> Type[T]:
+    def decorator(cls: type[T]) -> type[T]:
         """Register class as event handler."""
         cls._event_type = event_type
         cls._handler_type = "event"
@@ -366,7 +366,7 @@ def event_handler(event_type: Type) -> Callable[[Type[T]], Type[T]]:
 # Utility Functions
 
 
-def is_injectable(cls: Type) -> bool:
+def is_injectable(cls: type) -> bool:
     """
     Check if class is marked as injectable.
 
@@ -379,7 +379,7 @@ def is_injectable(cls: Type) -> bool:
     return hasattr(cls, "_injectable") and cls._injectable
 
 
-def get_injectable_metadata(cls: Type) -> Optional[InjectableMetadata]:
+def get_injectable_metadata(cls: type) -> Optional[InjectableMetadata]:
     """
     Get injectable metadata for class.
 
@@ -395,7 +395,7 @@ def get_injectable_metadata(cls: Type) -> Optional[InjectableMetadata]:
     return None
 
 
-def is_singleton(cls: Type) -> bool:
+def is_singleton(cls: type) -> bool:
     """
     Check if class is marked as singleton.
 
@@ -408,7 +408,7 @@ def is_singleton(cls: Type) -> bool:
     return hasattr(cls, "_singleton") and cls._singleton
 
 
-def is_cqrs_handler(cls: Type) -> bool:
+def is_cqrs_handler(cls: type) -> bool:
     """
     Check if class is a CQRS handler.
 
@@ -421,7 +421,7 @@ def is_cqrs_handler(cls: Type) -> bool:
     return hasattr(cls, "_cqrs_handler") and cls._cqrs_handler
 
 
-def get_handler_type(cls: Type) -> Optional[str]:
+def get_handler_type(cls: type) -> Optional[str]:
     """
     Get CQRS handler type.
 
@@ -437,7 +437,7 @@ def get_handler_type(cls: Type) -> Optional[str]:
     return None
 
 
-def get_dependencies(cls: Type) -> List[Type]:
+def get_dependencies(cls: type) -> list[type]:
     """
     Get explicit dependencies for class.
 
@@ -448,7 +448,7 @@ def get_dependencies(cls: Type) -> List[Type]:
         List of dependency types
     """
     if hasattr(cls, "_dependencies"):
-        dependencies: List[Type] = cls._dependencies
+        dependencies: list[type] = cls._dependencies
         return dependencies
 
     # Try to get from metadata
@@ -469,14 +469,14 @@ class OptionalDependency(Generic[T]):
     Use this to mark dependencies as optional in constructor parameters.
     """
 
-    def __init__(self, dependency_type: Type[T]) -> None:
+    def __init__(self, dependency_type: type[T]) -> None:
         self.dependency_type = dependency_type
 
     def __repr__(self) -> str:
         return f"OptionalDependency({self.dependency_type})"
 
 
-def optional_dependency(dependency_type: Type[T]) -> OptionalDependency[T]:
+def optional_dependency(dependency_type: type[T]) -> OptionalDependency[T]:
     """
     Mark dependency as optional.
 
@@ -507,7 +507,7 @@ def optional_dependency(dependency_type: Type[T]) -> OptionalDependency[T]:
 
 
 # Preserve existing function names for compatibility
-def get_injectable_info(cls: Type) -> Dict[str, Any]:
+def get_injectable_info(cls: type) -> dict[str, Any]:
     """
     Get injectable information for class (backward compatibility).
 

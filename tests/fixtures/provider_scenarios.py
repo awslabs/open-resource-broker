@@ -1,6 +1,6 @@
 """Provider test scenarios for comprehensive testing."""
 
-from typing import Any, Dict, List
+from typing import Any
 
 from domain.base.value_objects import InstanceId
 
@@ -9,7 +9,7 @@ class ProviderScenarios:
     """Test scenarios for provider operations."""
 
     @staticmethod
-    def get_success_scenarios() -> List[Dict[str, Any]]:
+    def get_success_scenarios() -> list[dict[str, Any]]:
         """Get successful operation scenarios."""
         return [
             {
@@ -49,7 +49,7 @@ class ProviderScenarios:
         ]
 
     @staticmethod
-    def get_failure_scenarios() -> List[Dict[str, Any]]:
+    def get_failure_scenarios() -> list[dict[str, Any]]:
         """Get failure operation scenarios."""
         return [
             {
@@ -74,7 +74,7 @@ class ProviderScenarios:
         ]
 
     @staticmethod
-    def get_status_transition_scenarios() -> List[Dict[str, Any]]:
+    def get_status_transition_scenarios() -> list[dict[str, Any]]:
         """Get status transition scenarios."""
         return [
             {
@@ -116,7 +116,7 @@ class ProviderScenarios:
         ]
 
     @staticmethod
-    def get_return_request_scenarios() -> List[Dict[str, Any]]:
+    def get_return_request_scenarios() -> list[dict[str, Any]]:
         """Get return request scenarios."""
         return [
             {
@@ -142,7 +142,7 @@ class ProviderScenarios:
         ]
 
     @staticmethod
-    def get_template_scenarios() -> List[Dict[str, Any]]:
+    def get_template_scenarios() -> list[dict[str, Any]]:
         """Get template validation scenarios."""
         return [
             {
@@ -171,7 +171,7 @@ class ProviderScenarios:
         ]
 
     @staticmethod
-    def configure_mock_provider(mock_provider, scenario: Dict[str, Any]):
+    def configure_mock_provider(mock_provider, scenario: dict[str, Any]):
         """Configure mock provider with scenario data."""
         if "create_instances" in scenario:
             mock_provider.set_response("create_instances", scenario["create_instances"])
@@ -194,7 +194,7 @@ class HostFactoryFormatValidator:
     """Validate responses match Host Factory specification."""
 
     @staticmethod
-    def validate_templates_response(response: Dict[str, Any]) -> bool:
+    def validate_templates_response(response: dict[str, Any]) -> bool:
         """Validate getAvailableTemplates response format."""
         if "templates" not in response:
             return False
@@ -213,13 +213,13 @@ class HostFactoryFormatValidator:
         return True
 
     @staticmethod
-    def validate_request_response(response: Dict[str, Any]) -> bool:
+    def validate_request_response(response: dict[str, Any]) -> bool:
         """Validate requestMachines response format."""
         required_fields = ["requestId", "message"]
         return all(field in response for field in required_fields)
 
     @staticmethod
-    def validate_status_response(response: Dict[str, Any]) -> bool:
+    def validate_status_response(response: dict[str, Any]) -> bool:
         """Validate getRequestStatus response format."""
         if "requests" not in response:
             return False

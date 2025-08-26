@@ -2,7 +2,7 @@
 
 import json
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from config.managers.configuration_manager import ConfigurationManager
 from infrastructure.logging.logger import get_logger
@@ -42,7 +42,7 @@ class ProviderTemplateStrategy(JSONStorageStrategy):
         self.logger = get_logger(__name__)
 
         # Cache for loaded templates to avoid repeated file reads
-        self._template_cache: Optional[Dict[str, Dict[str, Any]]] = None
+        self._template_cache: Optional[dict[str, dict[str, Any]]] = None
         self._cache_timestamp: Optional[float] = None
 
         # Discover all template files
@@ -55,7 +55,7 @@ class ProviderTemplateStrategy(JSONStorageStrategy):
         for file_path in self._template_files:
             self.logger.debug("Template file: %s", file_path)
 
-    def _discover_template_files(self) -> List[str]:
+    def _discover_template_files(self) -> list[str]:
         """
         Discover all template files in priority order.
 
@@ -112,7 +112,7 @@ class ProviderTemplateStrategy(JSONStorageStrategy):
 
         return template_files
 
-    def _load_merged_templates(self) -> Dict[str, Dict[str, Any]]:
+    def _load_merged_templates(self) -> dict[str, dict[str, Any]]:
         """
         Load and merge templates from all discovered files.
 
@@ -167,7 +167,7 @@ class ProviderTemplateStrategy(JSONStorageStrategy):
         )
         return merged_templates
 
-    def _get_templates_cache(self) -> Dict[str, Dict[str, Any]]:
+    def _get_templates_cache(self) -> dict[str, dict[str, Any]]:
         """
         Get templates with caching support.
 
@@ -188,7 +188,7 @@ class ProviderTemplateStrategy(JSONStorageStrategy):
 
         return self._template_cache
 
-    def find_all(self) -> List[Dict[str, Any]]:
+    def find_all(self) -> list[dict[str, Any]]:
         """
         Find all templates from all provider-specific files.
 
@@ -198,7 +198,7 @@ class ProviderTemplateStrategy(JSONStorageStrategy):
         templates = self._get_templates_cache()
         return list(templates.values())
 
-    def find_by_id(self, entity_id: str) -> Optional[Dict[str, Any]]:
+    def find_by_id(self, entity_id: str) -> Optional[dict[str, Any]]:
         """
         Find template by ID from merged provider-specific files.
 
@@ -211,7 +211,7 @@ class ProviderTemplateStrategy(JSONStorageStrategy):
         templates = self._get_templates_cache()
         return templates.get(entity_id)
 
-    def save(self, entity_data: Dict[str, Any]) -> None:
+    def save(self, entity_data: dict[str, Any]) -> None:
         """
         Save template to the appropriate provider-specific file.
 
@@ -259,7 +259,7 @@ class ProviderTemplateStrategy(JSONStorageStrategy):
             self.logger.error("Error saving template '%s' to %s: %s", template_id, target_file, e)
             raise
 
-    def _determine_target_file(self, entity_data: Dict[str, Any]) -> str:
+    def _determine_target_file(self, entity_data: dict[str, Any]) -> str:
         """
         Determine which file to save the template to based on provider information.
 
@@ -336,7 +336,7 @@ class ProviderTemplateStrategy(JSONStorageStrategy):
 
         return deleted
 
-    def get_template_source_info(self, template_id: str) -> Optional[Dict[str, Any]]:
+    def get_template_source_info(self, template_id: str) -> Optional[dict[str, Any]]:
         """
         Get information about which file a template was loaded from.
 

@@ -10,7 +10,6 @@ import json
 import subprocess
 import sys
 from datetime import datetime, timezone
-from typing import List
 
 # Setup logging
 logging.basicConfig(
@@ -19,7 +18,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def run_command(cmd: List[str], capture_output: bool = True) -> subprocess.CompletedProcess:
+def run_command(cmd: list[str], capture_output: bool = True) -> subprocess.CompletedProcess:
     """Run a command and return the result."""
     try:
         return subprocess.run(cmd, capture_output=capture_output, text=True, check=False)

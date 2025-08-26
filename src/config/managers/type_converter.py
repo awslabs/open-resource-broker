@@ -1,7 +1,7 @@
 """Configuration type conversion utilities."""
 
 import logging
-from typing import Any, Dict, List, Optional, Type, TypeVar
+from typing import Any, Optional, TypeVar
 
 from domain.base.exceptions import ConfigurationError
 
@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 class ConfigTypeConverter:
     """Handles type conversion for configuration values."""
 
-    def __init__(self, raw_config: Dict[str, Any]) -> None:
+    def __init__(self, raw_config: dict[str, Any]) -> None:
         """Initialize the instance."""
         self._raw_config = raw_config
 
@@ -63,7 +63,7 @@ class ConfigTypeConverter:
         value = self.get(key, default)
         return str(value) if value is not None else default
 
-    def get_list(self, key: str, default: Optional[List[Any]] = None) -> List[Any]:
+    def get_list(self, key: str, default: Optional[list[Any]] = None) -> list[Any]:
         """Get list configuration value."""
         if default is None:
             default = []
@@ -77,7 +77,7 @@ class ConfigTypeConverter:
         else:
             return default
 
-    def get_dict(self, key: str, default: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def get_dict(self, key: str, default: Optional[dict[str, Any]] = None) -> dict[str, Any]:
         """Get dictionary configuration value."""
         if default is None:
             default = {}
@@ -85,7 +85,7 @@ class ConfigTypeConverter:
         value = self.get(key, default)
         return value if isinstance(value, dict) else default
 
-    def get_typed(self, config_class: Type[T]) -> T:
+    def get_typed(self, config_class: type[T]) -> T:
         """Create typed configuration object from raw config."""
         try:
             class_name = config_class.__name__
@@ -108,7 +108,7 @@ class ConfigTypeConverter:
             logger.error("Failed to create typed config for %s: %s", config_class.__name__, e)
             raise ConfigurationError(f"Invalid configuration for {config_class.__name__}: {e}")
 
-    def _get_aws_provider_config(self, config_class: Type[T]) -> T:
+    def _get_aws_provider_config(self, config_class: type[T]) -> T:
         """Get AWS provider configuration from provider strategy system."""
         try:
             # Get provider configuration
@@ -165,10 +165,10 @@ class ConfigTypeConverter:
         # Set the final value
         config[keys[-1]] = value
 
-    def update(self, updates: Dict[str, Any]) -> None:
+    def update(self, updates: dict[str, Any]) -> None:
         """Update configuration with new values."""
 
-        def deep_update(base_dict: Dict[str, Any], update_dict: Dict[str, Any]) -> None:
+        def deep_update(base_dict: dict[str, Any], update_dict: dict[str, Any]) -> None:
             """Recursively update nested dictionary values."""
             for key, value in update_dict.items():
                 if (

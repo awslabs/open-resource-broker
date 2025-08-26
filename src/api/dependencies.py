@@ -1,6 +1,6 @@
 """FastAPI dependency injection integration."""
 
-from typing import Type, TypeVar
+from typing import TypeVar
 
 from config.schemas.server_schema import ServerConfig
 from domain.base.ports.configuration_port import ConfigurationPort
@@ -15,7 +15,7 @@ def get_di_container():
     return get_container()
 
 
-def get_service(service_type: Type[T]) -> T:
+def get_service(service_type: type[T]) -> T:
     """
     Get services from DI container.
 

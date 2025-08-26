@@ -5,7 +5,7 @@ eliminating duplication and ensuring consistent tagging patterns.
 """
 
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import Any
 
 from domain.request.aggregate import Request
 from domain.template.aggregate import Template
@@ -18,7 +18,7 @@ class FleetTagBuilder:
     @staticmethod
     def build_base_tags(
         request: Request, template: Template, package_name: str = "open-hostfactory-plugin"
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         """Build base tags used across all AWS resources.
 
         Args:
@@ -42,7 +42,7 @@ class FleetTagBuilder:
         template: Template,
         resource_type: str,
         package_name: str = "open-hostfactory-plugin",
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         """Build complete tags for a specific resource type.
 
         Args:
@@ -67,7 +67,7 @@ class FleetTagBuilder:
         return tags
 
     @staticmethod
-    def format_for_aws(tags: Dict[str, str]) -> List[Dict[str, str]]:
+    def format_for_aws(tags: dict[str, str]) -> list[dict[str, str]]:
         """Convert tag dictionary to AWS TagSpecifications format.
 
         Args:
@@ -82,9 +82,9 @@ class FleetTagBuilder:
     def build_tag_specifications(
         request: Request,
         template: Template,
-        resource_types: List[str],
+        resource_types: list[str],
         package_name: str = "open-hostfactory-plugin",
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Build AWS TagSpecifications for multiple resource types.
 
         Args:
@@ -115,7 +115,7 @@ class FleetTagBuilder:
 
     # Legacy compatibility methods
     @staticmethod
-    def build_common_tags(request: Request, template: Template) -> List[Dict[str, str]]:
+    def build_common_tags(request: Request, template: Template) -> list[dict[str, str]]:
         """Legacy method for backward compatibility."""
         tags = FleetTagBuilder.build_base_tags(request, template)
         tags["Name"] = f"hf-{request.request_id}"  # Legacy naming
@@ -124,21 +124,21 @@ class FleetTagBuilder:
     @staticmethod
     def build_fleet_tags(
         request: Request, template: Template, fleet_name: str
-    ) -> List[Dict[str, str]]:
+    ) -> list[dict[str, str]]:
         """Legacy method for backward compatibility."""
         tags = FleetTagBuilder.build_base_tags(request, template)
         tags["Name"] = fleet_name
         return FleetTagBuilder.format_for_aws(tags)
 
     @staticmethod
-    def build_instance_tags(request: Request, template: Template) -> List[Dict[str, str]]:
+    def build_instance_tags(request: Request, template: Template) -> list[dict[str, str]]:
         """Legacy method for backward compatibility."""
         return FleetTagBuilder.build_common_tags(request, template)
 
     @staticmethod
     def add_template_tags(
-        base_tags: List[Dict[str, str]], template: Template
-    ) -> List[Dict[str, str]]:
+        base_tags: list[dict[str, str]], template: Template
+    ) -> list[dict[str, str]]:
         """Legacy method for backward compatibility."""
         if not hasattr(template, "tags") or not template.tags:
             return base_tags

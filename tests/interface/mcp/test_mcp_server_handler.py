@@ -61,7 +61,7 @@ class TestMCPServerHandler:
 
         # Mock stdin/stdout
         with (
-            patch("sys.stdin") as mock_stdin,
+            patch("sys.stdin"),
             patch("builtins.print") as mock_print,
             patch("asyncio.get_event_loop") as mock_loop,
         ):

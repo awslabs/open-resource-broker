@@ -1,7 +1,7 @@
 """API handler for returning machines."""
 
 import time
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from application.base.infrastructure_handlers import BaseAPIHandler, RequestContext
 from application.dto.commands import CreateReturnRequestCommand
@@ -20,7 +20,7 @@ from monitoring.metrics import MetricsCollector
 
 @injectable
 class RequestReturnMachinesRESTHandler(
-    BaseAPIHandler[Dict[str, Any], RequestReturnMachinesResponse]
+    BaseAPIHandler[dict[str, Any], RequestReturnMachinesResponse]
 ):
     """API handler for returning machines."""
 
@@ -51,7 +51,7 @@ class RequestReturnMachinesRESTHandler(
         self._scheduler_strategy = scheduler_strategy
         self._metrics = metrics
 
-    async def validate_api_request(self, request: Dict[str, Any], context: RequestContext) -> None:
+    async def validate_api_request(self, request: dict[str, Any], context: RequestContext) -> None:
         """
         Validate API request for returning machines.
 
@@ -96,7 +96,7 @@ class RequestReturnMachinesRESTHandler(
 
     @handle_interface_exceptions(context="request_return_machines_api", interface_type="api")
     async def execute_api_request(
-        self, request: Dict[str, Any], context: RequestContext
+        self, request: dict[str, Any], context: RequestContext
     ) -> RequestReturnMachinesResponse:
         """
         Execute the core API logic for returning machines.
@@ -265,7 +265,7 @@ class RequestReturnMachinesRESTHandler(
 
         return response
 
-    def _extract_machine_ids(self, machines_data: List[Dict[str, Any]]) -> List[str]:
+    def _extract_machine_ids(self, machines_data: list[dict[str, Any]]) -> list[str]:
         """
         Extract and validate machine IDs from input data.
 

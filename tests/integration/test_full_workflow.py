@@ -442,7 +442,7 @@ class TestEndToEndScenarios:
 
         with (
             patch.object(service, "_command_bus") as mock_command_bus,
-            patch.object(service, "_query_bus") as mock_query_bus,
+            patch.object(service, "_query_bus"),
         ):
             # Simulate initial failure
             mock_command_bus.dispatch.side_effect = Exception("Temporary failure")

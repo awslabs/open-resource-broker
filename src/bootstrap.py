@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 # Import configuration
 from config import AppConfig
@@ -16,7 +16,7 @@ from infrastructure.logging.logger import get_logger, setup_logging
 class Application:
     """DI-based application context manager with registration pattern."""
 
-    def __init__(self, config_path: Optional[str] = None) -> None:
+    def __init__(self, config_path: str | None = None) -> None:
         """Initialize the instance."""
         self.config_path = config_path
         self._initialized = False
@@ -212,7 +212,7 @@ class Application:
             self._command_bus = self._container.get(CommandBus)
         return self._command_bus
 
-    def get_provider_info(self) -> Dict[str, Any]:
+    def get_provider_info(self) -> dict[str, Any]:
         """Get provider information using direct provider context."""
         if not self._initialized:
             return {"status": "not_initialized"}
@@ -241,7 +241,7 @@ class Application:
             self.logger.error("Failed to get provider info: %s", e)
             return {"status": "error", "error": str(e), "initialized": False}
 
-    def health_check(self) -> Dict[str, Any]:
+    def health_check(self) -> dict[str, Any]:
         """Check application health using direct provider context."""
         if not self._initialized:
             return {"status": "error", "message": "Application not initialized"}
@@ -321,7 +321,7 @@ class Application:
         self.shutdown()
 
 
-async def create_application(config_path: Optional[str] = None) -> Application:
+async def create_application(config_path: str | None = None) -> Application:
     """Create and initialize a provider-aware application."""
     app = Application(config_path)
     if not await app.initialize():

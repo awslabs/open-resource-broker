@@ -17,7 +17,7 @@ import threading
 from datetime import datetime
 from functools import lru_cache
 from http import HTTPStatus
-from typing import Any, Callable, Dict, Optional, Type
+from typing import Any, Callable, Optional
 
 from pydantic import Field
 
@@ -126,7 +126,7 @@ class InfrastructureErrorResponse(BaseDTO):
     error_code: str
     message: str
     category: str = ErrorCategory.INTERNAL
-    details: Dict[str, Any] = Field(default_factory=dict)
+    details: dict[str, Any] = Field(default_factory=dict)
     http_status: int = HTTPStatus.INTERNAL_SERVER_ERROR
     timestamp: datetime = Field(default_factory=datetime.utcnow)
 
@@ -136,7 +136,7 @@ class InfrastructureErrorResponse(BaseDTO):
         error_code: str,
         message: str,
         category: str = ErrorCategory.INTERNAL,
-        details: Optional[Dict[str, Any]] = None,
+        details: Optional[dict[str, Any]] = None,
         http_status: Optional[int] = None,
     ) -> "InfrastructureErrorResponse":
         """Create infrastructure error response from domain error components."""
@@ -170,7 +170,7 @@ class InfrastructureErrorResponse(BaseDTO):
             http_status=http_status,
         )
 
-    def to_api_response(self) -> Dict[str, Any]:
+    def to_api_response(self) -> dict[str, Any]:
         """Convert to API response format."""
         return {
             "error": {
@@ -183,7 +183,7 @@ class InfrastructureErrorResponse(BaseDTO):
             "timestamp": self.timestamp.isoformat(),
         }
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert error response to dictionary."""
         return {
             "error": {
@@ -199,7 +199,7 @@ class InfrastructureErrorResponse(BaseDTO):
     @staticmethod
     def _exception_to_components(
         exception: Exception,
-    ) -> tuple[str, str, str, Dict[str, Any]]:
+    ) -> tuple[str, str, str, dict[str, Any]]:
         """Convert exception to error components."""
         if isinstance(exception, ValidationError):
             return (
@@ -281,7 +281,7 @@ class ExceptionContext:
         self.thread_id = threading.get_ident()
         self.additional_context = additional_context
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert context to dictionary for logging."""
         return {
             "operation": self.operation,
@@ -304,8 +304,8 @@ class ExceptionHandler:
         """Initialize exception handler with optional logger and metrics."""
         self.logger = logger or get_logger(__name__)
         self.metrics = metrics
-        self._handlers: Dict[Type[Exception], Callable] = {}
-        self._http_handlers: Dict[Type[Exception], Callable[[Exception], ErrorResponse]] = {}
+        self._handlers: dict[type[Exception], Callable] = {}
+        self._http_handlers: dict[type[Exception], Callable[[Exception], ErrorResponse]] = {}
         self._performance_stats = {"total_handled": 0, "by_type": {}}
         self._lock = threading.Lock()
         self._register_handlers()
@@ -343,7 +343,7 @@ class ExceptionHandler:
         return handler(exception, context, **kwargs)
 
     @lru_cache(maxsize=128)
-    def _get_handler(self, exception_type: Type[Exception]) -> Callable:
+    def _get_handler(self, exception_type: type[Exception]) -> Callable:
         """
         Find the most specific handler for this exception type.
 
@@ -675,7 +675,7 @@ class ExceptionHandler:
     # PYTHON BUILT-IN EXCEPTION HANDLERS (WRAP)
 
     def _wrap_json_decode_error(
-        self, exc: json.JSONDecodeError, context: str = None, **kwargs
+        self, exc: json.JSONDecodeError, context: Optional[str] = None, **kwargs
     ) -> InfrastructureError:
         """Wrap JSON decode error into appropriate domain exception based on context."""
         # Handle both string context and ExceptionContext object
@@ -732,7 +732,7 @@ class ExceptionHandler:
             )
 
     def _wrap_connection_error(
-        self, exc: ConnectionError, context: str = None, **kwargs
+        self, exc: ConnectionError, context: Optional[str] = None, **kwargs
     ) -> InfrastructureError:
         """Wrap connection error into infrastructure exception."""
         return InfrastructureError(
@@ -748,7 +748,7 @@ class ExceptionHandler:
         )
 
     def _wrap_file_not_found_error(
-        self, exc: FileNotFoundError, context: str = None, **kwargs
+        self, exc: FileNotFoundError, context: Optional[str] = None, **kwargs
     ) -> InfrastructureError:
         """Wrap file not found error into appropriate domain exception."""
         context_lower = (context or "").lower()
@@ -780,7 +780,7 @@ class ExceptionHandler:
                 },
             )
 
-    def _wrap_value_error(self, exc: ValueError, context: str = None, **kwargs) -> ValidationError:
+    def _wrap_value_error(self, exc: ValueError, context: Optional[str] = None, **kwargs) -> ValidationError:
         """Wrap value error into validation exception."""
         return ValidationError(
             message=f"Invalid value: {exc!s}",
@@ -794,7 +794,7 @@ class ExceptionHandler:
             },
         )
 
-    def _wrap_key_error(self, exc: KeyError, context: str = None, **kwargs) -> ValidationError:
+    def _wrap_key_error(self, exc: KeyError, context: Optional[str] = None, **kwargs) -> ValidationError:
         """Wrap key error into validation exception."""
         return ValidationError(
             message=f"Missing required key: {exc!s}",
@@ -808,7 +808,7 @@ class ExceptionHandler:
             },
         )
 
-    def _wrap_type_error(self, exc: TypeError, context: str = None, **kwargs) -> ValidationError:
+    def _wrap_type_error(self, exc: TypeError, context: Optional[str] = None, **kwargs) -> ValidationError:
         """Wrap type error into validation exception."""
         return ValidationError(
             message=f"Type error: {exc!s}",
@@ -823,7 +823,7 @@ class ExceptionHandler:
         )
 
     def _wrap_attribute_error(
-        self, exc: AttributeError, context: str = None, **kwargs
+        self, exc: AttributeError, context: Optional[str] = None, **kwargs
     ) -> InfrastructureError:
         """Wrap attribute error into infrastructure exception."""
         return InfrastructureError(
@@ -839,7 +839,7 @@ class ExceptionHandler:
         )
 
     def _handle_generic_exception(
-        self, exc: Exception, context: str = None, **kwargs
+        self, exc: Exception, context: Optional[str] = None, **kwargs
     ) -> InfrastructureError:
         """Handle any unrecognized exception by wrapping in InfrastructureError."""
         # Handle both string context and ExceptionContext object
@@ -873,7 +873,7 @@ class ExceptionHandler:
             return self._handle_unexpected_error_http(exception)
 
     def _get_http_handler(
-        self, exception_type: Type[Exception]
+        self, exception_type: type[Exception]
     ) -> Callable[[Exception], ErrorResponse]:
         """Get the appropriate HTTP handler for an exception type."""
         # Check for exact match first
@@ -890,8 +890,8 @@ class ExceptionHandler:
 
     def _register_http_handlers(self) -> None:
         """Register HTTP error handlers."""
-        self._http_handlers: Dict[
-            Type[Exception], Callable[[Exception], ErrorResponse]
+        self._http_handlers: dict[
+            type[Exception], Callable[[Exception], ErrorResponse]
         ] = {  # Domain errors
             ValidationError: self._handle_validation_error_http,
             EntityNotFoundError: self._handle_not_found_error_http,

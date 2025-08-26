@@ -2,7 +2,7 @@
 
 import threading
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from domain.base.dependency_injection import injectable
 from domain.base.ports import LoggingPort
@@ -41,8 +41,8 @@ class LoadBalancingProviderStrategy(ProviderStrategy):
     def __init__(
         self,
         logger: LoggingPort,
-        strategies: List[ProviderStrategy],
-        weights: Optional[Dict[str, float]] = None,
+        strategies: list[ProviderStrategy],
+        weights: Optional[dict[str, float]] = None,
         config: LoadBalancingConfig = None,
     ) -> None:
         """
@@ -71,7 +71,7 @@ class LoadBalancingProviderStrategy(ProviderStrategy):
         self._logger = logger
 
         # Initialize strategy statistics
-        self._stats: Dict[str, StrategyStats] = {}
+        self._stats: dict[str, StrategyStats] = {}
         for strategy_type in self._strategies:
             weight = weights.get(strategy_type, 1.0) if weights else 1.0
             self._stats[strategy_type] = StrategyStats(weight=weight)
@@ -79,8 +79,8 @@ class LoadBalancingProviderStrategy(ProviderStrategy):
         # Load balancing state
         self._round_robin_index = 0
         self._lock = threading.RLock()
-        self._sessions: Dict[str, str] = {}  # session_id -> strategy_type
-        self._session_timestamps: Dict[str, float] = {}
+        self._sessions: dict[str, str] = {}  # session_id -> strategy_type
+        self._session_timestamps: dict[str, float] = {}
 
         # Health monitoring
         self._last_health_check = 0.0
@@ -236,7 +236,7 @@ class LoadBalancingProviderStrategy(ProviderStrategy):
                 # Default to round robin
                 return self._round_robin_selection(healthy_strategies)
 
-    def _round_robin_selection(self, strategies: Dict[str, ProviderStrategy]) -> ProviderStrategy:
+    def _round_robin_selection(self, strategies: dict[str, ProviderStrategy]) -> ProviderStrategy:
         """Round robin strategy selection."""
         strategy_list = list(strategies.values())
         selected = strategy_list[self._round_robin_index % len(strategy_list)]
@@ -244,7 +244,7 @@ class LoadBalancingProviderStrategy(ProviderStrategy):
         return selected
 
     def _weighted_round_robin_selection(
-        self, strategies: Dict[str, ProviderStrategy]
+        self, strategies: dict[str, ProviderStrategy]
     ) -> ProviderStrategy:
         """Weighted round robin strategy selection."""
         # Implementation would use weights from stats
@@ -252,7 +252,7 @@ class LoadBalancingProviderStrategy(ProviderStrategy):
         return self._round_robin_selection(strategies)
 
     def _least_connections_selection(
-        self, strategies: Dict[str, ProviderStrategy]
+        self, strategies: dict[str, ProviderStrategy]
     ) -> ProviderStrategy:
         """Select strategy with least active connections."""
         min_connections = float("inf")
@@ -264,10 +264,10 @@ class LoadBalancingProviderStrategy(ProviderStrategy):
                 min_connections = connections
                 selected_strategy = strategy
 
-        return selected_strategy or list(strategies.values())[0]
+        return selected_strategy or next(iter(strategies.values()))
 
     def _least_response_time_selection(
-        self, strategies: Dict[str, ProviderStrategy]
+        self, strategies: dict[str, ProviderStrategy]
     ) -> ProviderStrategy:
         """Select strategy with lowest average response time."""
         min_response_time = float("inf")
@@ -279,9 +279,9 @@ class LoadBalancingProviderStrategy(ProviderStrategy):
                 min_response_time = avg_time
                 selected_strategy = strategy
 
-        return selected_strategy or list(strategies.values())[0]
+        return selected_strategy or next(iter(strategies.values()))
 
-    def _random_selection(self, strategies: Dict[str, ProviderStrategy]) -> ProviderStrategy:
+    def _random_selection(self, strategies: dict[str, ProviderStrategy]) -> ProviderStrategy:
         """Random strategy selection."""
         import random
 
@@ -289,14 +289,14 @@ class LoadBalancingProviderStrategy(ProviderStrategy):
         return random.choice(list(strategies.values()))  # nosec B311
 
     def _weighted_random_selection(
-        self, strategies: Dict[str, ProviderStrategy]
+        self, strategies: dict[str, ProviderStrategy]
     ) -> ProviderStrategy:
         """Weighted random strategy selection."""
         # For now, fallback to regular random
         return self._random_selection(strategies)
 
     def _hash_based_selection(
-        self, strategies: Dict[str, ProviderStrategy], operation: ProviderOperation
+        self, strategies: dict[str, ProviderStrategy], operation: ProviderOperation
     ) -> ProviderStrategy:
         """Hash-based strategy selection for consistent routing."""
         # Use operation hash for consistent selection
@@ -305,7 +305,7 @@ class LoadBalancingProviderStrategy(ProviderStrategy):
         index = operation_hash % len(strategy_list)
         return strategy_list[index]
 
-    def _adaptive_selection(self, strategies: Dict[str, ProviderStrategy]) -> ProviderStrategy:
+    def _adaptive_selection(self, strategies: dict[str, ProviderStrategy]) -> ProviderStrategy:
         """Adaptive strategy selection based on performance metrics."""
         # For now, use least response time as adaptive metric
         return self._least_response_time_selection(strategies)
@@ -336,7 +336,7 @@ class LoadBalancingProviderStrategy(ProviderStrategy):
 
         return self._sessions.get(session_id)
 
-    def get_stats(self) -> Dict[str, Dict[str, Any]]:
+    def get_stats(self) -> dict[str, dict[str, Any]]:
         """Get load balancing statistics."""
         with self._lock:
             return {

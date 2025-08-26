@@ -12,7 +12,6 @@ import json
 import subprocess
 import sys
 from pathlib import Path
-from typing import Dict, Tuple
 
 # Setup logging
 logging.basicConfig(
@@ -30,7 +29,7 @@ class SecurityScanner:
         self.results = {}
         self.sarif_files = []
 
-    def run_bandit(self) -> Tuple[bool, str]:
+    def run_bandit(self) -> tuple[bool, str]:
         """Run Bandit security linter with SARIF output."""
         logger.info("Running Bandit security analysis...")
 
@@ -77,7 +76,7 @@ class SecurityScanner:
         except Exception as e:
             return False, f"Bandit scan failed: {e}"
 
-    def run_safety(self) -> Tuple[bool, str]:
+    def run_safety(self) -> tuple[bool, str]:
         """Run Safety dependency vulnerability check."""
         logger.info("Running Safety dependency scan...")
 
@@ -98,7 +97,7 @@ class SecurityScanner:
         except Exception as e:
             return False, f"Safety scan failed: {e}"
 
-    def run_trivy(self) -> Tuple[bool, str]:
+    def run_trivy(self) -> tuple[bool, str]:
         """Run Trivy container vulnerability scan."""
         logger.info("Running Trivy container security scan...")
 
@@ -146,7 +145,7 @@ class SecurityScanner:
         except Exception as e:
             return False, f"Trivy scan failed: {e}"
 
-    def run_hadolint(self) -> Tuple[bool, str]:
+    def run_hadolint(self) -> tuple[bool, str]:
         """Run Hadolint Dockerfile security scan."""
         logger.info("Running Hadolint Dockerfile scan...")
 
@@ -164,7 +163,7 @@ class SecurityScanner:
         except Exception as e:
             return False, f"Hadolint scan failed: {e}"
 
-    def generate_sbom(self) -> Tuple[bool, str]:
+    def generate_sbom(self) -> tuple[bool, str]:
         """Generate Software Bill of Materials."""
         logger.info("Generating SBOM files...")
 
@@ -280,7 +279,7 @@ class SecurityScanner:
 
         return "security-report.md"
 
-    def run_all_scans(self, include_container: bool = True) -> Dict[str, Tuple[bool, str]]:
+    def run_all_scans(self, include_container: bool = True) -> dict[str, tuple[bool, str]]:
         """Run all security scans."""
         logger.info("Starting comprehensive security scan...")
 

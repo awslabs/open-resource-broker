@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 
 class AuthStatus(Enum):
@@ -23,15 +23,15 @@ class AuthContext:
     # Request information
     method: str
     path: str
-    headers: Dict[str, str]
-    query_params: Dict[str, str]
+    headers: dict[str, str]
+    query_params: dict[str, str]
 
     # Client information
     client_ip: Optional[str] = None
     user_agent: Optional[str] = None
 
     # Additional context
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -40,12 +40,12 @@ class AuthResult:
 
     status: AuthStatus
     user_id: Optional[str] = None
-    user_roles: List[str] = field(default_factory=list)
-    permissions: List[str] = field(default_factory=list)
+    user_roles: list[str] = field(default_factory=list)
+    permissions: list[str] = field(default_factory=list)
     token: Optional[str] = None
     expires_at: Optional[int] = None  # Unix timestamp
     error_message: Optional[str] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         if self.user_roles is None:

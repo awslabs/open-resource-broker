@@ -5,7 +5,6 @@ This module provides a factory for creating AWS handlers based on template types
 It follows the Factory Method pattern to create the appropriate handler for each template.
 """
 
-from typing import Dict, Type
 
 from domain.base.dependency_injection import injectable
 from domain.base.ports import ConfigurationPort, LoggingPort
@@ -39,8 +38,8 @@ class AWSHandlerFactory:
         self._aws_client = aws_client
         self._logger = logger
         self._config = config
-        self._handlers: Dict[str, AWSHandler] = {}
-        self._handler_classes: Dict[str, Type[AWSHandler]] = {}
+        self._handlers: dict[str, AWSHandler] = {}
+        self._handler_classes: dict[str, type[AWSHandler]] = {}
 
         # Register handler classes
         self._register_handler_classes()

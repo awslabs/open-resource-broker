@@ -6,7 +6,7 @@ maintaining all existing AWS functionality and adding new capabilities.
 """
 
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from domain.base.dependency_injection import injectable
 from domain.base.ports import LoggingPort
@@ -72,7 +72,7 @@ class AWSProviderStrategy(ProviderStrategy):
         self._aws_client: Optional[AWSClient] = None
         self._resource_manager: Optional[AWSResourceManager] = None
         self._launch_template_manager: Optional[AWSLaunchTemplateManager] = None
-        self._handlers: Dict[str, Any] = {}
+        self._handlers: dict[str, Any] = {}
 
     @property
     def provider_type(self) -> str:
@@ -123,7 +123,7 @@ class AWSProviderStrategy(ProviderStrategy):
         return self._launch_template_manager
 
     @property
-    def handlers(self) -> Dict[str, Any]:
+    def handlers(self) -> dict[str, Any]:
         """Get the AWS handlers with lazy initialization."""
         if not self._handlers and self.aws_client:
             self._logger.debug("Creating AWS handlers on first access")
@@ -722,7 +722,7 @@ class AWSProviderStrategy(ProviderStrategy):
                 {"error": str(e), "response_time_ms": response_time_ms},
             )
 
-    def _validate_aws_template(self, template_config: Dict[str, Any]) -> Dict[str, Any]:
+    def _validate_aws_template(self, template_config: dict[str, Any]) -> dict[str, Any]:
         """Validate AWS-specific template configuration."""
         validation_errors = []
         validation_warnings = []
@@ -754,7 +754,7 @@ class AWSProviderStrategy(ProviderStrategy):
             "validated_fields": list(template_config.keys()),
         }
 
-    def _get_aws_templates(self) -> List[Dict[str, Any]]:
+    def _get_aws_templates(self) -> list[dict[str, Any]]:
         """Get available AWS templates using scheduler strategy."""
         try:
             # Use scheduler strategy to load templates from configuration
@@ -790,7 +790,7 @@ class AWSProviderStrategy(ProviderStrategy):
             self._logger.error("Failed to load templates via scheduler strategy: %s", e)
             return self._get_fallback_templates()
 
-    def _get_fallback_templates(self) -> List[Dict[str, Any]]:
+    def _get_fallback_templates(self) -> list[dict[str, Any]]:
         """Get fallback AWS templates when scheduler strategy is not available."""
         return [
             {
@@ -809,7 +809,7 @@ class AWSProviderStrategy(ProviderStrategy):
             },
         ]
 
-    def _convert_aws_instance_to_machine(self, aws_instance: Dict[str, Any]) -> Dict[str, Any]:
+    def _convert_aws_instance_to_machine(self, aws_instance: dict[str, Any]) -> dict[str, Any]:
         """Convert AWS instance data to domain Machine entity data.
 
         This method translates AWS-specific field names and formats to domain entity format,

@@ -1,7 +1,7 @@
 """AWS Provider Registration - Register AWS provider with the provider registry."""
 
 from contextlib import suppress
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 # Use TYPE_CHECKING to avoid direct infrastructure import
 if TYPE_CHECKING:
@@ -59,7 +59,7 @@ def create_aws_strategy(provider_config: Any) -> Any:
         raise RuntimeError(f"Failed to create AWS strategy: {e!s}")
 
 
-def create_aws_config(data: Dict[str, Any]) -> Any:
+def create_aws_config(data: dict[str, Any]) -> Any:
     """
     Create AWS configuration from data dictionary.
 
@@ -118,7 +118,7 @@ def create_aws_validator() -> Any:
 def register_aws_provider(
     registry: "ProviderRegistry" = None,
     logger: "LoggingPort" = None,
-    instance_name: str = None,
+    instance_name: Optional[str] = None,
 ) -> None:
     """Register AWS provider with the provider registry.
 

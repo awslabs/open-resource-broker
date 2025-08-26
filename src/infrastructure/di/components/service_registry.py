@@ -2,7 +2,7 @@
 
 import logging
 import threading
-from typing import Any, Callable, Dict, Optional, Set, Type, TypeVar
+from typing import Any, Callable, Optional, TypeVar
 
 from domain.base.di_contracts import DependencyRegistration, DIScope
 
@@ -15,22 +15,22 @@ class ServiceRegistry:
 
     def __init__(self) -> None:
         """Initialize the instance."""
-        self._registrations: Dict[Type, DependencyRegistration] = {}
-        self._singletons: Dict[Type, Any] = {}
+        self._registrations: dict[type, DependencyRegistration] = {}
+        self._singletons: dict[type, Any] = {}
         self._lock = threading.RLock()
-        self._injectable_classes: Set[Type] = set()
+        self._injectable_classes: set[type] = set()
 
-    def is_registered(self, cls: Type) -> bool:
+    def is_registered(self, cls: type) -> bool:
         """Check if a class is registered."""
         with self._lock:
             return cls in self._registrations
 
-    def has(self, service_type: Type[T]) -> bool:
+    def has(self, service_type: type[T]) -> bool:
         """Check if service type is registered."""
         with self._lock:
             return service_type in self._registrations
 
-    def register_singleton(self, cls: Type[T], instance_or_factory: Any = None) -> None:
+    def register_singleton(self, cls: type[T], instance_or_factory: Any = None) -> None:
         """Register a singleton service."""
         with self._lock:
             if instance_or_factory is None:
@@ -59,7 +59,7 @@ class ServiceRegistry:
             self._registrations[cls] = registration
             logger.debug("Registered singleton: %s", cls.__name__)
 
-    def register_factory(self, cls: Type[T], factory: Callable[..., T]) -> None:
+    def register_factory(self, cls: type[T], factory: Callable[..., T]) -> None:
         """Register a factory for creating instances."""
         with self._lock:
             registration = DependencyRegistration(
@@ -68,7 +68,7 @@ class ServiceRegistry:
             self._registrations[cls] = registration
             logger.debug("Registered factory for: %s", cls.__name__)
 
-    def register_instance(self, cls: Type[T], instance: T) -> None:
+    def register_instance(self, cls: type[T], instance: T) -> None:
         """Register a specific instance."""
         with self._lock:
             registration = DependencyRegistration(
@@ -91,8 +91,8 @@ class ServiceRegistry:
 
     def register_type(
         self,
-        interface_type: Type[T],
-        implementation_type: Type[T],
+        interface_type: type[T],
+        implementation_type: type[T],
         scope: DIScope = DIScope.TRANSIENT,
     ) -> None:
         """Register an interface to implementation mapping."""
@@ -109,7 +109,7 @@ class ServiceRegistry:
                 implementation_type.__name__,
             )
 
-    def register_injectable_class(self, cls: Type[T]) -> None:
+    def register_injectable_class(self, cls: type[T]) -> None:
         """Register a class as injectable (auto-registration)."""
         with self._lock:
             self._injectable_classes.add(cls)
@@ -125,27 +125,27 @@ class ServiceRegistry:
 
             logger.debug("Registered injectable class: %s", cls.__name__)
 
-    def get_registration(self, dependency_type: Type[T]) -> Optional[DependencyRegistration]:
+    def get_registration(self, dependency_type: type[T]) -> Optional[DependencyRegistration]:
         """Get registration for a dependency type."""
         with self._lock:
             return self._registrations.get(dependency_type)
 
-    def get_registrations(self) -> Dict[Type, DependencyRegistration]:
+    def get_registrations(self) -> dict[type, DependencyRegistration]:
         """Get all registrations."""
         with self._lock:
             return self._registrations.copy()
 
-    def get_singleton_instance(self, dependency_type: Type[T]) -> Optional[T]:
+    def get_singleton_instance(self, dependency_type: type[T]) -> Optional[T]:
         """Get cached singleton instance."""
         with self._lock:
             return self._singletons.get(dependency_type)
 
-    def set_singleton_instance(self, dependency_type: Type[T], instance: T) -> None:
+    def set_singleton_instance(self, dependency_type: type[T], instance: T) -> None:
         """Cache singleton instance."""
         with self._lock:
             self._singletons[dependency_type] = instance
 
-    def unregister(self, dependency_type: Type[T]) -> bool:
+    def unregister(self, dependency_type: type[T]) -> bool:
         """Unregister a dependency type."""
         with self._lock:
             if dependency_type in self._registrations:
@@ -165,7 +165,7 @@ class ServiceRegistry:
             self._injectable_classes.clear()
             logger.info("Service registry cleared")
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get registry statistics."""
         with self._lock:
             return {

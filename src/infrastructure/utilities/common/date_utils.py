@@ -6,7 +6,6 @@ This module contains utility functions for working with dates and times.
 
 import datetime
 import time
-from typing import List
 
 
 def get_current_timestamp() -> float:
@@ -386,7 +385,7 @@ def get_end_of_year(dt: datetime.datetime) -> datetime.datetime:
     return dt.replace(month=12, day=31, hour=23, minute=59, second=59, microsecond=999999)
 
 
-def get_date_range(start_date: datetime.date, end_date: datetime.date) -> List[datetime.date]:
+def get_date_range(start_date: datetime.date, end_date: datetime.date) -> list[datetime.date]:
     """
     Get a list of dates in a range.
 
@@ -403,7 +402,7 @@ def get_date_range(start_date: datetime.date, end_date: datetime.date) -> List[d
 
 def get_datetime_range(
     start_dt: datetime.datetime, end_dt: datetime.datetime, delta: datetime.timedelta
-) -> List[datetime.datetime]:
+) -> list[datetime.datetime]:
     """
     Get a list of datetimes in a range with a specified interval.
 

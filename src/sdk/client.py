@@ -7,7 +7,7 @@ handler discovery for zero code duplication.
 """
 
 from contextlib import suppress
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Optional
 
 from bootstrap import Application
 
@@ -34,7 +34,7 @@ class OpenHFPluginSDK:
     def __init__(
         self,
         provider: str = "aws",
-        config: Optional[Dict[str, Any]] = None,
+        config: Optional[dict[str, Any]] = None,
         config_path: Optional[str] = None,
         **kwargs,
     ) -> None:
@@ -73,7 +73,7 @@ class OpenHFPluginSDK:
         self._query_bus = None
         self._command_bus = None
         self._discovery: Optional[SDKMethodDiscovery] = None
-        self._methods: Dict[str, Callable] = {}
+        self._methods: dict[str, Callable] = {}
         self._initialized = False
 
     async def initialize(self) -> bool:
@@ -156,7 +156,7 @@ class OpenHFPluginSDK:
         await self.cleanup()
 
     # SDK introspection methods
-    def list_available_methods(self) -> List[str]:
+    def list_available_methods(self) -> list[str]:
         """
         List all available SDK methods discovered from handlers.
 
@@ -190,7 +190,7 @@ class OpenHFPluginSDK:
 
         return self._discovery.get_method_info(method_name)
 
-    def get_methods_by_type(self, handler_type: str) -> List[str]:
+    def get_methods_by_type(self, handler_type: str) -> list[str]:
         """
         Get methods filtered by handler type.
 
@@ -232,7 +232,7 @@ class OpenHFPluginSDK:
         """Get the SDK configuration."""
         return self._config
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """
         Get SDK statistics and information.
 

@@ -1,10 +1,10 @@
 """JSON file operations utilities."""
 
 import json
-from typing import Any, Dict
+from typing import Any
 
 
-def read_json_file(file_path: str, encoding: str = "utf-8") -> Dict[str, Any]:
+def read_json_file(file_path: str, encoding: str = "utf-8") -> dict[str, Any]:
     """
     Read a JSON file and return parsed data.
 
@@ -21,7 +21,7 @@ def read_json_file(file_path: str, encoding: str = "utf-8") -> Dict[str, Any]:
     """
     try:
         with open(file_path, encoding=encoding) as f:
-            result: Dict[str, Any] = json.load(f)
+            result: dict[str, Any] = json.load(f)
             return result
     except FileNotFoundError:
         raise FileNotFoundError(f"JSON file not found: {file_path}")
@@ -31,7 +31,7 @@ def read_json_file(file_path: str, encoding: str = "utf-8") -> Dict[str, Any]:
 
 def write_json_file(
     file_path: str,
-    data: Dict[str, Any],
+    data: dict[str, Any],
     encoding: str = "utf-8",
     indent: int = 2,
     ensure_ascii: bool = False,

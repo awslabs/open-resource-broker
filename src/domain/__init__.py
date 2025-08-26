@@ -41,34 +41,34 @@ from .request import Request, RequestRepository, RequestStatus, RequestType
 from .template import Template
 
 __all__: list[str] = [
+    "AggregateRepository",
+    "AggregateRoot",
+    "AllocationStrategy",
+    "DomainEvent",
+    "DomainException",
     # Base primitives
     "Entity",
-    "AggregateRoot",
-    "ValueObject",
-    "DomainEvent",
     "EventPublisher",
+    "IPAddress",
+    "InstanceId",
+    "InstanceType",
+    # Machine context
+    "Machine",
+    "MachineRepository",
+    "MachineStatus",
+    "PriceType",
     "Repository",
-    "AggregateRepository",
-    "DomainException",
+    # Request context
+    "Request",
+    "RequestRepository",
+    "RequestStatus",
+    "RequestType",
+    # Common value objects
+    "ResourceId",
+    "Tags",
     # Template context
     "Template",
     "TemplateId",
     "TemplateRepository",
-    # Machine context
-    "Machine",
-    "MachineStatus",
-    "MachineRepository",
-    # Request context
-    "Request",
-    "RequestStatus",
-    "RequestType",
-    "RequestRepository",
-    # Common value objects
-    "ResourceId",
-    "InstanceId",
-    "IPAddress",
-    "InstanceType",
-    "Tags",
-    "PriceType",
-    "AllocationStrategy",
+    "ValueObject",
 ]

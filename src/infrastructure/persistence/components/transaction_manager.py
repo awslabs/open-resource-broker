@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from enum import Enum
-from typing import Any, Callable, List, Optional
+from typing import Any, Callable, Optional
 
 from infrastructure.logging.logger import get_logger
 
@@ -62,8 +62,8 @@ class MemoryTransactionManager(TransactionManager):
     def __init__(self) -> None:
         """Initialize in-memory transaction manager."""
         super().__init__()
-        self.operations: List[Callable[[], None]] = []
-        self.rollback_operations: List[Callable[[], None]] = []
+        self.operations: list[Callable[[], None]] = []
+        self.rollback_operations: list[Callable[[], None]] = []
 
     def begin_transaction(self) -> None:
         """Begin a new transaction."""

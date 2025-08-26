@@ -1,6 +1,6 @@
 """Mock provider for testing provider-agnostic functionality."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from domain.base.value_objects import InstanceId
 from infrastructure.interfaces.provider import ProviderConfig, ProviderPort
@@ -39,7 +39,7 @@ class MockProvider(ProviderPort):
         """Configure mock responses for testing."""
         self._responses[operation] = response
 
-    def create_instances(self, template_config: Dict[str, Any], count: int) -> List[InstanceId]:
+    def create_instances(self, template_config: dict[str, Any], count: int) -> list[InstanceId]:
         """Create mock instances."""
         if "create_instances" in self._responses:
             return self._responses["create_instances"]
@@ -62,7 +62,7 @@ class MockProvider(ProviderPort):
 
         return instance_ids
 
-    def terminate_instances(self, instance_ids: List[InstanceId]) -> bool:
+    def terminate_instances(self, instance_ids: list[InstanceId]) -> bool:
         """Terminate mock instances."""
         if "terminate_instances" in self._responses:
             return self._responses["terminate_instances"]
@@ -74,7 +74,7 @@ class MockProvider(ProviderPort):
 
         return True
 
-    def get_instance_status(self, instance_ids: List[InstanceId]) -> Dict[InstanceId, str]:
+    def get_instance_status(self, instance_ids: list[InstanceId]) -> dict[InstanceId, str]:
         """Get mock instance status."""
         if "get_instance_status" in self._responses:
             return self._responses["get_instance_status"]
@@ -89,7 +89,7 @@ class MockProvider(ProviderPort):
 
         return status_map
 
-    def validate_template(self, template_config: Dict[str, Any]) -> Dict[str, Any]:
+    def validate_template(self, template_config: dict[str, Any]) -> dict[str, Any]:
         """Validate mock template configuration."""
         if "validate_template" in self._responses:
             return self._responses["validate_template"]
@@ -103,7 +103,7 @@ class MockProvider(ProviderPort):
 
         return {"valid": len(errors) == 0, "errors": errors}
 
-    def get_available_templates(self) -> List[Dict[str, Any]]:
+    def get_available_templates(self) -> list[dict[str, Any]]:
         """Get mock available templates."""
         if "get_available_templates" in self._responses:
             return self._responses["get_available_templates"]
@@ -130,14 +130,14 @@ class MockProvider(ProviderPort):
             },
         ]
 
-    def health_check(self) -> Dict[str, Any]:
+    def health_check(self) -> dict[str, Any]:
         """Mock health check."""
         if "health_check" in self._responses:
             return self._responses["health_check"]
 
         return {"status": "healthy", "provider": "mock"}
 
-    def get_capabilities(self) -> Dict[str, Any]:
+    def get_capabilities(self) -> dict[str, Any]:
         """Get mock provider capabilities."""
         if "get_capabilities" in self._responses:
             return self._responses["get_capabilities"]
@@ -154,7 +154,7 @@ class MockProvider(ProviderPort):
         if instance_id in self._instances:
             self._instances[instance_id]["state"] = state
 
-    def get_instance_details(self, instance_id: str) -> Optional[Dict[str, Any]]:
+    def get_instance_details(self, instance_id: str) -> Optional[dict[str, Any]]:
         """Helper method to get instance details for testing."""
         return self._instances.get(instance_id)
 

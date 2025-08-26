@@ -6,7 +6,7 @@ based on template requirements, following DDD and Clean Architecture principles.
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from config.schemas.provider_strategy_schema import ProviderInstanceConfig
 from domain.base.dependency_injection import injectable
@@ -24,7 +24,7 @@ class ProviderSelectionResult:
     provider_instance: str
     selection_reason: str
     confidence: float = 1.0
-    alternatives: List[str] = None
+    alternatives: list[str] = None
 
     def __post_init__(self) -> None:
         if self.alternatives is None:
@@ -276,7 +276,7 @@ class ProviderSelectionService:
                 return provider
         return None
 
-    def _get_enabled_instances_by_type(self, provider_type: str) -> List[ProviderInstanceConfig]:
+    def _get_enabled_instances_by_type(self, provider_type: str) -> list[ProviderInstanceConfig]:
         """Get all enabled provider instances of specified type."""
         return [
             provider
@@ -285,7 +285,7 @@ class ProviderSelectionService:
         ]
 
     def _apply_load_balancing_strategy(
-        self, instances: List[ProviderInstanceConfig]
+        self, instances: list[ProviderInstanceConfig]
     ) -> ProviderInstanceConfig:
         """Apply load balancing strategy to select instance."""
         selection_policy = self._provider_config.selection_policy
@@ -301,7 +301,7 @@ class ProviderSelectionService:
             return min(instances, key=lambda x: x.priority)
 
     def _weighted_round_robin_selection(
-        self, instances: List[ProviderInstanceConfig]
+        self, instances: list[ProviderInstanceConfig]
     ) -> ProviderInstanceConfig:
         """Select instance using priority-first, then weighted selection."""
         # Sort by priority first (lower number = higher priority)
@@ -342,14 +342,14 @@ class ProviderSelectionService:
         return selected
 
     def _health_based_selection(
-        self, instances: List[ProviderInstanceConfig]
+        self, instances: list[ProviderInstanceConfig]
     ) -> ProviderInstanceConfig:
         """Select instance based on health status."""
         # For now, return highest priority healthy instance
         # In production, this would check actual health status
         return min(instances, key=lambda x: x.priority)
 
-    def _find_compatible_providers(self, provider_api: str) -> List[ProviderInstanceConfig]:
+    def _find_compatible_providers(self, provider_api: str) -> list[ProviderInstanceConfig]:
         """Find provider instances that support the specified API."""
         compatible = []
 
@@ -383,13 +383,13 @@ class ProviderSelectionService:
         return True
 
     def _select_best_compatible_instance(
-        self, instances: List[ProviderInstanceConfig]
+        self, instances: list[ProviderInstanceConfig]
     ) -> ProviderInstanceConfig:
         """Select the best instance from compatible providers."""
         # Select based on priority (lower number = higher priority)
         return min(instances, key=lambda x: x.priority)
 
-    def get_available_providers(self) -> List[Dict[str, Any]]:
+    def get_available_providers(self) -> list[dict[str, Any]]:
         """Get list of all available provider instances with their status."""
         providers = []
 

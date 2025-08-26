@@ -28,7 +28,7 @@ Note:
 """
 
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import Any
 
 from botocore.exceptions import ClientError
 
@@ -102,7 +102,7 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
             self.config_port = None
 
     @handle_infrastructure_exceptions(context="run_instances_creation")
-    def acquire_hosts(self, request: Request, aws_template: AWSTemplate) -> Dict[str, Any]:
+    def acquire_hosts(self, request: Request, aws_template: AWSTemplate) -> dict[str, Any]:
         """
         Create EC2 instances using RunInstances to acquire hosts.
         Returns structured result with resource IDs and instance data.
@@ -194,8 +194,8 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
         return resource_id
 
     def _format_instance_data(
-        self, instance_details: List[Dict[str, Any]], resource_id: str
-    ) -> List[Dict[str, Any]]:
+        self, instance_details: list[dict[str, Any]], resource_id: str
+    ) -> list[dict[str, Any]]:
         """Format AWS instance details to standard structure."""
         return [
             {
@@ -209,7 +209,7 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
             for inst in instance_details
         ]
 
-    def _prepare_template_context(self, template: AWSTemplate, request: Request) -> Dict[str, Any]:
+    def _prepare_template_context(self, template: AWSTemplate, request: Request) -> dict[str, Any]:
         """Prepare context with all computed values for template rendering."""
 
         # Start with base context
@@ -229,7 +229,7 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
 
     def _prepare_runinstances_specific_context(
         self, template: AWSTemplate, request: Request
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Prepare RunInstances-specific context."""
 
         return {
@@ -243,7 +243,7 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
         request: Request,
         launch_template_id: str,
         launch_template_version: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Create RunInstances parameters with native spec support."""
         # Try native spec processing with merge support
         if self.aws_native_spec_service:
@@ -289,7 +289,7 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
         request: Request,
         launch_template_id: str,
         launch_template_version: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Create RunInstances parameters using legacy logic."""
 
         # Base parameters using launch template
@@ -370,7 +370,7 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
 
         return params
 
-    def check_hosts_status(self, request: Request) -> List[Dict[str, Any]]:
+    def check_hosts_status(self, request: Request) -> list[dict[str, Any]]:
         """Check the status of instances created by RunInstances."""
         try:
             # Get instance IDs from request metadata
@@ -398,7 +398,7 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
             self._logger.error("Unexpected error checking RunInstances status: %s", str(e))
             raise AWSInfrastructureError(f"Failed to check RunInstances status: {e!s}")
 
-    def _find_instances_by_resource_ids(self, resource_ids: List[str]) -> List[Dict[str, Any]]:
+    def _find_instances_by_resource_ids(self, resource_ids: list[str]) -> list[dict[str, Any]]:
         """Find instances using resource IDs (reservation IDs for RunInstances)."""
         try:
             all_instances = []
@@ -463,7 +463,7 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
             self._logger.error("Failed to find instances by resource IDs: %s", str(e))
             raise AWSInfrastructureError(f"Failed to find instances by resource IDs: {e!s}")
 
-    def _find_instances_by_tags_fallback(self, resource_ids: List[str]) -> List[Dict[str, Any]]:
+    def _find_instances_by_tags_fallback(self, resource_ids: list[str]) -> list[dict[str, Any]]:
         """Fallback method to find instances by tags when reservation-id filter is not supported."""
         try:
             self._logger.info(

@@ -1,6 +1,6 @@
 """Domain configuration service using ConfigurationPort."""
 
-from typing import Dict, Optional
+from typing import Optional
 
 from domain.ports import ConfigurationPort
 
@@ -56,7 +56,7 @@ class DomainConfigurationService:
         validation_config = self._config_port.get_validation_config()
         return int(validation_config.get("max_machines_per_request", 100))
 
-    def get_default_instance_tags(self, provider_type: str) -> Dict[str, str]:
+    def get_default_instance_tags(self, provider_type: str) -> dict[str, str]:
         """Get default instance tags for the specified provider."""
         provider_config = self._config_port.get_provider_config(provider_type)
         tags = provider_config.get("default_instance_tags", {})

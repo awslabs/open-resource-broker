@@ -1,7 +1,7 @@
 """AWS configuration validation and naming patterns."""
 
 from dataclasses import dataclass, field
-from typing import Dict, Optional
+from typing import Optional
 
 # Import AWSProviderConfig for compatibility
 from .config import AWSProviderConfig
@@ -22,7 +22,7 @@ class AWSLimits:
 class AWSNamingConfig:
     """AWS naming patterns and validation rules."""
 
-    patterns: Dict[str, str] = field(
+    patterns: dict[str, str] = field(
         default_factory=lambda: {
             "subnet": r"^subnet-[0-9a-f]{8,17}$",
             "security_group": r"^sg-[0-9a-f]{8,17}$",
@@ -63,7 +63,7 @@ class AWSHandlerDefaults:
 class AWSHandlerConfig:
     """AWS handler configuration."""
 
-    types: Dict[str, str] = field(
+    types: dict[str, str] = field(
         default_factory=lambda: {
             "ec2_fleet": "EC2Fleet",
             "spot_fleet": "SpotFleet",
@@ -72,7 +72,7 @@ class AWSHandlerConfig:
         }
     )
 
-    capabilities: Dict[str, AWSHandlerCapabilities] = field(
+    capabilities: dict[str, AWSHandlerCapabilities] = field(
         default_factory=lambda: {
             "EC2Fleet": AWSHandlerCapabilities(
                 supported_fleet_types=["instant", "request", "maintain"],

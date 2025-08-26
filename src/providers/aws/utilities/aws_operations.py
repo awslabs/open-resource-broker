@@ -5,7 +5,7 @@ This module provides integrated AWS operation patterns to eliminate duplication 
 Consolidates: instance management, operation execution, describe operations, logging, and status checking.
 """
 
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Optional
 
 from botocore.exceptions import ClientError
 
@@ -53,10 +53,10 @@ class AWSOperations:
 
     def terminate_instances_with_fallback(
         self,
-        instance_ids: List[str],
+        instance_ids: list[str],
         request_adapter: Optional[Any] = None,
         operation_context: str = "instances",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Integrated instance termination with adapter fallback.
 
@@ -163,7 +163,7 @@ class AWSOperations:
 
     def describe_with_pagination_and_retry(
         self, client_method: Callable, result_key: str, operation_name: str, **filters
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Integrated describe operations with pagination and retry.
 
@@ -199,7 +199,7 @@ class AWSOperations:
 
     def _paginate_method(
         self, client_method: Callable, result_key: str, **kwargs
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Access handler's pagination functionality."""
         # This will be set by the handler when initializing AWSOperations
         if hasattr(self, "_paginate_func"):
@@ -321,7 +321,7 @@ class AWSOperations:
         describe_instances_method: Callable,
         instances_key: str,
         **describe_params,
-    ) -> List[str]:
+    ) -> list[str]:
         """
         Get instance IDs associated with a resource.
 
@@ -527,7 +527,7 @@ class AWSOperations:
             self._logger.error(f"Failed to discover and tag fleet instances for {fleet_id}: {e}")
             return 0
 
-    def _get_ec2_fleet_instances(self, fleet_id: str) -> List[str]:
+    def _get_ec2_fleet_instances(self, fleet_id: str) -> list[str]:
         """Get instance IDs from EC2 Fleet."""
         try:
             response = self.aws_client.ec2_client.describe_fleet_instances(FleetId=fleet_id)
@@ -536,7 +536,7 @@ class AWSOperations:
             self._logger.error(f"Failed to get EC2Fleet instances for {fleet_id}: {e}")
             return []
 
-    def _get_spot_fleet_instances(self, spot_fleet_id: str) -> List[str]:
+    def _get_spot_fleet_instances(self, spot_fleet_id: str) -> list[str]:
         """Get instance IDs from Spot Fleet."""
         try:
             response = self.aws_client.ec2_client.describe_spot_fleet_instances(

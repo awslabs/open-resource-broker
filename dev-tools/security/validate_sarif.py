@@ -11,7 +11,6 @@ import json
 import logging
 import sys
 from pathlib import Path
-from typing import Dict, List, Tuple
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(message)s")
@@ -26,7 +25,7 @@ class SarifValidator:
         self.errors = []
         self.warnings = []
 
-    def validate_sarif_structure(self, sarif_data: Dict) -> bool:
+    def validate_sarif_structure(self, sarif_data: dict) -> bool:
         """Validate basic SARIF structure."""
         required_fields = ["version", "runs"]
 
@@ -51,7 +50,7 @@ class SarifValidator:
 
         return True
 
-    def validate_run(self, run: Dict, run_index: int) -> bool:
+    def validate_run(self, run: dict, run_index: int) -> bool:
         """Validate a single run in the SARIF file."""
         required_fields = ["tool"]
 
@@ -84,7 +83,7 @@ class SarifValidator:
 
         return True
 
-    def validate_result(self, result: Dict, run_index: int, result_index: int) -> bool:
+    def validate_result(self, result: dict, run_index: int, result_index: int) -> bool:
         """Validate a single result in a run."""
         required_fields = ["ruleId", "message"]
 
@@ -112,7 +111,7 @@ class SarifValidator:
 
         return True
 
-    def validate_file(self, file_path: Path) -> Tuple[bool, List[str], List[str]]:
+    def validate_file(self, file_path: Path) -> tuple[bool, list[str], list[str]]:
         """Validate a SARIF file."""
         self.errors = []
         self.warnings = []

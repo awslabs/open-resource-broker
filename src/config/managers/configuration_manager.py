@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import logging
 import time
-from typing import TYPE_CHECKING, Any, Dict, Optional, Type, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
 # Import config classes for runtime use
 from config.schemas import AppConfig
@@ -38,21 +38,21 @@ class ConfigurationManager:
     It uses ConfigurationLoader to load configuration from multiple sources.
     """
 
-    def __init__(self, config_file: Optional[str] = None) -> None:
+    def __init__(self, config_file: str | None = None) -> None:
         """Initialize configuration manager with lazy loading."""
         self._config_file = config_file
-        self._loader: Optional[ConfigurationLoader] = None
-        self._app_config: Optional[AppConfig] = None
+        self._loader: ConfigurationLoader | None = None
+        self._app_config: AppConfig | None = None
 
         # Initialize component managers
         self._cache_manager = ConfigCacheManager()
-        self._raw_config: Optional[Dict[str, Any]] = None
-        self._type_converter: Optional[ConfigTypeConverter] = None
-        self._path_resolver: Optional[ConfigPathResolver] = None
-        self._provider_manager: Optional[ProviderConfigManager] = None
+        self._raw_config: dict[str, Any] | None = None
+        self._type_converter: ConfigTypeConverter | None = None
+        self._path_resolver: ConfigPathResolver | None = None
+        self._provider_manager: ProviderConfigManager | None = None
 
         # Scheduler override support
-        self._scheduler_override: Optional[str] = None
+        self._scheduler_override: str | None = None
 
     @property
     def loader(self) -> ConfigurationLoader:
@@ -79,7 +79,7 @@ class ConfigurationManager:
             logger.error("Failed to load app config: %s", e)
             raise
 
-    def _ensure_raw_config(self) -> Dict[str, Any]:
+    def _ensure_raw_config(self) -> dict[str, Any]:
         """Ensure raw configuration is loaded."""
         if self._raw_config is None:
             self._raw_config = self.loader.load(self._config_file)
@@ -105,7 +105,7 @@ class ConfigurationManager:
             self._provider_manager = ProviderConfigManager(raw_config)
         return self._provider_manager
 
-    def get_typed(self, config_type: Type[T]) -> T:
+    def get_typed(self, config_type: type[T]) -> T:
         """Get typed configuration with caching."""
         # Check cache first
         cached_config = self._cache_manager.get_cached_config(config_type)
@@ -170,7 +170,7 @@ class ConfigurationManager:
         # Clear relevant caches
         self._cache_manager.clear_cache()
 
-    def update(self, updates: Dict[str, Any]) -> None:
+    def update(self, updates: dict[str, Any]) -> None:
         """Update configuration with new values."""
         self._ensure_type_converter().update(updates)
         # Clear relevant caches
@@ -178,25 +178,25 @@ class ConfigurationManager:
 
     # Delegate path resolution methods
     def resolve_path(
-        self, path_type: str, default_path: str, config_path: Optional[str] = None
+        self, path_type: str, default_path: str, config_path: str | None = None
     ) -> str:
         """Resolve configuration path."""
         return self._ensure_path_resolver().resolve_path(path_type, default_path, config_path)
 
     def get_work_dir(
-        self, default_path: Optional[str] = None, config_path: Optional[str] = None
+        self, default_path: str | None = None, config_path: str | None = None
     ) -> str:
         """Get work directory path."""
         return self._ensure_path_resolver().get_work_dir(default_path, config_path)
 
     def get_conf_dir(
-        self, default_path: Optional[str] = None, config_path: Optional[str] = None
+        self, default_path: str | None = None, config_path: str | None = None
     ) -> str:
         """Get configuration directory path."""
         return self._ensure_path_resolver().get_conf_dir(default_path, config_path)
 
     def get_log_dir(
-        self, default_path: Optional[str] = None, config_path: Optional[str] = None
+        self, default_path: str | None = None, config_path: str | None = None
     ) -> str:
         """Get log directory path."""
         return self._ensure_path_resolver().get_log_dir(default_path, config_path)
@@ -224,7 +224,7 @@ class ConfigurationManager:
         """Get provider type."""
         return self._ensure_provider_manager().get_provider_type()
 
-    def get_provider_config(self) -> Optional[ProviderConfig]:
+    def get_provider_config(self) -> ProviderConfig | None:
         """Get provider configuration."""
         return self._ensure_provider_manager().get_provider_config()
 
@@ -239,11 +239,11 @@ class ConfigurationManager:
             logger.error("Failed to save configuration: %s", e)
             raise ConfigurationError(f"Failed to save configuration: {e}")
 
-    def get_raw_config(self) -> Dict[str, Any]:
+    def get_raw_config(self) -> dict[str, Any]:
         """Get raw configuration dictionary."""
         return self._ensure_raw_config().copy()
 
-    def get_app_config(self) -> Dict[str, Any]:
+    def get_app_config(self) -> dict[str, Any]:
         """Get structured application configuration.
 
         Returns the raw configuration dictionary for backward compatibility.
@@ -255,8 +255,8 @@ class ConfigurationManager:
         self,
         file_type: str,
         filename: str,
-        default_dir: Optional[str] = None,
-        explicit_path: Optional[str] = None,
+        default_dir: str | None = None,
+        explicit_path: str | None = None,
     ) -> str:
         """Resolve a configuration file path with consistent priority:
         1. Explicit path (if provided and contains directory)
@@ -322,6 +322,6 @@ class ConfigurationManager:
         fallback_path = os.path.join(default_dir, filename)
         return fallback_path
 
-    def get_cache_stats(self) -> Dict[str, Any]:
+    def get_cache_stats(self) -> dict[str, Any]:
         """Get cache statistics."""
         return self._cache_manager.get_cache_stats()

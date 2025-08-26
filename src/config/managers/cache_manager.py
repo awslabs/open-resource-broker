@@ -2,7 +2,7 @@
 
 import logging
 import threading
-from typing import Any, Dict, Optional, Type, TypeVar
+from typing import Any, Optional, TypeVar
 
 T = TypeVar("T")
 logger = logging.getLogger(__name__)
@@ -13,17 +13,17 @@ class ConfigCacheManager:
 
     def __init__(self) -> None:
         """Initialize the instance."""
-        self._config_cache: Dict[Type, Any] = {}
+        self._config_cache: dict[type, Any] = {}
         self._cache_lock = threading.RLock()
         self._last_reload_time: Optional[float] = None
 
-    def get_cached_config(self, config_type: Type[T]) -> Optional[T]:
+    def get_cached_config(self, config_type: type[T]) -> Optional[T]:
         """Get cached configuration object."""
         with self._cache_lock:
             cached_value = self._config_cache.get(config_type)
             return cached_value  # type: ignore
 
-    def cache_config(self, config_type: Type[T], config_instance: T) -> None:
+    def cache_config(self, config_type: type[T], config_instance: T) -> None:
         """Cache configuration object."""
         with self._cache_lock:
             self._config_cache[config_type] = config_instance
@@ -35,14 +35,14 @@ class ConfigCacheManager:
             self._config_cache.clear()
             logger.info("Configuration cache cleared")
 
-    def clear_config_cache(self, config_type: Type[T]) -> None:
+    def clear_config_cache(self, config_type: type[T]) -> None:
         """Clear cache for specific configuration type."""
         with self._cache_lock:
             if config_type in self._config_cache:
                 del self._config_cache[config_type]
                 logger.debug("Cleared cache for %s", config_type.__name__)
 
-    def get_cache_stats(self) -> Dict[str, Any]:
+    def get_cache_stats(self) -> dict[str, Any]:
         """Get cache statistics."""
         with self._cache_lock:
             return {

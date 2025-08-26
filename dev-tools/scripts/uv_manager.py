@@ -11,7 +11,6 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 import time
 from pathlib import Path
-from typing import List
 
 
 def check_uv_available() -> bool:
@@ -19,7 +18,7 @@ def check_uv_available() -> bool:
     return shutil.which("uv") is not None
 
 
-def run_command(cmd: List[str], capture_output: bool = False) -> subprocess.CompletedProcess:
+def run_command(cmd: list[str], capture_output: bool = False) -> subprocess.CompletedProcess:
     """Run command and return result."""
     try:
         return subprocess.run(cmd, check=True, capture_output=capture_output, text=True)

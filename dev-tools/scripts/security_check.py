@@ -32,7 +32,7 @@ def run_tool(tool_name, *args):
     script_dir = Path(__file__).parent
     run_tool_script = script_dir / "run_tool.sh"
 
-    command = [str(run_tool_script), tool_name] + list(args)
+    command = [str(run_tool_script), tool_name, *list(args)]
 
     logger.info(f"Running {tool_name}...")
     try:

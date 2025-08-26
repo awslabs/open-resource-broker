@@ -28,7 +28,7 @@ Note:
 
 import json
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import Any
 
 from domain.base.dependency_injection import injectable
 from domain.base.ports import LoggingPort
@@ -96,7 +96,7 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin):
             self.config_port = None
 
     @handle_infrastructure_exceptions(context="spot_fleet_creation")
-    def acquire_hosts(self, request: Request, aws_template: AWSTemplate) -> Dict[str, Any]:
+    def acquire_hosts(self, request: Request, aws_template: AWSTemplate) -> dict[str, Any]:
         """
         Create a Spot Fleet to acquire hosts.
         Returns structured result with resource IDs and instance data.
@@ -336,7 +336,7 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin):
         except Exception as e:
             raise IAMError(f"Failed to validate IAM permissions: {e!s}")
 
-    def _prepare_template_context(self, template: AWSTemplate, request: Request) -> Dict[str, Any]:
+    def _prepare_template_context(self, template: AWSTemplate, request: Request) -> dict[str, Any]:
         """Prepare context with all computed values for template rendering."""
 
         # Start with base context
@@ -359,7 +359,7 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin):
 
     def _prepare_spotfleet_specific_context(
         self, template: AWSTemplate, request: Request
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Prepare SpotFleet-specific context with template reference pattern."""
 
         # Base template data (referenced by all specs)
@@ -424,7 +424,7 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin):
         request: Request,
         launch_template_id: str,
         launch_template_version: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Create Spot Fleet configuration with native spec support."""
         # Try native spec processing with merge support
         if self.aws_native_spec_service:
@@ -467,7 +467,7 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin):
         request: Request,
         launch_template_id: str,
         launch_template_version: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Create Spot Fleet configuration using legacy logic."""
         # Strip the full ARN for service-linked role
         fleet_role = template.fleet_role
@@ -697,7 +697,7 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin):
 
         return strategy_map.get(strategy, "lowestPrice")
 
-    def _monitor_spot_prices(self, aws_template: AWSTemplate) -> Dict[str, float]:
+    def _monitor_spot_prices(self, aws_template: AWSTemplate) -> dict[str, float]:
         """Monitor current spot prices in specified regions/AZs."""
         try:
             prices = {}
@@ -732,7 +732,7 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin):
             self._logger.warning("Failed to monitor spot prices: %s", str(e))
             return {}
 
-    def check_hosts_status(self, request: Request) -> List[Dict[str, Any]]:
+    def check_hosts_status(self, request: Request) -> list[dict[str, Any]]:
         """Check the status of instances across all spot fleets in the request."""
         try:
             if not request.resource_ids:
@@ -758,7 +758,7 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin):
             self._logger.error("Unexpected error checking Spot Fleet status: %s", str(e))
             raise AWSInfrastructureError(f"Failed to check Spot Fleet status: {e!s}")
 
-    def _get_spot_fleet_instances(self, fleet_id: str) -> List[Dict[str, Any]]:
+    def _get_spot_fleet_instances(self, fleet_id: str) -> list[dict[str, Any]]:
         """Get instances for a specific spot fleet."""
         # Get fleet information
         fleet_list = self._retry_with_backoff(

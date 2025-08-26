@@ -1,6 +1,6 @@
 """JSON storage strategy implementation using componentized architecture."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from infrastructure.logging.logger import get_logger
 from infrastructure.persistence.base.strategy import BaseStorageStrategy
@@ -46,12 +46,12 @@ class JSONStorageStrategy(BaseStorageStrategy):
         self.transaction_manager = MemoryTransactionManager()
 
         # Cache for loaded data
-        self._data_cache: Optional[Dict[str, Dict[str, Any]]] = None
+        self._data_cache: Optional[dict[str, dict[str, Any]]] = None
         self._cache_valid = False
 
         self.logger.debug("Initialized JSON storage strategy for %s at %s", entity_type, file_path)
 
-    def save(self, entity_id: str, data: Dict[str, Any]) -> None:
+    def save(self, entity_id: str, data: dict[str, Any]) -> None:
         """
         Save entity data to JSON file.
 
@@ -79,7 +79,7 @@ class JSONStorageStrategy(BaseStorageStrategy):
                 self.logger.error("Failed to save %s entity %s: %s", self.entity_type, entity_id, e)
                 raise PersistenceError(f"Failed to save entity {entity_id}: {e}")
 
-    def find_by_id(self, entity_id: str) -> Optional[Dict[str, Any]]:
+    def find_by_id(self, entity_id: str) -> Optional[dict[str, Any]]:
         """
         Find entity by ID.
 
@@ -105,7 +105,7 @@ class JSONStorageStrategy(BaseStorageStrategy):
                 self.logger.error("Failed to find %s entity %s: %s", self.entity_type, entity_id, e)
                 raise PersistenceError(f"Failed to find entity {entity_id}: {e}")
 
-    def find_all(self) -> Dict[str, Dict[str, Any]]:
+    def find_all(self) -> dict[str, dict[str, Any]]:
         """
         Find all entities.
 
@@ -179,7 +179,7 @@ class JSONStorageStrategy(BaseStorageStrategy):
                 )
                 return False
 
-    def find_by_criteria(self, criteria: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def find_by_criteria(self, criteria: dict[str, Any]) -> list[dict[str, Any]]:
         """
         Find entities matching criteria.
 
@@ -209,7 +209,7 @@ class JSONStorageStrategy(BaseStorageStrategy):
                 self.logger.error("Failed to search %s entities: %s", self.entity_type, e)
                 raise PersistenceError(f"Failed to search entities: {e}")
 
-    def save_batch(self, entities: Dict[str, Dict[str, Any]]) -> None:
+    def save_batch(self, entities: dict[str, dict[str, Any]]) -> None:
         """
         Save multiple entities in batch.
 
@@ -229,7 +229,7 @@ class JSONStorageStrategy(BaseStorageStrategy):
                 self.logger.error("Failed to save batch of %s entities: %s", self.entity_type, e)
                 raise PersistenceError(f"Failed to save batch: {e}")
 
-    def delete_batch(self, entity_ids: List[str]) -> None:
+    def delete_batch(self, entity_ids: list[str]) -> None:
         """
         Delete multiple entities in batch.
 
@@ -286,7 +286,7 @@ class JSONStorageStrategy(BaseStorageStrategy):
                 self.logger.error(f"Failed to count {self.entity_type} entities: {e}")
                 return 0
 
-    def _load_data(self) -> Dict[str, Dict[str, Any]]:
+    def _load_data(self) -> dict[str, dict[str, Any]]:
         """Load data from file with caching."""
         if self._cache_valid and self._data_cache is not None:
             return self._data_cache
@@ -318,7 +318,7 @@ class JSONStorageStrategy(BaseStorageStrategy):
                 self.logger.warning("No backup available, starting with empty data")
                 return {}
 
-    def _save_data(self, data: Dict[str, Dict[str, Any]]) -> None:
+    def _save_data(self, data: dict[str, dict[str, Any]]) -> None:
         """Save data to file with backup."""
         try:
             # Create backup before saving
@@ -336,7 +336,7 @@ class JSONStorageStrategy(BaseStorageStrategy):
             self.logger.error("Failed to save data: %s", e)
             raise
 
-    def _matches_criteria(self, entity_data: Dict[str, Any], criteria: Dict[str, Any]) -> bool:
+    def _matches_criteria(self, entity_data: dict[str, Any], criteria: dict[str, Any]) -> bool:
         """Check if entity matches search criteria."""
         for key, expected_value in criteria.items():
             if key not in entity_data:

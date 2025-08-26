@@ -1,7 +1,7 @@
 """Lazy import utilities to break circular dependencies."""
 
 import importlib
-from typing import Any, Callable, Dict, Optional, Type, TypeVar
+from typing import Any, Callable, Optional, TypeVar
 
 T = TypeVar("T")
 
@@ -74,10 +74,10 @@ class LazyImport:
 
 
 # Cache for lazy singletons
-_lazy_singleton_cache: Dict[Type, Any] = {}
+_lazy_singleton_cache: dict[type, Any] = {}
 
 
-def lazy_singleton(cls: Type[T]) -> Callable[[], T]:
+def lazy_singleton(cls: type[T]) -> Callable[[], T]:
     """
     Create a lazy singleton accessor function.
 

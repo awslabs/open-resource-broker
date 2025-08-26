@@ -2,7 +2,7 @@
 
 import re
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Optional
 
 from infrastructure.logging.logger import get_logger
 from infrastructure.persistence.components.resource_manager import QueryManager
@@ -25,7 +25,7 @@ class SQLQueryBuilder(QueryManager):
     Builds safe, parameterized SQL queries to prevent SQL injection.
     """
 
-    def __init__(self, table_name: str, columns: Dict[str, str]) -> None:
+    def __init__(self, table_name: str, columns: dict[str, str]) -> None:
         """
         Initialize query builder.
 
@@ -62,9 +62,9 @@ class SQLQueryBuilder(QueryManager):
     def build_read_query(
         self,
         entity_id: Optional[str] = None,
-        criteria: Optional[Dict[str, Any]] = None,
+        criteria: Optional[dict[str, Any]] = None,
         **kwargs,
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> tuple[str, dict[str, Any]]:
         """Build SELECT query (implements QueryManager interface)."""
         if entity_id:
             id_column = kwargs.get("id_column", "id")
@@ -75,14 +75,14 @@ class SQLQueryBuilder(QueryManager):
             return self.build_select_all(), {}
 
     def build_update_query(
-        self, data: Dict[str, Any], entity_id: str, id_column: str = "id", **kwargs
-    ) -> Tuple[str, Dict[str, Any]]:
+        self, data: dict[str, Any], entity_id: str, id_column: str = "id", **kwargs
+    ) -> tuple[str, dict[str, Any]]:
         """Build UPDATE query (implements QueryManager interface)."""
         return self.build_update(data, id_column, entity_id)
 
     def build_delete_query(
         self, entity_id: str, id_column: str = "id", **kwargs
-    ) -> Tuple[str, str]:
+    ) -> tuple[str, str]:
         """Build DELETE query (implements QueryManager interface)."""
         return self.build_delete(id_column)
 
@@ -104,7 +104,7 @@ class SQLQueryBuilder(QueryManager):
         self.logger.debug("Built CREATE TABLE query for %s", self.table_name)
         return query
 
-    def build_insert(self, data: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
+    def build_insert(self, data: dict[str, Any]) -> tuple[str, dict[str, Any]]:
         """
         Build INSERT query with parameters.
 
@@ -139,7 +139,7 @@ class SQLQueryBuilder(QueryManager):
         self.logger.debug("Built INSERT query for %s", self.table_name)
         return query, filtered_data
 
-    def build_select_by_id(self, id_column: str) -> Tuple[str, str]:
+    def build_select_by_id(self, id_column: str) -> tuple[str, str]:
         """
         Build SELECT by ID query.
 
@@ -175,8 +175,8 @@ class SQLQueryBuilder(QueryManager):
         return query
 
     def build_update(
-        self, data: Dict[str, Any], id_column: str, entity_id: str
-    ) -> Tuple[str, Dict[str, Any]]:
+        self, data: dict[str, Any], id_column: str, entity_id: str
+    ) -> tuple[str, dict[str, Any]]:
         """
         Build UPDATE query with parameters.
 
@@ -215,7 +215,7 @@ class SQLQueryBuilder(QueryManager):
         self.logger.debug("Built UPDATE query for %s", self.table_name)
         return query, parameters
 
-    def build_delete(self, id_column: str) -> Tuple[str, str]:
+    def build_delete(self, id_column: str) -> tuple[str, str]:
         """
         Build DELETE query.
 
@@ -237,7 +237,7 @@ class SQLQueryBuilder(QueryManager):
         self.logger.debug("Built DELETE query for %s", self.table_name)
         return query, id_column
 
-    def build_exists(self, id_column: str) -> Tuple[str, str]:
+    def build_exists(self, id_column: str) -> tuple[str, str]:
         """
         Build EXISTS check query.
 
@@ -252,7 +252,7 @@ class SQLQueryBuilder(QueryManager):
         self.logger.debug("Built EXISTS query for %s", self.table_name)
         return query, id_column
 
-    def build_select_by_criteria(self, criteria: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
+    def build_select_by_criteria(self, criteria: dict[str, Any]) -> tuple[str, dict[str, Any]]:
         """
         Build SELECT with WHERE criteria.
 
@@ -326,8 +326,8 @@ class SQLQueryBuilder(QueryManager):
         return query
 
     def build_batch_insert(
-        self, data_list: List[Dict[str, Any]]
-    ) -> Tuple[str, List[Dict[str, Any]]]:
+        self, data_list: list[dict[str, Any]]
+    ) -> tuple[str, list[dict[str, Any]]]:
         """
         Build batch INSERT query.
 
