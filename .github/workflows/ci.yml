@@ -132,17 +132,10 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           ref: ${{ github.head_ref }}
 
-      - name: Install UV
-        uses: astral-sh/setup-uv@v6
-
-      - name: Restore UV environment
-        uses: actions/cache/restore@v4
+      - name: Setup UV with cached environment
+        uses: ./.github/actions/setup-uv-cached
         with:
-          path: |
-            .venv
-            ~/.cache/uv
-          key: ${{ needs.setup-dependencies.outputs.cache-key }}
-          fail-on-cache-miss: true
+          cache-key: ${{ needs.setup-dependencies.outputs.cache-key }}
 
       - name: Auto-format (no checks)
         run: make format-fix
@@ -164,17 +157,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v5
 
-      - name: Install UV
-        uses: astral-sh/setup-uv@v6
-
-      - name: Restore UV environment
-        uses: actions/cache/restore@v4
+      - name: Setup UV with cached environment
+        uses: ./.github/actions/setup-uv-cached
         with:
-          path: |
-            .venv
-            ~/.cache/uv
-          key: ${{ needs.setup-dependencies.outputs.cache-key }}
-          fail-on-cache-miss: true
+          cache-key: ${{ needs.setup-dependencies.outputs.cache-key }}
 
       - name: Check code quality
         run: make ci-quality-ruff
@@ -356,14 +342,10 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v5
 
-    - name: Restore UV environment
-      uses: actions/cache/restore@v4
+    - name: Setup UV with cached environment
+      uses: ./.github/actions/setup-uv-cached
       with:
-        path: |
-          .venv
-          ~/.cache/uv
-        key: ${{ needs.setup-dependencies.outputs.cache-key }}
-        fail-on-cache-miss: true
+        cache-key: ${{ needs.setup-dependencies.outputs.cache-key }}
 
     - name: Build package
       run: make build
