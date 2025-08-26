@@ -326,35 +326,18 @@ class ConfigurationLoader:
             filename = explicit_path
             get_config_logger().debug("Using explicit filename: %s", filename)
 
-        # 2. Try environment variable directory + filename
-        env_dir = None
-        env_var_name = None
-
-        if file_type in ["conf", "template", "legacy"]:
-            env_dir = os.environ.get("HF_PROVIDER_CONFDIR")
-            env_var_name = "HF_PROVIDER_CONFDIR"
-        elif file_type == "log":
-            env_dir = os.environ.get("HF_PROVIDER_LOGDIR")
-            env_var_name = "HF_PROVIDER_LOGDIR"
-        elif file_type == "work":
-            env_dir = os.environ.get("HF_PROVIDER_WORKDIR")
-            env_var_name = "HF_PROVIDER_WORKDIR"
-        elif file_type == "events":
-            env_dir = os.environ.get("HF_PROVIDER_EVENTSDIR")
-            env_var_name = "HF_PROVIDER_EVENTSDIR"
-        elif file_type == "snapshots":
-            env_dir = os.environ.get("HF_PROVIDER_SNAPSHOTSDIR")
-            env_var_name = "HF_PROVIDER_SNAPSHOTSDIR"
-
-        if env_dir:
-            env_path = os.path.join(env_dir, filename)
-            if os.path.exists(env_path):
-                get_config_logger().debug("Found file using %s: %s", env_var_name, env_path)
-                return env_path
-            else:
-                get_config_logger().debug(
-                    "File not found in %s directory: %s", env_var_name, env_path
-                )
+        # 2. Try scheduler-provided directory + filename
+        try:
+            scheduler_dir = cls._get_scheduler_directory(file_type)
+            if scheduler_dir:
+                scheduler_path = os.path.join(scheduler_dir, filename)
+                if os.path.exists(scheduler_path):
+                    get_config_logger().debug("Found file using scheduler directory: %s", scheduler_path)
+                    return scheduler_path
+                else:
+                    get_config_logger().debug("File not found in scheduler directory: %s", scheduler_path)
+        except Exception as e:
+            get_config_logger().debug("Failed to get scheduler directory: %s", e)
 
         # 3. Fall back to default directory + filename
         default_dirs = {
@@ -369,8 +352,8 @@ class ConfigurationLoader:
 
         default_dir = default_dirs.get(file_type, "config")
 
-        # Build path relative to project root
-        project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        # Build path relative to working directory (not package location)
+        project_root = os.getcwd()
         fallback_path = os.path.join(project_root, default_dir, filename)
 
         # Always return the fallback path, even if file doesn't exist
@@ -594,3 +577,43 @@ class ConfigurationLoader:
             Deep copy of dictionary
         """
         return json.loads(json.dumps(obj))
+
+    @classmethod
+    def _get_scheduler_directory(cls, file_type: str) -> Optional[str]:
+        """
+        Get directory path from scheduler port for the given file type.
+        
+        Args:
+            file_type: Type of file ('conf', 'work', 'log', etc.)
+            
+        Returns:
+            Directory path from scheduler or None if not available
+        """
+        try:
+            from infrastructure.registry.scheduler_registry import get_scheduler_registry
+            
+            # Get current scheduler strategy
+            registry = get_scheduler_registry()
+            
+            # Try to get scheduler type from environment or default to 'default'
+            scheduler_type = os.environ.get("SCHEDULER_TYPE", "default")
+            
+            # Ensure scheduler type is registered
+            registry.ensure_type_registered(scheduler_type)
+            
+            # Create scheduler strategy
+            scheduler = registry.create_strategy(scheduler_type, {})
+            
+            # Map file types to scheduler methods
+            if file_type in ["conf", "template", "legacy"]:
+                config_path = scheduler.get_config_file_path()
+                return os.path.dirname(config_path) if config_path else None
+            elif file_type in ["work", "data"]:
+                return scheduler.get_storage_base_path()
+            else:
+                # For other types, use working directory
+                return scheduler.get_working_directory()
+                
+        except Exception as e:
+            get_config_logger().debug("Could not get scheduler directory: %s", e)
+            return None
