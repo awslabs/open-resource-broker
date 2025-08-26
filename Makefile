@@ -497,6 +497,108 @@ local-ci: dev-install  ## Run CI workflow locally (.github/workflows/ci.yml)
 		exit 1; \
 	fi
 
+# =============================================================================
+# Release Management
+# =============================================================================
+
+# Standard releases
+release-patch: ## Bump patch version and create release (1.0.0 -> 1.0.1)
+	@$(MAKE) _release BUMP_TYPE=patch
+
+release-minor: ## Bump minor version and create release (1.0.0 -> 1.1.0)
+	@$(MAKE) _release BUMP_TYPE=minor
+
+release-major: ## Bump major version and create release (1.0.0 -> 2.0.0)
+	@$(MAKE) _release BUMP_TYPE=major
+
+# Pre-releases - Alpha
+release-patch-alpha: ## Bump patch and create alpha release (1.0.0 -> 1.0.1-alpha.1)
+	@$(MAKE) _release BUMP_TYPE=patch PRERELEASE_TYPE=alpha
+
+release-minor-alpha: ## Bump minor and create alpha release (1.0.0 -> 1.1.0-alpha.1)
+	@$(MAKE) _release BUMP_TYPE=minor PRERELEASE_TYPE=alpha
+
+release-major-alpha: ## Bump major and create alpha release (1.0.0 -> 2.0.0-alpha.1)
+	@$(MAKE) _release BUMP_TYPE=major PRERELEASE_TYPE=alpha
+
+# Pre-releases - Beta
+release-patch-beta: ## Bump patch and create beta release (1.0.0 -> 1.0.1-beta.1)
+	@$(MAKE) _release BUMP_TYPE=patch PRERELEASE_TYPE=beta
+
+release-minor-beta: ## Bump minor and create beta release (1.0.0 -> 1.1.0-beta.1)
+	@$(MAKE) _release BUMP_TYPE=minor PRERELEASE_TYPE=beta
+
+release-major-beta: ## Bump major and create beta release (1.0.0 -> 2.0.0-beta.1)
+	@$(MAKE) _release BUMP_TYPE=major PRERELEASE_TYPE=beta
+
+# Pre-releases - RC
+release-patch-rc: ## Bump patch and create rc release (1.0.0 -> 1.0.1-rc.1)
+	@$(MAKE) _release BUMP_TYPE=patch PRERELEASE_TYPE=rc
+
+release-minor-rc: ## Bump minor and create rc release (1.0.0 -> 1.1.0-rc.1)
+	@$(MAKE) _release BUMP_TYPE=minor PRERELEASE_TYPE=rc
+
+release-major-rc: ## Bump major and create rc release (1.0.0 -> 2.0.0-rc.1)
+	@$(MAKE) _release BUMP_TYPE=major PRERELEASE_TYPE=rc
+
+# Promotions
+promote-alpha: ## Promote to next alpha version (1.0.0-alpha.1 -> 1.0.0-alpha.2)
+	@$(MAKE) _promote PROMOTE_TO=alpha
+
+promote-beta: ## Promote alpha to beta (1.0.0-alpha.2 -> 1.0.0-beta.1)
+	@$(MAKE) _promote PROMOTE_TO=beta
+
+promote-rc: ## Promote beta to rc (1.0.0-beta.1 -> 1.0.0-rc.1)
+	@$(MAKE) _promote PROMOTE_TO=rc
+
+promote-stable: ## Promote rc to stable (1.0.0-rc.1 -> 1.0.0)
+	@$(MAKE) _promote PROMOTE_TO=stable
+
+# Special releases
+release-version: ## Create release with specific version (RELEASE_VERSION=1.2.3)
+	@$(MAKE) _release_custom
+
+release-backfill: ## Create backfill release (RELEASE_VERSION=1.2.3 TO_COMMIT=abc)
+	@$(MAKE) _release_backfill
+
+# Internal DRY implementations
+_release:
+	@if [ -n "$(RELEASE_VERSION)" ]; then \
+		echo "ERROR: RELEASE_VERSION cannot be used with bump targets"; \
+		echo "Use: RELEASE_VERSION=$(RELEASE_VERSION) make release-version"; \
+		exit 1; \
+	fi
+	@./dev-tools/release/version_manager.sh bump $(BUMP_TYPE) $(PRERELEASE_TYPE)
+	@./dev-tools/release/release_creator.sh
+
+_promote:
+	@if [ -n "$(RELEASE_VERSION)" ]; then \
+		echo "ERROR: RELEASE_VERSION cannot be used with promotion targets"; \
+		echo "Use: RELEASE_VERSION=$(RELEASE_VERSION) make release-version"; \
+		exit 1; \
+	fi
+	@./dev-tools/release/promote_manager.sh $(PROMOTE_TO)
+	@./dev-tools/release/release_creator.sh
+
+_release_custom:
+	@if [ -z "$(RELEASE_VERSION)" ]; then \
+		echo "ERROR: RELEASE_VERSION required"; \
+		echo "Usage: RELEASE_VERSION=1.2.3 make release-version"; \
+		exit 1; \
+	fi
+	@./dev-tools/release/version_manager.sh set $(RELEASE_VERSION)
+	@./dev-tools/release/release_creator.sh
+
+_release_backfill:
+	@if [ -z "$(RELEASE_VERSION)" ] || [ -z "$(TO_COMMIT)" ]; then \
+		echo "ERROR: RELEASE_VERSION and TO_COMMIT required"; \
+		echo "Usage: RELEASE_VERSION=1.2.3 TO_COMMIT=abc make release-backfill"; \
+		echo "Optional: FROM_COMMIT=def (defaults to first commit)"; \
+		exit 1; \
+	fi
+	@ALLOW_BACKFILL=true ./dev-tools/release/version_manager.sh set $(RELEASE_VERSION)
+	@ALLOW_BACKFILL=true ./dev-tools/release/release_creator.sh
+
 local-security: dev-install  ## Run security workflow locally (.github/workflows/security.yml)
 	@echo "Running security workflow locally..."
 	@if command -v act >/dev/null 2>&1; then \
@@ -887,6 +989,20 @@ status:  ## Show project status and useful commands
 	@echo "  Deploy docs:    make docs-deploy (local) or make ci-docs-deploy (CI)"
 	@echo "  List versions:  make docs-list-versions"
 	@echo "  Deploy version: make docs-deploy-version VERSION=1.0.0"
+	@echo ""
+	@echo "Release Management:"
+	@echo "  Standard:       make release-patch|minor|major"
+	@echo "  Pre-releases:   make release-patch-alpha|beta|rc"
+	@echo "  Promotions:     make promote-alpha|beta|rc|stable"
+	@echo "  Custom version: RELEASE_VERSION=1.2.3 make release-version"
+	@echo "  Backfill:       RELEASE_VERSION=1.2.3 TO_COMMIT=abc make release-backfill"
+	@echo "  Dry run:        DRY_RUN=true make release-minor"
+	@echo ""
+	@echo "Environment Variables:"
+	@echo "  RELEASE_VERSION  Override version (use with release-version/backfill)"
+	@echo "  FROM_COMMIT      Start commit (optional, smart defaults)"
+	@echo "  TO_COMMIT        End commit (optional, defaults to HEAD)"
+	@echo "  DRY_RUN          Test mode without making changes"
 	@echo ""
 	@echo "Version Management:"
 	@echo "  Patch version:  make version-bump-patch"
