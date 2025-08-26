@@ -310,7 +310,7 @@ jobs:
 
   integration-tests:
     name: Integration Tests (Fast)
-    needs: [get-config, unit-tests]
+    needs: [get-config, lint-ruff]
     uses: ./.github/workflows/reusable-test.yml
     with:
       test-type: integration
@@ -320,7 +320,7 @@ jobs:
 
   e2e-tests:
     name: End-to-End Tests (Fast)
-    needs: [get-config, unit-tests, integration-tests]
+    needs: [get-config, lint-ruff]
     uses: ./.github/workflows/reusable-test.yml
     with:
       test-type: e2e
@@ -352,6 +352,7 @@ jobs:
       uses: ./.github/actions/setup-uv-cached
       with:
         cache-key: ${{ needs.setup-dependencies.outputs.cache-key }}
+        fail-on-cache-miss: false
 
     - name: Build package
       run: make build
