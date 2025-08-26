@@ -88,18 +88,24 @@ jobs:
     - name: Determine version and target
       run: |
         if [[ "${{ github.event_name }}" == "release" ]]; then
-          echo "VERSION=${{ github.ref_name }}" >> "$GITHUB_ENV"
-          echo "TARGET=pypi" >> "$GITHUB_ENV"
-          echo "IS_RELEASE=true" >> "$GITHUB_ENV"
+          {
+            echo "VERSION=${{ github.ref_name }}"
+            echo "TARGET=pypi"
+            echo "IS_RELEASE=true"
+          } >> "$GITHUB_ENV"
         elif [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ github.event.inputs.environment }}" == "pypi" ]]; then
-          echo "VERSION=${{ github.ref_name }}" >> "$GITHUB_ENV"
-          echo "TARGET=pypi" >> "$GITHUB_ENV"
-          echo "IS_RELEASE=true" >> "$GITHUB_ENV"
+          {
+            echo "VERSION=${{ github.ref_name }}"
+            echo "TARGET=pypi"
+            echo "IS_RELEASE=true"
+          } >> "$GITHUB_ENV"
         else
           # Dev version for TestPyPI - use Makefile infrastructure
           VERSION=$(make -s get-version)
-          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
-          echo "TARGET=testpypi" >> "$GITHUB_ENV"
+          {
+            echo "VERSION=$VERSION"
+            echo "TARGET=testpypi"
+          } >> "$GITHUB_ENV"
         fi
         echo "Publishing to: $TARGET with version: $VERSION"
 
