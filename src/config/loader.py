@@ -5,10 +5,13 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
-from typing import Any, Dict, Optional, TypeVar
+from typing import TYPE_CHECKING, Any, Dict, Optional, TypeVar
 
 from config.schemas import AppConfig, validate_config
 from domain.base.exceptions import ConfigurationError
+
+if TYPE_CHECKING:
+    from config.managers.configuration_manager import ConfigurationManager
 
 T = TypeVar("T")
 
@@ -93,7 +96,11 @@ class ConfigurationLoader:
     DEFAULT_CONFIG_FILENAME = "default_config.json"
 
     @classmethod
-    def load(cls, config_path: Optional[str] = None) -> Dict[str, Any]:
+    def load(
+        cls,
+        config_path: Optional[str] = None,
+        config_manager: Optional[ConfigurationManager] = None,
+    ) -> Dict[str, Any]:
         """
         Load configuration from multiple sources with correct precedence.
 
@@ -141,7 +148,7 @@ class ConfigurationLoader:
                 get_config_logger().warning("User configuration file not found: %s", config_path)
 
         # Override with environment variables (highest precedence)
-        cls._load_from_env(config)
+        cls._load_from_env(config, config_manager)
 
         # Expand environment variables in the final configuration
         from config.utils.env_expansion import expand_config_env_vars
@@ -265,7 +272,7 @@ class ConfigurationLoader:
 
         # Resolve the file path using centralized logic
         # In practice, this would be refactored to use a static method or utility
-        resolved_path = cls._resolve_file_path(file_type, filename, explicit_path)
+        resolved_path = cls._resolve_file_path(file_type, filename, explicit_path, config_manager)
 
         if resolved_path:
             get_config_logger().info("Loading %s configuration from: %s", file_type, resolved_path)
@@ -283,7 +290,11 @@ class ConfigurationLoader:
 
     @classmethod
     def _resolve_file_path(
-        cls, file_type: str, filename: str, explicit_path: Optional[str] = None
+        cls,
+        file_type: str,
+        filename: str,
+        explicit_path: Optional[str] = None,
+        config_manager: Optional[ConfigurationManager] = None,
     ) -> Optional[str]:
         """
         Resolve file path using centralized logic (static version of ConfigurationManager.resolve_file).
@@ -292,6 +303,7 @@ class ConfigurationLoader:
             file_type: Type of file ('conf', 'template', 'legacy', 'log', 'work', 'events', 'snapshots')
             filename: Name of the file
             explicit_path: Explicit path provided by user (optional)
+            config_manager: Configuration manager for scheduler directory resolution (optional)
 
         Returns:
             Resolved file path or None if not found
@@ -315,7 +327,7 @@ class ConfigurationLoader:
 
         # 2. Try scheduler-provided directory + filename
         try:
-            scheduler_dir = cls._get_scheduler_directory(file_type)
+            scheduler_dir = cls._get_scheduler_directory(file_type, config_manager)
             if scheduler_dir:
                 scheduler_path = os.path.join(scheduler_dir, filename)
                 if os.path.exists(scheduler_path):
@@ -354,7 +366,9 @@ class ConfigurationLoader:
         return fallback_path
 
     @classmethod
-    def _load_from_env(cls, config: dict[str, Any]) -> None:
+    def _load_from_env(
+        cls, config: dict[str, Any], config_manager: Optional[ConfigurationManager] = None
+    ) -> None:
         """
         Load configuration from environment variables.
 
@@ -373,12 +387,14 @@ class ConfigurationLoader:
                         current = current.setdefault(key, {})
 
         # Process Host Factory environment variables
-        cls._process_hf_env_vars(config)
+        cls._process_hf_env_vars(config, config_manager)
 
         get_config_logger().debug("Loaded configuration from environment variables")
 
     @classmethod
-    def _process_hf_env_vars(cls, config: dict[str, Any]) -> None:
+    def _process_hf_env_vars(
+        cls, config: dict[str, Any], config_manager: Optional[ConfigurationManager] = None
+    ) -> None:
         """
         Process Host Factory environment variables.
 
@@ -387,8 +403,8 @@ class ConfigurationLoader:
         """
         # Get directories from scheduler
         try:
-            scheduler_dir = cls._get_scheduler_directory("work")
-            logs_dir = cls._get_scheduler_directory("log")
+            scheduler_dir = cls._get_scheduler_directory("work", config_manager)
+            logs_dir = cls._get_scheduler_directory("log", config_manager)
 
             # Set up logging path
             if logs_dir:
@@ -480,56 +496,19 @@ class ConfigurationLoader:
         return json.loads(json.dumps(obj))
 
     @classmethod
-    def _get_scheduler_directory(cls, file_type: str) -> Optional[str]:
+    def _get_scheduler_directory(
+        cls, file_type: str, config_manager: Optional[ConfigurationManager] = None
+    ) -> Optional[str]:
         """
         Get directory path from scheduler port for the given file type.
 
         Args:
             file_type: Type of file ('conf', 'work', 'log', etc.)
+            config_manager: Configuration manager with scheduler access (optional)
 
         Returns:
             Directory path from scheduler or None if not available
         """
-        try:
-            from infrastructure.registry.scheduler_registry import get_scheduler_registry
-
-            # Get current scheduler strategy
-            registry = get_scheduler_registry()
-
-            # Try to determine scheduler type from context
-            scheduler_type = None
-
-            # First try environment variable (explicit override)
-            scheduler_type = os.environ.get("SCHEDULER_TYPE")
-
-            # If no explicit override, try to detect from context
-            if not scheduler_type:
-                # Check if we're in a HostFactory environment
-                if any(
-                    os.environ.get(var)
-                    for var in ["HF_PROVIDER_CONFDIR", "HF_PROVIDER_WORKDIR", "HF_PROVIDER_LOGDIR"]
-                ):
-                    scheduler_type = "hostfactory"
-                else:
-                    scheduler_type = "default"
-
-            # Ensure scheduler type is registered
-            registry.ensure_type_registered(scheduler_type)
-
-            # Create scheduler strategy
-            scheduler = registry.create_strategy(scheduler_type, {})
-
-            # Map file types to scheduler methods
-            if file_type in ["conf", "template", "legacy"]:
-                return scheduler.get_config_directory()
-            elif file_type == "log":
-                return scheduler.get_logs_directory()
-            elif file_type in ["work", "data"]:
-                return scheduler.get_storage_base_path()
-            else:
-                # For other types, use working directory
-                return scheduler.get_working_directory()
-
-        except Exception as e:
-            get_config_logger().debug("Could not get scheduler directory: %s", e)
-            return None
+        if config_manager:
+            return config_manager._get_scheduler_directory(file_type)
+        return None  # No scheduler available during bootstrap

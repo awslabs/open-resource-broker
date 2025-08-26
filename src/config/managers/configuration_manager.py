@@ -73,7 +73,7 @@ class ConfigurationManager:
     def _load_app_config(self) -> AppConfig:
         """Load application configuration from loader."""
         try:
-            raw_config = self.loader.load(self._config_file)
+            raw_config = self.loader.load(self._config_file, config_manager=self)
             return self.loader.create_app_config(raw_config)
         except Exception as e:
             logger.error("Failed to load app config: %s", e)
@@ -82,7 +82,7 @@ class ConfigurationManager:
     def _ensure_raw_config(self) -> dict[str, Any]:
         """Ensure raw configuration is loaded."""
         if self._raw_config is None:
-            self._raw_config = self.loader.load(self._config_file)
+            self._raw_config = self.loader.load(self._config_file, config_manager=self)
         return self._raw_config
 
     def _ensure_type_converter(self) -> ConfigTypeConverter:
