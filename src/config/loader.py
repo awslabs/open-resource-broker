@@ -415,79 +415,37 @@ class ConfigurationLoader:
         Args:
             config: Configuration dictionary to update
         """
-        # Get environment variables
-        workdir = os.environ.get("HF_PROVIDER_WORKDIR")
-        logdir = os.environ.get("HF_PROVIDER_LOGDIR")
-        confdir = os.environ.get("HF_PROVIDER_CONFDIR")
-        eventsdir = os.environ.get("HF_PROVIDER_EVENTSDIR")
-        snapshotsdir = os.environ.get("HF_PROVIDER_SNAPSHOTSDIR")
+        # Get directories from scheduler
+        try:
+            scheduler_dir = cls._get_scheduler_directory("work")
+            logs_dir = cls._get_scheduler_directory("log")
 
-        # Set up logging path based on HF_PROVIDER_LOGDIR
-        if logdir:
-            config.setdefault("logging", {})["file_path"] = os.path.join(logdir, "app.log")
-            get_config_logger().debug(
-                "Set logging file_path to %s", os.path.join(logdir, "app.log")
-            )
-        elif workdir:
-            log_dir = os.path.join(workdir, "logs")
-            config.setdefault("logging", {})["file_path"] = os.path.join(log_dir, "app.log")
-            get_config_logger().debug(
-                "Set logging file_path to %s", os.path.join(log_dir, "app.log")
-            )
-
-        # Set up storage paths based on workdir
-        if workdir:
-            # Update JSON storage strategy
-            storage = config.setdefault("storage", {})
-            json_strategy = storage.setdefault("json_strategy", {})
-            json_strategy["base_path"] = workdir
-            get_config_logger().debug("Set JSON storage base_path to %s", workdir)
-
-            # Update SQL storage strategy if using SQLite
-            sql_strategy = storage.setdefault("sql_strategy", {})
-            if sql_strategy.get("type", "sqlite") == "sqlite":
-                # Always use workdir for SQLite, regardless of host value
-                sql_strategy["name"] = os.path.join(workdir, "database.db")
+            # Set up logging path
+            if logs_dir:
+                config.setdefault("logging", {})["file_path"] = os.path.join(logs_dir, "app.log")
                 get_config_logger().debug(
-                    "Set SQLite database path to %s",
-                    os.path.join(workdir, "database.db"),
+                    "Set logging file_path to %s", os.path.join(logs_dir, "app.log")
                 )
 
-        # Set up config paths based on HF_PROVIDER_CONFDIR
-        if confdir:
-            # Template paths are now handled by centralized file resolution
-            # No need to override them here since the template loading will use
-            # resolve_file()
-            get_config_logger().debug(
-                "HF_PROVIDER_CONFDIR set to: %s (template paths will be resolved dynamically)",
-                confdir,
-            )
+            # Set up storage paths
+            if scheduler_dir:
+                # Update JSON storage strategy
+                storage = config.setdefault("storage", {})
+                json_strategy = storage.setdefault("json_strategy", {})
+                json_strategy["base_path"] = scheduler_dir
+                get_config_logger().debug("Set JSON storage base_path to %s", scheduler_dir)
 
-        # Set up events paths based on HF_PROVIDER_EVENTSDIR
-        if eventsdir:
-            events_config = config.setdefault("events", {})
-            events_config["store_path"] = eventsdir
-            events_config["default_events_path"] = eventsdir
-            get_config_logger().debug("Set events store_path to %s", eventsdir)
-        elif workdir:
-            events_dir = os.path.join(workdir, "events")
-            events_config = config.setdefault("events", {})
-            events_config["default_events_path"] = events_dir
-            get_config_logger().debug("Set events default_events_path to %s", events_dir)
+                # Update SQL storage strategy if using SQLite
+                sql_strategy = storage.setdefault("sql_strategy", {})
+                if sql_strategy.get("type", "sqlite") == "sqlite":
+                    sql_strategy["name"] = os.path.join(scheduler_dir, "database.db")
+                    get_config_logger().debug(
+                        "Set SQLite database path to %s", os.path.join(scheduler_dir, "database.db")
+                    )
+        except Exception as e:
+            get_config_logger().debug("Could not get scheduler directories: %s", e)
 
-        # Set up snapshots paths based on HF_PROVIDER_SNAPSHOTSDIR
-        if snapshotsdir:
-            events_config = config.setdefault("events", {})
-            events_config["snapshot_store_path"] = snapshotsdir
-            events_config["default_snapshots_path"] = snapshotsdir
-            get_config_logger().debug("Set snapshots snapshot_store_path to %s", snapshotsdir)
-        elif workdir:
-            snapshots_dir = os.path.join(workdir, "snapshots")
-            events_config = config.setdefault("events", {})
-            events_config["default_snapshots_path"] = snapshots_dir
-            get_config_logger().debug("Set snapshots default_snapshots_path to %s", snapshots_dir)
-
-        # Process AMI resolution environment variables
+        # Process AMI resolution environment variables (keep these as they're AWS-specific)
         ami_resolution_enabled = os.environ.get("HF_TEMPLATE_AMI_RESOLUTION_ENABLED")
         ami_resolution_fallback = os.environ.get("HF_TEMPLATE_AMI_RESOLUTION_FALLBACK_ON_FAILURE")
         ami_resolution_cache_file = os.environ.get("HF_TEMPLATE_AMI_RESOLUTION_CACHE_FILE")
