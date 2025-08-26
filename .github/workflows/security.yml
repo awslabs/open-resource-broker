@@ -176,8 +176,8 @@ jobs:
     - name: Setup Python and UV
       uses: ./.github/actions/setup-uv-cached
       with:
-        python-version: ${{ matrix.python-version }}
-        cache-key-suffix: container-security-${{ matrix.python-version }}
+        cache-key: deps-${{ matrix.python-version }}-${{ hashFiles('.project.yml', 'pyproject.toml.template', 'requirements*.txt') }}
+        fail-on-cache-miss: false
         install-deps: false
 
     - name: Set up Docker Buildx

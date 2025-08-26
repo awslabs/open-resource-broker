@@ -131,10 +131,10 @@ jobs:
         echo "Tags: $CONTAINER_TAGS"
 
     - name: Setup Python and UV
-      uses: ./.github/actions/setup-python-uv
+      uses: ./.github/actions/setup-uv-cached
       with:
-        python-version: ${{ matrix.python-version }}
-        cache-key-suffix: container-${{ matrix.python-version }}
+        cache-key: deps-${{ matrix.python-version }}-${{ hashFiles('.project.yml', 'pyproject.toml.template', 'requirements*.txt') }}
+        fail-on-cache-miss: false
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3

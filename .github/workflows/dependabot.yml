@@ -41,8 +41,8 @@ jobs:
       - name: Setup Python and UV
         uses: ./.github/actions/setup-uv-cached
         with:
-          python-version: ${{ needs.get-config.outputs.default-python-version }}
-          cache-key-suffix: dependabot-update
+          cache-key: deps-${{ needs.get-config.outputs.default-python-version }}-${{ hashFiles('.project.yml', 'pyproject.toml.template', 'requirements*.txt') }}
+          fail-on-cache-miss: false
           install-deps: false
 
       - name: Update UV lock file
@@ -179,8 +179,8 @@ jobs:
       - name: Setup Python and UV
         uses: ./.github/actions/setup-uv-cached
         with:
-          python-version: ${{ needs.get-config.outputs.default-python-version }}
-          cache-key-suffix: dependabot-maintenance
+          cache-key: deps-${{ needs.get-config.outputs.default-python-version }}-${{ hashFiles('.project.yml', 'pyproject.toml.template', 'requirements*.txt') }}
+          fail-on-cache-miss: false
           install-deps: false
 
       - name: Update all dependencies
