@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Generic, Protocol, TypeVar
+from typing import Any, Generic, Optional, Protocol, TypeVar
 
 from .entity import AggregateRoot, Entity
 
@@ -25,7 +25,7 @@ class RepositoryProtocol(Protocol[T]):
         """Save an entity."""
         ...
 
-    def find_by_id(self, id_value: Any) -> T | None:
+    def find_by_id(self, id_value: Any) -> Optional[T]:
         """Find entity by ID."""
         ...
 
@@ -51,7 +51,7 @@ class Repository(Generic[T], ABC):
         """Save an entity."""
 
     @abstractmethod
-    def find_by_id(self, entity_id: Any) -> T | None:
+    def find_by_id(self, entity_id: Any) -> Optional[T]:
         """Find entity by ID."""
 
     @abstractmethod
@@ -71,7 +71,7 @@ class AggregateRepository(Generic[A], ABC):
         """Save an aggregate root."""
 
     @abstractmethod
-    def find_by_id(self, aggregate_id: str) -> A | None:
+    def find_by_id(self, aggregate_id: str) -> Optional[A]:
         """Find aggregate by ID."""
 
     @abstractmethod

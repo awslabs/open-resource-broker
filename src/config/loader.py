@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
-from typing import Any, TypeVar
+from typing import Any, Dict, Optional, TypeVar
 
 from config.schemas import AppConfig, validate_config
 from domain.base.exceptions import ConfigurationError
@@ -106,7 +106,7 @@ class ConfigurationLoader:
     DEFAULT_CONFIG_FILENAME = "default_config.json"
 
     @classmethod
-    def load(cls, config_path: str | None = None) -> dict[str, Any]:
+    def load(cls, config_path: Optional[str] = None) -> Dict[str, Any]:
         """
         Load configuration from multiple sources with correct precedence.
 
@@ -216,7 +216,7 @@ class ConfigurationLoader:
             raise ConfigurationError("App", f"Failed to create typed configuration: {e!s}")
 
     @classmethod
-    def _load_from_file(cls, config_path: str) -> dict[str, Any] | None:
+    def _load_from_file(cls, config_path: str) -> Optional[Dict[str, Any]]:
         """
         Load configuration from file.
 
@@ -248,9 +248,9 @@ class ConfigurationLoader:
         cls,
         file_type: str,
         filename: str,
-        explicit_path: str | None = None,
+        explicit_path: Optional[str] = None,
         required: bool = False,
-    ) -> dict[str, Any] | None:
+    ) -> Optional[Dict[str, Any]]:
         """
         Centralized method for loading any configuration file with consistent priority:
         1. Explicit path (if provided and contains directory)
@@ -296,8 +296,8 @@ class ConfigurationLoader:
 
     @classmethod
     def _resolve_file_path(
-        cls, file_type: str, filename: str, explicit_path: str | None = None
-    ) -> str | None:
+        cls, file_type: str, filename: str, explicit_path: Optional[str] = None
+    ) -> Optional[str]:
         """
         Resolve file path using centralized logic (static version of ConfigurationManager.resolve_file).
 

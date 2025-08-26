@@ -7,7 +7,7 @@ import logging
 import logging.handlers
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Dict, Optional
 
 from config import LoggingConfig
 
@@ -87,8 +87,8 @@ class ContextLogger(logging.Logger):
         level: int,
         msg: str,
         args: tuple,
-        exc_info: Exception | None = None,
-        extra: dict[str, Any] | None = None,
+        exc_info: Optional[Exception] = None,
+        extra: Optional[Dict[str, Any]] = None,
         stack_info: bool = False,
         stacklevel: int = 1,
     ) -> None:
@@ -229,7 +229,7 @@ def with_context(**context: Any) -> LoggerAdapter:
 class RequestLogger:
     """Logger for request-specific logging."""
 
-    def __init__(self, request_id: str, correlation_id: str | None = None) -> None:
+    def __init__(self, request_id: str, correlation_id: Optional[str] = None) -> None:
         self.logger = with_context(
             request_id=request_id, correlation_id=correlation_id or request_id
         )
@@ -238,7 +238,7 @@ class RequestLogger:
         """Log info message."""
         self.logger.info(msg, extra=kwargs)
 
-    def error(self, msg: str, exc_info: Exception | None = None, **kwargs: Any) -> None:
+    def error(self, msg: str, exc_info: Optional[Exception] = None, **kwargs: Any) -> None:
         """Log error message."""
         self.logger.error(msg, exc_info=exc_info, extra=kwargs)
 
@@ -264,7 +264,7 @@ class AuditLogger:
         action: str,
         resource: str,
         status: str,
-        details: dict[str, Any] | None = None,
+        details: Optional[Dict[str, Any]] = None,
     ) -> None:
         """
         Log an audit event.

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Optional
 
 # Import configuration
 from config import AppConfig
@@ -16,7 +16,7 @@ from infrastructure.logging.logger import get_logger, setup_logging
 class Application:
     """DI-based application context manager with registration pattern."""
 
-    def __init__(self, config_path: str | None = None) -> None:
+    def __init__(self, config_path: Optional[str] = None) -> None:
         """Initialize the instance."""
         self.config_path = config_path
         self._initialized = False
@@ -322,7 +322,7 @@ class Application:
         self.shutdown()
 
 
-async def create_application(config_path: str | None = None) -> Application:
+async def create_application(config_path: Optional[str] = None) -> Application:
     """Create and initialize a provider-aware application."""
     app = Application(config_path)
     if not await app.initialize():

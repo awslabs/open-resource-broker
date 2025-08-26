@@ -249,6 +249,7 @@ test_image() {
 
     # Check health
     if curl -f http://localhost:8001/health; then
+        echo  # Add newline after health check response
         log_info "Health check test passed"
     else
         log_error "Health check test failed"

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 import uuid
+from typing import Optional
 
 from pydantic import field_validator
 
@@ -108,12 +109,12 @@ class MachineReference(ValueObject):
     """
 
     machine_id: str
-    instance_id: str | None = None
+    instance_id: Optional[str] = None
     status: str  # MachineStatus enum value as string
     result: str  # MachineResult enum value as string
-    error_message: str | None = None
-    created_at: str | None = None  # ISO format datetime string
-    updated_at: str | None = None  # ISO format datetime string
+    error_message: Optional[str] = None
+    created_at: Optional[str] = None  # ISO format datetime string
+    updated_at: Optional[str] = None  # ISO format datetime string
 
     @field_validator("machine_id")
     @classmethod
@@ -130,7 +131,7 @@ class MachineReference(ValueObject):
 
     @field_validator("instance_id")
     @classmethod
-    def validate_instance_id(cls, v: str | None) -> str | None:
+    def validate_instance_id(cls, v: Optional[str]) -> Optional[str]:
         """Validate instance ID format if provided."""
         if v is None:
             return v
@@ -168,7 +169,7 @@ class MachineReference(ValueObject):
         return self.error_message is not None and self.error_message.strip() != ""
 
     def update_status(
-        self, new_status: str, result: str, error_message: str | None = None
+        self, new_status: str, result: str, error_message: Optional[str] = None
     ) -> MachineReference:
         """
         Create a new MachineReference with updated status.
@@ -211,8 +212,8 @@ class ResourceIdentifier(ValueObject):
 
     resource_type: str
     resource_id: str
-    resource_arn: str | None = None
-    region: str | None = None
+    resource_arn: Optional[str] = None
+    region: Optional[str] = None
     tags: dict = {}
 
     @field_validator("resource_type")

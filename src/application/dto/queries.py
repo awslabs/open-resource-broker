@@ -1,6 +1,7 @@
 """Query DTOs for application layer."""
 
 from __future__ import annotations
+from typing import Optional
 
 from pydantic import BaseModel, ConfigDict
 
@@ -35,8 +36,8 @@ class ListReturnRequestsQuery(Query, BaseModel):
 
     model_config = ConfigDict(frozen=True)
 
-    status: str | None = None
-    requester_id: str | None = None
+    status: Optional[str] = None
+    requester_id: Optional[str] = None
 
 
 class GetTemplateQuery(Query, BaseModel):
@@ -52,7 +53,7 @@ class ListTemplatesQuery(Query, BaseModel):
 
     model_config = ConfigDict(frozen=True)
 
-    provider_api: str | None = None
+    provider_api: Optional[str] = None
     active_only: bool = True
     include_configuration: bool = False
 
@@ -78,8 +79,8 @@ class ListMachinesQuery(Query, BaseModel):
 
     model_config = ConfigDict(frozen=True)
 
-    request_id: str | None = None
-    status: str | None = None
+    request_id: Optional[str] = None
+    status: Optional[str] = None
     active_only: bool = False
 
 

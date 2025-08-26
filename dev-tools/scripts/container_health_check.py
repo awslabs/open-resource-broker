@@ -13,7 +13,7 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
 
-def check_health(url: str = None, timeout: int = None, interval: int = None) -> bool:
+def check_health(url=None, timeout=None, interval=None):
     """Check container health endpoint with timeout and retry logic."""
     # Use environment variables with fallbacks
     url = url or os.getenv("HEALTH_CHECK_URL", "http://localhost:8000/health")
@@ -53,7 +53,7 @@ def check_health(url: str = None, timeout: int = None, interval: int = None) -> 
     return False
 
 
-def main() -> int:
+def main():
     """Main entry point."""
     import argparse
 

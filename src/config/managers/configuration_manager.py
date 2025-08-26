@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import logging
 import time
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any, Dict, Optional, TypeVar, Union
 
 # Import config classes for runtime use
 from config.schemas import AppConfig
@@ -38,21 +38,21 @@ class ConfigurationManager:
     It uses ConfigurationLoader to load configuration from multiple sources.
     """
 
-    def __init__(self, config_file: str | None = None) -> None:
+    def __init__(self, config_file: Optional[str] = None) -> None:
         """Initialize configuration manager with lazy loading."""
         self._config_file = config_file
-        self._loader: ConfigurationLoader | None = None
-        self._app_config: AppConfig | None = None
+        self._loader: Optional[ConfigurationLoader] = None
+        self._app_config: Optional[AppConfig] = None
 
         # Initialize component managers
         self._cache_manager = ConfigCacheManager()
-        self._raw_config: dict[str, Any] | None = None
-        self._type_converter: ConfigTypeConverter | None = None
-        self._path_resolver: ConfigPathResolver | None = None
-        self._provider_manager: ProviderConfigManager | None = None
+        self._raw_config: Optional[Dict[str, Any]] = None
+        self._type_converter: Optional[ConfigTypeConverter] = None
+        self._path_resolver: Optional[ConfigPathResolver] = None
+        self._provider_manager: Optional[ProviderConfigManager] = None
 
         # Scheduler override support
-        self._scheduler_override: str | None = None
+        self._scheduler_override: Optional[str] = None
 
     @property
     def loader(self) -> ConfigurationLoader:
@@ -178,20 +178,20 @@ class ConfigurationManager:
 
     # Delegate path resolution methods
     def resolve_path(
-        self, path_type: str, default_path: str, config_path: str | None = None
+        self, path_type: str, default_path: str, config_path: Optional[str] = None
     ) -> str:
         """Resolve configuration path."""
         return self._ensure_path_resolver().resolve_path(path_type, default_path, config_path)
 
-    def get_work_dir(self, default_path: str | None = None, config_path: str | None = None) -> str:
+    def get_work_dir(self, default_path: Optional[str] = None, config_path: Optional[str] = None) -> str:
         """Get work directory path."""
         return self._ensure_path_resolver().get_work_dir(default_path, config_path)
 
-    def get_conf_dir(self, default_path: str | None = None, config_path: str | None = None) -> str:
+    def get_conf_dir(self, default_path: Optional[str] = None, config_path: Optional[str] = None) -> str:
         """Get configuration directory path."""
         return self._ensure_path_resolver().get_conf_dir(default_path, config_path)
 
-    def get_log_dir(self, default_path: str | None = None, config_path: str | None = None) -> str:
+    def get_log_dir(self, default_path: Optional[str] = None, config_path: Optional[str] = None) -> str:
         """Get log directory path."""
         return self._ensure_path_resolver().get_log_dir(default_path, config_path)
 
@@ -218,7 +218,7 @@ class ConfigurationManager:
         """Get provider type."""
         return self._ensure_provider_manager().get_provider_type()
 
-    def get_provider_config(self) -> ProviderConfig | None:
+    def get_provider_config(self) -> Optional[ProviderConfig]:
         """Get provider configuration."""
         return self._ensure_provider_manager().get_provider_config()
 
@@ -249,8 +249,8 @@ class ConfigurationManager:
         self,
         file_type: str,
         filename: str,
-        default_dir: str | None = None,
-        explicit_path: str | None = None,
+        default_dir: Optional[str] = None,
+        explicit_path: Optional[str] = None,
     ) -> str:
         """Resolve a configuration file path with consistent priority:
         1. Explicit path (if provided and contains directory)

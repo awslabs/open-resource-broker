@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
-from typing import Any
+from typing import Any, Dict, Optional
 
 from pydantic import field_validator, model_validator
 
@@ -94,7 +94,7 @@ class MachineCount(ValueObject):
     """
 
     value: int
-    max_allowed: int | None = None
+    max_allowed: Optional[int] = None
 
     @model_validator(mode="after")
     def validate_machine_count(self) -> MachineCount:
@@ -152,7 +152,7 @@ class MachineCount(ValueObject):
         return self.value
 
     @classmethod
-    def from_int(cls, value: int, max_allowed: int | None = None) -> MachineCount:
+    def from_int(cls, value: int, max_allowed: Optional[int] = None) -> MachineCount:
         """Create count from integer."""
         return cls(value=value, max_allowed=max_allowed)
 
@@ -377,7 +377,7 @@ class LaunchTemplateInfo(ValueObject):
     """
 
     template_id: str
-    template_name: str | None = None
+    template_name: Optional[str] = None
     version: str = "$Latest"
     configuration: dict[str, Any] = {}
 
@@ -473,7 +473,7 @@ class RequestHistoryEvent(ValueObject):
         cls,
         event_type: str,
         message: str,
-        details: dict[str, Any] | None = None,
+        details: Optional[Dict[str, Any]] = None,
         source: str = "system",
     ) -> RequestHistoryEvent:
         """Create a new event with current timestamp."""
