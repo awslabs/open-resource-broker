@@ -132,6 +132,9 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           ref: ${{ github.head_ref }}
 
+      - name: Install UV
+        uses: astral-sh/setup-uv@v6
+
       - name: Restore UV environment
         uses: actions/cache/restore@v4
         with:
@@ -160,6 +163,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
+
+      - name: Install UV
+        uses: astral-sh/setup-uv@v6
 
       - name: Restore UV environment
         uses: actions/cache/restore@v4
