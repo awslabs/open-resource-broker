@@ -96,7 +96,7 @@ jobs:
       - name: Generate cache key
         id: cache-key
         run: |
-          echo "key=deps-${{ needs.get-config.outputs.default-python-version }}-${{ hashFiles('.project.yml', 'pyproject.toml.template', 'requirements*.txt') }}" >> $GITHUB_OUTPUT
+          echo "key=deps-${{ needs.get-config.outputs.default-python-version }}-${{ hashFiles('.project.yml', 'pyproject.toml.template', 'requirements*.txt') }}" >> "$GITHUB_OUTPUT"
 
       - name: Cache UV environment
         id: cache-deps
@@ -142,7 +142,7 @@ jobs:
           fail-on-cache-miss: true
 
       - name: Auto-format (no checks)
-        run: uv run ruff format . && uv run ruff check --fix --exit-zero .
+        run: make format-fix
 
       - name: Commit formatting changes
         run: |
@@ -171,7 +171,7 @@ jobs:
           fail-on-cache-miss: true
 
       - name: Check code quality
-        run: uv run ruff check --select W,F,I --ignore E501 .
+        run: make ci-quality-ruff
 
   lint-ruff-optional:
     name: Ruff (Extended Checks)
@@ -191,7 +191,7 @@ jobs:
           fail-on-cache-miss: true
 
       - name: Extended linting (warnings)
-        run: uv run ruff check --select=E501,N,UP,B,PL,C90,RUF . || true
+        run: make ci-quality-ruff-optional
         continue-on-error: true
 
   lint-mypy:
@@ -213,7 +213,7 @@ jobs:
         fail-on-cache-miss: true
 
     - name: Run mypy type check
-      run: uv run mypy src --config-file pyproject.toml
+      run: make ci-quality-mypy
       continue-on-error: true
 
   arch-cqrs:
@@ -235,7 +235,7 @@ jobs:
         fail-on-cache-miss: true
 
     - name: Run CQRS pattern validation
-      run: uv run python dev-tools/architecture/cqrs_validator.py
+      run: make ci-arch-cqrs
       continue-on-error: true
 
   arch-clean:
@@ -257,7 +257,7 @@ jobs:
         fail-on-cache-miss: true
 
     - name: Run Clean Architecture validation
-      run: uv run python dev-tools/architecture/clean_arch_validator.py
+      run: make ci-arch-clean
       continue-on-error: true
 
   arch-imports:
@@ -279,7 +279,7 @@ jobs:
         fail-on-cache-miss: true
 
     - name: Run import validation
-      run: uv run python dev-tools/architecture/import_validator.py
+      run: make ci-arch-imports
       continue-on-error: true
 
   arch-file-sizes:
@@ -301,7 +301,7 @@ jobs:
         fail-on-cache-miss: true
 
     - name: Run file size checks
-      run: uv run python dev-tools/architecture/file_size_validator.py
+      run: make ci-arch-file-sizes
       continue-on-error: true
 
   unit-tests:
@@ -395,7 +395,7 @@ jobs:
         path: test-results/
 
     - name: Generate complete test report
-      run: uv run python dev-tools/testing/test_reporter.py
+      run: make test-report
       continue-on-error: true
 
     - name: Upload complete test report
