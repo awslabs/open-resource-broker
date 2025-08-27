@@ -55,7 +55,7 @@ jobs:
       - name: Report status
         run: |
           if [ "${{ steps.check-changes.outputs.should_release }}" = "true" ]; then
-            echo "✅ Alpha release created successfully"
+            echo "Alpha release created successfully"
           else
-            echo "ℹ️ No alpha release needed (no changes)"
+            echo "No alpha release needed (no changes)"
           fi

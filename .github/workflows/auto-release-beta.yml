@@ -55,7 +55,7 @@ jobs:
       - name: Report status
         run: |
           if [ "${{ steps.check-changes.outputs.should_release }}" = "true" ]; then
-            echo "✅ Beta release created successfully"
+            echo "Beta release created successfully"
           else
-            echo "ℹ️ No beta release needed (no changes)"
+            echo "No beta release needed (no changes)"
           fi
