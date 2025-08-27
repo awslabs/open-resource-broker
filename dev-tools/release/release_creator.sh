@@ -233,8 +233,8 @@ create_release() {
             # Cherry-pick essential build files from current branch
             git checkout "$current_branch" -- Makefile dev-tools/package/ dev-tools/scripts/ 2>/dev/null || true
             
-            # Convert git tag to package version format
-            PACKAGE_VERSION=$(git show "$current_branch":dev-tools/release/version_normalizer.sh "$tag_name" package 2>/dev/null || echo "${tag_name#v}")
+            # Use tag name directly (unified format)
+            PACKAGE_VERSION="${tag_name#v}"
             log_debug "Building package with version: $PACKAGE_VERSION"
             
             # Build with the actual release code but modern build system
@@ -248,7 +248,7 @@ create_release() {
         else
             # Regular release: build from current commit
             log_info "Building package from current commit..."
-            PACKAGE_VERSION=$(./dev-tools/release/version_normalizer.sh "$tag_name" package)
+            PACKAGE_VERSION="${tag_name#v}"
             VERSION="$PACKAGE_VERSION" make clean build
         fi
     fi

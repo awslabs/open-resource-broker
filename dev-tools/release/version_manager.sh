@@ -135,14 +135,25 @@ elif [ "$COMMAND" = "bump" ]; then
     # Build new version
     NEW_VERSION="$MAJOR.$MINOR.$PATCH"
     
-    # Add pre-release suffix if specified
+    # Add pre-release suffix if specified (PEP 440 format)
     if [ -n "$PRERELEASE_TYPE" ]; then
-        NEW_VERSION="$NEW_VERSION-$PRERELEASE_TYPE.1"
+        case $PRERELEASE_TYPE in
+            alpha) NEW_VERSION="${NEW_VERSION}a1" ;;     # 0.2.0a1
+            beta)  NEW_VERSION="${NEW_VERSION}b1" ;;     # 0.2.0b1  
+            rc)    NEW_VERSION="${NEW_VERSION}rc1" ;;    # 0.2.0rc1
+            *)     NEW_VERSION="$NEW_VERSION-$PRERELEASE_TYPE.1" ;;  # fallback
+        esac
     fi
+    
+elif [ "$COMMAND" = "historical" ]; then
+    # Historical release: set version without updating .project.yml
+    NEW_VERSION=$VERSION_ARG
+    echo "Historical version: $NEW_VERSION"
+    exit 0  # Don't update .project.yml for historical builds
     
 else
     echo "ERROR: Invalid command: $COMMAND"
-    echo "Use: bump or set"
+    echo "Use: bump, set, or historical"
     exit 1
 fi
 

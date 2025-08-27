@@ -133,7 +133,8 @@ def main():
     for i, hook in enumerate(hooks):
         name = hook["name"]
         command = hook["entry"]
-        warning_only = hook.get("warning_only", False)
+        # Treat manual stages as warning-only (optional checks)
+        warning_only = hook.get("warning_only", False) or hook.get("stages") == ["manual"]
 
         # Skip warning-only checks if --required-only flag is set
         if args.required_only and warning_only:

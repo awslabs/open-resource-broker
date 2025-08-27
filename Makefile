@@ -411,16 +411,13 @@ docs-clean:  ## Clean documentation build files
 version-show:  ## Show current version from project config
 	@echo "Current version: $(VERSION)"
 
-get-version:  ## Generate version (supports FORMAT=package|container|git|display)
+get-version:  ## Generate unified version (works for PyPI, Docker, Git)
 	@if [ "$${IS_RELEASE:-false}" = "true" ]; then \
-		./dev-tools/release/version_normalizer.sh "$(VERSION)" "$${FORMAT:-package}"; \
+		echo "$(VERSION)"; \
 	else \
 		commit=$$(git rev-parse --short HEAD 2>/dev/null || echo 'unknown'); \
-		if [ "$${FORMAT}" = "container" ]; then \
-			./dev-tools/release/version_normalizer.sh "$(VERSION).dev+$${commit}" container; \
-		else \
-			./dev-tools/release/version_normalizer.sh "$(VERSION).dev+$${commit}" package; \
-		fi; \
+		dev_int=$$(python3 -c "print(int('$${commit}'[:6], 16))"); \
+		echo "$(VERSION).dev$${dev_int}"; \
 	fi
 
 version-bump-patch:  ## Bump patch version (1.0.0 -> 1.0.1)
@@ -560,6 +557,17 @@ release-version: ## Create release with specific version (RELEASE_VERSION=1.2.3)
 
 release-backfill: ## Create backfill release (RELEASE_VERSION=1.2.3 TO_COMMIT=abc)
 	@$(MAKE) _release_backfill
+
+build-historical:  ## Build historical release (usage: make build-historical COMMIT=abc123 VERSION=0.0.1)
+	@if [ -z "$(COMMIT)" ] || [ -z "$(VERSION)" ]; then \
+		echo "Usage: make build-historical COMMIT=<hash> VERSION=<version>"; \
+		exit 1; \
+	fi
+	@./dev-tools/release/historical_release.sh $(COMMIT) $(VERSION)
+
+release-historical:  ## Create and publish historical release
+	@$(MAKE) build-historical COMMIT=$(COMMIT) VERSION=$(VERSION)
+	@$(MAKE) publish-pypi
 
 # Internal DRY implementations
 _release:
@@ -1014,6 +1022,7 @@ status:  ## Show project status and useful commands
 	@echo "  Promotions:     make promote-alpha|beta|rc|stable"
 	@echo "  Custom version: RELEASE_VERSION=1.2.3 make release-version"
 	@echo "  Backfill:       RELEASE_VERSION=1.2.3 TO_COMMIT=abc make release-backfill"
+	@echo "  Historical:     COMMIT=abc123 VERSION=0.0.1 make build-historical"
 	@echo "  Dry run:        DRY_RUN=true make release-minor"
 	@echo ""
 	@echo "Environment Variables:"

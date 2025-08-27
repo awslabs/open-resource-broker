@@ -64,8 +64,7 @@ jobs:
       default-python-version: ${{ steps.config.outputs.default-python-version }}
       container-registry: ${{ steps.config.outputs.container-registry }}
       container-image: ${{ steps.config.outputs.container-image }}
-      pypi-package-version: ${{ steps.config.outputs.pypi-package-version }}
-      container-tag-prefix: ${{ steps.config.outputs.container-tag-prefix }}
+      package-version: ${{ steps.config.outputs.package-version }}
       is-release: ${{ steps.config.outputs.is-release }}
     steps:
     - name: Checkout code
@@ -102,22 +101,21 @@ jobs:
     - name: Set versions for matrix job
       run: |
         # Use centralized versions from get-config (DRY approach)
-        PYPI_PACKAGE_VERSION="${{ needs.get-config.outputs.pypi-package-version }}"
-        CONTAINER_TAG_PREFIX="${{ needs.get-config.outputs.container-tag-prefix }}"
-        CONTAINER_URI="${{ needs.get-config.outputs.container-registry }}/${{ needs.get-config.outputs.container-image }}:${{ needs.get-config.outputs.container-tag-prefix }}-python${{ matrix.python-version }}"
+        PACKAGE_VERSION="${{ needs.get-config.outputs.package-version }}"
+        CONTAINER_URI="${{ needs.get-config.outputs.container-registry }}/${{ needs.get-config.outputs.container-image }}:${{ needs.get-config.outputs.package-version }}-python${{ matrix.python-version }}"
         
         if [[ "${{ github.event_name }}" == "release" ]]; then
           # Release: push to registry
           PUSH_IMAGES="true"
-          CONTAINER_TAGS="latest,${{ needs.get-config.outputs.pypi-package-version }}"
+          CONTAINER_TAGS="latest,${{ needs.get-config.outputs.package-version }}"
         elif [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/main" ]]; then
           # Main branch: push with dev tags
           PUSH_IMAGES="true"
-          CONTAINER_TAGS="dev,$CONTAINER_TAG_PREFIX-python${{ matrix.python-version }}"
+          CONTAINER_TAGS="dev,$PACKAGE_VERSION-python${{ matrix.python-version }}"
         else
           # PR/comment triggers: don't push (security)
           PUSH_IMAGES="false"
-          CONTAINER_TAGS="$CONTAINER_TAG_PREFIX-python${{ matrix.python-version }}"
+          CONTAINER_TAGS="$PACKAGE_VERSION-python${{ matrix.python-version }}"
         fi
         
         # Export to environment for subsequent steps
@@ -252,13 +250,12 @@ jobs:
         DEFAULT_PYTHON_VERSION: ${{ needs.get-config.outputs.default-python-version }}
         REGISTRY: ${{ needs.get-config.outputs.container-registry }}
         IMAGE: ${{ needs.get-config.outputs.container-image }}
-        PYPI_PACKAGE_VERSION: ${{ needs.get-config.outputs.pypi-package-version }}
-        CONTAINER_TAG_PREFIX: ${{ needs.get-config.outputs.container-tag-prefix }}
+        PACKAGE_VERSION: ${{ needs.get-config.outputs.package-version }}
       run: |
         if [ "${{ github.ref }}" = "refs/heads/main" ]; then
           # Create manifest for latest using default Python version
           echo "Creating latest tag from default Python version: $DEFAULT_PYTHON_VERSION"
-          docker buildx imagetools create -t "$REGISTRY/$IMAGE:latest" "$REGISTRY/$IMAGE:$CONTAINER_TAG_PREFIX-python$DEFAULT_PYTHON_VERSION"
+          docker buildx imagetools create -t "$REGISTRY/$IMAGE:latest" "$REGISTRY/$IMAGE:$PACKAGE_VERSION-python$DEFAULT_PYTHON_VERSION"
         fi
 
         if [ "${{ github.event_name }}" = "release" ]; then
