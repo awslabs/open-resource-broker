@@ -54,6 +54,9 @@ if not config:
             # CI builds will override this with dynamic versions like "0.1.0.dev20250822145030+abc1234"
             "version": "0.1.0.dev0",
             "description": "Cloud provider integration plugin for IBM Spectrum Symphony Host Factory",
+            "author": "AWS Professional Services",
+            "email": "aws-proserve@amazon.com",
+            "license": "Apache-2.0",
         },
         "repository": {
             "org": "awslabs",
