@@ -120,16 +120,14 @@ jobs:
         
         # Export to environment for subsequent steps
         {
-          echo "PYPI_PACKAGE_VERSION=$PYPI_PACKAGE_VERSION"
-          echo "CONTAINER_TAG_PREFIX=$CONTAINER_TAG_PREFIX"
+          echo "VERSION=$PACKAGE_VERSION"
           echo "CONTAINER_URI=$CONTAINER_URI"
           echo "PUSH_IMAGES=$PUSH_IMAGES"
           echo "CONTAINER_TAGS=$CONTAINER_TAGS"
         } >> "$GITHUB_ENV"
         
         # Display values for debugging
-        echo "PyPI package version: $PYPI_PACKAGE_VERSION"
-        echo "Container tag prefix: $CONTAINER_TAG_PREFIX"
+        echo "Package version: $PACKAGE_VERSION"
         echo "Container URI: $CONTAINER_URI"
         echo "Push images: $PUSH_IMAGES"
         echo "Tags: $CONTAINER_TAGS"
@@ -161,8 +159,7 @@ jobs:
       env:
         REGISTRY: ${{ needs.get-config.outputs.container-registry }}
         IMAGE_NAME: ${{ needs.get-config.outputs.container-image }}
-        VERSION: ${{ env.PYPI_PACKAGE_VERSION }}
-        CONTAINER_TAG_PREFIX: ${{ env.CONTAINER_TAG_PREFIX }}
+        VERSION: ${{ env.VERSION }}
         PYTHON_VERSION: ${{ matrix.python-version }}
         PLATFORMS: linux/amd64,linux/arm64
         PUSH: ${{ github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.event_name == 'release' || github.event.inputs.push_images == 'true') }}
