@@ -179,28 +179,6 @@ check_overlapping_releases() {
     else
         log_debug "No existing releases found, proceeding with first release"
     fi
-        if git merge-base --is-ancestor "$from_commit" "$latest_tag_commit" || \
-           [ "$from_commit" = "$latest_tag_commit" ]; then
-            
-            # Find the commit right after the latest release
-            next_commit=$(git rev-list --reverse "$latest_tag_commit..HEAD" | head -1)
-            
-            if [ -n "$next_commit" ]; then
-                echo "ERROR: FROM_COMMIT '$from_commit' overlaps with existing release $latest_tag"
-                echo ""
-                echo "Latest release: $latest_tag (commit: ${latest_tag_commit:0:8})"
-                echo "Use this instead:"
-                echo "  FROM_COMMIT=$next_commit make release-..."
-                echo ""
-                echo "Or use default (automatically starts after latest release):"
-                echo "  make release-..."
-            else
-                echo "ERROR: No new commits since latest release $latest_tag"
-                echo "Nothing to release!"
-            fi
-            exit 1
-        fi
-    fi
 }
 
 # Set smart defaults for commit range
