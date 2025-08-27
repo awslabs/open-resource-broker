@@ -33,6 +33,7 @@ LICENSE := $(shell yq '.project.license' $(PROJECT_CONFIG))
 
 # Repository information (loaded from project config)
 REPO_ORG := $(shell yq '.repository.org' $(PROJECT_CONFIG))
+REPO_URL := https://github.com/$(REPO_ORG)/$(PACKAGE_NAME)
 CONTAINER_REGISTRY := $(shell yq '.repository.registry' $(PROJECT_CONFIG))/$(REPO_ORG)
 CONTAINER_IMAGE := $(PACKAGE_NAME)
 DOCS_URL := https://$(REPO_ORG).github.io/$(PACKAGE_NAME)
