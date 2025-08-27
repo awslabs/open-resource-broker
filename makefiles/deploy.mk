@@ -259,13 +259,12 @@ _release_backfill:
 	@if [ -z "$(RELEASE_VERSION)" ] || [ -z "$(TO_COMMIT)" ]; then \
 		echo "ERROR: RELEASE_VERSION and TO_COMMIT required"; \
 		echo "Usage: RELEASE_VERSION=1.2.3 TO_COMMIT=abc make release-backfill"; \
-		echo "Optional: FROM_COMMIT=def (defaults to first commit)"; \
+		echo "Optional: FROM_COMMIT=def (defaults to previous release)"; \
 		exit 1; \
 	fi
 	@if [ "$(DRY_RUN)" = "true" ]; then \
 		echo "DRY RUN: Backfill simulation"; \
 		ALLOW_BACKFILL=true ./dev-tools/release/dry_run_release.sh set $(RELEASE_VERSION); \
 	else \
-		ALLOW_BACKFILL=true ./dev-tools/release/version_manager.sh set $(RELEASE_VERSION); \
-		ALLOW_BACKFILL=true ./dev-tools/release/release_creator.sh; \
+		ALLOW_BACKFILL=true BACKFILL_VERSION=$(RELEASE_VERSION) TO_COMMIT=$(TO_COMMIT) FROM_COMMIT=$(FROM_COMMIT) ./dev-tools/release/release_creator.sh; \
 	fi

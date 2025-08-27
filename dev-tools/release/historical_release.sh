@@ -52,31 +52,44 @@ fi
 CURRENT_BRANCH=$(git branch --show-current)
 TEMP_BRANCH="historical-release-$VERSION-$(date +%s)"
 
-log_info "Creating temporary branch: $TEMP_BRANCH"
-git checkout -b "$TEMP_BRANCH"
+log_info "Creating temporary branch from historical commit $COMMIT_HASH"
+# Step 1: Checkout historical commit first (clean state)
+git checkout -b "$TEMP_BRANCH" "$COMMIT_HASH" -q
 
-# Identify source files to extract from historical commit
-SOURCE_DIRS="src tests README.md setup.py requirements.txt pyproject.toml"
+log_info "Copying modern build system to historical code"
+# Step 2: Copy modern build files (avoid conflicts by using current branch files)
+git checkout "$CURRENT_BRANCH" -- Makefile dev-tools/ pyproject.toml 2>/dev/null || {
+    log_warn "Some build files don't exist in current branch, continuing..."
+}
 
-log_info "Extracting source files from commit $COMMIT_HASH"
-for item in $SOURCE_DIRS; do
-    if git show "$COMMIT_HASH:$item" >/dev/null 2>&1; then
-        log_info "  Extracting: $item"
-        git checkout "$COMMIT_HASH" -- "$item" 2>/dev/null || true
-    fi
-done
+# Step 3: Auto-resolve any conflicts by preferring modern build system
+if ! git diff-index --quiet HEAD --; then
+    log_info "Auto-resolving build system conflicts..."
+    git add . 2>/dev/null || true
+fi
 
-# Create temporary version override
-log_info "Setting version to $VERSION"
-echo "project:
-  version: $VERSION" > .temp_version.yml
+# Step 4: Update version in the temporary branch
+log_info "Setting version to $VERSION in historical context"
+if [ -f ".project.yml" ]; then
+    # Use modern version system if available
+    echo "project:
+  version: $VERSION" > .project.yml
+elif [ -f "pyproject.toml" ]; then
+    # Update pyproject.toml version
+    sed -i.bak "s/^version = .*/version = \"$VERSION\"/" pyproject.toml && rm -f pyproject.toml.bak
+fi
 
 # Override VERSION for build
 export VERSION="$VERSION"
 
-# Build release using current build infrastructure
-log_info "Building release with current build system"
-IS_RELEASE=true make build
+# Step 5: Build with historical code + modern build system
+log_info "Building historical release with modern build system"
+IS_RELEASE=true make build 2>/dev/null || {
+    log_error "Build failed - historical code may be incompatible with modern build system"
+    git checkout "$CURRENT_BRANCH" -q
+    git branch -D "$TEMP_BRANCH" -q 2>/dev/null || true
+    exit 1
+}
 
 # Tag the original commit (not our temporary branch)
 log_info "Tagging original commit $COMMIT_HASH as v$VERSION"

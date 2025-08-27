@@ -55,6 +55,10 @@ fi
 # Get current version (force fresh read, not cached)
 if [ "$DRY_RUN" = "true" ] && [ -n "$RELEASE_DRY_RUN_VERSION" ]; then
     VERSION="$RELEASE_DRY_RUN_VERSION"
+elif [ -n "$BACKFILL_VERSION" ]; then
+    # Use backfill version for historical releases
+    VERSION="$BACKFILL_VERSION"
+    log_info "Using backfill version: $VERSION"
 else
     VERSION=$(yq '.project.version' .project.yml)
 fi
@@ -185,9 +189,21 @@ check_overlapping_releases() {
 set_commit_defaults() {
     if [ -z "$FROM_COMMIT" ]; then
         if [ "$ALLOW_BACKFILL" = "true" ]; then
-            # Backfill mode: default to first commit
-            FROM_COMMIT=$(git rev-list --max-parents=0 HEAD)
-            echo "Backfill mode: Using first commit as FROM_COMMIT: ${FROM_COMMIT:0:8}"
+            # Backfill mode: find previous release before TO_COMMIT
+            if [ -n "$TO_COMMIT" ]; then
+                # Find the latest tag that comes before TO_COMMIT
+                previous_tag=$(git tag -l "v*" --sort=-version:refname --merged "$TO_COMMIT" | head -1)
+                if [ -n "$previous_tag" ]; then
+                    FROM_COMMIT=$(git rev-list -n 1 "$previous_tag")
+                    echo "Backfill mode: Using previous release ($previous_tag) as FROM_COMMIT: ${FROM_COMMIT:0:8}"
+                else
+                    FROM_COMMIT=$(git rev-list --max-parents=0 HEAD)
+                    echo "Backfill mode: No previous releases, using first commit as FROM_COMMIT: ${FROM_COMMIT:0:8}"
+                fi
+            else
+                FROM_COMMIT=$(git rev-list --max-parents=0 HEAD)
+                echo "Backfill mode: No TO_COMMIT specified, using first commit as FROM_COMMIT: ${FROM_COMMIT:0:8}"
+            fi
         else
             # Normal mode: default to after last release
             latest_tag=$(git tag -l "v*" --sort=-version:refname | head -1)
@@ -230,8 +246,30 @@ create_release() {
             
             git checkout -b "$temp_branch" "$to_commit" -q
             
-            # Cherry-pick essential build files from current branch
-            git checkout "$current_branch" -- Makefile dev-tools/package/ dev-tools/scripts/ 2>/dev/null || true
+            # Copy essential build files from current branch with conflict resolution
+            log_info "Copying modern build system with auto-conflict resolution..."
+            if ! git checkout "$current_branch" -- Makefile dev-tools/ pyproject.toml 2>/dev/null; then
+                log_info "Conflicts detected during build system copy, auto-resolving..."
+                # Auto-resolve conflicts by preferring modern build system
+                git checkout --theirs pyproject.toml 2>/dev/null || true
+                git checkout --theirs Makefile 2>/dev/null || true
+                # Add all changes (resolved conflicts)
+                git add . 2>/dev/null || true
+                log_info "Build system conflicts resolved automatically"
+            fi
+            
+            # Update version in temp branch for backfill builds
+            if [ -n "$BACKFILL_VERSION" ]; then
+                log_info "Setting backfill version to $BACKFILL_VERSION in temp branch..."
+                if [ -f ".project.yml" ]; then
+                    echo "project:
+  version: $BACKFILL_VERSION" > .project.yml
+                fi
+                # Update pyproject.toml if it exists
+                if [ -f "pyproject.toml" ]; then
+                    sed -i.bak "s/^version = .*/version = \"$BACKFILL_VERSION\"/" pyproject.toml && rm -f pyproject.toml.bak
+                fi
+            fi
             
             # Use tag name directly (unified format)
             PACKAGE_VERSION="${tag_name#v}"
