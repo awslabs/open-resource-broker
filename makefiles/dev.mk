@@ -160,13 +160,13 @@ uninstall-package:  ## Uninstall package
 reinstall-package: uninstall-package install-package  ## Reinstall package
 
 # UV-specific targets for performance optimization
-uv-lock: ## Generate uv lock file for reproducible builds
+uv-lock: ## Generate uv.lock file for reproducible builds
 	./dev-tools/scripts/uv_manager.py lock
 
-uv-sync: ## Sync environment with uv lock files
+uv-sync: ## Sync environment with uv.lock file
 	./dev-tools/scripts/uv_manager.py sync
 
-uv-sync-dev: ## Sync development environment with uv lock files
+uv-sync-dev: ## Sync development environment with uv.lock file
 	./dev-tools/scripts/uv_manager.py sync-dev
 
 uv-check: ## Check if uv is available and show version
