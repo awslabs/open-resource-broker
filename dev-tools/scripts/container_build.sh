@@ -27,10 +27,10 @@ log_error() {
 IMAGE_NAME="${IMAGE_NAME:-open-hostfactory-plugin}"  # Will be overridden by Makefile with $(CONTAINER_IMAGE)
 REGISTRY="${REGISTRY:-}"
 
-# Use VERSION as provided (already in correct format from Makefile)
+# Use VERSION as provided (unified format works for all systems)
 VERSION="${VERSION:-0.1.0}"
-# Use CONTAINER_TAG_PREFIX if provided, otherwise convert VERSION to Docker-safe format
-CONTAINER_VERSION="${CONTAINER_TAG_PREFIX:-${VERSION//+/-}}"
+# Use VERSION directly - no conversion needed with unified format
+CONTAINER_VERSION="${VERSION}"
 
 BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
 VCS_REF=$(git rev-parse --short HEAD 2>/dev/null || echo 'unknown')

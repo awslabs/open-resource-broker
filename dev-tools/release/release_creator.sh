@@ -4,6 +4,38 @@ set -e
 # GitHub release creator with validation and conflict handling
 # Supports: FROM_COMMIT, TO_COMMIT, ALLOW_BACKFILL, DRY_RUN env vars
 
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Logging functions
+log_info() {
+    echo -e "${GREEN}[INFO]${NC} $1"
+}
+
+log_warn() {
+    echo -e "${YELLOW}[WARN]${NC} $1"
+}
+
+log_error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+}
+
+log_debug() {
+    if [ "${DEBUG:-false}" = "true" ] || [ "${VERBOSE:-false}" = "true" ]; then
+        echo -e "${BLUE}[DEBUG]${NC} $1"
+    fi
+}
+
+log_debug "Starting release_creator.sh"
+log_debug "ALLOW_BACKFILL=${ALLOW_BACKFILL:-false}"
+log_debug "FROM_COMMIT=${FROM_COMMIT:-unset}"
+log_debug "TO_COMMIT=${TO_COMMIT:-unset}"
+log_debug "DRY_RUN=${DRY_RUN:-false}"
+
 # Get to project root
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 PROJECT_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
@@ -36,11 +68,13 @@ validate_working_directory() {
         return 0
     fi
     
-    # Check if working directory is clean
-    if ! git diff-index --quiet HEAD --; then
-        echo "ERROR: Working directory has uncommitted changes"
+    # Check if working directory is clean (skip in backfill mode)
+    if [ "${ALLOW_BACKFILL:-false}" != "true" ] && ! git diff-index --quiet HEAD --; then
+        log_error "Working directory has uncommitted changes"
         echo "Commit or stash changes before creating a release"
         exit 1
+    elif [ "${ALLOW_BACKFILL:-false}" = "true" ]; then
+        log_debug "Skipping working directory check in backfill mode"
     fi
 }
 
@@ -51,9 +85,9 @@ validate_branch() {
         echo "WARNING: Creating release from branch '$current_branch' (not main)"
         echo "Use ALLOW_RELEASE_FROM_BRANCH=true to suppress this warning"
         
-        # Skip confirmation in non-interactive mode, dry-run, or CI
-        if [ "$DRY_RUN" = "true" ] || [ "$CI" = "true" ] || [ ! -t 0 ]; then
-            echo "Non-interactive mode: Proceeding with release from $current_branch"
+        # Skip confirmation in non-interactive mode, dry-run, CI, or backfill mode
+        if [ "$DRY_RUN" = "true" ] || [ "$CI" = "true" ] || [ ! -t 0 ] || [ "$ALLOW_BACKFILL" = "true" ]; then
+            log_info "Non-interactive mode: Proceeding with release from $current_branch"
             return 0
         fi
         
@@ -123,12 +157,6 @@ check_overlapping_releases() {
     local from_commit=$1
     local to_commit=$2
     
-    # Skip overlap check in backfill mode
-    if [ "$ALLOW_BACKFILL" = "true" ]; then
-        echo "BACKFILL MODE: Skipping overlap validation"
-        return 0
-    fi
-    
     # Get the latest release tag and its commit
     latest_tag=$(git tag -l "v*" --sort=-version:refname | head -1)
     
@@ -136,27 +164,20 @@ check_overlapping_releases() {
         latest_tag_commit=$(git rev-list -n 1 "$latest_tag")
         
         # Check if FROM_COMMIT is before or at the latest release
-        if git merge-base --is-ancestor "$from_commit" "$latest_tag_commit" || \
-           [ "$from_commit" = "$latest_tag_commit" ]; then
-            
-            # Find the commit right after the latest release
-            next_commit=$(git rev-list --reverse "$latest_tag_commit..HEAD" | head -1)
-            
-            if [ -n "$next_commit" ]; then
-                echo "ERROR: FROM_COMMIT '$from_commit' overlaps with existing release $latest_tag"
-                echo ""
-                echo "Latest release: $latest_tag (commit: ${latest_tag_commit:0:8})"
-                echo "Use this instead:"
-                echo "  FROM_COMMIT=$next_commit make release-..."
-                echo ""
-                echo "Or use default (automatically starts after latest release):"
-                echo "  make release-..."
+        if git merge-base --is-ancestor "$from_commit" "$latest_tag_commit" 2>/dev/null; then
+            if [ "$ALLOW_BACKFILL" = "true" ]; then
+                log_warn "BACKFILL MODE: Release range overlaps with existing release $latest_tag"
+                log_warn "This will create a backfill release with overlapping commits"
+                return 0
             else
-                echo "ERROR: No new commits since latest release $latest_tag"
-                echo "Nothing to release!"
+                log_error "Release range overlaps with existing release $latest_tag"
+                echo "FROM_COMMIT ($from_commit) includes commits already released in $latest_tag"
+                echo "Use ALLOW_BACKFILL=true for backfill releases"
+                exit 1
             fi
-            exit 1
         fi
+    else
+        log_debug "No existing releases found, proceeding with first release"
     fi
 }
 
@@ -190,32 +211,80 @@ create_release() {
     local to_commit=$3
     
     # Generate release notes
-    echo "Generating release notes..."
+    log_info "Generating release notes..."
     NOTES=$(./dev-tools/release/release_notes.sh "$from_commit" "$to_commit")
+    
+    # Build package if not skipped
+    if [ "${SKIP_BUILD:-false}" = "true" ]; then
+        log_info "Skipping package build (SKIP_BUILD=true)"
+    else
+        # For backfill releases, we need to build from the actual release commit
+        # but use modern build tools. Create a temporary branch at the target commit
+        # and cherry-pick the build system improvements.
+        if [ "$ALLOW_BACKFILL" = "true" ]; then
+            log_info "Building package from release commit $to_commit with modern build system..."
+            
+            # Create temporary branch at target commit
+            temp_branch="temp-build-$(date +%s)"
+            current_branch=$(git branch --show-current)
+            
+            git checkout -b "$temp_branch" "$to_commit" -q
+            
+            # Cherry-pick essential build files from current branch
+            git checkout "$current_branch" -- Makefile dev-tools/package/ dev-tools/scripts/ 2>/dev/null || true
+            
+            # Use tag name directly (unified format)
+            PACKAGE_VERSION="${tag_name#v}"
+            log_debug "Building package with version: $PACKAGE_VERSION"
+            
+            # Build with the actual release code but modern build system
+            VERSION="$PACKAGE_VERSION" make clean build 2>/dev/null || {
+                log_warn "Package build failed from release commit, skipping package"
+            }
+            
+            # Return to original branch and cleanup
+            git checkout "$current_branch" -q
+            git branch -D "$temp_branch" -q 2>/dev/null || true
+        else
+            # Regular release: build from current commit
+            log_info "Building package from current commit..."
+            PACKAGE_VERSION="${tag_name#v}"
+            VERSION="$PACKAGE_VERSION" make clean build
+        fi
+    fi
     
     # Determine release flags
     RELEASE_FLAGS=""
-    if [[ "$VERSION" =~ -alpha|-beta|-rc ]]; then
+    if [[ "$tag_name" =~ -alpha|-beta|-rc ]]; then
         RELEASE_FLAGS="--prerelease"
-        echo "Creating pre-release: $tag_name"
+        log_info "Creating pre-release: $tag_name"
     else
-        echo "Creating stable release: $tag_name"
+        log_info "Creating stable release: $tag_name"
     fi
     
     # Create git tag
-    echo "Creating git tag: $tag_name"
+    log_info "Creating git tag: $tag_name"
     git tag "$tag_name" "$to_commit"
     
     # Push tag
-    echo "Pushing tag to remote..."
+    log_info "Pushing tag to remote..."
     git push origin "$tag_name"
     
-    # Create GitHub release
-    echo "Creating GitHub release..."
-    gh release create "$tag_name" $RELEASE_FLAGS --notes "$NOTES"
+    # Create GitHub release with package if available
+    log_info "Creating GitHub release..."
+    if [ "${SKIP_BUILD:-false}" = "false" ] && [ -d "dist" ] && [ -n "$(ls dist/*.whl 2>/dev/null)" ]; then
+        gh release create "$tag_name" $RELEASE_FLAGS --notes "$NOTES" dist/*.whl dist/*.tar.gz 2>/dev/null || \
+        gh release create "$tag_name" $RELEASE_FLAGS --notes "$NOTES" dist/*.whl 2>/dev/null || \
+        gh release create "$tag_name" $RELEASE_FLAGS --notes "$NOTES"
+    else
+        gh release create "$tag_name" $RELEASE_FLAGS --notes "$NOTES"
+        if [ "${SKIP_BUILD:-false}" = "true" ]; then
+            log_info "Release created without package (build skipped)"
+        fi
+    fi
     
     echo ""
-    echo "✅ Release created successfully!"
+    echo "Release created successfully!"
     echo "Tag: $tag_name"
     echo "GitHub: https://github.com/$(gh repo view --json owner,name --jq '.owner.login + "/" + .name')/releases/tag/$tag_name"
 }
@@ -255,8 +324,10 @@ if [ "$DRY_RUN" != "true" ]; then
     echo "  Range: ${FROM_COMMIT:0:8}..${TO_COMMIT:0:8}"
     echo "  Pre-release: $([[ "$VERSION" =~ -alpha|-beta|-rc ]] && echo "yes" || echo "no")"
     
-    # Skip confirmation in non-interactive mode or CI
-    if [ -t 0 ] && [ "$CI" != "true" ]; then
+    # Skip confirmation in non-interactive mode, CI, or backfill mode
+    if [ "$ALLOW_BACKFILL" = "true" ] || [ ! -t 0 ] || [ "$CI" = "true" ]; then
+        log_info "Non-interactive mode: Creating release"
+    else
         echo ""
         read -p "Create release? (y/N): " -n 1 -r
         echo
@@ -264,8 +335,6 @@ if [ "$DRY_RUN" != "true" ]; then
             echo "Cancelled"
             exit 1
         fi
-    else
-        echo "Non-interactive mode: Creating release"
     fi
 fi
 

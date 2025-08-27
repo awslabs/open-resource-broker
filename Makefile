@@ -22,7 +22,7 @@ DEFAULT_PYTHON_VERSION := $(shell yq '.python.default_version' $(PROJECT_CONFIG)
 # Generate pyproject.toml from template with project configuration
 generate-pyproject:  ## Generate pyproject.toml from template using project config
 	@echo "Generating pyproject.toml from template using $(PROJECT_CONFIG)..."
-	@VERSION="$(VERSION)" ./dev-tools/scripts/generate_pyproject.py --config $(PROJECT_CONFIG)
+	@./dev-tools/scripts/generate_pyproject.py --config $(PROJECT_CONFIG)
 
 # Package information (loaded from project config, but respect environment VERSION for CI)
 PACKAGE_NAME := $(shell yq '.project.name' $(PROJECT_CONFIG))
@@ -411,16 +411,13 @@ docs-clean:  ## Clean documentation build files
 version-show:  ## Show current version from project config
 	@echo "Current version: $(VERSION)"
 
-get-version:  ## Generate version (supports FORMAT=container for Docker-safe prefix)
+get-version:  ## Generate unified version (works for PyPI, Docker, Git)
 	@if [ "$${IS_RELEASE:-false}" = "true" ]; then \
 		echo "$(VERSION)"; \
 	else \
 		commit=$$(git rev-parse --short HEAD 2>/dev/null || echo 'unknown'); \
-		if [ "$${FORMAT}" = "container" ]; then \
-			echo "$(VERSION).dev-$${commit}"; \
-		else \
-			echo "$(VERSION).dev+$${commit}"; \
-		fi; \
+		dev_int=$$(python3 -c "print(int('$${commit}'[:6], 16))"); \
+		echo "$(VERSION).dev$${dev_int}"; \
 	fi
 
 version-bump-patch:  ## Bump patch version (1.0.0 -> 1.0.1)
@@ -561,6 +558,17 @@ release-version: ## Create release with specific version (RELEASE_VERSION=1.2.3)
 release-backfill: ## Create backfill release (RELEASE_VERSION=1.2.3 TO_COMMIT=abc)
 	@$(MAKE) _release_backfill
 
+build-historical:  ## Build historical release (usage: make build-historical COMMIT=abc123 VERSION=0.0.1)
+	@if [ -z "$(COMMIT)" ] || [ -z "$(VERSION)" ]; then \
+		echo "Usage: make build-historical COMMIT=<hash> VERSION=<version>"; \
+		exit 1; \
+	fi
+	@./dev-tools/release/historical_release.sh $(COMMIT) $(VERSION)
+
+release-historical:  ## Create and publish historical release
+	@$(MAKE) build-historical COMMIT=$(COMMIT) VERSION=$(VERSION)
+	@$(MAKE) publish-pypi
+
 # Internal DRY implementations
 _release:
 	@if [ -n "$(RELEASE_VERSION)" ]; then \
@@ -647,8 +655,8 @@ local-clean: ## Clean local act artifacts and containers
 	@echo "Local cleanup complete!"
 # @SECTION Build & Deploy
 build: clean dev-install  ## Build package
-	VERSION=$$(make -s get-version) $(MAKE) generate-pyproject && \
-	VERSION=$$(make -s get-version) BUILD_ARGS="$(BUILD_ARGS)" ./dev-tools/package/build.sh --quiet
+	VERSION=$${VERSION:-$$(make -s get-version)} $(MAKE) generate-pyproject && \
+	VERSION=$${VERSION:-$$(make -s get-version)} BUILD_ARGS="$(BUILD_ARGS)" ./dev-tools/package/build.sh
 
 build-test: build  ## Build and test package installation
 	./dev-tools/package/test_install.sh
@@ -1014,6 +1022,7 @@ status:  ## Show project status and useful commands
 	@echo "  Promotions:     make promote-alpha|beta|rc|stable"
 	@echo "  Custom version: RELEASE_VERSION=1.2.3 make release-version"
 	@echo "  Backfill:       RELEASE_VERSION=1.2.3 TO_COMMIT=abc make release-backfill"
+	@echo "  Historical:     COMMIT=abc123 VERSION=0.0.1 make build-historical"
 	@echo "  Dry run:        DRY_RUN=true make release-minor"
 	@echo ""
 	@echo "Environment Variables:"

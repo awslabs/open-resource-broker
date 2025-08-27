@@ -26,7 +26,7 @@ generate_notes() {
     # Check if this is the first release
     first_commit=$(git rev-list --max-parents=0 HEAD)
     if [ "$from_commit" = "$first_commit" ] && [ -z "$(git tag -l "v*")" ]; then
-        echo "## 🎉 Initial Release"
+        echo "## Initial Release"
         echo ""
         echo "First public release of the Open Host Factory Plugin."
         echo ""

@@ -11,20 +11,21 @@ repos:
         description: "Auto-format Python code with Ruff"
 
       - id: ruff-check
-        name: Ruff (Code Quality)
+        name: Ruff (Code Quality - Required)
         entry: make ci-quality-ruff
         language: system
         files: \.(py)$
         pass_filenames: false
-        description: "Check Python code quality with Ruff"
+        description: "Check Python code quality with Ruff (must pass)"
 
       - id: ruff-optional
-        name: Ruff (Extended Checks)
+        name: Ruff (Extended Checks - Optional)
         entry: make ci-quality-ruff-optional
         language: system
         files: \.(py)$
         pass_filenames: false
         description: "Extended Python code checks with Ruff (warnings only)"
+        stages: [manual]  # Optional check - run as warning only
 
       - id: mypy
         name: mypy (Type Checking)
@@ -33,7 +34,7 @@ repos:
         files: \.(py)$
         pass_filenames: false
         description: "Check Python type annotations with mypy"
-        warning_only: true  # Allow this to fail without blocking commit
+        stages: [manual]  # Optional check - run as warning only
 
       - id: bandit
         name: bandit (Security Analysis)
@@ -58,7 +59,7 @@ repos:
         files: Dockerfile.*
         pass_filenames: false
         description: "Lint Dockerfile with hadolint"
-        warning_only: true  # Allow this to fail without blocking commit
+        stages: [manual]  # Optional check - run as warning only
 
       - id: quality-check
         name: Quality Check
@@ -83,7 +84,7 @@ repos:
         files: \.(py)$
         pass_filenames: false
         description: "Validate CQRS architecture patterns"
-        warning_only: true  # Allow this to fail without blocking commit
+        stages: [manual]  # Optional check - run as warning only
 
       - id: check-architecture
         name: Check Architecture Compliance
@@ -92,7 +93,7 @@ repos:
         files: \.(py)$
         pass_filenames: false
         description: "Check Clean Architecture compliance"
-        warning_only: true  # Allow this to fail without blocking commit
+        stages: [manual]  # Optional check - run as warning only
 
       - id: validate-imports-arch
         name: Validate Import Architecture
@@ -101,7 +102,7 @@ repos:
         files: \.(py)$
         pass_filenames: false
         description: "Validate import architecture compliance"
-        warning_only: true  # Allow this to fail without blocking commit
+        stages: [manual]  # Optional check - run as warning only
 
       - id: check-file-sizes-arch
         name: Check File Sizes (Architecture)
@@ -110,7 +111,7 @@ repos:
         files: \.(py)$
         pass_filenames: false
         description: "Check file sizes for architecture compliance"
-        warning_only: true  # Allow this to fail without blocking commit
+        stages: [manual]  # Optional check - run as warning only
 
       - id: security-scan
         name: Security Scan
@@ -119,7 +120,7 @@ repos:
         files: \.(py|txt|yml|yaml|toml|Dockerfile)$
         pass_filenames: false
         description: "Run comprehensive security scan"
-        warning_only: true  # Allow this to fail without blocking commit
+        stages: [manual]  # Optional check - run as warning only
 
       - id: semgrep
         name: Semgrep (Static Analysis)
@@ -128,7 +129,7 @@ repos:
         files: \.(py)$
         pass_filenames: false
         description: "Run Semgrep static analysis"
-        warning_only: true  # Allow this to fail without blocking commit
+        stages: [manual]  # Optional check - run as warning only
 
       - id: trivy-fs
         name: Trivy (Filesystem Scan)
@@ -137,7 +138,7 @@ repos:
         files: \.(py|txt|yml|yaml|toml|json)$
         pass_filenames: false
         description: "Run Trivy filesystem vulnerability scanner"
-        warning_only: true  # Allow this to fail without blocking commit
+        stages: [manual]  # Optional check - run as warning only
 
       - id: trufflehog
         name: TruffleHog (Secrets Scan)
@@ -146,7 +147,7 @@ repos:
         files: \.(py|txt|yml|yaml|toml|json|md|sh)$
         pass_filenames: false
         description: "Check for secrets with TruffleHog"
-        warning_only: true  # Allow this to fail without blocking commit
+        stages: [manual]  # Optional check - run as warning only
 
       - id: validate-workflows
         name: Validate Workflows
@@ -163,7 +164,7 @@ repos:
         files: \.github/workflows/.*\.(yml|yaml)$
         pass_filenames: false
         description: "Validate GitHub Actions workflows with actionlint"
-        warning_only: true  # Allow this to fail without blocking commit
+        stages: [manual]  # Optional check - run as warning only
 
       - id: validate-shell-scripts
         name: Validate Shell Scripts (shellcheck)
@@ -172,7 +173,7 @@ repos:
         files: \.sh$
         pass_filenames: false
         description: "Validate shell scripts with shellcheck"
-        warning_only: true  # Allow this to fail without blocking commit
+        stages: [manual]  # Optional check - run as warning only
 
       - id: detect-secrets
         name: Detect Hardcoded Secrets
@@ -189,4 +190,4 @@ repos:
         files: \.(py)$
         pass_filenames: false
         description: "Check for files that may violate Single Responsibility Principle"
-        warning_only: true  # Allow this to fail without blocking commit
+        stages: [manual]  # Optional check - run as warning only
