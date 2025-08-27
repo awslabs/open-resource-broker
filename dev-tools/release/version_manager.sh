@@ -46,7 +46,10 @@ parse_version() {
         MAJOR=${BASH_REMATCH[1]}
         MINOR=${BASH_REMATCH[2]}
         PATCH=${BASH_REMATCH[3]}
+        # These variables are used for future pre-release functionality
+        # shellcheck disable=SC2034
         PRERELEASE=${BASH_REMATCH[5]}
+        # shellcheck disable=SC2034
         PRERELEASE_NUM=${BASH_REMATCH[6]}
     else
         echo "ERROR: Invalid version format: $version"

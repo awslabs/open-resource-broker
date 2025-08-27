@@ -20,7 +20,8 @@ cd "$PROJECT_ROOT"
 generate_notes() {
     local from_commit=$1
     local to_commit=$2
-    local version=$(make -s get-version)
+    local version
+    version=$(make -s get-version)
     
     # Check if this is the first release
     first_commit=$(git rev-list --max-parents=0 HEAD)
@@ -49,7 +50,9 @@ generate_notes() {
         
         if [ -n "$previous_tag" ]; then
             echo "Generating notes from $previous_tag to v$version..."
-            gh api repos/$(gh repo view --json owner,name --jq '.owner.login + "/" + .name')/releases/generate-notes \
+            local repo_info
+            repo_info=$(gh repo view --json owner,name --jq '.owner.login + "/" + .name')
+            gh api "repos/$repo_info/releases/generate-notes" \
                 --field tag_name="v$version" \
                 --field previous_tag_name="$previous_tag" \
                 --jq '.body' 2>/dev/null || generate_fallback_notes "$from_commit" "$to_commit"
@@ -74,7 +77,9 @@ generate_fallback_notes() {
     done
     
     echo ""
-    echo "**Full Changelog**: https://github.com/$(gh repo view --json owner,name --jq '.owner.login + "/" + .name')/compare/${from_commit:0:8}...${to_commit:0:8}"
+    local repo_info
+    repo_info=$(gh repo view --json owner,name --jq '.owner.login + "/" + .name' 2>/dev/null || echo "owner/repo")
+    echo "**Full Changelog**: https://github.com/$repo_info/compare/${from_commit:0:8}...${to_commit:0:8}"
 }
 
 # Generate and output the notes
