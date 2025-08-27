@@ -279,6 +279,15 @@ create_release() {
             if [ -d "src" ] && [ ! -d "ohfp" ]; then
                 log_info "Historical code uses 'src/' structure, creating compatible build..."
                 
+                # Clean up any existing build artifacts first
+                rm -rf dist/ build/ *.egg-info src/*.egg-info 2>/dev/null || true
+                
+                # Handle conflicting build systems (setup.py + pyproject.toml)
+                if [ -f "setup.py" ] && [ -f "pyproject.toml" ]; then
+                    log_info "Detected conflicting build systems, using setup.py for historical build"
+                    mv pyproject.toml pyproject.toml.bak 2>/dev/null || true
+                fi
+                
                 # Create minimal pyproject.toml for historical structure
                 cat > pyproject.toml << EOF
 [build-system]
@@ -309,6 +318,11 @@ EOF
                 python -m build --wheel --outdir dist/ 2>/dev/null || {
                     log_warn "Historical build failed, skipping package"
                 }
+                
+                # Restore original pyproject.toml if it existed
+                if [ -f "pyproject.toml.bak" ]; then
+                    mv pyproject.toml.bak pyproject.toml
+                fi
             else
                 # Modern structure, use normal build
                 VERSION="$PACKAGE_VERSION" make clean build 2>/dev/null || {
@@ -316,9 +330,12 @@ EOF
                 }
             fi
             
-            # Return to original branch and cleanup
+            # Return to original branch and cleanup temp files
             git checkout "$current_branch" -q
             git branch -D "$temp_branch" -q 2>/dev/null || true
+            
+            # Clean up any remaining build artifacts in current branch
+            rm -rf build/ *.egg-info src/*.egg-info 2>/dev/null || true
         else
             # Regular release: build from current commit
             log_info "Building package from current commit..."
