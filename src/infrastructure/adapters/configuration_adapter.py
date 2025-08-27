@@ -224,10 +224,10 @@ class ConfigurationAdapter(ConfigurationPort):
                 "author": AUTHOR,
             }
         except ImportError:
-            # Fallback if package info not available
+            # Fallback if package info not available - use same defaults as _package.py
             return {
                 "name": "open-hostfactory-plugin",
                 "version": "unknown",
-                "description": "Cloud provider integration plugin",
+                "description": "Cloud provider integration plugin for IBM Spectrum Symphony Host Factory",
                 "author": "AWS Professional Services",
             }

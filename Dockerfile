@@ -22,6 +22,7 @@ ARG BUILD_DATE
 ARG VERSION=dev
 ARG VCS_REF
 ARG AUTHOR
+ARG LICENSE
 
 # Add metadata labels and set environment variables in single layer
 LABEL org.opencontainers.image.title="Open Host Factory Plugin API" \
@@ -31,7 +32,7 @@ LABEL org.opencontainers.image.title="Open Host Factory Plugin API" \
       org.opencontainers.image.created="${BUILD_DATE}" \
       org.opencontainers.image.revision="${VCS_REF}" \
       org.opencontainers.image.vendor="${AUTHOR}" \
-      org.opencontainers.image.licenses="Apache-2.0"
+      org.opencontainers.image.licenses="${LICENSE}"
 
 # Set build info as environment variables for runtime access
 ENV BUILD_DATE="${BUILD_DATE}" \
