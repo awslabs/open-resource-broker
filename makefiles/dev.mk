@@ -100,9 +100,9 @@ test-install: build  ## Test package installation
 
 test-completions:         ## Test completion generation
 	@echo "Testing bash completion generation..."
-	@$(PYTHON) src/run.py --completion bash > /dev/null && echo "SUCCESS: Bash completion generation works"
+	@$(call run-tool,python,src/run.py --completion bash) > /dev/null && echo "SUCCESS: Bash completion generation works"
 	@echo "Testing zsh completion generation..."
-	@$(PYTHON) src/run.py --completion zsh > /dev/null && echo "SUCCESS: Zsh completion generation works"
+	@$(call run-tool,python,src/run.py --completion zsh) > /dev/null && echo "SUCCESS: Zsh completion generation works"
 
 # @SECTION Code Quality
 # Code quality targets
@@ -178,9 +178,9 @@ uv-benchmark: ## Benchmark uv vs pip installation speed
 # Completion targets
 generate-completions:     ## Generate completion scripts (bash and zsh)
 	@echo "Generating bash completion..."
-	$(PYTHON) src/run.py --completion bash > dev-tools/completions/bash/$(PACKAGE_NAME_SHORT)-completion.bash
+	$(call run-tool,python,src/run.py --completion bash) > dev-tools/completions/bash/$(PACKAGE_NAME_SHORT)-completion.bash
 	@echo "Generating zsh completion..."
-	$(PYTHON) src/run.py --completion zsh > dev-tools/completions/zsh/_$(PACKAGE_NAME_SHORT)
+	$(call run-tool,python,src/run.py --completion zsh) > dev-tools/completions/zsh/_$(PACKAGE_NAME_SHORT)
 	@echo "SUCCESS: Completion scripts generated in dev-tools/completions/"
 
 install-completions:      ## Install completions for current user
@@ -210,14 +210,14 @@ install-dev-tools-dry-run: ## Show what development tools would be installed
 
 # Application targets
 run: install  ## Run application
-	$(PYTHON) src/run.py
+	$(call run-tool,python,src/run.py)
 
 run-dev: dev-install  ## Run application in development mode
-	$(PYTHON) src/run.py --log-level DEBUG
+	$(call run-tool,python,src/run.py --log-level DEBUG)
 
 # Database targets (if needed)
 init-db: install  ## Initialize database
-	$(PYTHON) src/run.py system init-db
+	$(call run-tool,python,src/run.py system init-db)
 
 # Configuration targets
 create-config:  ## Create default config file
@@ -230,7 +230,7 @@ create-config:  ## Create default config file
 	fi
 
 validate-config: install  ## Validate configuration
-	$(PYTHON) src/run.py config validate
+	$(call run-tool,python,src/run.py config validate)
 
 # Quick start for new developers
 quick-start: ## Complete setup for new developers (install tools + dependencies + verify)
