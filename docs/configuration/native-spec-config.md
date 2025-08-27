@@ -73,7 +73,7 @@ Recommended configuration for most use cases:
             "spec_file_base_path": "specs/aws",
             "template_search_paths": [
               "specs/aws/templates",
-              "specs/aws/examples",
+              "config/specs/aws/examples",
               "specs/aws/production"
             ],
             "allowed_file_extensions": [".json", ".yaml", ".yml"],

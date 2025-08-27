@@ -46,7 +46,7 @@ class TestSpecFileLoading:
 
             assert result == spec_content
             mock_read.assert_called_once_with(
-                "specs/aws/examples/ec2fleet-price-capacity-optimized.json"
+                "config/specs/aws/examples/ec2fleet-price-capacity-optimized.json"
             )
 
     def test_load_spec_file_with_custom_base_path(self):

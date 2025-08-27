@@ -1,0 +1,1 @@
+recursive-include src/ohfp/providers/aws/specs *.json
