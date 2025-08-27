@@ -98,7 +98,7 @@ Direct installation on servers with systemd service configuration.
 - **[User Guide](user_guide/installation.md)**: End-user documentation and API reference
 - **[Deployment Guide](deployment/readme.md)**: Complete deployment documentation
 - **[Developer Guide](developer_guide/architecture.md)**: Development and architecture documentation
-- **[API Reference](api-reference.md)**: Technical API documentation
+- **[API Reference](api/readme.md)**: Technical API documentation
 
 ## Support
 

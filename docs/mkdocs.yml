@@ -4,8 +4,8 @@ site_url: https://awslabs.github.io/open-hostfactory-plugin
 repo_url: https://github.com/awslabs/open-hostfactory-plugin
 repo_name: open-hostfactory-plugin
 
-# Appropriate docs structure: mkdocs.yml in docs/, markdown files in docs/docs/
-docs_dir: docs
+# Appropriate docs structure: mkdocs.yml in docs/, markdown files in docs/root/
+docs_dir: root
 site_dir: site
 
 # GitHub-specific settings
@@ -159,6 +159,7 @@ nav:
       - Native Spec Reference: api/native-spec-reference.md
       - Multi-Provider API: api/multi-provider-api.md
     - Configuration:
+      - Configuration Guide: configuration-guide.md
       - Examples: configuration/examples.md
       - Native Spec Config: configuration/native-spec-config.md
     - Deployment:
@@ -179,8 +180,10 @@ nav:
       - Lazy Loading Design: architecture/lazy-loading-design.md
       - Machine Discovery Flow: architecture/machine-discovery-flow.md
       - Multi-Provider Design: architecture/multi-provider-design.md
+      - Field Mapping Architecture: architecture/field_mapping_architecture.md
     - Testing Guide: testing/readme.md
     - Guides & Patterns:
+      - Native Spec Guide: native-spec-guide.md
       - Provider Strategy: provider_strategy_guide.md
       - Provider Pattern: provider_strategy_pattern_guide.md
       - Storage Registry: storage_registry_pattern.md

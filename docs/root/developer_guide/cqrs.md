@@ -574,5 +574,5 @@ else:
 
 - **[Event System](events.md)**: Learn about the event-driven architecture
 - **[Architecture](architecture.md)**: Understand the overall system design
-- **[API Reference](../api-reference.md)**: Explore the application layer API
+- **[API Reference](../api/readme.md)**: Explore the application layer API
 - **[Development](development.md)**: Set up development environment
