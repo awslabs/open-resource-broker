@@ -39,27 +39,30 @@ generate_notes() {
         return 0
     fi
     
-    # Try to use GitHub's generate-notes API
-    if command -v gh >/dev/null 2>&1; then
-        # Find previous tag for comparison
-        previous_tag=""
-        if [ "$from_commit" != "$first_commit" ]; then
-            # Find the tag that points to from_commit or is closest before it
-            previous_tag=$(git tag -l "v*" --sort=-version:refname --merged "$from_commit" | head -1)
+    # For backfill releases, generate notes based on actual commit range
+    if [ "$from_commit" != "$first_commit" ]; then
+        echo "## Changes in this release"
+        echo ""
+        
+        # Get commits in the range (excluding from_commit, including to_commit)
+        commits=$(git log --oneline --reverse "$from_commit..$to_commit")
+        
+        if [ -n "$commits" ]; then
+            echo "### Commits"
+            echo ""
+            while IFS= read -r commit_line; do
+                commit_hash=$(echo "$commit_line" | cut -d' ' -f1)
+                commit_msg=$(echo "$commit_line" | cut -d' ' -f2-)
+                echo "- $commit_msg ([${commit_hash}](https://github.com/awslabs/open-hostfactory-plugin/commit/$commit_hash))"
+            done <<< "$commits"
+        else
+            echo "No new commits in this release."
         fi
         
-        if [ -n "$previous_tag" ]; then
-            echo "Generating notes from $previous_tag to v$version..."
-            local repo_info
-            repo_info=$(gh repo view --json owner,name --jq '.owner.login + "/" + .name')
-            gh api "repos/$repo_info/releases/generate-notes" \
-                --field tag_name="v$version" \
-                --field previous_tag_name="$previous_tag" \
-                --jq '.body' 2>/dev/null || generate_fallback_notes "$from_commit" "$to_commit"
-        else
-            generate_fallback_notes "$from_commit" "$to_commit"
-        fi
+        echo ""
+        echo "**Full Changelog**: https://github.com/awslabs/open-hostfactory-plugin/compare/${from_commit:0:8}...${to_commit:0:8}"
     else
+        # First release - use fallback notes
         generate_fallback_notes "$from_commit" "$to_commit"
     fi
 }
