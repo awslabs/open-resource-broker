@@ -249,7 +249,7 @@ create_release() {
     gh release create "$tag_name" $RELEASE_FLAGS --notes "$NOTES"
     
     echo ""
-    echo "✅ Release created successfully!"
+    echo "Release created successfully!"
     echo "Tag: $tag_name"
     echo "GitHub: https://github.com/$(gh repo view --json owner,name --jq '.owner.login + "/" + .name')/releases/tag/$tag_name"
 }
