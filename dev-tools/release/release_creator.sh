@@ -282,14 +282,24 @@ create_release() {
                 # Clean up any existing build artifacts first
                 rm -rf dist/ build/ *.egg-info src/*.egg-info 2>/dev/null || true
                 
-                # Handle conflicting build systems (setup.py + pyproject.toml)
-                if [ -f "setup.py" ] && [ -f "pyproject.toml" ]; then
-                    log_info "Detected conflicting build systems, using setup.py for historical build"
-                    mv pyproject.toml pyproject.toml.bak 2>/dev/null || true
-                fi
-                
-                # Create minimal pyproject.toml for historical structure
-                cat > pyproject.toml << EOF
+                # Use existing setup.py if available, otherwise create pyproject.toml
+                if [ -f "setup.py" ]; then
+                    log_info "Using existing setup.py for historical build"
+                    # Rename conflicting pyproject.toml temporarily
+                    if [ -f "pyproject.toml" ]; then
+                        mv pyproject.toml pyproject.toml.bak
+                    fi
+                    # Build with setup.py
+                    python setup.py bdist_wheel --dist-dir dist/ 2>/dev/null || {
+                        log_warn "setup.py build failed, skipping package"
+                    }
+                    # Restore pyproject.toml if it existed
+                    if [ -f "pyproject.toml.bak" ]; then
+                        mv pyproject.toml.bak pyproject.toml
+                    fi
+                else
+                    # Create minimal pyproject.toml for historical structure
+                    cat > pyproject.toml << EOF
 [build-system]
 requires = ["setuptools>=45", "wheel"]
 build-backend = "setuptools.build_meta"
@@ -312,16 +322,12 @@ Repository = "https://github.com/awslabs/open-hostfactory-plugin"
 where = ["."]
 include = ["src*"]
 EOF
-                
-                # Build with setuptools directly for historical structure
-                python -m pip install build --quiet 2>/dev/null || true
-                python -m build --wheel --outdir dist/ 2>/dev/null || {
-                    log_warn "Historical build failed, skipping package"
-                }
-                
-                # Restore original pyproject.toml if it existed
-                if [ -f "pyproject.toml.bak" ]; then
-                    mv pyproject.toml.bak pyproject.toml
+                    
+                    # Build with setuptools directly for historical structure
+                    python -m pip install build --quiet 2>/dev/null || true
+                    python -m build --wheel --outdir dist/ 2>/dev/null || {
+                        log_warn "Historical build failed, skipping package"
+                    }
                 fi
             else
                 # Modern structure, use normal build
