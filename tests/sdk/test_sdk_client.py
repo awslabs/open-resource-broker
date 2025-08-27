@@ -65,7 +65,7 @@ class TestOpenHFPluginSDK:
                 mock_init.return_value = True
 
                 with pytest.raises(ValueError):
-                    async with OpenHFPluginSDK(provider="mock") as sdk:
+                    async with OpenHFPluginSDK(provider="mock"):
                         raise ValueError("Test exception")
 
                 mock_init.assert_called_once()

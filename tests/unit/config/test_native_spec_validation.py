@@ -123,7 +123,9 @@ class TestNativeSpecValidation:
     def test_aws_template_no_native_specs(self):
         """Test template without any native specs."""
         template = AWSTemplate(
-            template_id="legacy-template", image_id="ami-12345", instance_type="t3.micro"
+            template_id="legacy-template",
+            image_id="ami-12345",
+            instance_type="t3.micro",
         )
 
         assert template.launch_template_spec is None

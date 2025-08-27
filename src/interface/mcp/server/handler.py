@@ -2,7 +2,7 @@
 
 import asyncio
 import sys
-from typing import Any, Dict
+from typing import Any
 
 from infrastructure.di.container import get_container
 from infrastructure.error.decorators import handle_interface_exceptions
@@ -12,7 +12,7 @@ from .core import OpenHFPluginMCPServer
 
 
 @handle_interface_exceptions(context="mcp_server", interface_type="cli")
-async def handle_mcp_serve(args) -> Dict[str, Any]:
+async def handle_mcp_serve(args) -> dict[str, Any]:
     """
     Handle MCP server startup.
 
@@ -79,7 +79,7 @@ async def _run_stdio_server(mcp_server: OpenHFPluginMCPServer):
                 # Send error response
                 error_response = {
                     "jsonrpc": "2.0",
-                    "error": {"code": -32603, "message": f"Server error: {str(e)}"},
+                    "error": {"code": -32603, "message": f"Server error: {e!s}"},
                 }
                 print(error_response, flush=True)  # noqa: MCP protocol output
 

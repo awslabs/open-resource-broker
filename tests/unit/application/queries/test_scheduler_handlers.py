@@ -53,9 +53,11 @@ class TestListSchedulerStrategiesHandler:
                 "src.infrastructure.registry.scheduler_registry.get_scheduler_registry",
                 return_value=mock_registry,
             ),
-            patch("src.config.manager.ConfigurationManager", return_value=mock_config_manager),
+            patch(
+                "src.config.manager.ConfigurationManager",
+                return_value=mock_config_manager,
+            ),
         ):
-
             response = await handler.execute_query(query)
 
             assert isinstance(response, SchedulerStrategyListResponse)
@@ -78,9 +80,11 @@ class TestListSchedulerStrategiesHandler:
                 "src.infrastructure.registry.scheduler_registry.get_scheduler_registry",
                 return_value=mock_registry,
             ),
-            patch("src.config.manager.ConfigurationManager", return_value=mock_config_manager),
+            patch(
+                "src.config.manager.ConfigurationManager",
+                return_value=mock_config_manager,
+            ),
         ):
-
             response = await handler.execute_query(query)
 
             # Check that details are included
@@ -103,7 +107,6 @@ class TestListSchedulerStrategiesHandler:
                 side_effect=Exception("Config error"),
             ),
         ):
-
             response = await handler.execute_query(query)
 
             assert response.current_strategy == "unknown"
@@ -149,13 +152,15 @@ class TestGetSchedulerConfigurationHandler:
         query = GetSchedulerConfigurationQuery()
 
         with (
-            patch("src.config.manager.ConfigurationManager", return_value=mock_config_manager),
+            patch(
+                "src.config.manager.ConfigurationManager",
+                return_value=mock_config_manager,
+            ),
             patch(
                 "src.infrastructure.registry.scheduler_registry.get_scheduler_registry",
                 return_value=mock_registry,
             ),
         ):
-
             response = await handler.execute_query(query)
 
             assert isinstance(response, SchedulerConfigurationResponse)
@@ -171,13 +176,15 @@ class TestGetSchedulerConfigurationHandler:
         query = GetSchedulerConfigurationQuery(scheduler_name="default")
 
         with (
-            patch("src.config.manager.ConfigurationManager", return_value=mock_config_manager),
+            patch(
+                "src.config.manager.ConfigurationManager",
+                return_value=mock_config_manager,
+            ),
             patch(
                 "src.infrastructure.registry.scheduler_registry.get_scheduler_registry",
                 return_value=mock_registry,
             ),
         ):
-
             response = await handler.execute_query(query)
 
             assert response.scheduler_name == "default"
@@ -192,13 +199,15 @@ class TestGetSchedulerConfigurationHandler:
         query = GetSchedulerConfigurationQuery(scheduler_name="unknown")
 
         with (
-            patch("src.config.manager.ConfigurationManager", return_value=mock_config_manager),
+            patch(
+                "src.config.manager.ConfigurationManager",
+                return_value=mock_config_manager,
+            ),
             patch(
                 "src.infrastructure.registry.scheduler_registry.get_scheduler_registry",
                 return_value=mock_registry,
             ),
         ):
-
             response = await handler.execute_query(query)
 
             assert response.scheduler_name == "unknown"
@@ -242,13 +251,15 @@ class TestValidateSchedulerConfigurationHandler:
         query = ValidateSchedulerConfigurationQuery()
 
         with (
-            patch("src.config.manager.ConfigurationManager", return_value=mock_config_manager),
+            patch(
+                "src.config.manager.ConfigurationManager",
+                return_value=mock_config_manager,
+            ),
             patch(
                 "src.infrastructure.registry.scheduler_registry.get_scheduler_registry",
                 return_value=mock_registry,
             ),
         ):
-
             response = await handler.execute_query(query)
 
             assert isinstance(response, ValidationResultDTO)
@@ -263,13 +274,15 @@ class TestValidateSchedulerConfigurationHandler:
         query = ValidateSchedulerConfigurationQuery(scheduler_name="unknown")
 
         with (
-            patch("src.config.manager.ConfigurationManager", return_value=mock_config_manager),
+            patch(
+                "src.config.manager.ConfigurationManager",
+                return_value=mock_config_manager,
+            ),
             patch(
                 "src.infrastructure.registry.scheduler_registry.get_scheduler_registry",
                 return_value=mock_registry,
             ),
         ):
-
             response = await handler.execute_query(query)
 
             assert response.is_valid is False
@@ -287,13 +300,15 @@ class TestValidateSchedulerConfigurationHandler:
         mock_registry.create_strategy.side_effect = Exception("Creation failed")
 
         with (
-            patch("src.config.manager.ConfigurationManager", return_value=mock_config_manager),
+            patch(
+                "src.config.manager.ConfigurationManager",
+                return_value=mock_config_manager,
+            ),
             patch(
                 "src.infrastructure.registry.scheduler_registry.get_scheduler_registry",
                 return_value=mock_registry,
             ),
         ):
-
             response = await handler.execute_query(query)
 
             assert response.is_valid is False

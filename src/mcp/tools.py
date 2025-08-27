@@ -5,7 +5,7 @@ Provides MCP tools that can be directly integrated into AI assistants
 without requiring a separate server process.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from sdk.client import OpenHFPluginSDK
 
@@ -30,7 +30,7 @@ class OpenHFPluginMCPTools:
         """
         self.sdk = sdk or OpenHFPluginSDK(**sdk_kwargs)
         self.discovery = MCPToolDiscovery()
-        self.tools: Dict[str, MCPToolDefinition] = {}
+        self.tools: dict[str, MCPToolDefinition] = {}
         self._initialized = False
 
     async def initialize(self) -> None:
@@ -70,7 +70,7 @@ class OpenHFPluginMCPTools:
         """Async context manager exit."""
         await self.cleanup()
 
-    def list_tools(self) -> List[Dict[str, Any]]:
+    def list_tools(self) -> list[dict[str, Any]]:
         """
         List all available MCP tools.
 
@@ -87,7 +87,7 @@ class OpenHFPluginMCPTools:
 
         return self.discovery.get_tools_list()
 
-    async def call_tool(self, name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
+    async def call_tool(self, name: str, arguments: dict[str, Any]) -> dict[str, Any]:
         """
         Call an MCP tool by name.
 
@@ -152,7 +152,7 @@ class OpenHFPluginMCPTools:
 
         return self.tools.get(name)
 
-    def get_tools_by_type(self, handler_type: str) -> List[str]:
+    def get_tools_by_type(self, handler_type: str) -> list[str]:
         """
         Get tools filtered by handler type.
 
@@ -172,7 +172,7 @@ class OpenHFPluginMCPTools:
 
         return tools
 
-    def _format_result(self, result: Any, tool_name: str) -> Dict[str, Any]:
+    def _format_result(self, result: Any, tool_name: str) -> dict[str, Any]:
         """
         Format SDK result for MCP consumption.
 
@@ -205,7 +205,7 @@ class OpenHFPluginMCPTools:
             return {
                 "error": {
                     "type": "ResultFormattingError",
-                    "message": f"Failed to format result: {str(e)}",
+                    "message": f"Failed to format result: {e!s}",
                     "tool": tool_name,
                     "result_type": type(result).__name__,
                 }
@@ -216,7 +216,7 @@ class OpenHFPluginMCPTools:
         """Check if MCP tools are initialized."""
         return self._initialized
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """
         Get MCP tools statistics.
 

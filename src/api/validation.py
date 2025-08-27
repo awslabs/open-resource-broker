@@ -1,7 +1,7 @@
 """Request validation utilities for API handlers."""
 
 import json
-from typing import Any, Dict, List, Optional, Type, TypeVar, Union
+from typing import Any, Optional, TypeVar, Union
 
 from pydantic import BaseModel, ValidationError
 
@@ -18,7 +18,7 @@ logger = get_logger(__name__)
 class ValidationException(Exception):
     """Exception raised for validation errors."""
 
-    def __init__(self, message: str, errors: Optional[List[Dict[str, Any]]] = None) -> None:
+    def __init__(self, message: str, errors: Optional[list[dict[str, Any]]] = None) -> None:
         """
         Initialize validation exception.
 
@@ -32,7 +32,7 @@ class ValidationException(Exception):
 
 
 @handle_interface_exceptions(context="request_body_validation", interface_type="api")
-def validate_request_body(model_class: Type[T], request_body: Union[str, Dict[str, Any]]) -> T:
+def validate_request_body(model_class: type[T], request_body: Union[str, dict[str, Any]]) -> T:
     """
     Validate request body against a Pydantic model.
 
@@ -76,8 +76,8 @@ def validate_request_body(model_class: Type[T], request_body: Union[str, Dict[st
 
 
 def create_error_response(
-    message: str, errors: Optional[List[Dict[str, Any]]] = None
-) -> Dict[str, Any]:
+    message: str, errors: Optional[list[dict[str, Any]]] = None
+) -> dict[str, Any]:
     """
     Create standardized error response.
 
@@ -100,7 +100,7 @@ class RequestValidator:
     """Request validator for API handlers."""
 
     @staticmethod
-    def validate(model_class: Type[T], request_body: Union[str, Dict[str, Any]]) -> T:
+    def validate(model_class: type[T], request_body: Union[str, dict[str, Any]]) -> T:
         """
         Validate request body against a Pydantic model.
 
@@ -117,7 +117,7 @@ class RequestValidator:
         return validate_request_body(model_class, request_body)
 
     @staticmethod
-    def handle_validation_error(e: ValidationException) -> Dict[str, Any]:
+    def handle_validation_error(e: ValidationException) -> dict[str, Any]:
         """
         Handle validation error and create error response.
 

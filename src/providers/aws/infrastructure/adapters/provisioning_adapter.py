@@ -5,7 +5,7 @@ This module provides an adapter for AWS-specific resource provisioning operation
 It implements the ResourceProvisioningPort interface from the domain layer.
 """
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from domain.base.dependency_injection import injectable
 from domain.base.exceptions import EntityNotFoundError
@@ -134,7 +134,8 @@ class AWSProvisioningAdapter(ResourceProvisioningPort):
             # Extract resource ID from result
             resource_id = result.data.get("instance_ids", ["dry-run-resource-id"])[0]
             self._logger.info(
-                "Successfully provisioned resources via strategy with ID %s", resource_id
+                "Successfully provisioned resources via strategy with ID %s",
+                resource_id,
             )
             return resource_id
         else:
@@ -168,9 +169,9 @@ class AWSProvisioningAdapter(ResourceProvisioningPort):
             raise
         except Exception as e:
             self._logger.error("Error during resource provisioning: %s", str(e))
-            raise InfrastructureError(f"Failed to provision resources: {str(e)}")
+            raise InfrastructureError(f"Failed to provision resources: {e!s}")
 
-    def check_resources_status(self, request: Request) -> List[Dict[str, Any]]:
+    def check_resources_status(self, request: Request) -> list[dict[str, Any]]:
         """
         Check the status of provisioned AWS resources.
 
@@ -216,7 +217,8 @@ class AWSProvisioningAdapter(ResourceProvisioningPort):
             # Check hosts status using the handler
             status = handler.check_hosts_status(request)
             self._logger.info(
-                "Successfully checked status of resources for request %s", request.request_id
+                "Successfully checked status of resources for request %s",
+                request.request_id,
             )
             return status
         except AWSEntityNotFoundError as e:
@@ -224,7 +226,7 @@ class AWSProvisioningAdapter(ResourceProvisioningPort):
             raise
         except Exception as e:
             self._logger.error("Error during resource status check: %s", str(e))
-            raise InfrastructureError(f"Failed to check resource status: {str(e)}")
+            raise InfrastructureError(f"Failed to check resource status: {e!s}")
 
     def release_resources(self, request: Request) -> None:
         """
@@ -274,9 +276,9 @@ class AWSProvisioningAdapter(ResourceProvisioningPort):
             raise
         except Exception as e:
             self._logger.error("Error during resource release: %s", str(e))
-            raise InfrastructureError(f"Failed to release resources: {str(e)}")
+            raise InfrastructureError(f"Failed to release resources: {e!s}")
 
-    def get_resource_health(self, resource_id: str) -> Dict[str, Any]:
+    def get_resource_health(self, resource_id: str) -> dict[str, Any]:
         """
         Get health information for a specific AWS resource.
 
@@ -380,7 +382,7 @@ class AWSProvisioningAdapter(ResourceProvisioningPort):
             raise
         except Exception as e:
             self._logger.error("Error getting resource health: %s", str(e))
-            raise InfrastructureError(f"Failed to get resource health: {str(e)}")
+            raise InfrastructureError(f"Failed to get resource health: {e!s}")
 
     def _get_handler_for_template(self, template: Template) -> AWSHandler:
         """

@@ -1,6 +1,6 @@
 """Generic native spec processing service."""
 
-from typing import Any, Dict
+from typing import Any
 
 from domain.base.dependency_injection import injectable
 from domain.base.ports.configuration_port import ConfigurationPort
@@ -19,6 +19,6 @@ class NativeSpecService:
         """Check if native specs are enabled."""
         return self.config_port.get_native_spec_config()["enabled"]
 
-    def render_spec(self, spec: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
+    def render_spec(self, spec: dict[str, Any], context: dict[str, Any]) -> dict[str, Any]:
         """Render spec with context - provider agnostic."""
         return self.spec_renderer.render_spec(spec, context)

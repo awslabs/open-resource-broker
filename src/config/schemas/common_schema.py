@@ -1,7 +1,5 @@
 """Common configuration schemas."""
 
-from typing import Dict
-
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 
@@ -48,7 +46,7 @@ class PrefixConfig(BaseModel):
 class StatusValuesConfig(BaseModel):
     """Status values configuration."""
 
-    request: Dict[str, str] = Field(
+    request: dict[str, str] = Field(
         default_factory=lambda: {
             "pending": "pending",
             "running": "running",
@@ -58,7 +56,7 @@ class StatusValuesConfig(BaseModel):
         },
         description="Request status values",
     )
-    machine: Dict[str, str] = Field(
+    machine: dict[str, str] = Field(
         default_factory=lambda: {
             "pending": "pending",
             "running": "running",
@@ -70,7 +68,7 @@ class StatusValuesConfig(BaseModel):
         },
         description="Machine status values",
     )
-    machine_result: Dict[str, str] = Field(
+    machine_result: dict[str, str] = Field(
         default_factory=lambda: {
             "executing": "executing",
             "succeed": "succeed",
@@ -78,7 +76,7 @@ class StatusValuesConfig(BaseModel):
         },
         description="Machine result values",
     )
-    circuit_breaker: Dict[str, str] = Field(
+    circuit_breaker: dict[str, str] = Field(
         default_factory=lambda: {
             "closed": "closed",
             "open": "open",
@@ -110,7 +108,7 @@ class LimitsConfig(BaseModel):
 class NamingConfig(BaseModel):
     """Naming configuration."""
 
-    collections: Dict[str, str] = Field(
+    collections: dict[str, str] = Field(
         default_factory=lambda: {
             "requests": "requests",
             "machines": "machines",
@@ -118,7 +116,7 @@ class NamingConfig(BaseModel):
         },
         description="Collection names for NoSQL databases",
     )
-    tables: Dict[str, str] = Field(
+    tables: dict[str, str] = Field(
         default_factory=lambda: {
             "requests": "requests",
             "machines": "machines",
@@ -128,7 +126,7 @@ class NamingConfig(BaseModel):
         },
         description="Table names for SQL databases",
     )
-    handler_types: Dict[str, str] = Field(
+    handler_types: dict[str, str] = Field(
         default_factory=lambda: {
             "ec2_fleet": "EC2Fleet",
             "spot_fleet": "SpotFleet",
@@ -137,7 +135,7 @@ class NamingConfig(BaseModel):
         },
         description="Handler types for different AWS resources",
     )
-    fleet_types: Dict[str, str] = Field(
+    fleet_types: dict[str, str] = Field(
         default_factory=lambda: {
             "instant": "instant",
             "request": "request",
@@ -145,7 +143,7 @@ class NamingConfig(BaseModel):
         },
         description="Fleet types for EC2 Fleet and Spot Fleet",
     )
-    price_types: Dict[str, str] = Field(
+    price_types: dict[str, str] = Field(
         default_factory=lambda: {
             "ondemand": "ondemand",
             "spot": "spot",
@@ -154,7 +152,7 @@ class NamingConfig(BaseModel):
         description="Price types for templates",
     )
     statuses: StatusValuesConfig = Field(default_factory=lambda: StatusValuesConfig())
-    patterns: Dict[str, str] = Field(
+    patterns: dict[str, str] = Field(
         default_factory=lambda: {
             "ec2_instance": r"^i-[a-f0-9]+$",
             "spot_fleet": r"^sfr-[a-f0-9]+$",

@@ -7,7 +7,7 @@ This module provides registration functions for different scheduler strategies:
 - Registry management for scheduler types
 """
 
-from typing import TYPE_CHECKING, Any, Dict
+from typing import TYPE_CHECKING, Any
 
 from domain.base.ports.configuration_port import ConfigurationPort
 
@@ -36,12 +36,14 @@ def create_symphony_hostfactory_strategy(container: "DIContainer") -> "Scheduler
     return HostFactorySchedulerStrategy(config_manager, logger)
 
 
-def create_hostfactory_config(data: Dict[str, Any]) -> Any:
+def create_hostfactory_config(data: dict[str, Any]) -> Any:
     """Create HostFactory scheduler configuration."""
     return data
 
 
-def register_symphony_hostfactory_scheduler(registry: "SchedulerRegistry" = None) -> None:
+def register_symphony_hostfactory_scheduler(
+    registry: "SchedulerRegistry" = None,
+) -> None:
     """Register Symphony HostFactory scheduler."""
     if registry is None:
         from infrastructure.registry.scheduler_registry import get_scheduler_registry
@@ -95,7 +97,7 @@ def create_default_strategy(container: "DIContainer") -> "SchedulerPort":
     return DefaultSchedulerStrategy(config_manager, logger)
 
 
-def create_default_config(data: Dict[str, Any]) -> Any:
+def create_default_config(data: dict[str, Any]) -> Any:
     """Create default scheduler configuration."""
     return data
 

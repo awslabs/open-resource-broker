@@ -7,7 +7,7 @@ moving AWS-specific logic out of the base handler to maintain clean architecture
 
 import hashlib
 from dataclasses import dataclass
-from typing import Any, Dict, List
+from typing import Any
 
 from botocore.exceptions import ClientError
 
@@ -109,7 +109,7 @@ class AWSLaunchTemplateManager:
             self._logger.error(error_msg)
             raise InfrastructureError(error_msg)
         except Exception as e:
-            error_msg = f"Unexpected error in launch template management: {str(e)}"
+            error_msg = f"Unexpected error in launch template management: {e!s}"
             self._logger.error(error_msg)
             raise InfrastructureError(error_msg)
 
@@ -237,7 +237,7 @@ class AWSLaunchTemplateManager:
     def _create_new_launch_template(
         self,
         template_name: str,
-        template_data: Dict[str, Any],
+        template_data: dict[str, Any],
         client_token: str,
         request: Request,
         aws_template: AWSTemplate,
@@ -283,7 +283,7 @@ class AWSLaunchTemplateManager:
             is_new_version=True,
         )
 
-    def _prepare_template_context(self, template: AWSTemplate, request: Request) -> Dict[str, Any]:
+    def _prepare_template_context(self, template: AWSTemplate, request: Request) -> dict[str, Any]:
         """Prepare context with all computed values for template rendering."""
 
         # Get package name for CreatedBy tag
@@ -309,7 +309,7 @@ class AWSLaunchTemplateManager:
             "instance_type": (
                 template.instance_type
                 if template.instance_type
-                else list(template.instance_types.keys())[0]
+                else next(iter(template.instance_types.keys()))
             ),
             "request_id": str(request.request_id),
             "template_id": str(template.template_id),
@@ -366,7 +366,7 @@ class AWSLaunchTemplateManager:
 
     def _create_launch_template_data(
         self, aws_template: AWSTemplate, request: Request
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Create launch template data from AWS template configuration with native spec support.
 
@@ -384,7 +384,8 @@ class AWSLaunchTemplateManager:
             )
             if native_spec:
                 self._logger.info(
-                    "Using native launch template spec for template %s", aws_template.template_id
+                    "Using native launch template spec for template %s",
+                    aws_template.template_id,
                 )
                 return native_spec
 
@@ -397,7 +398,7 @@ class AWSLaunchTemplateManager:
 
     def _create_launch_template_data_legacy(
         self, aws_template: AWSTemplate, request: Request
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Create launch template data using legacy logic.
 
@@ -426,7 +427,7 @@ class AWSLaunchTemplateManager:
             "InstanceType": (
                 aws_template.instance_type
                 if aws_template.instance_type
-                else list(aws_template.instance_types.keys())[0]
+                else next(iter(aws_template.instance_types.keys()))
             ),
             "TagSpecifications": [
                 {
@@ -470,7 +471,7 @@ class AWSLaunchTemplateManager:
 
     def _create_instance_tags(
         self, aws_template: AWSTemplate, request: Request
-    ) -> List[Dict[str, str]]:
+    ) -> list[dict[str, str]]:
         """
         Create instance tags for the launch template.
 
@@ -510,7 +511,7 @@ class AWSLaunchTemplateManager:
 
     def _create_launch_template_tags(
         self, aws_template: AWSTemplate, request: Request
-    ) -> List[Dict[str, str]]:
+    ) -> list[dict[str, str]]:
         """
         Create tags for the launch template resource itself.
 

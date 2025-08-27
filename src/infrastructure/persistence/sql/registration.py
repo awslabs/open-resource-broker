@@ -6,7 +6,7 @@ enabling the storage registry pattern for SQL persistence.
 CLEAN ARCHITECTURE: Only handles storage strategies, no repository knowledge.
 """
 
-from typing import Any, Dict
+from typing import Any
 
 from infrastructure.logging.logger import get_logger
 from infrastructure.registry.storage_registry import get_storage_registry
@@ -39,7 +39,7 @@ def create_sql_strategy(config: Any) -> Any:
     )
 
 
-def create_sql_config(data: Dict[str, Any]) -> Any:
+def create_sql_config(data: dict[str, Any]) -> Any:
     """
     Create SQL storage configuration from data.
 

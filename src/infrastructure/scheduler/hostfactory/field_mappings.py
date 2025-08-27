@@ -1,7 +1,5 @@
 """HostFactory-specific field mappings - moved from generic location."""
 
-from typing import Dict
-
 from infrastructure.logging.logger import get_logger
 
 
@@ -55,7 +53,7 @@ class HostFactoryFieldMappings:
     }
 
     @classmethod
-    def get_mappings(cls, provider_type: str) -> Dict[str, str]:
+    def get_mappings(cls, provider_type: str) -> dict[str, str]:
         """
         Get field mappings for HostFactory + provider combination.
 

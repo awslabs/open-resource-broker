@@ -1,7 +1,7 @@
 """Base DTO class with stable API and clean snake_case format."""
 
 from enum import Enum
-from typing import Any, Dict, Optional, Union
+from typing import Any, Optional, Union
 
 from pydantic import BaseModel, ConfigDict
 
@@ -25,7 +25,7 @@ class BaseDTO(BaseModel):
         # Removed: populate_by_name=True (not needed without aliases)
     )
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Stable public API - returns clean snake_case dictionary.
 
@@ -39,7 +39,7 @@ class BaseDTO(BaseModel):
         return self.model_dump()
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "BaseDTO":
+    def from_dict(cls, data: dict[str, Any]) -> "BaseDTO":
         """
         Stable public API - creates instance from snake_case dictionary.
 
@@ -80,7 +80,7 @@ class BaseCommand(BaseDTO):
 
     command_id: Optional[str] = None
     correlation_id: Optional[str] = None
-    metadata: Dict[str, Any] = {}
+    metadata: dict[str, Any] = {}
     dry_run: bool = False  # Enable dry-run mode for testing without real resource creation
 
 
@@ -89,8 +89,8 @@ class BaseQuery(BaseDTO):
 
     query_id: Optional[str] = None
     correlation_id: Optional[str] = None
-    filters: Dict[str, Any] = {}
-    pagination: Optional[Dict[str, Any]] = None
+    filters: dict[str, Any] = {}
+    pagination: Optional[dict[str, Any]] = None
 
 
 class BaseResponse(BaseDTO):
@@ -99,7 +99,7 @@ class BaseResponse(BaseDTO):
     success: bool = True
     message: Optional[str] = None
     error_code: Optional[str] = None
-    metadata: Dict[str, Any] = {}
+    metadata: dict[str, Any] = {}
 
 
 class PaginatedResponse(BaseResponse):

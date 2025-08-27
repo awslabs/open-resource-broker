@@ -1,6 +1,6 @@
 """EC2 instance management utility functions."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from botocore.exceptions import ClientError
 
@@ -12,7 +12,7 @@ from infrastructure.resilience import retry
 logger = get_logger(__name__)
 
 
-def get_instance_by_id(instance_id: str, aws_client: Any = None) -> Dict[str, Any]:
+def get_instance_by_id(instance_id: str, aws_client: Any = None) -> dict[str, Any]:
     """
     Get an EC2 instance by ID.
 
@@ -71,7 +71,7 @@ def get_instance_by_id(instance_id: str, aws_client: Any = None) -> Dict[str, An
         )
 
         raise InfrastructureError(
-            "AWS.EC2", f"Unexpected error getting EC2 instance {instance_id}: {str(e)}"
+            "AWS.EC2", f"Unexpected error getting EC2 instance {instance_id}: {e!s}"
         )
 
 
@@ -79,12 +79,12 @@ def create_instance(
     image_id: str,
     instance_type: str,
     key_name: Optional[str] = None,
-    security_groups: Optional[List[str]] = None,
+    security_groups: Optional[list[str]] = None,
     subnet_id: Optional[str] = None,
     user_data: Optional[str] = None,
-    tags: Optional[List[Dict[str, str]]] = None,
+    tags: Optional[list[dict[str, str]]] = None,
     aws_client: Any = None,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Create an EC2 instance.
 
@@ -183,10 +183,10 @@ def create_instance(
             },
         )
 
-        raise InfrastructureError("AWS.EC2", f"Unexpected error creating EC2 instance: {str(e)}")
+        raise InfrastructureError("AWS.EC2", f"Unexpected error creating EC2 instance: {e!s}")
 
 
-def terminate_instance(instance_id: str, aws_client: Any = None) -> Dict[str, Any]:
+def terminate_instance(instance_id: str, aws_client: Any = None) -> dict[str, Any]:
     """
     Terminate an EC2 instance.
 
@@ -209,7 +209,11 @@ def terminate_instance(instance_id: str, aws_client: Any = None) -> Dict[str, An
         # Terminate instance with retry built-in
         response = _terminate_instance(ec2_client, instance_id)
 
-        logger.info("Terminated EC2 instance %s", instance_id, extra={"instance_id": instance_id})
+        logger.info(
+            "Terminated EC2 instance %s",
+            instance_id,
+            extra={"instance_id": instance_id},
+        )
 
         return response
 
@@ -244,30 +248,30 @@ def terminate_instance(instance_id: str, aws_client: Any = None) -> Dict[str, An
 
         raise InfrastructureError(
             "AWS.EC2",
-            f"Unexpected error terminating EC2 instance {instance_id}: {str(e)}",
+            f"Unexpected error terminating EC2 instance {instance_id}: {e!s}",
         )
 
 
 # Helper functions with retry
 @retry(strategy="exponential", max_attempts=3, base_delay=1.0, service="ec2")
-def _describe_instance(ec2_client: Any, instance_id: str) -> Dict[str, Any]:
+def _describe_instance(ec2_client: Any, instance_id: str) -> dict[str, Any]:
     """Describe an EC2 instance."""
     return ec2_client.describe_instances(InstanceIds=[instance_id])
 
 
 @retry(strategy="exponential", max_attempts=3, base_delay=1.0, service="ec2")
-def _run_instance(ec2_client: Any, params: Dict[str, Any]) -> Dict[str, Any]:
+def _run_instance(ec2_client: Any, params: dict[str, Any]) -> dict[str, Any]:
     """Run an EC2 instance."""
     return ec2_client.run_instances(**params)
 
 
 @retry(strategy="exponential", max_attempts=3, base_delay=1.0, service="ec2")
-def _terminate_instance(ec2_client: Any, instance_id: str) -> Dict[str, Any]:
+def _terminate_instance(ec2_client: Any, instance_id: str) -> dict[str, Any]:
     """Terminate an EC2 instance."""
     return ec2_client.terminate_instances(InstanceIds=[instance_id])
 
 
 @retry(strategy="exponential", max_attempts=3, base_delay=1.0, service="ec2")
-def _create_tags(ec2_client: Any, instance_id: str, tags: List[Dict[str, str]]) -> Dict[str, Any]:
+def _create_tags(ec2_client: Any, instance_id: str, tags: list[dict[str, str]]) -> dict[str, Any]:
     """Create tags for an EC2 instance."""
     return ec2_client.create_tags(Resources=[instance_id], Tags=tags)

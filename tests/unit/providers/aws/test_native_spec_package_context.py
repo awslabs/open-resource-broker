@@ -2,9 +2,9 @@
 
 from unittest.mock import Mock
 
-from domain.request.request import Request
+from domain.request.aggregate import Request
 from domain.request.value_objects import RequestId
-from providers.aws.domain.template import AWSTemplate
+from providers.aws.domain.template.aggregate import AWSTemplate
 from providers.aws.infrastructure.services.aws_native_spec_service import (
     AWSNativeSpecService,
 )
@@ -18,7 +18,8 @@ class TestAWSNativeSpecPackageContext:
         self.mock_config_port = Mock()
         self.mock_native_spec_service = Mock()
         self.service = AWSNativeSpecService(
-            config_port=self.mock_config_port, native_spec_service=self.mock_native_spec_service
+            config_port=self.mock_config_port,
+            native_spec_service=self.mock_native_spec_service,
         )
 
     def test_build_aws_context_includes_package_info(self):
@@ -34,7 +35,9 @@ class TestAWSNativeSpecPackageContext:
         )
 
         request = Request(
-            request_id=RequestId.generate(), requested_count=2, template_id="test-template"
+            request_id=RequestId.generate(),
+            requested_count=2,
+            template_id="test-template",
         )
 
         # Act
@@ -57,7 +60,9 @@ class TestAWSNativeSpecPackageContext:
         )
 
         request = Request(
-            request_id=RequestId.generate(), requested_count=1, template_id="test-template"
+            request_id=RequestId.generate(),
+            requested_count=1,
+            template_id="test-template",
         )
 
         # Act
@@ -80,7 +85,9 @@ class TestAWSNativeSpecPackageContext:
         )
 
         request = Request(
-            request_id=RequestId.generate(), requested_count=1, template_id="test-template"
+            request_id=RequestId.generate(),
+            requested_count=1,
+            template_id="test-template",
         )
 
         # Act

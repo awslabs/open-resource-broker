@@ -64,7 +64,8 @@ class TestFleetTagBuilder:
         self.mock_template.tags = {"Environment": "test", "Owner": "team"}
 
         with patch(
-            "infrastructure.utilities.common.resource_naming.get_resource_prefix", return_value=""
+            "infrastructure.utilities.common.resource_naming.get_resource_prefix",
+            return_value="",
         ):
             tags = FleetTagBuilder.build_resource_tags(
                 self.mock_request, self.mock_template, "instance"

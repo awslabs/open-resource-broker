@@ -1,23 +1,23 @@
 #!/usr/bin/env python3
 """Test runner script for the Open Host Factory Plugin."""
+
 import argparse
 import logging
 import subprocess
 import sys
-from typing import List
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
 
-def run_command(cmd: List[str], description: str) -> bool:
+def run_command(cmd: list[str], description: str) -> bool:
     """Run a command and return success status."""
     logger.info(f"Running: {description}")
     logger.debug(f"Command: {' '.join(cmd)}")
 
     try:
-        result = subprocess.run(cmd, check=True, capture_output=False)
+        subprocess.run(cmd, check=True, capture_output=False)
         logger.info(f"PASS {description}")
         return True
     except subprocess.CalledProcessError as e:
@@ -45,15 +45,35 @@ def main():
     parser.add_argument("--path", type=str, help="Run tests in specific path")
     parser.add_argument("--keyword", "-k", type=str, help="Run tests matching keyword")
     parser.add_argument(
-        "--ci", action="store_true", help="Enable CI-specific outputs (XML reports, coverage)"
+        "--ci",
+        action="store_true",
+        help="Enable CI-specific outputs (XML reports, coverage)",
     )
     parser.add_argument("--junit-xml", type=str, help="Generate JUnit XML report")
     parser.add_argument("--cov-xml", type=str, help="Generate coverage XML report")
     parser.add_argument("--all", action="store_true", help="Run all test types")
     parser.add_argument("--maxfail", type=int, default=5, help="Stop after N failures")
     parser.add_argument("--timeout", type=int, default=300, help="Test timeout in seconds")
+    parser.add_argument(
+        "extra_args", nargs="*", help="Additional paths, patterns, or pytest options"
+    )
 
     args = parser.parse_args()
+
+    # Parse mixed arguments (paths, patterns, pytest options)
+    extra_paths = []
+    extra_pytest_args = []
+
+    for arg in args.extra_args:
+        if arg.startswith("-"):
+            # Pytest option (e.g., -v, -s, --tb=short, -x)
+            extra_pytest_args.append(arg)
+        elif "/" in arg or arg.endswith(".py") or arg in ["tests", "unit", "integration", "e2e"]:
+            # Path or directory
+            extra_paths.append(arg)
+        else:
+            # Treat as keyword pattern
+            extra_pytest_args.extend(["-k", arg])
 
     # Base pytest command
     pytest_cmd = ["python", "-m", "pytest"]
@@ -87,7 +107,12 @@ def main():
     # Add coverage options
     if args.coverage or args.html_coverage or args.ci:
         pytest_cmd.extend(
-            ["--cov=src", "--cov-report=term-missing", "--cov-branch", "--no-cov-on-fail"]
+            [
+                "--cov=src",
+                "--cov-report=term-missing",
+                "--cov-branch",
+                "--no-cov-on-fail",
+            ]
         )
 
         if args.html_coverage:
@@ -106,7 +131,7 @@ def main():
 
     # Use centralized tool runner
     run_tool_script = "./dev-tools/scripts/run_tool.sh"
-    final_cmd = [run_tool_script] + pytest_cmd
+    final_cmd = [run_tool_script, *pytest_cmd]
     test_paths = []
     markers = []
 
@@ -130,7 +155,11 @@ def main():
     if args.markers:
         markers.append(args.markers)
 
-    # If no specific test type selected, run all
+    # Add extra paths from command line
+    if extra_paths:
+        test_paths.extend(extra_paths)
+
+    # If no specific test type selected and no extra paths, run default
     if not test_paths:
         test_paths = ["tests/"]
 
@@ -143,7 +172,7 @@ def main():
 
     # Add specific path if provided
     if args.path:
-        pytest_cmd = ["python", "-m", "pytest"] + [args.path]
+        pytest_cmd = ["python", "-m", "pytest", args.path]
         if args.verbose:
             pytest_cmd.append("-v")
         # Re-add markers for specific path
@@ -154,9 +183,13 @@ def main():
     if args.keyword:
         pytest_cmd.extend(["-k", args.keyword])
 
+    # Add extra pytest arguments from command line
+    if extra_pytest_args:
+        pytest_cmd.extend(extra_pytest_args)
+
     # Use centralized tool runner
     run_tool_script = "./dev-tools/scripts/run_tool.sh"
-    final_cmd = [run_tool_script] + pytest_cmd
+    final_cmd = [run_tool_script, *pytest_cmd]
 
     # Run the tests
     success = run_command(final_cmd, "Running Tests")

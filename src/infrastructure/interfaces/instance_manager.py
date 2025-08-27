@@ -1,7 +1,7 @@
 """Core instance manager interface - provider-agnostic instance management."""
 
 from enum import Enum
-from typing import Any, Dict, List, Optional, Protocol, runtime_checkable
+from typing import Any, Optional, Protocol, runtime_checkable
 
 from pydantic import BaseModel, ConfigDict
 
@@ -29,7 +29,7 @@ class InstanceSpec(BaseModel):
     count: int = 1
     tags: Optional[Tags] = None
     subnet_id: Optional[str] = None
-    security_group_ids: Optional[List[str]] = None
+    security_group_ids: Optional[list[str]] = None
     key_name: Optional[str] = None
     user_data: Optional[str] = None
 
@@ -52,7 +52,7 @@ class InstanceStatusResponse(BaseModel):
 
     model_config = ConfigDict(extra="allow")
 
-    instances: List[Instance]
+    instances: list[Instance]
     total_count: int
 
 
@@ -71,38 +71,38 @@ class InstanceConfig(BaseModel):
 class InstanceManagerPort(Protocol):
     """Interface for managing cloud instances."""
 
-    def launch_instances(self, config: InstanceConfig) -> List[InstanceId]:
+    def launch_instances(self, config: InstanceConfig) -> list[InstanceId]:
         """Launch cloud instances."""
         ...
 
-    def terminate_instances(self, instance_ids: List[InstanceId]) -> bool:
+    def terminate_instances(self, instance_ids: list[InstanceId]) -> bool:
         """Terminate cloud instances."""
         ...
 
-    def get_instance_status(self, instance_ids: List[InstanceId]) -> InstanceStatusResponse:
+    def get_instance_status(self, instance_ids: list[InstanceId]) -> InstanceStatusResponse:
         """Get status of specific instances."""
         ...
 
-    def create_instances(self, spec: InstanceSpec) -> List[Instance]:
+    def create_instances(self, spec: InstanceSpec) -> list[Instance]:
         """Create instances based on specification."""
         ...
 
-    def list_instances(self, filters: Optional[Dict[str, Any]] = None) -> List[Instance]:
+    def list_instances(self, filters: Optional[dict[str, Any]] = None) -> list[Instance]:
         """List instances with optional filters."""
         ...
 
-    def stop_instances(self, instance_ids: List[InstanceId]) -> bool:
+    def stop_instances(self, instance_ids: list[InstanceId]) -> bool:
         """Stop cloud instances (if supported by provider)."""
         ...
 
-    def start_instances(self, instance_ids: List[InstanceId]) -> bool:
+    def start_instances(self, instance_ids: list[InstanceId]) -> bool:
         """Start stopped cloud instances (if supported by provider)."""
         ...
 
-    def get_instance_details(self, instance_ids: List[InstanceId]) -> List[Dict[str, Any]]:
+    def get_instance_details(self, instance_ids: list[InstanceId]) -> list[dict[str, Any]]:
         """Get detailed information about cloud instances."""
         ...
 
-    def update_instance_tags(self, instance_ids: List[InstanceId], tags: Tags) -> bool:
+    def update_instance_tags(self, instance_ids: list[InstanceId], tags: Tags) -> bool:
         """Update tags on cloud instances."""
         ...

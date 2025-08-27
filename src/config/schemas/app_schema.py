@@ -1,7 +1,7 @@
 """Main application configuration schema."""
 
 import os
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
@@ -137,7 +137,7 @@ class AppConfig(BaseModel):
         return v
 
 
-def validate_config(config: Dict[str, Any]) -> AppConfig:
+def validate_config(config: dict[str, Any]) -> AppConfig:
     """
     Validate configuration.
 

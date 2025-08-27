@@ -1,6 +1,6 @@
 """AWS-specific exceptions."""
 
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from domain.base.exceptions import InfrastructureError
 
@@ -11,7 +11,7 @@ class AWSError(InfrastructureError):
     def __init__(
         self,
         message: str,
-        details: Optional[Dict[str, Any]] = None,
+        details: Optional[dict[str, Any]] = None,
         error_code: Optional[str] = None,
     ) -> None:
         """Initialize AWS exception.
@@ -24,9 +24,9 @@ class AWSError(InfrastructureError):
         super().__init__(message, error_code or self.__class__.__name__, details)
         self.error_code = error_code or self.__class__.__name__
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert error to dictionary."""
-        result: Dict[str, Any] = super().to_dict()
+        result: dict[str, Any] = super().to_dict()
         if self.error_code and self.error_code != self.__class__.__name__:
             result["error_code"] = self.error_code
         return result
@@ -77,7 +77,7 @@ class ResourceStateError(AWSError):
         resource_id: str,
         current_state: str,
         expected_states: list[str],
-        details: Optional[Dict[str, Any]] = None,
+        details: Optional[dict[str, Any]] = None,
     ) -> None:
         """Initialize resource state error.
 
@@ -109,8 +109,8 @@ class TaggingError(AWSError):
         self,
         message: str,
         resource_id: str,
-        tags: Dict[str, str],
-        details: Optional[Dict[str, Any]] = None,
+        tags: dict[str, str],
+        details: Optional[dict[str, Any]] = None,
     ) -> None:
         """Initialize resource tagging error.
 
@@ -135,8 +135,8 @@ class LaunchError(AWSError):
         self,
         message: str,
         template_id: str,
-        launch_params: Dict[str, Any],
-        details: Optional[Dict[str, Any]] = None,
+        launch_params: dict[str, Any],
+        details: Optional[dict[str, Any]] = None,
     ) -> None:
         """Initialize the instance."""
         super().__init__(
@@ -158,7 +158,7 @@ class TerminationError(AWSError):
         self,
         message: str,
         resource_ids: list[str],
-        details: Optional[Dict[str, Any]] = None,
+        details: Optional[dict[str, Any]] = None,
     ) -> None:
         super().__init__(message, details={"resource_ids": resource_ids, **(details or {})})
         self.resource_ids = resource_ids
@@ -167,7 +167,7 @@ class TerminationError(AWSError):
 class EC2InstanceNotFoundError(AWSEntityNotFoundError):
     """Raised when an EC2 instance cannot be found."""
 
-    def __init__(self, instance_id: str, details: Optional[Dict[str, Any]] = None) -> None:
+    def __init__(self, instance_id: str, details: Optional[dict[str, Any]] = None) -> None:
         super().__init__(
             f"EC2 instance not found: {instance_id}",
             details={"instance_id": instance_id, **(details or {})},
@@ -183,7 +183,7 @@ class ResourceCleanupError(AWSError):
         message: str,
         resource_id: str,
         resource_type: str,
-        details: Optional[Dict[str, Any]] = None,
+        details: Optional[dict[str, Any]] = None,
     ) -> None:
         super().__init__(
             message,
@@ -205,7 +205,7 @@ class LaunchTemplateError(LaunchError):
         message: str,
         template_id: str,
         operation: str,
-        details: Optional[Dict[str, Any]] = None,
+        details: Optional[dict[str, Any]] = None,
     ) -> None:
         super().__init__(message, template_id, {"operation": operation}, details)
         self.operation = operation
@@ -219,7 +219,7 @@ class FleetRequestError(LaunchError):
         message: str,
         fleet_type: str,
         request_id: Optional[str] = None,
-        details: Optional[Dict[str, Any]] = None,
+        details: Optional[dict[str, Any]] = None,
     ) -> None:
         super().__init__(message, fleet_type, {"request_id": request_id}, details)
         self.fleet_type = fleet_type
@@ -229,7 +229,7 @@ class FleetRequestError(LaunchError):
 class AMIValidationError(AWSValidationError):
     """Raised when there are issues validating an AMI."""
 
-    def __init__(self, message: str, ami_id: str, details: Optional[Dict[str, Any]] = None) -> None:
+    def __init__(self, message: str, ami_id: str, details: Optional[dict[str, Any]] = None) -> None:
         super().__init__(message, details={"ami_id": ami_id, **(details or {})})
         self.ami_id = ami_id
 
@@ -238,7 +238,7 @@ class SubnetValidationError(AWSValidationError):
     """Raised when there are issues validating a subnet."""
 
     def __init__(
-        self, message: str, subnet_id: str, details: Optional[Dict[str, Any]] = None
+        self, message: str, subnet_id: str, details: Optional[dict[str, Any]] = None
     ) -> None:
         super().__init__(message, details={"subnet_id": subnet_id, **(details or {})})
         self.subnet_id = subnet_id
@@ -251,7 +251,7 @@ class SecurityGroupValidationError(AWSValidationError):
         self,
         message: str,
         security_group_id: str,
-        details: Optional[Dict[str, Any]] = None,
+        details: Optional[dict[str, Any]] = None,
     ) -> None:
         super().__init__(
             message, details={"security_group_id": security_group_id, **(details or {})}
@@ -269,7 +269,7 @@ class ServiceQuotaError(QuotaExceededError):
         quota_name: str,
         current_value: int,
         quota_value: int,
-        details: Optional[Dict[str, Any]] = None,
+        details: Optional[dict[str, Any]] = None,
     ) -> None:
         super().__init__(
             message,
@@ -296,7 +296,7 @@ class CostExceededError(AWSError):
         threshold: float,
         current_cost: float,
         projected_cost: float,
-        details: Optional[Dict[str, Any]] = None,
+        details: Optional[dict[str, Any]] = None,
     ) -> None:
         super().__init__(
             message,
@@ -320,7 +320,7 @@ class IAMError(AWSError):
         message: str,
         role_arn: Optional[str] = None,
         permission: Optional[str] = None,
-        details: Optional[Dict[str, Any]] = None,
+        details: Optional[dict[str, Any]] = None,
     ) -> None:
         super().__init__(
             message,

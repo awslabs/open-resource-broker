@@ -48,6 +48,8 @@ Usage Example:
 """
 
 # Advanced strategy patterns
+from typing import Optional
+
 from .base_provider_strategy import BaseProviderStrategy
 from .composite_strategy import (
     AggregationPolicy,
@@ -99,42 +101,42 @@ from .provider_strategy import (
 
 # Public API exports
 __all__: list[str] = [
+    "AggregationPolicy",
     # Core interfaces
     "BaseProviderStrategy",
-    "ProviderStrategy",
-    "ProviderOperation",
-    "ProviderResult",
-    "ProviderCapabilities",
-    "ProviderHealthStatus",
-    "ProviderOperationType",
-    # Context management
-    "ProviderContext",
-    "StrategyMetrics",
-    # Selection algorithms
-    "ProviderSelector",
-    "SelectionPolicy",
-    "SelectionCriteria",
-    "SelectionResult",
-    "SelectorFactory",
-    "FirstAvailableSelector",
-    "RoundRobinSelector",
-    "PerformanceBasedSelector",
-    "RandomSelector",
+    "CircuitBreakerState",
+    "CircuitState",
     # Advanced strategies
     "CompositeProviderStrategy",
     "CompositionConfig",
     "CompositionMode",
-    "AggregationPolicy",
-    "StrategyExecutionResult",
-    "FallbackProviderStrategy",
     "FallbackConfig",
     "FallbackMode",
-    "CircuitState",
-    "CircuitBreakerState",
-    "LoadBalancingProviderStrategy",
-    "LoadBalancingConfig",
-    "LoadBalancingAlgorithm",
+    "FallbackProviderStrategy",
+    "FirstAvailableSelector",
     "HealthCheckMode",
+    "LoadBalancingAlgorithm",
+    "LoadBalancingConfig",
+    "LoadBalancingProviderStrategy",
+    "PerformanceBasedSelector",
+    "ProviderCapabilities",
+    # Context management
+    "ProviderContext",
+    "ProviderHealthStatus",
+    "ProviderOperation",
+    "ProviderOperationType",
+    "ProviderResult",
+    # Selection algorithms
+    "ProviderSelector",
+    "ProviderStrategy",
+    "RandomSelector",
+    "RoundRobinSelector",
+    "SelectionCriteria",
+    "SelectionPolicy",
+    "SelectionResult",
+    "SelectorFactory",
+    "StrategyExecutionResult",
+    "StrategyMetrics",
     "StrategyStats",
 ]
 
@@ -195,7 +197,9 @@ def create_provider_context(logger=None) -> ProviderContext:
             except Exception as e:
                 if logger:
                     logger.warning(
-                        "Failed to load strategy for provider instance %s: %s", instance_name, e
+                        "Failed to load strategy for provider instance %s: %s",
+                        instance_name,
+                        e,
                     )
 
     except Exception as e:
@@ -259,7 +263,7 @@ def create_fallback_strategy(
 
 def create_load_balancing_strategy(
     strategies: list,
-    weights: dict = None,
+    weights: Optional[dict] = None,
     config: LoadBalancingConfig = None,
     logger=None,
 ) -> LoadBalancingProviderStrategy:

@@ -50,33 +50,33 @@ from interface.template_command_handlers import (
 __all__: list[str] = [
     # Base handler
     "CLICommandHandler",
-    # Template handlers (function-based)
-    "handle_list_templates",
-    "handle_get_template",
-    "handle_validate_template",
+    "handle_execute_provider_operation",
     # Request handlers (function-based)
     "handle_get_request_status",
-    "handle_request_machines",
     "handle_get_return_requests",
-    "handle_request_return_machines",
-    # System handlers (function-based)
-    "handle_provider_health",
+    "handle_get_template",
     "handle_list_providers",
-    "handle_provider_config",
-    "handle_validate_provider_config",
-    "handle_reload_provider_config",
-    "handle_select_provider_strategy",
-    "handle_execute_provider_operation",
-    "handle_provider_metrics",
-    # Storage handlers (function-based)
-    "handle_list_storage_strategies",
-    "handle_show_storage_config",
-    "handle_validate_storage_config",
-    "handle_test_storage",
-    "handle_storage_health",
-    "handle_storage_metrics",
     # Scheduler handlers (function-based)
     "handle_list_scheduler_strategies",
+    # Storage handlers (function-based)
+    "handle_list_storage_strategies",
+    # Template handlers (function-based)
+    "handle_list_templates",
+    "handle_provider_config",
+    # System handlers (function-based)
+    "handle_provider_health",
+    "handle_provider_metrics",
+    "handle_reload_provider_config",
+    "handle_request_machines",
+    "handle_request_return_machines",
+    "handle_select_provider_strategy",
     "handle_show_scheduler_config",
+    "handle_show_storage_config",
+    "handle_storage_health",
+    "handle_storage_metrics",
+    "handle_test_storage",
+    "handle_validate_provider_config",
     "handle_validate_scheduler_config",
+    "handle_validate_storage_config",
+    "handle_validate_template",
 ]

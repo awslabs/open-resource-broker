@@ -6,7 +6,7 @@ following Clean Architecture and Single Responsibility Principle.
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from domain.base.ports import LoggingPort
 from domain.template.aggregate import Template
@@ -23,10 +23,10 @@ class ValidationResult:
 
     is_valid: bool
     provider_instance: str
-    errors: List[str]
-    warnings: List[str]
-    supported_features: List[str]
-    unsupported_features: List[str]
+    errors: list[str]
+    warnings: list[str]
+    supported_features: list[str]
+    unsupported_features: list[str]
 
     def __post_init__(self) -> None:
         if self.errors is None:
@@ -98,7 +98,9 @@ class ProviderCapabilityService:
             ValidationResult with detailed validation information
         """
         self._logger.info(
-            "Validating template %s against provider %s", template.template_id, provider_instance
+            "Validating template %s against provider %s",
+            template.template_id,
+            provider_instance,
         )
 
         result = ValidationResult(
@@ -148,7 +150,7 @@ class ProviderCapabilityService:
         except Exception as e:
             self._logger.error("Validation failed with exception: %s", str(e))
             result.is_valid = False
-            result.errors.append(f"Validation error: {str(e)}")
+            result.errors.append(f"Validation error: {e!s}")
 
         return result
 
@@ -236,7 +238,7 @@ class ProviderCapabilityService:
         supported_apis = capabilities.get_feature("supported_apis", [])
         if template.provider_api not in supported_apis:
             result.errors.append(
-                f"Provider does not support API '{ template.provider_api}'. Supported APIs: {supported_apis}"
+                f"Provider does not support API '{template.provider_api}'. Supported APIs: {supported_apis}"
             )
         else:
             result.supported_features.append(f"API: {template.provider_api}")
@@ -266,7 +268,7 @@ class ProviderCapabilityService:
         elif price_type == "ondemand":
             if not api_caps.get("supports_on_demand", True):
                 result.errors.append(
-                    f"API '{ template.provider_api}' does not support on-demand instances"
+                    f"API '{template.provider_api}' does not support on-demand instances"
                 )
             else:
                 result.supported_features.append("Pricing: On-demand instances")
@@ -296,7 +298,7 @@ class ProviderCapabilityService:
 
         if supported_fleet_types and fleet_type not in supported_fleet_types:
             result.errors.append(
-                f"API '{ template.provider_api}' does not support fleet type '{fleet_type}'. Supported types: {supported_fleet_types}"
+                f"API '{template.provider_api}' does not support fleet type '{fleet_type}'. Supported types: {supported_fleet_types}"
             )
         elif supported_fleet_types:
             result.supported_features.append(f"Fleet type: {fleet_type}")
@@ -317,14 +319,14 @@ class ProviderCapabilityService:
 
         if template.max_instances > max_instances:
             result.errors.append(
-                f"Requested { template.max_instances} instances exceeds API limit of {max_instances}"
+                f"Requested {template.max_instances} instances exceeds API limit of {max_instances}"
             )
         else:
             result.supported_features.append(
                 f"Instance count: {template.max_instances} (within limit)"
             )
 
-    def get_provider_api_capabilities(self, provider_instance: str, api: str) -> Dict[str, Any]:
+    def get_provider_api_capabilities(self, provider_instance: str, api: str) -> dict[str, Any]:
         """Get detailed capabilities for specific provider API."""
         capabilities = self._get_provider_capabilities(provider_instance)
         if not capabilities:
@@ -333,7 +335,7 @@ class ProviderCapabilityService:
         api_capabilities = capabilities.get_feature("api_capabilities", {})
         return api_capabilities.get(api, {})
 
-    def list_supported_apis(self, provider_instance: str) -> List[str]:
+    def list_supported_apis(self, provider_instance: str) -> list[str]:
         """List all APIs supported by provider instance."""
         capabilities = self._get_provider_capabilities(provider_instance)
         if not capabilities:
@@ -342,8 +344,8 @@ class ProviderCapabilityService:
         return capabilities.get_feature("supported_apis", [])
 
     def check_api_compatibility(
-        self, template: Template, provider_instances: List[str]
-    ) -> Dict[str, ValidationResult]:
+        self, template: Template, provider_instances: list[str]
+    ) -> dict[str, ValidationResult]:
         """Check template compatibility across multiple provider instances."""
         results = {}
 

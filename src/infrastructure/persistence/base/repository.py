@@ -1,6 +1,6 @@
 """Base repository interfaces and implementations."""
 
-from typing import Any, Dict, Generic, List, Optional, TypeVar
+from typing import Any, Generic, Optional, TypeVar
 
 from pydantic import ValidationError as PydanticValidationError
 
@@ -26,8 +26,8 @@ class StrategyBasedRepository(Repository[T], Generic[T]):
         """
         self.entity_class = entity_class
         self.storage_strategy = storage_strategy
-        self._cache: Dict[str, T] = {}
-        self._version_map: Dict[str, int] = {}
+        self._cache: dict[str, T] = {}
+        self._version_map: dict[str, int] = {}
         self.logger = get_logger(__name__)
 
     def _get_entity_id(self, entity: Any) -> str:
@@ -49,7 +49,7 @@ class StrategyBasedRepository(Repository[T], Generic[T]):
         else:
             raise ValueError(f"Cannot determine ID for entity: {entity}")
 
-    def _to_dict(self, entity: Any) -> Dict[str, Any]:
+    def _to_dict(self, entity: Any) -> dict[str, Any]:
         """
         Convert entity to dictionary.
 
@@ -88,7 +88,7 @@ class StrategyBasedRepository(Repository[T], Generic[T]):
 
             return process_value_objects(data)
 
-    def _from_dict(self, entity_dict: Dict[str, Any]) -> T:
+    def _from_dict(self, entity_dict: dict[str, Any]) -> T:
         """
         Convert dictionary to entity.
 
@@ -258,7 +258,7 @@ class StrategyBasedRepository(Repository[T], Generic[T]):
 
         return entity
 
-    def find_all(self) -> List[Any]:
+    def find_all(self) -> list[Any]:
         """
         Find all entities.
 
@@ -300,7 +300,7 @@ class StrategyBasedRepository(Repository[T], Generic[T]):
 
         return entities
 
-    def _get_entity_id_from_dict(self, data: Dict[str, Any]) -> str:
+    def _get_entity_id_from_dict(self, data: dict[str, Any]) -> str:
         """
         Get entity ID from dictionary.
 
@@ -369,7 +369,7 @@ class StrategyBasedRepository(Repository[T], Generic[T]):
         # Check storage
         return self.storage_strategy.exists(entity_id_str)
 
-    def find_by_criteria(self, criteria: Dict[str, Any]) -> List[Any]:
+    def find_by_criteria(self, criteria: dict[str, Any]) -> list[Any]:
         """
         Find entities by criteria.
 
@@ -414,7 +414,7 @@ class StrategyBasedRepository(Repository[T], Generic[T]):
 
         return entities
 
-    def save_batch(self, entities: List[T]) -> None:
+    def save_batch(self, entities: list[T]) -> None:
         """
         Save multiple entities in a single operation.
 
@@ -460,13 +460,15 @@ class StrategyBasedRepository(Repository[T], Generic[T]):
                 self.storage_strategy.save_batch(entity_batch)
 
                 self.logger.debug(
-                    "Saved batch of %s %s entities", len(entity_batch), self.entity_class.__name__
+                    "Saved batch of %s %s entities",
+                    len(entity_batch),
+                    self.entity_class.__name__,
                 )
         except PydanticValidationError as e:
             # Convert Pydantic validation error to ValueError
             raise ValueError(f"Validation error: {e}")
 
-    def delete_batch(self, entity_ids: List[Any]) -> None:
+    def delete_batch(self, entity_ids: list[Any]) -> None:
         """
         Delete multiple entities in a single operation.
 
@@ -495,7 +497,9 @@ class StrategyBasedRepository(Repository[T], Generic[T]):
                 del self._version_map[entity_id_str]
 
         self.logger.debug(
-            "Deleted batch of %s %s entities", len(entity_id_strs), self.entity_class.__name__
+            "Deleted batch of %s %s entities",
+            len(entity_id_strs),
+            self.entity_class.__name__,
         )
 
     def clear_cache(self) -> None:

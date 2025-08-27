@@ -1,7 +1,7 @@
 """Request aggregate - core request domain logic."""
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from pydantic import ConfigDict, Field
 
@@ -41,7 +41,7 @@ class Request(AggregateRoot):
 
     # Resource tracking (what was created)
     # Provider resource identifiers
-    resource_ids: List[str] = Field(default_factory=list)
+    resource_ids: list[str] = Field(default_factory=list)
 
     # Request state
     status: RequestStatus = Field(default=RequestStatus.PENDING)
@@ -51,7 +51,7 @@ class Request(AggregateRoot):
     message: Optional[str] = None
 
     # Results
-    instance_ids: List[InstanceId] = Field(default_factory=list)
+    instance_ids: list[InstanceId] = Field(default_factory=list)
     successful_count: int = 0
     failed_count: int = 0
 
@@ -61,11 +61,11 @@ class Request(AggregateRoot):
     completed_at: Optional[datetime] = None
 
     # Request metadata
-    metadata: Dict[str, Any] = Field(default_factory=dict)
-    error_details: Dict[str, Any] = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)
+    error_details: dict[str, Any] = Field(default_factory=dict)
 
     # Provider-specific data
-    provider_data: Dict[str, Any] = Field(default_factory=dict)
+    provider_data: dict[str, Any] = Field(default_factory=dict)
 
     # Versioning
     version: int = Field(default=0)
@@ -113,7 +113,7 @@ class Request(AggregateRoot):
     def add_instance(self, instance_id: InstanceId) -> "Request":
         """Add a successfully created instance."""
         data = self.model_dump()
-        data["instance_ids"] = self.instance_ids + [instance_id]
+        data["instance_ids"] = [*self.instance_ids, instance_id]
         data["successful_count"] = self.successful_count + 1
         data["version"] = self.version + 1
 
@@ -127,7 +127,7 @@ class Request(AggregateRoot):
         return Request.model_validate(data)
 
     def add_failure(
-        self, error_message: str, error_details: Optional[Dict[str, Any]] = None
+        self, error_message: str, error_details: Optional[dict[str, Any]] = None
     ) -> "Request":
         """Add a failed instance creation."""
         data = self.model_dump()
@@ -201,7 +201,7 @@ class Request(AggregateRoot):
 
         return updated_request
 
-    def fail(self, error_message: str, error_details: Optional[Dict[str, Any]] = None) -> "Request":
+    def fail(self, error_message: str, error_details: Optional[dict[str, Any]] = None) -> "Request":
         """Mark request as failed."""
         data = self.model_dump()
         data["status"] = RequestStatus.FAILED
@@ -214,7 +214,7 @@ class Request(AggregateRoot):
 
         return Request.model_validate(data)
 
-    def set_provider_data(self, provider_data: Dict[str, Any]) -> "Request":
+    def set_provider_data(self, provider_data: dict[str, Any]) -> "Request":
         """Set provider-specific data."""
         data = self.model_dump()
         data["provider_data"] = provider_data
@@ -229,7 +229,7 @@ class Request(AggregateRoot):
         """Add a provider resource ID"""
         if resource_id not in self.resource_ids:
             data = self.model_dump()
-            data["resource_ids"] = self.resource_ids + [resource_id]
+            data["resource_ids"] = [*self.resource_ids, resource_id]
             data["version"] = self.version + 1
             return Request.model_validate(data)
         return self
@@ -274,7 +274,7 @@ class Request(AggregateRoot):
             return int((datetime.utcnow() - self.started_at).total_seconds())
         return None
 
-    def to_provider_format(self, provider_type: str) -> Dict[str, Any]:
+    def to_provider_format(self, provider_type: str) -> dict[str, Any]:
         """Convert request to provider-specific format."""
         base_format = {
             "request_id": self.request_id,
@@ -310,7 +310,7 @@ class Request(AggregateRoot):
         machine_count: int,
         provider_type: str,  # Provider type must be explicitly specified
         provider_instance: Optional[str] = None,  # Specific provider instance
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: Optional[dict[str, Any]] = None,
     ) -> "Request":
         """
         Create a new request with domain event generation.
@@ -364,8 +364,8 @@ class Request(AggregateRoot):
     @classmethod
     def create_return_request(
         cls,
-        machine_refs: List[Dict[str, Any]],
-        metadata: Optional[Dict[str, Any]] = None,
+        machine_refs: list[dict[str, Any]],
+        metadata: Optional[dict[str, Any]] = None,
     ) -> "Request":
         """
         Create a return/terminate request.
@@ -416,7 +416,7 @@ class Request(AggregateRoot):
         return request
 
     @classmethod
-    def from_provider_format(cls, data: Dict[str, Any], provider_type: str) -> "Request":
+    def from_provider_format(cls, data: dict[str, Any], provider_type: str) -> "Request":
         """Create request from provider-specific format."""
         core_data = {
             "request_id": data.get("request_id"),
@@ -439,14 +439,14 @@ class Request(AggregateRoot):
         }
 
         # Handle optional timestamps
-        if "started_at" in data and data["started_at"]:
+        if data.get("started_at"):
             core_data["started_at"] = datetime.fromisoformat(data["started_at"])
-        if "completed_at" in data and data["completed_at"]:
+        if data.get("completed_at"):
             core_data["completed_at"] = datetime.fromisoformat(data["completed_at"])
 
         return cls.model_validate(core_data)
 
-    def update_with_provisioning_result(self, provisioning_result: Dict[str, Any]) -> "Request":
+    def update_with_provisioning_result(self, provisioning_result: dict[str, Any]) -> "Request":
         """
         Update request with provider provisioning results.
 

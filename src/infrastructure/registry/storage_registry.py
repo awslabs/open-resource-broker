@@ -1,7 +1,7 @@
 """Storage Registry - Registry pattern for storage strategy factories."""
 
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Optional
 
 from domain.base.exceptions import ConfigurationError
 
@@ -20,7 +20,7 @@ class StorageFactoryInterface(ABC):
         """Create a storage strategy."""
 
     @abstractmethod
-    def create_config(self, data: Dict[str, Any]) -> Any:
+    def create_config(self, data: dict[str, Any]) -> Any:
         """Create a storage configuration."""
 
 
@@ -119,7 +119,7 @@ class StorageRegistry(BaseRegistry):
         except ValueError as e:
             raise UnsupportedStorageError(str(e))
 
-    def create_config(self, storage_type: str, data: Dict[str, Any]) -> Any:
+    def create_config(self, storage_type: str, data: dict[str, Any]) -> Any:
         """
         Create a storage configuration for the given type and data.
 
@@ -141,7 +141,7 @@ class StorageRegistry(BaseRegistry):
         except ValueError as e:
             raise UnsupportedStorageError(str(e))
         except Exception as e:
-            error_msg = f"Failed to create config for storage type '{storage_type}': {str(e)}"
+            error_msg = f"Failed to create config for storage type '{storage_type}': {e!s}"
             self.logger.error(error_msg)
             raise ConfigurationError(error_msg)
 
@@ -157,7 +157,7 @@ class StorageRegistry(BaseRegistry):
         """
         return self.create_additional_component(storage_type, "unit_of_work_factory")
 
-    def get_registered_storage_types(self) -> List[str]:
+    def get_registered_storage_types(self) -> list[str]:
         """Get list of registered storage types - backward compatibility method."""
         return self.get_registered_types()
 

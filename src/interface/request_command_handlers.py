@@ -1,6 +1,6 @@
 """Request-related command handlers for the interface layer."""
 
-from typing import TYPE_CHECKING, Any, Dict
+from typing import TYPE_CHECKING, Any
 
 from domain.base.ports.scheduler_port import SchedulerPort
 from infrastructure.di.buses import CommandBus, QueryBus
@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 
 @handle_interface_exceptions(context="get_request_status", interface_type="cli")
-async def handle_get_request_status(args: "argparse.Namespace") -> Dict[str, Any]:
+async def handle_get_request_status(args: "argparse.Namespace") -> dict[str, Any]:
     """
     Handle get request status operations.
 
@@ -66,7 +66,7 @@ async def handle_get_request_status(args: "argparse.Namespace") -> Dict[str, Any
 
 
 @handle_interface_exceptions(context="request_machines", interface_type="cli")
-async def handle_request_machines(args: "argparse.Namespace") -> Dict[str, Any]:
+async def handle_request_machines(args: "argparse.Namespace") -> dict[str, Any]:
     """
     Handle request machines operations.
 
@@ -162,7 +162,7 @@ async def handle_request_machines(args: "argparse.Namespace") -> Dict[str, Any]:
 
 
 @handle_interface_exceptions(context="get_return_requests", interface_type="cli")
-async def handle_get_return_requests(args: "argparse.Namespace") -> Dict[str, Any]:
+async def handle_get_return_requests(args: "argparse.Namespace") -> dict[str, Any]:
     """
     Handle get return requests operations.
 
@@ -189,7 +189,7 @@ async def handle_get_return_requests(args: "argparse.Namespace") -> Dict[str, An
 
 
 @handle_interface_exceptions(context="request_return_machines", interface_type="cli")
-async def handle_request_return_machines(args: "argparse.Namespace") -> Dict[str, Any]:
+async def handle_request_return_machines(args: "argparse.Namespace") -> dict[str, Any]:
     """
     Handle request return machines operations.
 

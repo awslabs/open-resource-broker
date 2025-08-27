@@ -12,7 +12,7 @@ Clean Architecture Compliance:
 """
 
 import importlib
-from typing import TYPE_CHECKING, Dict, Optional, Type
+from typing import TYPE_CHECKING, Optional
 
 # Domain imports (Clean Architecture compliant)
 from domain.base.dependency_injection import injectable
@@ -36,10 +36,10 @@ class APIHandlerFactory:
     This maintains Clean Architecture by avoiding Infrastructure -> Interface dependencies.
     """
 
-    _handlers: Dict[str, Type] = {}
+    _handlers: dict[str, type] = {}
 
     @classmethod
-    def register_handler(cls, name: str, handler_class: Type) -> None:
+    def register_handler(cls, name: str, handler_class: type) -> None:
         """
         Register a handler class.
 
@@ -73,7 +73,7 @@ class APIHandlerFactory:
             if name not in cls._handlers:
                 available_handlers = list(cls._handlers.keys())
                 raise ValueError(
-                    f"Handler not found: {name}. " f"Available handlers: {available_handlers}"
+                    f"Handler not found: {name}. Available handlers: {available_handlers}"
                 )
 
         handler_class = cls._handlers[name]
@@ -136,7 +136,7 @@ class APIHandlerFactory:
                 logger.warning("Failed to dynamically load handler %s: %s", name, e)
 
     @classmethod
-    def get_registered_handlers(cls) -> Dict[str, Type]:
+    def get_registered_handlers(cls) -> dict[str, type]:
         """
         Get all registered handlers.
 

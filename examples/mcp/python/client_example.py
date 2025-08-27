@@ -5,9 +5,10 @@ Example Python MCP client for Open Host Factory Plugin.
 This example demonstrates how to connect to the MCP server and perform
 common infrastructure provisioning tasks.
 """
+
 import asyncio
 import logging
-from typing import Any, Dict
+from typing import Any, Optional
 
 # Note: Install mcp package: pip install mcp
 from mcp import ClientSession, StdioServerParameters
@@ -36,35 +37,37 @@ class HostFactoryMCPClient:
         if self.session:
             await self.session.__aexit__(exc_type, exc_val, exc_tb)
 
-    async def initialize(self) -> Dict[str, Any]:
+    async def initialize(self) -> dict[str, Any]:
         """Initialize the MCP session."""
         logger.info("Initializing MCP session...")
         result = await self.session.initialize()
         logger.info(f"Session initialized: {result}")
         return result
 
-    async def list_tools(self) -> Dict[str, Any]:
+    async def list_tools(self) -> dict[str, Any]:
         """List available tools."""
         logger.info("Listing available tools...")
         tools = await self.session.list_tools()
         logger.info(f"Found {len(tools)} tools")
         return tools
 
-    async def list_resources(self) -> Dict[str, Any]:
+    async def list_resources(self) -> dict[str, Any]:
         """List available resources."""
         logger.info("Listing available resources...")
         resources = await self.session.list_resources()
         logger.info(f"Found {len(resources)} resources")
         return resources
 
-    async def list_prompts(self) -> Dict[str, Any]:
+    async def list_prompts(self) -> dict[str, Any]:
         """List available prompts."""
         logger.info("Listing available prompts...")
         prompts = await self.session.list_prompts()
         logger.info(f"Found {len(prompts)} prompts")
         return prompts
 
-    async def call_tool(self, name: str, arguments: Dict[str, Any] = None) -> Dict[str, Any]:
+    async def call_tool(
+        self, name: str, arguments: Optional[dict[str, Any]] = None
+    ) -> dict[str, Any]:
         """Call a specific tool."""
         if arguments is None:
             arguments = {}
@@ -74,14 +77,16 @@ class HostFactoryMCPClient:
         logger.info(f"Tool result: {result}")
         return result
 
-    async def read_resource(self, uri: str) -> Dict[str, Any]:
+    async def read_resource(self, uri: str) -> dict[str, Any]:
         """Read a specific resource."""
         logger.info(f"Reading resource: {uri}")
         result = await self.session.read_resource(uri)
         logger.info(f"Resource content: {result}")
         return result
 
-    async def get_prompt(self, name: str, arguments: Dict[str, Any] = None) -> Dict[str, Any]:
+    async def get_prompt(
+        self, name: str, arguments: Optional[dict[str, Any]] = None
+    ) -> dict[str, Any]:
         """Get a specific prompt."""
         if arguments is None:
             arguments = {}

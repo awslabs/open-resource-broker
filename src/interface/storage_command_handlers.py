@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any
 
 from domain.base.ports.scheduler_port import SchedulerPort
 from infrastructure.di.buses import CommandBus, QueryBus
@@ -11,7 +11,7 @@ from infrastructure.error.decorators import handle_interface_exceptions
 
 
 @handle_interface_exceptions(context="list_storage_strategies", interface_type="cli")
-async def handle_list_storage_strategies(args) -> Dict[str, Any]:
+async def handle_list_storage_strategies(args) -> dict[str, Any]:
     """Handle list storage strategies operations."""
     container = get_container()
     query_bus = container.get(QueryBus)
@@ -31,7 +31,7 @@ async def handle_list_storage_strategies(args) -> Dict[str, Any]:
 
 
 @handle_interface_exceptions(context="show_storage_config", interface_type="cli")
-async def handle_show_storage_config(args) -> Dict[str, Any]:
+async def handle_show_storage_config(args) -> dict[str, Any]:
     """
     Handle show storage configuration operations.
 
@@ -53,7 +53,7 @@ async def handle_show_storage_config(args) -> Dict[str, Any]:
 
 
 @handle_interface_exceptions(context="validate_storage_config", interface_type="cli")
-async def handle_validate_storage_config(args) -> Dict[str, Any]:
+async def handle_validate_storage_config(args) -> dict[str, Any]:
     """
     Handle validate storage configuration operations.
 
@@ -78,7 +78,7 @@ async def handle_validate_storage_config(args) -> Dict[str, Any]:
 
 
 @handle_interface_exceptions(context="test_storage", interface_type="cli")
-async def handle_test_storage(args) -> Dict[str, Any]:
+async def handle_test_storage(args) -> dict[str, Any]:
     """
     Handle test storage operations.
 
@@ -100,7 +100,7 @@ async def handle_test_storage(args) -> Dict[str, Any]:
 
 
 @handle_interface_exceptions(context="storage_health", interface_type="cli")
-async def handle_storage_health(args) -> Dict[str, Any]:
+async def handle_storage_health(args) -> dict[str, Any]:
     """
     Handle storage health operations.
 
@@ -122,7 +122,7 @@ async def handle_storage_health(args) -> Dict[str, Any]:
 
 
 @handle_interface_exceptions(context="storage_metrics", interface_type="cli")
-async def handle_storage_metrics(args) -> Dict[str, Any]:
+async def handle_storage_metrics(args) -> dict[str, Any]:
     """
     Handle storage metrics operations.
 

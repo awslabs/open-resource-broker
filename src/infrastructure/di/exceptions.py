@@ -1,6 +1,6 @@
 """Dependency injection exceptions."""
 
-from typing import Optional, Type
+from typing import Optional
 
 
 class DIError(Exception):
@@ -12,9 +12,9 @@ class DependencyResolutionError(DIError):
 
     def __init__(
         self,
-        dependency_type: Type,
+        dependency_type: type,
         message: str,
-        parent_type: Optional[Type] = None,
+        parent_type: Optional[type] = None,
         parameter_name: Optional[str] = None,
         cause: Optional[Exception] = None,
     ) -> None:
@@ -58,8 +58,8 @@ class UnregisteredDependencyError(DependencyResolutionError):
 
     def __init__(
         self,
-        dependency_type: Type,
-        parent_type: Optional[Type] = None,
+        dependency_type: type,
+        parent_type: Optional[type] = None,
         parameter_name: Optional[str] = None,
     ) -> None:
         """
@@ -77,7 +77,7 @@ class UnregisteredDependencyError(DependencyResolutionError):
 class UntypedParameterError(DependencyResolutionError):
     """Error raised when a parameter has no type annotation."""
 
-    def __init__(self, parent_type: Type, parameter_name: str) -> None:
+    def __init__(self, parent_type: type, parameter_name: str) -> None:
         """
         Initialize untyped parameter error.
 
@@ -93,7 +93,7 @@ class UntypedParameterError(DependencyResolutionError):
 class CircularDependencyError(DependencyResolutionError):
     """Error raised when a circular dependency is detected."""
 
-    def __init__(self, dependency_chain: list[Type]) -> None:
+    def __init__(self, dependency_chain: list[type]) -> None:
         """
         Initialize circular dependency error.
 
@@ -118,9 +118,9 @@ class InstantiationError(DependencyResolutionError):
 
     def __init__(
         self,
-        dependency_type: Type,
+        dependency_type: type,
         message: str,
-        parent_type: Optional[Type] = None,
+        parent_type: Optional[type] = None,
         cause: Optional[Exception] = None,
     ) -> None:
         """
@@ -139,7 +139,7 @@ class FactoryError(DependencyResolutionError):
     """Error raised when a factory function fails to create a dependency."""
 
     def __init__(
-        self, dependency_type: Type, message: str, cause: Optional[Exception] = None
+        self, dependency_type: type, message: str, cause: Optional[Exception] = None
     ) -> None:
         """
         Initialize factory error.

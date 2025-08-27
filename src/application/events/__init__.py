@@ -40,19 +40,19 @@ from .handlers import (
 )
 
 __all__: list[str] = [
+    "ActionEventHandler",
     # Core components
     "EventBus",
-    "event_handler",
-    "EventHandlerRegistry",
     # Base classes
     "EventHandler",
+    "EventHandlerRegistry",
     "LoggingEventHandler",
-    "ActionEventHandler",
+    "event_handler",
+    "infrastructure_handlers",
     # Handler modules (imported for registration)
     "machine_handlers",
     "request_handlers",
     "system_handlers",
-    "infrastructure_handlers",
     "template_handlers",
 ]
 

@@ -6,7 +6,7 @@ import time
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Optional
 
 from botocore.exceptions import ClientError
 
@@ -23,11 +23,11 @@ class HealthStatus:
 
     name: str
     status: str  # 'healthy', 'degraded', 'unhealthy'
-    details: Dict[str, Any]
+    details: dict[str, Any]
     timestamp: datetime = field(default_factory=datetime.utcnow)
-    dependencies: List[str] = field(default_factory=list)
+    dependencies: list[str] = field(default_factory=list)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert health status to dictionary."""
         return {
             "name": self.name,
@@ -47,8 +47,8 @@ class HealthCheck:
         """Initialize health check."""
         self.config = config.get_config()
         self.aws_client = aws_client
-        self.checks: Dict[str, Callable[[], HealthStatus]] = {}
-        self.status_history: Dict[str, List[HealthStatus]] = {}
+        self.checks: dict[str, Callable[[], HealthStatus]] = {}
+        self.status_history: dict[str, list[HealthStatus]] = {}
         self._lock = threading.Lock()
 
         # Create health check directory
@@ -107,14 +107,14 @@ class HealthCheck:
                 dependencies=[],
             )
 
-    def run_all_checks(self) -> Dict[str, HealthStatus]:
+    def run_all_checks(self) -> dict[str, HealthStatus]:
         """Run all registered health checks."""
         results = {}
         for name in self.checks:
             results[name] = self.run_check(name)
         return results
 
-    def get_status(self, name: Optional[str] = None) -> Dict[str, Any]:
+    def get_status(self, name: Optional[str] = None) -> dict[str, Any]:
         """Get health check status."""
         with self._lock:
             if name:
@@ -162,7 +162,7 @@ class HealthCheck:
         thread = threading.Thread(target=check_health, daemon=True)
         thread.start()
 
-    def _check_alerts(self, results: Dict[str, HealthStatus]) -> None:
+    def _check_alerts(self, results: dict[str, HealthStatus]) -> None:
         """Check health status for alerts."""
         alerts = []
         for name, status in results.items():

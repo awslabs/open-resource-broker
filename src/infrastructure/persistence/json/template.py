@@ -2,7 +2,7 @@
 
 import json
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from config.managers.configuration_manager import ConfigurationManager
 from domain.base.exceptions import ConfigurationError
@@ -53,10 +53,12 @@ class TemplateJSONStorageStrategy(JSONStorageStrategy):
             self.logger.info("Found only templates.json: %s", self.file_path)
         else:
             self.logger.warning(
-                "No template files found at %s or %s", self.file_path, self.legacy_file_path
+                "No template files found at %s or %s",
+                self.file_path,
+                self.legacy_file_path,
             )
 
-    def find_by_id(self, entity_id: str) -> Optional[Dict[str, Any]]:
+    def find_by_id(self, entity_id: str) -> Optional[dict[str, Any]]:
         """
         Find entity by ID, checking both main and legacy files.
 
@@ -74,7 +76,7 @@ class TemplateJSONStorageStrategy(JSONStorageStrategy):
         # Then check legacy file if it exists
         if self.legacy_file_path and os.path.exists(self.legacy_file_path):
             try:
-                with open(self.legacy_file_path, "r", encoding="utf-8") as f:
+                with open(self.legacy_file_path, encoding="utf-8") as f:
                     legacy_data = json.load(f)
 
                 if isinstance(legacy_data, list):
@@ -86,12 +88,14 @@ class TemplateJSONStorageStrategy(JSONStorageStrategy):
 
             except Exception as e:
                 self.logger.error(
-                    "Error reading legacy templates file %s: %s", self.legacy_file_path, e
+                    "Error reading legacy templates file %s: %s",
+                    self.legacy_file_path,
+                    e,
                 )
 
         return None
 
-    def find_all(self) -> List[Dict[str, Any]]:
+    def find_all(self) -> list[dict[str, Any]]:
         """
         Find all entities from both main and legacy files.
 
@@ -103,7 +107,7 @@ class TemplateJSONStorageStrategy(JSONStorageStrategy):
         # Load from legacy file first (lower priority)
         if self.legacy_file_path and os.path.exists(self.legacy_file_path):
             try:
-                with open(self.legacy_file_path, "r", encoding="utf-8") as f:
+                with open(self.legacy_file_path, encoding="utf-8") as f:
                     legacy_data = json.load(f)
 
                 if isinstance(legacy_data, list):
@@ -118,7 +122,9 @@ class TemplateJSONStorageStrategy(JSONStorageStrategy):
 
             except Exception as e:
                 self.logger.error(
-                    "Error reading legacy templates file %s: %s", self.legacy_file_path, e
+                    "Error reading legacy templates file %s: %s",
+                    self.legacy_file_path,
+                    e,
                 )
 
         # Load from main file (higher priority, will override legacy)
@@ -185,12 +191,14 @@ class TemplateJSONRepository(StrategyBasedRepository, TemplateRepository):
                 return self._data_to_aggregate(template_data)
             except Exception as e:
                 self.logger.error(
-                    "Error converting template data to aggregate for '%s': %s", template_id, e
+                    "Error converting template data to aggregate for '%s': %s",
+                    template_id,
+                    e,
                 )
                 return None
         return None
 
-    def find_all(self) -> List[Template]:
+    def find_all(self) -> list[Template]:
         """
         Find all templates.
 
@@ -207,7 +215,9 @@ class TemplateJSONRepository(StrategyBasedRepository, TemplateRepository):
             except Exception as e:
                 template_id = template_data.get("template_id", "unknown")
                 self.logger.error(
-                    "Error converting template data to aggregate for '%s': %s", template_id, e
+                    "Error converting template data to aggregate for '%s': %s",
+                    template_id,
+                    e,
                 )
                 continue
 
@@ -235,7 +245,7 @@ class TemplateJSONRepository(StrategyBasedRepository, TemplateRepository):
         """
         return self.strategy.delete(template_id)
 
-    def find_by_provider_type(self, provider_type: str) -> List[Template]:
+    def find_by_provider_type(self, provider_type: str) -> list[Template]:
         """
         Find templates by provider type.
 
@@ -248,7 +258,7 @@ class TemplateJSONRepository(StrategyBasedRepository, TemplateRepository):
         all_templates = self.find_all()
         return [template for template in all_templates if template.provider_type == provider_type]
 
-    def find_by_provider_name(self, provider_name: str) -> List[Template]:
+    def find_by_provider_name(self, provider_name: str) -> list[Template]:
         """
         Find templates by provider name/instance.
 
@@ -261,7 +271,7 @@ class TemplateJSONRepository(StrategyBasedRepository, TemplateRepository):
         all_templates = self.find_all()
         return [template for template in all_templates if template.provider_name == provider_name]
 
-    def get_template_source_info(self, template_id: str) -> Optional[Dict[str, Any]]:
+    def get_template_source_info(self, template_id: str) -> Optional[dict[str, Any]]:
         """
         Get information about which file a template was loaded from.
 
@@ -281,7 +291,7 @@ class TemplateJSONRepository(StrategyBasedRepository, TemplateRepository):
             self.strategy.refresh_cache()
             self.logger.info("Refreshed template cache")
 
-    def _data_to_aggregate(self, data: Dict[str, Any]) -> Template:
+    def _data_to_aggregate(self, data: dict[str, Any]) -> Template:
         """
         Convert template data to Template aggregate.
 
@@ -326,7 +336,7 @@ class TemplateJSONRepository(StrategyBasedRepository, TemplateRepository):
             is_active=data.get("is_active", True),
         )
 
-    def _aggregate_to_data(self, template: Template) -> Dict[str, Any]:
+    def _aggregate_to_data(self, template: Template) -> dict[str, Any]:
         """
         Convert Template aggregate to data dictionary.
 

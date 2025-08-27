@@ -1,7 +1,7 @@
 """SQL connection management components for SQL storage operations."""
 
 from contextlib import contextmanager
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from sqlalchemy import Engine, create_engine, text
 from sqlalchemy.orm import sessionmaker
@@ -17,7 +17,7 @@ class SQLConnectionManager(ResourceManager):
     Handles database connections, connection pooling, and session management.
     """
 
-    def __init__(self, config: Dict[str, Any]) -> None:
+    def __init__(self, config: dict[str, Any]) -> None:
         """
         Initialize SQL connection manager.
 
@@ -59,7 +59,7 @@ class SQLConnectionManager(ResourceManager):
             self.logger.error("Health check failed: %s", e)
             return False
 
-    def get_connection_info(self) -> Dict[str, Any]:
+    def get_connection_info(self) -> dict[str, Any]:
         """Get SQL connection information."""
         info = {
             "type": "sql",
@@ -183,7 +183,7 @@ class SQLConnectionManager(ResourceManager):
         finally:
             connection.close()
 
-    def execute_query(self, query: str, params: Optional[Dict[str, Any]] = None) -> Any:
+    def execute_query(self, query: str, params: Optional[dict[str, Any]] = None) -> Any:
         """
         Execute raw SQL query.
 
@@ -206,7 +206,7 @@ class SQLConnectionManager(ResourceManager):
                 # For DDL/DML queries, just return None
                 return None
 
-    def create_tables(self, table_definitions: Dict[str, str]) -> None:
+    def create_tables(self, table_definitions: dict[str, str]) -> None:
         """
         Create tables from definitions.
 
@@ -220,7 +220,9 @@ class SQLConnectionManager(ResourceManager):
                     self.logger.debug("Created table: %s", table_name)
                 except Exception as e:
                     self.logger.warning(
-                        "Table %s creation failed (may already exist): %s", table_name, e
+                        "Table %s creation failed (may already exist): %s",
+                        table_name,
+                        e,
                     )
 
     def table_exists(self, table_name: str) -> bool:

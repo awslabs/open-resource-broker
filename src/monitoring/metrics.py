@@ -6,7 +6,7 @@ import time
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from infrastructure.logging.logger import get_logger
 
@@ -23,9 +23,9 @@ class Metric:
     name: str
     value: float
     timestamp: datetime = field(default_factory=datetime.utcnow)
-    labels: Dict[str, str] = field(default_factory=dict)
+    labels: dict[str, str] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert metric to dictionary."""
         return {
             "name": self.name,
@@ -60,7 +60,7 @@ class Timer:
     """Timer for measuring durations."""
 
     name: str
-    labels: Dict[str, str]
+    labels: dict[str, str]
     start_time: float = field(default_factory=time.time)
 
     def stop(self) -> float:
@@ -72,11 +72,11 @@ class Timer:
 class MetricsCollector:
     """Collects and manages application metrics."""
 
-    def __init__(self, config: Dict[str, Any]) -> None:
+    def __init__(self, config: dict[str, Any]) -> None:
         """Initialize metrics collector."""
         self.config = config
-        self.metrics: Dict[str, Metric] = {}
-        self.timers: Dict[str, List[float]] = {}
+        self.metrics: dict[str, Metric] = {}
+        self.timers: dict[str, list[float]] = {}
         self._lock = threading.Lock()
 
         # Create metrics directory
@@ -109,14 +109,14 @@ class MetricsCollector:
         self.register_gauge("memory_usage_bytes")
         self.register_gauge("cpu_usage_percent")
 
-    def register_counter(self, name: str, labels: Optional[Dict[str, str]] = None) -> Counter:
+    def register_counter(self, name: str, labels: Optional[dict[str, str]] = None) -> Counter:
         """Register a new counter metric."""
         with self._lock:
             counter = Counter(name, 0.0, labels=labels or {})
             self.metrics[name] = counter
             return counter
 
-    def register_gauge(self, name: str, labels: Optional[Dict[str, str]] = None) -> Gauge:
+    def register_gauge(self, name: str, labels: Optional[dict[str, str]] = None) -> Gauge:
         """Register a new gauge metric."""
         with self._lock:
             gauge = Gauge(name, 0.0, labels=labels or {})
@@ -139,7 +139,7 @@ class MetricsCollector:
             if isinstance(self.metrics[name], Gauge):
                 self.metrics[name].set(value)
 
-    def start_timer(self, name: str = "", labels: Optional[Dict[str, str]] = None) -> Timer:
+    def start_timer(self, name: str = "", labels: Optional[dict[str, str]] = None) -> Timer:
         """Start a new timer."""
         if labels is None:
             labels = {}
@@ -160,7 +160,7 @@ class MetricsCollector:
         self,
         operation: str,
         start_time: float,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: Optional[dict[str, Any]] = None,
     ) -> None:
         """Record a successful operation."""
         duration = time.time() - start_time
@@ -178,7 +178,7 @@ class MetricsCollector:
         self,
         operation: str,
         start_time: float,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: Optional[dict[str, Any]] = None,
     ) -> None:
         """Record a failed operation."""
         duration = time.time() - start_time
@@ -192,7 +192,7 @@ class MetricsCollector:
                 extra={"duration": duration, "metadata": metadata},
             )
 
-    def get_metrics(self) -> Dict[str, Dict[str, Any]]:
+    def get_metrics(self) -> dict[str, dict[str, Any]]:
         """Get all current metrics."""
         with self._lock:
             return {name: metric.to_dict() for name, metric in self.metrics.items()}
@@ -216,7 +216,7 @@ class MetricsCollector:
                     with prom_file.open("w") as f:
                         for name, metric in metrics.items():
                             labels = ",".join(f'{k}="{v}"' for k, v in metric["labels"].items())
-                            f.write(f'{name}{{{labels}}} {metric["value"]}\n')
+                            f.write(f"{name}{{{labels}}} {metric['value']}\n")
 
                     time.sleep(self.config.get("METRICS_INTERVAL", 60))
 
@@ -227,7 +227,7 @@ class MetricsCollector:
         thread = threading.Thread(target=write_metrics, daemon=True)
         thread.start()
 
-    def check_thresholds(self) -> List[Dict[str, Any]]:
+    def check_thresholds(self) -> list[dict[str, Any]]:
         """Check metrics against configured thresholds."""
         alerts = []
         thresholds = self.config.get("ALERT_THRESHOLDS", {})

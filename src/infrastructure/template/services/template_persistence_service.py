@@ -6,7 +6,7 @@ for format conversion and file operations.
 
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from domain.base.dependency_injection import injectable
 from domain.base.events.domain_events import (
@@ -160,7 +160,7 @@ class TemplatePersistenceService:
             self.logger.error("Failed to delete template %s: %s", template_id, e)
             raise
 
-    async def _load_templates_from_file(self, file_path: Path) -> list[Dict[str, Any]]:
+    async def _load_templates_from_file(self, file_path: Path) -> list[dict[str, Any]]:
         """Load raw template data from a file using scheduler strategy."""
         try:
             # Use scheduler strategy to load and parse templates
@@ -171,7 +171,7 @@ class TemplatePersistenceService:
             return []
 
     async def _write_templates_to_file(
-        self, file_path: Path, templates: list[Dict[str, Any]]
+        self, file_path: Path, templates: list[dict[str, Any]]
     ) -> None:
         """Write templates to a file using appropriate format."""
         try:

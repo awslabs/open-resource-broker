@@ -1,7 +1,7 @@
 """Template factory for creating provider-specific templates with extensions."""
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional, Protocol
+from typing import Any, Optional, Protocol
 
 from domain.base.ports.logging_port import LoggingPort
 from domain.template.aggregate import Template
@@ -12,7 +12,7 @@ class TemplateFactoryPort(Protocol):
     """Port for template factory following DIP."""
 
     def create_template(
-        self, template_data: Dict[str, Any], provider_type: Optional[str] = None
+        self, template_data: dict[str, Any], provider_type: Optional[str] = None
     ) -> Template:
         """Create appropriate template type based on provider."""
         ...
@@ -27,7 +27,7 @@ class BaseTemplateFactory(ABC):
 
     @abstractmethod
     def create_template(
-        self, template_data: Dict[str, Any], provider_type: Optional[str] = None
+        self, template_data: dict[str, Any], provider_type: Optional[str] = None
     ) -> Template:
         """Create appropriate template type based on provider."""
 
@@ -62,7 +62,7 @@ class TemplateFactory(BaseTemplateFactory):
         self._logger = logger
 
         # Registry of provider-specific template classes
-        self._provider_template_classes: Dict[str, type] = {}
+        self._provider_template_classes: dict[str, type] = {}
 
         # Register built-in provider template classes
         self._register_builtin_providers()
@@ -106,7 +106,7 @@ class TemplateFactory(BaseTemplateFactory):
             self._logger.debug("Registered template class for provider: %s", provider_type)
 
     def create_template(
-        self, template_data: Dict[str, Any], provider_type: Optional[str] = None
+        self, template_data: dict[str, Any], provider_type: Optional[str] = None
     ) -> Template:
         """Create appropriate template type based on provider.
 
@@ -174,7 +174,7 @@ class TemplateFactory(BaseTemplateFactory):
         """
         return list(self._provider_template_classes.keys())
 
-    def _determine_provider_type(self, template_data: Dict[str, Any]) -> Optional[str]:
+    def _determine_provider_type(self, template_data: dict[str, Any]) -> Optional[str]:
         """Determine provider type from template data.
 
         Args:
@@ -219,9 +219,9 @@ class TemplateFactory(BaseTemplateFactory):
 
     def create_template_with_extensions(
         self,
-        template_data: Dict[str, Any],
+        template_data: dict[str, Any],
         provider_type: Optional[str] = None,
-        extension_data: Optional[Dict[str, Any]] = None,
+        extension_data: Optional[dict[str, Any]] = None,
     ) -> Template:
         """Create template with provider extensions applied.
 

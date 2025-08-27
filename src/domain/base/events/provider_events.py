@@ -215,15 +215,15 @@ class ProviderStrategyRegisteredEvent(DomainEvent):
 
 # Export all provider events
 __all__: list[str] = [
-    "ProviderOperationEvent",
-    "ProviderRateLimitEvent",
-    "ProviderCredentialsEvent",
-    "ProviderResourceStateChangedEvent",
     "ProviderConfigurationEvent",
+    "ProviderCredentialsEvent",
+    "ProviderHealthChangedEvent",
     "ProviderHealthCheckEvent",
+    "ProviderOperationEvent",
+    "ProviderOperationExecutedEvent",
+    "ProviderRateLimitEvent",
+    "ProviderResourceStateChangedEvent",
+    "ProviderStrategyRegisteredEvent",
     # Provider Strategy Events
     "ProviderStrategySelectedEvent",
-    "ProviderOperationExecutedEvent",
-    "ProviderHealthChangedEvent",
-    "ProviderStrategyRegisteredEvent",
 ]

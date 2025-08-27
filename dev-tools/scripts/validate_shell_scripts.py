@@ -26,7 +26,7 @@ def load_gitignore():
         return None
 
     try:
-        with open(gitignore_path, "r", encoding="utf-8") as f:
+        with open(gitignore_path, encoding="utf-8") as f:
             return pathspec.PathSpec.from_lines("gitwildmatch", f)
     except Exception as e:
         logger.warning(f"Could not load .gitignore: {e}")
@@ -64,7 +64,10 @@ def validate_shell_script(file_path: Path):
 
     try:
         result = subprocess.run(
-            ["shellcheck", "-x", str(file_path)], capture_output=True, text=True, check=False
+            ["shellcheck", "-x", str(file_path)],
+            capture_output=True,
+            text=True,
+            check=False,
         )
 
         if result.returncode == 0:

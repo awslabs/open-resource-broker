@@ -1,7 +1,7 @@
 """Machine repository interface - contract for machine data access."""
 
 from abc import abstractmethod
-from typing import List, Optional
+from typing import Optional
 
 from domain.base.domain_interfaces import AggregateRepository
 from domain.base.value_objects import InstanceId
@@ -18,17 +18,17 @@ class MachineRepository(AggregateRepository[Machine]):
         """Find machine by instance ID."""
 
     @abstractmethod
-    def find_by_template_id(self, template_id: str) -> List[Machine]:
+    def find_by_template_id(self, template_id: str) -> list[Machine]:
         """Find machines by template ID."""
 
     @abstractmethod
-    def find_by_status(self, status: MachineStatus) -> List[Machine]:
+    def find_by_status(self, status: MachineStatus) -> list[Machine]:
         """Find machines by status."""
 
     @abstractmethod
-    def find_by_request_id(self, request_id: str) -> List[Machine]:
+    def find_by_request_id(self, request_id: str) -> list[Machine]:
         """Find machines by request ID."""
 
     @abstractmethod
-    def find_active_machines(self) -> List[Machine]:
+    def find_active_machines(self) -> list[Machine]:
         """Find all active (non-terminated) machines."""

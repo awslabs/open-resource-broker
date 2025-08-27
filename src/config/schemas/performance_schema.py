@@ -1,6 +1,6 @@
 """Performance configuration schemas."""
 
-from typing import Any, Dict, List
+from typing import Any
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
@@ -179,7 +179,7 @@ class CircuitBreakerConfig(BaseCircuitBreakerConfig):
     """Performance-focused circuit breaker configuration with service-specific settings."""
 
     # Service-specific configurations
-    service_configs: Dict[str, Dict[str, Any]] = Field(
+    service_configs: dict[str, dict[str, Any]] = Field(
         default_factory=lambda: {
             "ec2": {
                 "failure_threshold": 3,
@@ -216,7 +216,7 @@ class CircuitBreakerConfig(BaseCircuitBreakerConfig):
     )
 
     # Retryable exceptions by service
-    retryable_exceptions: Dict[str, List[str]] = Field(
+    retryable_exceptions: dict[str, list[str]] = Field(
         default_factory=lambda: {
             "ec2": [
                 "RequestLimitExceeded",

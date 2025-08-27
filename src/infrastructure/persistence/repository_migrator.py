@@ -11,7 +11,7 @@ implementations and storage strategies:
 import json
 import os
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from domain.base.domain_interfaces import Repository
 from domain.base.ports.configuration_port import ConfigurationPort
@@ -52,7 +52,7 @@ class RepositoryMigrator:
         target_type: str,
         batch_size: int = 100,
         create_backup: bool = True,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Migrate data between repository types.
 
@@ -118,7 +118,7 @@ class RepositoryMigrator:
 
         return stats
 
-    def _create_repositories_for_storage_type(self, storage_type: str) -> Dict[str, Repository]:
+    def _create_repositories_for_storage_type(self, storage_type: str) -> dict[str, Repository]:
         """
         Create repositories for a specific storage type.
 
@@ -249,7 +249,7 @@ class RepositoryMigrator:
             # No need to restore config since we didn't modify it
             pass
 
-    def _create_backup(self, repos: Dict[str, Repository]) -> str:
+    def _create_backup(self, repos: dict[str, Repository]) -> str:
         """
         Create backup of current data.
 
@@ -284,7 +284,10 @@ class RepositoryMigrator:
                             indent=2,
                         )
                     self.logger.debug(
-                        "Backed up %s items from %s to %s", len(items), collection, backup_file
+                        "Backed up %s items from %s to %s",
+                        len(items),
+                        collection,
+                        backup_file,
                     )
             except Exception as e:
                 self.logger.warning("Failed to backup %s: %s", collection, str(e))
@@ -297,7 +300,7 @@ class RepositoryMigrator:
         source_repo: Repository,
         target_repo: Repository,
         batch_size: int,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Migrate a single collection.
 
@@ -366,7 +369,7 @@ class RepositoryMigrator:
                                             str(conversion_error),
                                         )
                                         raise ValueError(
-                                            f"Entity conversion failed: { str(conversion_error)}"
+                                            f"Entity conversion failed: {conversion_error!s}"
                                         )
                                 else:
                                     # Try to determine the entity class from the
@@ -398,7 +401,7 @@ class RepositoryMigrator:
                                                 str(conversion_error),
                                             )
                                             raise ValueError(
-                                                f"Entity creation failed: { str(conversion_error)}"
+                                                f"Entity creation failed: {conversion_error!s}"
                                             )
                                     else:
                                         # Fallback to direct save, which might fail
@@ -408,7 +411,7 @@ class RepositoryMigrator:
                                         )
                                         target_repo.save(item)
                             except Exception as e:
-                                raise ValueError(f"Failed to save item {item_id}: {str(e)}")
+                                raise ValueError(f"Failed to save item {item_id}: {e!s}")
                         stats["migrated"] += 1
 
                     except Exception as e:

@@ -1,7 +1,6 @@
 """Bearer token authentication strategy."""
 
 import time
-from typing import List
 
 import jwt
 
@@ -108,7 +107,7 @@ class BearerTokenStrategy(AuthPort):
         except jwt.ExpiredSignatureError:
             return AuthResult(status=AuthStatus.EXPIRED, error_message="Token has expired")
         except jwt.InvalidTokenError as e:
-            return AuthResult(status=AuthStatus.INVALID, error_message=f"Invalid token: {str(e)}")
+            return AuthResult(status=AuthStatus.INVALID, error_message=f"Invalid token: {e!s}")
         except Exception as e:
             self.logger.error("Token validation error: %s", e)
             return AuthResult(status=AuthStatus.FAILED, error_message="Token validation failed")
@@ -154,7 +153,7 @@ class BearerTokenStrategy(AuthPort):
         except jwt.InvalidTokenError as e:
             return AuthResult(
                 status=AuthStatus.INVALID,
-                error_message=f"Invalid refresh token: {str(e)}",
+                error_message=f"Invalid refresh token: {e!s}",
             )
         except Exception as e:
             self.logger.error("Token refresh error: %s", e)
@@ -194,7 +193,7 @@ class BearerTokenStrategy(AuthPort):
         """
         return self.enabled
 
-    def _create_access_token(self, user_id: str, roles: List[str], permissions: List[str]) -> str:
+    def _create_access_token(self, user_id: str, roles: list[str], permissions: list[str]) -> str:
         """
         Create a new access token.
 
@@ -219,7 +218,7 @@ class BearerTokenStrategy(AuthPort):
 
         return jwt.encode(payload, self.secret_key, algorithm=self.algorithm)
 
-    def create_refresh_token(self, user_id: str, roles: List[str], permissions: List[str]) -> str:
+    def create_refresh_token(self, user_id: str, roles: list[str], permissions: list[str]) -> str:
         """
         Create a refresh token.
 

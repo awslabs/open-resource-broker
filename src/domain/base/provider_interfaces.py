@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import List, Optional, Protocol
+from typing import Optional, Protocol
 
 
 class ProviderType(str, Enum):
@@ -144,6 +144,6 @@ class ProviderAdapterFactory(Protocol):
         """Create a provider adapter for the specified type."""
         ...
 
-    def get_supported_providers(self) -> List[ProviderType]:
+    def get_supported_providers(self) -> list[ProviderType]:
         """Get list of supported provider types."""
         ...

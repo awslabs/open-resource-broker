@@ -23,7 +23,6 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
-from typing import List
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
@@ -57,7 +56,7 @@ class CIChecker:
         self.temp_file.flush()
         return self.temp_file.name
 
-    def run_command(self, cmd: List[str], description: str, allow_failure: bool = False) -> bool:
+    def run_command(self, cmd: list[str], description: str, allow_failure: bool = False) -> bool:
         """Run a command and return success status."""
         if self.verbose:
             self.log(f"Running: {' '.join(cmd)}")
@@ -199,7 +198,10 @@ class CIChecker:
         self.log("\n=== Code Formatting Checks ===")
 
         checks = [
-            ("Black code formatting", [sys.executable, "-m", "black", "--check", "src/", "tests/"]),
+            (
+                "Black code formatting",
+                [sys.executable, "-m", "black", "--check", "src/", "tests/"],
+            ),
             (
                 "isort import sorting",
                 [sys.executable, "-m", "isort", "--check-only", "src/", "tests/"],
@@ -208,8 +210,14 @@ class CIChecker:
 
         if self.fix:
             checks = [
-                ("Black code formatting", [sys.executable, "-m", "black", "src/", "tests/"]),
-                ("isort import sorting", [sys.executable, "-m", "isort", "src/", "tests/"]),
+                (
+                    "Black code formatting",
+                    [sys.executable, "-m", "black", "src/", "tests/"],
+                ),
+                (
+                    "isort import sorting",
+                    [sys.executable, "-m", "isort", "src/", "tests/"],
+                ),
             ]
 
         all_passed = True
@@ -225,7 +233,11 @@ class CIChecker:
         self.log("\n=== Linting Checks ===")
 
         checks = [
-            ("flake8 style guide", [sys.executable, "-m", "flake8", "src/", "tests/"], False),
+            (
+                "flake8 style guide",
+                [sys.executable, "-m", "flake8", "src/", "tests/"],
+                False,
+            ),
             ("mypy type checking", [sys.executable, "-m", "mypy", "src/"], True),
             ("pylint code analysis", [sys.executable, "-m", "pylint", "src/"], True),
         ]
@@ -245,7 +257,16 @@ class CIChecker:
 
         # Radon complexity analysis (allowed to fail)
         self.run_command(
-            [sys.executable, "-m", "radon", "cc", "src/", "--min", "B", "--show-complexity"],
+            [
+                sys.executable,
+                "-m",
+                "radon",
+                "cc",
+                "src/",
+                "--min",
+                "B",
+                "--show-complexity",
+            ],
             "radon cyclomatic complexity",
             allow_failure=True,
         )
@@ -335,9 +356,9 @@ class CIChecker:
 
         # Tests
         if not quick:
-            tests_passed = self.run_tests(quick=quick)
+            self.run_tests(quick=quick)
         else:
-            tests_passed = True  # Skip tests in quick mode
+            pass  # Skip tests in quick mode
 
         # Summary
         self.log("\n=== CI Check Summary ===")

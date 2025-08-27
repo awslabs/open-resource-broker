@@ -1,7 +1,7 @@
 """Template repository implementation using storage strategy composition."""
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from domain.template.aggregate import Template
 from domain.template.repository import TemplateRepository as TemplateRepositoryInterface
@@ -33,7 +33,7 @@ class TemplateSerializer:
                 self.logger.debug("Could not get defaults service from container: %s", e)
 
     @handle_infrastructure_exceptions(context="template_serialization")
-    def to_dict(self, template: Template) -> Dict[str, Any]:
+    def to_dict(self, template: Template) -> dict[str, Any]:
         """Convert Template aggregate to dictionary with complete field support."""
         try:
             return {  # Core template fields
@@ -91,7 +91,7 @@ class TemplateSerializer:
             raise
 
     @handle_infrastructure_exceptions(context="template_deserialization")
-    def from_dict(self, data: Dict[str, Any]) -> Template:
+    def from_dict(self, data: dict[str, Any]) -> Template:
         """Convert dictionary to Template aggregate with complete field support."""
         try:
             self.logger.debug("Converting template data: %s", data)
@@ -207,7 +207,7 @@ class TemplateRepositoryImpl(TemplateRepositoryInterface):
         self.logger = get_logger(__name__)
 
     @handle_infrastructure_exceptions(context="template_save")
-    def save(self, template: Template) -> List[Any]:
+    def save(self, template: Template) -> list[Any]:
         """Save template using storage strategy and return extracted events."""
         try:
             # Save the template
@@ -219,7 +219,9 @@ class TemplateRepositoryImpl(TemplateRepositoryInterface):
             template.clear_domain_events()
 
             self.logger.debug(
-                "Saved template %s and extracted %s events", template.template_id, len(events)
+                "Saved template %s and extracted %s events",
+                template.template_id,
+                len(events),
             )
             return events
 
@@ -267,7 +269,7 @@ class TemplateRepositoryImpl(TemplateRepositoryInterface):
             raise
 
     @handle_infrastructure_exceptions(context="template_search")
-    def find_active_templates(self) -> List[Template]:
+    def find_active_templates(self) -> list[Template]:
         """Find active templates."""
         try:
             criteria = {"is_active": True}
@@ -278,7 +280,7 @@ class TemplateRepositoryImpl(TemplateRepositoryInterface):
             raise
 
     @handle_infrastructure_exceptions(context="template_search")
-    def find_by_provider_api(self, provider_api: str) -> List[Template]:
+    def find_by_provider_api(self, provider_api: str) -> list[Template]:
         """Find templates by provider API."""
         try:
             criteria = {"provider_api": provider_api}
@@ -289,7 +291,7 @@ class TemplateRepositoryImpl(TemplateRepositoryInterface):
             raise
 
     @handle_infrastructure_exceptions(context="template_search")
-    def find_all(self) -> List[Template]:
+    def find_all(self) -> list[Template]:
         """Find all templates."""
         try:
             all_data = self.storage_strategy.find_all()
@@ -298,12 +300,12 @@ class TemplateRepositoryImpl(TemplateRepositoryInterface):
             self.logger.error("Failed to find all templates: %s", e)
             raise
 
-    def get_all(self) -> List[Template]:
+    def get_all(self) -> list[Template]:
         """Get all templates - alias for find_all for backward compatibility."""
         return self.find_all()
 
     @handle_infrastructure_exceptions(context="template_search")
-    def search_templates(self, criteria: Dict[str, Any]) -> List[Template]:
+    def search_templates(self, criteria: dict[str, Any]) -> list[Template]:
         """Search templates by criteria."""
         try:
             data_list = self.storage_strategy.find_by_criteria(criteria)

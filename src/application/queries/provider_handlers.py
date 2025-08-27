@@ -5,7 +5,7 @@ leveraging the existing provider strategy ecosystem through clean CQRS interface
 """
 
 import time
-from typing import Any, Dict, List
+from typing import Any
 
 from application.base.handlers import BaseQueryHandler
 from application.decorators import query_handler
@@ -45,7 +45,7 @@ class GetProviderHealthHandler(BaseQueryHandler[GetProviderHealthQuery, Provider
         super().__init__(logger, error_handler)
         self.provider_port = provider_port
 
-    async def execute_query(self, query: GetProviderHealthQuery) -> Dict[str, Any]:
+    async def execute_query(self, query: GetProviderHealthQuery) -> dict[str, Any]:
         """Execute provider health query."""
         self.logger.info("Getting health for provider: %s", query.provider_name)
 
@@ -89,7 +89,7 @@ class GetProviderHealthHandler(BaseQueryHandler[GetProviderHealthQuery, Provider
 
 @query_handler(ListAvailableProvidersQuery)
 class ListAvailableProvidersHandler(
-    BaseQueryHandler[ListAvailableProvidersQuery, List[Dict[str, Any]]]
+    BaseQueryHandler[ListAvailableProvidersQuery, list[dict[str, Any]]]
 ):
     """Handler for listing available providers."""
 
@@ -110,7 +110,7 @@ class ListAvailableProvidersHandler(
         super().__init__(logger, error_handler)
         self.provider_port = provider_port
 
-    async def execute_query(self, query: ListAvailableProvidersQuery) -> List[Dict[str, Any]]:
+    async def execute_query(self, query: ListAvailableProvidersQuery) -> list[dict[str, Any]]:
         """Execute list available providers query."""
         self.logger.info("Listing available providers")
 
@@ -172,7 +172,7 @@ class GetProviderCapabilitiesHandler(
         super().__init__(logger, error_handler)
         self.provider_port = provider_port
 
-    async def execute_query(self, query: GetProviderCapabilitiesQuery) -> Dict[str, Any]:
+    async def execute_query(self, query: GetProviderCapabilitiesQuery) -> dict[str, Any]:
         """Execute provider capabilities query."""
         self.logger.info("Getting capabilities for provider: %s", query.provider_name)
 
@@ -207,7 +207,7 @@ class GetProviderCapabilitiesHandler(
             raise
 
 
-class GetProviderMetricsHandler(BaseQueryHandler[GetProviderMetricsQuery, Dict[str, Any]]):
+class GetProviderMetricsHandler(BaseQueryHandler[GetProviderMetricsQuery, dict[str, Any]]):
     """Handler for retrieving provider metrics."""
 
     def __init__(
@@ -227,7 +227,7 @@ class GetProviderMetricsHandler(BaseQueryHandler[GetProviderMetricsQuery, Dict[s
         super().__init__(logger, error_handler)
         self.provider_port = provider_port
 
-    async def execute_query(self, query: GetProviderMetricsQuery) -> Dict[str, Any]:
+    async def execute_query(self, query: GetProviderMetricsQuery) -> dict[str, Any]:
         """Execute provider metrics query."""
         self.logger.info("Getting metrics for provider: %s", query.provider_name)
 
@@ -286,7 +286,7 @@ class GetProviderStrategyConfigHandler(
         super().__init__(logger, error_handler)
         self.provider_port = provider_port
 
-    async def execute_query(self, query: GetProviderStrategyConfigQuery) -> Dict[str, Any]:
+    async def execute_query(self, query: GetProviderStrategyConfigQuery) -> dict[str, Any]:
         """Execute provider strategy configuration query."""
         self.logger.info("Getting strategy config for provider: %s", query.provider_name)
 

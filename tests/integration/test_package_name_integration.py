@@ -70,11 +70,15 @@ class TestPackageNameIntegration:
         from providers.aws.domain.template import AWSTemplate
 
         template = AWSTemplate(
-            template_id="integration-test", image_id="ami-test", instance_type="t3.micro"
+            template_id="integration-test",
+            image_id="ami-test",
+            instance_type="t3.micro",
         )
 
         request = Request(
-            request_id=RequestId.generate(), requested_count=1, template_id="integration-test"
+            request_id=RequestId.generate(),
+            requested_count=1,
+            template_id="integration-test",
         )
 
         # Act

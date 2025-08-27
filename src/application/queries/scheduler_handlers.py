@@ -1,7 +1,5 @@
 """Scheduler query handlers for administrative operations."""
 
-from typing import List
-
 from application.base.handlers import BaseQueryHandler
 from application.decorators import query_handler
 from application.dto.system import (
@@ -84,7 +82,7 @@ class ListSchedulerStrategiesHandler(
         }
         return descriptions.get(scheduler_type, f"Scheduler strategy: {scheduler_type}")
 
-    def _get_scheduler_capabilities(self, scheduler_type: str) -> List[str]:
+    def _get_scheduler_capabilities(self, scheduler_type: str) -> list[str]:
         """Get capabilities for scheduler type."""
         capabilities = {
             "default": [
@@ -204,7 +202,7 @@ class ValidateSchedulerConfigurationHandler(
                 if strategy is None:
                     errors.append(f"Failed to create scheduler strategy '{scheduler_name}'")
             except Exception as e:
-                errors.append(f"Scheduler strategy creation failed: {str(e)}")
+                errors.append(f"Scheduler strategy creation failed: {e!s}")
 
             # Check configuration completeness
             try:
@@ -214,10 +212,10 @@ class ValidateSchedulerConfigurationHandler(
                 elif not app_config.scheduler.type:
                     warnings.append("Scheduler type not specified in configuration")
             except Exception as e:
-                errors.append(f"Configuration access failed: {str(e)}")
+                errors.append(f"Configuration access failed: {e!s}")
 
         except Exception as e:
-            errors.append(f"Validation failed: {str(e)}")
+            errors.append(f"Validation failed: {e!s}")
 
         return ValidationResultDTO(
             is_valid=len(errors) == 0, validation_errors=errors, warnings=warnings

@@ -1,6 +1,6 @@
 """AWS-specific template extension configuration."""
 
-from typing import Dict, List, Optional
+from typing import Optional
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -58,19 +58,19 @@ class AWSTemplateExtensionConfig(BaseModel):
 
     # AWS instance type configuration
     vm_type: Optional[str] = Field(None, description="EC2 instance type for ondemand")
-    vm_types: Optional[Dict[str, int]] = Field(
+    vm_types: Optional[dict[str, int]] = Field(
         None, description="Map of instance types and weights for spot/heterogeneous"
     )
-    vm_types_on_demand: Optional[Dict[str, int]] = Field(
+    vm_types_on_demand: Optional[dict[str, int]] = Field(
         None, description="On-Demand instance types for heterogeneous"
     )
-    vm_types_priority: Optional[Dict[str, int]] = Field(
+    vm_types_priority: Optional[dict[str, int]] = Field(
         None, description="Priority settings for instance types"
     )
 
     # AWS network configuration defaults (moved from deprecated template schema fields)
-    subnet_ids: Optional[List[str]] = Field(None, description="Default subnet IDs")
-    security_group_ids: Optional[List[str]] = Field(None, description="Default security group IDs")
+    subnet_ids: Optional[list[str]] = Field(None, description="Default subnet IDs")
+    security_group_ids: Optional[list[str]] = Field(None, description="Default security group IDs")
 
     # AWS Context field for fleet operations
     context: Optional[str] = Field(
@@ -79,7 +79,7 @@ class AWSTemplateExtensionConfig(BaseModel):
 
     @field_validator("subnet_ids")
     @classmethod
-    def validate_subnet_ids(cls, v: Optional[List[str]]) -> Optional[List[str]]:
+    def validate_subnet_ids(cls, v: Optional[list[str]]) -> Optional[list[str]]:
         """Validate subnet IDs."""
         if v is not None and not v:
             raise ValueError("If subnet_ids is provided, at least one subnet ID is required")
@@ -87,7 +87,7 @@ class AWSTemplateExtensionConfig(BaseModel):
 
     @field_validator("security_group_ids")
     @classmethod
-    def validate_security_group_ids(cls, v: Optional[List[str]]) -> Optional[List[str]]:
+    def validate_security_group_ids(cls, v: Optional[list[str]]) -> Optional[list[str]]:
         """Validate security group IDs."""
         if v is not None and not v:
             raise ValueError(
@@ -111,7 +111,7 @@ class AWSTemplateExtensionConfig(BaseModel):
             raise ValueError("Percent on demand must be between 0 and 100")
         return v
 
-    def to_template_defaults(self) -> Dict[str, any]:
+    def to_template_defaults(self) -> dict[str, any]:
         """Convert extension config to template defaults format.
 
         This method converts the extension configuration to the format

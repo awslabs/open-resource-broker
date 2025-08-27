@@ -157,7 +157,6 @@ class TestCLIIntegration:
         }
 
         # Test migration logic directly since migration module doesn't have the expected function
-        legacy_config = {"provider": {"type": "aws", "aws": {"region": "us-east-1"}}}
 
         # Simulate migration result
         result = expected_result
@@ -212,7 +211,7 @@ class TestCLIIntegration:
             json.dump(input_data, f)
 
         # Test file input parsing directly
-        with open(input_file, "r") as f:
+        with open(input_file) as f:
             parsed_data = json.load(f)
 
         assert parsed_data["config_path"] == "/test/path.json"

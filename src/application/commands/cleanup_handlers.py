@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
-from typing import Any, Dict
+from typing import Any
 
 from application.base.handlers import BaseCommandHandler
 from application.decorators import command_handler
@@ -19,7 +19,7 @@ from domain.request.repository import RequestRepository
 
 
 @command_handler(CleanupOldRequestsCommand)
-class CleanupOldRequestsHandler(BaseCommandHandler[CleanupOldRequestsCommand, Dict[str, Any]]):
+class CleanupOldRequestsHandler(BaseCommandHandler[CleanupOldRequestsCommand, dict[str, Any]]):
     """Handler for cleaning up old requests using domain commands."""
 
     def __init__(
@@ -41,7 +41,7 @@ class CleanupOldRequestsHandler(BaseCommandHandler[CleanupOldRequestsCommand, Di
         if command.older_than_days <= 0:
             raise ValueError("older_than_days must be positive")
 
-    async def execute_command(self, command: CleanupOldRequestsCommand) -> Dict[str, Any]:
+    async def execute_command(self, command: CleanupOldRequestsCommand) -> dict[str, Any]:
         """Handle cleanup old requests command."""
         self.logger.info("Cleaning up requests older than %s days", command.older_than_days)
         cutoff_date = datetime.utcnow() - timedelta(days=command.older_than_days)
@@ -82,7 +82,7 @@ class CleanupOldRequestsHandler(BaseCommandHandler[CleanupOldRequestsCommand, Di
                     resource_id="multiple",
                     provider="system",
                     resource_count=cleaned_count,
-                    cleanup_reason=f"Cleanup requests older than { command.older_than_days} days",
+                    cleanup_reason=f"Cleanup requests older than {command.older_than_days} days",
                 )
                 self.event_publisher.publish(cleanup_event)
 
@@ -99,7 +99,7 @@ class CleanupOldRequestsHandler(BaseCommandHandler[CleanupOldRequestsCommand, Di
 
 
 @command_handler(CleanupAllResourcesCommand)
-class CleanupAllResourcesHandler(BaseCommandHandler[CleanupAllResourcesCommand, Dict[str, Any]]):
+class CleanupAllResourcesHandler(BaseCommandHandler[CleanupAllResourcesCommand, dict[str, Any]]):
     """Handler for cleaning up all resources (requests and machines)."""
 
     def __init__(
@@ -122,7 +122,7 @@ class CleanupAllResourcesHandler(BaseCommandHandler[CleanupAllResourcesCommand, 
         if command.older_than_days <= 0:
             raise ValueError("older_than_days must be positive")
 
-    async def execute_command(self, command: CleanupAllResourcesCommand) -> Dict[str, Any]:
+    async def execute_command(self, command: CleanupAllResourcesCommand) -> dict[str, Any]:
         """Handle cleanup all resources command."""
         self.logger.info("Cleaning up all resources older than %s days", command.older_than_days)
         cutoff_date = datetime.utcnow() - timedelta(days=command.older_than_days)
@@ -183,7 +183,7 @@ class CleanupAllResourcesHandler(BaseCommandHandler[CleanupAllResourcesCommand, 
                     resource_id="all",
                     provider="system",
                     resource_count=requests_cleaned + machines_cleaned,
-                    cleanup_reason=f"Cleanup all resources older than { command.older_than_days} days",
+                    cleanup_reason=f"Cleanup all resources older than {command.older_than_days} days",
                 )
                 self.event_publisher.publish(cleanup_event)
 

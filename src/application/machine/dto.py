@@ -1,7 +1,7 @@
 """Data Transfer Objects for machine domain operations."""
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from pydantic import Field
 
@@ -26,8 +26,8 @@ class MachineDTO(BaseDTO):
     resource_id: Optional[str] = None
     price_type: Optional[str] = None
     cloud_host_id: Optional[str] = None
-    metadata: Optional[Dict[str, Any]] = Field(default=None)
-    health_checks: Optional[Dict[str, Any]] = Field(default=None)
+    metadata: Optional[dict[str, Any]] = Field(default=None)
+    health_checks: Optional[dict[str, Any]] = Field(default=None)
 
     @staticmethod
     def _get_result_status(status: str) -> str:
@@ -84,7 +84,7 @@ class MachineDTO(BaseDTO):
 
         return cls(**common_fields)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Convert to dictionary format - returns snake_case for internal use.
         External format conversion should be handled at scheduler strategy level.
@@ -102,10 +102,10 @@ class MachineHealthDTO(BaseDTO):
     overall_status: str
     system_status: str
     instance_status: str
-    metrics: List[Dict[str, Any]] = Field(default_factory=list)
+    metrics: list[dict[str, Any]] = Field(default_factory=list)
     last_check: datetime
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Convert to dictionary format - returns snake_case for internal use.
         External format conversion should be handled at scheduler strategy level.

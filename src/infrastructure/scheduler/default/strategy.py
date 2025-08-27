@@ -1,6 +1,6 @@
 """Default scheduler strategy using native domain fields - no conversion needed."""
 
-from typing import Any, Dict, List, Union
+from typing import Any, Union
 
 from config.manager import ConfigurationManager
 from domain.base.ports.logging_port import LoggingPort
@@ -31,16 +31,16 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
         # Use templates.json with native domain format
         return self.config_manager.resolve_file("template", "templates.json")
 
-    def get_template_paths(self) -> List[str]:
+    def get_template_paths(self) -> list[str]:
         """Get template file paths."""
         return [self.get_templates_file_path()]
 
-    def load_templates_from_path(self, template_path: str) -> List[Dict[str, Any]]:
+    def load_templates_from_path(self, template_path: str) -> list[dict[str, Any]]:
         """Load templates from path - no field mapping needed."""
         try:
             import json
 
-            with open(template_path, "r") as f:
+            with open(template_path) as f:
                 data = json.load(f)
 
             # Handle different template file formats
@@ -60,7 +60,7 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
         # Use default_config.json
         return self.config_manager.resolve_file("config", "default_config.json")
 
-    def parse_template_config(self, raw_data: Dict[str, Any]) -> Template:
+    def parse_template_config(self, raw_data: dict[str, Any]) -> Template:
         """
         Parse template using native domain fields - no conversion needed.
 
@@ -75,8 +75,8 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
             raise ValueError(f"Failed to create Template from data: {e}. Data: {raw_data}")
 
     def parse_request_data(
-        self, raw_data: Dict[str, Any]
-    ) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
+        self, raw_data: dict[str, Any]
+    ) -> Union[dict[str, Any], list[dict[str, Any]]]:
         """
         Parse request data using native domain format - no conversion needed.
 
@@ -97,7 +97,7 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
             "metadata": raw_data.get("metadata", {}),
         }
 
-    def format_templates_response(self, templates: List[Template]) -> Dict[str, Any]:
+    def format_templates_response(self, templates: list[Template]) -> dict[str, Any]:
         """
         Format domain Templates to native domain response format.
 
@@ -109,7 +109,7 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
             "count": len(templates),
         }
 
-    def format_request_status_response(self, requests: List[Request]) -> Dict[str, Any]:
+    def format_request_status_response(self, requests: list[Request]) -> dict[str, Any]:
         """
         Format domain Requests to native domain response format.
 
@@ -121,7 +121,7 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
             "count": len(requests),
         }
 
-    def format_machine_status_response(self, machines: List[Machine]) -> Dict[str, Any]:
+    def format_machine_status_response(self, machines: list[Machine]) -> dict[str, Any]:
         """
         Format domain Machines to native domain response format.
 
@@ -139,6 +139,18 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
 
         return os.getcwd()
 
+    def get_config_directory(self) -> str:
+        """Get config directory - use working_dir/config."""
+        import os
+
+        return os.path.join(self.get_working_directory(), "config")
+
+    def get_logs_directory(self) -> str:
+        """Get logs directory - use working_dir/logs."""
+        import os
+
+        return os.path.join(self.get_working_directory(), "logs")
+
     def get_storage_base_path(self) -> str:
         """Get storage base path within working directory."""
         import os
@@ -146,7 +158,7 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
         workdir = self.get_working_directory()
         return os.path.join(workdir, "data")
 
-    def format_request_response(self, request_data: Dict[str, Any]) -> Dict[str, Any]:
+    def format_request_response(self, request_data: dict[str, Any]) -> dict[str, Any]:
         """Format request creation response to native domain format."""
         return {
             "requestId": request_data.get("request_id", request_data.get("requestId")),

@@ -1,6 +1,6 @@
 """AWS-specific template domain extensions."""
 
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from pydantic import ConfigDict, model_validator
 
@@ -46,13 +46,13 @@ class AWSTemplate(CoreTemplate):
     launch_template_version: Optional[str] = None
 
     # AWS-specific instance types and priorities (extends CoreTemplate.instance_types)
-    instance_types_ondemand: Optional[Dict[str, int]] = None
-    instance_types_priority: Optional[Dict[str, int]] = None
+    instance_types_ondemand: Optional[dict[str, int]] = None
+    instance_types_priority: Optional[dict[str, int]] = None
 
     # Native spec fields (flattened, no nesting)
-    launch_template_spec: Optional[Dict[str, Any]] = None
+    launch_template_spec: Optional[dict[str, Any]] = None
     launch_template_spec_file: Optional[str] = None
-    provider_api_spec: Optional[Dict[str, Any]] = None
+    provider_api_spec: Optional[dict[str, Any]] = None
     provider_api_spec_file: Optional[str] = None
 
     # AWS Context field for fleet operations
@@ -132,7 +132,7 @@ class AWSTemplate(CoreTemplate):
             return self.allocation_strategy_on_demand.to_ec2_fleet_format()
         return self.get_ec2_fleet_allocation_strategy()
 
-    def to_aws_api_format(self) -> Dict[str, Any]:
+    def to_aws_api_format(self) -> dict[str, Any]:
         """Convert template to AWS API format."""
         base_format = self.to_provider_format("aws")
 
@@ -164,7 +164,7 @@ class AWSTemplate(CoreTemplate):
         return aws_format
 
     @classmethod
-    def from_aws_format(cls, data: Dict[str, Any]) -> "AWSTemplate":
+    def from_aws_format(cls, data: dict[str, Any]) -> "AWSTemplate":
         """Create AWS template from AWS-specific format."""
         # Convert AWS format to core format first
         core_data = {

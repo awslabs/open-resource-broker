@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import logging
 import time
-from typing import TYPE_CHECKING, Any, Dict, Optional, Type, TypeVar
+from typing import TYPE_CHECKING, Any, Dict, Optional, TypeVar
 
 # Import config classes for runtime use
 from config.schemas import AppConfig
@@ -41,7 +41,7 @@ class ConfigurationManager:
     def __init__(self, config_file: Optional[str] = None) -> None:
         """Initialize configuration manager with lazy loading."""
         self._config_file = config_file
-        self._loader: Optional["ConfigurationLoader"] = None
+        self._loader: Optional[ConfigurationLoader] = None
         self._app_config: Optional[AppConfig] = None
 
         # Initialize component managers
@@ -55,7 +55,7 @@ class ConfigurationManager:
         self._scheduler_override: Optional[str] = None
 
     @property
-    def loader(self) -> "ConfigurationLoader":
+    def loader(self) -> ConfigurationLoader:
         """Lazy load configuration loader."""
         if self._loader is None:
             from config.loader import ConfigurationLoader
@@ -73,16 +73,16 @@ class ConfigurationManager:
     def _load_app_config(self) -> AppConfig:
         """Load application configuration from loader."""
         try:
-            raw_config = self.loader.load(self._config_file)
+            raw_config = self.loader.load(self._config_file, config_manager=self)
             return self.loader.create_app_config(raw_config)
         except Exception as e:
             logger.error("Failed to load app config: %s", e)
             raise
 
-    def _ensure_raw_config(self) -> Dict[str, Any]:
+    def _ensure_raw_config(self) -> dict[str, Any]:
         """Ensure raw configuration is loaded."""
         if self._raw_config is None:
-            self._raw_config = self.loader.load(self._config_file)
+            self._raw_config = self.loader.load(self._config_file, config_manager=self)
         return self._raw_config
 
     def _ensure_type_converter(self) -> ConfigTypeConverter:
@@ -105,7 +105,7 @@ class ConfigurationManager:
             self._provider_manager = ProviderConfigManager(raw_config)
         return self._provider_manager
 
-    def get_typed(self, config_type: Type[T]) -> T:
+    def get_typed(self, config_type: type[T]) -> T:
         """Get typed configuration with caching."""
         # Check cache first
         cached_config = self._cache_manager.get_cached_config(config_type)
@@ -170,7 +170,7 @@ class ConfigurationManager:
         # Clear relevant caches
         self._cache_manager.clear_cache()
 
-    def update(self, updates: Dict[str, Any]) -> None:
+    def update(self, updates: dict[str, Any]) -> None:
         """Update configuration with new values."""
         self._ensure_type_converter().update(updates)
         # Clear relevant caches
@@ -224,7 +224,7 @@ class ConfigurationManager:
         """Get provider type."""
         return self._ensure_provider_manager().get_provider_type()
 
-    def get_provider_config(self) -> Optional["ProviderConfig"]:
+    def get_provider_config(self) -> Optional[ProviderConfig]:
         """Get provider configuration."""
         return self._ensure_provider_manager().get_provider_config()
 
@@ -239,11 +239,11 @@ class ConfigurationManager:
             logger.error("Failed to save configuration: %s", e)
             raise ConfigurationError(f"Failed to save configuration: {e}")
 
-    def get_raw_config(self) -> Dict[str, Any]:
+    def get_raw_config(self) -> dict[str, Any]:
         """Get raw configuration dictionary."""
         return self._ensure_raw_config().copy()
 
-    def get_app_config(self) -> Dict[str, Any]:
+    def get_app_config(self) -> dict[str, Any]:
         """Get structured application configuration.
 
         Returns the raw configuration dictionary for backward compatibility.
@@ -260,7 +260,7 @@ class ConfigurationManager:
     ) -> str:
         """Resolve a configuration file path with consistent priority:
         1. Explicit path (if provided and contains directory)
-        2. HF_PROVIDER_*DIR + filename (if file exists)
+        2. Scheduler-provided directory + filename (if file exists)
         3. Default directory + filename
 
         Args:
@@ -282,24 +282,15 @@ class ConfigurationManager:
         if explicit_path and not os.path.dirname(explicit_path):
             filename = explicit_path
 
-        # 2. Try environment variable directory + filename
-        env_dir = None
-
-        if file_type in ["conf", "template", "legacy"]:
-            env_dir = os.environ.get("HF_PROVIDER_CONFDIR")
-        elif file_type == "log":
-            env_dir = os.environ.get("HF_PROVIDER_LOGDIR")
-        elif file_type == "work":
-            env_dir = os.environ.get("HF_PROVIDER_WORKDIR")
-        elif file_type == "events":
-            env_dir = os.environ.get("HF_PROVIDER_EVENTSDIR")
-        elif file_type == "snapshots":
-            env_dir = os.environ.get("HF_PROVIDER_SNAPSHOTSDIR")
-
-        if env_dir:
-            env_path = os.path.join(env_dir, filename)
-            if os.path.exists(env_path):
-                return env_path
+        # 2. Try scheduler-provided directory + filename
+        try:
+            scheduler_dir = self._get_scheduler_directory(file_type)
+            if scheduler_dir:
+                scheduler_path = os.path.join(scheduler_dir, filename)
+                if os.path.exists(scheduler_path):
+                    return scheduler_path
+        except Exception:
+            pass
 
         # 3. Fall back to default directory + filename
         if default_dir is None:
@@ -322,6 +313,21 @@ class ConfigurationManager:
         fallback_path = os.path.join(default_dir, filename)
         return fallback_path
 
-    def get_cache_stats(self) -> Dict[str, Any]:
+    def _get_scheduler_directory(self, file_type: str) -> Optional[str]:
+        """Get directory path from scheduler strategy for the given file type."""
+        try:
+            scheduler = self.get_scheduler_strategy()
+            if file_type in ["conf", "template", "legacy"]:
+                return scheduler.get_config_directory()
+            elif file_type == "log":
+                return scheduler.get_logs_directory()
+            elif file_type in ["work", "data"]:
+                return scheduler.get_storage_base_path()
+            else:
+                return scheduler.get_working_directory()
+        except Exception:
+            return None
+
+    def get_cache_stats(self) -> dict[str, Any]:
         """Get cache statistics."""
         return self._cache_manager.get_cache_stats()

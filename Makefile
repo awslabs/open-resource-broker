@@ -1,6 +1,6 @@
 # Makefile for Open Host Factory Plugin
 
-.PHONY: help install install-pip dev-install dev-install-pip test test-unit test-integration test-e2e test-all test-cov test-html test-parallel test-quick test-performance test-aws test-report lint format security security-quick security-all security-with-container security-container security-full security-scan security-validate-sarif security-report sbom-generate clean clean-all build build-test docs docs-build docs-serve docs-deploy docs-clean docs-deploy-version docs-list-versions docs-delete-version ci-docs-build ci-docs-build-for-pages ci-docs-deploy run run-dev version-show version-bump version-bump-patch version-bump-minor version-bump-major generate-pyproject ci-quality ci-security ci-security-codeql ci-security-container ci-architecture ci-imports ci-tests-unit ci-tests-integration ci-tests-e2e ci-tests-matrix ci-tests-performance ci-check ci-check-quick ci-check-fix ci-check-verbose ci ci-quick workflow-ci workflow-test-matrix workflow-security architecture-check architecture-report quality-check quality-check-fix quality-check-files quality-gates quality-full generate-completions install-completions install-bash-completions install-zsh-completions uninstall-completions test-completions dev-setup install-package uninstall-package reinstall-package init-db create-config validate-config container-build container-build-single container-build-multi container-push-multi container-show-version container-run docker-compose-up docker-compose-down quick-start dev status uv-lock uv-sync uv-sync-dev uv-check uv-benchmark file-sizes file-sizes-report validate-workflows detect-secrets clean-whitespace hadolint-check install-dev-tools install-dev-tools-required install-dev-tools-dry-run dev-checks-container dev-checks-container-required format-container hadolint-check-container pre-commit-check pre-commit-check-required
+.PHONY: help install install-pip dev-install dev-install-pip test test-unit test-integration test-e2e test-all test-cov test-html test-parallel test-quick test-performance test-aws test-report lint format security security-quick security-all security-with-container ci-security-container security-full security-scan security-validate-sarif security-report sbom-generate clean clean-all build build-test docs docs-build docs-serve docs-deploy docs-clean docs-deploy-version docs-list-versions docs-delete-version ci-docs-build ci-docs-build-for-pages ci-docs-deploy run run-dev version-show version-bump version-bump-patch version-bump-minor version-bump-major generate-pyproject ci-quality ci-security ci-security-codeql ci-security-container ci-architecture ci-imports ci-tests-unit ci-tests-integration ci-tests-e2e ci-tests-matrix ci-tests-performance ci-check ci-check-quick ci-check-fix ci-check-verbose ci ci-quick workflow-ci workflow-test-matrix workflow-security architecture-check architecture-report quality-check quality-check-fix quality-check-files quality-gates quality-full generate-completions install-completions install-bash-completions install-zsh-completions uninstall-completions test-completions dev-setup install-package uninstall-package reinstall-package init-db create-config validate-config container-build container-build-single container-build-multi container-push-multi container-show-version container-run docker-compose-up docker-compose-down quick-start dev status uv-lock uv-sync uv-sync-dev uv-check uv-benchmark file-sizes file-sizes-report validate-workflows detect-secrets clean-whitespace hadolint-check install-dev-tools install-dev-tools-required install-dev-tools-dry-run dev-checks-container dev-checks-container-required format-container hadolint-check-container pre-commit-check pre-commit-check-required
 
 # Python settings
 PYTHON := python3
@@ -22,12 +22,12 @@ DEFAULT_PYTHON_VERSION := $(shell yq '.python.default_version' $(PROJECT_CONFIG)
 # Generate pyproject.toml from template with project configuration
 generate-pyproject:  ## Generate pyproject.toml from template using project config
 	@echo "Generating pyproject.toml from template using $(PROJECT_CONFIG)..."
-	@./dev-tools/scripts/generate_pyproject.py --config $(PROJECT_CONFIG)
+	@VERSION="$(VERSION)" ./dev-tools/scripts/generate_pyproject.py --config $(PROJECT_CONFIG)
 
-# Package information (loaded from project config)
+# Package information (loaded from project config, but respect environment VERSION for CI)
 PACKAGE_NAME := $(shell yq '.project.name' $(PROJECT_CONFIG))
 PACKAGE_NAME_SHORT := $(shell yq '.project.short_name' $(PROJECT_CONFIG))
-VERSION := $(shell yq '.project.version' $(PROJECT_CONFIG))
+VERSION ?= $(shell yq '.project.version' $(PROJECT_CONFIG))
 
 # Repository information (loaded from project config)
 REPO_ORG := $(shell yq '.repository.org' $(PROJECT_CONFIG))
@@ -85,8 +85,8 @@ install-pip: $(VENV)/bin/activate  ## Install production dependencies (pip alter
 	$(BIN)/pip install -r requirements.txt
 
 dev-install: generate-pyproject $(VENV)/bin/activate  ## Install development dependencies (UV-first)
-	@echo "Installing with UV (dev + ci dependencies)..."
-	uv sync --group ci --group dev
+	@echo "Installing with UV (all dependencies)..."
+	@uv sync --all-groups --quiet
 
 dev-install-pip: generate-pyproject $(VENV)/bin/activate  ## Install development dependencies (pip alternative)
 	@echo "Generating requirements from uv.lock..."
@@ -97,8 +97,8 @@ dev-install-pip: generate-pyproject $(VENV)/bin/activate  ## Install development
 
 # CI installation targets
 ci-install: generate-pyproject  ## Install dependencies for CI (UV frozen)
-	@echo "Installing with UV (frozen mode - CI dependencies)..."
-	uv sync --frozen --group ci
+	@echo "Installing with UV (frozen mode - all dependencies)..."
+	@uv sync --frozen --all-groups --quiet
 
 # Requirements generation
 requirements-generate:  ## Generate requirements files from uv.lock
@@ -113,68 +113,59 @@ deps-update:  ## Update dependencies and regenerate lock file
 	uv lock --upgrade
 
 deps-add:  ## Add new dependency (usage: make deps-add PACKAGE=package-name)
-	@if [ -z "$(PACKAGE)" ]; then \
-		echo "Error: PACKAGE is required. Usage: make deps-add PACKAGE=package-name"; \
-		exit 1; \
-	fi
-	uv add $(PACKAGE)
+	@if [ -z "$(PACKAGE)" ]; then echo "Usage: make deps-add PACKAGE=package-name"; exit 1; fi
+	./dev-tools/scripts/deps_manager.py add $(PACKAGE)
 
 deps-add-dev:  ## Add new dev dependency (usage: make deps-add-dev PACKAGE=package-name)
-	@if [ -z "$(PACKAGE)" ]; then \
-		echo "Error: PACKAGE is required. Usage: make deps-add-dev PACKAGE=package-name"; \
-		exit 1; \
-	fi
-	uv add --dev $(PACKAGE)
+	@if [ -z "$(PACKAGE)" ]; then echo "Usage: make deps-add-dev PACKAGE=package-name"; exit 1; fi
+	./dev-tools/scripts/deps_manager.py add --dev $(PACKAGE)
 
 # Cleanup
 clean-requirements:  ## Remove generated requirements files
 	rm -f requirements.txt requirements-dev.txt
 
 $(VENV)/bin/activate: uv.lock
-	test -d $(VENV) || $(PYTHON) -m venv $(VENV)
-	@if command -v uv >/dev/null 2>&1; then \
-		echo "INFO: Using uv for virtual environment setup..."; \
-		uv pip install --upgrade pip; \
-	else \
-		echo "INFO: Using pip for virtual environment setup..."; \
-		$(BIN)/pip install --upgrade pip; \
-	fi
-	touch $(VENV)/bin/activate
+	./dev-tools/scripts/venv_setup.py
 
 # @SECTION Testing
-# Testing targets (using dev-tools)
-test: test-quick  ## Run quick test suite (alias for test-quick)
+# Testing targets (using enhanced dispatcher)
+test: dev-install  ## Run tests (supports: make test path/to/tests -k pattern -v)
+	@./dev-tools/testing/run_tests.py $(filter-out $@,$(MAKECMDGOALS))
 
-test-unit: dev-install  ## Run unit tests only
-	./dev-tools/testing/run_tests.py --unit $(TEST_ARGS)
+test-unit: dev-install  ## Run unit tests (supports same args: make test-unit path -v)
+	@./dev-tools/testing/run_tests.py --unit $(filter-out $@,$(MAKECMDGOALS))
 
-test-integration: dev-install  ## Run integration tests only
-	./dev-tools/testing/run_tests.py --integration $(TEST_ARGS)
+test-integration: dev-install  ## Run integration tests (supports same args)
+	@./dev-tools/testing/run_tests.py --integration $(filter-out $@,$(MAKECMDGOALS))
 
-test-e2e: dev-install  ## Run end-to-end tests only
-	./dev-tools/testing/run_tests.py --e2e $(TEST_ARGS)
+test-e2e: dev-install  ## Run end-to-end tests (supports same args)
+	@./dev-tools/testing/run_tests.py --e2e $(filter-out $@,$(MAKECMDGOALS))
 
-test-all: dev-install  ## Run all tests
-	./dev-tools/testing/run_tests.py
+test-all: dev-install  ## Run all tests (supports same args)
+	@./dev-tools/testing/run_tests.py --all $(filter-out $@,$(MAKECMDGOALS))
 
-test-parallel: dev-install  ## Run tests in parallel
-	./dev-tools/testing/run_tests.py --parallel
+test-parallel: dev-install  ## Run tests in parallel (supports same args)
+	@./dev-tools/testing/run_tests.py --parallel $(filter-out $@,$(MAKECMDGOALS))
 
-test-quick: dev-install  ## Run quick test suite (unit + fast integration)
-	./dev-tools/testing/run_tests.py --unit --fast
+test-quick: dev-install  ## Run quick test suite (supports same args)
+	@./dev-tools/testing/run_tests.py --unit --fast $(filter-out $@,$(MAKECMDGOALS))
 
-test-performance: dev-install  ## Run performance tests
-	./dev-tools/testing/run_tests.py --markers slow
+test-performance: dev-install  ## Run performance tests (supports same args)
+	@./dev-tools/testing/run_tests.py --markers slow $(filter-out $@,$(MAKECMDGOALS))
 
-test-aws: dev-install  ## Run AWS-specific tests
-	./dev-tools/testing/run_tests.py --markers aws
+test-aws: dev-install  ## Run AWS-specific tests (supports same args)
+	@./dev-tools/testing/run_tests.py --markers aws $(filter-out $@,$(MAKECMDGOALS))
 
-test-cov: dev-install  ## Run tests with coverage report
-	./dev-tools/testing/run_tests.py --coverage
+test-cov: dev-install  ## Run tests with coverage (supports same args)
+	@./dev-tools/testing/run_tests.py --coverage $(filter-out $@,$(MAKECMDGOALS))
 
-test-html: dev-install  ## Run tests with HTML coverage report
-	./dev-tools/testing/run_tests.py --html-coverage
+test-html: dev-install  ## Run tests with HTML coverage (supports same args)
+	@./dev-tools/testing/run_tests.py --html-coverage $(filter-out $@,$(MAKECMDGOALS))
 	@echo "Coverage report generated in htmlcov/index.html"
+
+# Dummy target to prevent "No rule to make target" errors
+%:
+	@:
 
 test-report: dev-install  ## Generate comprehensive test report
 	./dev-tools/testing/run_tests.py --all --coverage --junit-xml=test-results-combined.xml --cov-xml=coverage-combined.xml --html-coverage --maxfail=1 --timeout=60
@@ -201,24 +192,32 @@ quality-check-files: dev-install  ## Run quality checks on specific files (usage
 	@echo "Running professional quality checks on specified files..."
 	./dev-tools/scripts/quality_check.py --strict --files $(FILES)
 
-lint: dev-install  ## Run comprehensive linting (black, isort, flake8, mypy, pylint)
-	./dev-tools/scripts/ci_check.py
+format-fix: clean-whitespace  ## Auto-fix code formatting with Ruff
+	@uv run ruff format --quiet .
+	@uv run ruff check --fix --exit-zero --quiet .
 
-lint-quick: dev-install  ## Run fast linting (skip slow mypy/pylint)
-	./dev-tools/scripts/ci_check.py --quick
+container-health-check:  ## Test container health endpoint (supports HEALTH_CHECK_TIMEOUT, HEALTH_CHECK_URL, HEALTH_CHECK_INTERVAL)
+	HEALTH_CHECK_TIMEOUT=$${HEALTH_CHECK_TIMEOUT:-60} \
+	HEALTH_CHECK_URL=$${HEALTH_CHECK_URL:-http://localhost:8000/health} \
+	HEALTH_CHECK_INTERVAL=$${HEALTH_CHECK_INTERVAL:-3} \
+	./dev-tools/scripts/container_health_check.py
 
-lint-fix: dev-install  ## Fix linting issues (black, isort auto-fix)
-	./dev-tools/scripts/ci_check.py --fix
+ci-git-setup:  ## Setup git configuration for CI automated commits
+	git config --local user.name "github-actions[bot]"
+	git config --local user.email "github-actions[bot]@users.noreply.github.com"
+
+lint: dev-install  ## Check enforced rules (fail on issues)
+	@uv run ruff check --quiet .
+	@uv run ruff format --check --quiet .
+
+lint-optional: dev-install  ## Check optional rules (warnings only)
+	@uv run ruff check --select=N,UP,B,PL,C90,RUF --quiet . || true
+
+pre-commit: format lint  ## Simulate pre-commit checks locally
+	@echo "All checks passed! Safe to commit."
 
 hadolint-check: ## Check Dockerfiles with hadolint
-	@if command -v hadolint >/dev/null 2>&1; then \
-		echo "Running hadolint on Dockerfiles..."; \
-		hadolint Dockerfile; \
-		hadolint dev-tools/docker/Dockerfile.dev-tools; \
-	else \
-		echo "hadolint not found - install with: brew install hadolint"; \
-		exit 1; \
-	fi
+	./dev-tools/scripts/hadolint_check.py
 
 dev-checks-container: ## Run all pre-commit checks in container (no local tools needed)
 	./dev-tools/scripts/run_dev_checks.sh all
@@ -246,10 +245,7 @@ install-dev-tools-dry-run: ## Show what development tools would be installed
 
 clean-whitespace:  ## Clean whitespace in blank lines from all files
 	@echo "Cleaning whitespace in blank lines..."
-	./dev-tools/scripts/clean_whitespace.py
-
-format: dev-install clean-whitespace  ## Format code (Black + isort + autopep8 + autoflake + whitespace cleanup)
-	./dev-tools/scripts/format_code.py
+	$(call run-tool,python,./dev-tools/scripts/clean_whitespace.py)
 
 security: dev-install  ## Run security checks (bandit, safety)
 	./dev-tools/scripts/security_check.py
@@ -260,17 +256,8 @@ security-quick: dev-install  ## Run quick security checks only
 security-all: dev-install  ## Run all available security tools
 	./dev-tools/scripts/security_check.py --all
 
-security-container: dev-install ## Run container security scans
-	@echo "Running container security scans..."
-	@echo "Ensuring required tools are installed..."
-	./dev-tools/scripts/install_dev_tools.py --tool trivy --tool hadolint
-	@echo "Building Docker image for security scan..."
-	docker build -t $(PROJECT):security-scan .
-	@echo "Running Trivy vulnerability scan..."
-	trivy image --format sarif --output trivy-results.sarif $(PROJECT):security-scan
-	trivy image --format json --output trivy-results.json $(PROJECT):security-scan
-	@echo "Running Hadolint Dockerfile scan..."
-	hadolint Dockerfile --format sarif > hadolint-results.sarif || echo "Dockerfile issues found"
+ci-security-container: dev-install ## Run container security scans (CI)
+	./dev-tools/scripts/security_container.py
 
 security-with-container: dev-install  ## Run security checks including container scans
 	./dev-tools/scripts/security_check.py --all --container
@@ -424,6 +411,18 @@ docs-clean:  ## Clean documentation build files
 version-show:  ## Show current version from project config
 	@echo "Current version: $(VERSION)"
 
+get-version:  ## Generate version (supports FORMAT=container for Docker-safe prefix)
+	@if [ "$${IS_RELEASE:-false}" = "true" ]; then \
+		echo "$(VERSION)"; \
+	else \
+		commit=$$(git rev-parse --short HEAD 2>/dev/null || echo 'unknown'); \
+		if [ "$${FORMAT}" = "container" ]; then \
+			echo "$(VERSION).dev-$${commit}"; \
+		else \
+			echo "$(VERSION).dev+$${commit}"; \
+		fi; \
+	fi
+
 version-bump-patch:  ## Bump patch version (1.0.0 -> 1.0.1)
 	@./dev-tools/package/version_bump.sh patch
 
@@ -442,10 +441,214 @@ version-bump:  ## Show version bump help
 	@echo ""
 	@echo "Current version: $(VERSION)"
 
+# @SECTION Local CI (GitHub Actions)
+# Local GitHub Actions execution with act
+local-list: dev-install  ## List available workflows and jobs for local execution
+	@echo "Available workflows and jobs for local execution:"
+	@if command -v act >/dev/null 2>&1; then \
+		act -l; \
+	else \
+		echo "Error: act not installed. Run 'make install-dev-tools' to install."; \
+		exit 1; \
+	fi
+
+local-dry-run: dev-install  ## Validate all workflows without running (dry run)
+	@echo "Validating workflows with act (dry run)..."
+	@if command -v act >/dev/null 2>&1; then \
+		act --dryrun; \
+	else \
+		echo "Error: act not installed. Run 'make install-dev-tools' to install."; \
+		exit 1; \
+	fi
+
+local-push: dev-install  ## Simulate push event (triggers CI workflow)
+	@echo "Simulating push event locally..."
+	@if command -v act >/dev/null 2>&1; then \
+		act push; \
+	else \
+		echo "Error: act not installed. Run 'make install-dev-tools' to install."; \
+		exit 1; \
+	fi
+
+local-pr: dev-install  ## Simulate pull request event (triggers CI + security workflows)
+	@echo "Simulating pull request event locally..."
+	@if command -v act >/dev/null 2>&1; then \
+		act pull_request; \
+	else \
+		echo "Error: act not installed. Run 'make install-dev-tools' to install."; \
+		exit 1; \
+	fi
+
+local-release: dev-install  ## Simulate release event (triggers publish workflow)
+	@echo "Simulating release event locally..."
+	@if command -v act >/dev/null 2>&1; then \
+		act release; \
+	else \
+		echo "Error: act not installed. Run 'make install-dev-tools' to install."; \
+		exit 1; \
+	fi
+
+local-ci: dev-install  ## Run CI workflow locally (.github/workflows/ci.yml)
+	@echo "Running CI workflow locally..."
+	@if command -v act >/dev/null 2>&1; then \
+		act -W .github/workflows/ci.yml; \
+	else \
+		echo "Error: act not installed. Run 'make install-dev-tools' to install."; \
+		exit 1; \
+	fi
+
+# =============================================================================
+# Release Management
+# =============================================================================
+
+# Standard releases
+release-patch: ## Bump patch version and create release (1.0.0 -> 1.0.1)
+	@$(MAKE) _release BUMP_TYPE=patch
+
+release-minor: ## Bump minor version and create release (1.0.0 -> 1.1.0)
+	@$(MAKE) _release BUMP_TYPE=minor
+
+release-major: ## Bump major version and create release (1.0.0 -> 2.0.0)
+	@$(MAKE) _release BUMP_TYPE=major
+
+# Pre-releases - Alpha
+release-patch-alpha: ## Bump patch and create alpha release (1.0.0 -> 1.0.1-alpha.1)
+	@$(MAKE) _release BUMP_TYPE=patch PRERELEASE_TYPE=alpha
+
+release-minor-alpha: ## Bump minor and create alpha release (1.0.0 -> 1.1.0-alpha.1)
+	@$(MAKE) _release BUMP_TYPE=minor PRERELEASE_TYPE=alpha
+
+release-major-alpha: ## Bump major and create alpha release (1.0.0 -> 2.0.0-alpha.1)
+	@$(MAKE) _release BUMP_TYPE=major PRERELEASE_TYPE=alpha
+
+# Pre-releases - Beta
+release-patch-beta: ## Bump patch and create beta release (1.0.0 -> 1.0.1-beta.1)
+	@$(MAKE) _release BUMP_TYPE=patch PRERELEASE_TYPE=beta
+
+release-minor-beta: ## Bump minor and create beta release (1.0.0 -> 1.1.0-beta.1)
+	@$(MAKE) _release BUMP_TYPE=minor PRERELEASE_TYPE=beta
+
+release-major-beta: ## Bump major and create beta release (1.0.0 -> 2.0.0-beta.1)
+	@$(MAKE) _release BUMP_TYPE=major PRERELEASE_TYPE=beta
+
+# Pre-releases - RC
+release-patch-rc: ## Bump patch and create rc release (1.0.0 -> 1.0.1-rc.1)
+	@$(MAKE) _release BUMP_TYPE=patch PRERELEASE_TYPE=rc
+
+release-minor-rc: ## Bump minor and create rc release (1.0.0 -> 1.1.0-rc.1)
+	@$(MAKE) _release BUMP_TYPE=minor PRERELEASE_TYPE=rc
+
+release-major-rc: ## Bump major and create rc release (1.0.0 -> 2.0.0-rc.1)
+	@$(MAKE) _release BUMP_TYPE=major PRERELEASE_TYPE=rc
+
+# Promotions
+promote-alpha: ## Promote to next alpha version (1.0.0-alpha.1 -> 1.0.0-alpha.2)
+	@$(MAKE) _promote PROMOTE_TO=alpha
+
+promote-beta: ## Promote alpha to beta (1.0.0-alpha.2 -> 1.0.0-beta.1)
+	@$(MAKE) _promote PROMOTE_TO=beta
+
+promote-rc: ## Promote beta to rc (1.0.0-beta.1 -> 1.0.0-rc.1)
+	@$(MAKE) _promote PROMOTE_TO=rc
+
+promote-stable: ## Promote rc to stable (1.0.0-rc.1 -> 1.0.0)
+	@$(MAKE) _promote PROMOTE_TO=stable
+
+# Special releases
+release-version: ## Create release with specific version (RELEASE_VERSION=1.2.3)
+	@$(MAKE) _release_custom
+
+release-backfill: ## Create backfill release (RELEASE_VERSION=1.2.3 TO_COMMIT=abc)
+	@$(MAKE) _release_backfill
+
+# Internal DRY implementations
+_release:
+	@if [ -n "$(RELEASE_VERSION)" ]; then \
+		echo "ERROR: RELEASE_VERSION cannot be used with bump targets"; \
+		echo "Use: RELEASE_VERSION=$(RELEASE_VERSION) make release-version"; \
+		exit 1; \
+	fi
+	@if [ "$(DRY_RUN)" = "true" ]; then \
+		./dev-tools/release/dry_run_release.sh bump $(BUMP_TYPE) $(PRERELEASE_TYPE); \
+	else \
+		./dev-tools/release/version_manager.sh bump $(BUMP_TYPE) $(PRERELEASE_TYPE); \
+		./dev-tools/release/release_creator.sh; \
+	fi
+
+_promote:
+	@if [ -n "$(RELEASE_VERSION)" ]; then \
+		echo "ERROR: RELEASE_VERSION cannot be used with promotion targets"; \
+		echo "Use: RELEASE_VERSION=$(RELEASE_VERSION) make release-version"; \
+		exit 1; \
+	fi
+	@if [ "$(DRY_RUN)" = "true" ]; then \
+		echo "DRY RUN: Promotion simulation not yet implemented"; \
+		echo "Would promote using: $(PROMOTE_TO)"; \
+	else \
+		./dev-tools/release/promote_manager.sh $(PROMOTE_TO); \
+		./dev-tools/release/release_creator.sh; \
+	fi
+
+_release_custom:
+	@if [ -z "$(RELEASE_VERSION)" ]; then \
+		echo "ERROR: RELEASE_VERSION required"; \
+		echo "Usage: RELEASE_VERSION=1.2.3 make release-version"; \
+		exit 1; \
+	fi
+	@if [ "$(DRY_RUN)" = "true" ]; then \
+		./dev-tools/release/dry_run_release.sh set $(RELEASE_VERSION); \
+	else \
+		./dev-tools/release/version_manager.sh set $(RELEASE_VERSION); \
+		./dev-tools/release/release_creator.sh; \
+	fi
+
+_release_backfill:
+	@if [ -z "$(RELEASE_VERSION)" ] || [ -z "$(TO_COMMIT)" ]; then \
+		echo "ERROR: RELEASE_VERSION and TO_COMMIT required"; \
+		echo "Usage: RELEASE_VERSION=1.2.3 TO_COMMIT=abc make release-backfill"; \
+		echo "Optional: FROM_COMMIT=def (defaults to first commit)"; \
+		exit 1; \
+	fi
+	@if [ "$(DRY_RUN)" = "true" ]; then \
+		echo "DRY RUN: Backfill simulation"; \
+		ALLOW_BACKFILL=true ./dev-tools/release/dry_run_release.sh set $(RELEASE_VERSION); \
+	else \
+		ALLOW_BACKFILL=true ./dev-tools/release/version_manager.sh set $(RELEASE_VERSION); \
+		ALLOW_BACKFILL=true ./dev-tools/release/release_creator.sh; \
+	fi
+
+local-security: dev-install  ## Run security workflow locally (.github/workflows/security.yml)
+	@echo "Running security workflow locally..."
+	@if command -v act >/dev/null 2>&1; then \
+		act -W .github/workflows/security.yml; \
+	else \
+		echo "Error: act not installed. Run 'make install-dev-tools' to install."; \
+		exit 1; \
+	fi
+
+local-test-matrix: dev-install  ## Run test matrix workflow locally (.github/workflows/test-matrix.yml)
+	@echo "Running test matrix workflow locally..."
+	@if command -v act >/dev/null 2>&1; then \
+		act -W .github/workflows/test-matrix.yml; \
+	else \
+		echo "Error: act not installed. Run 'make install-dev-tools' to install."; \
+		exit 1; \
+	fi
+
+local-clean: ## Clean local act artifacts and containers
+	@echo "Cleaning local act artifacts..."
+	@rm -rf .local/artifacts
+	@if command -v docker >/dev/null 2>&1; then \
+		echo "Removing act containers..."; \
+		docker ps -a --filter "label=act" -q | xargs -r docker rm -f; \
+		echo "Removing act images (unused)..."; \
+		docker images --filter "dangling=true" -q | xargs -r docker rmi; \
+	fi
+	@echo "Local cleanup complete!"
 # @SECTION Build & Deploy
-# Build targets (using dev-tools)
-build: clean generate-pyproject dev-install  ## Build package
-	BUILD_ARGS="$(BUILD_ARGS)" ./dev-tools/package/build.sh
+build: clean dev-install  ## Build package
+	VERSION=$$(make -s get-version) $(MAKE) generate-pyproject && \
+	VERSION=$$(make -s get-version) BUILD_ARGS="$(BUILD_ARGS)" ./dev-tools/package/build.sh --quiet
 
 build-test: build  ## Build and test package installation
 	./dev-tools/package/test_install.sh
@@ -462,33 +665,31 @@ publish-test: build  ## Publish to test PyPI
 # CI/CD targets
 # @SECTION CI Quality Checks
 # Individual code quality targets (with tool names)
-ci-quality-black:  ## Run Black code formatting check
-	@echo "Running Black formatting check..."
-	$(call run-tool,black,--check $(PACKAGE) $(TESTS))
+format: dev-install clean-whitespace  ## Format code with Ruff (no auto-fix)
+	@uv run ruff format --check --quiet .
 
-ci-quality-isort:  ## Run isort import sorting check
-	@echo "Running isort import check..."
-	$(call run-tool,isort,--check-only $(PACKAGE) $(TESTS))
+ci-quality-ruff: dev-install  ## Run Ruff formatting and linting check (basic rules only)
+	@echo "Running Ruff formatting and linting check (basic rules only)..."
+	@uv run ruff check --select W,F,I --ignore E501 --quiet .
+	@uv run ruff format --check --quiet .
 
-ci-quality-flake8:  ## Run flake8 style guide check
-	@echo "Running flake8 style check..."
-	$(call run-tool,flake8,$(PACKAGE) $(TESTS))
-
-ci-quality-mypy:  ## Run mypy type checking
-	@echo "Running mypy type check..."
-	$(call run-tool,mypy,.,$(PACKAGE))
-
-ci-quality-pylint:  ## Run pylint code analysis
-	@echo "Running pylint analysis..."
-	$(call run-tool,pylint,$(PACKAGE) $(TESTS))
+ci-quality-ruff-optional:  ## Run Ruff extended linting (warnings only)
+	@echo "Running Ruff extended linting..."
+	uv run ruff check --select=E501,N,UP,B,PL,C90,RUF . || true
 
 ci-quality-radon:  ## Run radon complexity analysis
 	@echo "Running radon complexity analysis..."
 	$(call run-tool,radon,cc $(PACKAGE) --min B --show-complexity)
 	$(call run-tool,radon,mi $(PACKAGE) --min B)
 
+ci-quality-mypy:  ## Run mypy type checking
+	@echo "Running mypy type check..."
+	$(call run-tool,mypy,.)
+
 # Composite target (for local convenience)
-ci-quality: ci-quality-black ci-quality-isort ci-quality-flake8 ci-quality-mypy ci-quality-pylint ci-quality-radon  ## Run all code quality checks
+ci-quality: ci-quality-ruff ci-quality-mypy  ## Run all enforced code quality checks
+
+ci-quality-full: ci-quality-ruff ci-quality-ruff-optional ci-quality-mypy  ## Run all code quality checks including optional
 
 # Individual architecture quality targets (with tool names)
 ci-arch-cqrs:  ## Run CQRS pattern validation
@@ -561,47 +762,20 @@ ci-security-safety:  ## Run Safety dependency scan
 	@echo "Running Safety dependency scan..."
 	$(call run-tool,safety,check)
 
-ci-security-trivy:  ## Run Trivy container scan
-	@echo "Running Trivy container scan..."
-	@if command -v docker >/dev/null 2>&1; then \
-		docker build -t security-scan:latest .; \
-		docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
-			-v $(PWD):/workspace aquasec/trivy:latest image security-scan:latest; \
-	else \
-		echo "Docker not available - Trivy requires Docker"; \
-	fi
+ci-security-trivy: dev-install  ## Run Trivy container scan
+	./dev-tools/scripts/ci_security.py trivy
 
-ci-security-hadolint:  ## Run Hadolint Dockerfile scan
-	@echo "Running Hadolint Dockerfile scan..."
-	@if command -v hadolint >/dev/null 2>&1; then \
-		hadolint Dockerfile; \
-	else \
-		echo "Hadolint not available - install with: brew install hadolint"; \
-	fi
+ci-security-hadolint: dev-install  ## Run Hadolint Dockerfile scan
+	./dev-tools/scripts/ci_security.py hadolint
 
-ci-security-semgrep:  ## Run Semgrep static analysis
-	@echo "Running Semgrep static analysis..."
-	@if command -v semgrep >/dev/null 2>&1; then \
-		semgrep --config=auto --sarif --output=semgrep.sarif $(PACKAGE) || echo "Semgrep issues found"; \
-	else \
-		echo "Semgrep not available - install with: pip install semgrep"; \
-	fi
+ci-security-semgrep: dev-install  ## Run Semgrep static analysis
+	./dev-tools/scripts/ci_security.py semgrep
 
-ci-security-trivy-fs:  ## Run Trivy filesystem scan
-	@echo "Running Trivy filesystem scan..."
-	@if command -v trivy >/dev/null 2>&1; then \
-		trivy fs --skip-dirs .venv --format sarif --output trivy-fs-results.sarif . || echo "Trivy filesystem issues found"; \
-	else \
-		echo "Trivy not available - install from https://aquasecurity.github.io/trivy/"; \
-	fi
+ci-security-trivy-fs: dev-install  ## Run Trivy filesystem scan
+	./dev-tools/scripts/ci_security.py trivy-fs
 
-ci-security-trufflehog:  ## Run TruffleHog secrets scan
-	@echo "Running TruffleHog secrets scan..."
-	@if command -v trufflehog >/dev/null 2>&1; then \
-		trufflehog git file://. --json > trufflehog-results.json || echo "Secrets found"; \
-	else \
-		echo "TruffleHog not available - install from https://github.com/trufflesecurity/trufflehog"; \
-	fi
+ci-security-trufflehog: dev-install  ## Run TruffleHog secrets scan
+	./dev-tools/scripts/ci_security.py trufflehog
 
 # Composite target
 ci-security: ci-security-bandit ci-security-safety ci-security-semgrep ci-security-trivy-fs ci-security-trufflehog  ## Run all security scans
@@ -725,7 +899,7 @@ validate-config: install  ## Validate configuration
 # Container targets
 container-build:  ## Build Docker image
 	REGISTRY=$(CONTAINER_REGISTRY) \
-	VERSION=$(VERSION) \
+	VERSION=$${VERSION:-$$(make -s get-version)} \
 	IMAGE_NAME=$(CONTAINER_IMAGE) \
 	./dev-tools/scripts/container_build.sh
 
@@ -758,7 +932,8 @@ container-build-single: dev-install  ## Build container image for single Python 
 		exit 1; \
 	fi
 	REGISTRY=$(CONTAINER_REGISTRY) \
-	VERSION=$(VERSION) \
+	VERSION=$${VERSION:-$$(make -s get-version)} \
+	CONTAINER_TAG_PREFIX=$${CONTAINER_TAG_PREFIX:-} \
 	IMAGE_NAME=$(CONTAINER_IMAGE) \
 	PYTHON_VERSION=$(PYTHON_VERSION) \
 	MULTI_PYTHON=true \
@@ -833,6 +1008,20 @@ status:  ## Show project status and useful commands
 	@echo "  List versions:  make docs-list-versions"
 	@echo "  Deploy version: make docs-deploy-version VERSION=1.0.0"
 	@echo ""
+	@echo "Release Management:"
+	@echo "  Standard:       make release-patch|minor|major"
+	@echo "  Pre-releases:   make release-patch-alpha|beta|rc"
+	@echo "  Promotions:     make promote-alpha|beta|rc|stable"
+	@echo "  Custom version: RELEASE_VERSION=1.2.3 make release-version"
+	@echo "  Backfill:       RELEASE_VERSION=1.2.3 TO_COMMIT=abc make release-backfill"
+	@echo "  Dry run:        DRY_RUN=true make release-minor"
+	@echo ""
+	@echo "Environment Variables:"
+	@echo "  RELEASE_VERSION  Override version (use with release-version/backfill)"
+	@echo "  FROM_COMMIT      Start commit (optional, smart defaults)"
+	@echo "  TO_COMMIT        End commit (optional, defaults to HEAD)"
+	@echo "  DRY_RUN          Test mode without making changes"
+	@echo ""
 	@echo "Version Management:"
 	@echo "  Patch version:  make version-bump-patch"
 	@echo "  Minor version:  make version-bump-minor"
@@ -861,68 +1050,16 @@ print-json-%:
 
 # UV-specific targets for performance optimization
 uv-lock: ## Generate uv lock file for reproducible builds
-	@if ! command -v uv >/dev/null 2>&1; then \
-		echo "ERROR: uv not available. Install with: pip install uv"; \
-		exit 1; \
-	fi
-	@echo "INFO: Generating uv lock files..."
-	uv pip compile pyproject.toml --output-file requirements.lock
-	uv pip compile pyproject.toml --extra dev --output-file requirements-dev.lock
-	@echo "SUCCESS: Lock files generated: requirements.lock, requirements-dev.lock"
+	./dev-tools/scripts/uv_manager.py lock
 
 uv-sync: ## Sync environment with uv lock files
-	@if ! command -v uv >/dev/null 2>&1; then \
-		echo "ERROR: uv not available. Install with: pip install uv"; \
-		exit 1; \
-	fi
-	@if [ -f requirements.lock ]; then \
-		echo "INFO: Syncing with uv lock file..."; \
-		uv pip sync requirements.lock; \
-	else \
-		echo "ERROR: No lock file found. Run 'make uv-lock' first."; \
-		exit 1; \
-	fi
+	./dev-tools/scripts/uv_manager.py sync
 
 uv-sync-dev: ## Sync development environment with uv lock files
-	@if ! command -v uv >/dev/null 2>&1; then \
-		echo "ERROR: uv not available. Install with: pip install uv"; \
-		exit 1; \
-	fi
-	@if [ -f requirements-dev.lock ]; then \
-		echo "INFO: Syncing development environment with uv lock file..."; \
-		uv pip sync requirements-dev.lock; \
-	else \
-		echo "ERROR: No dev lock file found. Run 'make uv-lock' first."; \
-		exit 1; \
-	fi
+	./dev-tools/scripts/uv_manager.py sync-dev
 
 uv-check: ## Check if uv is available and show version
-	@if command -v uv >/dev/null 2>&1; then \
-		echo "SUCCESS: uv is available: $$(uv --version)"; \
-		echo "INFO: Performance comparison:"; \
-		echo "  • uv is typically 10-100x faster than pip"; \
-		echo "  • Better dependency resolution and error messages"; \
-		echo "  • Use 'make dev-install-uv' for faster development setup"; \
-	else \
-		echo "ERROR: uv not available"; \
-		echo "INFO: Install with: pip install uv"; \
-		echo "INFO: Or use system package manager: brew install uv"; \
-	fi
+	./dev-tools/scripts/uv_manager.py check
 
 uv-benchmark: ## Benchmark uv vs pip installation speed
-	@echo "INFO: Benchmarking uv vs pip installation speed..."
-	@echo "This will create temporary virtual environments for testing."
-	@echo ""
-	@if ! command -v uv >/dev/null 2>&1; then \
-		echo "ERROR: uv not available for benchmarking"; \
-		exit 1; \
-	fi
-	@echo "INFO: Testing pip installation speed..."
-	@time (python -m venv .venv-pip-test && .venv-pip-test/bin/pip install -e ".[dev]" > /dev/null 2>&1)
-	@echo ""
-	@echo "INFO: Testing uv installation speed..."
-	@time (python -m venv .venv-uv-test && uv pip install -e ".[dev]" --python .venv-uv-test/bin/python > /dev/null 2>&1)
-	@echo ""
-	@echo "INFO: Cleaning up test environments..."
-	@rm -rf .venv-pip-test .venv-uv-test
-	@echo "SUCCESS: Benchmark complete!"
+	./dev-tools/scripts/uv_manager.py benchmark

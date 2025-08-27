@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from pydantic import field_validator, model_validator
 
@@ -27,7 +27,7 @@ class PriceType(str, Enum):
     HETEROGENEOUS = "heterogeneous"
 
     @classmethod
-    def from_string(cls, value: str) -> "PriceType":
+    def from_string(cls, value: str) -> PriceType:
         """Create PriceType from string value.
 
         Args:
@@ -62,7 +62,7 @@ class MachineConfiguration(ValueObject):
     cloud_host_id: Optional[str] = None
 
     @model_validator(mode="after")
-    def validate_configuration(self) -> "MachineConfiguration":
+    def validate_configuration(self) -> MachineConfiguration:
         """Validate machine configuration."""
         if not self.instance_type:
             raise ValueError("Instance type is required")
@@ -72,7 +72,7 @@ class MachineConfiguration(ValueObject):
             raise ValueError("Resource ID is required")
         return self
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert configuration to dictionary."""
         result = {
             "instanceType": self.instance_type,
@@ -90,7 +90,7 @@ class MachineConfiguration(ValueObject):
         return result
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "MachineConfiguration":
+    def from_dict(cls, data: dict[str, Any]) -> MachineConfiguration:
         """Create configuration from dictionary."""
         return cls(
             instance_type=data["instanceType"],
@@ -112,16 +112,16 @@ class MachineEvent(ValueObject):
     event_type: str
     old_state: Optional[str]
     new_state: Optional[str]
-    details: Optional[Dict[str, Any]] = None
+    details: Optional[dict[str, Any]] = None
 
     @model_validator(mode="after")
-    def validate_event(self) -> "MachineEvent":
+    def validate_event(self) -> MachineEvent:
         """Validate machine event."""
         if not self.event_type:
             raise ValueError("Event type is required")
         return self
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert event to dictionary."""
         return {
             "timestamp": self.timestamp.isoformat(),
@@ -138,16 +138,16 @@ class HealthCheck(ValueObject):
     check_type: str
     status: bool
     timestamp: datetime
-    details: Optional[Dict[str, Any]] = None
+    details: Optional[dict[str, Any]] = None
 
     @model_validator(mode="after")
-    def validate_health_check(self) -> "HealthCheck":
+    def validate_health_check(self) -> HealthCheck:
         """Validate health check."""
         if not self.check_type:
             raise ValueError("Health check type is required")
         return self
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert health check to dictionary."""
         return {
             "checkType": self.check_type,
@@ -236,10 +236,10 @@ class MachineMetadata(ValueObject):
     ami_id: str
     ebs_optimized: bool = False
     monitoring: str = "disabled"
-    tags: Dict[str, str] = {}
+    tags: dict[str, str] = {}
 
     @model_validator(mode="after")
-    def validate_metadata(self) -> "MachineMetadata":
+    def validate_metadata(self) -> MachineMetadata:
         """Validate machine metadata."""
         if not self.availability_zone:
             raise ValueError("Availability zone is required")
@@ -251,7 +251,7 @@ class MachineMetadata(ValueObject):
             raise ValueError("AMI ID is required")
         return self
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert metadata to dictionary."""
         return {
             "availability_zone": self.availability_zone,
@@ -264,7 +264,7 @@ class MachineMetadata(ValueObject):
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "MachineMetadata":
+    def from_dict(cls, data: dict[str, Any]) -> MachineMetadata:
         """Create metadata from dictionary."""
         return cls(
             availability_zone=data["availability_zone"],
@@ -290,15 +290,15 @@ class HealthCheckResult(ValueObject):
     system_status: bool
     instance_status: bool
     timestamp: datetime
-    system_details: Optional[Dict[str, Any]] = None
-    instance_details: Optional[Dict[str, Any]] = None
+    system_details: Optional[dict[str, Any]] = None
+    instance_details: Optional[dict[str, Any]] = None
 
     @property
     def is_healthy(self) -> bool:
         """Check if machine is healthy."""
         return self.system_status and self.instance_status
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert health check result to dictionary."""
         return {
             "system": {
@@ -313,7 +313,7 @@ class HealthCheckResult(ValueObject):
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "HealthCheckResult":
+    def from_dict(cls, data: dict[str, Any]) -> HealthCheckResult:
         """Create health check result from dictionary."""
         return cls(
             system_status=data["system"]["status"],
@@ -337,7 +337,7 @@ class ResourceTag(ValueObject):
     value: str
 
     @model_validator(mode="after")
-    def validate_tag(self) -> "ResourceTag":
+    def validate_tag(self) -> ResourceTag:
         """Validate resource tag."""
         if not self.key:
             raise ValueError("Tag key is required")
@@ -351,12 +351,12 @@ class ResourceTag(ValueObject):
             raise ValueError("Tag value cannot exceed 256 characters")
         return self
 
-    def to_dict(self) -> Dict[str, str]:
+    def to_dict(self) -> dict[str, str]:
         """Convert tag to dictionary."""
         return {"Key": self.key, "Value": self.value}
 
     @classmethod
-    def from_dict(cls, data: Dict[str, str]) -> "ResourceTag":
+    def from_dict(cls, data: dict[str, str]) -> ResourceTag:
         """Create tag from dictionary."""
         if "Key" in data and "Value" in data:
             return cls(key=data["Key"], value=data["Value"])
@@ -365,7 +365,7 @@ class ResourceTag(ValueObject):
             return [cls(key=k, value=v) for k, v in data.items()]
 
     @classmethod
-    def get_default_tags(cls) -> List["ResourceTag"]:
+    def get_default_tags(cls) -> list[ResourceTag]:
         """Get basic default tags.
 
         Returns:

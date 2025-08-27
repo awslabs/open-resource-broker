@@ -1,6 +1,6 @@
 """HostFactory-specific field transformations."""
 
-from typing import Any, Dict, List
+from typing import Any
 
 from infrastructure.logging.logger import get_logger
 
@@ -9,7 +9,7 @@ class HostFactoryTransformations:
     """HostFactory-specific field transformations."""
 
     @staticmethod
-    def transform_subnet_id(value: Any) -> List[str]:
+    def transform_subnet_id(value: Any) -> list[str]:
         """Transform HostFactory subnetId field to subnet_ids list."""
         if isinstance(value, str):
             return [value]
@@ -19,7 +19,7 @@ class HostFactoryTransformations:
             return []
 
     @staticmethod
-    def transform_instance_tags(value: Any) -> Dict[str, str]:
+    def transform_instance_tags(value: Any) -> dict[str, str]:
         """
         Transform HostFactory instanceTags from string format to dict.
 
@@ -40,7 +40,7 @@ class HostFactoryTransformations:
             return {}
 
     @staticmethod
-    def ensure_instance_type_consistency(mapped_data: Dict[str, Any]) -> Dict[str, Any]:
+    def ensure_instance_type_consistency(mapped_data: dict[str, Any]) -> dict[str, Any]:
         """
         Ensure instance_type and instance_types fields are consistent for HostFactory.
 
@@ -55,12 +55,12 @@ class HostFactoryTransformations:
             # Set primary instance_type from first instance_types entry
             instance_types = mapped_data["instance_types"]
             if isinstance(instance_types, dict) and instance_types:
-                mapped_data["instance_type"] = list(instance_types.keys())[0]
+                mapped_data["instance_type"] = next(iter(instance_types.keys()))
 
         return mapped_data
 
     @staticmethod
-    def apply_transformations(mapped_data: Dict[str, Any]) -> Dict[str, Any]:
+    def apply_transformations(mapped_data: dict[str, Any]) -> dict[str, Any]:
         """Apply all HostFactory-specific field transformations."""
         logger = get_logger(__name__)
 
@@ -81,7 +81,9 @@ class HostFactoryTransformations:
             original_value = mapped_data["tags"]
             mapped_data["tags"] = HostFactoryTransformations.transform_instance_tags(original_value)
             logger.debug(
-                "HostFactory: Transformed tags: %s -> %s", original_value, mapped_data["tags"]
+                "HostFactory: Transformed tags: %s -> %s",
+                original_value,
+                mapped_data["tags"],
             )
 
         # Ensure instance type consistency

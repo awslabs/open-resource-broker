@@ -1,10 +1,13 @@
 """AWS Validation Adapter - AWS-specific implementation of provider validation."""
 
-from typing import Any, Dict, List
+from typing import Any
 
 from domain.base.dependency_injection import injectable
 from domain.base.ports.logging_port import LoggingPort
 from domain.base.ports.provider_validation_port import BaseProviderValidationAdapter
+from providers.aws.configuration.config import (
+    AWSProviderConfig as AWSProviderConfigBase,
+)
 from providers.aws.configuration.validator import (
     AWSProviderConfig,
     get_aws_config_manager,
@@ -80,7 +83,7 @@ class AWSValidationAdapter(BaseProviderValidationAdapter):
             # Fallback to hardcoded list for safety
             return api in ["EC2Fleet", "SpotFleet", "ASG", "RunInstances"]
 
-    def get_supported_provider_apis(self) -> List[str]:
+    def get_supported_provider_apis(self) -> list[str]:
         """
         Get list of all supported AWS provider APIs.
 
@@ -143,7 +146,7 @@ class AWSValidationAdapter(BaseProviderValidationAdapter):
             self._logger.error("Error getting default fleet type for AWS API %s: %s", api, e)
             return "request"  # Safe fallback
 
-    def get_valid_fleet_types_for_api(self, api: str) -> List[str]:
+    def get_valid_fleet_types_for_api(self, api: str) -> list[str]:
         """
         Get valid fleet types for a specific AWS provider API.
 
@@ -214,7 +217,9 @@ class AWSValidationAdapter(BaseProviderValidationAdapter):
 
             if not is_valid:
                 self._logger.debug(
-                    "AWS fleet type validation failed: %s not valid for %s", fleet_type, api
+                    "AWS fleet type validation failed: %s not valid for %s",
+                    fleet_type,
+                    api,
                 )
 
             return is_valid
@@ -225,7 +230,7 @@ class AWSValidationAdapter(BaseProviderValidationAdapter):
             )
             return False
 
-    def validate_template_configuration(self, template_config: Dict[str, Any]) -> Dict[str, Any]:
+    def validate_template_configuration(self, template_config: dict[str, Any]) -> dict[str, Any]:
         """
         Validate a complete AWS template configuration.
 
@@ -261,7 +266,7 @@ class AWSValidationAdapter(BaseProviderValidationAdapter):
 
         except Exception as e:
             self._logger.error("Error during AWS template validation: %s", e)
-            errors.append(f"Validation error: {str(e)}")
+            errors.append(f"Validation error: {e!s}")
 
         return {
             "valid": len(errors) == 0,
@@ -272,10 +277,10 @@ class AWSValidationAdapter(BaseProviderValidationAdapter):
 
     def _validate_aws_specific_fields(
         self,
-        template_config: Dict[str, Any],
-        errors: List[str],
-        warnings: List[str],
-        validated_fields: List[str],
+        template_config: dict[str, Any],
+        errors: list[str],
+        warnings: list[str],
+        validated_fields: list[str],
     ) -> None:
         """
         Validate AWS-specific template fields.
@@ -380,8 +385,6 @@ def create_aws_validation_adapter(logger: LoggingPort) -> AWSValidationAdapter:
     except Exception as e:
         logger.debug("Could not load full AWS config for validation: %s", e)
         # Create a minimal config with dummy auth for validation only
-        from providers.aws.configuration.config import AWSProviderConfig
-
-        aws_config = AWSProviderConfig(profile="validation-only")
+        aws_config = AWSProviderConfigBase(profile="validation-only")
 
     return AWSValidationAdapter(aws_config, logger)

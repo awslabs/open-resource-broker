@@ -1,6 +1,6 @@
 """AWS Cognito authentication strategy."""
 
-from typing import List, Optional
+from typing import Optional
 
 import boto3
 import jwt
@@ -50,8 +50,7 @@ class CognitoAuthStrategy(AuthPort):
             self.jwks_url = jwks_url
         else:
             self.jwks_url = (
-                f"https://cognito-idp.{region}.amazonaws.com/"
-                f"{user_pool_id}/.well-known/jwks.json"
+                f"https://cognito-idp.{region}.amazonaws.com/{user_pool_id}/.well-known/jwks.json"
             )
 
         # Initialize Cognito client
@@ -156,7 +155,7 @@ class CognitoAuthStrategy(AuthPort):
         except jwt.ExpiredSignatureError:
             return AuthResult(status=AuthStatus.EXPIRED, error_message="Token has expired")
         except jwt.InvalidTokenError as e:
-            return AuthResult(status=AuthStatus.INVALID, error_message=f"Invalid token: {str(e)}")
+            return AuthResult(status=AuthStatus.INVALID, error_message=f"Invalid token: {e!s}")
         except Exception as e:
             self._logger.error("Cognito token validation error: %s", e)
             return AuthResult(status=AuthStatus.FAILED, error_message="Token validation failed")
@@ -269,7 +268,7 @@ class CognitoAuthStrategy(AuthPort):
             self._logger.error("Failed to get public key: %s", e)
             return None
 
-    def _map_groups_to_roles(self, groups: List[str]) -> List[str]:
+    def _map_groups_to_roles(self, groups: list[str]) -> list[str]:
         """
         Map Cognito groups to application roles.
 
@@ -296,7 +295,7 @@ class CognitoAuthStrategy(AuthPort):
 
         return roles
 
-    def _generate_permissions(self, roles: List[str]) -> List[str]:
+    def _generate_permissions(self, roles: list[str]) -> list[str]:
         """
         Generate permissions based on roles.
 

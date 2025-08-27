@@ -23,18 +23,18 @@ from .machine_status import MachineStatus
 
 # Export all value objects
 __all__: list[str] = [
-    # Machine status
-    "MachineStatus",
+    "HealthCheck",
+    "HealthCheckResult",
+    "IPAddressRange",
+    "MachineConfiguration",
+    "MachineEvent",
     # Machine identifiers and core types
     "MachineId",
+    "MachineMetadata",
+    # Machine status
+    "MachineStatus",
     "MachineType",
     # Machine metadata and configuration
     "PriceType",
-    "MachineConfiguration",
-    "MachineEvent",
-    "HealthCheck",
-    "IPAddressRange",
-    "MachineMetadata",
-    "HealthCheckResult",
     "ResourceTag",
 ]

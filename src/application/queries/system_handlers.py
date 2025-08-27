@@ -1,6 +1,6 @@
 """System query handlers for administrative operations."""
 
-from typing import TYPE_CHECKING, Any, Dict
+from typing import TYPE_CHECKING, Any
 
 from application.base.handlers import BaseQueryHandler
 from application.decorators import query_handler
@@ -192,7 +192,7 @@ class ValidateProviderConfigHandler(
         super().__init__(logger, error_handler)
         self.container = container
 
-    async def execute_query(self, query: ValidateProviderConfigQuery) -> Dict[str, Any]:
+    async def execute_query(self, query: ValidateProviderConfigQuery) -> dict[str, Any]:
         """Execute provider configuration validation query."""
         self.logger.info("Validating provider configuration")
 
@@ -226,7 +226,7 @@ class ValidateProviderConfigHandler(
                     warnings.append("Unable to access provider configuration")
             except Exception as validation_error:
                 validation_errors.append(
-                    f"Provider configuration validation failed: {str(validation_error)}"
+                    f"Provider configuration validation failed: {validation_error!s}"
                 )
 
             is_valid = len(validation_errors) == 0
@@ -264,7 +264,7 @@ class GetSystemStatusHandler(BaseQueryHandler[GetSystemStatusQuery, SystemStatus
         super().__init__(logger, error_handler)
         self.container = container
 
-    async def execute_query(self, query: GetSystemStatusQuery) -> Dict[str, Any]:
+    async def execute_query(self, query: GetSystemStatusQuery) -> dict[str, Any]:
         """Execute system status query."""
         self.logger.info("Getting system status")
 
@@ -292,7 +292,7 @@ class GetSystemStatusHandler(BaseQueryHandler[GetSystemStatusQuery, SystemStatus
             except Exception as e:
                 system_status["components"]["configuration"] = {
                     "status": "unhealthy",
-                    "details": f"Configuration manager error: {str(e)}",
+                    "details": f"Configuration manager error: {e!s}",
                 }
                 system_status["status"] = "degraded"
 
@@ -306,7 +306,7 @@ class GetSystemStatusHandler(BaseQueryHandler[GetSystemStatusQuery, SystemStatus
             except Exception as e:
                 system_status["components"]["dependency_injection"] = {
                     "status": "unhealthy",
-                    "details": f"DI container error: {str(e)}",
+                    "details": f"DI container error: {e!s}",
                 }
                 system_status["status"] = "degraded"
 
@@ -338,7 +338,7 @@ class GetProviderMetricsHandler(BaseQueryHandler[GetProviderMetricsQuery, Provid
         super().__init__(logger, error_handler)
         self.container = container
 
-    async def execute_query(self, query: GetProviderMetricsQuery) -> Dict[str, Any]:
+    async def execute_query(self, query: GetProviderMetricsQuery) -> dict[str, Any]:
         """Execute provider metrics query."""
         self.logger.info("Getting provider metrics for timeframe: %s", query.timeframe)
 

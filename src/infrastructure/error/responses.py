@@ -2,7 +2,7 @@
 
 from datetime import datetime
 from http import HTTPStatus
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from pydantic import Field
 
@@ -29,7 +29,7 @@ class InfrastructureErrorResponse(BaseDTO):
     error_code: str
     message: str
     category: str = ErrorCategory.INTERNAL
-    details: Dict[str, Any] = Field(default_factory=dict)
+    details: dict[str, Any] = Field(default_factory=dict)
     http_status: int = HTTPStatus.INTERNAL_SERVER_ERROR
     timestamp: datetime = Field(default_factory=datetime.utcnow)
 
@@ -39,7 +39,7 @@ class InfrastructureErrorResponse(BaseDTO):
         error_code: str,
         message: str,
         category: str = ErrorCategory.INTERNAL,
-        details: Optional[Dict[str, Any]] = None,
+        details: Optional[dict[str, Any]] = None,
         http_status: Optional[int] = None,
     ) -> "InfrastructureErrorResponse":
         """Create infrastructure error response from domain error components."""
@@ -73,7 +73,7 @@ class InfrastructureErrorResponse(BaseDTO):
             http_status=http_status,
         )
 
-    def to_api_response(self) -> Dict[str, Any]:
+    def to_api_response(self) -> dict[str, Any]:
         """Convert to API response format."""
         return {
             "error": {
@@ -86,7 +86,7 @@ class InfrastructureErrorResponse(BaseDTO):
             "timestamp": self.timestamp.isoformat(),
         }
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert error response to dictionary."""
         return {
             "error": {
@@ -102,7 +102,7 @@ class InfrastructureErrorResponse(BaseDTO):
     @staticmethod
     def _exception_to_components(
         exception: Exception,
-    ) -> tuple[str, str, str, Dict[str, Any]]:
+    ) -> tuple[str, str, str, dict[str, Any]]:
         """Convert exception to error components."""
         if isinstance(exception, ValidationError):
             return (

@@ -1,20 +1,20 @@
 """Domain ports - interfaces for external dependencies."""
 
-from typing import Any, Dict, Optional, Protocol
+from typing import Any, Optional, Protocol
 
 
 class ConfigurationPort(Protocol):
     """Port for accessing configuration from domain layer."""
 
-    def get_naming_config(self) -> Dict[str, Any]:
+    def get_naming_config(self) -> dict[str, Any]:
         """Get naming configuration."""
         ...
 
-    def get_validation_config(self) -> Dict[str, Any]:
+    def get_validation_config(self) -> dict[str, Any]:
         """Get validation configuration."""
         ...
 
-    def get_provider_config(self, provider_type: str) -> Dict[str, Any]:
+    def get_provider_config(self, provider_type: str) -> dict[str, Any]:
         """Get provider-specific configuration."""
         ...
 
@@ -22,11 +22,11 @@ class ConfigurationPort(Protocol):
 class LoggingPort(Protocol):
     """Port for logging from domain layer."""
 
-    def log_domain_event(self, event_type: str, data: Dict[str, Any]) -> None:
+    def log_domain_event(self, event_type: str, data: dict[str, Any]) -> None:
         """Log domain events."""
         ...
 
-    def log_business_rule_violation(self, rule: str, context: Dict[str, Any]) -> None:
+    def log_business_rule_violation(self, rule: str, context: dict[str, Any]) -> None:
         """Log business rule violations."""
         ...
 
@@ -66,6 +66,6 @@ class NotificationPort(Protocol):
         """Send a notification."""
         ...
 
-    def send_alert(self, alert_type: str, data: Dict[str, Any]) -> None:
+    def send_alert(self, alert_type: str, data: dict[str, Any]) -> None:
         """Send an alert."""
         ...

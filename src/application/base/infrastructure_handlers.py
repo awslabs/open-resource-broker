@@ -9,7 +9,7 @@ consistency across all handler types in the CQRS system.
 import time
 import uuid
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, Generic, Optional, TypeVar
+from typing import Any, Callable, Generic, Optional, TypeVar
 
 from application.interfaces.infrastructure_handler import InfrastructureHandler
 from domain.base.ports import ErrorHandlingPort, LoggingPort
@@ -25,7 +25,7 @@ class RequestContext:
         """Initialize request context."""
         self.correlation_id = str(uuid.uuid4())
         self.start_time = time.time()
-        self.metadata: Dict[str, Any] = {}
+        self.metadata: dict[str, Any] = {}
 
 
 class BaseInfrastructureHandler(
@@ -64,7 +64,7 @@ class BaseInfrastructureHandler(
         """
         self.logger = logger
         self.error_handler = error_handler
-        self._metrics: Dict[str, Any] = {}
+        self._metrics: dict[str, Any] = {}
 
     async def handle(self, request: TRequest) -> TResponse:
         """
@@ -120,7 +120,9 @@ class BaseInfrastructureHandler(
 
             if self.logger:
                 self.logger.error(
-                    "Infrastructure request processing failed: %s - %s", request_type, str(e)
+                    "Infrastructure request processing failed: %s - %s",
+                    request_type,
+                    str(e),
                 )
 
             # Re-raise for upstream handling
@@ -200,7 +202,7 @@ class BaseInfrastructureHandler(
             metrics["total_duration"] / total_count if total_count > 0 else 0.0
         )
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """Get handler performance metrics."""
         return self._metrics.copy()
 

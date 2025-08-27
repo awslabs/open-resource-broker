@@ -3,7 +3,7 @@
 import json
 import os
 import tempfile
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 if TYPE_CHECKING:
     pass
@@ -52,7 +52,7 @@ def read_text_file(file_path: str, encoding: str = "utf-8") -> str:
         FileNotFoundError: If file doesn't exist
         IOError: If file cannot be read
     """
-    with open(file_path, "r", encoding=encoding) as f:
+    with open(file_path, encoding=encoding) as f:
         return f.read()
 
 
@@ -73,7 +73,7 @@ def write_text_file(file_path: str, content: str, encoding: str = "utf-8") -> No
         f.write(content)
 
 
-def read_json_file(file_path: str, encoding: str = "utf-8") -> Dict[str, Any]:
+def read_json_file(file_path: str, encoding: str = "utf-8") -> dict[str, Any]:
     """
     Read a JSON file.
 
@@ -88,13 +88,13 @@ def read_json_file(file_path: str, encoding: str = "utf-8") -> Dict[str, Any]:
         FileNotFoundError: If file doesn't exist
         json.JSONDecodeError: If file is not valid JSON
     """
-    with open(file_path, "r", encoding=encoding) as f:
-        result: Dict[str, Any] = json.load(f)
+    with open(file_path, encoding=encoding) as f:
+        result: dict[str, Any] = json.load(f)
         return result
 
 
 def write_json_file(
-    file_path: str, data: Dict[str, Any], encoding: str = "utf-8", indent: int = 2
+    file_path: str, data: dict[str, Any], encoding: str = "utf-8", indent: int = 2
 ) -> None:
     """
     Write data to a JSON file.

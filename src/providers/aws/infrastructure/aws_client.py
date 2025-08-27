@@ -1,7 +1,7 @@
 """AWS client wrapper with additional functionality."""
 
 import threading
-from typing import TYPE_CHECKING, Any, Dict, Optional, TypeVar
+from typing import TYPE_CHECKING, Any, Optional, TypeVar
 
 import boto3
 from botocore.config import Config
@@ -199,7 +199,8 @@ class AWSClient:
                     break
             else:
                 self._logger.debug(
-                    "Provider %s not found in config", selection_result.provider_instance
+                    "Provider %s not found in config",
+                    selection_result.provider_instance,
                 )
 
         except Exception as e:
@@ -215,7 +216,8 @@ class AWSClient:
             aws_config = config_manager.get_typed(AWSProviderConfig)
             if aws_config and aws_config.profile:
                 self._logger.debug(
-                    "Using profile from legacy AWSProviderConfig: %s", aws_config.profile
+                    "Using profile from legacy AWSProviderConfig: %s",
+                    aws_config.profile,
                 )
                 return aws_config.profile
         except Exception as e:
@@ -223,7 +225,7 @@ class AWSClient:
 
         return None
 
-    def _load_performance_config(self, config_manager) -> Dict[str, Any]:
+    def _load_performance_config(self, config_manager) -> dict[str, Any]:
         """
         Load performance configuration from ConfigurationManager.
 
@@ -255,7 +257,8 @@ class AWSClient:
                 }
         except Exception as e:
             self._logger.debug(
-                "Could not load performance config from ConfigurationManager: %s", str(e)
+                "Could not load performance config from ConfigurationManager: %s",
+                str(e),
             )
 
         # Default configuration

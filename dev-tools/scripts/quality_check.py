@@ -28,7 +28,7 @@ import re
 import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
-from typing import List, Optional
+from typing import Optional
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format="%(message)s")
@@ -44,12 +44,12 @@ except ImportError:
 # Emoji detection pattern
 EMOJI_PATTERN = re.compile(
     "["
-    "\U0001F600-\U0001F64F"  # emoticons
-    "\U0001F300-\U0001F5FF"  # symbols & pictographs
-    "\U0001F680-\U0001F6FF"  # transport & map
-    "\U0001F1E0-\U0001F1FF"  # flags
-    "\U00002702-\U000027B0"  # dingbats
-    "\U000024C2-\U0001F251"
+    "\U0001f600-\U0001f64f"  # emoticons
+    "\U0001f300-\U0001f5ff"  # symbols & pictographs
+    "\U0001f680-\U0001f6ff"  # transport & map
+    "\U0001f1e0-\U0001f1ff"  # flags
+    "\U00002702-\U000027b0"  # dingbats
+    "\U000024c2-\U0001f251"
     "]+",
     flags=re.UNICODE,
 )
@@ -160,7 +160,10 @@ class EmojiViolation(Violation):
 
     def __init__(self, file_path: str, line_num: int, content: str):
         super().__init__(
-            file_path, line_num, content, "Contains emoji - not allowed in professional code"
+            file_path,
+            line_num,
+            content,
+            "Contains emoji - not allowed in professional code",
         )
 
 
@@ -189,7 +192,10 @@ class ImplementationDetailViolation(Violation):
 
     def __init__(self, file_path: str, line_num: int, content: str, term: str, suggestion: str):
         super().__init__(
-            file_path, line_num, content, f"Implementation detail '{term}' - {suggestion}"
+            file_path,
+            line_num,
+            content,
+            f"Implementation detail '{term}' - {suggestion}",
         )
         self.term = term
         self.suggestion = suggestion
@@ -213,7 +219,12 @@ class DocstringFormatViolation(Violation):
     """Docstring doesn't follow the required format."""
 
     def __init__(
-        self, file_path: str, line_num: int, element_type: str, element_name: str, issue: str
+        self,
+        file_path: str,
+        line_num: int,
+        element_type: str,
+        element_name: str,
+        issue: str,
     ):
         super().__init__(
             file_path,
@@ -245,7 +256,10 @@ class DebugStatementViolation(Violation):
 
     def __init__(self, file_path: str, line_num: int, content: str):
         super().__init__(
-            file_path, line_num, content, "Debug print/logging statement should be removed"
+            file_path,
+            line_num,
+            content,
+            "Debug print/logging statement should be removed",
         )
 
     def can_autofix(self) -> bool:
@@ -258,11 +272,11 @@ class DebugStatementViolation(Violation):
 class FileChecker:
     """Base class for file-based checkers."""
 
-    def check_file(self, file_path: str) -> List[Violation]:
+    def check_file(self, file_path: str) -> list[Violation]:
         """Check a file for violations."""
         violations = []
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 content = f.read()
             violations.extend(self.check_content(file_path, content))
         except UnicodeDecodeError:
@@ -273,7 +287,7 @@ class FileChecker:
 
         return violations
 
-    def check_content(self, file_path: str, content: str) -> List[Violation]:
+    def check_content(self, file_path: str, content: str) -> list[Violation]:
         """Check file content for violations."""
         return []
 
@@ -281,7 +295,7 @@ class FileChecker:
 class EmojiChecker(FileChecker):
     """Check for emojis in files."""
 
-    def check_content(self, file_path: str, content: str) -> List[Violation]:
+    def check_content(self, file_path: str, content: str) -> list[Violation]:
         violations = []
         for line_num, line in enumerate(content.splitlines(), 1):
             matches = EMOJI_PATTERN.findall(line)
@@ -296,7 +310,7 @@ class EmojiChecker(FileChecker):
 class LanguageChecker(FileChecker):
     """Check for unprofessional language and hyperbolic terms."""
 
-    def check_content(self, file_path: str, content: str) -> List[Violation]:
+    def check_content(self, file_path: str, content: str) -> list[Violation]:
         violations = []
         for line_num, line in enumerate(content.splitlines(), 1):
             # Check for unprofessional language
@@ -341,7 +355,7 @@ class LanguageChecker(FileChecker):
 class DocstringChecker(FileChecker):
     """Check for docstring coverage and format."""
 
-    def check_content(self, file_path: str, content: str) -> List[Violation]:
+    def check_content(self, file_path: str, content: str) -> list[Violation]:
         if not file_path.endswith(".py"):
             return []
 
@@ -417,7 +431,7 @@ class DocstringChecker(FileChecker):
 class ImportChecker(FileChecker):
     """Check for unused imports using autoflake."""
 
-    def check_content(self, file_path: str, content: str) -> List[Violation]:
+    def check_content(self, file_path: str, content: str) -> list[Violation]:
         if not file_path.endswith(".py"):
             return []
 
@@ -434,6 +448,7 @@ class ImportChecker(FileChecker):
                     "--remove-unused-variables",
                     file_path,
                 ],
+                check=False,
                 capture_output=True,
                 text=True,
                 cwd=".",
@@ -464,7 +479,7 @@ class CommentChecker(FileChecker):
         # noqa:COMMENTED section-end
     """
 
-    def check_content(self, file_path: str, content: str) -> List[Violation]:
+    def check_content(self, file_path: str, content: str) -> list[Violation]:
         violations = []
 
         # Regex for commented code (simple heuristic)
@@ -498,10 +513,9 @@ class CommentChecker(FileChecker):
                     string_delimiter = stripped[1:4]
                     if not (stripped.endswith(string_delimiter) and len(stripped) > 4):
                         in_multiline_string = True
-            else:
-                if stripped.endswith(string_delimiter):
-                    in_multiline_string = False
-                    string_delimiter = None
+            elif stripped.endswith(string_delimiter):
+                in_multiline_string = False
+                string_delimiter = None
 
             # Skip checks if we're inside a multiline string
             if in_multiline_string:
@@ -562,7 +576,7 @@ class QualityChecker:
             return None
 
         try:
-            with open(gitignore_path, "r", encoding="utf-8") as f:
+            with open(gitignore_path, encoding="utf-8") as f:
                 return pathspec.PathSpec.from_lines("gitwildmatch", f)
         except Exception:
             return None
@@ -579,7 +593,7 @@ class QualityChecker:
         except Exception:
             return False
 
-    def check_files(self, file_paths: List[str]) -> List[Violation]:
+    def check_files(self, file_paths: list[str]) -> list[Violation]:
         """Run all checks on the given files."""
         all_violations = []
 
@@ -630,7 +644,7 @@ class QualityChecker:
 
         return all_violations
 
-    def get_modified_files(self) -> List[str]:
+    def get_modified_files(self) -> list[str]:
         """Get list of modified files from git."""
         import os
         import subprocess
@@ -660,7 +674,10 @@ class QualityChecker:
 
             # Get unstaged files
             result = subprocess.run(
-                ["git", "diff", "--name-only"], capture_output=True, text=True, check=True
+                ["git", "diff", "--name-only"],
+                capture_output=True,
+                text=True,
+                check=True,
             )
             unstaged_files = result.stdout.strip().split("\n") if result.stdout.strip() else []
 
@@ -711,7 +728,7 @@ def main():
         # Load .gitignore patterns
         gitignore_path = Path(".gitignore")
         if gitignore_path.exists():
-            with open(gitignore_path, "r", encoding="utf-8") as f:
+            with open(gitignore_path, encoding="utf-8") as f:
                 spec = pathspec.PathSpec.from_lines("gitwildmatch", f)
         else:
             spec = pathspec.PathSpec.from_lines("gitwildmatch", [])
@@ -775,7 +792,7 @@ def main():
                 logger.error(f"    {v.content}")
 
         # Print summary by category
-        logger.error(f"\n" + "-" * 40)
+        logger.error("\n" + "-" * 40)
         logger.error("Summary:")
         for category, count in sorted(category_counts.items()):
             logger.error(f"{category}: {count}")

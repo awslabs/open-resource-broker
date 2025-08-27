@@ -2,7 +2,7 @@
 
 import functools
 import json
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Optional
 
 from infrastructure.error.exception_handler import (
     ExceptionHandler,
@@ -57,7 +57,7 @@ class ErrorMiddleware:
         """
 
         @functools.wraps(api_handler)
-        def wrapped_api_handler(input_data: Optional[Dict[str, Any]] = None, **kwargs):
+        def wrapped_api_handler(input_data: Optional[dict[str, Any]] = None, **kwargs):
             """API handler wrapper with error handling and validation."""
             try:
                 # Execute the original API handler
@@ -163,7 +163,7 @@ def with_api_error_handling(error_handler: Optional[ExceptionHandler] = None) ->
         """Apply API error handling decorator to function."""
 
         @functools.wraps(func)
-        def wrapper(input_data: Optional[Dict[str, Any]] = None, **kwargs):
+        def wrapper(input_data: Optional[dict[str, Any]] = None, **kwargs):
             """Wrapper function for API error handling."""
             try:
                 return func(input_data, **kwargs)

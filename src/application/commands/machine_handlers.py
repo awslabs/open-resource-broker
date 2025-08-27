@@ -1,7 +1,5 @@
 """Command handlers for machine operations."""
 
-from typing import List
-
 from application.base.handlers import BaseCommandHandler
 from application.decorators import command_handler
 from application.dto.base import BaseResponse
@@ -35,7 +33,7 @@ class ConvertMachineStatusResponse(BaseResponse):
 class ConvertBatchMachineStatusResponse(BaseResponse):
     """Response for batch machine status conversion."""
 
-    statuses: List[MachineStatus]
+    statuses: list[MachineStatus]
     count: int
 
 
@@ -84,7 +82,6 @@ class UpdateMachineStatusHandler(BaseCommandHandler[UpdateMachineStatusCommand, 
         await self._machine_repository.save(machine)
 
         # Events will be published by the base handler
-        return None  # No response needed for this command
 
 
 @command_handler(ConvertMachineStatusCommand)
@@ -381,8 +378,6 @@ class RegisterMachineHandler(BaseCommandHandler[RegisterMachineCommand, None]):
 
         # Save machine
         await self._machine_repository.save(machine)
-
-        return None
 
 
 @command_handler(DeregisterMachineCommand)

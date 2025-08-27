@@ -6,7 +6,7 @@ maintaining all existing AWS functionality and adding new capabilities.
 """
 
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from domain.base.dependency_injection import injectable
 from domain.base.ports import LoggingPort
@@ -72,7 +72,7 @@ class AWSProviderStrategy(ProviderStrategy):
         self._aws_client: Optional[AWSClient] = None
         self._resource_manager: Optional[AWSResourceManager] = None
         self._launch_template_manager: Optional[AWSLaunchTemplateManager] = None
-        self._handlers: Dict[str, Any] = {}
+        self._handlers: dict[str, Any] = {}
 
     @property
     def provider_type(self) -> str:
@@ -123,7 +123,7 @@ class AWSProviderStrategy(ProviderStrategy):
         return self._launch_template_manager
 
     @property
-    def handlers(self) -> Dict[str, Any]:
+    def handlers(self) -> dict[str, Any]:
         """Get the AWS handlers with lazy initialization."""
         if not self._handlers and self.aws_client:
             self._logger.debug("Creating AWS handlers on first access")
@@ -234,7 +234,7 @@ class AWSProviderStrategy(ProviderStrategy):
             execution_time_ms = int((time.time() - start_time) * 1000)
             self._logger.error("AWS operation failed: %s", e)
             return ProviderResult.error_result(
-                f"AWS operation failed: {str(e)}",
+                f"AWS operation failed: {e!s}",
                 "OPERATION_FAILED",
                 {
                     "execution_time_ms": execution_time_ms,
@@ -300,7 +300,8 @@ class AWSProviderStrategy(ProviderStrategy):
                         "HANDLER_NOT_FOUND",
                     )
                 self._logger.warning(
-                    "Handler for %s not found, using RunInstances fallback", provider_api
+                    "Handler for %s not found, using RunInstances fallback",
+                    provider_api,
                 )
 
             # Convert template_config to AWSTemplate domain object
@@ -353,7 +354,9 @@ class AWSProviderStrategy(ProviderStrategy):
                 instances = []
 
             self._logger.info(
-                "Handler returned resource_ids: %s, instances: %s", resource_ids, len(instances)
+                "Handler returned resource_ids: %s, instances: %s",
+                resource_ids,
+                len(instances),
             )
 
             return ProviderResult.success_result(
@@ -373,7 +376,7 @@ class AWSProviderStrategy(ProviderStrategy):
 
         except Exception as e:
             return ProviderResult.error_result(
-                f"Failed to create instances: {str(e)}", "CREATE_INSTANCES_ERROR"
+                f"Failed to create instances: {e!s}", "CREATE_INSTANCES_ERROR"
             )
 
     def _handle_terminate_instances(self, operation: ProviderOperation) -> ProviderResult:
@@ -406,12 +409,12 @@ class AWSProviderStrategy(ProviderStrategy):
             except Exception as e:
                 self._logger.error("Failed to terminate instances: %s", e)
                 return ProviderResult.error_result(
-                    f"Failed to terminate instances: {str(e)}", "AWS_API_ERROR"
+                    f"Failed to terminate instances: {e!s}", "AWS_API_ERROR"
                 )
 
         except Exception as e:
             return ProviderResult.error_result(
-                f"Failed to terminate instances: {str(e)}", "TERMINATE_INSTANCES_ERROR"
+                f"Failed to terminate instances: {e!s}", "TERMINATE_INSTANCES_ERROR"
             )
 
     def _handle_get_instance_status(self, operation: ProviderOperation) -> ProviderResult:
@@ -449,12 +452,12 @@ class AWSProviderStrategy(ProviderStrategy):
             except Exception as e:
                 self._logger.error("Failed to get instance status: %s", e)
                 return ProviderResult.error_result(
-                    f"Failed to get instance status: {str(e)}", "AWS_API_ERROR"
+                    f"Failed to get instance status: {e!s}", "AWS_API_ERROR"
                 )
 
         except Exception as e:
             return ProviderResult.error_result(
-                f"Failed to get instance status: {str(e)}", "GET_INSTANCE_STATUS_ERROR"
+                f"Failed to get instance status: {e!s}", "GET_INSTANCE_STATUS_ERROR"
             )
 
     def _handle_validate_template(self, operation: ProviderOperation) -> ProviderResult:
@@ -478,7 +481,7 @@ class AWSProviderStrategy(ProviderStrategy):
 
         except Exception as e:
             return ProviderResult.error_result(
-                f"Failed to validate template: {str(e)}", "VALIDATE_TEMPLATE_ERROR"
+                f"Failed to validate template: {e!s}", "VALIDATE_TEMPLATE_ERROR"
             )
 
     def _handle_get_available_templates(self, operation: ProviderOperation) -> ProviderResult:
@@ -494,7 +497,7 @@ class AWSProviderStrategy(ProviderStrategy):
 
         except Exception as e:
             return ProviderResult.error_result(
-                f"Failed to get available templates: {str(e)}", "GET_TEMPLATES_ERROR"
+                f"Failed to get available templates: {e!s}", "GET_TEMPLATES_ERROR"
             )
 
     async def _handle_describe_resource_instances(
@@ -522,7 +525,8 @@ class AWSProviderStrategy(ProviderStrategy):
                         "HANDLER_NOT_FOUND",
                     )
                 self._logger.warning(
-                    "Handler for %s not found, using RunInstances fallback", provider_api
+                    "Handler for %s not found, using RunInstances fallback",
+                    provider_api,
                 )
 
             # Create a minimal request object for the handler
@@ -583,7 +587,7 @@ class AWSProviderStrategy(ProviderStrategy):
 
         except Exception as e:
             return ProviderResult.error_result(
-                f"Failed to describe resource instances: {str(e)}",
+                f"Failed to describe resource instances: {e!s}",
                 "DESCRIBE_RESOURCE_INSTANCES_ERROR",
             )
 
@@ -707,7 +711,7 @@ class AWSProviderStrategy(ProviderStrategy):
             except Exception as e:
                 response_time_ms = (time.time() - start_time) * 1000
                 return ProviderHealthStatus.unhealthy(
-                    f"AWS connectivity check failed: {str(e)}",
+                    f"AWS connectivity check failed: {e!s}",
                     {
                         "error": str(e),
                         "region": self._aws_config.region,
@@ -718,11 +722,11 @@ class AWSProviderStrategy(ProviderStrategy):
         except Exception as e:
             response_time_ms = (time.time() - start_time) * 1000
             return ProviderHealthStatus.unhealthy(
-                f"Health check error: {str(e)}",
+                f"Health check error: {e!s}",
                 {"error": str(e), "response_time_ms": response_time_ms},
             )
 
-    def _validate_aws_template(self, template_config: Dict[str, Any]) -> Dict[str, Any]:
+    def _validate_aws_template(self, template_config: dict[str, Any]) -> dict[str, Any]:
         """Validate AWS-specific template configuration."""
         validation_errors = []
         validation_warnings = []
@@ -754,7 +758,7 @@ class AWSProviderStrategy(ProviderStrategy):
             "validated_fields": list(template_config.keys()),
         }
 
-    def _get_aws_templates(self) -> List[Dict[str, Any]]:
+    def _get_aws_templates(self) -> list[dict[str, Any]]:
         """Get available AWS templates using scheduler strategy."""
         try:
             # Use scheduler strategy to load templates from configuration
@@ -790,7 +794,7 @@ class AWSProviderStrategy(ProviderStrategy):
             self._logger.error("Failed to load templates via scheduler strategy: %s", e)
             return self._get_fallback_templates()
 
-    def _get_fallback_templates(self) -> List[Dict[str, Any]]:
+    def _get_fallback_templates(self) -> list[dict[str, Any]]:
         """Get fallback AWS templates when scheduler strategy is not available."""
         return [
             {
@@ -809,7 +813,7 @@ class AWSProviderStrategy(ProviderStrategy):
             },
         ]
 
-    def _convert_aws_instance_to_machine(self, aws_instance: Dict[str, Any]) -> Dict[str, Any]:
+    def _convert_aws_instance_to_machine(self, aws_instance: dict[str, Any]) -> dict[str, Any]:
         """Convert AWS instance data to domain Machine entity data.
 
         This method translates AWS-specific field names and formats to domain entity format,

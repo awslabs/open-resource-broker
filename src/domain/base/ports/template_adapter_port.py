@@ -6,7 +6,7 @@ while maintaining a consistent interface.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from domain.base.contracts.template_contract import (
     TemplateContract,
@@ -35,7 +35,7 @@ class TemplateAdapterPort(ABC):
         """
 
     @abstractmethod
-    async def get_all_templates(self) -> List[TemplateContract]:
+    async def get_all_templates(self) -> list[TemplateContract]:
         """
         Get all available templates.
 
@@ -44,7 +44,7 @@ class TemplateAdapterPort(ABC):
         """
 
     @abstractmethod
-    async def get_templates_by_provider_api(self, provider_api: str) -> List[TemplateContract]:
+    async def get_templates_by_provider_api(self, provider_api: str) -> list[TemplateContract]:
         """
         Get templates filtered by provider API.
 
@@ -86,7 +86,7 @@ class TemplateAdapterPort(ABC):
         """
 
     @abstractmethod
-    def get_supported_provider_apis(self) -> List[str]:
+    def get_supported_provider_apis(self) -> list[str]:
         """
         Get the list of provider APIs supported by this adapter.
 
@@ -95,7 +95,7 @@ class TemplateAdapterPort(ABC):
         """
 
     @abstractmethod
-    def get_adapter_info(self) -> Dict[str, Any]:
+    def get_adapter_info(self) -> dict[str, Any]:
         """
         Get information about this adapter.
 

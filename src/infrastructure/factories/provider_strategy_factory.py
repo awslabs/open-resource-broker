@@ -4,7 +4,7 @@ This factory creates provider strategies and contexts based on integrated config
 integrating the existing provider strategy ecosystem with the CQRS architecture.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from config.schemas.provider_strategy_schema import (
     ProviderConfig,
@@ -45,7 +45,7 @@ class ProviderStrategyFactory:
         """
         self._config_manager = config_manager
         self._logger = logger
-        self._provider_cache: Dict[str, ProviderStrategy] = {}
+        self._provider_cache: dict[str, ProviderStrategy] = {}
 
     @handle_infrastructure_exceptions(context="provider_context_creation")
     def create_provider_context(self) -> ProviderContext:
@@ -78,7 +78,7 @@ class ProviderStrategyFactory:
 
         except Exception as e:
             self._logger.error("Failed to create provider context: %s", str(e))
-            raise ProviderCreationError(f"Provider context creation failed: {str(e)}")
+            raise ProviderCreationError(f"Provider context creation failed: {e!s}")
 
     def _create_single_provider_context(self, config: ProviderConfig) -> ProviderContext:
         """
@@ -114,7 +114,8 @@ class ProviderStrategyFactory:
         self._configure_context_settings(context, config)
 
         self._logger.info(
-            "Single provider context created successfully with provider: %s", provider_config.name
+            "Single provider context created successfully with provider: %s",
+            provider_config.name,
         )
         return context
 
@@ -151,7 +152,9 @@ class ProviderStrategyFactory:
                 self._logger.debug("Registered provider strategy: %s", provider_config.name)
             except Exception as e:
                 self._logger.error(
-                    "Failed to create provider strategy %s: %s", provider_config.name, str(e)
+                    "Failed to create provider strategy %s: %s",
+                    provider_config.name,
+                    str(e),
                 )
                 # Continue with other providers, but log the error
                 continue
@@ -165,7 +168,8 @@ class ProviderStrategyFactory:
 
         registered_strategies = context.get_available_strategies()
         self._logger.info(
-            "Multi-provider context created with %s strategies", len(registered_strategies)
+            "Multi-provider context created with %s strategies",
+            len(registered_strategies),
         )
 
         return context
@@ -216,7 +220,9 @@ class ProviderStrategyFactory:
             self._provider_cache[cache_key] = strategy
 
             self._logger.debug(
-                "Created provider strategy: %s (%s)", provider_config.name, provider_config.type
+                "Created provider strategy: %s (%s)",
+                provider_config.name,
+                provider_config.type,
             )
             return strategy
 
@@ -228,7 +234,7 @@ class ProviderStrategyFactory:
             )
         except Exception as e:
             raise ProviderCreationError(
-                f"Failed to create {provider_config.type} provider '{provider_config.name}': {str(e)}"
+                f"Failed to create {provider_config.type} provider '{provider_config.name}': {e!s}"
             )
 
     def _parse_selection_policy(self, policy_name: str) -> SelectionPolicy:
@@ -290,7 +296,7 @@ class ProviderStrategyFactory:
             self._logger.warning("Failed to configure some context settings: %s", str(e))
             # Don't fail the entire creation for optional settings
 
-    def get_provider_info(self) -> Dict[str, Any]:
+    def get_provider_info(self) -> dict[str, Any]:
         """
         Get information about current provider configuration.
 
@@ -320,7 +326,7 @@ class ProviderStrategyFactory:
             self._logger.error("Failed to get provider info: %s", str(e))
             return {"mode": "error", "error": str(e)}
 
-    def validate_configuration(self) -> Dict[str, Any]:
+    def validate_configuration(self) -> dict[str, Any]:
         """
         Validate current provider configuration.
 
@@ -360,7 +366,7 @@ class ProviderStrategyFactory:
                     validation_result["warnings"].append(
                         "Multiple active providers in single provider mode"
                     )
-            elif mode == ProviderMode.MULTI:  # noqa: SIM102 (false positive - if-elif structure)
+            elif mode == ProviderMode.MULTI:
                 if len(active_providers) < 2:
                     validation_result["errors"].append(
                         "Multi-provider mode requires at least 2 active providers"
@@ -373,14 +379,14 @@ class ProviderStrategyFactory:
                     self._create_provider_strategy(provider_config)
                 except Exception as e:
                     validation_result["errors"].append(
-                        f"Provider '{provider_config.name}' validation failed: {str(e)}"
+                        f"Provider '{provider_config.name}' validation failed: {e!s}"
                     )
 
             # Set overall validation status
             validation_result["valid"] = len(validation_result["errors"]) == 0
 
         except Exception as e:
-            validation_result["errors"].append(f"Configuration validation failed: {str(e)}")
+            validation_result["errors"].append(f"Configuration validation failed: {e!s}")
 
         return validation_result
 

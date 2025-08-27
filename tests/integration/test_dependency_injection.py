@@ -67,7 +67,7 @@ def test_dependency_injection_updates():
             return False
 
     except Exception as e:
-        print(f"FAIL: Test execution failed: {str(e)}")
+        print(f"FAIL: Test execution failed: {e!s}")
         import traceback
 
         traceback.print_exc()
@@ -131,15 +131,15 @@ def test_aws_launch_template_manager_registration():
                 print("   WARN:  AWSLaunchTemplateManager not found in registration")
 
         except Exception as e:
-            print(f"   WARN:  Registration test failed: {str(e)}")
+            print(f"   WARN:  Registration test failed: {e!s}")
 
         return True
 
     except ImportError as e:
-        print(f"   FAIL: Import error: {str(e)}")
+        print(f"   FAIL: Import error: {e!s}")
         return False
     except Exception as e:
-        print(f"   FAIL: AWS Launch Template Manager registration test failed: {str(e)}")
+        print(f"   FAIL: AWS Launch Template Manager registration test failed: {e!s}")
         return False
 
 
@@ -177,10 +177,10 @@ def test_repository_factory_machine_support():
         return True
 
     except ImportError as e:
-        print(f"   FAIL: Import error: {str(e)}")
+        print(f"   FAIL: Import error: {e!s}")
         return False
     except Exception as e:
-        print(f"   FAIL: Repository factory machine support test failed: {str(e)}")
+        print(f"   FAIL: Repository factory machine support test failed: {e!s}")
         return False
 
 
@@ -225,10 +225,10 @@ def test_di_container_resolution():
         return True
 
     except ImportError as e:
-        print(f"   FAIL: Import error: {str(e)}")
+        print(f"   FAIL: Import error: {e!s}")
         return False
     except Exception as e:
-        print(f"   FAIL: DI container resolution test failed: {str(e)}")
+        print(f"   FAIL: DI container resolution test failed: {e!s}")
         return False
 
 
@@ -276,13 +276,14 @@ def test_service_dependencies():
         return True
 
     except ImportError as e:
-        print(f"   FAIL: Import error: {str(e)}")
+        print(f"   FAIL: Import error: {e!s}")
         return False
     except Exception as e:
-        print(f"   FAIL: Service dependencies test failed: {str(e)}")
+        print(f"   FAIL: Service dependencies test failed: {e!s}")
         return False
 
 
 if __name__ == "__main__":
-    success = test_phase6_dependency_injection()
-    sys.exit(0 if success else 1)
+    # Dependency injection tests should be run via pytest
+    print("Dependency injection tests should be run via pytest")
+    sys.exit(0)

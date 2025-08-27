@@ -1,6 +1,6 @@
 """DynamoDB client management components for AWS DynamoDB operations."""
 
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 import boto3
 from botocore.exceptions import ClientError
@@ -72,7 +72,7 @@ class DynamoDBClientManager(ResourceManager):
             self.logger.error("DynamoDB health check failed: %s", e)
             return False
 
-    def get_connection_info(self) -> Dict[str, Any]:
+    def get_connection_info(self) -> dict[str, Any]:
         """Get DynamoDB connection information."""
         return {
             "type": "dynamodb",
@@ -197,7 +197,7 @@ class DynamoDBClientManager(ResourceManager):
             self.logger.error("Unexpected error creating table %s: %s", table_name, e)
             return False
 
-    def put_item(self, table_name: str, item: Dict[str, Any]) -> bool:
+    def put_item(self, table_name: str, item: dict[str, Any]) -> bool:
         """
         Put item to DynamoDB table.
 
@@ -216,7 +216,7 @@ class DynamoDBClientManager(ResourceManager):
             self.logger.error("Failed to put item to %s: %s", table_name, e)
             return False
 
-    def get_item(self, table_name: str, key: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    def get_item(self, table_name: str, key: dict[str, Any]) -> Optional[dict[str, Any]]:
         """
         Get item from DynamoDB table.
 
@@ -235,7 +235,7 @@ class DynamoDBClientManager(ResourceManager):
             self.logger.error("Failed to get item from %s: %s", table_name, e)
             return None
 
-    def delete_item(self, table_name: str, key: Dict[str, Any]) -> bool:
+    def delete_item(self, table_name: str, key: dict[str, Any]) -> bool:
         """
         Delete item from DynamoDB table.
 
@@ -258,7 +258,7 @@ class DynamoDBClientManager(ResourceManager):
         self,
         table_name: str,
         filter_expression=None,
-        expression_attribute_values: Optional[Dict[str, Any]] = None,
+        expression_attribute_values: Optional[dict[str, Any]] = None,
     ) -> list:
         """
         Scan DynamoDB table.

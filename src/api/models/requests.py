@@ -1,6 +1,6 @@
 """Request models for API handlers."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -35,7 +35,7 @@ class MachineReferenceModel(BaseRequestModel):
 class RequestMachinesModel(BaseRequestModel):
     """Model for request machines API."""
 
-    template: Dict[str, Any]
+    template: dict[str, Any]
 
     @property
     def template_id(self) -> str:
@@ -51,10 +51,10 @@ class RequestMachinesModel(BaseRequestModel):
 class RequestStatusModel(BaseRequestModel):
     """Model for request status API."""
 
-    requests: List[Dict[str, Any]]
+    requests: list[dict[str, Any]]
 
     @property
-    def request_ids(self) -> List[str]:
+    def request_ids(self) -> list[str]:
         """Get request IDs from requests list."""
         return [r.get("requestId", "") for r in self.requests if "requestId" in r]
 
@@ -62,15 +62,15 @@ class RequestStatusModel(BaseRequestModel):
 class RequestReturnMachinesModel(BaseRequestModel):
     """Model for request return machines API."""
 
-    machines: List[Dict[str, Any]]
+    machines: list[dict[str, Any]]
 
     @property
-    def machine_names(self) -> List[str]:
+    def machine_names(self) -> list[str]:
         """Get machine names from machines list."""
         return [m.get("name", "") for m in self.machines if "name" in m]
 
     @property
-    def machine_ids(self) -> List[str]:
+    def machine_ids(self) -> list[str]:
         """Get machine IDs from machines list."""
         return [m.get("machineId", "") for m in self.machines if "machineId" in m]
 
@@ -78,10 +78,10 @@ class RequestReturnMachinesModel(BaseRequestModel):
 class GetReturnRequestsModel(BaseRequestModel):
     """Model for get return requests API."""
 
-    machines: Optional[List[Dict[str, Any]]] = Field(default_factory=list)
+    machines: Optional[list[dict[str, Any]]] = Field(default_factory=list)
 
     @property
-    def machine_names(self) -> List[str]:
+    def machine_names(self) -> list[str]:
         """Get machine names from machines list."""
         if not self.machines:
             return []

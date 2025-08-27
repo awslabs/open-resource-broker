@@ -6,9 +6,10 @@ import shutil
 import sys
 import tempfile
 import uuid
+from collections.abc import Generator
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, Generator, Optional
+from typing import Any, Optional
 from unittest.mock import Mock
 
 import pytest
@@ -183,7 +184,7 @@ def temp_dir() -> Generator[Path, None, None]:
 
 
 @pytest.fixture
-def test_config_dict() -> Dict[str, Any]:
+def test_config_dict() -> dict[str, Any]:
     """Basic test configuration dictionary."""
     return {
         "aws": {
@@ -216,7 +217,7 @@ def test_config_dict() -> Dict[str, Any]:
 
 
 @pytest.fixture
-def test_config_file(temp_dir: Path, test_config_dict: Dict[str, Any]) -> Path:
+def test_config_file(temp_dir: Path, test_config_dict: dict[str, Any]) -> Path:
     """Create a test configuration file."""
     config_file = temp_dir / "test_config.json"
     with open(config_file, "w") as f:
@@ -225,7 +226,7 @@ def test_config_file(temp_dir: Path, test_config_dict: Dict[str, Any]) -> Path:
 
 
 @pytest.fixture
-def config_manager(test_config_dict: Dict[str, Any]) -> ConfigurationManager:
+def config_manager(test_config_dict: dict[str, Any]) -> ConfigurationManager:
     """Create a test configuration manager."""
     manager = ConfigurationManager()
     if IMPORTS_AVAILABLE:
@@ -234,7 +235,7 @@ def config_manager(test_config_dict: Dict[str, Any]) -> ConfigurationManager:
 
 
 @pytest.fixture
-def app_config(test_config_dict: Dict[str, Any]) -> AppConfig:
+def app_config(test_config_dict: dict[str, Any]) -> AppConfig:
     """Create a test app configuration."""
     if IMPORTS_AVAILABLE:
         return AppConfig(**test_config_dict)

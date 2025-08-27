@@ -1,7 +1,7 @@
 """SQL storage strategy implementation using componentized architecture."""
 
 from contextlib import contextmanager
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from sqlalchemy import text
 
@@ -26,7 +26,7 @@ class SQLStorageStrategy(BaseStorageStrategy):
     serialization, and locking. Reduced from 769 lines to ~200 lines.
     """
 
-    def __init__(self, config: Dict[str, Any], table_name: str, columns: Dict[str, str]) -> None:
+    def __init__(self, config: dict[str, Any], table_name: str, columns: dict[str, str]) -> None:
         """
         Initialize SQL storage strategy with components.
 
@@ -70,7 +70,7 @@ class SQLStorageStrategy(BaseStorageStrategy):
             self.logger.error("Failed to initialize table %s: %s", self.table_name, e)
             raise
 
-    def save(self, entity_id: str, data: Dict[str, Any]) -> None:
+    def save(self, entity_id: str, data: dict[str, Any]) -> None:
         """
         Save entity data to SQL database.
 
@@ -104,7 +104,7 @@ class SQLStorageStrategy(BaseStorageStrategy):
                 self.logger.error("Failed to save entity %s: %s", entity_id, e)
                 raise PersistenceError(f"Failed to save entity {entity_id}: {e}")
 
-    def find_by_id(self, entity_id: str) -> Optional[Dict[str, Any]]:
+    def find_by_id(self, entity_id: str) -> Optional[dict[str, Any]]:
         """
         Find entity by ID.
 
@@ -137,7 +137,7 @@ class SQLStorageStrategy(BaseStorageStrategy):
                 self.logger.error("Failed to find entity %s: %s", entity_id, e)
                 raise PersistenceError(f"Failed to find entity {entity_id}: {e}")
 
-    def find_all(self) -> Dict[str, Dict[str, Any]]:
+    def find_all(self) -> dict[str, dict[str, Any]]:
         """
         Find all entities.
 
@@ -219,7 +219,7 @@ class SQLStorageStrategy(BaseStorageStrategy):
             self.logger.error("Failed to check existence of entity %s: %s", entity_id, e)
             return False
 
-    def find_by_criteria(self, criteria: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def find_by_criteria(self, criteria: dict[str, Any]) -> list[dict[str, Any]]:
         """
         Find entities matching criteria.
 
@@ -251,7 +251,7 @@ class SQLStorageStrategy(BaseStorageStrategy):
                 self.logger.error("Failed to search entities: %s", e)
                 raise PersistenceError(f"Failed to search entities: {e}")
 
-    def save_batch(self, entities: Dict[str, Dict[str, Any]]) -> None:
+    def save_batch(self, entities: dict[str, dict[str, Any]]) -> None:
         """
         Save multiple entities in batch.
 
@@ -274,7 +274,7 @@ class SQLStorageStrategy(BaseStorageStrategy):
                 self.logger.error("Failed to save batch: %s", e)
                 raise PersistenceError(f"Failed to save batch: {e}")
 
-    def delete_batch(self, entity_ids: List[str]) -> None:
+    def delete_batch(self, entity_ids: list[str]) -> None:
         """
         Delete multiple entities in batch.
 

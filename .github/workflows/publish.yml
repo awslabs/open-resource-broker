@@ -38,75 +38,34 @@ jobs:
       triggered: ${{ steps.check.outputs.triggered }}
       pr_ref: ${{ steps.check.outputs.pr_ref }}
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
       - name: Check build comment
         id: check
-        if: github.event_name == 'issue_comment'
-        uses: actions/github-script@v7
-        env:
-          PUBLISH_TRIGGERS: ${{ env.PUBLISH_TRIGGERS }}
+        uses: ./.github/actions/check-comment-trigger
         with:
-          script: |
-            if (!context.issue.pull_request) {
-              console.log('Not a PR comment, skipping');
-              return;
-            }
-            
-            // Security: Only allow authorized users for publishing
-            const allowedAssociations = ['MEMBER', 'OWNER'];
-            const userAssociation = context.payload.comment.author_association;
-            
-            if (!allowedAssociations.includes(userAssociation)) {
-              console.log(`User ${context.payload.comment.user.login} not authorized for publishing (${userAssociation})`);
-              return;
-            }
-            
-            const comment = context.payload.comment.body.toLowerCase().trim();
-            const triggers = process.env.PUBLISH_TRIGGERS.split(',').map(t => t.trim());
-            const triggered = triggers.some(t => comment === t);
-            
-            console.log(`Comment: ${context.payload.comment.body}`);
-            console.log(`User: ${context.payload.comment.user.login} (${userAssociation})`);
-            console.log(`Build triggered: ${triggered}`);
-            
-            if (triggered) {
-              const pr = await github.rest.pulls.get({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                pull_number: context.issue.number
-              });
-              core.setOutput('triggered', 'true');
-              core.setOutput('pr_ref', pr.data.head.sha);
-              
-              // Add reaction to confirm command received
-              await github.rest.reactions.createForIssueComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                comment_id: context.payload.comment.id,
-                content: 'eyes'
-              });
-            }
+          triggers: ${{ env.PUBLISH_TRIGGERS }}
+          allowed-associations: 'MEMBER,OWNER'  # More restrictive for publishing
+
   get-config:
-    name: Get Python Version from Makefile
+    name: Get Configuration
     runs-on: ubuntu-latest
     if: |
       github.event_name != 'issue_comment' || 
       needs.check-build-comment.outputs.triggered == 'true'
     needs: [check-build-comment]
     outputs:
-      default-python-version: ${{ steps.version.outputs.default-python-version }}
+      default-python-version: ${{ steps.config.outputs.default-python-version }}
+      pypi-package-version: ${{ steps.config.outputs.pypi-package-version }}
+      is-release: ${{ steps.config.outputs.is-release }}
     steps:
     - name: Checkout code
       uses: actions/checkout@v5
 
-    - name: Install yq
-      uses: mikefarah/yq@master
-
-    - name: Get default Python version from project config
-      id: version
-      run: |
-        DEFAULT_PYTHON_VERSION=$(make print-DEFAULT_PYTHON_VERSION)
-        echo "default-python-version=$DEFAULT_PYTHON_VERSION" >> "$GITHUB_OUTPUT"
-        echo "Using Python version: $DEFAULT_PYTHON_VERSION"
+    - name: Get project configuration
+      id: config
+      uses: ./.github/actions/get-config
 
   publish:
     name: Build and Publish Package
@@ -130,31 +89,26 @@ jobs:
 
     - name: Determine version and target
       run: |
-        if [[ "${{ github.event_name }}" == "release" ]]; then
-          echo "VERSION=${{ github.ref_name }}" >> "$GITHUB_ENV"
-          echo "TARGET=pypi" >> "$GITHUB_ENV"
-        elif [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ github.event.inputs.environment }}" == "pypi" ]]; then
-          echo "VERSION=${{ github.ref_name }}" >> "$GITHUB_ENV"
-          echo "TARGET=pypi" >> "$GITHUB_ENV"
+        if [[ "${{ needs.get-config.outputs.is-release }}" == "true" ]]; then
+          {
+            echo "VERSION=${{ needs.get-config.outputs.pypi-package-version }}"
+            echo "TARGET=pypi"
+            echo "IS_RELEASE=true"
+          } >> "$GITHUB_ENV"
         else
-          # Dev version for TestPyPI (push to main/develop or comment trigger)
-          # Comment triggers can ONLY publish to TestPyPI for security
-          VERSION="0.1.0.dev$(date +%Y%m%d%H%M%S)+$(git rev-parse --short HEAD)"
-          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
-          echo "TARGET=testpypi" >> "$GITHUB_ENV"
+          # Dev version for TestPyPI - use centralized version
+          {
+            echo "VERSION=${{ needs.get-config.outputs.pypi-package-version }}"
+            echo "TARGET=testpypi"
+          } >> "$GITHUB_ENV"
         fi
         echo "Publishing to: $TARGET with version: $VERSION"
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
+    - name: Setup Python and UV
+      uses: ./.github/actions/setup-uv-cached
       with:
-        python-version: ${{ needs.get-config.outputs.default-python-version }}
-
-    - name: Install uv
-      uses: astral-sh/setup-uv@v6
-      with:
-        enable-cache: true
-
+        cache-key: deps-${{ needs.get-config.outputs.default-python-version }}-${{ hashFiles('.project.yml', 'pyproject.toml.template', 'requirements*.txt') }}
+        fail-on-cache-miss: false
     - name: Build package
       run: |
         make build
@@ -210,20 +164,11 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v5
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
+    - name: Setup Python and UV
+      uses: ./.github/actions/setup-uv-cached
       with:
-        python-version: ${{ needs.get-config.outputs.default-python-version }}
-
-    - name: Install uv
-      uses: astral-sh/setup-uv@v6
-      with:
-        enable-cache: true
-        cache-dependency-glob: "requirements*.txt"
-
-    - name: Install dependencies with uv
-      run: |
-        make ci-install
+        cache-key: deps-${{ needs.get-config.outputs.default-python-version }}-${{ hashFiles('.project.yml', 'pyproject.toml.template', 'requirements*.txt') }}
+        fail-on-cache-miss: false
 
     - name: Generate SBOM files
       run: |

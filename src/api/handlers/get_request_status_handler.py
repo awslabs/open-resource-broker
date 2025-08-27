@@ -1,7 +1,7 @@
 """API handler for checking request status."""
 
 import time
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from api.models import RequestStatusModel
 from api.validation import RequestValidator, ValidationException
@@ -17,7 +17,7 @@ from monitoring.metrics import MetricsCollector
 
 
 @injectable
-class GetRequestStatusRESTHandler(BaseAPIHandler[Dict[str, Any], RequestStatusResponse]):
+class GetRequestStatusRESTHandler(BaseAPIHandler[dict[str, Any], RequestStatusResponse]):
     """API handler for checking request status."""
 
     def __init__(
@@ -51,7 +51,7 @@ class GetRequestStatusRESTHandler(BaseAPIHandler[Dict[str, Any], RequestStatusRe
         self._max_retries = max_retries
         self.validator = RequestValidator()
 
-    async def validate_api_request(self, request: Dict[str, Any], context: RequestContext) -> None:
+    async def validate_api_request(self, request: dict[str, Any], context: RequestContext) -> None:
         """
         Validate API request for checking request status.
 
@@ -82,7 +82,7 @@ class GetRequestStatusRESTHandler(BaseAPIHandler[Dict[str, Any], RequestStatusRe
 
     @handle_interface_exceptions(context="get_request_status_api", interface_type="api")
     async def execute_api_request(
-        self, request: Dict[str, Any], context: RequestContext
+        self, request: dict[str, Any], context: RequestContext
     ) -> RequestStatusResponse:
         """
         Execute the core API logic for checking request status.
@@ -284,7 +284,10 @@ class GetRequestStatusRESTHandler(BaseAPIHandler[Dict[str, Any], RequestStatusRe
                 if attempt < self._max_retries - 1:
                     if self.logger:
                         self.logger.warning(
-                            "Retry %s/%s for request %s", attempt + 1, self._max_retries, request_id
+                            "Retry %s/%s for request %s",
+                            attempt + 1,
+                            self._max_retries,
+                            request_id,
                         )
                     continue
 

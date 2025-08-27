@@ -9,7 +9,6 @@ with launch template management, provider tracking, and machine creation.
 import os
 import sys
 from datetime import datetime
-from typing import List
 from unittest.mock import Mock
 
 import pytest
@@ -295,7 +294,7 @@ class TestAdditionalEndToEnd:
                 provider_api=self.request.provider_api,
                 resource_id=resource_id,
                 result="executing",
-                private_ip_address=f"10.0.1.{i+10}",
+                private_ip_address=f"10.0.1.{i + 10}",
                 launch_time=int(datetime.now().timestamp()),
             )
             machines.append(machine)
@@ -403,7 +402,7 @@ class TestAdditionalEndToEnd:
         # Verify storage calls
         assert json_storage.save.call_count == 3  # template, request, machine
 
-    def _create_sample_machines(self, resource_id: str, request: Request) -> List[Machine]:
+    def _create_sample_machines(self, resource_id: str, request: Request) -> list[Machine]:
         """Create sample machine entities for testing."""
         machines = []
         for i in range(request.requested_count):
@@ -417,7 +416,7 @@ class TestAdditionalEndToEnd:
                 resource_id=resource_id,
                 result="executing",
                 status="pending",
-                private_ip_address=f"10.0.1.{i+10}",
+                private_ip_address=f"10.0.1.{i + 10}",
                 launch_time=int(datetime.now().timestamp()),
                 instance_type="t2.micro",
                 price_type="spot",

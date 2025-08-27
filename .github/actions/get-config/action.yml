@@ -1,0 +1,69 @@
+name: 'Get Project Configuration'
+description: 'Get project configuration from Makefile'
+outputs:
+  python-versions:
+    description: 'JSON array of Python versions'
+    value: ${{ steps.config.outputs.python-versions }}
+  default-python-version:
+    description: 'Default Python version'
+    value: ${{ steps.config.outputs.default-python-version }}
+  container-registry:
+    description: 'Container registry'
+    value: ${{ steps.config.outputs.container-registry }}
+  container-image:
+    description: 'Container image name'
+    value: ${{ steps.config.outputs.container-image }}
+  pypi-package-version:
+    description: 'PEP 440 compliant version for Python packages'
+    value: ${{ steps.config.outputs.pypi-package-version }}
+  container-tag-prefix:
+    description: 'Docker-safe base version for container tags'
+    value: ${{ steps.config.outputs.container-tag-prefix }}
+  is-release:
+    description: 'Whether this is a release build'
+    value: ${{ steps.config.outputs.is-release }}
+runs:
+  using: 'composite'
+  steps:
+    - name: Install yq
+      uses: mikefarah/yq@master
+
+    - name: Get configuration from project config
+      id: config
+      shell: bash
+      run: |
+        DEFAULT_PYTHON_VERSION=$(make print-DEFAULT_PYTHON_VERSION)
+        PYTHON_VERSIONS=$(make print-json-PYTHON_VERSIONS)
+        CONTAINER_REGISTRY=$(make print-CONTAINER_REGISTRY || echo "ghcr.io")
+        CONTAINER_IMAGE=$(make print-CONTAINER_IMAGE || echo "awslabs/open-hostfactory-plugin")
+        
+        # Centralized version generation using Makefile infrastructure
+        if [[ "${{ github.event_name }}" == "release" ]] || [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ github.event.inputs.environment }}" == "pypi" ]]; then
+          # Release build
+          PYPI_PACKAGE_VERSION=$(IS_RELEASE=true make -s get-version)
+          CONTAINER_TAG_PREFIX=$(IS_RELEASE=true make -s get-version)
+          IS_RELEASE="true"
+        else
+          # Development build
+          PYPI_PACKAGE_VERSION=$(make -s get-version)
+          CONTAINER_TAG_PREFIX=$(FORMAT=container make -s get-version)
+          IS_RELEASE="false"
+        fi
+        
+        {
+          echo "default-python-version=$DEFAULT_PYTHON_VERSION"
+          echo "python-versions=$PYTHON_VERSIONS"
+          echo "container-registry=$CONTAINER_REGISTRY"
+          echo "container-image=$CONTAINER_IMAGE"
+          echo "pypi-package-version=$PYPI_PACKAGE_VERSION"
+          echo "container-tag-prefix=$CONTAINER_TAG_PREFIX"
+          echo "is-release=$IS_RELEASE"
+        } >> "$GITHUB_OUTPUT"
+        
+        echo "Default Python version: $DEFAULT_PYTHON_VERSION"
+        echo "Python versions: $PYTHON_VERSIONS"
+        echo "Container registry: $CONTAINER_REGISTRY"
+        echo "Container image: $CONTAINER_IMAGE"
+        echo "PyPI package version: $PYPI_PACKAGE_VERSION"
+        echo "Container tag prefix: $CONTAINER_TAG_PREFIX"
+        echo "Is release: $IS_RELEASE"

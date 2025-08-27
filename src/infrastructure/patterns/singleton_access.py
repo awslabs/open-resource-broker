@@ -1,6 +1,6 @@
 """Standard singleton access functions."""
 
-from typing import Any, Type, TypeVar, cast
+from typing import Any, TypeVar, cast
 
 from infrastructure.logging.logger import get_logger
 from infrastructure.patterns.singleton_registry import SingletonRegistry
@@ -8,7 +8,7 @@ from infrastructure.patterns.singleton_registry import SingletonRegistry
 T = TypeVar("T")
 
 
-def get_singleton(singleton_class: Type[T], *args: Any, **kwargs: Any) -> T:
+def get_singleton(singleton_class: type[T], *args: Any, **kwargs: Any) -> T:
     """
     Get singleton instances.
 

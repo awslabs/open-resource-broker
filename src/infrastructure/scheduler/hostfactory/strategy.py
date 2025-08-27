@@ -1,7 +1,7 @@
 """HostFactory scheduler strategy for field mapping and response formatting."""
 
 import os
-from typing import TYPE_CHECKING, Any, Dict, List, Union
+from typing import TYPE_CHECKING, Any, Union
 
 if TYPE_CHECKING:
     pass
@@ -55,16 +55,16 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
             # Fallback to aws for backward compatibility
             return self.config_manager.resolve_file("template", "awsprov_templates.json")
 
-    def get_template_paths(self) -> List[str]:
+    def get_template_paths(self) -> list[str]:
         """Get template file paths."""
         return [self.get_templates_file_path()]
 
-    def load_templates_from_path(self, template_path: str) -> List[Dict[str, Any]]:
+    def load_templates_from_path(self, template_path: str) -> list[dict[str, Any]]:
         """Load and process templates from a file path with field mapping."""
         try:
             import json
 
-            with open(template_path, "r") as f:
+            with open(template_path) as f:
                 data = json.load(f)
 
             # Handle different template file formats
@@ -87,7 +87,9 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
                 except Exception as e:
                     # Skip invalid templates but log the issue
                     self._logger.warning(
-                        "Skipping invalid template %s: %s", template.get("id", "unknown"), e
+                        "Skipping invalid template %s: %s",
+                        template.get("id", "unknown"),
+                        e,
                     )
                     continue
 
@@ -97,7 +99,7 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
             # Return empty list on error - let caller handle logging
             return []
 
-    def _map_template_fields(self, template: Dict[str, Any]) -> Dict[str, Any]:
+    def _map_template_fields(self, template: dict[str, Any]) -> dict[str, Any]:
         """
         Map HostFactory standard fields to internal domain model fields.
 
@@ -133,7 +135,7 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
             mapped["instance_types"] = template["vmTypes"]
             # Ensure primary instance_type is set if not already present
             if "instance_type" not in mapped or not mapped["instance_type"]:
-                mapped["instance_type"] = list(template["vmTypes"].keys())[0]
+                mapped["instance_type"] = next(iter(template["vmTypes"].keys()))
 
         # === ATTRIBUTES (HostFactory standard) ===
 
@@ -191,7 +193,7 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
             self._logger.warning("Failed to get active provider type, defaulting to 'aws': %s", e)
             return "aws"  # Default fallback
 
-    def convert_cli_args_to_hostfactory_input(self, operation: str, args: Any) -> Dict[str, Any]:
+    def convert_cli_args_to_hostfactory_input(self, operation: str, args: Any) -> dict[str, Any]:
         """Convert CLI arguments to HostFactory JSON input format.
 
         This method handles the conversion from CLI arguments to the expected
@@ -223,7 +225,7 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         else:
             raise ValueError(f"Unsupported HostFactory operation: {operation}")
 
-    def format_request_response(self, request_data: Dict[str, Any]) -> Dict[str, Any]:
+    def format_request_response(self, request_data: dict[str, Any]) -> dict[str, Any]:
         """Format request creation response to HostFactory format."""
         return {
             "requestId": request_data.get("request_id", request_data.get("requestId")),
@@ -231,8 +233,8 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         }
 
     def convert_domain_to_hostfactory_output(
-        self, operation: str, data: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self, operation: str, data: dict[str, Any]
+    ) -> dict[str, Any]:
         """Convert domain objects to HostFactory JSON output format.
 
         This method handles the conversion from internal domain objects to the expected
@@ -331,7 +333,7 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         else:
             raise ValueError(f"Unsupported HostFactory operation: {operation}")
 
-    def _convert_template_to_hostfactory(self, template: Template) -> Dict[str, Any]:
+    def _convert_template_to_hostfactory(self, template: Template) -> dict[str, Any]:
         """Convert internal template to HostFactory format."""
         # Handle both domain Template objects and TemplateDTO objects
         if hasattr(template, "to_dict"):
@@ -392,7 +394,7 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         }
         return mapping.get(hf_field, hf_field)
 
-    def _create_hf_attributes(self, template_data: Dict[str, Any]) -> Dict[str, Any]:
+    def _create_hf_attributes(self, template_data: dict[str, Any]) -> dict[str, Any]:
         """Create HF-compatible attributes object with CPU/RAM specs.
 
         This method handles the creation of HostFactory attributes with
@@ -447,7 +449,7 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         config_file = f"{provider_type}prov_config.json"
         return os.path.join(config_root, config_file)
 
-    def parse_template_config(self, raw_data: Dict[str, Any]) -> Template:
+    def parse_template_config(self, raw_data: dict[str, Any]) -> Template:
         """
         Parse HostFactory template to domain Template.
 
@@ -495,8 +497,8 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         return Template(**domain_data)
 
     def parse_request_data(
-        self, raw_data: Dict[str, Any]
-    ) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
+        self, raw_data: dict[str, Any]
+    ) -> Union[dict[str, Any], list[dict[str, Any]]]:
         """
         Parse HostFactory request data to domain-compatible format.
 
@@ -537,7 +539,7 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
             "metadata": raw_data.get("metadata", {}),
         }
 
-    def format_templates_response(self, templates: List[Template]) -> Dict[str, Any]:
+    def format_templates_response(self, templates: list[Template]) -> dict[str, Any]:
         """
         Format domain Templates to HostFactory response.
 
@@ -579,7 +581,7 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
             ]
         }
 
-    def format_request_status_response(self, requests: List[Request]) -> Dict[str, Any]:
+    def format_request_status_response(self, requests: list[Request]) -> dict[str, Any]:
         """
         Format domain Requests to HostFactory status response.
 
@@ -609,7 +611,7 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
             ]
         }
 
-    def format_machine_status_response(self, machines: List[Machine]) -> Dict[str, Any]:
+    def format_machine_status_response(self, machines: list[Machine]) -> dict[str, Any]:
         """
         Format domain Machines to HostFactory machine response.
 
@@ -642,14 +644,26 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         """Get working directory from HF_PROVIDER_WORKDIR."""
         return os.environ.get("HF_PROVIDER_WORKDIR", os.getcwd())
 
+    def get_config_directory(self) -> str:
+        """Get config directory from HF_PROVIDER_CONFDIR."""
+        return os.environ.get(
+            "HF_PROVIDER_CONFDIR", os.path.join(self.get_working_directory(), "config")
+        )
+
+    def get_logs_directory(self) -> str:
+        """Get logs directory from HF_PROVIDER_LOGDIR."""
+        return os.environ.get(
+            "HF_PROVIDER_LOGDIR", os.path.join(self.get_working_directory(), "logs")
+        )
+
     def get_storage_base_path(self) -> str:
         """Get storage base path within working directory."""
         workdir = self.get_working_directory()
         return os.path.join(workdir, "data")
 
     def _format_machines_for_hostfactory(
-        self, machines: List[Dict[str, Any]]
-    ) -> List[Dict[str, Any]]:
+        self, machines: list[dict[str, Any]]
+    ) -> list[dict[str, Any]]:
         """Format machine data to exact HostFactory format per hf_docs/input-output.md."""
         formatted_machines = []
 

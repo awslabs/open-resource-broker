@@ -7,7 +7,7 @@ Follows the Adapter/Port pattern established in the codebase.
 """
 
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from domain.base.ports.configuration_port import ConfigurationPort
 from domain.base.ports.logging_port import LoggingPort
@@ -23,7 +23,7 @@ class AWSTemplateAdapter(TemplateAdapterPort):
     """Consolidated adapter for AWS-specific template operations."""
 
     # Cache for SSM parameter resolution
-    _ssm_parameter_cache: Dict[str, str] = {}
+    _ssm_parameter_cache: dict[str, str] = {}
 
     # AWS-specific field mappings and supported fields
     _AWS_SUPPORTED_FIELDS = [
@@ -87,7 +87,7 @@ class AWSTemplateAdapter(TemplateAdapterPort):
         self._aws_client = aws_client
         self._logger = logger
 
-    def validate_template(self, template: Template) -> List[str]:
+    def validate_template(self, template: Template) -> list[str]:
         """
         Validate template for AWS-specific requirements.
 
@@ -169,7 +169,7 @@ class AWSTemplateAdapter(TemplateAdapterPort):
 
         return template
 
-    def get_supported_fields(self) -> List[str]:
+    def get_supported_fields(self) -> list[str]:
         """
         Get list of fields supported by this AWS adapter.
 
@@ -178,7 +178,7 @@ class AWSTemplateAdapter(TemplateAdapterPort):
         """
         return self._AWS_SUPPORTED_FIELDS.copy()
 
-    def validate_field_values(self, template: Template) -> Dict[str, str]:
+    def validate_field_values(self, template: Template) -> dict[str, str]:
         """
         Validate AWS-specific field values.
 
@@ -235,15 +235,15 @@ class AWSTemplateAdapter(TemplateAdapterPort):
         """Get a template by its ID."""
         return await self._template_config_manager.get_template_by_id(template_id)
 
-    async def get_all_templates(self) -> List[TemplateDTO]:
+    async def get_all_templates(self) -> list[TemplateDTO]:
         """Get all available templates."""
         return await self._template_config_manager.get_all_templates()
 
-    async def get_templates_by_provider_api(self, provider_api: str) -> List[TemplateDTO]:
+    async def get_templates_by_provider_api(self, provider_api: str) -> list[TemplateDTO]:
         """Get templates filtered by provider API."""
         return await self._template_config_manager.get_templates_by_provider(provider_api)
 
-    async def validate_template_dto(self, template: TemplateDTO) -> Dict[str, Any]:
+    async def validate_template_dto(self, template: TemplateDTO) -> dict[str, Any]:
         """Validate a template configuration."""
         return await self._template_config_manager.validate_template(template)
 
@@ -255,11 +255,11 @@ class AWSTemplateAdapter(TemplateAdapterPort):
         """Delete a template."""
         await self._template_config_manager.delete_template(template_id)
 
-    def get_supported_provider_apis(self) -> List[str]:
+    def get_supported_provider_apis(self) -> list[str]:
         """Get the list of provider APIs supported by this adapter."""
         return ["EC2Fleet", "SpotFleet", "ASG", "RunInstances"]
 
-    def get_adapter_info(self) -> Dict[str, Any]:
+    def get_adapter_info(self) -> dict[str, Any]:
         """Get information about this adapter."""
         return {
             "adapter_name": "AWSTemplateAdapter",
@@ -277,7 +277,7 @@ class AWSTemplateAdapter(TemplateAdapterPort):
 
     # === LEGACY COMPATIBILITY METHODS ===
 
-    def validate_aws_configuration(self, template: Template) -> Dict[str, str]:
+    def validate_aws_configuration(self, template: Template) -> dict[str, str]:
         """
         Validate AWS-specific configuration in template.
         Legacy method for backward compatibility.
@@ -364,7 +364,7 @@ class AWSTemplateAdapter(TemplateAdapterPort):
 
     # === PRIVATE HELPER METHODS ===
 
-    def _validate_required_fields(self, template: Template) -> List[str]:
+    def _validate_required_fields(self, template: Template) -> list[str]:
         """Validate required AWS fields."""
         errors = []
 
@@ -379,7 +379,7 @@ class AWSTemplateAdapter(TemplateAdapterPort):
 
         return errors
 
-    def _validate_aws_configurations(self, template: Template) -> List[str]:
+    def _validate_aws_configurations(self, template: Template) -> list[str]:
         """Validate AWS-specific configurations."""
         errors = []
 
@@ -400,7 +400,7 @@ class AWSTemplateAdapter(TemplateAdapterPort):
 
         return errors
 
-    def _validate_network_configuration(self, template: Template) -> List[str]:
+    def _validate_network_configuration(self, template: Template) -> list[str]:
         """Validate network configuration."""
         errors = []
 

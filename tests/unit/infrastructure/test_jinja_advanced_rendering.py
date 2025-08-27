@@ -30,7 +30,10 @@ class TestJinjaAdvancedRendering:
             "LaunchTemplateData": {
                 "InstanceType": "{{ instance_type }}",
                 "NetworkInterfaces": [
-                    {"SubnetId": "{{ subnet_id }}", "SecurityGroupIds": ["{{ security_group }}"]}
+                    {
+                        "SubnetId": "{{ subnet_id }}",
+                        "SecurityGroupIds": ["{{ security_group }}"],
+                    }
                 ],
             }
         }
@@ -80,7 +83,11 @@ class TestJinjaAdvancedRendering:
         assert result1["SpotPrice"] == "0.05"
 
         # Test with spot disabled
-        context2 = {"instance_type": "t3.micro", "use_spot": False, "spot_price": "0.05"}
+        context2 = {
+            "instance_type": "t3.micro",
+            "use_spot": False,
+            "spot_price": "0.05",
+        }
         result2 = self.renderer.render_spec(spec, context2)
         assert result2["SpotPrice"] == ""
 
@@ -233,7 +240,10 @@ class TestJinjaAdvancedRendering:
 
     def test_empty_context(self):
         """Test rendering with empty context."""
-        spec = {"StaticValue": "static", "DefaultValue": "{{ missing_var | default('default') }}"}
+        spec = {
+            "StaticValue": "static",
+            "DefaultValue": "{{ missing_var | default('default') }}",
+        }
         context = {}
 
         result = self.renderer.render_spec(spec, context)
@@ -268,7 +278,14 @@ class TestJinjaAdvancedRendering:
 
     def test_mixed_data_types_in_lists(self):
         """Test lists containing mixed data types."""
-        spec = {"MixedList": ["{{ string_var }}", 42, True, {"NestedKey": "{{ nested_var }}"}]}
+        spec = {
+            "MixedList": [
+                "{{ string_var }}",
+                42,
+                True,
+                {"NestedKey": "{{ nested_var }}"},
+            ]
+        }
         context = {"string_var": "string-value", "nested_var": "nested-value"}
 
         result = self.renderer.render_spec(spec, context)

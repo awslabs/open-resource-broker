@@ -4,7 +4,7 @@ This module defines commands for managing provider strategies, including
 strategy selection, operation execution, health updates, and configuration.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from application.dto.base import BaseCommand
 from providers.base.strategy import (
@@ -20,7 +20,7 @@ class SelectProviderStrategyCommand(BaseCommand):
 
     operation_type: ProviderOperationType
     selection_criteria: SelectionCriteria
-    context: Optional[Dict[str, Any]] = None
+    context: Optional[dict[str, Any]] = None
 
 
 class ExecuteProviderOperationCommand(BaseCommand):
@@ -37,8 +37,8 @@ class RegisterProviderStrategyCommand(BaseCommand):
 
     strategy_name: str
     provider_type: str
-    strategy_config: Dict[str, Any]
-    capabilities: Optional[Dict[str, Any]] = None
+    strategy_config: dict[str, Any]
+    capabilities: Optional[dict[str, Any]] = None
     priority: int = 0
 
 
@@ -55,7 +55,7 @@ class ConfigureProviderStrategyCommand(BaseCommand):
     """Command to configure provider strategy selection policies."""
 
     default_selection_policy: str
-    selection_criteria: Dict[str, Any]
-    fallback_strategies: Optional[List[str]] = None
+    selection_criteria: dict[str, Any]
+    fallback_strategies: Optional[list[str]] = None
     health_check_interval: int = 300  # 5 minutes default
-    circuit_breaker_config: Optional[Dict[str, Any]] = None
+    circuit_breaker_config: Optional[dict[str, Any]] = None

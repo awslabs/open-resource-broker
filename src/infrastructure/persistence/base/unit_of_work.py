@@ -1,7 +1,7 @@
 """Base unit of work interfaces and implementations."""
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, TypeVar
+from typing import Any, TypeVar
 
 from domain.base.domain_interfaces import UnitOfWork
 from infrastructure.logging.logger import get_logger
@@ -87,7 +87,7 @@ class BaseUnitOfWork(UnitOfWork, ABC):
 class StrategyUnitOfWork(BaseUnitOfWork):
     """Unit of work implementation for strategy-based repositories."""
 
-    def __init__(self, repositories: List[StrategyBasedRepository]) -> None:
+    def __init__(self, repositories: list[StrategyBasedRepository]) -> None:
         """
         Initialize unit of work.
 
@@ -96,7 +96,7 @@ class StrategyUnitOfWork(BaseUnitOfWork):
         """
         super().__init__()
         self.repositories = repositories
-        self._snapshots: Dict[StrategyBasedRepository, Dict[str, Any]] = {}
+        self._snapshots: dict[StrategyBasedRepository, dict[str, Any]] = {}
 
     def _begin_transaction(self) -> None:
         """Begin transaction by delegating to storage strategies."""
@@ -113,7 +113,7 @@ class StrategyUnitOfWork(BaseUnitOfWork):
             self.logger.error("Error beginning transaction: %s", str(e))
             # Clean up any started transactions
             self._rollback_transaction()
-            raise TransactionError(f"Error beginning transaction: {str(e)}")
+            raise TransactionError(f"Error beginning transaction: {e!s}")
 
     def _commit_transaction(self) -> None:
         """Commit transaction by delegating to storage strategies."""
@@ -127,7 +127,7 @@ class StrategyUnitOfWork(BaseUnitOfWork):
             self._snapshots.clear()
         except Exception as e:
             self.logger.error("Error committing transaction: %s", str(e))
-            raise TransactionError(f"Error committing transaction: {str(e)}")
+            raise TransactionError(f"Error committing transaction: {e!s}")
 
     def _rollback_transaction(self) -> None:
         """Rollback transaction by delegating to storage strategies."""
@@ -154,4 +154,4 @@ class StrategyUnitOfWork(BaseUnitOfWork):
             self._snapshots.clear()
         except Exception as e:
             self.logger.error("Error rolling back transaction: %s", str(e))
-            raise TransactionError(f"Error rolling back transaction: {str(e)}")
+            raise TransactionError(f"Error rolling back transaction: {e!s}")

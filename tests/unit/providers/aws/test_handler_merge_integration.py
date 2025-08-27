@@ -40,7 +40,12 @@ class TestHandlerMergeIntegration:
         mock_native_service = Mock()
         mock_native_service.process_provider_api_spec_with_merge.return_value = {
             "LaunchTemplateConfigs": [
-                {"LaunchTemplateSpecification": {"LaunchTemplateId": "lt-123", "Version": "1"}}
+                {
+                    "LaunchTemplateSpecification": {
+                        "LaunchTemplateId": "lt-123",
+                        "Version": "1",
+                    }
+                }
             ],
             "TargetCapacitySpecification": {"TotalTargetCapacity": 10},
             "Type": "maintain",

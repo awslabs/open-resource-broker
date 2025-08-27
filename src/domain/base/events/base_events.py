@@ -1,7 +1,7 @@
 """Base event classes and protocols - foundation for event-driven architecture."""
 
 from datetime import datetime
-from typing import Any, Callable, Dict, Optional, Protocol
+from typing import Any, Callable, Optional, Protocol
 from uuid import uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -18,7 +18,7 @@ class DomainEvent(BaseModel):
     aggregate_id: str
     aggregate_type: str
     version: int = 1
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
     def model_post_init(self, __context: Any) -> None:
         """Set event_type based on class name if not provided."""

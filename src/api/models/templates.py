@@ -1,6 +1,6 @@
 """Template API models."""
 
-from typing import Dict, List, Optional
+from typing import Optional
 
 from pydantic import Field
 
@@ -10,12 +10,12 @@ from api.models.base import APIRequest, APIResponse
 class TemplateAttribute(APIRequest):
     """Template attribute model."""
 
-    type: Optional[List[str]] = None
-    ncpus: Optional[List[str]] = None
-    nram: Optional[List[str]] = None
-    ncores: Optional[List[str]] = None
-    rank: Optional[List[str]] = None
-    price_info: Optional[List[str]] = None
+    type: Optional[list[str]] = None
+    ncpus: Optional[list[str]] = None
+    nram: Optional[list[str]] = None
+    ncores: Optional[list[str]] = None
+    rank: Optional[list[str]] = None
+    price_info: Optional[list[str]] = None
 
 
 class Template(APIRequest):
@@ -35,7 +35,7 @@ class Template(APIRequest):
         alias="availableNumber",
         description="Number of machines that can be currently provisioned with this template",
     )
-    requested_machines: Optional[List[str]] = Field(
+    requested_machines: Optional[list[str]] = Field(
         default=None,
         alias="requestedMachines",
         description="Names of machines provisioned from this template",
@@ -47,7 +47,7 @@ class Template(APIRequest):
     on_demand_capacity: Optional[int] = Field(
         default=0, alias="onDemandCapacity", description="On-demand capacity"
     )
-    vm_types: Optional[Dict[str, int]] = Field(
+    vm_types: Optional[dict[str, int]] = Field(
         default=None, alias="vmTypes", description="VM types with weights"
     )
     instance_tags: Optional[str] = Field(
@@ -62,7 +62,7 @@ class GetAvailableTemplatesRequest(APIRequest):
 class GetAvailableTemplatesResponse(APIResponse):
     """Get available templates response model."""
 
-    templates: List[Template] = Field(description="List of available templates")
+    templates: list[Template] = Field(description="List of available templates")
     message: str = Field(
         default="Get available templates success.",
         description="Any additional message the caller should know",

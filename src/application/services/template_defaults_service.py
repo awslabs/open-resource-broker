@@ -1,6 +1,6 @@
 """Template Defaults Service - Hierarchical template default resolution with domain extensions."""
 
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from domain.base.dependency_injection import injectable
 from domain.base.ports.configuration_port import ConfigurationPort
@@ -49,9 +49,9 @@ class TemplateDefaultsService(TemplateDefaultsPort):
 
     def resolve_template_defaults(
         self,
-        template_dict: Dict[str, Any],
+        template_dict: dict[str, Any],
         provider_instance_name: Optional[str] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Apply hierarchical defaults to a template dictionary.
 
@@ -63,7 +63,8 @@ class TemplateDefaultsService(TemplateDefaultsPort):
             Template dictionary with defaults applied
         """
         self.logger.debug(
-            "Resolving defaults for template %s", template_dict.get("template_id", "unknown")
+            "Resolving defaults for template %s",
+            template_dict.get("template_id", "unknown"),
         )
 
         # Start with empty defaults
@@ -108,7 +109,7 @@ class TemplateDefaultsService(TemplateDefaultsPort):
 
     def resolve_provider_api_default(
         self,
-        template_dict: Dict[str, Any],
+        template_dict: dict[str, Any],
         provider_instance_name: Optional[str] = None,
     ) -> str:
         """
@@ -160,7 +161,7 @@ class TemplateDefaultsService(TemplateDefaultsPort):
 
     def get_effective_template_defaults(
         self, provider_instance_name: Optional[str] = None
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Get the effective template defaults for a provider instance.
 
@@ -189,7 +190,7 @@ class TemplateDefaultsService(TemplateDefaultsPort):
 
         return defaults
 
-    def _get_global_template_defaults(self) -> Dict[str, Any]:
+    def _get_global_template_defaults(self) -> dict[str, Any]:
         """Get global template defaults from configuration."""
         try:
             template_config = self.config_manager.get_template_config()
@@ -220,7 +221,7 @@ class TemplateDefaultsService(TemplateDefaultsPort):
             self.logger.warning("Could not get global template defaults: %s", e)
             return {}
 
-    def _get_provider_type_defaults(self, provider_type: str) -> Dict[str, Any]:
+    def _get_provider_type_defaults(self, provider_type: str) -> dict[str, Any]:
         """Get template defaults for a provider type."""
         try:
             provider_config = self.config_manager.get_provider_config()
@@ -236,7 +237,7 @@ class TemplateDefaultsService(TemplateDefaultsPort):
             self.logger.warning("Could not get provider type defaults for %s: %s", provider_type, e)
             return {}
 
-    def _get_provider_instance_defaults(self, provider_instance_name: str) -> Dict[str, Any]:
+    def _get_provider_instance_defaults(self, provider_instance_name: str) -> dict[str, Any]:
         """Get template defaults for a specific provider instance."""
         try:
             provider_config = self.config_manager.get_provider_config()
@@ -250,7 +251,9 @@ class TemplateDefaultsService(TemplateDefaultsPort):
 
         except Exception as e:
             self.logger.warning(
-                "Could not get provider instance defaults for %s: %s", provider_instance_name, e
+                "Could not get provider instance defaults for %s: %s",
+                provider_instance_name,
+                e,
             )
             return {}
 
@@ -272,13 +275,15 @@ class TemplateDefaultsService(TemplateDefaultsPort):
 
         except Exception as e:
             self.logger.warning(
-                "Could not determine provider type for %s: %s", provider_instance_name, e
+                "Could not determine provider type for %s: %s",
+                provider_instance_name,
+                e,
             )
             return None
 
     def validate_template_defaults(
         self, provider_instance_name: Optional[str] = None
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Validate template defaults configuration.
 
@@ -320,19 +325,20 @@ class TemplateDefaultsService(TemplateDefaultsPort):
                             )
 
             self.logger.info(
-                "Template defaults validation completed for %s", provider_instance_name or "global"
+                "Template defaults validation completed for %s",
+                provider_instance_name or "global",
             )
 
         except Exception as e:
             validation_result["is_valid"] = False
-            validation_result["errors"].append(f"Validation failed: {str(e)}")
+            validation_result["errors"].append(f"Validation failed: {e!s}")
             self.logger.error("Template defaults validation failed: %s", e)
 
         return validation_result
 
     def resolve_template_with_extensions(
         self,
-        template_dict: Dict[str, Any],
+        template_dict: dict[str, Any],
         provider_instance_name: Optional[str] = None,
     ) -> Template:
         """
@@ -349,7 +355,8 @@ class TemplateDefaultsService(TemplateDefaultsPort):
             Domain template object with extensions applied
         """
         self.logger.debug(
-            "Resolving template with extensions: %s", template_dict.get("template_id", "unknown")
+            "Resolving template with extensions: %s",
+            template_dict.get("template_id", "unknown"),
         )
 
         # 1. Apply hierarchical defaults (existing logic)
@@ -366,7 +373,9 @@ class TemplateDefaultsService(TemplateDefaultsPort):
             # Extension defaults have lower priority than hierarchical defaults
             resolved_dict = {**extension_defaults, **resolved_dict}
             self.logger.debug(
-                "Applied %s extension defaults for %s", len(extension_defaults), provider_type
+                "Applied %s extension defaults for %s",
+                len(extension_defaults),
+                provider_type,
             )
 
         # 4. Create appropriate template type via factory
@@ -390,7 +399,7 @@ class TemplateDefaultsService(TemplateDefaultsPort):
 
     def _get_extension_defaults(
         self, provider_type: str, provider_instance_name: Optional[str]
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Get provider extension defaults with hierarchy.
 
@@ -421,7 +430,8 @@ class TemplateDefaultsService(TemplateDefaultsPort):
                 )
                 extension_defaults.update(instance_extension_defaults)
                 self.logger.debug(
-                    "Applied %s instance extension defaults", len(instance_extension_defaults)
+                    "Applied %s instance extension defaults",
+                    len(instance_extension_defaults),
                 )
 
         except Exception as e:
@@ -431,7 +441,7 @@ class TemplateDefaultsService(TemplateDefaultsPort):
 
     def _get_provider_instance_extension_defaults(
         self, provider_instance_name: str, provider_type: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Get extension defaults for a specific provider instance.
 
@@ -465,15 +475,17 @@ class TemplateDefaultsService(TemplateDefaultsPort):
 
         except Exception as e:
             self.logger.warning(
-                "Could not get instance extension defaults for %s: %s", provider_instance_name, e
+                "Could not get instance extension defaults for %s: %s",
+                provider_instance_name,
+                e,
             )
             return {}
 
     def get_effective_template_with_extensions(
         self,
-        template_dict: Dict[str, Any],
+        template_dict: dict[str, Any],
         provider_instance_name: Optional[str] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Get effective template configuration with all defaults and extensions applied.
 
@@ -502,9 +514,9 @@ class TemplateDefaultsService(TemplateDefaultsPort):
 
     def validate_template_with_extensions(
         self,
-        template_dict: Dict[str, Any],
+        template_dict: dict[str, Any],
         provider_instance_name: Optional[str] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Validate template configuration with extensions.
 

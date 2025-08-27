@@ -1,14 +1,15 @@
 """Collection transformation utility functions."""
 
 import copy
-from typing import Any, Callable, Dict, Iterable, List, Set, Tuple, TypeVar
+from collections.abc import Iterable
+from typing import Any, Callable, TypeVar
 
 T = TypeVar("T")
 K = TypeVar("K")
 V = TypeVar("V")
 
 
-def map_values(collection: Dict[K, V], transform_func: Callable[[V], Any]) -> Dict[K, Any]:
+def map_values(collection: dict[K, V], transform_func: Callable[[V], Any]) -> dict[K, Any]:
     """
     Transform dictionary values.
 
@@ -22,7 +23,7 @@ def map_values(collection: Dict[K, V], transform_func: Callable[[V], Any]) -> Di
     return {key: transform_func(value) for key, value in collection.items()}
 
 
-def map_keys(collection: Dict[K, V], transform_func: Callable[[K], Any]) -> Dict[Any, V]:
+def map_keys(collection: dict[K, V], transform_func: Callable[[K], Any]) -> dict[Any, V]:
     """
     Transform dictionary keys.
 
@@ -36,7 +37,7 @@ def map_keys(collection: Dict[K, V], transform_func: Callable[[K], Any]) -> Dict
     return {transform_func(key): value for key, value in collection.items()}
 
 
-def flatten(collection: List[List[T]]) -> List[T]:
+def flatten(collection: list[list[T]]) -> list[T]:
     """
     Flatten a list of lists.
 
@@ -52,7 +53,7 @@ def flatten(collection: List[List[T]]) -> List[T]:
     return result
 
 
-def deep_flatten(collection: List[Any]) -> List[Any]:
+def deep_flatten(collection: list[Any]) -> list[Any]:
     """
     Recursively flatten nested lists.
 
@@ -71,7 +72,7 @@ def deep_flatten(collection: List[Any]) -> List[Any]:
     return result
 
 
-def chunk(collection: List[T], size: int) -> List[List[T]]:
+def chunk(collection: list[T], size: int) -> list[list[T]]:
     """
     Split list into chunks of specified size.
 
@@ -88,7 +89,7 @@ def chunk(collection: List[T], size: int) -> List[List[T]]:
     return [collection[i : i + size] for i in range(0, len(collection), size)]
 
 
-def to_dict(collection: Iterable[T], key_func: Callable[[T], K]) -> Dict[K, T]:
+def to_dict(collection: Iterable[T], key_func: Callable[[T], K]) -> dict[K, T]:
     """
     Convert collection to dictionary using key function.
 
@@ -104,7 +105,7 @@ def to_dict(collection: Iterable[T], key_func: Callable[[T], K]) -> Dict[K, T]:
 
 def to_dict_with_transform(
     collection: Iterable[T], key_func: Callable[[T], K], value_func: Callable[[T], V]
-) -> Dict[K, V]:
+) -> dict[K, V]:
     """
     Convert collection to dictionary with key and value transformations.
 
@@ -119,7 +120,7 @@ def to_dict_with_transform(
     return {key_func(item): value_func(item) for item in collection}
 
 
-def to_list(collection: Iterable[T]) -> List[T]:
+def to_list(collection: Iterable[T]) -> list[T]:
     """
     Convert iterable to list.
 
@@ -132,7 +133,7 @@ def to_list(collection: Iterable[T]) -> List[T]:
     return list(collection)
 
 
-def to_set(collection: Iterable[T]) -> Set[T]:
+def to_set(collection: Iterable[T]) -> set[T]:
     """
     Convert iterable to set.
 
@@ -145,7 +146,7 @@ def to_set(collection: Iterable[T]) -> Set[T]:
     return set(collection)
 
 
-def to_tuple(collection: Iterable[T]) -> Tuple[T, ...]:
+def to_tuple(collection: Iterable[T]) -> tuple[T, ...]:
     """
     Convert iterable to tuple.
 
@@ -158,7 +159,7 @@ def to_tuple(collection: Iterable[T]) -> Tuple[T, ...]:
     return tuple(collection)
 
 
-def invert_dict(collection: Dict[K, V]) -> Dict[V, K]:
+def invert_dict(collection: dict[K, V]) -> dict[V, K]:
     """
     Invert dictionary (swap keys and values).
 
@@ -171,7 +172,7 @@ def invert_dict(collection: Dict[K, V]) -> Dict[V, K]:
     return {value: key for key, value in collection.items()}
 
 
-def merge_dicts(*dicts: Dict[K, V]) -> Dict[K, V]:
+def merge_dicts(*dicts: dict[K, V]) -> dict[K, V]:
     """
     Merge multiple dictionaries.
 
@@ -187,7 +188,7 @@ def merge_dicts(*dicts: Dict[K, V]) -> Dict[K, V]:
     return result
 
 
-def deep_merge_dicts(dict1: Dict[K, Any], dict2: Dict[K, Any]) -> Dict[K, Any]:
+def deep_merge_dicts(dict1: dict[K, Any], dict2: dict[K, Any]) -> dict[K, Any]:
     """
     Deep merge two dictionaries.
 

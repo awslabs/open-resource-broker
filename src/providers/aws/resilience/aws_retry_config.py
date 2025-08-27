@@ -1,6 +1,6 @@
 """AWS-specific retry configuration."""
 
-from typing import Any, Dict
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -9,7 +9,7 @@ class AWSRetryConfig(BaseModel):
     """AWS-specific retry configuration."""
 
     # Service-specific retry settings
-    service_configs: Dict[str, Dict[str, Any]] = Field(
+    service_configs: dict[str, dict[str, Any]] = Field(
         default_factory=lambda: {
             "ec2": {
                 "max_attempts": 3,
@@ -45,7 +45,7 @@ class AWSRetryConfig(BaseModel):
         description="AWS service-specific retry configurations",
     )
 
-    def get_service_config(self, service: str) -> Dict[str, Any]:
+    def get_service_config(self, service: str) -> dict[str, Any]:
         """
         Get retry configuration for a specific AWS service.
 

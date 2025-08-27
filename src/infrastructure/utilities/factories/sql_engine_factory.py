@@ -95,7 +95,10 @@ class SQLEngineFactory:
             # Build connection string
             connection_string = f"postgresql://{username}:{password}@{host}:{port}/{database}"
             logger.debug(
-                "Creating PostgreSQL engine with connection to %s:%s/%s", host, port, database
+                "Creating PostgreSQL engine with connection to %s:%s/%s",
+                host,
+                port,
+                database,
             )
 
             # Add pooling configuration
@@ -118,7 +121,12 @@ class SQLEngineFactory:
 
             # Build connection string
             connection_string = f"mysql+pymysql://{username}:{password}@{host}:{port}/{database}"
-            logger.debug("Creating MySQL engine with connection to %s:%s/%s", host, port, database)
+            logger.debug(
+                "Creating MySQL engine with connection to %s:%s/%s",
+                host,
+                port,
+                database,
+            )
 
             # Add pooling configuration
             engine_kwargs.update(
@@ -141,7 +149,12 @@ class SQLEngineFactory:
 
             # Build connection string
             connection_string = f"mysql+pymysql://{username}:{password}@{host}:{port}/{database}"
-            logger.debug("Creating Aurora engine with connection to %s:%s/%s", host, port, database)
+            logger.debug(
+                "Creating Aurora engine with connection to %s:%s/%s",
+                host,
+                port,
+                database,
+            )
 
             # Add pooling configuration
             engine_kwargs.update(

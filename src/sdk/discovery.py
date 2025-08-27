@@ -8,7 +8,7 @@ Follows the same patterns as the infrastructure handler discovery.
 
 import re
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Optional, Type, get_type_hints
+from typing import Any, Callable, Optional, get_type_hints
 
 from application.decorators import (
     get_registered_command_handlers,
@@ -24,11 +24,11 @@ class MethodInfo:
 
     name: str
     description: str
-    parameters: Dict[str, Any]
-    required_params: List[str]
-    return_type: Optional[Type]
+    parameters: dict[str, Any]
+    required_params: list[str]
+    return_type: Optional[type]
     handler_type: str  # 'command' or 'query'
-    original_class: Type
+    original_class: type
 
 
 class SDKMethodDiscovery:
@@ -41,9 +41,9 @@ class SDKMethodDiscovery:
 
     def __init__(self) -> None:
         """Initialize the instance."""
-        self._method_info_cache: Dict[str, MethodInfo] = {}
+        self._method_info_cache: dict[str, MethodInfo] = {}
 
-    async def discover_cqrs_methods(self, query_bus, command_bus) -> Dict[str, Callable]:
+    async def discover_cqrs_methods(self, query_bus, command_bus) -> dict[str, Callable]:
         """
         Auto-discover all CQRS handlers and create SDK methods using direct bus access.
 
@@ -84,9 +84,9 @@ class SDKMethodDiscovery:
             return methods
 
         except Exception as e:
-            raise HandlerDiscoveryError(f"Failed to discover SDK methods: {str(e)}")
+            raise HandlerDiscoveryError(f"Failed to discover SDK methods: {e!s}")
 
-    async def discover_sdk_methods(self, service) -> Dict[str, Callable]:
+    async def discover_sdk_methods(self, service) -> dict[str, Callable]:
         """
         Legacy method for backward compatibility.
 
@@ -106,11 +106,11 @@ class SDKMethodDiscovery:
         """Get information about a specific SDK method."""
         return self._method_info_cache.get(method_name)
 
-    def list_available_methods(self) -> List[str]:
+    def list_available_methods(self) -> list[str]:
         """List all discovered method names."""
         return list(self._method_info_cache.keys())
 
-    def _query_to_method_name(self, query_type: Type) -> str:
+    def _query_to_method_name(self, query_type: type) -> str:
         """
         Convert query class name to SDK method name.
 
@@ -123,7 +123,7 @@ class SDKMethodDiscovery:
             name = name[:-5]  # Remove 'Query'
         return self._camel_to_snake(name)
 
-    def _command_to_method_name(self, command_type: Type) -> str:
+    def _command_to_method_name(self, command_type: type) -> str:
         """
         Convert command class name to SDK method name.
 
@@ -147,8 +147,8 @@ class SDKMethodDiscovery:
     def _create_method_info(
         self,
         method_name: str,
-        handler_type: Type,
-        handler_class: Type,
+        handler_type: type,
+        handler_class: type,
         operation_type: str,
     ) -> MethodInfo:
         """Create method information from handler type."""
@@ -203,7 +203,7 @@ class SDKMethodDiscovery:
         return f"{words} - {operation_type.title()} operation"
 
     def _create_query_method_cqrs(
-        self, query_bus, query_type: Type, method_info: MethodInfo
+        self, query_bus, query_type: type, method_info: MethodInfo
     ) -> Callable:
         """Create SDK method for query handler using direct CQRS bus."""
 
@@ -220,7 +220,7 @@ class SDKMethodDiscovery:
 
             except Exception as e:
                 raise MethodExecutionError(
-                    f"Failed to execute {method_info.name}: {str(e)}",
+                    f"Failed to execute {method_info.name}: {e!s}",
                     method_name=method_info.name,
                     details={"query_type": query_type.__name__, "kwargs": kwargs},
                 )
@@ -233,7 +233,7 @@ class SDKMethodDiscovery:
         return sdk_method
 
     def _create_command_method_cqrs(
-        self, command_bus, command_type: Type, method_info: MethodInfo
+        self, command_bus, command_type: type, method_info: MethodInfo
     ) -> Callable:
         """Create SDK method for command handler using direct CQRS bus."""
 
@@ -250,7 +250,7 @@ class SDKMethodDiscovery:
 
             except Exception as e:
                 raise MethodExecutionError(
-                    f"Failed to execute {method_info.name}: {str(e)}",
+                    f"Failed to execute {method_info.name}: {e!s}",
                     method_name=method_info.name,
                     details={"command_type": command_type.__name__, "kwargs": kwargs},
                 )
@@ -263,14 +263,14 @@ class SDKMethodDiscovery:
         return sdk_method
 
     # Legacy methods (deprecated)
-    def _create_query_method(self, service, query_type: Type, method_info: MethodInfo) -> Callable:
+    def _create_query_method(self, service, query_type: type, method_info: MethodInfo) -> Callable:
         """Create SDK method for query handler (deprecated)."""
         raise NotImplementedError(
             "Legacy method deprecated. Use _create_query_method_cqrs instead."
         )
 
     def _create_command_method(
-        self, service, command_type: Type, method_info: MethodInfo
+        self, service, command_type: type, method_info: MethodInfo
     ) -> Callable:
         """Create SDK method for command handler (deprecated)."""
         raise NotImplementedError(

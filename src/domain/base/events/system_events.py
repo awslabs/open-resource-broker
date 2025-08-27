@@ -1,6 +1,6 @@
 """System events - Configuration, lifecycle, security, and performance monitoring."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from pydantic import Field
 
@@ -15,7 +15,7 @@ class SystemEvent(InfrastructureEvent):
     """Base class for system-wide events."""
 
     component: str
-    system_context: Dict[str, Any] = Field(default_factory=dict)
+    system_context: dict[str, Any] = Field(default_factory=dict)
 
 
 # Configuration Events
@@ -24,16 +24,16 @@ class ConfigurationLoadedEvent(SystemEvent, TimedEvent):
 
     config_source: str  # "file", "environment", "default"
     config_version: str
-    loaded_sections: List[str] = Field(default_factory=list)
+    loaded_sections: list[str] = Field(default_factory=list)
     load_duration_ms: float = Field(alias="duration_ms")  # Use inherited duration_ms
 
 
 class ConfigurationChangedEvent(SystemEvent):
     """Event raised when configuration changes."""
 
-    changed_keys: List[str] = Field(default_factory=list)
-    old_values: Dict[str, Any] = Field(default_factory=dict)
-    new_values: Dict[str, Any] = Field(default_factory=dict)
+    changed_keys: list[str] = Field(default_factory=list)
+    old_values: dict[str, Any] = Field(default_factory=dict)
+    new_values: dict[str, Any] = Field(default_factory=dict)
     change_source: str  # "file_reload", "environment_update", "runtime_change"
 
 
@@ -91,8 +91,8 @@ class AuditTrailEvent(InfrastructureEvent):
     entity_type: str
     entity_id: str
     user_context: str
-    before_state: Optional[Dict[str, Any]] = None
-    after_state: Optional[Dict[str, Any]] = None
+    before_state: Optional[dict[str, Any]] = None
+    after_state: Optional[dict[str, Any]] = None
 
 
 class ComplianceEvent(InfrastructureEvent):
@@ -120,5 +120,5 @@ class HealthCheckEvent(SystemEvent, PerformanceEvent):
     check_name: str
     health_status: str  # "healthy", "degraded", "unhealthy"
     response_time_ms: float = Field(alias="duration_ms")  # Use inherited duration_ms
-    check_details: Dict[str, Any] = Field(default_factory=dict)
-    dependencies_status: Dict[str, str] = Field(default_factory=dict)
+    check_details: dict[str, Any] = Field(default_factory=dict)
+    dependencies_status: dict[str, str] = Field(default_factory=dict)

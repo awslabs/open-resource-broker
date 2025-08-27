@@ -6,12 +6,12 @@ data consistently regardless of the underlying data format (snake_case,
 camelCase, HF format, etc.).
 """
 
-from typing import Any, Dict, List
+from typing import Any
 
 
 def get_field_value(
-    data_dict: Dict[str, Any],
-    field_mapping: Dict[str, List[str]],
+    data_dict: dict[str, Any],
+    field_mapping: dict[str, list[str]],
     field_key: str,
     default: str = "N/A",
 ) -> str:
@@ -37,7 +37,7 @@ def get_field_value(
     return default
 
 
-def get_template_field_mapping() -> Dict[str, List[str]]:
+def get_template_field_mapping() -> dict[str, list[str]]:
     """
     Get mapping of logical template field names to possible actual field names.
     Uses Template model as source of truth for field names.
@@ -68,7 +68,7 @@ def get_template_field_mapping() -> Dict[str, List[str]]:
     }
 
 
-def get_request_field_mapping() -> Dict[str, List[str]]:
+def get_request_field_mapping() -> dict[str, list[str]]:
     """Get mapping of logical request field names to possible actual field names."""
     return {
         "id": ["request_id", "requestId"],
@@ -81,7 +81,7 @@ def get_request_field_mapping() -> Dict[str, List[str]]:
     }
 
 
-def get_machine_field_mapping() -> Dict[str, List[str]]:
+def get_machine_field_mapping() -> dict[str, list[str]]:
     """Get mapping of logical machine field names to possible actual field names."""
     return {
         "id": ["machine_id", "machineId", "instance_id", "instanceId"],

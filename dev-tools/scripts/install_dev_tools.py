@@ -205,6 +205,20 @@ class DevToolsInstaller:
                     "generic": self._install_pip_audit_python,
                 },
             },
+            "act": {
+                "description": "Run GitHub Actions locally (optional)",
+                "check_cmd": ["act", "--version"],
+                "install": {
+                    "darwin": ["brew", "install", "act"],
+                    "windows": ["choco", "install", "-y", "act-cli"],
+                    "ubuntu": self._install_act_generic,
+                    "debian": self._install_act_generic,
+                    "rhel": self._install_act_generic,
+                    "centos": self._install_act_generic,
+                    "fedora": self._install_act_generic,
+                    "generic": self._install_act_generic,
+                },
+            },
         }
 
     def _detect_os_distro(self):
@@ -217,7 +231,7 @@ class DevToolsInstaller:
             return self.os_type
 
         try:
-            with open("/etc/os-release", "r") as f:
+            with open("/etc/os-release") as f:
                 content = f.read().lower()
                 if "ubuntu" in content:
                     return "ubuntu"
@@ -263,7 +277,7 @@ class DevToolsInstaller:
         ]
 
         try:
-            result = subprocess.run(powershell_cmd, check=True, capture_output=True, text=True)
+            subprocess.run(powershell_cmd, check=True, capture_output=True, text=True)
             logger.info("Chocolatey installed successfully")
             return True
         except subprocess.CalledProcessError as e:
@@ -284,7 +298,7 @@ class DevToolsInstaller:
 
         logger.info(f"Running: {cmd_str}")
         try:
-            result = subprocess.run(cmd, check=True, capture_output=True, text=True, shell=shell)
+            subprocess.run(cmd, check=True, capture_output=True, text=True, shell=shell)
             return True
         except subprocess.CalledProcessError as e:
             logger.error(f"Failed to run {cmd_str}: {e}")
@@ -384,7 +398,7 @@ class DevToolsInstaller:
                 "-C",
                 "/usr/local/bin",
                 "--strip-components=1",
-                f"shellcheck-latest/shellcheck",
+                "shellcheck-latest/shellcheck",
             ]
         )
 
@@ -398,7 +412,31 @@ class DevToolsInstaller:
 
         url = f"https://github.com/trufflesecurity/trufflehog/releases/latest/download/trufflehog_linux_{arch}.tar.gz"
         return self._run_command(
-            ["curl", "-L", url, "|", "sudo", "tar", "-xz", "-C", "/usr/local/bin", "trufflehog"]
+            [
+                "curl",
+                "-L",
+                url,
+                "|",
+                "sudo",
+                "tar",
+                "-xz",
+                "-C",
+                "/usr/local/bin",
+                "trufflehog",
+            ]
+        )
+
+    def _install_act_generic(self):
+        """Install act using GitHub releases."""
+        return self._run_command(
+            [
+                "curl",
+                "-s",
+                "https://raw.githubusercontent.com/nektos/act/master/install.sh",
+                "|",
+                "sudo",
+                "bash",
+            ]
         )
 
     def _install_pip_audit_python(self):
@@ -428,7 +466,15 @@ class DevToolsInstaller:
             ],
             ["sudo", "chmod", "a+r", "/etc/apt/keyrings/docker.gpg"],
             ["sudo", "apt", "update"],
-            ["sudo", "apt", "install", "-y", "docker-ce", "docker-ce-cli", "containerd.io"],
+            [
+                "sudo",
+                "apt",
+                "install",
+                "-y",
+                "docker-ce",
+                "docker-ce-cli",
+                "containerd.io",
+            ],
         ]
 
         for cmd in commands:
@@ -446,7 +492,15 @@ class DevToolsInstaller:
                 "--add-repo",
                 "https://download.docker.com/linux/centos/docker-ce.repo",
             ],
-            ["sudo", "yum", "install", "-y", "docker-ce", "docker-ce-cli", "containerd.io"],
+            [
+                "sudo",
+                "yum",
+                "install",
+                "-y",
+                "docker-ce",
+                "docker-ce-cli",
+                "containerd.io",
+            ],
         ]
 
         for cmd in commands:
@@ -523,6 +577,7 @@ class DevToolsInstaller:
             "trufflehog",
             "actionlint",
             "shellcheck",
+            "act",
         ]
 
         tools_to_install = required_tools

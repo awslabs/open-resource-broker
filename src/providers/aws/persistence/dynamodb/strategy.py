@@ -1,6 +1,6 @@
 """DynamoDB storage strategy implementation using componentized architecture."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from botocore.exceptions import ClientError
 
@@ -87,7 +87,7 @@ class DynamoDBStorageStrategy(BaseStorageStrategy):
             self._self._logger.error("Failed to initialize table %s: %s", self.table_name, e)
             raise
 
-    def save(self, entity_id: str, data: Dict[str, Any]) -> None:
+    def save(self, entity_id: str, data: dict[str, Any]) -> None:
         """
         Save entity data to DynamoDB table.
 
@@ -115,7 +115,7 @@ class DynamoDBStorageStrategy(BaseStorageStrategy):
                 self._self._logger.error("Failed to save entity %s: %s", entity_id, e)
                 raise PersistenceError(f"Failed to save entity {entity_id}: {e}")
 
-    def find_by_id(self, entity_id: str) -> Optional[Dict[str, Any]]:
+    def find_by_id(self, entity_id: str) -> Optional[dict[str, Any]]:
         """
         Find entity by ID.
 
@@ -148,7 +148,7 @@ class DynamoDBStorageStrategy(BaseStorageStrategy):
                 self._self._logger.error("Failed to find entity %s: %s", entity_id, e)
                 return None
 
-    def find_all(self) -> Dict[str, Dict[str, Any]]:
+    def find_all(self) -> dict[str, dict[str, Any]]:
         """
         Find all entities.
 
@@ -229,7 +229,7 @@ class DynamoDBStorageStrategy(BaseStorageStrategy):
             self._self._logger.error("Failed to check existence of entity %s: %s", entity_id, e)
             return False
 
-    def find_by_criteria(self, criteria: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def find_by_criteria(self, criteria: dict[str, Any]) -> list[dict[str, Any]]:
         """
         Find entities matching criteria.
 
@@ -264,7 +264,7 @@ class DynamoDBStorageStrategy(BaseStorageStrategy):
                 self._self._logger.error("Failed to search entities: %s", e)
                 return []
 
-    def save_batch(self, entities: Dict[str, Dict[str, Any]]) -> None:
+    def save_batch(self, entities: dict[str, dict[str, Any]]) -> None:
         """
         Save multiple entities in batch.
 
@@ -291,7 +291,7 @@ class DynamoDBStorageStrategy(BaseStorageStrategy):
                 self._self._logger.error("Failed to save batch: %s", e)
                 raise PersistenceError(f"Failed to save batch: {e}")
 
-    def delete_batch(self, entity_ids: List[str]) -> None:
+    def delete_batch(self, entity_ids: list[str]) -> None:
         """
         Delete multiple entities in batch.
 

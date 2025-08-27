@@ -1,6 +1,6 @@
 """AWS Instance Manager implementation."""
 
-from typing import Any, Dict, List
+from typing import Any
 
 from domain.base.dependency_injection import injectable
 from domain.base.ports import LoggingPort
@@ -21,7 +21,7 @@ class AWSInstanceManager:
         self._config = config
         self._logger = logger
 
-    def create_instances(self, template_config: Dict[str, Any], count: int) -> List[str]:
+    def create_instances(self, template_config: dict[str, Any], count: int) -> list[str]:
         """Create instances based on template configuration."""
         with aws_dry_run_context():
             try:
@@ -81,7 +81,7 @@ class AWSInstanceManager:
                 self._logger.error("Failed to create instances: %s", e)
                 return []
 
-    def terminate_instances(self, instance_ids: List[str]) -> bool:
+    def terminate_instances(self, instance_ids: list[str]) -> bool:
         """Terminate instances by ID."""
         with aws_dry_run_context():
             try:
@@ -97,7 +97,7 @@ class AWSInstanceManager:
                 self._logger.error("Failed to terminate instances: %s", e)
                 return False
 
-    def get_instance_status(self, instance_ids: List[str]) -> Dict[str, str]:
+    def get_instance_status(self, instance_ids: list[str]) -> dict[str, str]:
         """Get status of instances."""
         with aws_dry_run_context():
             try:
@@ -118,7 +118,7 @@ class AWSInstanceManager:
                 self._logger.error("Failed to get instance status: %s", e)
                 return {instance_id: "error" for instance_id in instance_ids}
 
-    def start_instances(self, instance_ids: List[str]) -> Dict[str, bool]:
+    def start_instances(self, instance_ids: list[str]) -> dict[str, bool]:
         """Start stopped instances."""
         try:
             ec2_client = self._aws_client.ec2_client
@@ -136,7 +136,7 @@ class AWSInstanceManager:
             self._logger.error("Failed to start instances: %s", e)
             return {instance_id: False for instance_id in instance_ids}
 
-    def stop_instances(self, instance_ids: List[str]) -> Dict[str, bool]:
+    def stop_instances(self, instance_ids: list[str]) -> dict[str, bool]:
         """Stop running instances."""
         try:
             ec2_client = self._aws_client.ec2_client
@@ -154,7 +154,7 @@ class AWSInstanceManager:
             self._logger.error("Failed to stop instances: %s", e)
             return {instance_id: False for instance_id in instance_ids}
 
-    def get_instances_by_tags(self, tags: Dict[str, str]) -> List[str]:
+    def get_instances_by_tags(self, tags: dict[str, str]) -> list[str]:
         """Find instance IDs by tags."""
         with aws_dry_run_context():
             try:

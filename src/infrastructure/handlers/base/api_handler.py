@@ -4,7 +4,7 @@ import json
 import time
 import uuid
 from abc import abstractmethod
-from typing import Any, Callable, Dict, Generic, Optional, TypeVar
+from typing import Any, Callable, Generic, Optional, TypeVar
 
 from domain.base.exceptions import DomainException, EntityNotFoundError, ValidationError
 from infrastructure.handlers.base.base_handler import BaseHandler
@@ -21,7 +21,7 @@ class RequestContext:
         """Initialize request context."""
         self.correlation_id = str(uuid.uuid4())
         self.start_time = time.time()
-        self.metadata: Dict[str, Any] = {}
+        self.metadata: dict[str, Any] = {}
 
 
 class BaseAPIHandler(BaseHandler, Generic[T, R]):
@@ -68,7 +68,7 @@ class BaseAPIHandler(BaseHandler, Generic[T, R]):
 
     def apply_middleware(
         self, func: Callable[[T], R], service_name: Optional[str] = None
-    ) -> Callable[[T], Dict[str, Any]]:
+    ) -> Callable[[T], dict[str, Any]]:
         """
         Apply middleware in standardized order.
 
@@ -187,7 +187,7 @@ class BaseAPIHandler(BaseHandler, Generic[T, R]):
 
     def with_error_handling_middleware(
         self, func: Callable[[T], R]
-    ) -> Callable[[T], Dict[str, Any]]:
+    ) -> Callable[[T], dict[str, Any]]:
         """
         Provide standardized error handling.
 
@@ -201,7 +201,7 @@ class BaseAPIHandler(BaseHandler, Generic[T, R]):
             Decorated function that returns a standardized error response
         """
 
-        def wrapper(request: T) -> Dict[str, Any]:
+        def wrapper(request: T) -> dict[str, Any]:
             """Wrapper function for error handling middleware."""
             try:
                 result = func(request)
@@ -219,7 +219,9 @@ class BaseAPIHandler(BaseHandler, Generic[T, R]):
                 # Handle ValueError specifically for better error messages
                 error_message = str(e)
                 self.logger.error(
-                    "Validation error: %s", error_message, extra={"error": error_message}
+                    "Validation error: %s",
+                    error_message,
+                    extra={"error": error_message},
                 )
                 return {
                     "error": "ValidationError",
@@ -323,7 +325,7 @@ class BaseAPIHandler(BaseHandler, Generic[T, R]):
         return decorator
 
     def with_input_validation(
-        self, schema: Dict[str, Any], func: Callable[[T], R]
+        self, schema: dict[str, Any], func: Callable[[T], R]
     ) -> Callable[[T], R]:
         """
         Validate input.
@@ -339,8 +341,10 @@ class BaseAPIHandler(BaseHandler, Generic[T, R]):
         def wrapper(request: T) -> R:
             """Wrapper function for validation middleware."""
             # Import jsonschema directly - it's a required dependency
-            from jsonschema import ValidationError as JsonSchemaValidationError
-            from jsonschema import validate
+            from jsonschema import (
+                ValidationError as JsonSchemaValidationError,
+                validate,
+            )
 
             try:
                 # Validate input against schema

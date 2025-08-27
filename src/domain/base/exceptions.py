@@ -1,6 +1,6 @@
 """Base domain exceptions - foundation for domain error handling."""
 
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 
 class DomainException(Exception):
@@ -10,7 +10,7 @@ class DomainException(Exception):
         self,
         message: str,
         error_code: Optional[str] = None,
-        details: Optional[Dict[str, Any]] = None,
+        details: Optional[dict[str, Any]] = None,
     ) -> None:
         """Initialize domain exception with message, error code, and details."""
         super().__init__(message)

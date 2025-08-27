@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 import threading
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from infrastructure.logging.logger import ContextLogger, with_context
 from infrastructure.patterns.singleton_registry import SingletonRegistry
@@ -29,8 +29,8 @@ class LoggerSingleton:
         Note: This constructor should not be called directly.
         Use get_logger_singleton() instead.
         """
-        self._loggers: Dict[str, ContextLogger] = {}
-        self._context: Dict[str, Any] = {}
+        self._loggers: dict[str, ContextLogger] = {}
+        self._context: dict[str, Any] = {}
         self._lock = threading.RLock()  # Use RLock for reentrant locking
 
     def get_logger(self, name: str) -> ContextLogger:

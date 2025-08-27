@@ -16,7 +16,9 @@ def register_scheduler_services(container: DIContainer) -> None:
     _register_configured_scheduler_strategy(container)
 
 
-def create_scheduler_strategy_factory(container: DIContainer) -> SchedulerStrategyFactory:
+def create_scheduler_strategy_factory(
+    container: DIContainer,
+) -> SchedulerStrategyFactory:
     """Create scheduler strategy factory with configuration."""
     config = container.get(ConfigurationPort)
     return SchedulerStrategyFactory(config_manager=config)

@@ -337,13 +337,16 @@ pip install -r requirements-dev.txt
 pip install -e .
 
 # Run tests
-pytest
+make test
 
-# Run linting
+# Format code (Ruff replaces Black + isort)
+make format
+
+# Check code quality
 make lint
 
-# Run type checking
-make type-check
+# Run before committing (replaces pre-commit hooks)
+make pre-commit
 ```
 
 ### Testing
@@ -361,6 +364,33 @@ make test-integration
 # Run performance tests
 make test-performance
 ```
+
+### Release Workflow
+
+The project supports automated releases with semantic versioning and pre-releases:
+
+```bash
+# Standard development workflow
+make release-minor-alpha     # Start new feature as alpha
+make promote-beta           # Move to beta testing
+make promote-stable         # Final release
+
+# Emergency patch
+make release-patch          # Quick patch release
+
+# Test releases without changes
+DRY_RUN=true make release-minor
+```
+
+**Available release types:**
+- **Standard**: `release-patch|minor|major` 
+- **Pre-releases**: `release-patch-alpha|beta|rc`
+- **Promotions**: `promote-alpha|beta|rc|stable`
+- **Custom**: `RELEASE_VERSION=1.2.3 make release-version`
+
+Releases automatically trigger PyPI publishing, container builds, and documentation deployment.
+
+See [Release Management Guide](docs/docs/developer_guide/releases.md) for complete documentation.
 
 ## Documentation
 

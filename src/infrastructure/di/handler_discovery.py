@@ -22,7 +22,7 @@ import pkgutil
 import time
 from contextlib import suppress
 from pathlib import Path
-from typing import Any, Dict, Optional, Type
+from typing import Any, Optional
 
 from application.decorators import (
     get_handler_registry_stats,
@@ -81,7 +81,14 @@ class HandlerDiscoveryService:
 
     def _resolve_cache_path_fallback(self) -> str:
         """Fallback cache path resolution."""
-        workdir = os.environ.get("HF_PROVIDER_WORKDIR", os.getcwd())
+        try:
+            from infrastructure.di.container import get_container
+
+            container = get_container()
+            scheduler = container.get("scheduler_strategy")
+            workdir = scheduler.get_working_directory()
+        except Exception:
+            workdir = os.getcwd()
         cache_dir = os.path.join(workdir, "cache")
         os.makedirs(cache_dir, exist_ok=True)
         return os.path.join(cache_dir, "handler_discovery.json")
@@ -100,7 +107,8 @@ class HandlerDiscoveryService:
         cached_result = self._try_load_from_cache(base_package)
         if cached_result:
             logger.info(
-                "Using cached handler discovery (%s handlers)", cached_result["total_handlers"]
+                "Using cached handler discovery (%s handlers)",
+                cached_result["total_handlers"],
             )
             self._register_handlers_from_cache(cached_result["handlers"])
             return
@@ -185,18 +193,22 @@ class HandlerDiscoveryService:
                     command_type.__name__,
                 )
             except Exception as e:
-                logger.error("Failed to register command handler %s: %s", handler_class.__name__, e)
+                logger.error(
+                    "Failed to register command handler %s: %s",
+                    handler_class.__name__,
+                    e,
+                )
 
         total_registered = len(query_handlers) + len(command_handlers)
         logger.info("Handler registration complete. Registered %s handlers", total_registered)
 
-    def _try_load_from_cache(self, base_package: str) -> Optional[Dict[str, Any]]:
+    def _try_load_from_cache(self, base_package: str) -> Optional[dict[str, Any]]:
         """Try to load handler discovery results from cache if valid."""
         if not self.cache_enabled or not self.cache_file or not os.path.exists(self.cache_file):
             return None
 
         try:
-            with open(self.cache_file, "r") as f:
+            with open(self.cache_file) as f:
                 cache_data = json.load(f)
 
             # Check if cache is for the same base package
@@ -219,7 +231,7 @@ class HandlerDiscoveryService:
             return None
 
     def _save_to_cache(
-        self, base_package: str, stats: Dict[str, Any], discovery_time: float
+        self, base_package: str, stats: dict[str, Any], discovery_time: float
     ) -> None:
         """Save handler discovery results to cache."""
         if not self.cache_enabled or not self.cache_file:
@@ -254,14 +266,15 @@ class HandlerDiscoveryService:
             os.rename(temp_file, self.cache_file)
 
             logger.debug(
-                "Cached handler discovery results (%s handlers)", stats.get("total_handlers", 0)
+                "Cached handler discovery results (%s handlers)",
+                stats.get("total_handlers", 0),
             )
 
         except Exception as e:
             logger.debug("Failed to save cache: %s", e)
             # Continue without caching - not critical for functionality
 
-    def _register_handlers_from_cache(self, cached_handlers: Dict[str, Any]) -> None:
+    def _register_handlers_from_cache(self, cached_handlers: dict[str, Any]) -> None:
         """Register handlers from cached information."""
         try:
             # Import and register query handlers
@@ -312,7 +325,8 @@ class HandlerDiscoveryService:
 
             total_registered = len(query_handlers_data) + len(command_handlers_data)
             logger.info(
-                "Handler registration from cache complete. Registered %s handlers", total_registered
+                "Handler registration from cache complete. Registered %s handlers",
+                total_registered,
             )
 
         except Exception as e:
@@ -325,7 +339,7 @@ class HandlerDiscoveryService:
         self._discover_handlers("src.application")
         self._register_handlers()
 
-    def _get_source_file_mtimes(self, base_package: str) -> Dict[str, float]:
+    def _get_source_file_mtimes(self, base_package: str) -> dict[str, float]:
         """Get modification times of all source files in the package."""
         mtimes = {}
 
@@ -345,7 +359,7 @@ class HandlerDiscoveryService:
 
         return mtimes
 
-    def _serialize_handlers(self, handlers: Dict[Type, Type]) -> Dict[str, Dict[str, str]]:
+    def _serialize_handlers(self, handlers: dict[type, type]) -> dict[str, dict[str, str]]:
         """Serialize handler information for caching."""
         serialized = {}
 

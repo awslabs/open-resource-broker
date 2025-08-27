@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Generic, List, Optional, Protocol, TypeVar
+from typing import Any, Generic, Optional, Protocol, TypeVar
 
 from .entity import AggregateRoot, Entity
 
@@ -33,7 +33,7 @@ class RepositoryProtocol(Protocol[T]):
         """Delete entity by ID."""
         ...
 
-    def find_all(self) -> List[T]:
+    def find_all(self) -> list[T]:
         """Find all entities."""
         ...
 
@@ -59,7 +59,7 @@ class Repository(Generic[T], ABC):
         """Delete entity by ID."""
 
     @abstractmethod
-    def find_all(self) -> List[T]:
+    def find_all(self) -> list[T]:
         """Find all entities."""
 
 
@@ -82,7 +82,7 @@ class AggregateRepository(Generic[A], ABC):
 class UnitOfWork(Protocol):
     """Unit of work pattern for transaction management."""
 
-    def __enter__(self) -> "UnitOfWork":
+    def __enter__(self) -> UnitOfWork:
         """Enter the unit of work context."""
         ...
 

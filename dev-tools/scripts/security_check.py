@@ -32,7 +32,7 @@ def run_tool(tool_name, *args):
     script_dir = Path(__file__).parent
     run_tool_script = script_dir / "run_tool.sh"
 
-    command = [str(run_tool_script), tool_name] + list(args)
+    command = [str(run_tool_script), tool_name, *list(args)]
 
     logger.info(f"Running {tool_name}...")
     try:
@@ -93,6 +93,7 @@ def run_semgrep():
     try:
         result = subprocess.run(
             ["semgrep", "--config=auto", "--sarif", "--output=semgrep.sarif", "src"],
+            check=False,
             capture_output=True,
             text=True,
         )
@@ -123,7 +124,10 @@ def run_trufflehog():
 
     try:
         result = subprocess.run(
-            ["trufflehog", "git", "file://.", "--json"], capture_output=True, text=True
+            ["trufflehog", "git", "file://.", "--json"],
+            check=False,
+            capture_output=True,
+            text=True,
         )
 
         # Write results to file
@@ -179,7 +183,7 @@ def main():
     passed = sum(results)
     total = len(results)
 
-    logger.info(f"\n=== Security Check Summary ===")
+    logger.info("\n=== Security Check Summary ===")
     logger.info(f"Passed: {passed}/{total} checks")
 
     if passed == total:

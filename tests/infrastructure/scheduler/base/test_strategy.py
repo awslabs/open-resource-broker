@@ -1,6 +1,6 @@
 """Tests for base scheduler strategy."""
 
-from typing import Any, Dict, List
+from typing import Any
 from unittest.mock import Mock
 
 import pytest
@@ -20,22 +20,22 @@ class ConcreteSchedulerStrategy(BaseSchedulerStrategy):
     def get_config_file_path(self) -> str:
         return "/test/config.json"
 
-    def parse_template_config(self, raw_data: Dict[str, Any]) -> Template:
+    def parse_template_config(self, raw_data: dict[str, Any]) -> Template:
         return Mock(spec=Template)
 
-    def parse_request_data(self, raw_data: Dict[str, Any]) -> Dict[str, Any]:
+    def parse_request_data(self, raw_data: dict[str, Any]) -> dict[str, Any]:
         return {"parsed": True}
 
-    def format_templates_response(self, templates: List[Template]) -> Dict[str, Any]:
+    def format_templates_response(self, templates: list[Template]) -> dict[str, Any]:
         return {"templates": []}
 
-    def format_request_status_response(self, requests: List[Request]) -> Dict[str, Any]:
+    def format_request_status_response(self, requests: list[Request]) -> dict[str, Any]:
         return {"requests": []}
 
-    def format_request_response(self, request_data: Dict[str, Any]) -> Dict[str, Any]:
+    def format_request_response(self, request_data: dict[str, Any]) -> dict[str, Any]:
         return {"response": True}
 
-    def format_machine_status_response(self, machines: List[Machine]) -> Dict[str, Any]:
+    def format_machine_status_response(self, machines: list[Machine]) -> dict[str, Any]:
         return {"machines": []}
 
     def get_working_directory(self) -> str:

@@ -8,7 +8,7 @@ from the DI container without requiring explicit factory functions.
 import inspect
 import logging
 from functools import wraps
-from typing import Any, Dict, Type, TypeVar, Union, get_args, get_origin, get_type_hints
+from typing import Any, TypeVar, Union, get_args, get_origin, get_type_hints
 
 T = TypeVar("T")
 
@@ -16,7 +16,7 @@ T = TypeVar("T")
 logger = logging.getLogger(__name__)
 
 
-def injectable(cls: Type[T]) -> Type[T]:
+def injectable(cls: type[T]) -> type[T]:
     """
     Mark a class as injectable with automatic dependency resolution.
 
@@ -94,7 +94,11 @@ def injectable(cls: Type[T]) -> Type[T]:
         try:
             original_init(self, **resolved_kwargs)
         except Exception as e:
-            logger.error("Failed to initialize %s with resolved dependencies: %s", cls.__name__, e)
+            logger.error(
+                "Failed to initialize %s with resolved dependencies: %s",
+                cls.__name__,
+                e,
+            )
             logger.debug("Resolved kwargs: %s", resolved_kwargs)
             raise
 
@@ -107,7 +111,7 @@ def injectable(cls: Type[T]) -> Type[T]:
     return cls
 
 
-def _is_primitive_type(annotation: Type) -> bool:
+def _is_primitive_type(annotation: type) -> bool:
     """Check if a type annotation represents a primitive type that shouldn't be resolved from DI."""
     primitive_types = {str, int, float, bool, bytes, type(None)}
 
@@ -128,7 +132,7 @@ def _is_primitive_type(annotation: Type) -> bool:
 
 
 def _resolve_dependency(
-    annotation: Type, param: inspect.Parameter, class_name: str, param_name: str
+    annotation: type, param: inspect.Parameter, class_name: str, param_name: str
 ) -> Any:
     """
     Resolve a single dependency from the DI container.
@@ -202,7 +206,7 @@ def _resolve_dependency(
         return None
 
 
-def _is_optional_type(annotation: Type) -> bool:
+def _is_optional_type(annotation: type) -> bool:
     """Check if a type annotation represents Optional[T]."""
     origin = get_origin(annotation)
     if origin is Union:
@@ -212,18 +216,18 @@ def _is_optional_type(annotation: Type) -> bool:
     return False
 
 
-def _extract_optional_inner_type(annotation: Type) -> Type:
+def _extract_optional_inner_type(annotation: type) -> type:
     """Extract T from Optional[T]."""
     args = get_args(annotation)
     return next(arg for arg in args if arg is not type(None))
 
 
-def is_injectable(cls: Type) -> bool:
+def is_injectable(cls: type) -> bool:
     """Check if a class has been marked as injectable."""
     return hasattr(cls, "_injectable") and cls._injectable
 
 
-def get_injectable_info(cls: Type) -> Dict[str, Any]:
+def get_injectable_info(cls: type) -> dict[str, Any]:
     """Get information about an injectable class."""
     if not is_injectable(cls):
         return {}

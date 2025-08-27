@@ -12,7 +12,7 @@ import asyncio
 import logging
 import os
 import sys
-from typing import Any, Dict
+from typing import Any
 
 from _package import REPO_URL
 from cli.completion import generate_bash_completion, generate_zsh_completion
@@ -502,7 +502,7 @@ For more information, visit: {REPO_URL}
     return parser.parse_args(), resource_parsers
 
 
-async def execute_command(args, app) -> Dict[str, Any]:
+async def execute_command(args, app) -> dict[str, Any]:
     """Execute the appropriate command handler."""
     # Process input data from -f/--file or -d/--data flags (HostFactory compatibility)
     input_data = None
@@ -510,7 +510,7 @@ async def execute_command(args, app) -> Dict[str, Any]:
         try:
             import json
 
-            with open(args.file, "r") as f:
+            with open(args.file) as f:
                 input_data = json.load(f)
         except Exception as e:
             from infrastructure.logging.logger import get_logger

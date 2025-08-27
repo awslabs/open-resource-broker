@@ -1,7 +1,7 @@
 """Provider Registry - Registry pattern for provider strategy factories."""
 
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Optional
 
 from domain.base.exceptions import ConfigurationError
 
@@ -20,7 +20,7 @@ class ProviderFactoryInterface(ABC):
         """Create a provider strategy."""
 
     @abstractmethod
-    def create_config(self, data: Dict[str, Any]) -> Any:
+    def create_config(self, data: dict[str, Any]) -> Any:
         """Create a provider configuration."""
 
 
@@ -189,7 +189,7 @@ class ProviderRegistry(BaseRegistry):
                 f"Available instances: {available_instances}"
             )
 
-    def create_config(self, provider_type: str, data: Dict[str, Any]) -> Any:
+    def create_config(self, provider_type: str, data: dict[str, Any]) -> Any:
         """
         Create a provider configuration using registered factory.
 
@@ -216,7 +216,7 @@ class ProviderRegistry(BaseRegistry):
             )
         except Exception as e:
             raise ConfigurationError(
-                f"Failed to create config for provider '{provider_type}': {str(e)}"
+                f"Failed to create config for provider '{provider_type}': {e!s}"
             )
 
     def create_resolver(self, provider_type: str) -> Optional[Any]:
@@ -291,7 +291,7 @@ class ProviderRegistry(BaseRegistry):
         """
         return self.is_instance_registered(instance_name)
 
-    def get_registered_providers(self) -> List[str]:
+    def get_registered_providers(self) -> list[str]:
         """
         Get list of all registered provider types - backward compatibility method.
 
@@ -300,7 +300,7 @@ class ProviderRegistry(BaseRegistry):
         """
         return self.get_registered_types()
 
-    def get_registered_provider_instances(self) -> List[str]:
+    def get_registered_provider_instances(self) -> list[str]:
         """
         Get list of all registered provider instance names.
 

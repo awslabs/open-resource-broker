@@ -3,7 +3,7 @@
 import json
 import os
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -24,7 +24,7 @@ class TestConfigurationManager:
         assert manager._config_file_path is None
         assert manager._legacy_config is None
 
-    def test_load_from_dict(self, test_config_dict: Dict[str, Any]):
+    def test_load_from_dict(self, test_config_dict: dict[str, Any]):
         """Test loading configuration from dictionary."""
         manager = ConfigurationManager()
         manager.load_from_dict(test_config_dict)
@@ -224,7 +224,7 @@ class TestConfigurationManager:
         # Verify file was created and contains correct data
         assert output_file.exists()
 
-        with open(output_file, "r") as f:
+        with open(output_file) as f:
             saved_config = json.load(f)
 
         assert saved_config["aws"]["region"] == "us-east-1"
@@ -478,7 +478,7 @@ class TestConfigurationManagerEdgeCases:
         with pytest.raises(PermissionError):
             manager.load_from_file("/restricted/config.json")
 
-    @patch("builtins.open", side_effect=IOError("I/O error"))
+    @patch("builtins.open", side_effect=OSError("I/O error"))
     def test_file_io_error(self, mock_open):
         """Test handling file I/O errors."""
         manager = ConfigurationManager()

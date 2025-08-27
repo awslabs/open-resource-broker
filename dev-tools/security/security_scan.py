@@ -6,12 +6,13 @@ This script orchestrates multiple security tools to provide comprehensive
 security analysis including SAST, dependency scanning, container security,
 and SBOM generation.
 """
+
 import argparse
 import json
+import logging
 import subprocess
 import sys
 from pathlib import Path
-from typing import Dict, Tuple
 
 # Setup logging
 logging.basicConfig(
@@ -29,7 +30,7 @@ class SecurityScanner:
         self.results = {}
         self.sarif_files = []
 
-    def run_bandit(self) -> Tuple[bool, str]:
+    def run_bandit(self) -> tuple[bool, str]:
         """Run Bandit security linter with SARIF output."""
         logger.info("Running Bandit security analysis...")
 
@@ -41,11 +42,21 @@ class SecurityScanner:
                 sarif_available = True
             except ImportError:
                 sarif_available = False
-                logger.warning(f"bandit-sarif-formatter not available, falling back to JSON")
+                logger.warning("bandit-sarif-formatter not available, falling back to JSON")
 
             # Generate JSON output (always)
             subprocess.run(
-                ["python", "-m", "bandit", "-r", "src/", "-f", "json", "-o", "bandit-report.json"],
+                [
+                    "python",
+                    "-m",
+                    "bandit",
+                    "-r",
+                    "src/",
+                    "-f",
+                    "json",
+                    "-o",
+                    "bandit-report.json",
+                ],
                 cwd=self.project_root,
                 check=False,
             )
@@ -69,20 +80,21 @@ class SecurityScanner:
                 )
 
                 self.sarif_files.append("bandit-report.sarif")
-                logger.info(f"Bandit SARIF report generated for GitHub Security integration")
+                logger.info("Bandit SARIF report generated for GitHub Security integration")
 
             return True, "Bandit scan completed"
 
         except Exception as e:
             return False, f"Bandit scan failed: {e}"
 
-    def run_safety(self) -> Tuple[bool, str]:
+    def run_safety(self) -> tuple[bool, str]:
         """Run Safety dependency vulnerability check."""
         logger.info("Running Safety dependency scan...")
 
         try:
             result = subprocess.run(
                 ["python", "-m", "safety", "check", "--json"],
+                check=False,
                 cwd=self.project_root,
                 capture_output=True,
                 text=True,
@@ -96,7 +108,7 @@ class SecurityScanner:
         except Exception as e:
             return False, f"Safety scan failed: {e}"
 
-    def run_trivy(self) -> Tuple[bool, str]:
+    def run_trivy(self) -> tuple[bool, str]:
         """Run Trivy container vulnerability scan."""
         logger.info("Running Trivy container security scan...")
 
@@ -144,7 +156,7 @@ class SecurityScanner:
         except Exception as e:
             return False, f"Trivy scan failed: {e}"
 
-    def run_hadolint(self) -> Tuple[bool, str]:
+    def run_hadolint(self) -> tuple[bool, str]:
         """Run Hadolint Dockerfile security scan."""
         logger.info("Running Hadolint Dockerfile scan...")
 
@@ -162,7 +174,7 @@ class SecurityScanner:
         except Exception as e:
             return False, f"Hadolint scan failed: {e}"
 
-    def generate_sbom(self) -> Tuple[bool, str]:
+    def generate_sbom(self) -> tuple[bool, str]:
         """Generate Software Bill of Materials."""
         logger.info("Generating SBOM files...")
 
@@ -181,7 +193,7 @@ class SecurityScanner:
             )
 
             # Check if Syft is available
-            if subprocess.run(["which", "syft"], capture_output=True).returncode == 0:
+            if subprocess.run(["which", "syft"], check=False, capture_output=True).returncode == 0:
                 # Project SBOM with Syft
                 subprocess.run(
                     ["syft", ".", "-o", "spdx-json=project-sbom-spdx.json"],
@@ -228,8 +240,8 @@ class SecurityScanner:
         # Write markdown summary
         md_report = f"""# Security Scan Report
 
-**Generated:** {report['scan_timestamp']}
-**Project:** {report['project']}
+**Generated:** {report["scan_timestamp"]}
+**Project:** {report["project"]}
 
 ## Scans Performed
 
@@ -239,7 +251,7 @@ class SecurityScanner:
             status = "PASS" if success else "FAIL"
             md_report += f"- **{status}**: {scan} - {message}\n"
 
-        md_report += f"""
+        md_report += """
 ## Generated Files
 
 ### SARIF Files (for GitHub Security tab)
@@ -278,7 +290,7 @@ class SecurityScanner:
 
         return "security-report.md"
 
-    def run_all_scans(self, include_container: bool = True) -> Dict[str, Tuple[bool, str]]:
+    def run_all_scans(self, include_container: bool = True) -> dict[str, tuple[bool, str]]:
         """Run all security scans."""
         logger.info("Starting comprehensive security scan...")
 

@@ -71,7 +71,7 @@ class ContextLogger(logging.Logger):
     def __init__(self, name: str, level: int = logging.NOTSET) -> None:
         """Initialize context logger with name and level."""
         super().__init__(name, level)
-        self._context: Dict[str, Any] = {}
+        self._context: dict[str, Any] = {}
 
     def bind(self, **kwargs: Any) -> None:
         """Bind context values to logger."""
@@ -204,7 +204,7 @@ def get_logger(name: str) -> ContextLogger:
 class LoggerAdapter(logging.LoggerAdapter):
     """Adapter that adds context to log records."""
 
-    def process(self, msg: str, kwargs: Dict[str, Any]) -> tuple[str, Dict[str, Any]]:
+    def process(self, msg: str, kwargs: dict[str, Any]) -> tuple[str, dict[str, Any]]:
         """Process log record to add context."""
         if "extra" not in kwargs:
             kwargs["extra"] = {}

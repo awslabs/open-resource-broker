@@ -26,7 +26,7 @@ Note:
     based on demand and maintain high availability across multiple AZs.
 """
 
-from typing import Any, Dict, List
+from typing import Any
 
 from domain.base.dependency_injection import injectable
 from domain.base.ports import LoggingPort
@@ -86,7 +86,7 @@ class ASGHandler(AWSHandler, BaseContextMixin):
             self.config_port = None
 
     @handle_infrastructure_exceptions(context="asg_creation")
-    def acquire_hosts(self, request: Request, aws_template: AWSTemplate) -> Dict[str, Any]:
+    def acquire_hosts(self, request: Request, aws_template: AWSTemplate) -> dict[str, Any]:
         """
         Create an Auto Scaling Group to acquire hosts.
         Returns structured result with resource IDs and instance data.
@@ -162,7 +162,7 @@ class ASGHandler(AWSHandler, BaseContextMixin):
 
         return asg_name
 
-    def _prepare_template_context(self, template: AWSTemplate, request: Request) -> Dict[str, Any]:
+    def _prepare_template_context(self, template: AWSTemplate, request: Request) -> dict[str, Any]:
         """Prepare context with all computed values for template rendering."""
 
         # Start with base context
@@ -185,7 +185,7 @@ class ASGHandler(AWSHandler, BaseContextMixin):
 
     def _prepare_asg_specific_context(
         self, template: AWSTemplate, request: Request
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Prepare ASG-specific context."""
 
         return {
@@ -216,7 +216,7 @@ class ASGHandler(AWSHandler, BaseContextMixin):
         request: Request,
         launch_template_id: str,
         launch_template_version: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Create Auto Scaling Group configuration with native spec support."""
         # Try native spec processing with merge support
         if self.aws_native_spec_service:
@@ -260,7 +260,7 @@ class ASGHandler(AWSHandler, BaseContextMixin):
         request: Request,
         launch_template_id: str,
         launch_template_version: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Create Auto Scaling Group configuration using legacy logic."""
         asg_config = {
             "AutoScalingGroupName": asg_name,
@@ -287,7 +287,7 @@ class ASGHandler(AWSHandler, BaseContextMixin):
         return asg_config
 
     @handle_infrastructure_exceptions(context="asg_termination")
-    def _get_asg_instances(self, asg_name: str) -> List[Dict[str, Any]]:
+    def _get_asg_instances(self, asg_name: str) -> list[dict[str, Any]]:
         """Get instances for a specific ASG."""
         # Get ASG information
         asg_list = self._retry_with_backoff(
@@ -341,7 +341,7 @@ class ASGHandler(AWSHandler, BaseContextMixin):
 
         except Exception as e:
             self._logger.error("Failed to release ASG hosts: %s", str(e))
-            raise AWSInfrastructureError(f"Failed to release ASG hosts: {str(e)}")
+            raise AWSInfrastructureError(f"Failed to release ASG hosts: {e!s}")
 
         # Get instance IDs from machine references
         instance_ids = []
@@ -397,7 +397,7 @@ class ASGHandler(AWSHandler, BaseContextMixin):
             )
             self._logger.info("Deleted Auto Scaling Group: %s", request.resource_id)
 
-    def check_hosts_status(self, request: Request) -> List[Dict[str, Any]]:
+    def check_hosts_status(self, request: Request) -> list[dict[str, Any]]:
         """Check the status of instances across all ASGs in the request."""
         try:
             if not request.resource_ids:
@@ -420,4 +420,4 @@ class ASGHandler(AWSHandler, BaseContextMixin):
             return all_instances
         except Exception as e:
             self._logger.error("Unexpected error checking ASG status: %s", str(e))
-            raise AWSInfrastructureError(f"Failed to check ASG status: {str(e)}")
+            raise AWSInfrastructureError(f"Failed to check ASG status: {e!s}")

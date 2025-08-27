@@ -4,7 +4,7 @@ This factory creates storage strategies using the storage registry pattern,
 eliminating hard-coded storage conditionals and maintaining clean architecture.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from infrastructure.logging.logger import get_logger
 from infrastructure.persistence.base.strategy import BaseStorageStrategy
@@ -19,7 +19,7 @@ class StorageStrategyFactory:
         self.logger = get_logger(__name__)
         self.config_manager = config_manager
         self._storage_registry = None
-        self._strategy_cache: Dict[str, BaseStorageStrategy] = {}
+        self._strategy_cache: dict[str, BaseStorageStrategy] = {}
 
     @property
     def storage_registry(self):

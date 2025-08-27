@@ -8,7 +8,7 @@ and middleware support.
 
 import asyncio
 import time
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Optional
 
 # Import types - using string imports to avoid circular dependencies
 try:
@@ -44,13 +44,13 @@ class EventBus:
             logger: Logger for event processing messages
         """
         self.logger = logger
-        self._handlers: Dict[str, List[EventHandler]] = {}
-        self._handler_instances: Dict[Type[EventHandler], EventHandler] = {}
+        self._handlers: dict[str, list[EventHandler]] = {}
+        self._handler_instances: dict[type[EventHandler], EventHandler] = {}
 
         # Statistics for monitoring
         self._events_processed = 0
         self._events_failed = 0
-        self._processing_times: List[float] = []
+        self._processing_times: list[float] = []
 
     def register_handler(self, event_type: str, handler: EventHandler) -> None:
         """
@@ -76,7 +76,7 @@ class EventBus:
     def register_handler_class(
         self,
         event_type: str,
-        handler_class: Type[EventHandler],
+        handler_class: type[EventHandler],
         logger: Optional[LoggingPort] = None,
     ) -> None:
         """
@@ -144,7 +144,10 @@ class EventBus:
 
         if self.logger:
             self.logger.debug(
-                "Publishing event %s (ID: %s) to %s handlers", event_type, event_id, len(handlers)
+                "Publishing event %s (ID: %s) to %s handlers",
+                event_type,
+                event_id,
+                len(handlers),
             )
 
         # Execute all handlers concurrently
@@ -166,7 +169,10 @@ class EventBus:
                 if self.logger:
                     handler_name = handlers[i].__class__.__name__
                     self.logger.error(
-                        "Handler %s failed for event %s: %s", handler_name, event_type, str(result)
+                        "Handler %s failed for event %s: %s",
+                        handler_name,
+                        event_type,
+                        str(result),
                     )
             else:
                 success_count += 1
@@ -205,7 +211,7 @@ class EventBus:
             # The exception will be caught by asyncio.gather() above
             raise
 
-    def get_handlers_for_event(self, event_type: str) -> List[EventHandler]:
+    def get_handlers_for_event(self, event_type: str) -> list[EventHandler]:
         """
         Get all handlers registered for a specific event type.
 
@@ -217,7 +223,7 @@ class EventBus:
         """
         return self._handlers.get(event_type, []).copy()
 
-    def get_registered_event_types(self) -> List[str]:
+    def get_registered_event_types(self) -> list[str]:
         """
         Get all event types that have registered handlers.
 
@@ -226,7 +232,7 @@ class EventBus:
         """
         return list(self._handlers.keys())
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """
         Get event processing statistics.
 

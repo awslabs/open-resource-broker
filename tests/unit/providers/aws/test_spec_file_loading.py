@@ -20,7 +20,8 @@ class TestSpecFileLoading:
         self.mock_config_port = Mock(spec=ConfigurationPort)
         self.mock_native_spec_service = Mock(spec=NativeSpecService)
         self.service = AWSNativeSpecService(
-            config_port=self.mock_config_port, native_spec_service=self.mock_native_spec_service
+            config_port=self.mock_config_port,
+            native_spec_service=self.mock_native_spec_service,
         )
 
     def test_load_spec_file_success(self):
@@ -171,7 +172,10 @@ class TestSpecFileLoading:
         """Test resolving inline provider API spec."""
         from providers.aws.domain.template.aggregate import AWSTemplate
 
-        inline_spec = {"Type": "instant", "TargetCapacitySpecification": {"TotalTargetCapacity": 5}}
+        inline_spec = {
+            "Type": "instant",
+            "TargetCapacitySpecification": {"TotalTargetCapacity": 5},
+        }
 
         template = AWSTemplate(
             template_id="test-template",
@@ -188,7 +192,10 @@ class TestSpecFileLoading:
         """Test resolving provider API spec from file."""
         from providers.aws.domain.template.aggregate import AWSTemplate
 
-        file_spec = {"Type": "maintain", "TargetCapacitySpecification": {"TotalTargetCapacity": 10}}
+        file_spec = {
+            "Type": "maintain",
+            "TargetCapacitySpecification": {"TotalTargetCapacity": 10},
+        }
 
         template = AWSTemplate(
             template_id="test-template",
@@ -220,7 +227,11 @@ class TestSpecFileLoading:
     def test_spec_file_path_construction(self):
         """Test spec file path construction with various configurations."""
         test_cases = [
-            {"base_path": "specs/aws", "file_name": "test.json", "expected": "specs/aws/test.json"},
+            {
+                "base_path": "specs/aws",
+                "file_name": "test.json",
+                "expected": "specs/aws/test.json",
+            },
             {
                 "base_path": "/opt/specs",
                 "file_name": "subdir/test.json",

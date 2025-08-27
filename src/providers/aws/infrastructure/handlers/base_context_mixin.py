@@ -1,7 +1,7 @@
 """Base context mixin for AWS handlers."""
 
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any
 
 from domain.request.aggregate import Request
 from providers.aws.domain.template.aggregate import AWSTemplate
@@ -10,7 +10,7 @@ from providers.aws.domain.template.aggregate import AWSTemplate
 class BaseContextMixin:
     """Shared context preparation methods for all AWS handlers."""
 
-    def _prepare_base_context(self, template: AWSTemplate, request: Request) -> Dict[str, Any]:
+    def _prepare_base_context(self, template: AWSTemplate, request: Request) -> dict[str, Any]:
         """Base context used by all handlers."""
         return {
             # Standard identifiers
@@ -38,7 +38,7 @@ class BaseContextMixin:
 
     def _calculate_capacity_distribution(
         self, template: AWSTemplate, request: Request
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Standard capacity calculation for all fleet types."""
         total_capacity = request.requested_count
 
@@ -61,7 +61,7 @@ class BaseContextMixin:
             "is_ondemand_only": template.price_type == "ondemand",
         }
 
-    def _prepare_standard_tags(self, template: AWSTemplate, request: Request) -> Dict[str, Any]:
+    def _prepare_standard_tags(self, template: AWSTemplate, request: Request) -> dict[str, Any]:
         """Standard tag preparation for all handlers."""
         created_by = self._get_package_name()
 
@@ -83,7 +83,7 @@ class BaseContextMixin:
             "has_custom_tags": bool(custom_tags),
         }
 
-    def _prepare_standard_flags(self, template: AWSTemplate) -> Dict[str, Any]:
+    def _prepare_standard_flags(self, template: AWSTemplate) -> dict[str, Any]:
         """Standard conditional flags for all handlers."""
         return {
             # Network flags

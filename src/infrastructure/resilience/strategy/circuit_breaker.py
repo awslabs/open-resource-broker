@@ -3,7 +3,7 @@
 import secrets
 import time
 from enum import Enum
-from typing import Any, Dict
+from typing import Any
 
 from infrastructure.logging.logger import get_logger
 from infrastructure.resilience.exceptions import CircuitBreakerOpenError
@@ -31,7 +31,7 @@ class CircuitBreakerStrategy(RetryStrategy):
     """
 
     # Class-level storage for circuit states (shared across instances)
-    _circuit_states: Dict[str, Dict[str, Any]] = {}
+    _circuit_states: dict[str, dict[str, Any]] = {}
 
     def __init__(
         self,
@@ -233,7 +233,6 @@ class CircuitBreakerStrategy(RetryStrategy):
             circuit_state["state"] == CircuitState.CLOSED
             and circuit_state["failure_count"] >= self.failure_threshold
         ):
-
             circuit_state["state"] = CircuitState.OPEN
 
             logger.error(
@@ -259,7 +258,6 @@ class CircuitBreakerStrategy(RetryStrategy):
                 circuit_state["last_failure_time"]
                 and current_time - circuit_state["last_failure_time"] >= self.reset_timeout
             ):
-
                 circuit_state["state"] = CircuitState.HALF_OPEN
                 circuit_state["half_open_start_time"] = current_time
 
@@ -275,15 +273,12 @@ class CircuitBreakerStrategy(RetryStrategy):
 
                 return CircuitState.HALF_OPEN
 
-        elif (
-            current_state == CircuitState.HALF_OPEN
-        ):  # noqa: SIM102 (false positive - if-elif structure)
+        elif current_state == CircuitState.HALF_OPEN:
             # Check if we should timeout back to open
             if (
                 circuit_state["half_open_start_time"]
                 and current_time - circuit_state["half_open_start_time"] >= self.half_open_timeout
             ):
-
                 circuit_state["state"] = CircuitState.OPEN
                 circuit_state["half_open_start_time"] = None
 
@@ -353,7 +348,7 @@ class CircuitBreakerStrategy(RetryStrategy):
 
         return max(0.0, delay)
 
-    def get_circuit_info(self) -> Dict[str, Any]:
+    def get_circuit_info(self) -> dict[str, Any]:
         """
         Get current circuit breaker information.
 

@@ -9,7 +9,7 @@ Architecture:
 - CLICommandHandler: For CLI interface handlers
 """
 
-from typing import Any, Dict, Optional, TypeVar
+from typing import Any, Optional, TypeVar
 
 # Import the CQRS interface
 from application.interfaces.command_handler import CommandHandler
@@ -113,7 +113,7 @@ class CLICommandHandler(CommandHandler[TCommand, TResponse]):
         if not command_bus:
             raise ValueError("CommandBus is required for CLI command handlers")
 
-    def process_input(self, command) -> Optional[Dict[str, Any]]:
+    def process_input(self, command) -> Optional[dict[str, Any]]:
         """
         Process input from CLI arguments, files, or data strings.
 

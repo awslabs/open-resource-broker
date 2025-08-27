@@ -5,7 +5,7 @@ This module contains utility functions for working with AWS SSM Parameter Store.
 """
 
 import re
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional, Union
 
 from botocore.exceptions import ClientError
 
@@ -121,7 +121,7 @@ def resolve_ssm_parameter(parameter_path: str, aws_client: Any = None) -> str:
         )
 
         raise InfrastructureError(
-            "AWS.SSM", f"Unexpected error resolving SSM parameter {path}: {str(e)}"
+            "AWS.SSM", f"Unexpected error resolving SSM parameter {path}: {e!s}"
         )
 
 
@@ -142,9 +142,9 @@ def _get_ssm_parameter_value(ssm_client: Any, parameter_path: str) -> str:
 
 
 def resolve_ssm_parameters_in_dict(
-    data: Dict[str, Any],
+    data: dict[str, Any],
     aws_client: Any = None,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Resolve all SSM parameters in a dictionary.
 
@@ -172,9 +172,9 @@ def resolve_ssm_parameters_in_dict(
 
 
 def resolve_ssm_parameters_in_list(
-    data: List[Any],
+    data: list[Any],
     aws_client: Any = None,
-) -> List[Any]:
+) -> list[Any]:
     """
     Resolve all SSM parameters in a list.
 
@@ -202,9 +202,9 @@ def resolve_ssm_parameters_in_list(
 
 
 def resolve_ssm_parameters(
-    data: Union[Dict[str, Any], List[Any]],
+    data: Union[dict[str, Any], list[Any]],
     aws_client: Any = None,
-) -> Union[Dict[str, Any], List[Any]]:
+) -> Union[dict[str, Any], list[Any]]:
     """
     Resolve all SSM parameters in a dictionary or list.
 
@@ -228,7 +228,7 @@ def get_ssm_parameters_by_path(
     path: str,
     recursive: bool = True,
     aws_client: Any = None,
-) -> Dict[str, str]:
+) -> dict[str, str]:
     """
     Get all SSM parameters under a path.
 
@@ -276,7 +276,7 @@ def get_ssm_parameters_by_path(
 
 
 @retry(strategy="exponential", max_attempts=3, base_delay=1.0, service="ssm")
-def _get_parameters_by_path(ssm_client: Any, path: str, recursive: bool = True) -> Dict[str, str]:
+def _get_parameters_by_path(ssm_client: Any, path: str, recursive: bool = True) -> dict[str, str]:
     """Get SSM parameters by path with retry."""
     paginator = ssm_client.get_paginator("get_parameters_by_path")
     parameters = {}

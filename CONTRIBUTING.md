@@ -112,12 +112,30 @@ The project uses a secure three-tier publishing strategy:
 
 ### Formatting and Linting
 
+We use Ruff for code formatting and linting (replaces Black, isort, flake8, pylint).
+
+Since pre-commit hooks cannot be installed due to git configuration:
+
+1. **Enable format-on-save** in your IDE (see .vscode/settings.json)
+2. **Run before committing**: `make pre-commit`
+3. **Let CI auto-format**: If you forget, CI will auto-format and commit
+
+### IDE Setup
+- **VS Code**: Install Ruff extension, settings already configured
+- **PyCharm**: Install Ruff plugin, enable format-on-save
+
 ```bash
-# Format code
+# Format code (auto-fix what can be fixed)
 make format
 
-# Run linting
+# Check code quality (enforced rules)
 make lint
+
+# Check extended rules (warnings only)
+make lint-optional
+
+# Run all pre-commit checks locally
+make pre-commit
 
 # Type checking
 make type-check
@@ -154,7 +172,7 @@ The plugin follows Clean Architecture principles:
 ### Before Submitting
 
 1. **Run tests locally**: `make test`
-2. **Format code**: `make format`
+2. **Run pre-commit checks**: `make pre-commit`
 3. **Update documentation** if needed
 4. **Add tests** for new functionality
 
@@ -225,6 +243,65 @@ make docs-serve
 - `docs/` - Detailed documentation
 - `CONTRIBUTING.md` - This file
 - `docs/deployment/` - Deployment guides
+
+## Release Management
+
+The project uses automated release management with semantic versioning and pre-release support. All releases are created through Makefile targets that handle version bumping, validation, and GitHub release creation.
+
+### Quick Reference
+
+```bash
+# Standard releases
+make release-patch              # 1.0.0 -> 1.0.1
+make release-minor              # 1.0.0 -> 1.1.0
+make release-major              # 1.0.0 -> 2.0.0
+
+# Pre-releases
+make release-minor-alpha        # 1.0.0 -> 1.1.0-alpha.1
+make release-patch-beta         # 1.0.0 -> 1.0.1-beta.1
+make release-major-rc           # 1.0.0 -> 2.0.0-rc.1
+
+# Promotions
+make promote-alpha              # 1.1.0-alpha.1 -> 1.1.0-alpha.2
+make promote-beta               # 1.1.0-alpha.2 -> 1.1.0-beta.1
+make promote-stable             # 1.1.0-rc.1 -> 1.1.0
+
+# Custom releases
+RELEASE_VERSION=1.5.0 make release-version
+DRY_RUN=true make release-minor # Test without changes
+```
+
+### Environment Variables
+
+- **`RELEASE_VERSION`**: Override version (use with `release-version`/`release-backfill`)
+- **`FROM_COMMIT`**: Start commit (optional, smart defaults)
+- **`TO_COMMIT`**: End commit (optional, defaults to HEAD)
+- **`DRY_RUN`**: Test mode without making changes
+- **`ALLOW_BACKFILL`**: Enable non-linear releases
+
+### Pre-release Workflow
+
+1. **Alpha**: `make release-minor-alpha` - Internal testing
+2. **Beta**: `make promote-beta` - External testing
+3. **RC**: `make promote-rc` - Final testing
+4. **Stable**: `make promote-stable` - Production release
+
+### Validation
+
+The system automatically validates:
+- Working directory cleanliness
+- Commit range validity
+- Tag conflicts (prevents duplicates)
+- Release overlap detection
+
+### Integration
+
+Releases automatically trigger:
+- PyPI publishing (stable and pre-releases)
+- Container registry publishing
+- Documentation deployment
+
+For complete documentation, see [Release Management Guide](docs/docs/developer_guide/releases.md).
 
 ## Release Process
 

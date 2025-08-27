@@ -1,6 +1,6 @@
 """Template management API routes."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from fastapi import APIRouter, Body, HTTPException, Query
 from fastapi.responses import JSONResponse
@@ -38,10 +38,10 @@ class TemplateCreateRequest(BaseModel):
     image_id: Optional[str] = None
     instance_type: Optional[str] = None
     key_name: Optional[str] = None
-    security_group_ids: Optional[List[str]] = None
-    subnet_ids: Optional[List[str]] = None
+    security_group_ids: Optional[list[str]] = None
+    subnet_ids: Optional[list[str]] = None
     user_data: Optional[str] = None
-    tags: Optional[Dict[str, str]] = None
+    tags: Optional[dict[str, str]] = None
     version: Optional[str] = "1.0"
 
 
@@ -53,10 +53,10 @@ class TemplateUpdateRequest(BaseModel):
     image_id: Optional[str] = None
     instance_type: Optional[str] = None
     key_name: Optional[str] = None
-    security_group_ids: Optional[List[str]] = None
-    subnet_ids: Optional[List[str]] = None
+    security_group_ids: Optional[list[str]] = None
+    subnet_ids: Optional[list[str]] = None
     user_data: Optional[str] = None
-    tags: Optional[Dict[str, str]] = None
+    tags: Optional[dict[str, str]] = None
     version: Optional[str] = None
 
 
@@ -101,7 +101,7 @@ async def list_templates(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to list templates: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to list templates: {e!s}")
 
 
 @router.get("/{template_id}", summary="Get Template", description="Get template by ID")
@@ -143,7 +143,7 @@ async def get_template(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to get template: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get template: {e!s}")
 
 
 @router.post("/", summary="Create Template", description="Create a new template")
@@ -198,7 +198,7 @@ async def create_template(template_data: TemplateCreateRequest) -> JSONResponse:
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to create template: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to create template: {e!s}")
 
 
 @router.put(
@@ -252,7 +252,7 @@ async def update_template(template_id: str, template_data: TemplateUpdateRequest
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to update template: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to update template: {e!s}")
 
 
 @router.delete("/{template_id}", summary="Delete Template", description="Delete a template")
@@ -292,7 +292,7 @@ async def delete_template(template_id: str) -> JSONResponse:
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to delete template: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to delete template: {e!s}")
 
 
 @router.post(
@@ -301,7 +301,9 @@ async def delete_template(template_id: str) -> JSONResponse:
     description="Validate template configuration",
 )
 @handle_rest_exceptions(endpoint="/api/v1/templates/validate", method="POST")
-async def validate_template(template_data: Dict[str, Any] = TEMPLATE_DATA_BODY) -> JSONResponse:
+async def validate_template(
+    template_data: dict[str, Any] = TEMPLATE_DATA_BODY,
+) -> JSONResponse:
     """
     Validate template configuration.
 
@@ -339,7 +341,7 @@ async def validate_template(template_data: Dict[str, Any] = TEMPLATE_DATA_BODY) 
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to validate template: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to validate template: {e!s}")
 
 
 @router.post("/refresh", summary="Refresh Templates", description="Refresh template cache")
@@ -375,4 +377,4 @@ async def refresh_templates() -> JSONResponse:
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to refresh templates: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to refresh templates: {e!s}")

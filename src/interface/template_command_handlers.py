@@ -10,7 +10,7 @@ following the same pattern as other entities in the system.
 from __future__ import annotations
 
 import argparse
-from typing import Any, Dict
+from typing import Any
 
 from application.dto.queries import (
     GetTemplateQuery,
@@ -29,7 +29,7 @@ from infrastructure.error.decorators import handle_interface_exceptions
 
 
 @handle_interface_exceptions(context="list_templates", interface_type="cli")
-async def handle_list_templates(args: argparse.Namespace) -> Dict[str, Any]:
+async def handle_list_templates(args: argparse.Namespace) -> dict[str, Any]:
     """
     Handle list templates operations using CQRS QueryBus.
 
@@ -100,13 +100,13 @@ async def handle_list_templates(args: argparse.Namespace) -> Dict[str, Any]:
     except Exception as e:
         return {
             "success": False,
-            "error": f"Failed to list templates: {str(e)}",
+            "error": f"Failed to list templates: {e!s}",
             "templates": [],
         }
 
 
 @handle_interface_exceptions(context="get_template", interface_type="cli")
-async def handle_get_template(args: argparse.Namespace) -> Dict[str, Any]:
+async def handle_get_template(args: argparse.Namespace) -> dict[str, Any]:
     """
     Handle get template operations using CQRS QueryBus.
 
@@ -156,13 +156,13 @@ async def handle_get_template(args: argparse.Namespace) -> Dict[str, Any]:
     except Exception as e:
         return {
             "success": False,
-            "error": f"Failed to get template: {str(e)}",
+            "error": f"Failed to get template: {e!s}",
             "template": None,
         }
 
 
 @handle_interface_exceptions(context="create_template", interface_type="cli")
-async def handle_create_template(args: argparse.Namespace) -> Dict[str, Any]:
+async def handle_create_template(args: argparse.Namespace) -> dict[str, Any]:
     """
     Handle create template operations using CQRS CommandBus.
 
@@ -236,11 +236,11 @@ async def handle_create_template(args: argparse.Namespace) -> Dict[str, Any]:
         }
 
     except Exception as e:
-        return {"success": False, "error": f"Failed to create template: {str(e)}"}
+        return {"success": False, "error": f"Failed to create template: {e!s}"}
 
 
 @handle_interface_exceptions(context="update_template", interface_type="cli")
-async def handle_update_template(args: argparse.Namespace) -> Dict[str, Any]:
+async def handle_update_template(args: argparse.Namespace) -> dict[str, Any]:
     """
     Handle update template operations using CQRS CommandBus.
 
@@ -305,11 +305,11 @@ async def handle_update_template(args: argparse.Namespace) -> Dict[str, Any]:
         }
 
     except Exception as e:
-        return {"success": False, "error": f"Failed to update template: {str(e)}"}
+        return {"success": False, "error": f"Failed to update template: {e!s}"}
 
 
 @handle_interface_exceptions(context="delete_template", interface_type="cli")
-async def handle_delete_template(args: argparse.Namespace) -> Dict[str, Any]:
+async def handle_delete_template(args: argparse.Namespace) -> dict[str, Any]:
     """
     Handle delete template operations using CQRS CommandBus.
 
@@ -362,11 +362,11 @@ async def handle_delete_template(args: argparse.Namespace) -> Dict[str, Any]:
         }
 
     except Exception as e:
-        return {"success": False, "error": f"Failed to delete template: {str(e)}"}
+        return {"success": False, "error": f"Failed to delete template: {e!s}"}
 
 
 @handle_interface_exceptions(context="validate_template", interface_type="cli")
-async def handle_validate_template(args: argparse.Namespace) -> Dict[str, Any]:
+async def handle_validate_template(args: argparse.Namespace) -> dict[str, Any]:
     """
     Handle validate template operations using CQRS buses.
 
@@ -410,7 +410,7 @@ async def handle_validate_template(args: argparse.Namespace) -> Dict[str, Any]:
                 }
 
             try:
-                with open(template_file, "r") as f:
+                with open(template_file) as f:
                     if template_file.suffix.lower() in {".yml", ".yaml"}:
                         template_config = yaml.safe_load(f)
                     else:
@@ -419,7 +419,7 @@ async def handle_validate_template(args: argparse.Namespace) -> Dict[str, Any]:
             except Exception as e:
                 return {
                     "success": False,
-                    "error": f"Failed to parse template file: {str(e)}",
+                    "error": f"Failed to parse template file: {e!s}",
                     "valid": False,
                 }
         else:
@@ -468,13 +468,13 @@ async def handle_validate_template(args: argparse.Namespace) -> Dict[str, Any]:
     except Exception as e:
         return {
             "success": False,
-            "error": f"Failed to validate template: {str(e)}",
+            "error": f"Failed to validate template: {e!s}",
             "valid": False,
         }
 
 
 @handle_interface_exceptions(context="refresh_templates", interface_type="cli")
-async def handle_refresh_templates(args: argparse.Namespace) -> Dict[str, Any]:
+async def handle_refresh_templates(args: argparse.Namespace) -> dict[str, Any]:
     """
     Handle refresh templates operations using CQRS QueryBus.
 
@@ -508,4 +508,4 @@ async def handle_refresh_templates(args: argparse.Namespace) -> Dict[str, Any]:
         }
 
     except Exception as e:
-        return {"success": False, "error": f"Failed to refresh templates: {str(e)}"}
+        return {"success": False, "error": f"Failed to refresh templates: {e!s}"}

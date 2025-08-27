@@ -8,7 +8,7 @@ while maintaining the power and flexibility of dependency injection.
 
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, Union
+from typing import Any, Callable, Optional, TypeVar, Union
 
 T = TypeVar("T")
 
@@ -38,14 +38,14 @@ class DependencyRegistration:
 
     def __init__(
         self,
-        dependency_type: Type[T],
-        implementation_type: Optional[Type[T]] = None,
+        dependency_type: type[T],
+        implementation_type: Optional[type[T]] = None,
         instance: Optional[T] = None,
         factory: Optional[Callable[[], T]] = None,
         scope: DIScope = DIScope.TRANSIENT,
         lifecycle: DILifecycle = DILifecycle.EAGER,
-        dependencies: Optional[List[Type]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        dependencies: Optional[list[type]] = None,
+        metadata: Optional[dict[str, Any]] = None,
     ) -> None:
         """Initialize the instance."""
         self.dependency_type = dependency_type
@@ -94,8 +94,8 @@ class DIContainerPort(ABC):
     @abstractmethod
     def register_type(
         self,
-        dependency_type: Type[T],
-        implementation_type: Optional[Type[T]] = None,
+        dependency_type: type[T],
+        implementation_type: Optional[type[T]] = None,
         scope: DIScope = DIScope.TRANSIENT,
     ) -> None:
         """
@@ -108,7 +108,7 @@ class DIContainerPort(ABC):
         """
 
     @abstractmethod
-    def register_instance(self, dependency_type: Type[T], instance: T) -> None:
+    def register_instance(self, dependency_type: type[T], instance: T) -> None:
         """
         Register a pre-created instance.
 
@@ -120,7 +120,7 @@ class DIContainerPort(ABC):
     @abstractmethod
     def register_factory(
         self,
-        dependency_type: Type[T],
+        dependency_type: type[T],
         factory: Callable[[], T],
         scope: DIScope = DIScope.TRANSIENT,
     ) -> None:
@@ -136,8 +136,8 @@ class DIContainerPort(ABC):
     @abstractmethod
     def register_singleton(
         self,
-        dependency_type: Type[T],
-        implementation_or_factory: Union[Type[T], Callable[[], T]],
+        dependency_type: type[T],
+        implementation_or_factory: Union[type[T], Callable[[], T]],
     ) -> None:
         """
         Register a singleton dependency.
@@ -148,7 +148,7 @@ class DIContainerPort(ABC):
         """
 
     @abstractmethod
-    def get(self, dependency_type: Type[T]) -> T:
+    def get(self, dependency_type: type[T]) -> T:
         """
         Resolve a dependency.
 
@@ -163,7 +163,7 @@ class DIContainerPort(ABC):
         """
 
     @abstractmethod
-    def get_optional(self, dependency_type: Type[T]) -> Optional[T]:
+    def get_optional(self, dependency_type: type[T]) -> Optional[T]:
         """
         Resolve an optional dependency.
 
@@ -175,7 +175,7 @@ class DIContainerPort(ABC):
         """
 
     @abstractmethod
-    def get_all(self, dependency_type: Type[T]) -> List[T]:
+    def get_all(self, dependency_type: type[T]) -> list[T]:
         """
         Resolve all instances of a type.
 
@@ -187,7 +187,7 @@ class DIContainerPort(ABC):
         """
 
     @abstractmethod
-    def is_registered(self, dependency_type: Type[T]) -> bool:
+    def is_registered(self, dependency_type: type[T]) -> bool:
         """
         Check if a type is registered.
 
@@ -199,7 +199,7 @@ class DIContainerPort(ABC):
         """
 
     @abstractmethod
-    def unregister(self, dependency_type: Type[T]) -> bool:
+    def unregister(self, dependency_type: type[T]) -> bool:
         """
         Unregister a dependency.
 
@@ -215,7 +215,7 @@ class DIContainerPort(ABC):
         """Clear all registrations."""
 
     @abstractmethod
-    def get_registrations(self) -> Dict[Type, DependencyRegistration]:
+    def get_registrations(self) -> dict[type, DependencyRegistration]:
         """
         Get all current registrations.
 
@@ -233,7 +233,7 @@ class DIServiceLocatorPort(ABC):
     """
 
     @abstractmethod
-    def locate(self, service_type: Type[T]) -> T:
+    def locate(self, service_type: type[T]) -> T:
         """
         Locate a service by type.
 
@@ -245,7 +245,7 @@ class DIServiceLocatorPort(ABC):
         """
 
     @abstractmethod
-    def locate_optional(self, service_type: Type[T]) -> Optional[T]:
+    def locate_optional(self, service_type: type[T]) -> Optional[T]:
         """
         Locate an optional service by type.
 
@@ -312,7 +312,7 @@ class DIEventPort(ABC):
 
     @abstractmethod
     def on_dependency_registered(
-        self, callback: Callable[[Type, DependencyRegistration], None]
+        self, callback: Callable[[type, DependencyRegistration], None]
     ) -> None:
         """
         Register callback for dependency registration events.
@@ -322,7 +322,7 @@ class DIEventPort(ABC):
         """
 
     @abstractmethod
-    def on_dependency_resolved(self, callback: Callable[[Type, Any], None]) -> None:
+    def on_dependency_resolved(self, callback: Callable[[type, Any], None]) -> None:
         """
         Register callback for dependency resolution events.
 
@@ -331,7 +331,7 @@ class DIEventPort(ABC):
         """
 
     @abstractmethod
-    def on_dependency_creation_failed(self, callback: Callable[[Type, Exception], None]) -> None:
+    def on_dependency_creation_failed(self, callback: Callable[[type, Exception], None]) -> None:
         """
         Register callback for dependency creation failures.
 
@@ -362,7 +362,7 @@ class CQRSHandlerRegistrationPort(ABC):
     """
 
     @abstractmethod
-    def register_command_handler(self, command_type: Type, handler_type: Type) -> None:
+    def register_command_handler(self, command_type: type, handler_type: type) -> None:
         """
         Register a command handler.
 
@@ -372,7 +372,7 @@ class CQRSHandlerRegistrationPort(ABC):
         """
 
     @abstractmethod
-    def register_query_handler(self, query_type: Type, handler_type: Type) -> None:
+    def register_query_handler(self, query_type: type, handler_type: type) -> None:
         """
         Register a query handler.
 
@@ -382,7 +382,7 @@ class CQRSHandlerRegistrationPort(ABC):
         """
 
     @abstractmethod
-    def register_event_handler(self, event_type: Type, handler_type: Type) -> None:
+    def register_event_handler(self, event_type: type, handler_type: type) -> None:
         """
         Register an event handler.
 
@@ -392,7 +392,7 @@ class CQRSHandlerRegistrationPort(ABC):
         """
 
     @abstractmethod
-    def get_command_handler(self, command_type: Type) -> Any:
+    def get_command_handler(self, command_type: type) -> Any:
         """
         Get command handler for command type.
 
@@ -404,7 +404,7 @@ class CQRSHandlerRegistrationPort(ABC):
         """
 
     @abstractmethod
-    def get_query_handler(self, query_type: Type) -> Any:
+    def get_query_handler(self, query_type: type) -> Any:
         """
         Get query handler for query type.
 
@@ -416,7 +416,7 @@ class CQRSHandlerRegistrationPort(ABC):
         """
 
     @abstractmethod
-    def get_event_handlers(self, event_type: Type) -> List[Any]:
+    def get_event_handlers(self, event_type: type) -> list[Any]:
         """
         Get all event handlers for event type.
 
@@ -434,7 +434,7 @@ class CQRSHandlerRegistrationPort(ABC):
 class DependencyResolutionError(Exception):
     """Raised when dependency cannot be resolved."""
 
-    def __init__(self, dependency_type: Type, message: str = None) -> None:
+    def __init__(self, dependency_type: type, message: Optional[str] = None) -> None:
         """Initialize dependency resolution error."""
         self.dependency_type = dependency_type
         self.message = message or f"Cannot resolve dependency: {dependency_type}"
@@ -444,7 +444,7 @@ class DependencyResolutionError(Exception):
 class CircularDependencyError(DependencyResolutionError):
     """Raised when circular dependency is detected."""
 
-    def __init__(self, dependency_chain: List[Type]) -> None:
+    def __init__(self, dependency_chain: list[type]) -> None:
         """Initialize circular dependency error with dependency chain."""
         self.dependency_chain = dependency_chain
         chain_str = " -> ".join(str(t) for t in dependency_chain)
@@ -455,7 +455,7 @@ class CircularDependencyError(DependencyResolutionError):
 class DependencyRegistrationError(Exception):
     """Raised when dependency registration fails."""
 
-    def __init__(self, dependency_type: Type, message: str) -> None:
+    def __init__(self, dependency_type: type, message: str) -> None:
         self.dependency_type = dependency_type
         self.message = message
         super().__init__(f"Registration failed for {dependency_type}: {message}")

@@ -2,7 +2,7 @@
 
 import threading
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any
 
 
 class ExceptionContext:
@@ -18,7 +18,7 @@ class ExceptionContext:
         self.thread_id = threading.get_ident()
         self.additional_context = additional_context
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert context to dictionary for logging."""
         return {
             "operation": self.operation,

@@ -8,7 +8,7 @@ provider strategies while handling strategy selection, switching, and lifecycle.
 import time
 from dataclasses import dataclass
 from threading import Lock
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from domain.base.ports import LoggingPort
 from providers.base.strategy.provider_strategy import (
@@ -84,8 +84,8 @@ class ProviderContext:
             logger: Logging port for dependency injection
         """
         self._logger = logger
-        self._strategies: Dict[str, ProviderStrategy] = {}
-        self._strategy_metrics: Dict[str, StrategyMetrics] = {}
+        self._strategies: dict[str, ProviderStrategy] = {}
+        self._strategy_metrics: dict[str, StrategyMetrics] = {}
         self._current_strategy: Optional[ProviderStrategy] = None
         self._default_strategy_type: Optional[str] = None
         self._lock = Lock()
@@ -113,11 +113,13 @@ class ProviderContext:
         return self._current_strategy.provider_type
 
     @property
-    def available_strategies(self) -> List[str]:
+    def available_strategies(self) -> list[str]:
         """Get list of available strategy types."""
         return list(self._strategies.keys())
 
-    def register_strategy(self, strategy: ProviderStrategy, instance_name: str = None) -> None:
+    def register_strategy(
+        self, strategy: ProviderStrategy, instance_name: Optional[str] = None
+    ) -> None:
         """
         Register a provider strategy.
 
@@ -301,7 +303,7 @@ class ProviderContext:
                 e,
             )
             return ProviderResult.error_result(
-                f"Operation execution failed: {str(e)}", "EXECUTION_ERROR"
+                f"Operation execution failed: {e!s}", "EXECUTION_ERROR"
             )
 
     async def execute_with_strategy(
@@ -333,7 +335,7 @@ class ProviderContext:
                     )
             except Exception as e:
                 return ProviderResult.error_result(
-                    f"Error initializing strategy {strategy_type}: {str(e)}",
+                    f"Error initializing strategy {strategy_type}: {e!s}",
                     "STRATEGY_INITIALIZATION_ERROR",
                 )
 
@@ -387,11 +389,11 @@ class ProviderContext:
                 e,
             )
             return ProviderResult.error_result(
-                f"Operation execution failed: {str(e)}", "EXECUTION_ERROR"
+                f"Operation execution failed: {e!s}", "EXECUTION_ERROR"
             )
 
     def get_strategy_capabilities(
-        self, strategy_type: str = None
+        self, strategy_type: Optional[str] = None
     ) -> Optional[ProviderCapabilities]:
         """
         Get capabilities of a specific strategy or current strategy.
@@ -413,7 +415,9 @@ class ProviderContext:
 
         return strategy.get_capabilities()
 
-    def check_strategy_health(self, strategy_type: str = None) -> Optional[ProviderHealthStatus]:
+    def check_strategy_health(
+        self, strategy_type: Optional[str] = None
+    ) -> Optional[ProviderHealthStatus]:
         """
         Check health of a specific strategy or current strategy.
 
@@ -450,10 +454,12 @@ class ProviderContext:
         except Exception as e:
             self._logger.error("Error checking health of strategy %s: %s", strategy_type, e)
             return ProviderHealthStatus.unhealthy(
-                f"Health check failed: {str(e)}", {"exception": str(e)}
+                f"Health check failed: {e!s}", {"exception": str(e)}
             )
 
-    def get_strategy_metrics(self, strategy_type: str = None) -> Optional[StrategyMetrics]:
+    def get_strategy_metrics(
+        self, strategy_type: Optional[str] = None
+    ) -> Optional[StrategyMetrics]:
         """
         Get metrics for a specific strategy or current strategy.
 
@@ -472,7 +478,7 @@ class ProviderContext:
 
         return self._strategy_metrics.get(strategy_type)
 
-    def get_all_metrics(self) -> Dict[str, StrategyMetrics]:
+    def get_all_metrics(self) -> dict[str, StrategyMetrics]:
         """Get metrics for all registered strategies."""
         with self._lock:
             return self._strategy_metrics.copy()

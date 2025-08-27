@@ -25,7 +25,7 @@ class TestContainerIntegration:
     def built_image(self, project_root, test_image_name):
         """Build test image for integration tests."""
         try:
-            _ = subprocess.run(
+            result = subprocess.run(
                 [
                     "docker",
                     "build",
@@ -39,6 +39,7 @@ class TestContainerIntegration:
                     "VCS_REF=test",
                     str(project_root),
                 ],
+                check=False,
                 capture_output=True,
                 text=True,
                 timeout=300,
@@ -50,7 +51,7 @@ class TestContainerIntegration:
             yield test_image_name
 
             # Cleanup
-            subprocess.run(["docker", "rmi", test_image_name], capture_output=True)
+            subprocess.run(["docker", "rmi", test_image_name], check=False, capture_output=True)
 
         except (subprocess.TimeoutExpired, FileNotFoundError):
             pytest.skip("Docker not available or build timed out")
@@ -59,7 +60,7 @@ class TestContainerIntegration:
         """Test container responds to environment variables."""
         try:
             # Test version command with environment variables
-            _ = subprocess.run(
+            result = subprocess.run(
                 [
                     "docker",
                     "run",
@@ -71,6 +72,7 @@ class TestContainerIntegration:
                     built_image,
                     "version",
                 ],
+                check=False,
                 capture_output=True,
                 text=True,
                 timeout=30,
@@ -88,7 +90,7 @@ class TestContainerIntegration:
         """Test container configuration loading."""
         try:
             # Test with different configuration
-            _ = subprocess.run(
+            result = subprocess.run(
                 [
                     "docker",
                     "run",
@@ -104,6 +106,7 @@ class TestContainerIntegration:
                     built_image,
                     "version",
                 ],
+                check=False,
                 capture_output=True,
                 text=True,
                 timeout=30,
@@ -119,7 +122,7 @@ class TestContainerIntegration:
     def test_container_aws_configuration(self, built_image):
         """Test container AWS configuration."""
         try:
-            _ = subprocess.run(
+            result = subprocess.run(
                 [
                     "docker",
                     "run",
@@ -133,6 +136,7 @@ class TestContainerIntegration:
                     built_image,
                     "version",
                 ],
+                check=False,
                 capture_output=True,
                 text=True,
                 timeout=30,
@@ -148,7 +152,7 @@ class TestContainerIntegration:
     def test_container_authentication_configuration(self, built_image):
         """Test container authentication configuration."""
         try:
-            _ = subprocess.run(
+            result = subprocess.run(
                 [
                     "docker",
                     "run",
@@ -162,6 +166,7 @@ class TestContainerIntegration:
                     built_image,
                     "version",
                 ],
+                check=False,
                 capture_output=True,
                 text=True,
                 timeout=30,
@@ -180,7 +185,7 @@ class TestContainerIntegration:
         container_id = None
         try:
             # Start container
-            _ = subprocess.run(
+            result = subprocess.run(
                 [
                     "docker",
                     "run",
@@ -198,6 +203,7 @@ class TestContainerIntegration:
                     built_image,
                     "serve",
                 ],
+                check=False,
                 capture_output=True,
                 text=True,
                 timeout=30,
@@ -214,6 +220,7 @@ class TestContainerIntegration:
             # Check if container is still running
             status_result = subprocess.run(
                 ["docker", "ps", "-q", "-f", f"id={container_id}"],
+                check=False,
                 capture_output=True,
                 text=True,
             )
@@ -221,7 +228,10 @@ class TestContainerIntegration:
             if not status_result.stdout.strip():
                 # Container stopped, get logs
                 logs_result = subprocess.run(
-                    ["docker", "logs", container_id], capture_output=True, text=True
+                    ["docker", "logs", container_id],
+                    check=False,
+                    capture_output=True,
+                    text=True,
                 )
                 pytest.fail(f"Container stopped unexpectedly. Logs: {logs_result.stdout}")
 
@@ -246,8 +256,8 @@ class TestContainerIntegration:
         finally:
             # Cleanup
             if container_id:
-                subprocess.run(["docker", "stop", container_id], capture_output=True)
-                subprocess.run(["docker", "rm", container_id], capture_output=True)
+                subprocess.run(["docker", "stop", container_id], check=False, capture_output=True)
+                subprocess.run(["docker", "rm", container_id], check=False, capture_output=True)
 
     def test_container_cli_commands(self, built_image):
         """Test container CLI command functionality."""
@@ -255,6 +265,7 @@ class TestContainerIntegration:
             # Test help command
             subprocess.run(
                 ["docker", "run", "--rm", built_image, "cli", "--help"],
+                check=False,
                 capture_output=True,
                 text=True,
                 timeout=30,
@@ -273,6 +284,7 @@ class TestContainerIntegration:
         try:
             _ = subprocess.run(
                 ["docker", "run", "--rm", built_image, "health"],
+                check=False,
                 capture_output=True,
                 text=True,
                 timeout=30,
@@ -289,7 +301,7 @@ class TestContainerIntegration:
     def test_container_bash_access(self, built_image):
         """Test container bash access for debugging."""
         try:
-            _ = subprocess.run(
+            result = subprocess.run(
                 [
                     "docker",
                     "run",
@@ -299,6 +311,7 @@ class TestContainerIntegration:
                     "-c",
                     "echo 'Container bash access works'",
                 ],
+                check=False,
                 capture_output=True,
                 text=True,
                 timeout=30,
@@ -316,7 +329,7 @@ class TestContainerIntegration:
         """Test container file permissions and ownership."""
         try:
             # Check that files are owned by ohfp user
-            _ = subprocess.run(
+            result = subprocess.run(
                 [
                     "docker",
                     "run",
@@ -326,6 +339,7 @@ class TestContainerIntegration:
                     "-c",
                     "ls -la /app/ | head -5",
                 ],
+                check=False,
                 capture_output=True,
                 text=True,
                 timeout=30,
@@ -343,7 +357,7 @@ class TestContainerIntegration:
     def test_container_directory_structure(self, built_image):
         """Test container directory structure."""
         try:
-            _ = subprocess.run(
+            result = subprocess.run(
                 [
                     "docker",
                     "run",
@@ -353,6 +367,7 @@ class TestContainerIntegration:
                     "-c",
                     "ls -la /app/ && echo '---' && ls -la /app/src/ | head -5",
                 ],
+                check=False,
                 capture_output=True,
                 text=True,
                 timeout=30,

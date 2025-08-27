@@ -6,7 +6,7 @@ enabling the storage registry pattern for DynamoDB persistence.
 CLEAN ARCHITECTURE: Only handles storage strategies, no repository knowledge.
 """
 
-from typing import TYPE_CHECKING, Any, Dict
+from typing import TYPE_CHECKING, Any
 
 # Use TYPE_CHECKING to avoid direct infrastructure import
 if TYPE_CHECKING:
@@ -53,7 +53,7 @@ def create_dynamodb_strategy(config: Any) -> Any:
     )
 
 
-def create_dynamodb_config(data: Dict[str, Any]) -> Any:
+def create_dynamodb_config(data: dict[str, Any]) -> Any:
     """
     Create DynamoDB storage configuration from data.
 

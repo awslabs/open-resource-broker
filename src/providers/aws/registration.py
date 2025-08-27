@@ -1,7 +1,7 @@
 """AWS Provider Registration - Register AWS provider with the provider registry."""
 
 from contextlib import suppress
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 # Use TYPE_CHECKING to avoid direct infrastructure import
 if TYPE_CHECKING:
@@ -54,12 +54,12 @@ def create_aws_strategy(provider_config: Any) -> Any:
         return strategy
 
     except ImportError as e:
-        raise ImportError(f"AWS provider strategy not available: {str(e)}")
+        raise ImportError(f"AWS provider strategy not available: {e!s}")
     except Exception as e:
-        raise RuntimeError(f"Failed to create AWS strategy: {str(e)}")
+        raise RuntimeError(f"Failed to create AWS strategy: {e!s}")
 
 
-def create_aws_config(data: Dict[str, Any]) -> Any:
+def create_aws_config(data: dict[str, Any]) -> Any:
     """
     Create AWS configuration from data dictionary.
 
@@ -74,9 +74,9 @@ def create_aws_config(data: Dict[str, Any]) -> Any:
 
         return AWSProviderConfig(**data)
     except ImportError as e:
-        raise ImportError(f"AWS configuration not available: {str(e)}")
+        raise ImportError(f"AWS configuration not available: {e!s}")
     except Exception as e:
-        raise RuntimeError(f"Failed to create AWS config: {str(e)}")
+        raise RuntimeError(f"Failed to create AWS config: {e!s}")
 
 
 def create_aws_resolver() -> Any:
@@ -97,7 +97,7 @@ def create_aws_resolver() -> Any:
         return None
     except Exception as e:
         # Re-raise with context - let caller handle logging
-        raise RuntimeError(f"Failed to create AWS resolver: {str(e)}")
+        raise RuntimeError(f"Failed to create AWS resolver: {e!s}")
 
 
 def create_aws_validator() -> Any:
@@ -112,13 +112,13 @@ def create_aws_validator() -> Any:
         return None
     except Exception as e:
         # Re-raise with context - let caller handle logging
-        raise RuntimeError(f"Failed to create AWS validator: {str(e)}")
+        raise RuntimeError(f"Failed to create AWS validator: {e!s}")
 
 
 def register_aws_provider(
     registry: "ProviderRegistry" = None,
     logger: "LoggingPort" = None,
-    instance_name: str = None,
+    instance_name: Optional[str] = None,
 ) -> None:
     """Register AWS provider with the provider registry.
 
@@ -255,7 +255,9 @@ def register_aws_provider_with_di(provider_instance, container) -> bool:
 
     except Exception as e:
         logger.error(
-            "Failed to register AWS provider instance '%s': %s", provider_instance.name, str(e)
+            "Failed to register AWS provider instance '%s': %s",
+            provider_instance.name,
+            str(e),
         )
         return False
 

@@ -94,7 +94,9 @@ def retry(
                     # Log successful retry if this wasn't the first attempt
                     if attempt > 0:
                         logger.info(
-                            "Operation succeeded after %s attempts: %s", attempt + 1, func.__name__
+                            "Operation succeeded after %s attempts: %s",
+                            attempt + 1,
+                            func.__name__,
                         )
 
                     return result

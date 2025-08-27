@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 from types import TracebackType
-from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, Union
+from typing import Any, Generic, Optional, TypeVar, Union
 
 from domain.base.ports.storage_port import StoragePort
 from infrastructure.logging.logger import get_logger
@@ -38,7 +38,7 @@ class StorageStrategy(StoragePort[T], ABC, Generic[T]):
     @abstractmethod
     def __exit__(
         self,
-        exc_type: Optional[Type[BaseException]],
+        exc_type: Optional[type[BaseException]],
         exc_val: Optional[BaseException],
         exc_tb: Optional[TracebackType],
     ) -> bool:
@@ -55,7 +55,7 @@ class StorageStrategy(StoragePort[T], ABC, Generic[T]):
         """
 
     @abstractmethod
-    def save(self, entity_id: str, data: Dict[str, Any]) -> None:
+    def save(self, entity_id: str, data: dict[str, Any]) -> None:
         """
         Save entity data.
 
@@ -68,7 +68,7 @@ class StorageStrategy(StoragePort[T], ABC, Generic[T]):
         """
 
     @abstractmethod
-    def find_by_id(self, entity_id: str) -> Optional[Dict[str, Any]]:
+    def find_by_id(self, entity_id: str) -> Optional[dict[str, Any]]:
         """
         Find entity by ID.
 
@@ -80,7 +80,7 @@ class StorageStrategy(StoragePort[T], ABC, Generic[T]):
         """
 
     @abstractmethod
-    def find_all(self) -> Union[List[Dict[str, Any]], Dict[str, Dict[str, Any]]]:
+    def find_all(self) -> Union[list[dict[str, Any]], dict[str, dict[str, Any]]]:
         """
         Find all entities.
 
@@ -113,7 +113,7 @@ class StorageStrategy(StoragePort[T], ABC, Generic[T]):
         """
 
     @abstractmethod
-    def find_by_criteria(self, criteria: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def find_by_criteria(self, criteria: dict[str, Any]) -> list[dict[str, Any]]:
         """
         Find entities by criteria.
 
@@ -152,7 +152,7 @@ class StorageStrategy(StoragePort[T], ABC, Generic[T]):
         """
 
     @abstractmethod
-    def save_batch(self, entities: Dict[str, Dict[str, Any]]) -> None:
+    def save_batch(self, entities: dict[str, dict[str, Any]]) -> None:
         """
         Save multiple entities in a single operation.
 
@@ -164,7 +164,7 @@ class StorageStrategy(StoragePort[T], ABC, Generic[T]):
         """
 
     @abstractmethod
-    def delete_batch(self, entity_ids: List[str]) -> None:
+    def delete_batch(self, entity_ids: list[str]) -> None:
         """
         Delete multiple entities in a single operation.
 
@@ -207,7 +207,7 @@ class BaseStorageStrategy(StorageStrategy[T], Generic[T]):
 
             self.logger.debug("Base storage strategy cleanup completed")
         except Exception as e:
-            error_msg = f"Error cleaning up storage strategy: {str(e)}"
+            error_msg = f"Error cleaning up storage strategy: {e!s}"
             self.logger.error(error_msg)
             raise PersistenceError(error_msg)
 
@@ -224,7 +224,7 @@ class BaseStorageStrategy(StorageStrategy[T], Generic[T]):
 
     def __exit__(
         self,
-        exc_type: Optional[Type[BaseException]],
+        exc_type: Optional[type[BaseException]],
         exc_val: Optional[BaseException],
         exc_tb: Optional[TracebackType],
     ) -> bool:
@@ -245,7 +245,8 @@ class BaseStorageStrategy(StorageStrategy[T], Generic[T]):
             # Rollback transaction if an exception occurred
             if exc_type is not None and self._in_transaction:
                 self.logger.warning(
-                    "Exception in context manager, rolling back transaction: %s", exc_val
+                    "Exception in context manager, rolling back transaction: %s",
+                    exc_val,
                 )
                 self.rollback_transaction()
 
@@ -283,7 +284,7 @@ class BaseStorageStrategy(StorageStrategy[T], Generic[T]):
 
             self._in_transaction = True
         except Exception as e:
-            raise PersistenceError(f"Error beginning transaction: {str(e)}")
+            raise PersistenceError(f"Error beginning transaction: {e!s}")
 
     def commit_transaction(self) -> None:
         """
@@ -300,7 +301,7 @@ class BaseStorageStrategy(StorageStrategy[T], Generic[T]):
             self._transaction_snapshot = None
             self._in_transaction = False
         except Exception as e:
-            raise PersistenceError(f"Error committing transaction: {str(e)}")
+            raise PersistenceError(f"Error committing transaction: {e!s}")
 
     def rollback_transaction(self) -> None:
         """
@@ -322,9 +323,9 @@ class BaseStorageStrategy(StorageStrategy[T], Generic[T]):
             self._transaction_snapshot = None
             self._in_transaction = False
         except Exception as e:
-            raise PersistenceError(f"Error rolling back transaction: {str(e)}")
+            raise PersistenceError(f"Error rolling back transaction: {e!s}")
 
-    def save_batch(self, entities: Dict[str, Dict[str, Any]]) -> None:
+    def save_batch(self, entities: dict[str, dict[str, Any]]) -> None:
         """
         Save multiple entities in a single operation.
 
@@ -339,9 +340,9 @@ class BaseStorageStrategy(StorageStrategy[T], Generic[T]):
             for entity_id, entity_data in entities.items():
                 self.save(entity_id, entity_data)
         except Exception as e:
-            raise PersistenceError(f"Error saving batch: {str(e)}")
+            raise PersistenceError(f"Error saving batch: {e!s}")
 
-    def delete_batch(self, entity_ids: List[str]) -> None:
+    def delete_batch(self, entity_ids: list[str]) -> None:
         """
         Delete multiple entities in a single operation.
 
@@ -356,9 +357,9 @@ class BaseStorageStrategy(StorageStrategy[T], Generic[T]):
             for entity_id in entity_ids:
                 self.delete(entity_id)
         except Exception as e:
-            raise PersistenceError(f"Error deleting batch: {str(e)}")
+            raise PersistenceError(f"Error deleting batch: {e!s}")
 
-    def _get_entity_id_from_dict(self, data: Dict[str, Any]) -> str:
+    def _get_entity_id_from_dict(self, data: dict[str, Any]) -> str:
         """
         Get entity ID from dictionary.
 
@@ -382,7 +383,7 @@ class BaseStorageStrategy(StorageStrategy[T], Generic[T]):
         else:
             raise ValueError(f"Cannot determine ID for entity data: {data}")
 
-    def find_by_criteria(self, criteria: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def find_by_criteria(self, criteria: dict[str, Any]) -> list[dict[str, Any]]:
         """
         Find entities by criteria.
 
@@ -409,7 +410,7 @@ class BaseStorageStrategy(StorageStrategy[T], Generic[T]):
 
         return matching_entities
 
-    def _matches_criteria(self, entity_data: Dict[str, Any], criteria: Dict[str, Any]) -> bool:
+    def _matches_criteria(self, entity_data: dict[str, Any], criteria: dict[str, Any]) -> bool:
         """
         Check if entity matches criteria.
 

@@ -2,7 +2,7 @@
 
 import time
 from functools import wraps
-from typing import Any, Callable, Dict, List, Optional, TypeVar
+from typing import Any, Callable, Optional, TypeVar
 
 from domain.base.exceptions import ConcurrencyError
 from infrastructure.logging.logger import get_logger
@@ -68,7 +68,7 @@ class OptimisticConcurrencyControl:
         self,
         entity: T,
         entity_id: str,
-        version_map: Dict[str, int],
+        version_map: dict[str, int],
         entity_class_name: str,
     ) -> None:
         """
@@ -88,7 +88,7 @@ class OptimisticConcurrencyControl:
                 entity_class_name, entity_id, version_map[entity_id], entity.version
             )
 
-    def increment_version(self, entity: T, entity_id: str, version_map: Dict[str, int]) -> None:
+    def increment_version(self, entity: T, entity_id: str, version_map: dict[str, int]) -> None:
         """
         Increment entity version.
 
@@ -101,9 +101,9 @@ class OptimisticConcurrencyControl:
 
     def batch_check_versions(
         self,
-        entities: List[T],
+        entities: list[T],
         get_entity_id: Callable[[T], str],
-        version_map: Dict[str, int],
+        version_map: dict[str, int],
         entity_class_name: str,
     ) -> None:
         """
@@ -124,9 +124,9 @@ class OptimisticConcurrencyControl:
 
     def batch_increment_versions(
         self,
-        entities: List[T],
+        entities: list[T],
         get_entity_id: Callable[[T], str],
-        version_map: Dict[str, int],
+        version_map: dict[str, int],
     ) -> None:
         """
         Increment versions for a batch of entities.

@@ -28,7 +28,10 @@ class TestSchedulerNativeSpecParsing:
                 "maxNumber": 5,
                 "launch_template_spec": {
                     "LaunchTemplateName": "custom-template",
-                    "LaunchTemplateData": {"ImageId": "ami-12345678", "InstanceType": "t2.micro"},
+                    "LaunchTemplateData": {
+                        "ImageId": "ami-12345678",
+                        "InstanceType": "t2.micro",
+                    },
                 },
             }
 
@@ -38,7 +41,10 @@ class TestSchedulerNativeSpecParsing:
             assert template.instance_type == "t2.micro"
             assert template.launch_template_spec == {
                 "LaunchTemplateName": "custom-template",
-                "LaunchTemplateData": {"ImageId": "ami-12345678", "InstanceType": "t2.micro"},
+                "LaunchTemplateData": {
+                    "ImageId": "ami-12345678",
+                    "InstanceType": "t2.micro",
+                },
             }
 
     def test_parse_template_with_provider_api_spec(self):

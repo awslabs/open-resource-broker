@@ -3,7 +3,7 @@
 import json
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Any, Dict, Optional, Type, TypeVar
+from typing import Any, Optional, TypeVar
 
 from infrastructure.logging.logger import get_logger
 
@@ -14,11 +14,11 @@ class SerializationManager(ABC):
     """Base interface for serialization managers."""
 
     @abstractmethod
-    def serialize(self, data: Dict[str, Any]) -> Any:
+    def serialize(self, data: dict[str, Any]) -> Any:
         """Serialize data for storage."""
 
     @abstractmethod
-    def deserialize(self, data: Any) -> Dict[str, Any]:
+    def deserialize(self, data: Any) -> dict[str, Any]:
         """Deserialize data from storage."""
 
 
@@ -29,7 +29,7 @@ class JSONSerializer(SerializationManager):
         """Initialize the instance."""
         self.logger = get_logger(__name__)
 
-    def serialize(self, data: Dict[str, Any]) -> str:
+    def serialize(self, data: dict[str, Any]) -> str:
         """
         Serialize data to JSON string.
 
@@ -47,7 +47,7 @@ class JSONSerializer(SerializationManager):
             self.logger.error("JSON serialization failed: %s", e)
             raise
 
-    def deserialize(self, data: str) -> Dict[str, Any]:
+    def deserialize(self, data: str) -> dict[str, Any]:
         """
         Deserialize JSON string to dictionary.
 
@@ -68,7 +68,7 @@ class JSONSerializer(SerializationManager):
             self.logger.error("Unexpected deserialization error: %s", e)
             raise
 
-    def _prepare_for_serialization(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _prepare_for_serialization(self, data: dict[str, Any]) -> dict[str, Any]:
         """Prepare data for JSON serialization by handling special types."""
         if not isinstance(data, dict):
             return data
@@ -102,7 +102,7 @@ class JSONSerializer(SerializationManager):
 
     @staticmethod
     def deserialize_enum(
-        enum_class: Type[E], value: Any, default: Optional[E] = None
+        enum_class: type[E], value: Any, default: Optional[E] = None
     ) -> Optional[E]:
         """Deserialize string to enum value."""
         if value is None:
@@ -124,7 +124,7 @@ class BinarySerializer(SerializationManager):
         """Initialize binary serializer."""
         self.logger = get_logger(__name__)
 
-    def serialize(self, data: Dict[str, Any]) -> bytes:
+    def serialize(self, data: dict[str, Any]) -> bytes:
         """Serialize data to binary format."""
         import json
 
@@ -134,7 +134,7 @@ class BinarySerializer(SerializationManager):
             self.logger.error("Binary serialization failed: %s", e)
             raise
 
-    def deserialize(self, data: bytes) -> Dict[str, Any]:
+    def deserialize(self, data: bytes) -> dict[str, Any]:
         """Deserialize binary data to dictionary."""
         import json
 

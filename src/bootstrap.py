@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 # Import configuration
 from config import AppConfig
@@ -148,7 +148,8 @@ class Application:
                     if mode.value == "multi":
                         self.logger.info("Selection policy: %s", provider_config.selection_policy)
                         self.logger.info(
-                            "Health check interval: %ss", provider_config.health_check_interval
+                            "Health check interval: %ss",
+                            provider_config.health_check_interval,
                         )
                 else:
                     self.logger.info("Provider configuration not found")
@@ -212,7 +213,7 @@ class Application:
             self._command_bus = self._container.get(CommandBus)
         return self._command_bus
 
-    def get_provider_info(self) -> Dict[str, Any]:
+    def get_provider_info(self) -> dict[str, Any]:
         """Get provider information using direct provider context."""
         if not self._initialized:
             return {"status": "not_initialized"}
@@ -241,7 +242,7 @@ class Application:
             self.logger.error("Failed to get provider info: %s", e)
             return {"status": "error", "error": str(e), "initialized": False}
 
-    def health_check(self) -> Dict[str, Any]:
+    def health_check(self) -> dict[str, Any]:
         """Check application health using direct provider context."""
         if not self._initialized:
             return {"status": "error", "message": "Application not initialized"}
@@ -301,7 +302,7 @@ class Application:
             self.logger.error("Health check failed: %s", e)
             return {
                 "status": "error",
-                "message": f"Health check failed: {str(e)}",
+                "message": f"Health check failed: {e!s}",
                 "initialized": self._initialized,
             }
 
@@ -310,7 +311,7 @@ class Application:
         self.logger.info("Shutting down application")
         self._initialized = False
 
-    async def __aenter__(self) -> "Application":
+    async def __aenter__(self) -> Application:
         """Async context manager entry."""
         if not await self.initialize():
             raise RuntimeError("Failed to initialize application")
@@ -344,7 +345,8 @@ async def main() -> None:
         async with await create_application(config_path) as app:
             # Use existing app.logger - no need to create new logger
             app.logger.info(
-                "Application started successfully with %s provider", app.provider_type.upper()
+                "Application started successfully with %s provider",
+                app.provider_type.upper(),
             )
 
             # Get provider info

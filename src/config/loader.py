@@ -5,10 +5,13 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
-from typing import Any, Dict, Optional, TypeVar
+from typing import TYPE_CHECKING, Any, Dict, Optional, TypeVar
 
 from config.schemas import AppConfig, validate_config
 from domain.base.exceptions import ConfigurationError
+
+if TYPE_CHECKING:
+    from config.managers.configuration_manager import ConfigurationManager
 
 T = TypeVar("T")
 
@@ -89,31 +92,22 @@ class ConfigurationLoader:
         "MAX_MACHINES_PER_REQUEST": ("max_machines_per_request",),
     }
 
-    # Host Factory environment variables
-    HF_ENV_VARS = {
-        "HF_PROVIDER_WORKDIR": "workdir",
-        "HF_PROVIDER_LOGDIR": "logs",
-        "HF_PROVIDER_CONFDIR": "config",
-        "HF_PROVIDER_EVENTSDIR": "events",
-        "HF_PROVIDER_SNAPSHOTSDIR": "snapshots",
-        "HF_PROVIDER_NAME": "provider_name",
-        "HF_TEMPLATE_AMI_RESOLUTION_ENABLED": "template.ami_resolution.enabled",
-        "HF_TEMPLATE_AMI_RESOLUTION_FALLBACK_ON_FAILURE": "template.ami_resolution.fallback_on_failure",
-        "HF_TEMPLATE_AMI_RESOLUTION_CACHE_FILE": "template.ami_resolution.persistent_cache_file",
-    }
-
     # Default configuration file name
     DEFAULT_CONFIG_FILENAME = "default_config.json"
 
     @classmethod
-    def load(cls, config_path: Optional[str] = None) -> Dict[str, Any]:
+    def load(
+        cls,
+        config_path: Optional[str] = None,
+        config_manager: Optional[ConfigurationManager] = None,
+    ) -> Dict[str, Any]:
         """
         Load configuration from multiple sources with correct precedence.
 
         Precedence order (highest to lowest):
         1. Environment variables (highest precedence)
         2. Explicit config file (if config_path provided)
-        3. HF_PROVIDER_CONFDIR/config.json (provider-specific)
+        3. Scheduler-provided config directory/config.json
         4. config/config.json (fallback)
         5. Legacy configuration (awsprov_config.json, awsprov_templates.json)
         6. default_config.json (lowest precedence)
@@ -130,9 +124,11 @@ class ConfigurationLoader:
         # Start with default configuration (lowest precedence)
         config = cls._load_default_config()
 
-        # Load main config.json with correct precedence (HF_PROVIDER_CONFDIR first,
+        # Load main config.json with correct precedence (scheduler config dir first,
         # then config/)
-        main_config = cls._load_config_file("conf", "config.json", required=False)
+        main_config = cls._load_config_file(
+            "conf", "config.json", required=False, config_manager=config_manager
+        )
         if main_config:
             cls._merge_config(config, main_config)
             get_config_logger().info("Loaded main configuration")
@@ -145,7 +141,11 @@ class ConfigurationLoader:
             filename = os.path.basename(config_path) if config_path else "config.json"
 
             file_config = cls._load_config_file(
-                "conf", filename, explicit_path=config_path, required=False
+                "conf",
+                filename,
+                explicit_path=config_path,
+                required=False,
+                config_manager=config_manager,
             )
             if file_config:
                 cls._merge_config(config, file_config)
@@ -154,7 +154,7 @@ class ConfigurationLoader:
                 get_config_logger().warning("User configuration file not found: %s", config_path)
 
         # Override with environment variables (highest precedence)
-        cls._load_from_env(config)
+        cls._load_from_env(config, config_manager)
 
         # Expand environment variables in the final configuration
         from config.utils.env_expansion import expand_config_env_vars
@@ -164,11 +164,11 @@ class ConfigurationLoader:
         return config
 
     @classmethod
-    def _load_default_config(cls) -> Dict[str, Any]:
+    def _load_default_config(cls) -> dict[str, Any]:
         """
         Load default configuration from file.
 
-        First tries to load from HF_PROVIDER_CONFDIR, then falls back to local config.
+        First tries to load from scheduler config directory, then falls back to local config.
 
         Returns:
             Default configuration dictionary
@@ -176,20 +176,21 @@ class ConfigurationLoader:
         get_config_logger().debug("Loading default configuration")
 
         # Use file loading method
-        config = cls._load_config_file("conf", cls.DEFAULT_CONFIG_FILENAME, required=False)
+        config = cls._load_config_file(
+            "conf", cls.DEFAULT_CONFIG_FILENAME, required=False, config_manager=None
+        )
 
         if config:
             get_config_logger().info("Loaded default configuration successfully")
             return config
         else:
             get_config_logger().warning(
-                "Failed to load default configuration from any location. "
-                "Using empty configuration."
+                "Failed to load default configuration from any location. Using empty configuration."
             )
             return {}
 
     @classmethod
-    def create_app_config(cls, config: Dict[str, Any]) -> AppConfig:
+    def create_app_config(cls, config: dict[str, Any]) -> AppConfig:
         """
         Create typed AppConfig from configuration dictionary using Pydantic.
 
@@ -210,11 +211,11 @@ class ConfigurationLoader:
 
         except ValueError as e:
             # Convert Pydantic validation errors to ConfigurationError
-            raise ConfigurationError("App", f"Configuration validation failed: {str(e)}")
+            raise ConfigurationError("App", f"Configuration validation failed: {e!s}")
         except KeyError as e:
-            raise ConfigurationError("App", f"Missing required configuration: {str(e)}")
+            raise ConfigurationError("App", f"Missing required configuration: {e!s}")
         except Exception as e:
-            raise ConfigurationError("App", f"Failed to create typed configuration: {str(e)}")
+            raise ConfigurationError("App", f"Failed to create typed configuration: {e!s}")
 
     @classmethod
     def _load_from_file(cls, config_path: str) -> Optional[Dict[str, Any]]:
@@ -240,9 +241,9 @@ class ConfigurationLoader:
                 return json.load(f)
 
         except json.JSONDecodeError as e:
-            raise ConfigurationError(f"Invalid JSON in configuration file: {str(e)}")
+            raise ConfigurationError(f"Invalid JSON in configuration file: {e!s}")
         except Exception as e:
-            raise ConfigurationError(f"Failed to load configuration file: {str(e)}")
+            raise ConfigurationError(f"Failed to load configuration file: {e!s}")
 
     @classmethod
     def _load_config_file(
@@ -251,11 +252,12 @@ class ConfigurationLoader:
         filename: str,
         explicit_path: Optional[str] = None,
         required: bool = False,
+        config_manager: Optional[ConfigurationManager] = None,
     ) -> Optional[Dict[str, Any]]:
         """
         Centralized method for loading any configuration file with consistent priority:
         1. Explicit path (if provided and contains directory)
-        2. HF_PROVIDER_*DIR + filename (if file exists)
+        2. Scheduler-provided directory + filename (if file exists)
         3. Default directory + filename
 
         Args:
@@ -279,7 +281,7 @@ class ConfigurationLoader:
 
         # Resolve the file path using centralized logic
         # In practice, this would be refactored to use a static method or utility
-        resolved_path = cls._resolve_file_path(file_type, filename, explicit_path)
+        resolved_path = cls._resolve_file_path(file_type, filename, explicit_path, config_manager)
 
         if resolved_path:
             get_config_logger().info("Loading %s configuration from: %s", file_type, resolved_path)
@@ -297,7 +299,11 @@ class ConfigurationLoader:
 
     @classmethod
     def _resolve_file_path(
-        cls, file_type: str, filename: str, explicit_path: Optional[str] = None
+        cls,
+        file_type: str,
+        filename: str,
+        explicit_path: Optional[str] = None,
+        config_manager: Optional[ConfigurationManager] = None,
     ) -> Optional[str]:
         """
         Resolve file path using centralized logic (static version of ConfigurationManager.resolve_file).
@@ -306,6 +312,7 @@ class ConfigurationLoader:
             file_type: Type of file ('conf', 'template', 'legacy', 'log', 'work', 'events', 'snapshots')
             filename: Name of the file
             explicit_path: Explicit path provided by user (optional)
+            config_manager: Configuration manager for scheduler directory resolution (optional)
 
         Returns:
             Resolved file path or None if not found
@@ -327,35 +334,22 @@ class ConfigurationLoader:
             filename = explicit_path
             get_config_logger().debug("Using explicit filename: %s", filename)
 
-        # 2. Try environment variable directory + filename
-        env_dir = None
-        env_var_name = None
-
-        if file_type in ["conf", "template", "legacy"]:
-            env_dir = os.environ.get("HF_PROVIDER_CONFDIR")
-            env_var_name = "HF_PROVIDER_CONFDIR"
-        elif file_type == "log":
-            env_dir = os.environ.get("HF_PROVIDER_LOGDIR")
-            env_var_name = "HF_PROVIDER_LOGDIR"
-        elif file_type == "work":
-            env_dir = os.environ.get("HF_PROVIDER_WORKDIR")
-            env_var_name = "HF_PROVIDER_WORKDIR"
-        elif file_type == "events":
-            env_dir = os.environ.get("HF_PROVIDER_EVENTSDIR")
-            env_var_name = "HF_PROVIDER_EVENTSDIR"
-        elif file_type == "snapshots":
-            env_dir = os.environ.get("HF_PROVIDER_SNAPSHOTSDIR")
-            env_var_name = "HF_PROVIDER_SNAPSHOTSDIR"
-
-        if env_dir:
-            env_path = os.path.join(env_dir, filename)
-            if os.path.exists(env_path):
-                get_config_logger().debug("Found file using %s: %s", env_var_name, env_path)
-                return env_path
-            else:
-                get_config_logger().debug(
-                    "File not found in %s directory: %s", env_var_name, env_path
-                )
+        # 2. Try scheduler-provided directory + filename
+        try:
+            scheduler_dir = cls._get_scheduler_directory(file_type, config_manager)
+            if scheduler_dir:
+                scheduler_path = os.path.join(scheduler_dir, filename)
+                if os.path.exists(scheduler_path):
+                    get_config_logger().debug(
+                        "Found file using scheduler directory: %s", scheduler_path
+                    )
+                    return scheduler_path
+                else:
+                    get_config_logger().debug(
+                        "File not found in scheduler directory: %s", scheduler_path
+                    )
+        except Exception as e:
+            get_config_logger().debug("Failed to get scheduler directory: %s", e)
 
         # 3. Fall back to default directory + filename
         default_dirs = {
@@ -370,8 +364,8 @@ class ConfigurationLoader:
 
         default_dir = default_dirs.get(file_type, "config")
 
-        # Build path relative to project root
-        project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        # Build path relative to working directory (not package location)
+        project_root = os.getcwd()
         fallback_path = os.path.join(project_root, default_dir, filename)
 
         # Always return the fallback path, even if file doesn't exist
@@ -381,7 +375,9 @@ class ConfigurationLoader:
         return fallback_path
 
     @classmethod
-    def _load_from_env(cls, config: Dict[str, Any]) -> None:
+    def _load_from_env(
+        cls, config: dict[str, Any], config_manager: Optional[ConfigurationManager] = None
+    ) -> None:
         """
         Load configuration from environment variables.
 
@@ -399,137 +395,51 @@ class ConfigurationLoader:
                     else:
                         current = current.setdefault(key, {})
 
-        # Process Host Factory environment variables
-        cls._process_hf_env_vars(config)
-
-        # HF_ prefixed environment variables (legacy support)
-        env_prefix = "HF_"
-        for key, value in os.environ.items():
-            if key.startswith(env_prefix) and key not in cls.HF_ENV_VARS:
-                config_key = key[len(env_prefix) :].upper()
-
-                # Handle nested configuration using double underscore
-                if "__" in config_key:
-                    parts = config_key.split("__")
-                    current = config
-                    for part in parts[:-1]:
-                        current = current.setdefault(part, {})
-                    current[parts[-1]] = cls._convert_value(value)
-                else:
-                    # Add to root config
-                    config[config_key] = cls._convert_value(value)
+        # Process scheduler-provided directory overrides
+        cls._process_scheduler_directories(config, config_manager)
 
         get_config_logger().debug("Loaded configuration from environment variables")
 
     @classmethod
-    def _process_hf_env_vars(cls, config: Dict[str, Any]) -> None:
+    def _process_scheduler_directories(
+        cls, config: dict[str, Any], config_manager: Optional[ConfigurationManager] = None
+    ) -> None:
         """
-        Process Host Factory environment variables.
+        Process scheduler-provided directory overrides for logging and storage.
 
         Args:
             config: Configuration dictionary to update
+            config_manager: Configuration manager with scheduler access (optional)
         """
-        # Get environment variables
-        workdir = os.environ.get("HF_PROVIDER_WORKDIR")
-        logdir = os.environ.get("HF_PROVIDER_LOGDIR")
-        confdir = os.environ.get("HF_PROVIDER_CONFDIR")
-        eventsdir = os.environ.get("HF_PROVIDER_EVENTSDIR")
-        snapshotsdir = os.environ.get("HF_PROVIDER_SNAPSHOTSDIR")
+        # Get directories from scheduler
+        try:
+            scheduler_dir = cls._get_scheduler_directory("work", config_manager)
+            logs_dir = cls._get_scheduler_directory("log", config_manager)
 
-        # Set up logging path based on HF_PROVIDER_LOGDIR
-        if logdir:
-            config.setdefault("logging", {})["file_path"] = os.path.join(logdir, "app.log")
-            get_config_logger().debug(
-                "Set logging file_path to %s", os.path.join(logdir, "app.log")
-            )
-        elif workdir:
-            log_dir = os.path.join(workdir, "logs")
-            config.setdefault("logging", {})["file_path"] = os.path.join(log_dir, "app.log")
-            get_config_logger().debug(
-                "Set logging file_path to %s", os.path.join(log_dir, "app.log")
-            )
-
-        # Set up storage paths based on workdir
-        if workdir:
-            # Update JSON storage strategy
-            storage = config.setdefault("storage", {})
-            json_strategy = storage.setdefault("json_strategy", {})
-            json_strategy["base_path"] = workdir
-            get_config_logger().debug("Set JSON storage base_path to %s", workdir)
-
-            # Update SQL storage strategy if using SQLite
-            sql_strategy = storage.setdefault("sql_strategy", {})
-            if sql_strategy.get("type", "sqlite") == "sqlite":
-                # Always use workdir for SQLite, regardless of host value
-                sql_strategy["name"] = os.path.join(workdir, "database.db")
+            # Set up logging path
+            if logs_dir:
+                config.setdefault("logging", {})["file_path"] = os.path.join(logs_dir, "app.log")
                 get_config_logger().debug(
-                    "Set SQLite database path to %s", os.path.join(workdir, "database.db")
+                    "Set logging file_path to %s", os.path.join(logs_dir, "app.log")
                 )
 
-        # Set up config paths based on HF_PROVIDER_CONFDIR
-        if confdir:
-            # Template paths are now handled by centralized file resolution
-            # No need to override them here since the template loading will use
-            # resolve_file()
-            get_config_logger().debug(
-                "HF_PROVIDER_CONFDIR set to: %s (template paths will be resolved dynamically)",
-                confdir,
-            )
+            # Set up storage paths
+            if scheduler_dir:
+                # Update JSON storage strategy
+                storage = config.setdefault("storage", {})
+                json_strategy = storage.setdefault("json_strategy", {})
+                json_strategy["base_path"] = scheduler_dir
+                get_config_logger().debug("Set JSON storage base_path to %s", scheduler_dir)
 
-        # Set up events paths based on HF_PROVIDER_EVENTSDIR
-        if eventsdir:
-            events_config = config.setdefault("events", {})
-            events_config["store_path"] = eventsdir
-            events_config["default_events_path"] = eventsdir
-            get_config_logger().debug("Set events store_path to %s", eventsdir)
-        elif workdir:
-            events_dir = os.path.join(workdir, "events")
-            events_config = config.setdefault("events", {})
-            events_config["default_events_path"] = events_dir
-            get_config_logger().debug("Set events default_events_path to %s", events_dir)
-
-        # Set up snapshots paths based on HF_PROVIDER_SNAPSHOTSDIR
-        if snapshotsdir:
-            events_config = config.setdefault("events", {})
-            events_config["snapshot_store_path"] = snapshotsdir
-            events_config["default_snapshots_path"] = snapshotsdir
-            get_config_logger().debug("Set snapshots snapshot_store_path to %s", snapshotsdir)
-        elif workdir:
-            snapshots_dir = os.path.join(workdir, "snapshots")
-            events_config = config.setdefault("events", {})
-            events_config["default_snapshots_path"] = snapshots_dir
-            get_config_logger().debug("Set snapshots default_snapshots_path to %s", snapshots_dir)
-
-        # Process AMI resolution environment variables
-        ami_resolution_enabled = os.environ.get("HF_TEMPLATE_AMI_RESOLUTION_ENABLED")
-        ami_resolution_fallback = os.environ.get("HF_TEMPLATE_AMI_RESOLUTION_FALLBACK_ON_FAILURE")
-        ami_resolution_cache_file = os.environ.get("HF_TEMPLATE_AMI_RESOLUTION_CACHE_FILE")
-
-        if any([ami_resolution_enabled, ami_resolution_fallback, ami_resolution_cache_file]):
-            template_config = config.setdefault("template", {})
-            ami_resolution_config = template_config.setdefault("ami_resolution", {})
-
-            if ami_resolution_enabled is not None:
-                ami_resolution_config["enabled"] = cls._convert_value(ami_resolution_enabled)
-                get_config_logger().debug(
-                    "Set ami_resolution.enabled to %s", ami_resolution_config["enabled"]
-                )
-
-            if ami_resolution_fallback is not None:
-                ami_resolution_config["fallback_on_failure"] = cls._convert_value(
-                    ami_resolution_fallback
-                )
-                get_config_logger().debug(
-                    "Set ami_resolution.fallback_on_failure to %s",
-                    ami_resolution_config["fallback_on_failure"],
-                )
-
-            if ami_resolution_cache_file is not None:
-                ami_resolution_config["persistent_cache_file"] = ami_resolution_cache_file
-                get_config_logger().debug(
-                    "Set ami_resolution.persistent_cache_file to %s",
-                    ami_resolution_config["persistent_cache_file"],
-                )
+                # Update SQL storage strategy if using SQLite
+                sql_strategy = storage.setdefault("sql_strategy", {})
+                if sql_strategy.get("type", "sqlite") == "sqlite":
+                    sql_strategy["name"] = os.path.join(scheduler_dir, "database.db")
+                    get_config_logger().debug(
+                        "Set SQLite database path to %s", os.path.join(scheduler_dir, "database.db")
+                    )
+        except Exception as e:
+            get_config_logger().debug("Could not get scheduler directories: %s", e)
 
     @classmethod
     def _convert_value(cls, value: str) -> Any:
@@ -564,7 +474,7 @@ class ConfigurationLoader:
         return value
 
     @classmethod
-    def _merge_config(cls, base: Dict[str, Any], update: Dict[str, Any]) -> None:
+    def _merge_config(cls, base: dict[str, Any], update: dict[str, Any]) -> None:
         """
         Merge update configuration into base configuration.
 
@@ -583,7 +493,7 @@ class ConfigurationLoader:
                 base[key] = value
 
     @classmethod
-    def _deep_copy(cls, obj: Dict[str, Any]) -> Dict[str, Any]:
+    def _deep_copy(cls, obj: dict[str, Any]) -> dict[str, Any]:
         """
         Create a deep copy of a dictionary.
 
@@ -594,3 +504,21 @@ class ConfigurationLoader:
             Deep copy of dictionary
         """
         return json.loads(json.dumps(obj))
+
+    @classmethod
+    def _get_scheduler_directory(
+        cls, file_type: str, config_manager: Optional[ConfigurationManager] = None
+    ) -> Optional[str]:
+        """
+        Get directory path from scheduler port for the given file type.
+
+        Args:
+            file_type: Type of file ('conf', 'work', 'log', etc.)
+            config_manager: Configuration manager with scheduler access (optional)
+
+        Returns:
+            Directory path from scheduler or None if not available
+        """
+        if config_manager:
+            return config_manager._get_scheduler_directory(file_type)
+        return None  # No scheduler available during bootstrap

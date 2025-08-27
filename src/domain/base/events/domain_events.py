@@ -1,7 +1,7 @@
 """Domain events - Request, Machine, and Template business events."""
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from pydantic import Field
 
@@ -25,7 +25,7 @@ class RequestCreatedEvent(RequestEvent):
     template_id: str
     machine_count: int
     timeout: Optional[int] = None
-    tags: Dict[str, str] = Field(default_factory=dict)
+    tags: dict[str, str] = Field(default_factory=dict)
 
 
 class RequestStatusChangedEvent(RequestEvent, StatusChangeEvent):
@@ -38,7 +38,7 @@ class RequestCompletedEvent(RequestEvent):
     """Event raised when a request is completed."""
 
     completion_status: str
-    machine_ids: List[str] = Field(default_factory=list)
+    machine_ids: list[str] = Field(default_factory=list)
     completion_time: datetime = Field(default_factory=datetime.utcnow)
 
 
@@ -54,7 +54,7 @@ class RequestTimeoutEvent(RequestEvent):
     """Event raised when a request times out."""
 
     timeout_duration: int
-    partial_results: Dict[str, Any] = Field(default_factory=dict)
+    partial_results: dict[str, Any] = Field(default_factory=dict)
 
 
 # =============================================================================
@@ -103,7 +103,7 @@ class MachineHealthCheckEvent(MachineEvent):
     """Event raised during machine health checks."""
 
     health_status: str
-    health_details: Dict[str, Any] = Field(default_factory=dict)
+    health_details: dict[str, Any] = Field(default_factory=dict)
     check_time: datetime = Field(default_factory=datetime.utcnow)
 
 
@@ -123,20 +123,20 @@ class TemplateCreatedEvent(TemplateEvent):
     """Event raised when a template is created."""
 
     template_type: str
-    configuration: Dict[str, Any] = Field(default_factory=dict)
+    configuration: dict[str, Any] = Field(default_factory=dict)
 
 
 class TemplateValidatedEvent(TemplateEvent):
     """Event raised when a template is validated."""
 
     validation_result: str
-    validation_details: Dict[str, Any] = Field(default_factory=dict)
+    validation_details: dict[str, Any] = Field(default_factory=dict)
 
 
 class TemplateUpdatedEvent(TemplateEvent):
     """Event raised when a template is updated."""
 
-    changes: Dict[str, Any] = Field(default_factory=dict)
+    changes: dict[str, Any] = Field(default_factory=dict)
     version: int
 
 

@@ -47,7 +47,9 @@ class TestNativeSpecAllProviders:
         )
 
         request = Request(
-            request_id=RequestId.generate(), requested_count=3, template_id="ec2fleet-test"
+            request_id=RequestId.generate(),
+            requested_count=3,
+            template_id="ec2fleet-test",
         )
 
         # Process provider API spec
@@ -98,7 +100,9 @@ class TestNativeSpecAllProviders:
         )
 
         request = Request(
-            request_id=RequestId.generate(), requested_count=5, template_id="spotfleet-test"
+            request_id=RequestId.generate(),
+            requested_count=5,
+            template_id="spotfleet-test",
         )
 
         result = self.aws_native_spec_service.process_provider_api_spec(template, request)
@@ -242,7 +246,9 @@ class TestNativeSpecAllProviders:
         )
 
         request = Request(
-            request_id=RequestId.generate(), requested_count=10, template_id="mixed-test"
+            request_id=RequestId.generate(),
+            requested_count=10,
+            template_id="mixed-test",
         )
 
         # Test launch template spec processing
@@ -327,7 +333,9 @@ class TestNativeSpecAllProviders:
         )
 
         request = Request(
-            request_id=RequestId.generate(), requested_count=1, template_id="disabled-test"
+            request_id=RequestId.generate(),
+            requested_count=1,
+            template_id="disabled-test",
         )
 
         # Mock native spec service to return disabled
@@ -364,7 +372,9 @@ class TestNativeSpecAllProviders:
 
         # Test with small request count
         request_small = Request(
-            request_id=RequestId.generate(), requested_count=4, template_id="complex-test"
+            request_id=RequestId.generate(),
+            requested_count=4,
+            template_id="complex-test",
         )
 
         result_small = self.aws_native_spec_service.process_provider_api_spec(
@@ -379,7 +389,9 @@ class TestNativeSpecAllProviders:
 
         # Test with large request count
         request_large = Request(
-            request_id=RequestId.generate(), requested_count=20, template_id="complex-test"
+            request_id=RequestId.generate(),
+            requested_count=20,
+            template_id="complex-test",
         )
 
         result_large = self.aws_native_spec_service.process_provider_api_spec(
@@ -406,7 +418,9 @@ class TestNativeSpecAllProviders:
         )
 
         request = Request(
-            request_id=RequestId.generate(), requested_count=1, template_id="invalid-test"
+            request_id=RequestId.generate(),
+            requested_count=1,
+            template_id="invalid-test",
         )
 
         # Should handle template syntax errors gracefully
@@ -434,7 +448,9 @@ class TestNativeSpecAllProviders:
         )
 
         request = Request(
-            request_id=RequestId.generate(), requested_count=3, template_id="context-test"
+            request_id=RequestId.generate(),
+            requested_count=3,
+            template_id="context-test",
         )
 
         result = self.aws_native_spec_service.process_provider_api_spec(template, request)

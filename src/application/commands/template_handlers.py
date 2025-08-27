@@ -71,7 +71,9 @@ class CreateTemplateHandler(BaseCommandHandler[CreateTemplateCommand, TemplateCo
             validation_errors = template_port.validate_template_config(command.configuration)
             if validation_errors:
                 self.logger.warning(
-                    "Template validation failed for %s: %s", command.template_id, validation_errors
+                    "Template validation failed for %s: %s",
+                    command.template_id,
+                    validation_errors,
                 )
                 return TemplateCommandResponse(
                     template_id=command.template_id, validation_errors=validation_errors
@@ -108,7 +110,9 @@ class CreateTemplateHandler(BaseCommandHandler[CreateTemplateCommand, TemplateCo
 
         except BusinessRuleError as e:
             self.logger.error(
-                "Business rule violation creating template %s: %s", command.template_id, e
+                "Business rule violation creating template %s: %s",
+                command.template_id,
+                e,
             )
             return TemplateCommandResponse(
                 template_id=command.template_id, validation_errors=[str(e)]
@@ -262,7 +266,7 @@ class DeleteTemplateHandler(BaseCommandHandler[DeleteTemplateCommand, TemplateCo
                 # template
                 if template.is_in_use():
                     raise BusinessRuleError(
-                        f"Cannot delete template { command.template_id}: template is in use"
+                        f"Cannot delete template {command.template_id}: template is in use"
                     )
 
                 # Delete template
@@ -278,7 +282,8 @@ class DeleteTemplateHandler(BaseCommandHandler[DeleteTemplateCommand, TemplateCo
             raise
         except BusinessRuleError:
             self.logger.error(
-                "Cannot delete template %s: business rule violation", command.template_id
+                "Cannot delete template %s: business rule violation",
+                command.template_id,
             )
             raise
         except Exception as e:
@@ -334,7 +339,9 @@ class ValidateTemplateHandler(BaseCommandHandler[ValidateTemplateCommand, Templa
             # Log validation results
             if validation_errors:
                 self.logger.warning(
-                    "Template validation failed for %s: %s", command.template_id, validation_errors
+                    "Template validation failed for %s: %s",
+                    command.template_id,
+                    validation_errors,
                 )
             else:
                 self.logger.info("Template validation passed for %s", command.template_id)
@@ -350,5 +357,5 @@ class ValidateTemplateHandler(BaseCommandHandler[ValidateTemplateCommand, Templa
             self.logger.error("Template validation failed for %s: %s", command.template_id, e)
             return TemplateCommandResponse(
                 template_id=command.template_id,
-                validation_errors=[f"Validation error: {str(e)}"],
+                validation_errors=[f"Validation error: {e!s}"],
             )

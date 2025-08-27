@@ -1,6 +1,6 @@
 """Jinja2 implementation of spec rendering."""
 
-from typing import Any, Dict
+from typing import Any
 
 from jinja2 import BaseLoader, Environment, select_autoescape
 
@@ -19,7 +19,7 @@ class JinjaSpecRenderer(SpecRenderingPort):
             loader=BaseLoader(), autoescape=select_autoescape(["json", "yaml", "yml"])
         )
 
-    def render_spec_from_file(self, file_path: str, context: Dict[str, Any]) -> Dict[str, Any]:
+    def render_spec_from_file(self, file_path: str, context: dict[str, Any]) -> dict[str, Any]:
         """Render specification from file with Jinja2 templating support.
 
         Args:
@@ -31,7 +31,7 @@ class JinjaSpecRenderer(SpecRenderingPort):
         """
         try:
             # Read file content
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 content = f.read()
 
             # Always process through Jinja2 - handles static content automatically
@@ -47,11 +47,11 @@ class JinjaSpecRenderer(SpecRenderingPort):
             self.logger.error(f"Failed to render spec from file {file_path}: {e}")
             raise
 
-    def render_spec(self, spec: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
+    def render_spec(self, spec: dict[str, Any], context: dict[str, Any]) -> dict[str, Any]:
         """Render Jinja2 templates in spec values."""
         return self._render_recursive(spec, context)
 
-    def _render_recursive(self, obj: Any, context: Dict[str, Any]) -> Any:
+    def _render_recursive(self, obj: Any, context: dict[str, Any]) -> Any:
         """Recursively render templates in nested structures."""
         if isinstance(obj, dict):
             return {k: self._render_recursive(v, context) for k, v in obj.items()}

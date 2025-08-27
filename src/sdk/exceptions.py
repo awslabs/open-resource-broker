@@ -5,13 +5,13 @@ Follows the same patterns as domain and infrastructure exceptions
 for consistency and structured error handling throughout the system.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 
 class SDKError(Exception):
     """Base exception for all SDK-related errors."""
 
-    def __init__(self, message: str, details: Optional[Dict[str, Any]] = None) -> None:
+    def __init__(self, message: str, details: Optional[dict[str, Any]] = None) -> None:
         """Initialize the instance."""
         super().__init__(message)
         self.message = message
@@ -30,7 +30,7 @@ class ConfigurationError(SDKError):
         self,
         message: str,
         config_key: Optional[str] = None,
-        details: Optional[Dict[str, Any]] = None,
+        details: Optional[dict[str, Any]] = None,
     ) -> None:
         super().__init__(message, details)
         self.config_key = config_key
@@ -43,7 +43,7 @@ class ProviderError(SDKError):
         self,
         message: str,
         provider: Optional[str] = None,
-        details: Optional[Dict[str, Any]] = None,
+        details: Optional[dict[str, Any]] = None,
     ) -> None:
         super().__init__(message, details)
         self.provider = provider
@@ -56,7 +56,7 @@ class HandlerDiscoveryError(SDKError):
         self,
         message: str,
         handler_type: Optional[str] = None,
-        details: Optional[Dict[str, Any]] = None,
+        details: Optional[dict[str, Any]] = None,
     ) -> None:
         super().__init__(message, details)
         self.handler_type = handler_type
@@ -69,7 +69,7 @@ class MethodExecutionError(SDKError):
         self,
         message: str,
         method_name: Optional[str] = None,
-        details: Optional[Dict[str, Any]] = None,
+        details: Optional[dict[str, Any]] = None,
     ) -> None:
         super().__init__(message, details)
         self.method_name = method_name

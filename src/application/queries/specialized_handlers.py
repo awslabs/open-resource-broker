@@ -221,7 +221,9 @@ class GetMachineHealthHandler(BaseQueryHandler[GetMachineHealthQuery, MachineHea
                 )
 
                 self.logger.info(
-                    "Retrieved health for machine %s: %s", query.machine_id, health_status
+                    "Retrieved health for machine %s: %s",
+                    query.machine_id,
+                    health_status,
                 )
                 return health_dto
 

@@ -1,6 +1,6 @@
 """Authentication middleware for FastAPI."""
 
-from typing import List
+from typing import Optional
 
 from fastapi import HTTPException, Request, Response, status
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -21,7 +21,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
         self,
         app,
         auth_port: AuthPort,
-        excluded_paths: List[str] = None,
+        excluded_paths: Optional[list[str]] = None,
         require_auth: bool = True,
     ) -> None:
         """
@@ -169,8 +169,8 @@ class AuthDependency:
 
     def __init__(
         self,
-        required_permissions: List[str] = None,
-        required_roles: List[str] = None,
+        required_permissions: Optional[list[str]] = None,
+        required_roles: Optional[list[str]] = None,
         allow_service_accounts: bool = True,
     ) -> None:
         """

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, TypeVar
+from typing import Any, TypeVar
 
 from application.base.handlers import BaseQueryHandler
 from application.decorators import query_handler
@@ -93,7 +93,8 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
                 machines = await self._update_machine_status_from_aws(machines)
             else:
                 self.logger.info(
-                    "DEBUG: No machines and no resource IDs for request %s", query.request_id
+                    "DEBUG: No machines and no resource IDs for request %s",
+                    query.request_id,
                 )
 
             # Convert to DTO with machine data
@@ -143,7 +144,9 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
                 self._cache_service.cache_request(request_dto)
 
             self.logger.info(
-                "Retrieved request with %s machines: %s", len(machines_data), query.request_id
+                "Retrieved request with %s machines: %s",
+                len(machines_data),
+                query.request_id,
             )
             return request_dto
 
@@ -154,7 +157,7 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
             self.logger.error("Failed to get request: %s", e)
             raise
 
-    async def _get_machines_from_storage(self, request_id: str) -> List:
+    async def _get_machines_from_storage(self, request_id: str) -> list:
         """Get machines from storage for the request."""
         try:
             with self.uow_factory.create_unit_of_work() as uow:
@@ -166,7 +169,7 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
             )
             return []
 
-    async def _check_provider_and_create_machines(self, request) -> List:
+    async def _check_provider_and_create_machines(self, request) -> list:
         """Check provider status and create machine aggregates using provider strategy pattern."""
         try:
             # Get provider context from container
@@ -211,7 +214,8 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
 
             if not result.success:
                 self.logger.warning(
-                    "Failed to discover instances from resources: %s", result.error_message
+                    "Failed to discover instances from resources: %s",
+                    result.error_message,
                 )
                 return []
 
@@ -253,7 +257,7 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
             self.logger.error("Failed to check provider and create machines: %s", e)
             return []
 
-    async def _update_machine_status_from_aws(self, machines: List) -> List:
+    async def _update_machine_status_from_aws(self, machines: list) -> list:
         """Update machine status from AWS using existing handler methods."""
         try:
             # Group machines by request to use existing check_hosts_status methods
@@ -379,7 +383,7 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
             def __init__(self, container) -> None:
                 self.container = container
 
-            async def check_resource_status(self, request) -> List[Dict[str, Any]]:
+            async def check_resource_status(self, request) -> list[dict[str, Any]]:
                 """Use appropriate AWS handler based on resource type."""
                 aws_handler = self._get_aws_handler_for_request(request)
                 return aws_handler.check_hosts_status(request)
@@ -423,7 +427,7 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
 
         return SimpleProviderContext(self._container)
 
-    def _create_machine_from_aws_data(self, aws_instance: Dict[str, Any], request):
+    def _create_machine_from_aws_data(self, aws_instance: dict[str, Any], request):
         """Create machine aggregate from AWS instance data."""
         from domain.base.value_objects import InstanceId
         from domain.machine.aggregate import Machine
@@ -544,7 +548,7 @@ class GetRequestStatusQueryHandler(BaseQueryHandler[GetRequestStatusQuery, str])
 
 
 @query_handler(ListActiveRequestsQuery)
-class ListActiveRequestsHandler(BaseQueryHandler[ListActiveRequestsQuery, List[RequestDTO]]):
+class ListActiveRequestsHandler(BaseQueryHandler[ListActiveRequestsQuery, list[RequestDTO]]):
     """Handler for listing active requests."""
 
     def __init__(
@@ -556,7 +560,7 @@ class ListActiveRequestsHandler(BaseQueryHandler[ListActiveRequestsQuery, List[R
         super().__init__(logger, error_handler)
         self.uow_factory = uow_factory
 
-    async def execute_query(self, query: ListActiveRequestsQuery) -> List[RequestDTO]:
+    async def execute_query(self, query: ListActiveRequestsQuery) -> list[RequestDTO]:
         """Execute list active requests query."""
         self.logger.info("Listing active requests")
 
@@ -596,7 +600,7 @@ class ListActiveRequestsHandler(BaseQueryHandler[ListActiveRequestsQuery, List[R
 
 
 @query_handler(ListReturnRequestsQuery)
-class ListReturnRequestsHandler(BaseQueryHandler[ListReturnRequestsQuery, List[RequestDTO]]):
+class ListReturnRequestsHandler(BaseQueryHandler[ListReturnRequestsQuery, list[RequestDTO]]):
     """Handler for listing return requests."""
 
     def __init__(
@@ -608,7 +612,7 @@ class ListReturnRequestsHandler(BaseQueryHandler[ListReturnRequestsQuery, List[R
         super().__init__(logger, error_handler)
         self.uow_factory = uow_factory
 
-    async def execute_query(self, query: ListReturnRequestsQuery) -> List[RequestDTO]:
+    async def execute_query(self, query: ListReturnRequestsQuery) -> list[RequestDTO]:
         """Execute list return requests query."""
         self.logger.info("Listing return requests")
 
@@ -708,7 +712,7 @@ class GetTemplateHandler(BaseQueryHandler[GetTemplateQuery, Template]):
 
 
 @query_handler(ListTemplatesQuery)
-class ListTemplatesHandler(BaseQueryHandler[ListTemplatesQuery, List[Template]]):
+class ListTemplatesHandler(BaseQueryHandler[ListTemplatesQuery, list[Template]]):
     """Handler for listing templates."""
 
     def __init__(
@@ -720,7 +724,7 @@ class ListTemplatesHandler(BaseQueryHandler[ListTemplatesQuery, List[Template]])
         super().__init__(logger, error_handler)
         self._container = container
 
-    async def execute_query(self, query: ListTemplatesQuery) -> List[Template]:
+    async def execute_query(self, query: ListTemplatesQuery) -> list[Template]:
         """Execute list templates query."""
         from domain.template.aggregate import Template
         from infrastructure.template.configuration_manager import (
@@ -797,7 +801,7 @@ class ValidateTemplateHandler(BaseQueryHandler[ValidateTemplateQuery, Validation
         super().__init__(logger, error_handler)
         self.container = container
 
-    async def execute_query(self, query: ValidateTemplateQuery) -> Dict[str, Any]:
+    async def execute_query(self, query: ValidateTemplateQuery) -> dict[str, Any]:
         """Execute validate template query."""
         self.logger.info("Validating template: %s", query.template_id)
 
@@ -815,7 +819,9 @@ class ValidateTemplateHandler(BaseQueryHandler[ValidateTemplateQuery, Validation
             # Log validation results
             if validation_errors:
                 self.logger.warning(
-                    "Template validation failed for %s: %s", query.template_id, validation_errors
+                    "Template validation failed for %s: %s",
+                    query.template_id,
+                    validation_errors,
                 )
             else:
                 self.logger.info("Template validation passed for %s", query.template_id)
@@ -832,7 +838,7 @@ class ValidateTemplateHandler(BaseQueryHandler[ValidateTemplateQuery, Validation
             return {
                 "template_id": query.template_id,
                 "is_valid": False,
-                "validation_errors": [f"Validation error: {str(e)}"],
+                "validation_errors": [f"Validation error: {e!s}"],
                 "configuration": query.configuration,
             }
 
@@ -885,7 +891,7 @@ class GetMachineHandler(BaseQueryHandler[GetMachineQuery, MachineDTO]):
 
 
 @query_handler(ListMachinesQuery)
-class ListMachinesHandler(BaseQueryHandler[ListMachinesQuery, List[MachineDTO]]):
+class ListMachinesHandler(BaseQueryHandler[ListMachinesQuery, list[MachineDTO]]):
     """Handler for listing machines."""
 
     def __init__(
@@ -897,7 +903,7 @@ class ListMachinesHandler(BaseQueryHandler[ListMachinesQuery, List[MachineDTO]])
         super().__init__(logger, error_handler)
         self.uow_factory = uow_factory
 
-    async def execute_query(self, query: ListMachinesQuery) -> List[MachineDTO]:
+    async def execute_query(self, query: ListMachinesQuery) -> list[MachineDTO]:
         """Execute list machines query."""
         self.logger.info("Listing machines")
 

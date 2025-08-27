@@ -2,7 +2,7 @@
 
 import time
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 from uuid import uuid4
 
 from domain.base.events import (
@@ -28,7 +28,7 @@ class RequestSerializer:
         """Initialize the instance."""
         self.logger = get_logger(__name__)
 
-    def to_dict(self, request: Request) -> Dict[str, Any]:
+    def to_dict(self, request: Request) -> dict[str, Any]:
         """Convert Request aggregate to dictionary with additional fields."""
         try:
             return {
@@ -74,7 +74,7 @@ class RequestSerializer:
             self.logger.error("Failed to serialize request %s: %s", request.request_id, e)
             raise
 
-    def from_dict(self, data: Dict[str, Any]) -> Request:
+    def from_dict(self, data: dict[str, Any]) -> Request:
         """Convert dictionary to Request aggregate with additional field support."""
         try:
             # Parse datetime fields
@@ -151,7 +151,7 @@ class RequestRepositoryImpl(RequestRepositoryInterface):
                 self.logger.warning("Failed to publish persistence event: %s", e)
 
     @handle_infrastructure_exceptions(context="request_repository_save")
-    def save(self, request: Request) -> List[Any]:
+    def save(self, request: Request) -> list[Any]:
         """Save request using storage strategy and return extracted events."""
         operation_id = str(uuid4())
         start_time = time.time()
@@ -216,7 +216,9 @@ class RequestRepositoryImpl(RequestRepositoryInterface):
                 )
 
             self.logger.debug(
-                "Saved request %s and extracted %s events", request.request_id, len(events)
+                "Saved request %s and extracted %s events",
+                request.request_id,
+                len(events),
             )
             return events
 
@@ -270,7 +272,7 @@ class RequestRepositoryImpl(RequestRepositoryInterface):
             raise
 
     @handle_infrastructure_exceptions(context="request_repository_find_by_status")
-    def find_by_status(self, status: RequestStatus) -> List[Request]:
+    def find_by_status(self, status: RequestStatus) -> list[Request]:
         """Find requests by status."""
         try:
             criteria = {"status": status.value}
@@ -281,7 +283,7 @@ class RequestRepositoryImpl(RequestRepositoryInterface):
             raise
 
     @handle_infrastructure_exceptions(context="request_repository_find_by_template_id")
-    def find_by_template_id(self, template_id: str) -> List[Request]:
+    def find_by_template_id(self, template_id: str) -> list[Request]:
         """Find requests by template ID."""
         try:
             criteria = {"template_id": template_id}
@@ -292,7 +294,7 @@ class RequestRepositoryImpl(RequestRepositoryInterface):
             raise
 
     @handle_infrastructure_exceptions(context="request_repository_find_by_type")
-    def find_by_type(self, request_type: RequestType) -> List[Request]:
+    def find_by_type(self, request_type: RequestType) -> list[Request]:
         """Find requests by type."""
         try:
             criteria = {"request_type": request_type.value}
@@ -303,12 +305,12 @@ class RequestRepositoryImpl(RequestRepositoryInterface):
             raise
 
     @handle_infrastructure_exceptions(context="request_repository_find_pending_requests")
-    def find_pending_requests(self) -> List[Request]:
+    def find_pending_requests(self) -> list[Request]:
         """Find pending requests."""
         return self.find_by_status(RequestStatus.PENDING)
 
     @handle_infrastructure_exceptions(context="request_repository_find_active_requests")
-    def find_active_requests(self) -> List[Request]:
+    def find_active_requests(self) -> list[Request]:
         """Find active requests (pending or in_progress)."""
         try:
             pending = self.find_by_status(RequestStatus.PENDING)
@@ -319,7 +321,7 @@ class RequestRepositoryImpl(RequestRepositoryInterface):
             raise
 
     @handle_infrastructure_exceptions(context="request_repository_find_by_date_range")
-    def find_by_date_range(self, start_date: datetime, end_date: datetime) -> List[Request]:
+    def find_by_date_range(self, start_date: datetime, end_date: datetime) -> list[Request]:
         """Find requests within date range."""
         try:
             all_requests = self.find_all()
@@ -335,7 +337,7 @@ class RequestRepositoryImpl(RequestRepositoryInterface):
             raise
 
     @handle_infrastructure_exceptions(context="request_repository_find_all")
-    def find_all(self) -> List[Request]:
+    def find_all(self) -> list[Request]:
         """Find all requests."""
         try:
             all_data = self.storage_port.find_all()

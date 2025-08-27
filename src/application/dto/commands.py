@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from pydantic import BaseModel, ConfigDict
 
@@ -23,7 +23,7 @@ class CreateRequestCommand(BaseCommand):
 class CreateReturnRequestCommand(BaseCommand):
     """Command to create a return request."""
 
-    machine_ids: List[str]
+    machine_ids: list[str]
     timeout: Optional[int] = 3600
     force_return: Optional[bool] = False
 

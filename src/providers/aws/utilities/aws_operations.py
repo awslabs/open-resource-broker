@@ -5,7 +5,7 @@ This module provides integrated AWS operation patterns to eliminate duplication 
 Consolidates: instance management, operation execution, describe operations, logging, and status checking.
 """
 
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Optional
 
 from botocore.exceptions import ClientError
 
@@ -53,10 +53,10 @@ class AWSOperations:
 
     def terminate_instances_with_fallback(
         self,
-        instance_ids: List[str],
+        instance_ids: list[str],
         request_adapter: Optional[Any] = None,
         operation_context: str = "instances",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Integrated instance termination with adapter fallback.
 
@@ -148,7 +148,7 @@ class AWSOperations:
             return result
 
         except CircuitBreakerOpenError as e:
-            error_msg = f"Circuit breaker OPEN for {operation_name}: {str(e)}"
+            error_msg = f"Circuit breaker OPEN for {operation_name}: {e!s}"
             self._logger.error(error_msg)
             raise
 
@@ -157,13 +157,13 @@ class AWSOperations:
             raise
 
         except Exception as e:
-            error_msg = error_message or f"Unexpected error in {operation_name}: {str(e)}"
+            error_msg = error_message or f"Unexpected error in {operation_name}: {e!s}"
             self._logger.error(error_msg)
             raise AWSInfrastructureError(error_msg)
 
     def describe_with_pagination_and_retry(
         self, client_method: Callable, result_key: str, operation_name: str, **filters
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Integrated describe operations with pagination and retry.
 
@@ -199,7 +199,7 @@ class AWSOperations:
 
     def _paginate_method(
         self, client_method: Callable, result_key: str, **kwargs
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Access handler's pagination functionality."""
         # This will be set by the handler when initializing AWSOperations
         if hasattr(self, "_paginate_func"):
@@ -234,7 +234,10 @@ class AWSOperations:
     ) -> None:
         """Standardized operation success logging."""
         self._logger.info(
-            "Successfully completed %s for %s: %s", operation, resource_type, resource_id
+            "Successfully completed %s for %s: %s",
+            operation,
+            resource_type,
+            resource_id,
         )
 
         if context:
@@ -250,7 +253,11 @@ class AWSOperations:
         """Standardized operation failure logging."""
         if resource_id:
             self._logger.error(
-                "Failed %s for %s %s: %s", operation, resource_type, resource_id, str(error)
+                "Failed %s for %s %s: %s",
+                operation,
+                resource_type,
+                resource_id,
+                str(error),
             )
         else:
             self._logger.error("Failed %s for %s: %s", operation, resource_type, str(error))
@@ -321,7 +328,7 @@ class AWSOperations:
         describe_instances_method: Callable,
         instances_key: str,
         **describe_params,
-    ) -> List[str]:
+    ) -> list[str]:
         """
         Get instance IDs associated with a resource.
 
@@ -357,13 +364,19 @@ class AWSOperations:
                     instance_ids.append(instance)
 
             self._logger.debug(
-                "Found %s instances for %s %s", len(instance_ids), resource_type, resource_id
+                "Found %s instances for %s %s",
+                len(instance_ids),
+                resource_type,
+                resource_id,
             )
             return instance_ids
 
         except Exception as e:
             self._logger.error(
-                "Failed to get instances for %s %s: %s", resource_type, resource_id, str(e)
+                "Failed to get instances for %s %s: %s",
+                resource_type,
+                resource_id,
+                str(e),
             )
             return []
 
@@ -402,7 +415,7 @@ class AWSOperations:
             self.log_operation_failure(operation_name, context, error)
             raise error
         except Exception as e:
-            error_msg = f"Failed to {operation_name}: {str(e)}"
+            error_msg = f"Failed to {operation_name}: {e!s}"
             self._logger.error("Unexpected error in %s: %s", context, error_msg)
             raise AWSInfrastructureError(error_msg)
 
@@ -527,7 +540,7 @@ class AWSOperations:
             self._logger.error(f"Failed to discover and tag fleet instances for {fleet_id}: {e}")
             return 0
 
-    def _get_ec2_fleet_instances(self, fleet_id: str) -> List[str]:
+    def _get_ec2_fleet_instances(self, fleet_id: str) -> list[str]:
         """Get instance IDs from EC2 Fleet."""
         try:
             response = self.aws_client.ec2_client.describe_fleet_instances(FleetId=fleet_id)
@@ -536,7 +549,7 @@ class AWSOperations:
             self._logger.error(f"Failed to get EC2Fleet instances for {fleet_id}: {e}")
             return []
 
-    def _get_spot_fleet_instances(self, spot_fleet_id: str) -> List[str]:
+    def _get_spot_fleet_instances(self, spot_fleet_id: str) -> list[str]:
         """Get instance IDs from Spot Fleet."""
         try:
             response = self.aws_client.ec2_client.describe_spot_fleet_instances(

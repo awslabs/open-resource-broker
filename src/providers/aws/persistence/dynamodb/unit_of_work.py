@@ -80,7 +80,8 @@ class DynamoDBUnitOfWork(BaseUnitOfWork):
         self.template_repository = TemplateRepository(template_strategy)
 
         self._self._logger.debug(
-            "Initialized DynamoDBUnitOfWork with simplified repositories in region: %s", region
+            "Initialized DynamoDBUnitOfWork with simplified repositories in region: %s",
+            region,
         )
 
     @property

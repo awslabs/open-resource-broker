@@ -5,7 +5,7 @@ This module defines the interface for request adapters.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List
+from typing import Any
 
 from domain.request.aggregate import Request
 
@@ -14,7 +14,7 @@ class RequestAdapterPort(ABC):
     """Interface for request adapters."""
 
     @abstractmethod
-    def get_request_status(self, request: Request) -> Dict[str, Any]:
+    def get_request_status(self, request: Request) -> dict[str, Any]:
         """
         Get provider-specific status for request.
 
@@ -26,7 +26,7 @@ class RequestAdapterPort(ABC):
         """
 
     @abstractmethod
-    def cancel_fleet_request(self, request: Request) -> Dict[str, Any]:
+    def cancel_fleet_request(self, request: Request) -> dict[str, Any]:
         """
         Cancel fleet request.
 
@@ -38,7 +38,7 @@ class RequestAdapterPort(ABC):
         """
 
     @abstractmethod
-    def terminate_instances(self, instance_ids: List[str]) -> Dict[str, Any]:
+    def terminate_instances(self, instance_ids: list[str]) -> dict[str, Any]:
         """
         Terminate instances.
 

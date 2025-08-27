@@ -1,7 +1,7 @@
 """Singleton registry implementation."""
 
 import threading
-from typing import Any, Dict, Optional, Type, TypeVar, cast
+from typing import Any, Optional, TypeVar, cast
 
 T = TypeVar("T")
 
@@ -27,8 +27,8 @@ class SingletonRegistry:
         Note: This constructor should not be called directly.
         Use get_instance() instead.
         """
-        self._singletons: Dict[Type[Any], Any] = {}
-        self._locks: Dict[Type[Any], threading.RLock] = {}
+        self._singletons: dict[type[Any], Any] = {}
+        self._locks: dict[type[Any], threading.RLock] = {}
 
     @classmethod
     def get_instance(cls) -> "SingletonRegistry":
@@ -43,7 +43,7 @@ class SingletonRegistry:
                 cls._instance = cls()
             return cls._instance
 
-    def register(self, singleton_class: Type[T], instance: Optional[T] = None) -> None:
+    def register(self, singleton_class: type[T], instance: Optional[T] = None) -> None:
         """
         Register a singleton class or instance.
 
@@ -57,7 +57,7 @@ class SingletonRegistry:
             if singleton_class not in self._locks:
                 self._locks[singleton_class] = threading.RLock()
 
-    def get(self, singleton_class: Type[T], *args: Any, **kwargs: Any) -> T:
+    def get(self, singleton_class: type[T], *args: Any, **kwargs: Any) -> T:
         """
         Get a singleton instance.
 
@@ -88,7 +88,7 @@ class SingletonRegistry:
 
             return cast(T, instance)
 
-    def reset(self, singleton_class: Optional[Type[Any]] = None) -> None:
+    def reset(self, singleton_class: Optional[type[Any]] = None) -> None:
         """
         Reset one or all singleton instances.
 
@@ -106,7 +106,7 @@ class SingletonRegistry:
                 # Reset a specific singleton
                 self._singletons[singleton_class] = None
 
-    def get_all(self) -> Dict[Type[Any], Any]:
+    def get_all(self) -> dict[type[Any], Any]:
         """
         Get all registered singletons.
 

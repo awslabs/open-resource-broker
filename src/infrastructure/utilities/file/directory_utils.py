@@ -2,7 +2,7 @@
 
 import glob
 import os
-from typing import List, Optional
+from typing import Optional
 
 
 def ensure_directory_exists(directory_path: str) -> None:
@@ -18,7 +18,7 @@ def ensure_directory_exists(directory_path: str) -> None:
     try:
         os.makedirs(directory_path, exist_ok=True)
     except OSError as e:
-        raise OSError(f"Failed to create directory {directory_path}: {str(e)}")
+        raise OSError(f"Failed to create directory {directory_path}: {e!s}")
 
 
 def ensure_parent_directory_exists(file_path: str) -> None:
@@ -72,12 +72,12 @@ def delete_directory(directory_path: str, recursive: bool = False) -> None:
         else:
             os.rmdir(directory_path)
     except OSError as e:
-        raise OSError(f"Failed to delete directory {directory_path}: {str(e)}")
+        raise OSError(f"Failed to delete directory {directory_path}: {e!s}")
 
 
 def list_files(
     directory_path: str, pattern: Optional[str] = None, recursive: bool = False
-) -> List[str]:
+) -> list[str]:
     """
     List files in a directory.
 
@@ -116,7 +116,7 @@ def list_files(
         return files
 
 
-def list_directories(directory_path: str, recursive: bool = False) -> List[str]:
+def list_directories(directory_path: str, recursive: bool = False) -> list[str]:
     """
     List directories in a directory.
 
@@ -151,7 +151,7 @@ def find_files(
     name_pattern: Optional[str] = None,
     content_pattern: Optional[str] = None,
     recursive: bool = True,
-) -> List[str]:
+) -> list[str]:
     """
     Find files matching criteria.
 
@@ -185,7 +185,7 @@ def find_files(
         pattern = re.compile(content_pattern)
         for file_path in files:
             try:
-                with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+                with open(file_path, encoding="utf-8", errors="ignore") as f:
                     if pattern.search(f.read()):
                         matching_files.append(file_path)
             except (OSError, UnicodeDecodeError):
@@ -224,7 +224,7 @@ def change_directory(directory_path: str) -> None:
     try:
         os.chdir(directory_path)
     except OSError as e:
-        raise OSError(f"Failed to change to directory {directory_path}: {str(e)}")
+        raise OSError(f"Failed to change to directory {directory_path}: {e!s}")
 
 
 def get_home_directory() -> str:
@@ -237,7 +237,7 @@ def get_home_directory() -> str:
     return os.path.expanduser("~")
 
 
-def create_temp_directory(suffix: str = "", prefix: str = "", dir: str = None) -> str:
+def create_temp_directory(suffix: str = "", prefix: str = "", dir: Optional[str] = None) -> str:
     """
     Create a temporary directory.
 
@@ -257,4 +257,4 @@ def create_temp_directory(suffix: str = "", prefix: str = "", dir: str = None) -
     try:
         return tempfile.mkdtemp(suffix=suffix, prefix=prefix, dir=dir)
     except OSError as e:
-        raise OSError(f"Failed to create temporary directory: {str(e)}")
+        raise OSError(f"Failed to create temporary directory: {e!s}")

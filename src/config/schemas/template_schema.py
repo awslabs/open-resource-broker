@@ -1,6 +1,6 @@
 """Template configuration schemas - provider agnostic core configuration."""
 
-from typing import Dict, List, Optional
+from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -23,13 +23,13 @@ class TemplateConfig(BaseModel):
     )
 
     # Generic template metadata
-    default_attributes: Dict[str, List[str]] = Field(
+    default_attributes: dict[str, list[str]] = Field(
         default_factory=dict, description="Default attributes for templates"
     )
-    default_instance_tags: Dict[str, str] = Field(
+    default_instance_tags: dict[str, str] = Field(
         default_factory=dict, description="Default instance tags"
     )
-    tags: Dict[str, str] = Field(default_factory=dict, description="Tags for templates")
+    tags: dict[str, str] = Field(default_factory=dict, description="Tags for templates")
 
     # Multi-provider template defaults (generic)
     default_provider_type: Optional[str] = Field(

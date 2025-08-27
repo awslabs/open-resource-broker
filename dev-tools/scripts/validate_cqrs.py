@@ -4,12 +4,12 @@ CQRS pattern validator for maintaining architectural consistency.
 
 This script validates that CQRS handlers follow correct patterns and inheritance.
 """
+
 import argparse
 import ast
 import logging
 import sys
 from pathlib import Path
-from typing import List
 
 # Setup logging
 logging.basicConfig(
@@ -28,7 +28,7 @@ class CQRSValidator:
         self.query_handlers = []
         self.event_handlers = []
 
-    def find_handler_files(self) -> List[Path]:
+    def find_handler_files(self) -> list[Path]:
         """Find all handler files in the project."""
         handler_files = []
 
@@ -142,7 +142,7 @@ class CQRSValidator:
     def report_findings(self, warn_only: bool) -> None:
         """Report validation findings."""
         if self.violations:
-            logger.warning(f"CQRS pattern violations detected:")
+            logger.warning("CQRS pattern violations detected:")
             logger.info("=" * 60)
             for violation in self.violations:
                 logger.info(f"  {violation}")
@@ -154,15 +154,15 @@ class CQRSValidator:
             logger.info("- Implement required validate_* and execute_* methods")
 
             if not warn_only:
-                logger.error(f"Build failed due to CQRS violations.")
+                logger.error("Build failed due to CQRS violations.")
                 sys.exit(1)
             else:
                 logger.info("Build continues with warnings.")
         else:
-            logger.info(f"All CQRS handlers follow correct patterns.")
+            logger.info("All CQRS handlers follow correct patterns.")
 
         # Summary statistics
-        logger.info(f"\nCQRS Handler Summary:")
+        logger.info("\nCQRS Handler Summary:")
         logger.info(f"  Command Handlers: {len(self.command_handlers)}")
         logger.info(f"  Query Handlers: {len(self.query_handlers)}")
         logger.info(f"  Event Handlers: {len(self.event_handlers)}")

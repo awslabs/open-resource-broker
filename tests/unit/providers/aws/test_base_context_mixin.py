@@ -144,7 +144,10 @@ class TestBaseContextMixin:
                 assert {"key": "RequestId", "value": "req-test-456"} in base_tags
                 assert {"key": "TemplateId", "value": "test-template-123"} in base_tags
                 assert {"key": "CreatedBy", "value": "test-package"} in base_tags
-                assert {"key": "CreatedAt", "value": "2025-01-15T10:30:00Z"} in base_tags
+                assert {
+                    "key": "CreatedAt",
+                    "value": "2025-01-15T10:30:00Z",
+                } in base_tags
 
                 # Check custom tags
                 custom_tags = result["custom_tags"]

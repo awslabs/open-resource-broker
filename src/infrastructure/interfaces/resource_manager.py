@@ -1,6 +1,6 @@
 """Core resource manager interface - provider-agnostic resource management."""
 
-from typing import Any, Dict, List, Optional, Protocol, runtime_checkable
+from typing import Any, Optional, Protocol, runtime_checkable
 
 from pydantic import BaseModel, ConfigDict
 
@@ -14,7 +14,7 @@ class ResourceConfig(BaseModel):
 
     resource_type: str
     name: Optional[str] = None
-    tags: Dict[str, str] = {}
+    tags: dict[str, str] = {}
 
 
 @runtime_checkable
@@ -33,14 +33,14 @@ class ResourceManagerPort(Protocol):
         """Get the status of a cloud resource."""
         ...
 
-    def get_resource_details(self, resource_id: ResourceId) -> Dict[str, Any]:
+    def get_resource_details(self, resource_id: ResourceId) -> dict[str, Any]:
         """Get detailed information about a cloud resource."""
         ...
 
-    def list_resources(self, resource_type: Optional[str] = None) -> List[Dict[str, Any]]:
+    def list_resources(self, resource_type: Optional[str] = None) -> list[dict[str, Any]]:
         """List cloud resources, optionally filtered by type."""
         ...
 
-    def update_resource_tags(self, resource_id: ResourceId, tags: Dict[str, str]) -> bool:
+    def update_resource_tags(self, resource_id: ResourceId, tags: dict[str, str]) -> bool:
         """Update tags on a cloud resource."""
         ...

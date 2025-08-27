@@ -44,23 +44,23 @@ from domain.template.aggregate import Template
 
 __all__: list[str] = [
     "BaseDTO",
-    "MachineDTO",
-    "RequestDTO",
-    "Template",  # Domain object used directly
-    "RequestSummaryDTO",
-    "MachineHealthDTO",
-    "RequestStatusResponse",
-    "ReturnRequestResponse",
-    "RequestMachinesResponse",
-    "RequestReturnMachinesResponse",
     "CleanupResourcesResponse",
+    "MachineDTO",
+    "MachineHealthDTO",
+    "ProviderCapabilitiesDTO",
     # System DTOs
     "ProviderConfigDTO",
-    "ValidationResultDTO",
-    "SystemStatusDTO",
-    "ProviderMetricsDTO",
     "ProviderHealthDTO",
-    "ProviderCapabilitiesDTO",
+    "ProviderMetricsDTO",
     "ProviderStrategyConfigDTO",
+    "RequestDTO",
+    "RequestMachinesResponse",
+    "RequestReturnMachinesResponse",
+    "RequestStatusResponse",
+    "RequestSummaryDTO",
+    "ReturnRequestResponse",
+    "SystemStatusDTO",
+    "Template",  # Domain object used directly
     "ValidationDTO",
+    "ValidationResultDTO",
 ]

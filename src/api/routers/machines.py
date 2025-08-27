@@ -1,6 +1,6 @@
 """Machine management API routes."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse
@@ -24,13 +24,13 @@ class RequestMachinesRequest(BaseModel):
 
     template_id: str
     machine_count: int
-    additional_data: Optional[Dict[str, Any]] = None
+    additional_data: Optional[dict[str, Any]] = None
 
 
 class ReturnMachinesRequest(BaseModel):
     """Request for machine return."""
 
-    machine_ids: List[str]
+    machine_ids: list[str]
 
 
 @router.post(

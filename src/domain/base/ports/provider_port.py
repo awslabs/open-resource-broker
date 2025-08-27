@@ -1,7 +1,7 @@
 """Domain port for provider operations."""
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List
+from typing import Any
 
 from domain.machine.aggregate import Machine
 from domain.request.aggregate import Request
@@ -12,15 +12,15 @@ class ProviderPort(ABC):
     """Domain port for provider operations."""
 
     @abstractmethod
-    def provision_resources(self, request: Request) -> List[Machine]:
+    def provision_resources(self, request: Request) -> list[Machine]:
         """Provision resources based on request."""
 
     @abstractmethod
-    def terminate_resources(self, machine_ids: List[str]) -> None:
+    def terminate_resources(self, machine_ids: list[str]) -> None:
         """Terminate resources by machine IDs."""
 
     @abstractmethod
-    def get_available_templates(self) -> List[Template]:
+    def get_available_templates(self) -> list[Template]:
         """Get available templates from provider."""
 
     @abstractmethod
@@ -28,9 +28,9 @@ class ProviderPort(ABC):
         """Validate template configuration."""
 
     @abstractmethod
-    def get_resource_status(self, machine_ids: List[str]) -> Dict[str, Any]:
+    def get_resource_status(self, machine_ids: list[str]) -> dict[str, Any]:
         """Get status of resources."""
 
     @abstractmethod
-    def get_provider_info(self) -> Dict[str, Any]:
+    def get_provider_info(self) -> dict[str, Any]:
         """Get provider information."""

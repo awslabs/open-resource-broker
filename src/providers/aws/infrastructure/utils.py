@@ -1,6 +1,6 @@
 """AWS utility functions."""
 
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable
 
 from botocore.exceptions import ClientError
 
@@ -9,7 +9,7 @@ from infrastructure.logging.logger import get_logger
 logger = get_logger(__name__)
 
 
-def paginate(client_method: Callable, result_key: str, **kwargs) -> List[Dict[str, Any]]:
+def paginate(client_method: Callable, result_key: str, **kwargs) -> list[dict[str, Any]]:
     """
     Handle paginated responses from Boto3 client methods.
 
@@ -32,7 +32,7 @@ def paginate(client_method: Callable, result_key: str, **kwargs) -> List[Dict[st
     return results
 
 
-def list_all_instances(ec2_client, filters=None) -> List[Dict[str, Any]]:
+def list_all_instances(ec2_client, filters=None) -> list[dict[str, Any]]:
     """
     List all EC2 instances with pagination.
 
@@ -52,7 +52,7 @@ def list_all_instances(ec2_client, filters=None) -> List[Dict[str, Any]]:
     return instances
 
 
-def list_all_subnets(ec2_client, filters=None) -> List[Dict[str, Any]]:
+def list_all_subnets(ec2_client, filters=None) -> list[dict[str, Any]]:
     """
     List all subnets with pagination.
 
@@ -66,7 +66,7 @@ def list_all_subnets(ec2_client, filters=None) -> List[Dict[str, Any]]:
     return paginate(ec2_client.describe_subnets, "Subnets", Filters=filters or [])
 
 
-def list_all_security_groups(ec2_client, filters=None) -> List[Dict[str, Any]]:
+def list_all_security_groups(ec2_client, filters=None) -> list[dict[str, Any]]:
     """
     List all security groups with pagination.
 

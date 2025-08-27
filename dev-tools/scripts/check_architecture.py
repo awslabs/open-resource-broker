@@ -7,12 +7,12 @@ This script validates that Clean Architecture dependency rules are followed:
 - Application layer should not depend on Interface layer
 - Dependencies should flow inward only
 """
+
 import argparse
 import ast
 import logging
 import sys
 from pathlib import Path
-from typing import Dict, List, Tuple
 
 # Setup logging
 logging.basicConfig(
@@ -33,7 +33,7 @@ class ArchitectureValidator:
             "interface": [],
         }
 
-    def analyze_imports(self, directory: str) -> List[Tuple[Path, str]]:
+    def analyze_imports(self, directory: str) -> list[tuple[Path, str]]:
         """Analyze imports in a directory."""
         imports = []
         dir_path = Path(directory)
@@ -123,7 +123,7 @@ class ArchitectureValidator:
         # This is a simplified check - could be improved
         module_imports = {}
 
-        for layer, imports in self.layer_imports.items():
+        for _layer, imports in self.layer_imports.items():
             for file_path, import_name in imports:
                 if import_name.startswith("src."):
                     module_name = str(file_path).replace("/", ".").replace(".py", "")
@@ -185,7 +185,7 @@ class ArchitectureValidator:
         for layer, imports in self.layer_imports.items():
             logger.info(f"  {layer.capitalize()} layer: {len(imports)} imports analyzed")
 
-    def generate_dependency_report(self) -> Dict[str, List[str]]:
+    def generate_dependency_report(self) -> dict[str, list[str]]:
         """Generate a detailed dependency report."""
         report = {}
 

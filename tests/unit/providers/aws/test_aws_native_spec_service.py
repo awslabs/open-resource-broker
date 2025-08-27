@@ -71,7 +71,10 @@ class TestAWSNativeSpecService:
         native_spec_service.is_native_spec_enabled.return_value = True
         native_spec_service.render_spec.return_value = {
             "LaunchTemplateName": "custom-template",
-            "LaunchTemplateData": {"ImageId": "ami-12345678", "InstanceType": "t2.micro"},
+            "LaunchTemplateData": {
+                "ImageId": "ami-12345678",
+                "InstanceType": "t2.micro",
+            },
         }
 
         result = service.process_launch_template_spec(aws_template, test_request)

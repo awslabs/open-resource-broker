@@ -1,6 +1,6 @@
 """Command handlers for request operations."""
 
-from typing import Any, Dict
+from typing import Any
 
 from application.base.handlers import BaseCommandHandler
 from application.decorators import command_handler
@@ -75,7 +75,8 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
             raise ValueError(error_msg)
 
         self.logger.debug(
-            "Available provider strategies: %s", self._provider_context.available_strategies
+            "Available provider strategies: %s",
+            self._provider_context.available_strategies,
         )
 
         # Initialize request variable
@@ -140,7 +141,8 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
             if is_dry_run:
                 # In dry-run mode, skip actual provisioning
                 self.logger.info(
-                    "Skipping actual provisioning for request %s (dry-run mode)", request.request_id
+                    "Skipping actual provisioning for request %s (dry-run mode)",
+                    request.request_id,
                 )
                 from domain.request.value_objects import RequestStatus
 
@@ -275,10 +277,12 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
                 # CRITICAL FIX: Assign the returned updated request back to the variable
                 request = request.update_status(
                     RequestStatus.FAILED,
-                    f"Provisioning failed: {str(provisioning_error)}",
+                    f"Provisioning failed: {provisioning_error!s}",
                 )
                 self.logger.error(
-                    "Provisioning failed for request %s: %s", request.request_id, provisioning_error
+                    "Provisioning failed for request %s: %s",
+                    request.request_id,
+                    provisioning_error,
                 )
 
                 # Save failed request for audit trail
@@ -291,7 +295,7 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
                     self.event_publisher.publish(event)
 
                 # CRITICAL FIX: Raise exception instead of returning success
-                raise ValueError(f"Machine provisioning failed: {str(provisioning_error)}")
+                raise ValueError(f"Machine provisioning failed: {provisioning_error!s}")
             else:
                 self.logger.error("Failed to create request: %s", provisioning_error)
                 raise
@@ -309,7 +313,7 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
         self.logger.info("Machine request created successfully: %s", request.request_id)
         return str(request.request_id)
 
-    def _create_machine_aggregate(self, instance_data: Dict[str, Any], request, template_id: str):
+    def _create_machine_aggregate(self, instance_data: dict[str, Any], request, template_id: str):
         """Create machine aggregate from instance data."""
         from datetime import datetime
 
@@ -339,7 +343,7 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
             metadata=instance_data.get("metadata", {}),
         )
 
-    async def _execute_provisioning(self, template, request, selection_result) -> Dict[str, Any]:
+    async def _execute_provisioning(self, template, request, selection_result) -> dict[str, Any]:
         """Execute actual provisioning via selected provider using existing ProviderContext."""
         try:
             # Import required types (using existing imports)
@@ -387,7 +391,9 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
                 instances = result.data.get("instances", [])
 
                 self.logger.info(
-                    "Extracted resource_ids: %s (type: %s)", resource_ids, type(resource_ids)
+                    "Extracted resource_ids: %s (type: %s)",
+                    resource_ids,
+                    type(resource_ids),
                 )
                 self.logger.info("Extracted instances: %s instances", len(instances))
 
@@ -395,7 +401,10 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
                 if resource_ids:
                     for i, resource_id in enumerate(resource_ids):
                         self.logger.info(
-                            "Resource ID %s: %s (type: %s)", i + 1, resource_id, type(resource_id)
+                            "Resource ID %s: %s (type: %s)",
+                            i + 1,
+                            resource_id,
+                            type(resource_id),
                         )
 
                 return {

@@ -2,7 +2,7 @@
 
 import time
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from application.base.infrastructure_handlers import BaseAPIHandler, RequestContext
 from application.dto.responses import ReturnRequestResponse
@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
 
 @injectable
-class GetReturnRequestsRESTHandler(BaseAPIHandler[Dict[str, Any], ReturnRequestResponse]):
+class GetReturnRequestsRESTHandler(BaseAPIHandler[dict[str, Any], ReturnRequestResponse]):
     """API handler for getting return requests."""
 
     def __init__(
@@ -56,7 +56,7 @@ class GetReturnRequestsRESTHandler(BaseAPIHandler[Dict[str, Any], ReturnRequestR
         self._cache_duration = cache_duration
         self._cache = {}
 
-    async def validate_api_request(self, request: Dict[str, Any], context: RequestContext):
+    async def validate_api_request(self, request: dict[str, Any], context: RequestContext):
         """
         Validate API request for getting return requests.
 
@@ -81,11 +81,11 @@ class GetReturnRequestsRESTHandler(BaseAPIHandler[Dict[str, Any], ReturnRequestR
                         raise ValueError("Start time must be before end time")
 
                 except (ValueError, KeyError) as e:
-                    raise ValueError(f"Invalid time range format: {str(e)}")
+                    raise ValueError(f"Invalid time range format: {e!s}")
 
     @handle_interface_exceptions(context="get_return_requests_api", interface_type="api")
     async def execute_api_request(
-        self, request: Dict[str, Any], context: RequestContext
+        self, request: dict[str, Any], context: RequestContext
     ) -> ReturnRequestResponse:
         """
         Execute the core API logic for getting return requests.
@@ -240,7 +240,7 @@ class GetReturnRequestsRESTHandler(BaseAPIHandler[Dict[str, Any], ReturnRequestR
 
         return response
 
-    def _get_cache_key(self, input_data: Optional[Dict[str, Any]], long: bool) -> str:
+    def _get_cache_key(self, input_data: Optional[dict[str, Any]], long: bool) -> str:
         """
         Generate cache key based on input parameters.
 
@@ -253,7 +253,7 @@ class GetReturnRequestsRESTHandler(BaseAPIHandler[Dict[str, Any], ReturnRequestR
         """
         return f"return_requests_{hash(str(input_data))}_{long}"
 
-    def _get_from_cache(self, cache_key: str) -> Optional[Dict[str, Any]]:
+    def _get_from_cache(self, cache_key: str) -> Optional[dict[str, Any]]:
         """
         Get result from cache if valid.
 
@@ -273,7 +273,7 @@ class GetReturnRequestsRESTHandler(BaseAPIHandler[Dict[str, Any], ReturnRequestR
                 del self._cache[cache_key]
         return None
 
-    def _add_to_cache(self, cache_key: str, data: Dict[str, Any]) -> None:
+    def _add_to_cache(self, cache_key: str, data: dict[str, Any]) -> None:
         """
         Add result to cache.
 
@@ -295,7 +295,7 @@ class GetReturnRequestsRESTHandler(BaseAPIHandler[Dict[str, Any], ReturnRequestR
         for key in expired_keys:
             del self._cache[key]
 
-    def _apply_filters(self, requests: List[Any], filters: Dict[str, Any]) -> List[Any]:
+    def _apply_filters(self, requests: list[Any], filters: dict[str, Any]) -> list[Any]:
         """
         Apply filters to return requests.
 

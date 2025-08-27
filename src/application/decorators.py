@@ -54,7 +54,7 @@ creates duplicate registrations and architectural confusion.
 
 from __future__ import annotations
 
-from typing import Dict, Type, TypeVar
+from typing import TypeVar
 
 from application.interfaces.command_query import (
     Command,
@@ -70,11 +70,11 @@ TQueryHandler = TypeVar("TQueryHandler", bound=QueryHandler)
 TCommandHandler = TypeVar("TCommandHandler", bound=CommandHandler)
 
 # Handler registries (application-level abstractions)
-_query_handler_registry: Dict[Type[Query], Type[QueryHandler]] = {}
-_command_handler_registry: Dict[Type[Command], Type[CommandHandler]] = {}
+_query_handler_registry: dict[type[Query], type[QueryHandler]] = {}
+_command_handler_registry: dict[type[Command], type[CommandHandler]] = {}
 
 
-def query_handler(query_type: Type[TQuery]):
+def query_handler(query_type: type[TQuery]):
     """
     Application-layer decorator to mark query handlers.
 
@@ -102,7 +102,7 @@ def query_handler(query_type: Type[TQuery]):
         Decorated handler class
     """
 
-    def decorator(handler_class: Type[TQueryHandler]) -> Type[TQueryHandler]:
+    def decorator(handler_class: type[TQueryHandler]) -> type[TQueryHandler]:
         """Apply query handler registration to the class."""
         # Register in application-layer registry
         _query_handler_registry[query_type] = handler_class
@@ -116,7 +116,7 @@ def query_handler(query_type: Type[TQuery]):
     return decorator
 
 
-def command_handler(command_type: Type[TCommand]):
+def command_handler(command_type: type[TCommand]):
     """
     Application-layer decorator to mark command handlers.
 
@@ -144,7 +144,7 @@ def command_handler(command_type: Type[TCommand]):
         Decorated handler class
     """
 
-    def decorator(handler_class: Type[TCommandHandler]) -> Type[TCommandHandler]:
+    def decorator(handler_class: type[TCommandHandler]) -> type[TCommandHandler]:
         """Apply command handler registration to the class."""
         # Register in application-layer registry
         _command_handler_registry[command_type] = handler_class
@@ -159,31 +159,31 @@ def command_handler(command_type: Type[TCommand]):
 
 
 # Application-layer registry access (for infrastructure to consume)
-def get_registered_query_handlers() -> Dict[Type[Query], Type[QueryHandler]]:
+def get_registered_query_handlers() -> dict[type[Query], type[QueryHandler]]:
     """Get all registered query handlers (for infrastructure consumption)."""
     return _query_handler_registry.copy()
 
 
-def get_registered_command_handlers() -> Dict[Type[Command], Type[CommandHandler]]:
+def get_registered_command_handlers() -> dict[type[Command], type[CommandHandler]]:
     """Get all registered command handlers (for infrastructure consumption)."""
     return _command_handler_registry.copy()
 
 
-def get_query_handler_for_type(query_type: Type[Query]) -> Type[QueryHandler]:
+def get_query_handler_for_type(query_type: type[Query]) -> type[QueryHandler]:
     """Get handler for specific query type."""
     if query_type not in _query_handler_registry:
         raise KeyError(f"No handler registered for query type: {query_type.__name__}")
     return _query_handler_registry[query_type]
 
 
-def get_command_handler_for_type(command_type: Type[Command]) -> Type[CommandHandler]:
+def get_command_handler_for_type(command_type: type[Command]) -> type[CommandHandler]:
     """Get handler for specific command type."""
     if command_type not in _command_handler_registry:
         raise KeyError(f"No handler registered for command type: {command_type.__name__}")
     return _command_handler_registry[command_type]
 
 
-def get_handler_registry_stats() -> Dict[str, int]:
+def get_handler_registry_stats() -> dict[str, int]:
     """Get statistics about registered handlers."""
     return {
         "query_handlers": len(_query_handler_registry),

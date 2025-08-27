@@ -1,7 +1,7 @@
 """Authentication strategy registry."""
 
 import threading
-from typing import Callable, Dict
+from typing import Callable
 
 from infrastructure.adapters.ports.auth import AuthPort
 from infrastructure.logging.logger import get_logger
@@ -12,7 +12,7 @@ class AuthRegistry:
 
     def __init__(self) -> None:
         """Initialize authentication registry."""
-        self._strategies: Dict[str, Callable[..., AuthPort]] = {}
+        self._strategies: dict[str, Callable[..., AuthPort]] = {}
         self._lock = threading.Lock()
         self.logger = get_logger(__name__)
 

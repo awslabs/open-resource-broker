@@ -1,7 +1,7 @@
 """Data Transfer Objects for request domain."""
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from pydantic import Field
 
@@ -55,7 +55,7 @@ class MachineReferenceDTO(BaseDTO):
             message=machine_ref.message,
         )
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Convert to dictionary format matching the expected API format.
 
@@ -104,13 +104,13 @@ class RequestDTO(BaseDTO):
     created_at: datetime
     last_status_check: Optional[datetime] = None
     first_status_check: Optional[datetime] = None
-    machine_references: List[MachineReferenceDTO] = Field(default_factory=list)
+    machine_references: list[MachineReferenceDTO] = Field(default_factory=list)
     message: str = ""
     resource_id: Optional[str] = None
     provider_api: Optional[str] = None
     launch_template_id: Optional[str] = None
     launch_template_version: Optional[str] = None
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)
     request_type: str = "acquire"
     long: bool = False  # Flag to indicate whether to include detailed information
 
@@ -153,7 +153,7 @@ class RequestDTO(BaseDTO):
             long=long,
         )
 
-    def to_dict(self, long: Optional[bool] = None) -> Dict[str, Any]:
+    def to_dict(self, long: Optional[bool] = None) -> dict[str, Any]:
         """
         Convert to dictionary format - returns snake_case for internal use.
         External format conversion should be handled at scheduler strategy level.
@@ -192,13 +192,13 @@ class RequestDTO(BaseDTO):
 class RequestStatusResponse(BaseDTO):
     """Response object for request status operations."""
 
-    requests: List[Dict[str, Any]]
+    requests: list[dict[str, Any]]
     status: str = "complete"
     message: str = "Status retrieved successfully."
-    errors: Optional[List[Dict[str, Any]]] = None
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    errors: Optional[list[dict[str, Any]]] = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Convert to dictionary format matching the expected API format.
 
@@ -212,13 +212,13 @@ class RequestStatusResponse(BaseDTO):
 class ReturnRequestResponse(BaseDTO):
     """Response object for return request operations."""
 
-    requests: List[Dict[str, Any]] = Field(default_factory=list)
+    requests: list[dict[str, Any]] = Field(default_factory=list)
     status: str = "complete"
     message: str = "Return requests retrieved successfully."
-    errors: Optional[List[Dict[str, Any]]] = None
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    errors: Optional[list[dict[str, Any]]] = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Convert to dictionary format matching the expected API format.
 
@@ -234,9 +234,9 @@ class RequestMachinesResponse(BaseDTO):
 
     request_id: str
     message: str = "Request VM success."
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Convert to dictionary format matching the expected API format.
 
@@ -251,9 +251,9 @@ class RequestReturnMachinesResponse(BaseDTO):
 
     request_id: Optional[str] = None
     message: str = "Delete VM success."
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Convert to dictionary format matching the expected API format.
 
@@ -270,9 +270,9 @@ class CleanupResourcesResponse(BaseDTO):
     """Response object for cleanup resources operations."""
 
     message: str = "All resources cleaned up successfully"
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Convert to dictionary format matching the expected API format.
 
@@ -288,12 +288,12 @@ class RequestSummaryDTO(BaseDTO):
     request_id: str
     status: str
     total_machines: int
-    machine_statuses: Dict[str, int]
+    machine_statuses: dict[str, int]
     created_at: datetime
     updated_at: Optional[datetime] = None
     duration: Optional[float] = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Convert to dictionary format matching the expected API format.
 

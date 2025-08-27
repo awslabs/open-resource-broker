@@ -1,7 +1,7 @@
 """Persistence events - Repository and storage monitoring."""
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from pydantic import Field
 
@@ -51,7 +51,7 @@ class SlowQueryDetectedEvent(PersistenceEvent, PerformanceEvent):
     """Event raised when a slow repository operation is detected."""
 
     operation_type: str
-    query_details: Dict[str, Any] = Field(default_factory=dict)
+    query_details: dict[str, Any] = Field(default_factory=dict)
 
 
 class TransactionStartedEvent(InfrastructureEvent):
@@ -59,14 +59,14 @@ class TransactionStartedEvent(InfrastructureEvent):
 
     transaction_id: str
     isolation_level: str = "default"
-    entities_involved: List[str] = Field(default_factory=list)
+    entities_involved: list[str] = Field(default_factory=list)
 
 
 class TransactionCommittedEvent(InfrastructureEvent, TimedEvent):
     """Event raised when a transaction is committed."""
 
     transaction_id: str
-    entities_affected: List[str] = Field(default_factory=list)
+    entities_affected: list[str] = Field(default_factory=list)
     operations_count: int
 
 
@@ -87,7 +87,7 @@ class StorageStrategySelectedEvent(StorageEvent):
 
     selected_strategy: str  # "JSON", "SQL", "DynamoDB"
     selection_reason: str  # "configuration", "fallback", "performance"
-    available_strategies: List[str] = Field(default_factory=list)
+    available_strategies: list[str] = Field(default_factory=list)
 
 
 class StorageStrategyFailoverEvent(StorageEvent, ErrorEvent):
@@ -123,4 +123,4 @@ class StorageHealthCheckEvent(StorageEvent, PerformanceEvent):
     health_status: str  # "healthy", "degraded", "unhealthy"
     response_time_ms: float
     error_rate_percent: float
-    check_details: Dict[str, Any] = Field(default_factory=dict)
+    check_details: dict[str, Any] = Field(default_factory=dict)

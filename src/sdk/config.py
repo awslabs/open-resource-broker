@@ -9,7 +9,7 @@ import json
 import os
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from .exceptions import ConfigurationError
 
@@ -36,7 +36,7 @@ class SDKConfig:
     log_level: str = "INFO"
 
     # Custom configuration for advanced usage
-    custom_config: Dict[str, Any] = field(default_factory=dict)
+    custom_config: dict[str, Any] = field(default_factory=dict)
 
     # Internal configuration path
     config_path: Optional[str] = None
@@ -59,7 +59,7 @@ class SDKConfig:
         )
 
     @classmethod
-    def from_dict(cls, config: Dict[str, Any]) -> "SDKConfig":
+    def from_dict(cls, config: dict[str, Any]) -> "SDKConfig":
         """Create configuration from dictionary."""
         # Extract known fields
         known_fields = {field.name for field in cls.__dataclass_fields__.values()}
@@ -91,7 +91,7 @@ class SDKConfig:
             raise ConfigurationError(f"Configuration file not found: {path}")
 
         try:
-            with open(file_path, "r") as f:
+            with open(file_path) as f:
                 if file_path.suffix.lower() in [".yml", ".yaml"]:
                     try:
                         import yaml
@@ -107,9 +107,9 @@ class SDKConfig:
             return config
 
         except Exception as e:
-            raise ConfigurationError(f"Failed to load configuration from {path}: {str(e)}")
+            raise ConfigurationError(f"Failed to load configuration from {path}: {e!s}")
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert configuration to dictionary."""
         result = {
             "provider": self.provider,
@@ -144,6 +144,5 @@ class SDKConfig:
         valid_log_levels = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
         if self.log_level.upper() not in valid_log_levels:
             raise ConfigurationError(
-                f"Invalid log level: {self.log_level}. "
-                f"Valid levels: {', '.join(valid_log_levels)}"
+                f"Invalid log level: {self.log_level}. Valid levels: {', '.join(valid_log_levels)}"
             )

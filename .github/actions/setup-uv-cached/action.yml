@@ -1,0 +1,33 @@
+name: 'Setup UV with Cache'
+description: 'Install UV and restore cached environment'
+inputs:
+  cache-key:
+    description: 'Cache key for UV environment'
+    required: true
+  fail-on-cache-miss:
+    description: 'Whether to fail if cache is not found'
+    required: false
+    default: 'true'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Install UV
+      uses: astral-sh/setup-uv@v6
+
+    - name: Restore UV environment
+      id: restore-cache
+      uses: actions/cache/restore@v4
+      with:
+        path: |
+          .venv
+          ~/.cache/uv
+          ~/.local/bin/uv
+          /opt/hostedtoolcache/uv
+        key: ${{ inputs.cache-key }}
+        fail-on-cache-miss: ${{ inputs.fail-on-cache-miss }}
+
+    - name: Install dependencies if cache miss
+      if: steps.restore-cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: make dev-install

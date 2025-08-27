@@ -3,7 +3,7 @@
 import os
 import sys
 import unittest
-from typing import Any, Dict
+from typing import Any
 
 # Add src directory to path
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
@@ -41,7 +41,7 @@ class MockConfigurationPort(ConfigurationPort):
                 return default
         return current
 
-    def get_all(self) -> Dict[str, Any]:
+    def get_all(self) -> dict[str, Any]:
         """Get all configuration values."""
         return self._config
 
@@ -55,31 +55,31 @@ class MockConfigurationPort(ConfigurationPort):
             current = current[part]
         current[parts[-1]] = value
 
-    def get_naming_config(self) -> Dict[str, Any]:
+    def get_naming_config(self) -> dict[str, Any]:
         """Get naming configuration."""
         return self._config.get("naming", {})
 
-    def get_request_config(self) -> Dict[str, Any]:
+    def get_request_config(self) -> dict[str, Any]:
         """Get request configuration."""
         return self._config.get("request", {})
 
-    def get_template_config(self) -> Dict[str, Any]:
+    def get_template_config(self) -> dict[str, Any]:
         """Get template configuration."""
         return self._config.get("template", {})
 
-    def get_provider_config(self) -> Dict[str, Any]:
+    def get_provider_config(self) -> dict[str, Any]:
         """Get provider configuration."""
         return self._config.get("provider", {})
 
-    def get_storage_config(self) -> Dict[str, Any]:
+    def get_storage_config(self) -> dict[str, Any]:
         """Get storage configuration."""
         return self._config.get("storage", {})
 
-    def get_events_config(self) -> Dict[str, Any]:
+    def get_events_config(self) -> dict[str, Any]:
         """Get events configuration."""
         return self._config.get("events", {})
 
-    def get_logging_config(self) -> Dict[str, Any]:
+    def get_logging_config(self) -> dict[str, Any]:
         """Get logging configuration."""
         return self._config.get("logging", {})
 

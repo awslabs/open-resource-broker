@@ -1,6 +1,6 @@
 """AWS IAM authentication strategy."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 import boto3
 from botocore.exceptions import ClientError, NoCredentialsError
@@ -24,7 +24,7 @@ class IAMAuthStrategy(AuthPort):
         logger: LoggingPort,
         region: str = "us-east-1",
         profile: Optional[str] = None,
-        required_actions: List[str] = None,
+        required_actions: Optional[list[str]] = None,
         enabled: bool = True,
     ) -> None:
         """
@@ -181,7 +181,7 @@ class IAMAuthStrategy(AuthPort):
         """
         return self.enabled
 
-    async def _get_caller_identity(self) -> Optional[Dict[str, Any]]:
+    async def _get_caller_identity(self) -> Optional[dict[str, Any]]:
         """
         Get AWS caller identity.
 
@@ -195,7 +195,7 @@ class IAMAuthStrategy(AuthPort):
             self._logger.error("Failed to get caller identity: %s", e)
             return None
 
-    async def _check_permissions(self, identity: Dict[str, Any]) -> List[str]:
+    async def _check_permissions(self, identity: dict[str, Any]) -> list[str]:
         """
         Check IAM permissions for the caller.
 
@@ -229,7 +229,7 @@ class IAMAuthStrategy(AuthPort):
 
         return permissions
 
-    async def _determine_roles(self, identity: Dict[str, Any], permissions: List[str]) -> List[str]:
+    async def _determine_roles(self, identity: dict[str, Any], permissions: list[str]) -> list[str]:
         """
         Determine user roles based on IAM identity and permissions.
 

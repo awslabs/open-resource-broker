@@ -7,7 +7,7 @@ and clean integration with our DI/CQRS system.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, List, Optional, TypeVar
+from typing import Any, Callable, Optional, TypeVar
 
 from botocore.exceptions import ClientError
 
@@ -81,7 +81,7 @@ class AWSHandler(ABC):
         self.max_retries = 3
         self.base_delay = 1  # seconds
         self.max_delay = 10  # seconds
-        self._metrics: Dict[str, Any] = {}
+        self._metrics: dict[str, Any] = {}
 
         # Setup required dependencies
         self._setup_aws_operations(aws_ops)
@@ -124,7 +124,7 @@ class AWSHandler(ABC):
         """
 
     @abstractmethod
-    def check_hosts_status(self, request: Request) -> List[Dict[str, Any]]:
+    def check_hosts_status(self, request: Request) -> list[dict[str, Any]]:
         """
         Check the status of hosts for a request.
 
@@ -157,7 +157,7 @@ class AWSHandler(ABC):
         func: Callable[..., T],
         *args,
         operation_type: str = "standard",
-        non_retryable_errors: List[str] = None,
+        non_retryable_errors: Optional[list[str]] = None,
         **kwargs,
     ) -> T:
         """
@@ -222,8 +222,11 @@ class AWSHandler(ABC):
         return self.__class__.__name__.replace("Handler", "").lower()
 
     def _get_retry_strategy_config(
-        self, operation_type: str, service_name: str, operation_name: str = None
-    ) -> Dict[str, Any]:
+        self,
+        operation_type: str,
+        service_name: str,
+        operation_name: Optional[str] = None,
+    ) -> dict[str, Any]:
         """
         Get retry strategy configuration based on operation type.
 
@@ -313,7 +316,7 @@ class AWSHandler(ABC):
         else:
             return InfrastructureError(f"AWS Error: {error_code} - {error_message}")
 
-    def _paginate(self, client_method: Callable, result_key: str, **kwargs) -> List[Dict[str, Any]]:
+    def _paginate(self, client_method: Callable, result_key: str, **kwargs) -> list[dict[str, Any]]:
         """
         Paginate through AWS API results.
 
@@ -329,7 +332,7 @@ class AWSHandler(ABC):
 
         return paginate(client_method, result_key, **kwargs)
 
-    def _get_instance_details(self, instance_ids: List[str]) -> List[Dict[str, Any]]:
+    def _get_instance_details(self, instance_ids: list[str]) -> list[dict[str, Any]]:
         """
         Get detailed information about EC2 instances.
 
@@ -370,7 +373,7 @@ class AWSHandler(ABC):
             raise error
         except Exception as e:
             self._logger.error("Unexpected error getting instance details: %s", str(e))
-            raise InfrastructureError(f"Failed to get instance details: {str(e)}")
+            raise InfrastructureError(f"Failed to get instance details: {e!s}")
 
     def _validate_prerequisites(self, template: AWSTemplate) -> None:
         """
@@ -455,7 +458,7 @@ class AWSHandler(ABC):
             metrics["total_duration"] / total_count if total_count > 0 else 0.0
         )
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """Get handler performance metrics."""
         return self._metrics.copy()
 

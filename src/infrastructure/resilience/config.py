@@ -1,6 +1,6 @@
 """Retry configuration classes."""
 
-from typing import Any, Dict
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -17,7 +17,7 @@ class RetryConfig(BaseModel):
     # Generic retry configuration - provider-specific configs should be in
     # provider layer
 
-    def get_service_config(self, service: str) -> Dict[str, Any]:
+    def get_service_config(self, service: str) -> dict[str, Any]:
         """
         Get retry configuration for a specific service.
 

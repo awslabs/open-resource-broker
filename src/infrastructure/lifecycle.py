@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 from threading import RLock
-from typing import Dict, List, Optional, Type
+from typing import Optional
 
 from infrastructure.logging.logger import get_logger
 
@@ -52,8 +52,8 @@ class LifecycleManager:
 
     def __init__(self) -> None:
         """Initialize the lifecycle manager."""
-        self._components: List[Lifecycle] = []
-        self._component_types: Dict[Type[Lifecycle], Lifecycle] = {}
+        self._components: list[Lifecycle] = []
+        self._component_types: dict[type[Lifecycle], Lifecycle] = {}
         self._logger = get_logger(__name__)
 
     @classmethod
@@ -103,7 +103,9 @@ class LifecycleManager:
                 self._logger.debug("Initialized component: %s", component.__class__.__name__)
             except Exception as e:
                 self._logger.error(
-                    "Error initializing component %s: %s", component.__class__.__name__, str(e)
+                    "Error initializing component %s: %s",
+                    component.__class__.__name__,
+                    str(e),
                 )
                 import traceback
 
@@ -123,13 +125,15 @@ class LifecycleManager:
                 self._logger.debug("Shut down component: %s", component.__class__.__name__)
             except Exception as e:
                 self._logger.error(
-                    "Error shutting down component %s: %s", component.__class__.__name__, str(e)
+                    "Error shutting down component %s: %s",
+                    component.__class__.__name__,
+                    str(e),
                 )
                 import traceback
 
                 self._logger.error("Shutdown error details: %s", traceback.format_exc())
 
-    def get_component(self, component_type: Type[Lifecycle]) -> Optional[Lifecycle]:
+    def get_component(self, component_type: type[Lifecycle]) -> Optional[Lifecycle]:
         """
         Get a registered component by type.
 

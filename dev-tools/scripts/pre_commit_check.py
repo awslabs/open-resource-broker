@@ -2,12 +2,16 @@
 """Pre-commit validation script - reads .pre-commit-config.yaml and executes hooks."""
 
 import argparse
+import logging
 import subprocess
 import sys
 import time
 from pathlib import Path
 
 import yaml
+
+# Setup logging
+logger = logging.getLogger(__name__)
 
 
 # Colors
@@ -31,7 +35,7 @@ def run_hook(name, command, warning_only=False, debug=False):
     if debug:
         logger.info(f"Running {name}...", end=" ", flush=True)
         start_time = time.time()
-        result = subprocess.run(cmd_args, shell=False, capture_output=True, text=True)
+        result = subprocess.run(cmd_args, check=False, shell=False, capture_output=True, text=True)
         duration = time.time() - start_time
         exit_code = result.returncode
         output = result.stdout + result.stderr
@@ -41,7 +45,11 @@ def run_hook(name, command, warning_only=False, debug=False):
 
         # Start subprocess
         process = subprocess.Popen(
-            cmd_args, shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+            cmd_args,
+            shell=False,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
         )
 
         # Show dots while running
@@ -60,17 +68,16 @@ def run_hook(name, command, warning_only=False, debug=False):
     if exit_code == 0:
         logger.info(f"{Colors.GREEN}PASS{Colors.NC} ({duration:.1f}s)")
         return True
+    elif warning_only:
+        logger.info(f"{Colors.YELLOW}WARN{Colors.NC} ({duration:.1f}s)")
+        if debug and output:
+            logger.info(f"{Colors.YELLOW}  Output: {output}{Colors.NC}")
+        return True  # Don't fail on warnings
     else:
-        if warning_only:
-            logger.info(f"{Colors.YELLOW}WARN{Colors.NC} ({duration:.1f}s)")
-            if debug and output:
-                logger.info(f"{Colors.YELLOW}  Output: {output}{Colors.NC}")
-            return True  # Don't fail on warnings
-        else:
-            logger.info(f"{Colors.RED}FAIL{Colors.NC} ({duration:.1f}s)")
-            if debug and output:
-                logger.info(f"{Colors.RED}  Output: {output}{Colors.NC}")
-            return False
+        logger.info(f"{Colors.RED}FAIL{Colors.NC} ({duration:.1f}s)")
+        if debug and output:
+            logger.info(f"{Colors.RED}  Output: {output}{Colors.NC}")
+        return False
 
 
 def main():
@@ -88,15 +95,15 @@ def main():
     args = parser.parse_args()
 
     # Check for yq
-    if subprocess.run(["which", "yq"], capture_output=True).returncode != 0:
+    if subprocess.run(["which", "yq"], check=False, capture_output=True).returncode != 0:
         logger.info(f"{Colors.RED}ERROR: yq not found. Install with:{Colors.NC}")
-        if subprocess.run(["which", "apt"], capture_output=True).returncode == 0:
+        if subprocess.run(["which", "apt"], check=False, capture_output=True).returncode == 0:
             logger.info(f"{Colors.BLUE}  Ubuntu/Debian: sudo apt install yq{Colors.NC}")
-        elif subprocess.run(["which", "dnf"], capture_output=True).returncode == 0:
+        elif subprocess.run(["which", "dnf"], check=False, capture_output=True).returncode == 0:
             logger.info(f"{Colors.BLUE}  RHEL/Fedora: sudo dnf install yq{Colors.NC}")
-        elif subprocess.run(["which", "yum"], capture_output=True).returncode == 0:
+        elif subprocess.run(["which", "yum"], check=False, capture_output=True).returncode == 0:
             logger.info(f"{Colors.BLUE}  CentOS/RHEL: sudo yum install yq{Colors.NC}")
-        elif subprocess.run(["which", "brew"], capture_output=True).returncode == 0:
+        elif subprocess.run(["which", "brew"], check=False, capture_output=True).returncode == 0:
             logger.info(f"{Colors.BLUE}  macOS: brew install yq{Colors.NC}")
         else:
             logger.info(f"{Colors.BLUE}  See: https://github.com/mikefarah/yq#install{Colors.NC}")
@@ -133,7 +140,7 @@ def main():
             continue
 
         if args.extended:
-            logger.info(f"{Colors.BLUE}Hook {i+1}/{len(hooks)}: {name}{Colors.NC}")
+            logger.info(f"{Colors.BLUE}Hook {i + 1}/{len(hooks)}: {name}{Colors.NC}")
             logger.info(f"{Colors.BLUE}  Command: {command}{Colors.NC}")
 
         success = run_hook(name, command, warning_only, args.debug)

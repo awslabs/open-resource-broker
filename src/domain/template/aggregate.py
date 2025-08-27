@@ -1,7 +1,7 @@
 """Template configuration value object - core template domain logic."""
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -26,8 +26,8 @@ class Template(BaseModel):
     max_instances: int = 1
 
     # Network configuration
-    subnet_ids: List[str] = Field(default_factory=list)
-    security_group_ids: List[str] = Field(default_factory=list)
+    subnet_ids: list[str] = Field(default_factory=list)
+    security_group_ids: list[str] = Field(default_factory=list)
 
     # Pricing and allocation
     price_type: str = "ondemand"
@@ -35,11 +35,11 @@ class Template(BaseModel):
     max_price: Optional[float] = None
 
     # Instance types configuration (extensible for all providers)
-    instance_types: Dict[str, int] = Field(default_factory=dict)  # type -> weight
+    instance_types: dict[str, int] = Field(default_factory=dict)  # type -> weight
     primary_instance_type: Optional[str] = None  # for simple cases
 
     # Network configuration (generic concepts)
-    network_zones: List[str] = Field(default_factory=list)  # subnets, zones, regions
+    network_zones: list[str] = Field(default_factory=list)  # subnets, zones, regions
     public_ip_assignment: Optional[bool] = None  # generic concept
 
     # Storage configuration (generic concepts)
@@ -59,8 +59,8 @@ class Template(BaseModel):
     monitoring_enabled: Optional[bool] = None
 
     # Tags and metadata
-    tags: Dict[str, Any] = Field(default_factory=dict)
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    tags: dict[str, Any] = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
     # Provider configuration (multi-provider support)
     provider_type: Optional[str] = None
@@ -142,7 +142,7 @@ class Template(BaseModel):
 
     # Host Factory standard fields (provider-agnostic interface)
     vm_type: Optional[str] = None
-    vm_types: Dict[str, Any] = Field(default_factory=dict)
+    vm_types: dict[str, Any] = Field(default_factory=dict)
     key_name: Optional[str] = None
     user_data: Optional[str] = None
 
@@ -161,7 +161,7 @@ class Template(BaseModel):
     def add_subnet(self, subnet_id: str) -> "Template":
         """Add a subnet ID."""
         if subnet_id not in self.subnet_ids:
-            new_subnets = self.subnet_ids + [subnet_id]
+            new_subnets = [*self.subnet_ids, subnet_id]
             data = self.model_dump()
             data["subnet_ids"] = new_subnets
             data["updated_at"] = datetime.now()
@@ -181,7 +181,7 @@ class Template(BaseModel):
     def add_security_group(self, security_group_id: str) -> "Template":
         """Add a security group ID."""
         if security_group_id not in self.security_group_ids:
-            new_sgs = self.security_group_ids + [security_group_id]
+            new_sgs = [*self.security_group_ids, security_group_id]
             data = self.model_dump()
             data["security_group_ids"] = new_sgs
             data["updated_at"] = datetime.now()
@@ -198,18 +198,18 @@ class Template(BaseModel):
             return Template.model_validate(data)
         return self
 
-    def set_provider_config(self, config: Dict[str, Any]) -> "Template":
+    def set_provider_config(self, config: dict[str, Any]) -> "Template":
         """Set provider-specific configuration."""
         data = self.model_dump()
         data["provider_config"] = {**self.provider_config, **config}
         data["updated_at"] = datetime.now()
         return Template.model_validate(data)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert template to dictionary."""
         return self.model_dump()
 
-    def to_legacy_format(self) -> Dict[str, Any]:
+    def to_legacy_format(self) -> dict[str, Any]:
         """
         Convert template to legacy camelCase format.
 

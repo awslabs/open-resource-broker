@@ -1,7 +1,7 @@
 """Infrastructure events - Generic resource and operation tracking."""
 
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from pydantic import Field
 
@@ -29,7 +29,7 @@ class ResourceCreatedEvent(ResourceEvent):
 class ResourceUpdatedEvent(ResourceEvent):
     """Event raised when an infrastructure resource is updated."""
 
-    changes: Dict[str, Any] = Field(default_factory=dict)
+    changes: dict[str, Any] = Field(default_factory=dict)
     update_time: datetime = Field(default_factory=datetime.utcnow)
 
 
@@ -61,7 +61,7 @@ class OperationStartedEvent(InfrastructureEvent):
 
     operation_type: str
     operation_id: str
-    parameters: Dict[str, Any] = Field(default_factory=dict)
+    parameters: dict[str, Any] = Field(default_factory=dict)
 
 
 class OperationCompletedEvent(InfrastructureEvent):
@@ -69,7 +69,7 @@ class OperationCompletedEvent(InfrastructureEvent):
 
     operation_type: str
     operation_id: str
-    result: Dict[str, Any] = Field(default_factory=dict)
+    result: dict[str, Any] = Field(default_factory=dict)
     duration_seconds: Optional[float] = None
 
 
@@ -79,4 +79,4 @@ class OperationFailedEvent(InfrastructureEvent):
     operation_type: str
     operation_id: str
     error_message: str
-    error_details: Dict[str, Any] = Field(default_factory=dict)
+    error_details: dict[str, Any] = Field(default_factory=dict)

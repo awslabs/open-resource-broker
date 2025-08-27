@@ -2,7 +2,7 @@
 
 import os
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -115,7 +115,7 @@ def complete_test_environment(mock_hf_environment, mock_aws_credentials):
     yield mock_hf_environment
 
 
-def create_test_config_dict() -> Dict[str, Any]:
+def create_test_config_dict() -> dict[str, Any]:
     """
     Create a test configuration dictionary for mocking.
 
@@ -137,7 +137,7 @@ def create_test_config_dict() -> Dict[str, Any]:
     }
 
 
-def create_test_templates_dict() -> Dict[str, Any]:
+def create_test_templates_dict() -> dict[str, Any]:
     """
     Create a test templates dictionary for mocking.
 

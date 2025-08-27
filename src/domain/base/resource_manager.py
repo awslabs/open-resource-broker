@@ -9,7 +9,7 @@ of truth for what resource management means in our domain.
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, Optional, Protocol
+from typing import Any, Optional, Protocol
 
 from domain.base.value_objects import ResourceId
 
@@ -36,8 +36,8 @@ class ResourceSpecification:
 
     resource_type: ResourceType
     name: str
-    configuration: Dict[str, Any]
-    tags: Dict[str, str]
+    configuration: dict[str, Any]
+    tags: dict[str, str]
     region: Optional[str] = None
 
     def __post_init__(self) -> None:
@@ -61,8 +61,8 @@ class ResourceAllocation:
     resource_type: ResourceType
     name: str
     status: str
-    metadata: Dict[str, Any]
-    provider_specific_data: Dict[str, Any]
+    metadata: dict[str, Any]
+    provider_specific_data: dict[str, Any]
 
     def is_active(self) -> bool:
         """Check if resource is in active state."""
@@ -128,7 +128,7 @@ class ResourceManagerPort(Protocol):
 
     async def list_resources(
         self, resource_type: Optional[ResourceType] = None
-    ) -> List[ResourceAllocation]:
+    ) -> list[ResourceAllocation]:
         """
         List all resources, optionally filtered by type.
 
@@ -142,7 +142,7 @@ class ResourceManagerPort(Protocol):
 
     async def get_resource_quota(
         self, resource_type: ResourceType, region: Optional[str] = None
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Get resource quota information.
 
@@ -170,8 +170,8 @@ class ResourceManagerDomainService(ABC):
 
     @abstractmethod
     async def provision_resource_group(
-        self, specifications: List[ResourceSpecification]
-    ) -> List[ResourceAllocation]:
+        self, specifications: list[ResourceSpecification]
+    ) -> list[ResourceAllocation]:
         """
         Provision a group of related resources.
 
@@ -181,8 +181,8 @@ class ResourceManagerDomainService(ABC):
 
     @abstractmethod
     async def migrate_resources(
-        self, source_region: str, target_region: str, resource_ids: List[ResourceId]
-    ) -> List[ResourceAllocation]:
+        self, source_region: str, target_region: str, resource_ids: list[ResourceId]
+    ) -> list[ResourceAllocation]:
         """
         Migrate resources from one region to another.
 

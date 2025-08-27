@@ -1,7 +1,7 @@
 """Template defaults port interface for dependency inversion."""
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 
 class TemplateDefaultsPort(ABC):
@@ -10,9 +10,9 @@ class TemplateDefaultsPort(ABC):
     @abstractmethod
     def resolve_template_defaults(
         self,
-        template_dict: Dict[str, Any],
+        template_dict: dict[str, Any],
         provider_instance_name: Optional[str] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Apply hierarchical defaults to a template dictionary.
 
@@ -27,7 +27,7 @@ class TemplateDefaultsPort(ABC):
     @abstractmethod
     def resolve_provider_api_default(
         self,
-        template_dict: Dict[str, Any],
+        template_dict: dict[str, Any],
         provider_instance_name: Optional[str] = None,
     ) -> str:
         """
@@ -44,7 +44,7 @@ class TemplateDefaultsPort(ABC):
     @abstractmethod
     def get_effective_template_defaults(
         self, provider_instance_name: Optional[str] = None
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Get the effective template defaults for a provider instance.
 

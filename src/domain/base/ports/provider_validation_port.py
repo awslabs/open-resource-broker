@@ -1,7 +1,7 @@
 """Provider Validation Port - Interface for provider-specific validation operations."""
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Protocol
+from typing import Any, Protocol
 
 
 class ProviderValidationPort(Protocol):
@@ -30,7 +30,7 @@ class ProviderValidationPort(Protocol):
         """
         ...
 
-    def get_supported_provider_apis(self) -> List[str]:
+    def get_supported_provider_apis(self) -> list[str]:
         """
         Get list of all supported provider APIs.
 
@@ -54,7 +54,7 @@ class ProviderValidationPort(Protocol):
         """
         ...
 
-    def get_valid_fleet_types_for_api(self, api: str) -> List[str]:
+    def get_valid_fleet_types_for_api(self, api: str) -> list[str]:
         """
         Get valid fleet types for a specific provider API.
 
@@ -91,7 +91,7 @@ class ProviderValidationPort(Protocol):
         """
         ...
 
-    def validate_template_configuration(self, template_config: Dict[str, Any]) -> Dict[str, Any]:
+    def validate_template_configuration(self, template_config: dict[str, Any]) -> dict[str, Any]:
         """
         Validate a complete template configuration for this provider.
 
@@ -120,10 +120,10 @@ class BaseProviderValidationAdapter(ABC):
         """Validate provider API support."""
 
     @abstractmethod
-    def get_supported_provider_apis(self) -> List[str]:
+    def get_supported_provider_apis(self) -> list[str]:
         """Get supported provider APIs."""
 
-    def validate_template_configuration(self, template_config: Dict[str, Any]) -> Dict[str, Any]:
+    def validate_template_configuration(self, template_config: dict[str, Any]) -> dict[str, Any]:
         """
         Validate template configuration with defaults.
 

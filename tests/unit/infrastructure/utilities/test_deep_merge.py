@@ -43,7 +43,10 @@ class TestDeepMerge:
         }
 
         override = {
-            "TargetCapacitySpecification": {"TotalTargetCapacity": 10, "OnDemandTargetCapacity": 3},
+            "TargetCapacitySpecification": {
+                "TotalTargetCapacity": 10,
+                "OnDemandTargetCapacity": 3,
+            },
             "SpotOptions": {"AllocationStrategy": "diversified"},
         }
 

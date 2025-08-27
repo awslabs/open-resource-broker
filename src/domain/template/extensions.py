@@ -1,7 +1,7 @@
 """Template extension registry for provider-specific extensions."""
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional, Type
+from typing import Any, Optional
 
 from pydantic import BaseModel
 
@@ -10,7 +10,7 @@ class TemplateExtension(ABC):
     """Abstract base class for template extensions."""
 
     @abstractmethod
-    def to_template_defaults(self) -> Dict[str, Any]:
+    def to_template_defaults(self) -> dict[str, Any]:
         """Convert extension to template defaults format."""
 
     @abstractmethod
@@ -26,11 +26,11 @@ class TemplateExtensionRegistry:
     doesn't need to change when new providers are added).
     """
 
-    _extensions: Dict[str, Type[BaseModel]] = {}
-    _extension_instances: Dict[str, TemplateExtension] = {}
+    _extensions: dict[str, type[BaseModel]] = {}
+    _extension_instances: dict[str, TemplateExtension] = {}
 
     @classmethod
-    def register_extension(cls, provider_type: str, extension_class: Type[BaseModel]) -> None:
+    def register_extension(cls, provider_type: str, extension_class: type[BaseModel]) -> None:
         """Register a provider-specific extension configuration class.
 
         Args:
@@ -54,13 +54,13 @@ class TemplateExtensionRegistry:
         """
         if not isinstance(extension_instance, TemplateExtension):
             raise ValueError(
-                f"Extension instance must implement TemplateExtension, got { type(extension_instance)}"
+                f"Extension instance must implement TemplateExtension, got {type(extension_instance)}"
             )
 
         cls._extension_instances[provider_type] = extension_instance
 
     @classmethod
-    def get_extension_class(cls, provider_type: str) -> Optional[Type[BaseModel]]:
+    def get_extension_class(cls, provider_type: str) -> Optional[type[BaseModel]]:
         """Get extension configuration class for a provider.
 
         Args:
@@ -107,7 +107,7 @@ class TemplateExtensionRegistry:
 
     @classmethod
     def create_extension_config(
-        cls, provider_type: str, config_data: Dict[str, Any]
+        cls, provider_type: str, config_data: dict[str, Any]
     ) -> Optional[BaseModel]:
         """Create an extension configuration instance for a provider.
 
@@ -125,8 +125,8 @@ class TemplateExtensionRegistry:
 
     @classmethod
     def get_extension_defaults(
-        cls, provider_type: str, config_data: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
+        cls, provider_type: str, config_data: Optional[dict[str, Any]] = None
+    ) -> dict[str, Any]:
         """Get template defaults from provider extension.
 
         Args:
@@ -157,14 +157,14 @@ class TemplateExtensionRegistry:
 
 
 # Convenience functions for common operations
-def register_provider_extension(provider_type: str, extension_class: Type[BaseModel]) -> None:
+def register_provider_extension(provider_type: str, extension_class: type[BaseModel]) -> None:
     """Register a provider extension."""
     TemplateExtensionRegistry.register_extension(provider_type, extension_class)
 
 
 def get_provider_extension_defaults(
-    provider_type: str, config_data: Optional[Dict[str, Any]] = None
-) -> Dict[str, Any]:
+    provider_type: str, config_data: Optional[dict[str, Any]] = None
+) -> dict[str, Any]:
     """Get provider extension defaults."""
     return TemplateExtensionRegistry.get_extension_defaults(provider_type, config_data)
 

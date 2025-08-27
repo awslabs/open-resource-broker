@@ -3,7 +3,7 @@
 import threading
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Optional
 
 
 class RegistryMode(Enum):
@@ -45,7 +45,7 @@ class BaseRegistration(ABC):
 class BaseRegistry(ABC):
     """Integrated base registry supporting both single-choice and multi-choice patterns."""
 
-    _instances: Dict[str, "BaseRegistry"] = {}
+    _instances: dict[str, "BaseRegistry"] = {}
     _lock = threading.Lock()
 
     def __new__(cls):
@@ -69,10 +69,10 @@ class BaseRegistry(ABC):
 
         self.mode = mode
         # Type-based registrations
-        self._type_registrations: Dict[str, BaseRegistration] = {}
-        self._instance_registrations: Dict[str, BaseRegistration] = (
-            {}
-        )  # Instance-based registrations (multi-choice only)
+        self._type_registrations: dict[str, BaseRegistration] = {}
+        self._instance_registrations: dict[
+            str, BaseRegistration
+        ] = {}  # Instance-based registrations (multi-choice only)
         self._registry_lock = threading.RLock()  # Use RLock for nested locking
 
         from infrastructure.logging.logger import get_logger
@@ -177,12 +177,12 @@ class BaseRegistry(ABC):
         with self._registry_lock:
             return instance_name in self._instance_registrations
 
-    def get_registered_types(self) -> List[str]:
+    def get_registered_types(self) -> list[str]:
         """Get list of registered types."""
         with self._registry_lock:
             return list(self._type_registrations.keys())
 
-    def get_registered_instances(self) -> List[str]:
+    def get_registered_instances(self) -> list[str]:
         """Get list of registered instances."""
         with self._registry_lock:
             return list(self._instance_registrations.keys())
@@ -272,6 +272,6 @@ class BaseRegistry(ABC):
         except Exception as e:
             from domain.base.exceptions import ConfigurationError
 
-            error_msg = f"Failed to create strategy for '{identifier}': {str(e)}"
+            error_msg = f"Failed to create strategy for '{identifier}': {e!s}"
             self.logger.error(error_msg)
             raise ConfigurationError(error_msg)
