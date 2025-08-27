@@ -92,7 +92,6 @@ def generate_pyproject():
         "{{REPO_ISSUES_URL}}": repo_issues_url,
         "{{MIN_PYTHON_VERSION}}": min_python_version,
         "{{PYTHON_CLASSIFIERS}}": python_classifiers_str,
-        "{{MIN_PYTHON_VERSION}}": min_python_version,
     }
 
     generated_content = template_content
