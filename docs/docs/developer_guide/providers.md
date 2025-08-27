@@ -639,4 +639,4 @@ ProviderFactory.register_provider("provider1", AzureProvider)
 - **[Resilience Patterns](resilience.md)**: Learn about error handling and retry logic
 - **[Data Models](data_models.md)**: Understand the data validation architecture
 - **[Storage Strategies](../user_guide/storage_strategies.md)**: Learn about storage options
-- **[Configuration Reference](../configuration-guide.md)**: Complete configuration guide
+- **[Configuration Reference](../configuration/native-spec-config.md)**: Complete configuration guide

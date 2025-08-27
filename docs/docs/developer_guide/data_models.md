@@ -881,4 +881,4 @@ class TestRequestValidation:
 - **[Dependency Injection](dependency_injection.md)**: Learn about the DI architecture
 - **[Storage Strategies](../user_guide/storage_strategies.md)**: Understand data persistence
 - **[Provider Architecture](providers.md)**: Learn about provider models
-- **[Configuration Reference](../configuration-guide.md)**: Complete configuration validation
+- **[Configuration Reference](../configuration/native-spec-config.md)**: Complete configuration validation

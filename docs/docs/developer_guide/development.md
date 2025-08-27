@@ -725,4 +725,4 @@ python -m src.infrastructure.persistence.database.show_schema
 - **[CQRS](cqrs.md)**: Learn about command and query patterns
 - **[Events](events.md)**: Understand the event system
 - **[Providers](providers.md)**: Learn about provider integration
-- **[API Reference](../api/)**: Explore the API documentation
+- **[API Reference](../api/readme.md)**: Explore the API documentation

@@ -441,7 +441,7 @@ python -m src.providers.aws.register
 ### Documentation
 - Check the [User Guide](../user_guide/) for usage instructions
 - Review the [Developer Guide](../developer_guide/) for technical details
-- Consult the [API Reference](../api/) for API documentation
+- Consult the [API Reference](api/) for API documentation
 
 ### Support Channels
 1. **GitHub Issues**: Report bugs and request features

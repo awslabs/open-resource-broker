@@ -799,7 +799,7 @@ aws dynamodb describe-table --table-name hostfactory_requests | jq '.Table.Billi
 
 ## Next Steps
 
-- **[Configuration Reference](../configuration-guide.md)**: Complete configuration options
+- **[Configuration Reference](../configuration/native-spec-config.md)**: Complete configuration options
 - **[Migration Procedures](../operational/migration.md)**: Detailed migration procedures
 - **[Performance Tuning](../operational/performance.md)**: Optimization strategies
 - **[Backup & Recovery](../operational/backup_recovery.md)**: Backup and recovery procedures

@@ -210,8 +210,8 @@ async def use_hostfactory():
 
 For working implementations, see:
 
-- **Python Client**: [examples/mcp/python/client_example.py](../../examples/mcp/python/client_example.py)
-- **Node.js Client**: [examples/mcp/nodejs/client_example.js](../../examples/mcp/nodejs/client_example.js)
+- **Python Client**: [examples/mcp/python/client_example.py](#python-client-example)
+- **Node.js Client**: [examples/mcp/nodejs/client_example.js](#nodejs-client-example)
 
 These examples include:
 - Error handling

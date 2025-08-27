@@ -59,8 +59,8 @@ ohfp mcp tools info list_templates
 
 For working implementations, see:
 
-- **Python Client**: [examples/mcp/python/client_example.py](../../examples/mcp/python/client_example.py)
-- **Node.js Client**: [examples/mcp/nodejs/client_example.js](../../examples/mcp/nodejs/client_example.js)
+- **Python Client**: [examples/mcp/python/client_example.py](#python-client-example)
+- **Node.js Client**: [examples/mcp/nodejs/client_example.js](#nodejs-client-example)
 
 These examples demonstrate:
 - Async context management
@@ -300,6 +300,6 @@ async with OpenHFPluginMCPTools() as tools:
 
 ## Next Steps
 
-- [MCP Server Mode](server-mode.md) - Standalone server for multiple clients
-- [CLI Reference](cli-reference.md) - Complete CLI command reference
+- [MCP Server Mode](#server-mode) - Standalone server for multiple clients
+- [CLI Reference](#cli-reference) - Complete CLI command reference
 - [Integration Examples](examples/) - More integration examples

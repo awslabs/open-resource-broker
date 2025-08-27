@@ -308,7 +308,7 @@ async with OHFPSDK(provider="aws") as sdk:
 
 ## Next Steps
 
-- [API Reference](api-reference.md) - Complete method documentation
-- [Configuration Guide](configuration.md) - Detailed configuration options
+- [API Reference](#api-reference) - Complete method documentation
+- [Configuration Guide](#configuration) - Detailed configuration options
 - [Examples](examples/) - More usage examples
-- [Integration Guide](integration.md) - Integrating with existing applications
+- [Integration Guide](#integration) - Integrating with existing applications

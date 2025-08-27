@@ -361,4 +361,4 @@ Native specs can run alongside legacy templates:
 4. Migrate production templates
 5. Disable legacy processing
 
-See [Migration Guide](../migration/legacy-to-native-spec.md) for detailed instructions.
+See [Migration Guide](#migration-guide) for detailed instructions.

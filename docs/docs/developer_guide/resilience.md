@@ -819,4 +819,4 @@ tail -f logs/app.log | grep "timeout"
 - **[Data Models](data_models.md)**: Learn about data validation and models
 - **[Dependency Injection](dependency_injection.md)**: Understand the DI architecture
 - **[Provider Architecture](providers.md)**: Learn about provider implementation
-- **[Configuration Reference](../configuration-guide.md)**: Complete configuration options
+- **[Configuration Reference](../configuration/native-spec-config.md)**: Complete configuration options
