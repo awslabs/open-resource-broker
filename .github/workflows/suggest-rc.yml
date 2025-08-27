@@ -1,0 +1,71 @@
+name: RC Suggestion
+
+on:
+  schedule:
+    - cron: '0 11 * * 3'  # Wednesdays 11 AM UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  suggest-rc:
+    name: Analyze and Suggest RC
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0  # Need full history for analysis
+
+      - name: Setup Python and UV
+        uses: ./.github/actions/setup-uv-cached
+        with:
+          python-version: '3.11'
+
+      - name: Analyze RC readiness
+        id: analysis
+        run: |
+          if ./dev-tools/release/analyze_rc_readiness.sh; then
+            echo "ready=true" >> $GITHUB_OUTPUT
+            NEXT_VERSION=$(yq '.project.version' .project.yml | sed 's/-beta\.[0-9]*/-rc.1/')
+            echo "version=$NEXT_VERSION" >> $GITHUB_OUTPUT
+          else
+            echo "ready=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check for existing RC suggestion
+        id: check-existing
+        if: steps.analysis.outputs.ready == 'true'
+        run: |
+          EXISTING=$(gh issue list --label "release-candidate,needs-approval" --state open --json number --jq length)
+          echo "existing_count=$EXISTING" >> $GITHUB_OUTPUT
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create RC suggestion
+        if: |
+          steps.analysis.outputs.ready == 'true' && 
+          steps.check-existing.outputs.existing_count == '0'
+        run: |
+          gh issue create \
+            --title "RC Suggestion: ${{ steps.analysis.outputs.version }}" \
+            --body "$(./dev-tools/release/generate_rc_analysis.sh)" \
+            --label "release-candidate,needs-approval"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Report status
+        run: |
+          if [ "${{ steps.analysis.outputs.ready }}" = "true" ]; then
+            if [ "${{ steps.check-existing.outputs.existing_count }}" = "0" ]; then
+              echo "RC suggestion created for ${{ steps.analysis.outputs.version }}"
+            else
+              echo "RC suggestion already exists, skipping"
+            fi
+          else
+            echo "Beta not ready for RC promotion yet"
+          fi

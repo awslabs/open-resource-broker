@@ -1,0 +1,61 @@
+name: Daily Alpha Release
+
+on:
+  schedule:
+    - cron: '0 5 * * *'  # 5 AM UTC daily
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  auto-alpha:
+    name: Automated Alpha Release
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0  # Need full history for git log analysis
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Python and UV
+        uses: ./.github/actions/setup-uv-cached
+        with:
+          python-version: '3.11'
+
+      - name: Check for changes since yesterday
+        id: check-changes
+        run: |
+          CHANGES=$(git log --since='24 hours ago' --oneline | wc -l)
+          echo "changes=$CHANGES" >> $GITHUB_OUTPUT
+          
+          if [ "$CHANGES" -gt 0 ]; then
+            echo "Found $CHANGES commits in last 24 hours"
+            echo "should_release=true" >> $GITHUB_OUTPUT
+          else
+            echo "No changes since yesterday, skipping alpha release"
+            echo "should_release=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create alpha release
+        if: steps.check-changes.outputs.should_release == 'true'
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          echo "Creating automated alpha release..."
+          make promote-alpha
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Report status
+        run: |
+          if [ "${{ steps.check-changes.outputs.should_release }}" = "true" ]; then
+            echo "✅ Alpha release created successfully"
+          else
+            echo "ℹ️ No alpha release needed (no changes)"
+          fi
