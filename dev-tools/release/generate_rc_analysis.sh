@@ -10,7 +10,7 @@ cd "$PROJECT_ROOT"
 
 # Get current version info
 CURRENT_VERSION=$(yq '.project.version' .project.yml)
-NEXT_RC_VERSION=$(echo "$CURRENT_VERSION" | sed 's/-beta\.[0-9]*/-rc.1/')
+NEXT_RC_VERSION=${CURRENT_VERSION/-beta.[0-9]*/-rc.1}
 
 # Get latest beta info
 LATEST_BETA=$(git tag -l "*-beta*" --sort=-version:refname | head -1)
@@ -29,8 +29,8 @@ cat << EOF
 
 | Metric | Value | Status |
 |--------|-------|--------|
-| Days since beta | $DAYS_SINCE_BETA | $([ $DAYS_SINCE_BETA -ge 14 ] && echo "PASS" || echo "WAIT") |
-| Commits since beta | $COMMITS_SINCE_BETA | $([ $COMMITS_SINCE_BETA -ge 10 ] && echo "PASS" || echo "WAIT") |
+| Days since beta | $DAYS_SINCE_BETA | $([ "$DAYS_SINCE_BETA" -ge 14 ] && echo "PASS" || echo "WAIT") |
+| Commits since beta | $COMMITS_SINCE_BETA | $([ "$COMMITS_SINCE_BETA" -ge 10 ] && echo "PASS" || echo "WAIT") |
 | Latest beta | $LATEST_BETA | - |
 
 ### Recent Changes
