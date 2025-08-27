@@ -275,10 +275,46 @@ create_release() {
             PACKAGE_VERSION="${tag_name#v}"
             log_debug "Building package with version: $PACKAGE_VERSION"
             
-            # Build with the actual release code but modern build system
-            VERSION="$PACKAGE_VERSION" make clean build 2>/dev/null || {
-                log_warn "Package build failed from release commit, skipping package"
-            }
+            # Check if historical code has compatible structure
+            if [ -d "src" ] && [ ! -d "ohfp" ]; then
+                log_info "Historical code uses 'src/' structure, creating compatible build..."
+                
+                # Create minimal pyproject.toml for historical structure
+                cat > pyproject.toml << EOF
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "open-hostfactory-plugin"
+version = "$PACKAGE_VERSION"
+description = "A cloud provider integration plugin for IBM Spectrum Symphony Host Factory"
+authors = [{name = "AWS Labs", email = "aws-labs@amazon.com"}]
+license = {text = "Apache-2.0"}
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/awslabs/open-hostfactory-plugin"
+Repository = "https://github.com/awslabs/open-hostfactory-plugin"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*"]
+EOF
+                
+                # Build with setuptools directly for historical structure
+                python -m pip install build --quiet 2>/dev/null || true
+                python -m build --wheel --outdir dist/ 2>/dev/null || {
+                    log_warn "Historical build failed, skipping package"
+                }
+            else
+                # Modern structure, use normal build
+                VERSION="$PACKAGE_VERSION" make clean build 2>/dev/null || {
+                    log_warn "Package build failed from release commit, skipping package"
+                }
+            fi
             
             # Return to original branch and cleanup
             git checkout "$current_branch" -q

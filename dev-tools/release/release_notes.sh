@@ -45,15 +45,29 @@ generate_notes() {
         echo ""
         
         # Get commits in the range (excluding from_commit, including to_commit)
-        commits=$(git log --oneline --reverse "$from_commit..$to_commit")
+        commits=$(git rev-list --reverse "$from_commit..$to_commit")
         
         if [ -n "$commits" ]; then
-            echo "### Commits"
-            echo ""
-            while IFS= read -r commit_line; do
-                commit_hash=$(echo "$commit_line" | cut -d' ' -f1)
-                commit_msg=$(echo "$commit_line" | cut -d' ' -f2-)
-                echo "- $commit_msg ([${commit_hash}](https://github.com/awslabs/open-hostfactory-plugin/commit/$commit_hash))"
+            while IFS= read -r commit_hash; do
+                if [ -n "$commit_hash" ]; then
+                    # Get full commit message and details
+                    commit_title=$(git log -1 --format="%s" "$commit_hash")
+                    commit_body=$(git log -1 --format="%b" "$commit_hash")
+                    commit_author=$(git log -1 --format="%an" "$commit_hash")
+                    commit_date=$(git log -1 --format="%ad" --date=short "$commit_hash")
+                    
+                    echo "### $commit_title"
+                    echo ""
+                    echo "**Author:** $commit_author  "
+                    echo "**Date:** $commit_date  "
+                    echo "**Commit:** [\`${commit_hash:0:8}\`](https://github.com/awslabs/open-hostfactory-plugin/commit/$commit_hash)"
+                    echo ""
+                    
+                    if [ -n "$commit_body" ]; then
+                        echo "$commit_body"
+                        echo ""
+                    fi
+                fi
             done <<< "$commits"
         else
             echo "No new commits in this release."
