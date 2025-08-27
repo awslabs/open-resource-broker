@@ -39,9 +39,9 @@ def _get_from_package_metadata() -> Optional[dict]:
                 "license": meta["License"],
             },
             "repository": {
-                "org": "awslabs",      # Not in package metadata
+                "org": "awslabs",  # Not in package metadata
                 "name": "open-hostfactory-plugin",  # Not in package metadata
-                "registry": "ghcr.io"  # Not in package metadata
+                "registry": "ghcr.io",  # Not in package metadata
             },
         }
     except Exception as e:
