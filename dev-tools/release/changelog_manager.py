@@ -37,6 +37,7 @@ def clean_emojis(text: str) -> str:
 
 class ChangelogManager:
     """Manages changelog generation and updates using git-changelog."""
+
     def __init__(self, project_root: Path):
         self.project_root = project_root
         self.changelog_path = project_root / "CHANGELOG.md"
