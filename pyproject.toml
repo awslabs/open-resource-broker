@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 # Values from centralized .project.yml configuration
 name = "open-hostfactory-plugin"
-version = "0.0.1rc1.dev1953106"
+version = "0.0.1rc1"
 description = "Cloud provider integration plugin for IBM Spectrum Symphony Host Factory"
 readme = "README.md"
 license = "Apache-2.0"

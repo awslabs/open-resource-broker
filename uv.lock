@@ -2210,7 +2210,7 @@ wheels = [
 
 [[package]]
 name = "open-hostfactory-plugin"
-version = "0.0.1rc1.dev1953106"
+version = "0.0.1rc1"
 source = { editable = "." }
 dependencies = [
     { name = "boto3" },

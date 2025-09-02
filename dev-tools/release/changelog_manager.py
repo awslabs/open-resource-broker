@@ -29,7 +29,6 @@ def clean_emojis(text: str) -> str:
         "\U0001f1e0-\U0001f1ff"  # flags (iOS)
         "\U00002702-\U000027b0"  # dingbats
         "\U000024c2-\U0001f251"
-        "✓✅❌⚠️🎯📊🚀🔍"  # common symbols
         "]+",
         flags=re.UNICODE,
     )

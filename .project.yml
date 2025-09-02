@@ -12,8 +12,7 @@ project:
   license: "Apache-2.0"
 python:
   versions: [3.9, 3.10, 3.11, 3.12, 3.13] # Supported Python versions
-  # min_version auto-calculated from versions array (3.9)
-  # default_version can be set explicitly if needed
+  default_version: 3.13
 repository:
   org: awslabs
   name: open-hostfactory-plugin
