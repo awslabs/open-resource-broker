@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Features
 
+- integrate comprehensive release management and notes enhancements ([207203b](https://github.com/awslabs/open-hostfactory-plugin/commit/207203b414f2649e68a80711d281f656e723c2a1) by Flamur Gogolli).
+- improve release notes with smart formatting ([41bd499](https://github.com/awslabs/open-hostfactory-plugin/commit/41bd499fe16beb58680c0d4c769b6a889a127158) by Flamur Gogolli).
 - migrate to git-changelog with proper command-line integration ([87ee1b1](https://github.com/awslabs/open-hostfactory-plugin/commit/87ee1b160ae4c1c0e5f0751fdce8cee32fb7f00c) by Flamur Gogolli).
 - reorganize specs for proper packaging and logical structure ([99d3b24](https://github.com/awslabs/open-hostfactory-plugin/commit/99d3b24e5b14a4d8872813d544c38d99b8a0ca2d) by Flamur Gogolli).
 - parameterize all remaining hardcoded references ([29de0ed](https://github.com/awslabs/open-hostfactory-plugin/commit/29de0ed4443d0353335e89230f37af64a4489a14) by Flamur Gogolli).
@@ -111,6 +113,18 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Bug Fixes
 
+- remove unsupported --output flag from changelog workflow ([1e41dfd](https://github.com/awslabs/open-hostfactory-plugin/commit/1e41dfdfd615c9211b2865c7b7f379529d804078) by Flamur Gogolli).
+- resolve remaining shellcheck issues in release scripts ([0c49c9f](https://github.com/awslabs/open-hostfactory-plugin/commit/0c49c9fea8140071b57d58a173e2b4d66ccbe4e3) by Flamur Gogolli).
+- resolve shellcheck issues in changelog.yml ([0d79d22](https://github.com/awslabs/open-hostfactory-plugin/commit/0d79d22c407c47999d6c4cb7e4b7716f6a6cbbc5) by Flamur Gogolli).
+- exclude CHANGELOG.md from hyperbolic terms check and add missing docstrings ([76807bb](https://github.com/awslabs/open-hostfactory-plugin/commit/76807bb1c0ab2aed73da5dd5fe34e9ca999d0bb5) by Flamur Gogolli).
+- resolve workflow configuration and quality issues ([8a4eb27](https://github.com/awslabs/open-hostfactory-plugin/commit/8a4eb278b272e62a72a6b1cb1498ced1b351d7b1) by Flamur Gogolli).
+- resolve code quality and workflow issues ([bd8fc35](https://github.com/awslabs/open-hostfactory-plugin/commit/bd8fc352d375ee8d7571eb539f16df2ebddd557b) by Flamur Gogolli).
+- auto-calculate Python min_version from versions array ([1dcd52f](https://github.com/awslabs/open-hostfactory-plugin/commit/1dcd52f73ade6179319bc1dd2afffba78c66df23) by Flamur Gogolli).
+- use existing setup.py for historical builds instead of creating conflicts ([ac3f44e](https://github.com/awslabs/open-hostfactory-plugin/commit/ac3f44e7ef0d9568fe83d6c95eeb31dfe9c87b79) by Flamur Gogolli).
+- add build cleanup and handle conflicting build systems ([56477a1](https://github.com/awslabs/open-hostfactory-plugin/commit/56477a134ff79f03f06c3f82222fe82220bf3089) by Flamur Gogolli).
+- show full commit contents in release notes and handle historical project structures ([e26c6e6](https://github.com/awslabs/open-hostfactory-plugin/commit/e26c6e69de8706f172f3457498cce3faa4747c11) by Flamur Gogolli).
+- generate proper incremental release notes ([9661718](https://github.com/awslabs/open-hostfactory-plugin/commit/966171832933b66a96a63015e20ab7bd499d102a) by Flamur Gogolli).
+- prevent GitHub auto-generated release notes ([086e5ba](https://github.com/awslabs/open-hostfactory-plugin/commit/086e5ba4b5cee603ba43f8ee80a1858ce24a5449) by Flamur Gogolli).
 - improve backfill and historical build systems ([701114a](https://github.com/awslabs/open-hostfactory-plugin/commit/701114a2e40dd8caca647a42625c0938ae482d21) by Flamur Gogolli).
 - include changelog makefile and add delete release script ([efb49f4](https://github.com/awslabs/open-hostfactory-plugin/commit/efb49f464ed3eb54bfd2f22b33b2005432093229) by Flamur Gogolli).
 - update config.example.json to match default_config.json structure ([7eb7161](https://github.com/awslabs/open-hostfactory-plugin/commit/7eb71617756617c0a926c8712ad53b7bc3cd5588) by Flamur Gogolli).
