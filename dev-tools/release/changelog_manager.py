@@ -36,6 +36,7 @@ def clean_emojis(text: str) -> str:
 
 
 class ChangelogManager:
+    """Manages changelog generation and updates using git-changelog."""
     def __init__(self, project_root: Path):
         self.project_root = project_root
         self.changelog_path = project_root / "CHANGELOG.md"
@@ -128,6 +129,7 @@ class ChangelogManager:
         unreleased_pattern = r"(## \[Unreleased\].*?)(\n## \[|\Z)"
 
         def replace_func(match):
+            """Replace unreleased section with version section."""
             return f"{match.group(1)}\n\n{version_section}\n{match.group(2)}"
 
         updated_content = re.sub(unreleased_pattern, replace_func, content, flags=re.DOTALL)
@@ -158,6 +160,7 @@ class ChangelogManager:
         unreleased_pattern = r"(## \[Unreleased\].*?)(\n## \[|\nZ)"
 
         def replace_func(match):
+            """Insert version section after unreleased section."""
             return f"{match.group(1)}\n\n{version_section}{match.group(2)}"
 
         updated_content = re.sub(
@@ -296,6 +299,7 @@ class ChangelogManager:
             unreleased_pattern = r"(## Unreleased.*?)(\n## \[|\Z)"
 
             def replace_func(match):
+                """Insert backfill version section after unreleased section."""
                 return f"{match.group(1)}\n\n{version_section}\n{match.group(2)}"
 
             updated_content = re.sub(unreleased_pattern, replace_func, content, flags=re.DOTALL)
@@ -312,6 +316,7 @@ class ChangelogManager:
 
 
 def main():
+    """Main entry point for changelog manager CLI."""
     parser = argparse.ArgumentParser(description="Changelog Manager")
     parser.add_argument(
         "--project-root", type=Path, default=Path.cwd(), help="Project root directory"
