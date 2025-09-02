@@ -55,10 +55,6 @@ fi
 # Get current version (force fresh read, not cached)
 if [ "$DRY_RUN" = "true" ] && [ -n "$RELEASE_DRY_RUN_VERSION" ]; then
     VERSION="$RELEASE_DRY_RUN_VERSION"
-elif [ -n "$BACKFILL_VERSION" ]; then
-    # Use backfill version for historical releases
-    VERSION="$BACKFILL_VERSION"
-    log_info "Using backfill version: $VERSION"
 else
     VERSION=$(yq '.project.version' .project.yml)
 fi
@@ -189,21 +185,9 @@ check_overlapping_releases() {
 set_commit_defaults() {
     if [ -z "$FROM_COMMIT" ]; then
         if [ "$ALLOW_BACKFILL" = "true" ]; then
-            # Backfill mode: find previous release before TO_COMMIT
-            if [ -n "$TO_COMMIT" ]; then
-                # Find the latest tag that comes before TO_COMMIT
-                previous_tag=$(git tag -l "v*" --sort=-version:refname --merged "$TO_COMMIT" | head -1)
-                if [ -n "$previous_tag" ]; then
-                    FROM_COMMIT=$(git rev-list -n 1 "$previous_tag")
-                    echo "Backfill mode: Using previous release ($previous_tag) as FROM_COMMIT: ${FROM_COMMIT:0:8}"
-                else
-                    FROM_COMMIT=$(git rev-list --max-parents=0 HEAD)
-                    echo "Backfill mode: No previous releases, using first commit as FROM_COMMIT: ${FROM_COMMIT:0:8}"
-                fi
-            else
-                FROM_COMMIT=$(git rev-list --max-parents=0 HEAD)
-                echo "Backfill mode: No TO_COMMIT specified, using first commit as FROM_COMMIT: ${FROM_COMMIT:0:8}"
-            fi
+            # Backfill mode: default to first commit
+            FROM_COMMIT=$(git rev-list --max-parents=0 HEAD)
+            echo "Backfill mode: Using first commit as FROM_COMMIT: ${FROM_COMMIT:0:8}"
         else
             # Normal mode: default to after last release
             latest_tag=$(git tag -l "v*" --sort=-version:refname | head -1)
@@ -238,110 +222,13 @@ create_release() {
         # but use modern build tools. Create a temporary branch at the target commit
         # and cherry-pick the build system improvements.
         if [ "$ALLOW_BACKFILL" = "true" ]; then
-            log_info "Building package from release commit $to_commit with modern build system..."
+            log_info "Building package from release commit $to_commit..."
             
-            # Create temporary branch at target commit
-            temp_branch="temp-build-$(date +%s)"
-            current_branch=$(git branch --show-current)
-            
-            git checkout -b "$temp_branch" "$to_commit" -q
-            
-            # Copy essential build files from current branch with conflict resolution
-            log_info "Copying modern build system with auto-conflict resolution..."
-            if ! git checkout "$current_branch" -- Makefile dev-tools/ pyproject.toml 2>/dev/null; then
-                log_info "Conflicts detected during build system copy, auto-resolving..."
-                # Auto-resolve conflicts by preferring modern build system
-                git checkout --theirs pyproject.toml 2>/dev/null || true
-                git checkout --theirs Makefile 2>/dev/null || true
-                # Add all changes (resolved conflicts)
-                git add . 2>/dev/null || true
-                log_info "Build system conflicts resolved automatically"
-            fi
-            
-            # Update version in temp branch for backfill builds
-            if [ -n "$BACKFILL_VERSION" ]; then
-                log_info "Setting backfill version to $BACKFILL_VERSION in temp branch..."
-                if [ -f ".project.yml" ]; then
-                    echo "project:
-  version: $BACKFILL_VERSION" > .project.yml
-                fi
-                # Update pyproject.toml if it exists
-                if [ -f "pyproject.toml" ]; then
-                    sed -i.bak "s/^version = .*/version = \"$BACKFILL_VERSION\"/" pyproject.toml && rm -f pyproject.toml.bak
-                fi
-            fi
-            
-            # Use tag name directly (unified format)
+            # Use existing build-historical system instead of duplicating logic
             PACKAGE_VERSION="${tag_name#v}"
-            log_debug "Building package with version: $PACKAGE_VERSION"
-            
-            # Check if historical code has compatible structure
-            if [ -d "src" ] && [ ! -d "ohfp" ]; then
-                log_info "Historical code uses 'src/' structure, creating compatible build..."
-                
-                # Clean up any existing build artifacts first
-                rm -rf dist/ build/ *.egg-info src/*.egg-info 2>/dev/null || true
-                
-                # Use existing setup.py if available, otherwise create pyproject.toml
-                if [ -f "setup.py" ]; then
-                    log_info "Using existing setup.py for historical build"
-                    # Rename conflicting pyproject.toml temporarily
-                    if [ -f "pyproject.toml" ]; then
-                        mv pyproject.toml pyproject.toml.bak
-                    fi
-                    # Build with setup.py
-                    python setup.py bdist_wheel --dist-dir dist/ 2>/dev/null || {
-                        log_warn "setup.py build failed, skipping package"
-                    }
-                    # Restore pyproject.toml if it existed
-                    if [ -f "pyproject.toml.bak" ]; then
-                        mv pyproject.toml.bak pyproject.toml
-                    fi
-                else
-                    # Create minimal pyproject.toml for historical structure
-                    cat > pyproject.toml << EOF
-[build-system]
-requires = ["setuptools>=45", "wheel"]
-build-backend = "setuptools.build_meta"
-
-[project]
-name = "open-hostfactory-plugin"
-version = "$PACKAGE_VERSION"
-description = "A cloud provider integration plugin for IBM Spectrum Symphony Host Factory"
-authors = [{name = "AWS Labs", email = "aws-labs@amazon.com"}]
-license = {text = "Apache-2.0"}
-readme = "README.md"
-requires-python = ">=3.9"
-dependencies = []
-
-[project.urls]
-Homepage = "https://github.com/awslabs/open-hostfactory-plugin"
-Repository = "https://github.com/awslabs/open-hostfactory-plugin"
-
-[tool.setuptools.packages.find]
-where = ["."]
-include = ["src*"]
-EOF
-                    
-                    # Build with setuptools directly for historical structure
-                    python -m pip install build --quiet 2>/dev/null || true
-                    python -m build --wheel --outdir dist/ 2>/dev/null || {
-                        log_warn "Historical build failed, skipping package"
-                    }
-                fi
-            else
-                # Modern structure, use normal build
-                VERSION="$PACKAGE_VERSION" make clean build 2>/dev/null || {
-                    log_warn "Package build failed from release commit, skipping package"
-                }
-            fi
-            
-            # Return to original branch and cleanup temp files
-            git checkout "$current_branch" -q
-            git branch -D "$temp_branch" -q 2>/dev/null || true
-            
-            # Clean up any remaining build artifacts in current branch
-            rm -rf build/ *.egg-info src/*.egg-info 2>/dev/null || true
+            make build-historical COMMIT="$to_commit" VERSION="$PACKAGE_VERSION" || {
+                log_warn "Package build failed from release commit, skipping package"
+            }
         else
             # Regular release: build from current commit
             log_info "Building package from current commit..."
@@ -370,11 +257,11 @@ EOF
     # Create GitHub release with package if available
     log_info "Creating GitHub release..."
     if [ "${SKIP_BUILD:-false}" = "false" ] && [ -d "dist" ] && [ -n "$(ls dist/*.whl 2>/dev/null)" ]; then
-        gh release create "$tag_name" $RELEASE_FLAGS --notes "$NOTES" --notes-from-tag=false dist/*.whl dist/*.tar.gz 2>/dev/null || \
-        gh release create "$tag_name" $RELEASE_FLAGS --notes "$NOTES" --notes-from-tag=false dist/*.whl 2>/dev/null || \
-        gh release create "$tag_name" $RELEASE_FLAGS --notes "$NOTES" --notes-from-tag=false
+        gh release create "$tag_name" $RELEASE_FLAGS --notes "$NOTES" dist/*.whl dist/*.tar.gz 2>/dev/null || \
+        gh release create "$tag_name" $RELEASE_FLAGS --notes "$NOTES" dist/*.whl 2>/dev/null || \
+        gh release create "$tag_name" $RELEASE_FLAGS --notes "$NOTES"
     else
-        gh release create "$tag_name" $RELEASE_FLAGS --notes "$NOTES" --notes-from-tag=false
+        gh release create "$tag_name" $RELEASE_FLAGS --notes "$NOTES"
         if [ "${SKIP_BUILD:-false}" = "true" ]; then
             log_info "Release created without package (build skipped)"
         fi
