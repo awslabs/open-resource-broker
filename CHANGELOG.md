@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 <!-- insertion marker -->
 ## Unreleased
 
-<small>[Compare with latest](https://github.com/awslabs/open-hostfactory-plugin/compare/b04b6dfdd9b9884bde513b4ff443cedcc1377c5b...HEAD)</small>
+<small>[Compare with latest](https://github.com/awslabs/open-hostfactory-plugin/compare/v0.1.0rc0...HEAD)</small>
 
 ### Features
 
@@ -113,6 +113,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Bug Fixes
 
+- use only Makefile targets in changelog workflow ([c2e2fc8](https://github.com/awslabs/open-hostfactory-plugin/commit/c2e2fc8cc78dbce3b4d043964538bb0cc3ea0b9c) by Flamur Gogolli).
 - remove unsupported --output flag from changelog workflow ([1e41dfd](https://github.com/awslabs/open-hostfactory-plugin/commit/1e41dfdfd615c9211b2865c7b7f379529d804078) by Flamur Gogolli).
 - resolve remaining shellcheck issues in release scripts ([0c49c9f](https://github.com/awslabs/open-hostfactory-plugin/commit/0c49c9fea8140071b57d58a173e2b4d66ccbe4e3) by Flamur Gogolli).
 - resolve shellcheck issues in changelog.yml ([0d79d22](https://github.com/awslabs/open-hostfactory-plugin/commit/0d79d22c407c47999d6c4cb7e4b7716f6a6cbbc5) by Flamur Gogolli).
@@ -474,3 +475,23 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - remove marketing language from development scripts ([409b6c1](https://github.com/awslabs/open-hostfactory-plugin/commit/409b6c12f60cd54fbeea889c8941a6b0dd96d868) by Flamur Gogolli).
 
 <!-- insertion marker -->
+## [v0.1.0rc0](https://github.com/awslabs/open-hostfactory-plugin/releases/tag/v0.1.0rc0) - 2025-07-21
+
+<small>[Compare with v0.1.0a1](https://github.com/awslabs/open-hostfactory-plugin/compare/v0.1.0a1...v0.1.0rc0)</small>
+
+## [v0.1.0a1](https://github.com/awslabs/open-hostfactory-plugin/releases/tag/v0.1.0a1) - 2025-07-09
+
+<small>[Compare with v0.0.1rc1](https://github.com/awslabs/open-hostfactory-plugin/compare/v0.0.1rc1...v0.1.0a1)</small>
+
+## [v0.0.1rc1](https://github.com/awslabs/open-hostfactory-plugin/releases/tag/v0.0.1rc1) - 2025-04-30
+
+<small>[Compare with v0.0.1rc0](https://github.com/awslabs/open-hostfactory-plugin/compare/v0.0.1rc0...v0.0.1rc1)</small>
+
+## [v0.0.1rc0](https://github.com/awslabs/open-hostfactory-plugin/releases/tag/v0.0.1rc0) - 2025-03-16
+
+<small>[Compare with v0.0.1a1](https://github.com/awslabs/open-hostfactory-plugin/compare/v0.0.1a1...v0.0.1rc0)</small>
+
+## [v0.0.1a1](https://github.com/awslabs/open-hostfactory-plugin/releases/tag/v0.0.1a1) - 2025-03-05
+
+<small>[Compare with first commit](https://github.com/awslabs/open-hostfactory-plugin/compare/0a095188e2424c340db472780731ac3942829c6d...v0.0.1a1)</small>
+
