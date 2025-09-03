@@ -1,4 +1,4 @@
-name: Weekly Beta Release
+name: Weekly Beta Release Suggestion
 
 on:
   schedule:
@@ -8,10 +8,11 @@ on:
 permissions:
   contents: write
   pull-requests: read
+  issues: write
 
 jobs:
-  auto-beta:
-    name: Automated Beta Release
+  suggest-beta:
+    name: Suggest Beta Release
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     
@@ -27,35 +28,85 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Check for changes since last week
+      - name: Check for changes since last beta
         id: check-changes
         run: |
-          CHANGES=$(git log --since='7 days ago' --oneline | wc -l)
-          echo "changes=$CHANGES" >> "$GITHUB_OUTPUT"
+          # Get the latest beta tag
+          LATEST_BETA=$(git tag -l "v*beta*" --sort=-version:refname | head -1)
           
-          if [ "$CHANGES" -gt 0 ]; then
-            echo "Found $CHANGES commits in last 7 days"
-            echo "should_release=true" >> "$GITHUB_OUTPUT"
+          if [ -n "$LATEST_BETA" ]; then
+            CHANGES=$(git log "${LATEST_BETA}..HEAD" --oneline | wc -l)
+            echo "Latest beta: $LATEST_BETA"
+            echo "Changes since last beta: $CHANGES"
+            
+            if [ "$CHANGES" -gt 0 ]; then
+              {
+                echo "should_suggest=true"
+                echo "changes_count=$CHANGES"
+                echo "since_tag=$LATEST_BETA"
+              } >> "$GITHUB_OUTPUT"
+            else
+              echo "should_suggest=false" >> "$GITHUB_OUTPUT"
+            fi
           else
-            echo "No changes since last week, skipping beta release"
-            echo "should_release=false" >> "$GITHUB_OUTPUT"
+            # No beta releases yet, check for any changes
+            CHANGES=$(git log --since='7 days ago' --oneline | wc -l)
+            echo "No previous beta releases found"
+            echo "Changes in last 7 days: $CHANGES"
+            
+            if [ "$CHANGES" -gt 0 ]; then
+              {
+                echo "should_suggest=true"
+                echo "changes_count=$CHANGES"
+                echo "since_tag=initial"
+              } >> "$GITHUB_OUTPUT"
+            else
+              echo "should_suggest=false" >> "$GITHUB_OUTPUT"
+            fi
           fi
 
-      - name: Create beta release
-        if: steps.check-changes.outputs.should_release == 'true'
+      - name: Create beta release suggestion issue
+        if: steps.check-changes.outputs.should_suggest == 'true'
         run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          ISSUE_TITLE="Weekly Beta Release - $(date +%Y-%m-%d)"
+          CHANGES_COUNT="${{ steps.check-changes.outputs.changes_count }}"
+          SINCE_TAG="${{ steps.check-changes.outputs.since_tag }}"
           
-          echo "Creating automated beta release..."
-          make promote-beta
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Create issue body
+          {
+            echo "## Weekly Beta Release Suggestion"
+            echo ""
+            echo "Changes detected: $CHANGES_COUNT commits since $SINCE_TAG"
+            echo ""
+            echo "### Recent Changes"
+            echo '```'
+            git log --oneline --max-count=10 "${SINCE_TAG}..HEAD" 2>/dev/null || git log --oneline --max-count=10 --since='7 days ago'
+            echo '```'
+            echo ""
+            echo "### Actions"
+            echo "- To create beta release: Comment \`/release-beta\` on this issue"
+            echo "- To skip this week: Close this issue without comment"
+            echo ""
+            echo "### Release Process"
+            echo "1. Comment \`/release-beta\` triggers automated beta release"
+            echo "2. GitHub release created with release notes"
+            echo "3. Changelog PR created for review and merge"
+            echo "4. Issue automatically closed after successful release"
+            echo ""
+            echo "---"
+            echo "This issue was created automatically by the weekly beta release workflow."
+          } > issue_body.md
+          
+          gh issue create \
+            --title "$ISSUE_TITLE" \
+            --body-file issue_body.md \
+            --label "release,beta,weekly,automated"
 
       - name: Report status
         run: |
-          if [ "${{ steps.check-changes.outputs.should_release }}" = "true" ]; then
-            echo "Beta release created successfully"
+          if [ "${{ steps.check-changes.outputs.should_suggest }}" = "true" ]; then
+            echo "Beta release suggestion issue created"
+            echo "Changes: ${{ steps.check-changes.outputs.changes_count }} commits"
           else
-            echo "No beta release needed (no changes)"
+            echo "No beta release needed (no changes since last beta)"
           fi

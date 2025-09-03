@@ -86,6 +86,8 @@ class ChangelogManager:
             "git-changelog",
             "--convention",
             "conventional",
+            "--versioning",
+            "pep440",
             "--output",
             str(self.changelog_path),
         ]
@@ -98,7 +100,15 @@ class ChangelogManager:
         logger.info(f"Updating changelog for release {version}")
 
         # Generate section for this version
-        cmd = ["git-changelog", "--convention", "conventional", "--output", "-"]
+        cmd = [
+            "git-changelog",
+            "--convention",
+            "conventional",
+            "--versioning",
+            "pep440",
+            "--output",
+            "-",
+        ]
 
         if from_commit:
             cmd.extend(["--filter-commits", f"{from_commit}..HEAD"])
@@ -263,6 +273,8 @@ class ChangelogManager:
             "git-changelog",
             "--convention",
             "conventional",
+            "--versioning",
+            "pep440",
             "--filter-commits",
             f"{from_commit}..{to_commit}",
             "--output",

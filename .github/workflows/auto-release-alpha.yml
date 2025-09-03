@@ -41,14 +41,38 @@ jobs:
             echo "should_release=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Create alpha release
+      - name: Create alpha release with changelog PR
         if: steps.check-changes.outputs.should_release == 'true'
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           
+          # Commit any generated files before release creation
+          if ! git diff-index --quiet HEAD --; then
+            git add .
+            git commit -m "chore: update generated files for release"
+          fi
+          
           echo "Creating automated alpha release..."
           make promote-alpha
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Auto-merge changelog PR
+        if: steps.check-changes.outputs.should_release == 'true'
+        run: |
+          # Wait a moment for PR to be created
+          sleep 10
+          
+          # Find the most recent changelog PR
+          PR_NUMBER=$(gh pr list --label "changelog,automated" --state open --json number --jq '.[0].number')
+          
+          if [ -n "$PR_NUMBER" ] && [ "$PR_NUMBER" != "null" ]; then
+            echo "Auto-merging changelog PR #$PR_NUMBER"
+            gh pr merge "$PR_NUMBER" --auto --squash --delete-branch
+          else
+            echo "No changelog PR found to auto-merge"
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

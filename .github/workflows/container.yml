@@ -36,29 +36,9 @@ on:
         type: boolean
 
 jobs:
-  check-container-comment:
-    name: Check Container Triggers
-    runs-on: ubuntu-latest
-    outputs:
-      triggered: ${{ steps.check.outputs.triggered }}
-      pr_ref: ${{ steps.check.outputs.pr_ref }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v5
-
-      - name: Check container comment
-        id: check
-        uses: ./.github/actions/check-comment-trigger
-        with:
-          triggers: ${{ env.CONTAINER_TRIGGERS }}
-
   get-config:
     name: Get Configuration
     runs-on: ubuntu-latest
-    if: |
-      github.event_name != 'issue_comment' || 
-      needs.check-container-comment.outputs.triggered == 'true'
-    needs: [check-container-comment]
     outputs:
       python-versions: ${{ steps.config.outputs.python-versions }}
       default-python-version: ${{ steps.config.outputs.default-python-version }}
@@ -70,7 +50,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v5
       with:
-        ref: ${{ needs.check-container-comment.outputs.pr_ref || github.sha }}
+        ref: ${{ github.sha }}
 
     - name: Get project configuration
       id: config
@@ -79,10 +59,7 @@ jobs:
   container-build:
     name: Build Container Images
     runs-on: ubuntu-latest
-    needs: [get-config, check-container-comment]
-    if: |
-      github.event_name != 'issue_comment' || 
-      needs.check-container-comment.outputs.triggered == 'true'
+    needs: [get-config]
 
     strategy:
       matrix:
@@ -96,7 +73,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v5
       with:
-        ref: ${{ needs.check-container-comment.outputs.pr_ref || github.sha }}
+        ref: ${{ github.sha }}
 
     - name: Set versions for matrix job
       run: |
