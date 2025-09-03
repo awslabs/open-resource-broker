@@ -47,6 +47,12 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           
+          # Commit any generated files before release creation
+          if ! git diff-index --quiet HEAD --; then
+            git add .
+            git commit -m "chore: update generated files for release"
+          fi
+          
           echo "Creating automated alpha release..."
           make promote-alpha
         env:

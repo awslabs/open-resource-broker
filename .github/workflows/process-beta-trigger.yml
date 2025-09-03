@@ -47,6 +47,12 @@ jobs:
       - name: Create beta release
         id: release
         run: |
+          # Commit any generated files before release creation
+          if ! git diff-index --quiet HEAD --; then
+            git add .
+            git commit -m "chore: update generated files for release"
+          fi
+          
           echo "Creating beta release..."
           make promote-beta
           

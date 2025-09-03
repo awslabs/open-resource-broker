@@ -87,17 +87,19 @@ echo "Current version: $CURRENT_VERSION"
 
 parse_version() {
     local version=$1
-    if [[ "$version" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)(-([a-z]+)\.([0-9]+))?$ ]]; then
+    # PEP 440 format: 1.0.0, 1.0.0a1, 1.0.0b1, 1.0.0rc1
+    if [[ "$version" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)([abc]|rc)?([0-9]+)?$ ]]; then
         MAJOR=${BASH_REMATCH[1]}
         MINOR=${BASH_REMATCH[2]}
         PATCH=${BASH_REMATCH[3]}
         # These variables are used for future pre-release functionality
         # shellcheck disable=SC2034
-        PRERELEASE=${BASH_REMATCH[5]}
+        PRERELEASE=${BASH_REMATCH[4]}
         # shellcheck disable=SC2034
-        PRERELEASE_NUM=${BASH_REMATCH[6]}
+        PRERELEASE_NUM=${BASH_REMATCH[5]}
     else
         echo "ERROR: Invalid version format: $version"
+        echo "Expected PEP 440 format: 1.0.0, 1.0.0a1, 1.0.0b1, 1.0.0rc1"
         exit 1
     fi
 }

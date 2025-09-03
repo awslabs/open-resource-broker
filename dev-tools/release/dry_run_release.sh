@@ -27,12 +27,14 @@ if [ "$COMMAND" = "set" ]; then
     NEW_VERSION=$VERSION_ARG
 elif [ "$COMMAND" = "bump" ]; then
     # Parse current version
-    if [[ "$CURRENT_VERSION" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)(-([a-z]+)\.([0-9]+))?$ ]]; then
+    # PEP 440 format: 1.0.0, 1.0.0a1, 1.0.0b1, 1.0.0rc1
+    if [[ "$CURRENT_VERSION" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)([abc]|rc)?([0-9]+)?$ ]]; then
         MAJOR=${BASH_REMATCH[1]}
         MINOR=${BASH_REMATCH[2]}
         PATCH=${BASH_REMATCH[3]}
     else
         echo "ERROR: Invalid version format: $CURRENT_VERSION"
+        echo "Expected PEP 440 format: 1.0.0, 1.0.0a1, 1.0.0b1, 1.0.0rc1"
         exit 1
     fi
     
