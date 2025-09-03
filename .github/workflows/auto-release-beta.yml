@@ -40,9 +40,11 @@ jobs:
             echo "Changes since last beta: $CHANGES"
             
             if [ "$CHANGES" -gt 0 ]; then
-              echo "should_suggest=true" >> "$GITHUB_OUTPUT"
-              echo "changes_count=$CHANGES" >> "$GITHUB_OUTPUT"
-              echo "since_tag=$LATEST_BETA" >> "$GITHUB_OUTPUT"
+              {
+                echo "should_suggest=true"
+                echo "changes_count=$CHANGES"
+                echo "since_tag=$LATEST_BETA"
+              } >> "$GITHUB_OUTPUT"
             else
               echo "should_suggest=false" >> "$GITHUB_OUTPUT"
             fi
@@ -53,9 +55,11 @@ jobs:
             echo "Changes in last 7 days: $CHANGES"
             
             if [ "$CHANGES" -gt 0 ]; then
-              echo "should_suggest=true" >> "$GITHUB_OUTPUT"
-              echo "changes_count=$CHANGES" >> "$GITHUB_OUTPUT"
-              echo "since_tag=initial" >> "$GITHUB_OUTPUT"
+              {
+                echo "should_suggest=true"
+                echo "changes_count=$CHANGES"
+                echo "since_tag=initial"
+              } >> "$GITHUB_OUTPUT"
             else
               echo "should_suggest=false" >> "$GITHUB_OUTPUT"
             fi
