@@ -46,7 +46,6 @@ jobs:
   security-bandit:
     name: Bandit (Security Scan)
     needs: [get-config]
-    if: |
     permissions:
       actions: read
       security-events: write
@@ -59,7 +58,6 @@ jobs:
   security-safety:
     name: Safety (Dependency Scan)
     needs: [get-config]
-    if: |
     permissions:
       actions: read
       security-events: write
@@ -72,7 +70,6 @@ jobs:
   security-hadolint:
     name: Hadolint (Dockerfile Scan)
     needs: [get-config]
-    if: |
     permissions:
       actions: read
       security-events: write
@@ -84,7 +81,6 @@ jobs:
   security-semgrep:
     name: Semgrep (Static Analysis)
     needs: [get-config]
-    if: |
     permissions:
       actions: read
       security-events: write
@@ -96,7 +92,6 @@ jobs:
   security-trivy-fs:
     name: Trivy (Filesystem Scan)
     needs: [get-config]
-    if: |
     permissions:
       actions: read
       security-events: write
