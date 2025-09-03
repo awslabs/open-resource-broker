@@ -902,6 +902,23 @@ wheels = [
 ]
 
 [[package]]
+name = "git-changelog"
+version = "2.6.2"
+source = { registry = "https://pkgs.safetycli.com/repository/fgo-inc/pypi/simple/" }
+dependencies = [
+    { name = "jinja2" },
+    { name = "packaging" },
+    { name = "platformdirs" },
+    { name = "semver" },
+    { name = "tomli", marker = "python_full_version < '3.11'" },
+    { name = "typing-extensions", marker = "python_full_version < '3.13'" },
+]
+sdist = { url = "https://pkgs.safetycli.com/package/fgo-inc/pypi/packages/e8/b4/ffa0a7c6cfdfec50f334bcc095850872f3db2e87b43e2ae59c6925025b7c/git_changelog-2.6.2.tar.gz", hash = "sha256:21a19971e26bbc641a92750b307788baa3ee2b75e743d31f0cb74bb37fbc4563", size = 81383, upload-time = "2025-09-03T09:35:25.306Z" }
+wheels = [
+    { url = "https://pkgs.safetycli.com/package/fgo-inc/pypi/packages/2f/18/e76abcba216d39a0a99ebdd8619ed1b1211046e309633dd8f27db9e955ec/git_changelog-2.6.2-py3-none-any.whl", hash = "sha256:c8538f42079a513d900b128ec211479c5662f8932156d690b1136055736ab5db", size = 37269, upload-time = "2025-09-03T09:35:23.818Z" },
+]
+
+[[package]]
 name = "glom"
 version = "22.1.0"
 source = { registry = "https://pkgs.safetycli.com/repository/fgo-inc/pypi/simple/" }
@@ -2276,6 +2293,7 @@ ci = [
 ]
 dev = [
     { name = "bump2version" },
+    { name = "git-changelog" },
     { name = "ipdb" },
     { name = "ipython", version = "8.18.1", source = { registry = "https://pkgs.safetycli.com/repository/fgo-inc/pypi/simple/" }, marker = "python_full_version < '3.10'" },
     { name = "ipython", version = "8.37.0", source = { registry = "https://pkgs.safetycli.com/repository/fgo-inc/pypi/simple/" }, marker = "python_full_version >= '3.10'" },
@@ -2353,6 +2371,7 @@ ci = [
 ]
 dev = [
     { name = "bump2version", specifier = ">=1.0.1,<2.0.0" },
+    { name = "git-changelog", specifier = ">=2.6.0,<3.0.0" },
     { name = "ipdb", specifier = ">=0.13.13,<1.0.0" },
     { name = "ipython", specifier = ">=8.16.1,<9.0.0" },
     { name = "line-profiler", specifier = ">=4.1.1,<5.0.0" },
@@ -2671,11 +2690,11 @@ wheels = [
 
 [[package]]
 name = "platformdirs"
-version = "4.3.8"
+version = "4.4.0"
 source = { registry = "https://pkgs.safetycli.com/repository/fgo-inc/pypi/simple/" }
-sdist = { url = "https://pkgs.safetycli.com/package/fgo-inc/pypi/packages/fe/8b/3c73abc9c759ecd3f1f7ceff6685840859e8070c4d947c93fae71f6a0bf2/platformdirs-4.3.8.tar.gz", hash = "sha256:3d512d96e16bcb959a814c9f348431070822a6496326a4be0911c40b5a74c2bc", size = 21362, upload-time = "2025-05-07T22:47:42.121Z" }
+sdist = { url = "https://pkgs.safetycli.com/package/fgo-inc/pypi/packages/23/e8/21db9c9987b0e728855bd57bff6984f67952bea55d6f75e055c46b5383e8/platformdirs-4.4.0.tar.gz", hash = "sha256:ca753cf4d81dc309bc67b0ea38fd15dc97bc30ce419a7f58d13eb3bf14c4febf", size = 21634, upload-time = "2025-08-26T14:32:04.268Z" }
 wheels = [
-    { url = "https://pkgs.safetycli.com/package/fgo-inc/pypi/packages/fe/39/979e8e21520d4e47a0bbe349e2713c0aac6f3d853d0e5b34d76206c439aa/platformdirs-4.3.8-py3-none-any.whl", hash = "sha256:ff7059bb7eb1179e2685604f4aaf157cfd9535242bd23742eadc3c13542139b4", size = 18567, upload-time = "2025-05-07T22:47:40.376Z" },
+    { url = "https://pkgs.safetycli.com/package/fgo-inc/pypi/packages/40/4b/2028861e724d3bd36227adfa20d3fd24c3fc6d52032f4a93c133be5d17ce/platformdirs-4.4.0-py3-none-any.whl", hash = "sha256:abd01743f24e5287cd7a5db3752faf1a2d65353f38ec26d98e25a6db65958c85", size = 18654, upload-time = "2025-08-26T14:32:02.735Z" },
 ]
 
 [[package]]
@@ -3910,6 +3929,15 @@ wheels = [
     { url = "https://pkgs.safetycli.com/package/fgo-inc/pypi/packages/6d/60/72cd60d880fc835f7e9721b7a0623b5fab731ea9b1f12829eb91be6f070a/semgrep-1.131.0-cp39.cp310.cp311.py39.py310.py311-none-musllinux_1_0_aarch64.manylinux2014_aarch64.whl", hash = "sha256:46b20a7fbc12cd069260402bdfcb72e93934361e94cdceb1e1ca3bd4c28f9857", size = 52121458, upload-time = "2025-07-31T21:10:35.088Z" },
     { url = "https://pkgs.safetycli.com/package/fgo-inc/pypi/packages/01/99/d0f4ed63a86bed7ce96792198106d5b33c7e2b5f34c78abd5c33772a2bb4/semgrep-1.131.0-cp39.cp310.cp311.py39.py310.py311-none-musllinux_1_0_x86_64.manylinux2014_x86_64.whl", hash = "sha256:ee2d11da8d7ca6f22d59fe131ac238dc387002e9197950877b6b8a27f5ba2692", size = 48266980, upload-time = "2025-07-31T21:10:39.394Z" },
     { url = "https://pkgs.safetycli.com/package/fgo-inc/pypi/packages/82/8c/6f62d97501220d54e75a74c1caee164b74bc2f56abcc2e83cf1dd5d83c71/semgrep-1.131.0-cp39.cp310.cp311.py39.py310.py311-none-win_amd64.whl", hash = "sha256:c7ff0ffb30fe6b6101d040c1881f9c4ac9efb91655ee5d27c50d180a840be566", size = 42603915, upload-time = "2025-07-31T21:10:43.39Z" },
+]
+
+[[package]]
+name = "semver"
+version = "3.0.4"
+source = { registry = "https://pkgs.safetycli.com/repository/fgo-inc/pypi/simple/" }
+sdist = { url = "https://pkgs.safetycli.com/package/fgo-inc/pypi/packages/72/d1/d3159231aec234a59dd7d601e9dd9fe96f3afff15efd33c1070019b26132/semver-3.0.4.tar.gz", hash = "sha256:afc7d8c584a5ed0a11033af086e8af226a9c0b206f313e0301f8dd7b6b589602", size = 269730, upload-time = "2025-01-24T13:19:27.617Z" }
+wheels = [
+    { url = "https://pkgs.safetycli.com/package/fgo-inc/pypi/packages/a6/24/4d91e05817e92e3a61c8a21e08fd0f390f5301f1c448b137c57c4bc6e543/semver-3.0.4-py3-none-any.whl", hash = "sha256:9c824d87ba7f7ab4a1890799cec8596f15c1241cb473404ea1cb0c55e4b04746", size = 17912, upload-time = "2025-01-24T13:19:24.949Z" },
 ]
 
 [[package]]

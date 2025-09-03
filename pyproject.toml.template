@@ -126,6 +126,7 @@ dev = [
     "radon>=6.0.1,<7.0.0",
     "pip-tools>=7.3.0,<8.0.0",
     "twine>=4.0.0",
+    "git-changelog>=2.6.0,<3.0.0",
 ]
 [project.scripts]
 {{PACKAGE_NAME_SHORT}} = "run:cli_main"     # From src._package.PACKAGE_NAME_SHORT

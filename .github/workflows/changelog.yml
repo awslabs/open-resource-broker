@@ -98,9 +98,5 @@ jobs:
         cache-key: changelog-sync-${{ env.PYTHON_VERSION }}-${{ hashFiles('pyproject.toml', 'uv.lock') }}
         fail-on-cache-miss: false
     
-    - name: Install changelog dependencies
-      run: |
-        uv pip install git-changelog
-    
     - name: Validate changelog
       run: make changelog-validate

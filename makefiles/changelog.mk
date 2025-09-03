@@ -18,7 +18,7 @@ changelog-preview: dev-install changelog-install-deps  ## Preview changelog chan
 	@echo "Previewing changelog changes..."
 	@python3 dev-tools/release/changelog_manager.py preview
 
-changelog-validate: dev-install changelog-install-deps  ## Validate changelog format and content
+changelog-validate: dev-install  ## Validate changelog format and content
 	@echo "Validating changelog..."
 	@python3 dev-tools/release/changelog_manager.py validate
 	@echo "Changelog validation passed"
@@ -56,15 +56,6 @@ release-backfill-with-changelog: dev-install  ## Create backfill release with ch
 	@echo "✓ Backfill release $(VERSION) created with changelog"
 
 # Development helpers
-changelog-install-deps:  ## Install changelog dependencies
-	@echo "Installing changelog dependencies..."
-	@if command -v uv >/dev/null 2>&1; then \
-		uv pip install git-changelog; \
-	else \
-		pip install git-changelog; \
-	fi
-	@echo "git-changelog installed"
-
 changelog-setup:  ## Setup changelog configuration and templates
 	@echo "Setting up changelog configuration..."
 	@if [ ! -f .git-changelog.toml ]; then \
