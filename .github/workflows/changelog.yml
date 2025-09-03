@@ -105,7 +105,9 @@ jobs:
     - name: Check if changelog needs regeneration
       run: |
         echo "Checking changelog synchronization..."
-        make changelog-validate
+        if ! make changelog-validate; then
+          echo "Changelog validation failed - needs regeneration"
+          exit 1
         else
           echo "Changelog is in sync with git history"
         fi
