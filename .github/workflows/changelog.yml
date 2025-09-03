@@ -102,12 +102,5 @@ jobs:
       run: |
         uv pip install git-changelog
     
-    - name: Check if changelog needs regeneration
-      run: |
-        echo "Checking changelog synchronization..."
-        if ! make changelog-validate; then
-          echo "Changelog validation failed - needs regeneration"
-          exit 1
-        else
-          echo "Changelog is in sync with git history"
-        fi
+    - name: Validate changelog
+      run: make changelog-validate
