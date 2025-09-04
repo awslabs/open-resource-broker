@@ -51,7 +51,7 @@ jobs:
       - name: Setup UV with cached environment
         uses: ./.github/actions/setup-uv-cached
         with:
-          cache-key: deps-${{ inputs.python-version }}-${{ hashFiles('.project.yml', 'pyproject.toml.template', 'requirements*.txt') }}
+          cache-key: deps-${{ inputs.python-version }}-${{ hashFiles('.project.yml', 'pyproject.toml', 'requirements*.txt') }}
           fail-on-cache-miss: false
 
       - name: Run tests

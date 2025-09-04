@@ -199,9 +199,6 @@ deps-update:  ## Update dependencies and regenerate lock file
 	@echo "Updating dependencies..."
 	uv lock --upgrade
 
-clean-requirements:  ## Remove generated requirements files
-	rm -f requirements.txt requirements-dev.txt
-
 show-package-info:  ## Show package information
 	@echo "Package Name: $(PACKAGE_NAME)"
 	@echo "Short Name: $(PACKAGE_NAME_SHORT)"
