@@ -24,7 +24,7 @@ runs:
       uses: astral-sh/setup-uv@v6
       with:
         enable-cache: true
-        cache-dependency-glob: "pyproject.toml.template"
+        cache-dependency-glob: "pyproject.toml"
         cache-suffix: ${{ inputs.cache-key-suffix }}
 
     - name: Generate pyproject.toml

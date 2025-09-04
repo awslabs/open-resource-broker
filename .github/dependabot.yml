@@ -1,7 +1,7 @@
 version: 2
 updates:
-  # Python dependencies using UV (modern approach)
-  - package-ecosystem: "pip"  # Dependabot doesn't have native UV support yet, but works with pyproject.toml
+  # Python dependencies with UV support
+  - package-ecosystem: "pip"  # Using pip ecosystem as UV is still experimental in Dependabot
     directory: "/"
     schedule:
       interval: "weekly"
