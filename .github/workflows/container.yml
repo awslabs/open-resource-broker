@@ -112,7 +112,7 @@ jobs:
     - name: Setup Python and UV
       uses: ./.github/actions/setup-uv-cached
       with:
-        cache-key: deps-${{ matrix.python-version }}-${{ hashFiles('.project.yml', 'pyproject.toml.template', 'requirements*.txt') }}
+        cache-key: deps-${{ matrix.python-version }}-${{ hashFiles('.project.yml', 'pyproject.toml', 'requirements*.txt') }}
         fail-on-cache-miss: false
 
     - name: Set up Docker Buildx
@@ -154,8 +154,16 @@ jobs:
         # Test that the container starts and responds to health check
         echo "Testing container image: ${{ env.CONTAINER_URI }}"
 
+        # For PR builds, use --pull=never to use local image only
+        PULL_POLICY=""
+        if [[ "${{ env.PUSH_IMAGES }}" == "false" ]]; then
+          PULL_POLICY="--pull=never"
+          echo "Using local image only (not pulling from registry)"
+        fi
+
         # Run container in background
         docker run --rm -d --name test-container \
+          $PULL_POLICY \
           -p 8000:8000 \
           "${{ env.CONTAINER_URI }}"
 

@@ -72,7 +72,7 @@ jobs:
       - name: Generate cache key
         id: cache-key
         run: |
-          echo "key=deps-${{ needs.get-config.outputs.default-python-version }}-${{ hashFiles('.project.yml', 'pyproject.toml.template', 'requirements*.txt') }}" >> "$GITHUB_OUTPUT"
+          echo "key=deps-${{ needs.get-config.outputs.default-python-version }}-${{ hashFiles('.project.yml', 'pyproject.toml', 'requirements*.txt') }}" >> "$GITHUB_OUTPUT"
 
       - name: Cache UV environment
         id: cache-deps

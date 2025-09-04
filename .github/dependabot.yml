@@ -1,6 +1,6 @@
 version: 2
 updates:
-  # Python dependencies with smart grouping
+  # Python dependencies using UV
   - package-ecosystem: "pip"
     directory: "/"
     schedule:
@@ -35,6 +35,7 @@ updates:
           - "pylint"
           - "flake8"
           - "autopep8"
+          - "ruff"
         update-types:
           - "minor"
           - "patch"

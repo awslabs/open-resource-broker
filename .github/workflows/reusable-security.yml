@@ -50,7 +50,7 @@ jobs:
         if: contains('bandit,safety,codeql', inputs.scan-type)
         uses: ./.github/actions/setup-uv-cached
         with:
-          cache-key: deps-${{ inputs.python-version || inputs.default-python-version }}-${{ hashFiles('.project.yml', 'pyproject.toml.template', 'requirements*.txt') }}
+          cache-key: deps-${{ inputs.python-version || inputs.default-python-version }}-${{ hashFiles('.project.yml', 'pyproject.toml', 'requirements*.txt') }}
           fail-on-cache-miss: false
 
       # Bandit Security Scan

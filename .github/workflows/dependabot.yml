@@ -41,16 +41,12 @@ jobs:
       - name: Setup Python and UV
         uses: ./.github/actions/setup-uv-cached
         with:
-          cache-key: deps-${{ needs.get-config.outputs.default-python-version }}-${{ hashFiles('.project.yml', 'pyproject.toml.template', 'requirements*.txt') }}
+          cache-key: deps-${{ needs.get-config.outputs.default-python-version }}-${{ hashFiles('.project.yml', 'pyproject.toml', 'requirements*.txt') }}
           fail-on-cache-miss: false
 
       - name: Update UV lock file
-        env:
-          PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
-          echo "Updating UV lock file after Dependabot changes..."
-          PACKAGE_NAME=$(echo "$PR_TITLE" | grep -oP 'Bump \K[^\s]+')
-          uv lock --upgrade-package "$PACKAGE_NAME"
+          uv lock
 
       - name: Commit updated lock file
         run: |
@@ -182,7 +178,7 @@ jobs:
       - name: Setup Python and UV
         uses: ./.github/actions/setup-uv-cached
         with:
-          cache-key: deps-${{ needs.get-config.outputs.default-python-version }}-${{ hashFiles('.project.yml', 'pyproject.toml.template', 'requirements*.txt') }}
+          cache-key: deps-${{ needs.get-config.outputs.default-python-version }}-${{ hashFiles('.project.yml', 'pyproject.toml', 'requirements*.txt') }}
           fail-on-cache-miss: false
 
       - name: Update all dependencies

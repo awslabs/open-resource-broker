@@ -3,27 +3,26 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-# Values from centralized .project.yml configuration
-name = "{{PACKAGE_NAME}}"
-version = "{{VERSION}}"
-description = "{{DESCRIPTION}}"
+name = "open-hostfactory-plugin"
+version = "0.1.0"
+description = "Cloud provider integration plugin for IBM Spectrum Symphony Host Factory"
 readme = "README.md"
 license = "Apache-2.0"
 authors = [
-    {name = "{{AUTHOR}}", email = "{{EMAIL}}"}
+    {name = "AWS Professional Services", email = "aws-proserve@amazon.com"},
 ]
 maintainers = [
-    {name = "{{AUTHOR}}", email = "{{EMAIL}}"}
+    {name = "AWS Professional Services", email = "aws-proserve@amazon.com"},
 ]
 keywords = [
     "aws",
-    "ec2", 
+    "ec2",
     "hostfactory",
     "symphony",
     "hpc",
     "cluster",
     "cloud",
-    "infrastructure"
+    "infrastructure",
 ]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -31,12 +30,17 @@ classifiers = [
     "Natural Language :: English",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
-{{PYTHON_CLASSIFIERS}}
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: System :: Clustering",
     "Topic :: System :: Distributed Computing",
 ]
-requires-python = ">={{MIN_PYTHON_VERSION}}"
+requires-python = ">=3.9"
+
 dependencies = [
     "boto3>=1.26.0",
     "botocore>=1.29.0",
@@ -92,6 +96,9 @@ ci = [
     "types-PyYAML>=6.0.12.12,<7.0.0",
     "types-python-dateutil>=2.8.19.14,<3.0.0",
     
+    # Build Tools
+    "tomli>=2.0.0,<3.0.0",  # For pyproject.toml parsing in dev scripts (Python < 3.11)
+    
     # Security Scanning
     "safety>=3.0.1,<4.0.0",
     "pip-audit>=2.6.1,<3.0.0",
@@ -129,15 +136,14 @@ dev = [
     "git-changelog>=2.6.0,<3.0.0",
 ]
 [project.scripts]
-{{PACKAGE_NAME_SHORT}} = "run:cli_main"     # From src._package.PACKAGE_NAME_SHORT
-{{PACKAGE_NAME}} = "run:cli_main"           # From src._package.PACKAGE_NAME
+ohfp = "run:cli_main"
+open-hostfactory-plugin = "run:cli_main"
 
-# URLs using centralized repository detection  
 [project.urls]
-Homepage = "{{REPO_URL}}"           # From src._package.REPO_URL
-Documentation = "{{DOCS_URL}}"      # From src._package.DOCS_URL  
-Repository = "{{REPO_URL}}"         # From src._package.REPO_URL
-"Bug Reports" = "{{REPO_ISSUES_URL}}"  # From src._package.REPO_ISSUES_URL
+Homepage = "https://github.com/awslabs/open-hostfactory-plugin"
+Documentation = "https://awslabs.github.io/open-hostfactory-plugin/"
+Repository = "https://github.com/awslabs/open-hostfactory-plugin"
+"Bug Reports" = "https://github.com/awslabs/open-hostfactory-plugin/issues"
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -218,7 +224,7 @@ known-first-party = ["ohfp", "application", "domain", "infrastructure", "interfa
 combine-as-imports = true
 
 [tool.mypy]
-python_version = "{{ project.python.default_version }}"
+python_version = "3.13"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = false
