@@ -2379,7 +2379,7 @@ dev = [
     { name = "line-profiler", specifier = ">=4.1.1,<5.0.0" },
     { name = "memory-profiler", specifier = ">=0.61.0,<1.0.0" },
     { name = "pip-tools", specifier = ">=7.3.0,<8.0.0" },
-    { name = "pre-commit", specifier = ">=3.5.0,<4.0.0" },
+    { name = "pre-commit", specifier = ">=3.5.0,<5.0.0" },
     { name = "py-cpuinfo", specifier = ">=9.0.0,<10.0.0" },
     { name = "py-spy", specifier = ">=0.3.14,<1.0.0" },
     { name = "radon", specifier = ">=6.0.1,<7.0.0" },
