@@ -116,7 +116,7 @@ container-build: dev-install  ## Build container image
 
 container-build-single: dev-install  ## Build single-platform container image
 	@echo "Building single-platform container image..."
-	docker build -t $(CONTAINER_REGISTRY)/$(CONTAINER_IMAGE):$(VERSION) .
+	docker build --load -t $(CONTAINER_REGISTRY)/$(CONTAINER_IMAGE):$(VERSION) .
 
 container-build-multi: dev-install  ## Build multi-platform container image
 	@echo "Building multi-platform container image..."
