@@ -6,17 +6,6 @@ set -e
 echo "=== RELEASE PUBLISHER ==="
 echo "Publishing all release artifacts..."
 
-# Publish to PyPI
-if [ "${PUBLISH_PYPI:-true}" = "true" ]; then
-    echo "=== PUBLISHING TO PYPI ==="
-    echo "Building and publishing Python package..."
-    make build
-    make publish-pypi
-    echo "PyPI publishing complete"
-else
-    echo "Skipping PyPI publishing (PUBLISH_PYPI not set to true)"
-fi
-
 # Build and push containers
 if [ "${PUBLISH_CONTAINERS:-true}" = "true" ]; then
     echo "=== PUBLISHING CONTAINERS ==="
@@ -40,5 +29,6 @@ else
 fi
 
 echo "=== RELEASE PUBLISHER COMPLETE ==="
+echo "Note: PyPI publishing is handled by GitHub Actions on release events"
 echo "To enable publishing:"
 echo "  PUBLISH_CONTAINERS=true PUBLISH_DOCS=true ./publisher.sh"
