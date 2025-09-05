@@ -317,12 +317,12 @@ class ConfigurationManager:
         """Get directory path from scheduler strategy for the given file type."""
         try:
             # Get the actual scheduler strategy instance and delegate to it
-            from infrastructure.di.container import Container
             from domain.base.ports.scheduler_port import SchedulerPort
-            
+            from infrastructure.di.container import Container
+
             container = Container()
             scheduler_strategy = container.get(SchedulerPort)
-            
+
             if scheduler_strategy:
                 return scheduler_strategy.get_directory(file_type)
         except Exception:

@@ -62,10 +62,10 @@ class SchedulerPort(ABC):
     @abstractmethod
     def get_directory(self, file_type: str) -> str | None:
         """Get directory path for the given file type.
-        
+
         Args:
             file_type: Type of file (conf, template, log, work, data, etc.)
-            
+
         Returns:
             Directory path or None if not available
         """

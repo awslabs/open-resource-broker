@@ -161,9 +161,9 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
     def get_directory(self, file_type: str) -> str | None:
         """Get directory path for the given file type."""
         import os
-        
+
         workdir = self.get_working_directory()
-        
+
         if file_type in ["conf", "template", "legacy"]:
             return os.path.join(workdir, "config")
         elif file_type == "log":
