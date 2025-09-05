@@ -661,6 +661,23 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         workdir = self.get_working_directory()
         return os.path.join(workdir, "data")
 
+    def get_directory(self, file_type: str) -> str | None:
+        """Get directory path for the given file type."""
+        if file_type in ["conf", "template", "legacy"]:
+            return os.environ.get(
+                "HF_PROVIDER_CONFDIR",
+                os.path.join(os.environ.get("HF_PROVIDER_WORKDIR", os.getcwd()), "config"),
+            )
+        elif file_type == "log":
+            return os.environ.get(
+                "HF_PROVIDER_LOGDIR",
+                os.path.join(os.environ.get("HF_PROVIDER_WORKDIR", os.getcwd()), "logs"),
+            )
+        elif file_type in ["work", "data"]:
+            return os.environ.get("HF_PROVIDER_WORKDIR", os.getcwd())
+        else:
+            return os.environ.get("HF_PROVIDER_WORKDIR", os.getcwd())
+
     def _format_machines_for_hostfactory(
         self, machines: list[dict[str, Any]]
     ) -> list[dict[str, Any]]:

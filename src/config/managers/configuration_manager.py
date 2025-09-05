@@ -316,26 +316,15 @@ class ConfigurationManager:
     def _get_scheduler_directory(self, file_type: str) -> Optional[str]:
         """Get directory path from scheduler strategy for the given file type."""
         try:
-            scheduler_type = self.get_scheduler_strategy()
-
-            if scheduler_type == "hostfactory" or scheduler_type == "hf":
-                # Use the same logic as HostFactorySchedulerStrategy without instantiation
-                import os
-
-                if file_type in ["conf", "template", "legacy"]:
-                    return os.environ.get(
-                        "HF_PROVIDER_CONFDIR",
-                        os.path.join(os.environ.get("HF_PROVIDER_WORKDIR", os.getcwd()), "config"),
-                    )
-                elif file_type == "log":
-                    return os.environ.get(
-                        "HF_PROVIDER_LOGDIR",
-                        os.path.join(os.environ.get("HF_PROVIDER_WORKDIR", os.getcwd()), "logs"),
-                    )
-                elif file_type in ["work", "data"]:
-                    return os.environ.get("HF_PROVIDER_WORKDIR", os.getcwd())
-                else:
-                    return os.environ.get("HF_PROVIDER_WORKDIR", os.getcwd())
+            # Get the actual scheduler strategy instance and delegate to it
+            from infrastructure.di.container import Container
+            from domain.base.ports.scheduler_port import SchedulerPort
+            
+            container = Container()
+            scheduler_strategy = container.get(SchedulerPort)
+            
+            if scheduler_strategy:
+                return scheduler_strategy.get_directory(file_type)
         except Exception:
             pass
         return None
