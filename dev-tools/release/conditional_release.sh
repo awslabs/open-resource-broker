@@ -14,7 +14,7 @@ case "$RELEASE_TYPE" in
         if [ "$LAST_ALPHA" = "none" ]; then
             COMMITS_SINCE=$(git rev-list --count HEAD)
         else
-            COMMITS_SINCE=$(git rev-list --count ${LAST_ALPHA}..HEAD)
+            COMMITS_SINCE=$(git rev-list --count "${LAST_ALPHA}..HEAD")
         fi
         
         if [ "$COMMITS_SINCE" -gt 0 ]; then
@@ -31,10 +31,12 @@ case "$RELEASE_TYPE" in
         LAST_BETA=$(git tag -l "v*-beta*" --sort=-version:refname | head -1 || echo "none")
         
         if [ "$LAST_ALPHA" != "none" ]; then
-            ALPHA_BASE=$(echo "$LAST_ALPHA" | sed 's/v\([0-9]*\.[0-9]*\.[0-9]*\)-.*/\1/')
+            ALPHA_BASE="${LAST_ALPHA//v/}"
+            ALPHA_BASE="${ALPHA_BASE//-alpha*/}"
             BETA_BASE="none"
             if [ "$LAST_BETA" != "none" ]; then
-                BETA_BASE=$(echo "$LAST_BETA" | sed 's/v\([0-9]*\.[0-9]*\.[0-9]*\)-.*/\1/')
+                BETA_BASE="${LAST_BETA//v/}"
+                BETA_BASE="${BETA_BASE//-beta*/}"
             fi
             
             if [ "$ALPHA_BASE" != "$BETA_BASE" ]; then
@@ -54,10 +56,12 @@ case "$RELEASE_TYPE" in
         LAST_RC=$(git tag -l "v*-rc*" --sort=-version:refname | head -1 || echo "none")
         
         if [ "$LAST_BETA" != "none" ]; then
-            BETA_BASE=$(echo "$LAST_BETA" | sed 's/v\([0-9]*\.[0-9]*\.[0-9]*\)-.*/\1/')
+            BETA_BASE="${LAST_BETA//v/}"
+            BETA_BASE="${BETA_BASE//-beta*/}"
             RC_BASE="none"
             if [ "$LAST_RC" != "none" ]; then
-                RC_BASE=$(echo "$LAST_RC" | sed 's/v\([0-9]*\.[0-9]*\.[0-9]*\)-.*/\1/')
+                RC_BASE="${LAST_RC//v/}"
+                RC_BASE="${RC_BASE//-rc*/}"
             fi
             
             if [ "$BETA_BASE" != "$RC_BASE" ]; then
