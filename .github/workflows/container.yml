@@ -34,11 +34,6 @@ on:
         required: false
         default: false
         type: boolean
-      use_unified_publisher:
-        description: 'Use integrated publisher for containers'
-        required: false
-        default: true
-        type: boolean
 
 jobs:
   get-config:
