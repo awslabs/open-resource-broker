@@ -61,6 +61,62 @@ docs-delete-version:  ## Delete a documentation version (usage: make docs-delete
 docs-clean:  ## Clean documentation build files
 	rm -rf $(DOCS_BUILD_DIR)
 
+# Scheduled release targets (used by workflows)
+release-alpha-if-needed: ## Create alpha release if there are new commits since last alpha
+	@echo "Checking if alpha release is needed..."
+	@LAST_ALPHA=$$(git tag -l "v*-alpha*" --sort=-version:refname | head -1 || echo "none"); \
+	if [ "$$LAST_ALPHA" = "none" ]; then \
+		COMMITS_SINCE=$$(git rev-list --count HEAD); \
+	else \
+		COMMITS_SINCE=$$(git rev-list --count $${LAST_ALPHA}..HEAD); \
+	fi; \
+	if [ "$$COMMITS_SINCE" -gt 0 ]; then \
+		echo "Found $$COMMITS_SINCE commits since last alpha, creating release..."; \
+		$(MAKE) release-patch-alpha; \
+	else \
+		echo "No commits since last alpha, skipping"; \
+	fi
+
+release-beta-if-needed: ## Create beta release if there are new alphas to promote
+	@echo "Checking if beta release is needed..."
+	@LAST_ALPHA=$$(git tag -l "v*-alpha*" --sort=-version:refname | head -1 || echo "none"); \
+	LAST_BETA=$$(git tag -l "v*-beta*" --sort=-version:refname | head -1 || echo "none"); \
+	if [ "$$LAST_ALPHA" != "none" ]; then \
+		ALPHA_BASE=$$(echo "$$LAST_ALPHA" | sed 's/v\([0-9]*\.[0-9]*\.[0-9]*\)-.*/\1/'); \
+		BETA_BASE="none"; \
+		if [ "$$LAST_BETA" != "none" ]; then \
+			BETA_BASE=$$(echo "$$LAST_BETA" | sed 's/v\([0-9]*\.[0-9]*\.[0-9]*\)-.*/\1/'); \
+		fi; \
+		if [ "$$ALPHA_BASE" != "$$BETA_BASE" ]; then \
+			echo "Promoting alpha $$LAST_ALPHA to beta..."; \
+			$(MAKE) release-patch-beta; \
+		else \
+			echo "Beta already exists for version $$ALPHA_BASE, skipping"; \
+		fi; \
+	else \
+		echo "No alpha releases found, skipping beta creation"; \
+	fi
+
+release-rc-if-needed: ## Create RC release if there are new betas to promote
+	@echo "Checking if RC release is needed..."
+	@LAST_BETA=$$(git tag -l "v*-beta*" --sort=-version:refname | head -1 || echo "none"); \
+	LAST_RC=$$(git tag -l "v*-rc*" --sort=-version:refname | head -1 || echo "none"); \
+	if [ "$$LAST_BETA" != "none" ]; then \
+		BETA_BASE=$$(echo "$$LAST_BETA" | sed 's/v\([0-9]*\.[0-9]*\.[0-9]*\)-.*/\1/'); \
+		RC_BASE="none"; \
+		if [ "$$LAST_RC" != "none" ]; then \
+			RC_BASE=$$(echo "$$LAST_RC" | sed 's/v\([0-9]*\.[0-9]*\.[0-9]*\)-.*/\1/'); \
+		fi; \
+		if [ "$$BETA_BASE" != "$$RC_BASE" ]; then \
+			echo "Promoting beta $$LAST_BETA to RC..."; \
+			$(MAKE) release-patch-rc; \
+		else \
+			echo "RC already exists for version $$BETA_BASE, skipping"; \
+		fi; \
+	else \
+		echo "No beta releases found, skipping RC creation"; \
+	fi
+
 # @SECTION Build & Deploy
 build: clean dev-install  ## Build package
 	VERSION=$${VERSION:-$$(make -s get-version)} $(MAKE) generate-pyproject && \

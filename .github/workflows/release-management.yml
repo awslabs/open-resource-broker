@@ -21,7 +21,7 @@ on:
         - analyze-rc
 
 permissions:
-  contents: read
+  contents: write  # Need write to create tags and releases
   issues: write
   pull-requests: write
 
@@ -73,34 +73,24 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ACTION: ${{ steps.action.outputs.action }}
         run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
           case "$ACTION" in
             suggest-alpha)
-              echo "Checking for alpha release suggestions..."
-              if [ -f ".github/workflows/auto-release-alpha.yml" ]; then
-                echo "Legacy alpha workflow still exists, using that for now"
-              else
-                echo "Would suggest alpha release based on recent commits"
-              fi
+              make release-alpha-if-needed
               ;;
             suggest-beta)
-              echo "Checking for beta release suggestions..."
-              if [ -f ".github/workflows/auto-release-beta.yml" ]; then
-                echo "Legacy beta workflow still exists, using that for now"
-              else
-                echo "Would suggest beta release based on alpha stability"
-              fi
+              make release-beta-if-needed
               ;;
             suggest-rc|analyze-rc)
-              echo "Running RC readiness analysis..."
-              RELEASE_MODE=analysis ./dev-tools/release/orchestrator.sh || true
+              make release-rc-if-needed
               ;;
             create-beta)
-              echo "Creating beta release via semantic-release..."
-              echo "Beta release creation not yet implemented"
+              make release-patch-beta
               ;;
             create-rc)
-              echo "Creating RC release via semantic-release..."
-              echo "RC release creation not yet implemented"
+              make release-patch-rc
               ;;
             none|*)
               echo "No action required"
