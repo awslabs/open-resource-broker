@@ -49,8 +49,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: [get-config]
     environment: 
-      name: ${{ github.event_name == 'release' && 'pypi' || github.event.inputs.environment || 'testpypi' }}
-      url: ${{ (github.event_name == 'release' || github.event.inputs.environment == 'pypi') && 'https://pypi.org/p/open-hostfactory-plugin' || 'https://test.pypi.org/p/open-hostfactory-plugin' }}
+      name: ${{ needs.get-config.outputs.is-release == 'true' && 'pypi' || github.event.inputs.environment || 'testpypi' }}
+      url: ${{ needs.get-config.outputs.is-release == 'true' && 'https://pypi.org/p/open-hostfactory-plugin' || 'https://test.pypi.org/p/open-hostfactory-plugin' }}
     permissions:
       id-token: write  # IMPORTANT: mandatory for trusted publishing
       contents: read   # needed to checkout code
