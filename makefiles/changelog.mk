@@ -1,14 +1,6 @@
 # Changelog management targets
 
 # @SECTION Changelog Management
-changelog-generate: dev-install  ## Generate full changelog from git history
-	@echo "Generating full changelog from git history..."
-	./dev-tools/release/changelog_manager.py generate
-
-changelog-update: dev-install  ## Update changelog for current version
-	@echo "Updating changelog for version $(VERSION)..."
-	./dev-tools/release/changelog_manager.py update --version $(VERSION)
-
 changelog-validate: dev-install  ## Validate changelog format and content
 	@echo "Validating changelog format..."
 	./dev-tools/release/changelog_manager.py validate
@@ -40,11 +32,6 @@ changelog-sync-check: dev-install  ## Check if changelog is in sync with git his
 	./dev-tools/release/changelog_manager.py validate --sync-check
 
 # @SECTION Release Notes Management
-release-notes-generate: dev-install  ## Generate release notes for current version
-	@echo "Generating release notes for version $(VERSION)..."
-	@LAST_TAG=$$(git describe --tags --abbrev=0 2>/dev/null || echo "HEAD~10"); \
-	./dev-tools/release/release_notes.sh "$$LAST_TAG" "HEAD" "$(VERSION)" > release-notes-v$(VERSION).md
-
 release-notes-preview: dev-install  ## Preview release notes for current version
 	@echo "Previewing release notes for version $(VERSION)..."
 	./dev-tools/release/release_notes.sh $(VERSION) --preview

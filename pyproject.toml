@@ -124,6 +124,7 @@ ci = [
 dev = [
     "pre-commit>=3.5.0,<5.0.0",
     "bump2version>=1.0.1,<2.0.0",
+    "python-semantic-release>=10.0.0,<11.0.0",
     "line-profiler>=4.1.1,<6.0.0",
     "memory-profiler>=0.61.0,<1.0.0",
     "py-spy>=0.3.14,<1.0.0",
@@ -239,3 +240,36 @@ warn_unreachable = true
 strict_equality = true
 explicit_package_bases = true
 namespace_packages = true
+
+[tool.semantic_release]
+version_toml = ["pyproject.toml:project.version"]
+build_command = "./dev-tools/integrated/release_orchestrator.sh"
+major_on_zero = false
+allow_zero_version = true
+tag_format = "v{version}"
+
+[tool.semantic_release.branches.main]
+match = "(main|master)"
+prerelease_token = "rc"
+prerelease = false
+
+[tool.semantic_release.branches.feature]
+match = "fix/.*|feature/.*"
+prerelease_token = "alpha"
+prerelease = true
+
+[tool.semantic_release.changelog.default_templates]
+changelog_file = "CHANGELOG.md"
+
+[tool.semantic_release.commit_parser_options]
+minor_tags = ["feat"]
+patch_tags = ["fix", "perf"]
+default_bump_level = 0
+
+[tool.semantic_release.remote]
+name = "origin"
+type = "github"
+
+[tool.semantic_release.publish]
+dist_glob_patterns = ["dist/*"]
+upload_to_vcs_release = true
