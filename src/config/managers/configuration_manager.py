@@ -316,17 +316,18 @@ class ConfigurationManager:
     def _get_scheduler_directory(self, file_type: str) -> Optional[str]:
         """Get directory path from scheduler strategy for the given file type."""
         try:
-            scheduler = self.get_scheduler_strategy()
-            if file_type in ["conf", "template", "legacy"]:
-                return scheduler.get_config_directory()
-            elif file_type == "log":
-                return scheduler.get_logs_directory()
-            elif file_type in ["work", "data"]:
-                return scheduler.get_storage_base_path()
-            else:
-                return scheduler.get_working_directory()
+            # Get the actual scheduler strategy instance and delegate to it
+            from domain.base.ports.scheduler_port import SchedulerPort
+            from infrastructure.di.container import Container
+
+            container = Container()
+            scheduler_strategy = container.get(SchedulerPort)
+
+            if scheduler_strategy:
+                return scheduler_strategy.get_directory(file_type)
         except Exception:
-            return None
+            pass
+        return None
 
     def get_cache_stats(self) -> dict[str, Any]:
         """Get cache statistics."""

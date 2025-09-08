@@ -1,0 +1,76 @@
+name: Semantic Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Release mode'
+        required: false
+        default: 'forward'
+        type: choice
+        options:
+        - forward
+        - historical
+        - analysis
+      commit:
+        description: 'Commit hash (for historical releases)'
+        required: false
+        type: string
+      version:
+        description: 'Version (for historical releases)'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: read
+  id-token: write
+
+jobs:
+  release:
+    name: Semantic Release
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Python and UV
+        uses: ./.github/actions/setup-python-uv
+        with:
+          python-version: '3.11'
+
+      - name: Install semantic-release
+        run: |
+          source .venv/bin/activate
+          pip install python-semantic-release
+
+      - name: Run semantic release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_MODE: ${{ inputs.mode || 'forward' }}
+          RELEASE_COMMIT: ${{ inputs.commit }}
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: |
+          source .venv/bin/activate
+          
+          if [ "${{ inputs.mode }}" = "historical" ]; then
+            if [ -z "${{ inputs.commit }}" ] || [ -z "${{ inputs.version }}" ]; then
+              echo "ERROR: Historical releases require both commit and version"
+              exit 1
+            fi
+            echo "Creating historical release ${{ inputs.version }} from commit ${{ inputs.commit }}"
+            RELEASE_MODE=historical RELEASE_COMMIT=${{ inputs.commit }} RELEASE_VERSION=${{ inputs.version }} semantic-release version
+          elif [ "${{ inputs.mode }}" = "analysis" ]; then
+            echo "Running release analysis"
+            RELEASE_MODE=analysis ./dev-tools/release/orchestrator.sh
+          else
+            echo "Running forward release with semantic-release"
+            semantic-release version
+          fi

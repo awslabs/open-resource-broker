@@ -13,8 +13,6 @@ env:
   PUBLISH_TRIGGERS: "/package"
 
 on:
-  push:
-    branches: [main, develop]
   release:
     types: [published]
   workflow_dispatch:

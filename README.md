@@ -367,26 +367,27 @@ make test-performance
 
 ### Release Workflow
 
-The project supports automated releases with semantic versioning and pre-releases:
+The project uses semantic-release for automated version management:
 
 ```bash
-# Standard development workflow
-make release-minor-alpha     # Start new feature as alpha
-make promote-beta           # Move to beta testing
-make promote-stable         # Final release
+# Create a new release (automatic version calculation)
+make release
 
-# Emergency patch
-make release-patch          # Quick patch release
+# Test release process (dry run)
+make release-dry-run
 
-# Test releases without changes
-DRY_RUN=true make release-minor
+# Create historical release
+make release-historical COMMIT=abc123 VERSION=0.0.5
+
+# Analyze RC readiness
+make release-analysis
 ```
 
-**Available release types:**
-- **Standard**: `release-patch|minor|major` 
-- **Pre-releases**: `release-patch-alpha|beta|rc`
-- **Promotions**: `promote-alpha|beta|rc|stable`
-- **Custom**: `RELEASE_VERSION=1.2.3 make release-version`
+**Release Process:**
+- Uses conventional commits for version calculation
+- `feat:` → minor version bump
+- `fix:` → patch version bump  
+- `BREAKING CHANGE:` → major version bump
 
 Releases automatically trigger PyPI publishing, container builds, and documentation deployment.
 

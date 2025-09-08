@@ -317,14 +317,7 @@ class ConfigurationManager:
         """Get directory path from scheduler strategy for the given file type."""
         try:
             scheduler = self.get_scheduler_strategy()
-            if file_type in ["conf", "template", "legacy"]:
-                return scheduler.get_config_directory()
-            elif file_type == "log":
-                return scheduler.get_logs_directory()
-            elif file_type in ["work", "data"]:
-                return scheduler.get_storage_base_path()
-            else:
-                return scheduler.get_working_directory()
+            return scheduler.get_directory(file_type)
         except Exception:
             return None
 

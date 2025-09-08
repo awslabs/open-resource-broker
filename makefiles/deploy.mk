@@ -61,6 +61,16 @@ docs-delete-version:  ## Delete a documentation version (usage: make docs-delete
 docs-clean:  ## Clean documentation build files
 	rm -rf $(DOCS_BUILD_DIR)
 
+# Scheduled release targets (used by workflows)
+release-alpha-if-needed: ## Create alpha release if there are new commits since last alpha
+	@./dev-tools/release/conditional_release.sh alpha
+
+release-beta-if-needed: ## Create beta release if there are new alphas to promote
+	@./dev-tools/release/conditional_release.sh beta
+
+release-rc-if-needed: ## Create RC release if there are new betas to promote
+	@./dev-tools/release/conditional_release.sh rc
+
 # @SECTION Build & Deploy
 build: clean dev-install  ## Build package
 	VERSION=$${VERSION:-$$(make -s get-version)} $(MAKE) generate-pyproject && \
@@ -78,6 +88,35 @@ test-install: build  ## Test package installation in clean environment
 	/tmp/test-install-env/bin/python -c "import $(PACKAGE_NAME_SHORT); print('Package installed successfully')"
 	rm -rf /tmp/test-install-env
 
+# @SECTION Unified Release Management
+release: dev-install ## Unified release command (forward/historical/analysis)
+	@if [ -n "$(COMMIT)" ] && [ -n "$(VERSION)" ]; then \
+		echo "Creating historical release $(VERSION) from commit $(COMMIT)"; \
+		RELEASE_MODE=historical RELEASE_COMMIT=$(COMMIT) RELEASE_VERSION=$(VERSION) \
+		$(call run-tool,semantic-release,version); \
+	elif [ "$(MODE)" = "analysis" ]; then \
+		echo "Running release analysis"; \
+		RELEASE_MODE=analysis ./dev-tools/release/orchestrator.sh; \
+	else \
+		echo "Running forward release with semantic-release"; \
+		$(call run-tool,semantic-release,version); \
+	fi
+
+release-historical: ## Historical release (usage: make release-historical COMMIT=abc123 VERSION=0.0.5)
+	@if [ -z "$(COMMIT)" ] || [ -z "$(VERSION)" ]; then \
+		echo "ERROR: Both COMMIT and VERSION are required"; \
+		echo "Usage: make release-historical COMMIT=abc123 VERSION=0.0.5"; \
+		exit 1; \
+	fi
+	@$(MAKE) release COMMIT=$(COMMIT) VERSION=$(VERSION)
+
+release-analysis: ## RC readiness analysis
+	@$(MAKE) release MODE=analysis
+
+release-dry-run: dev-install ## Dry run release (replaces old dry_run_release.sh)
+	@echo "Running semantic-release dry run..."
+	@$(call run-tool,semantic-release,--noop version)
+
 # Version management targets
 version-show:  ## Show current version from project config
 	@echo "Current version: $(VERSION)"
@@ -91,21 +130,11 @@ get-version:  ## Generate unified version (works for PyPI, Docker, Git)
 		echo "$(VERSION).dev$${dev_int}"; \
 	fi
 
-version-bump-patch:  ## Bump patch version (1.0.0 -> 1.0.1)
-	@./dev-tools/package/version_bump.sh patch
-
-version-bump-minor:  ## Bump minor version (1.0.0 -> 1.1.0)
-	@./dev-tools/package/version_bump.sh minor
-
-version-bump-major:  ## Bump major version (1.0.0 -> 2.0.0)
-	@./dev-tools/package/version_bump.sh major
-
 version-bump:  ## Show version bump help
 	@echo "Version Management Commands:"
 	@echo "  make version-show         - Show current version"
-	@echo "  make version-bump-patch   - Bump patch version (1.0.0 -> 1.0.1)"
-	@echo "  make version-bump-minor   - Bump minor version (1.0.0 -> 1.1.0)"
-	@echo "  make version-bump-major   - Bump major version (1.0.0 -> 2.0.0)"
+	@echo "  make release              - Create new release"
+	@echo "  make release-dry-run      - Test release process"
 	@echo ""
 	@echo "Current version: $(VERSION)"
 
@@ -154,18 +183,6 @@ docker-compose-down:  ## Stop services with docker-compose
 	docker-compose down
 
 # @SECTION Release Management
-promote-alpha: ## Promote to next alpha version (1.0.0-alpha.1 -> 1.0.0-alpha.2)
-	@$(MAKE) _promote PROMOTE_TO=alpha
-
-promote-beta: ## Promote alpha to beta (1.0.0-alpha.2 -> 1.0.0-beta.1)
-	@$(MAKE) _promote PROMOTE_TO=beta
-
-promote-rc: ## Promote beta to rc (1.0.0-beta.1 -> 1.0.0-rc.1)
-	@$(MAKE) _promote PROMOTE_TO=rc
-
-promote-stable: ## Promote rc to stable (1.0.0-rc.1 -> 1.0.0)
-	@$(MAKE) _promote PROMOTE_TO=stable
-
 _promote:
 	@if [ -n "$(RELEASE_VERSION)" ]; then \
 		echo "ERROR: RELEASE_VERSION cannot be used with promotion targets"; \
@@ -181,12 +198,6 @@ _promote:
 	fi
 
 # @SECTION Publishing
-publish: build  ## Publish to PyPI (interactive)
-	./dev-tools/package/publish.sh pypi
-
-publish-test: build  ## Publish to test PyPI
-	./dev-tools/package/publish.sh testpypi
-
 # @SECTION Release Management (Semantic Versioning)
 release-patch: ## Bump patch version and create release (1.0.0 -> 1.0.1)
 	@$(MAKE) _release BUMP_TYPE=patch

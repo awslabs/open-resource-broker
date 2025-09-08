@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, Union
 if TYPE_CHECKING:
     pass
 
-from config.manager import ConfigurationManager
+from domain.base.ports.configuration_port import ConfigurationPort
 from domain.base.ports.logging_port import LoggingPort
 from domain.machine.aggregate import Machine
 from domain.request.aggregate import Request
@@ -23,7 +23,7 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
 
     def __init__(
         self,
-        config_manager: ConfigurationManager,
+        config_manager: ConfigurationPort,
         logger: LoggingPort,
         template_defaults_service=None,
     ) -> None:
@@ -660,6 +660,23 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         """Get storage base path within working directory."""
         workdir = self.get_working_directory()
         return os.path.join(workdir, "data")
+
+    def get_directory(self, file_type: str) -> str | None:
+        """Get directory path for the given file type."""
+        if file_type in ["conf", "template", "legacy"]:
+            return os.environ.get(
+                "HF_PROVIDER_CONFDIR",
+                os.path.join(os.environ.get("HF_PROVIDER_WORKDIR", os.getcwd()), "config"),
+            )
+        elif file_type == "log":
+            return os.environ.get(
+                "HF_PROVIDER_LOGDIR",
+                os.path.join(os.environ.get("HF_PROVIDER_WORKDIR", os.getcwd()), "logs"),
+            )
+        elif file_type in ["work", "data"]:
+            return os.environ.get("HF_PROVIDER_WORKDIR", os.getcwd())
+        else:
+            return os.environ.get("HF_PROVIDER_WORKDIR", os.getcwd())
 
     def _format_machines_for_hostfactory(
         self, machines: list[dict[str, Any]]
