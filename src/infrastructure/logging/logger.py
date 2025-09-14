@@ -162,11 +162,26 @@ def setup_logging(config: LoggingConfig) -> None:
 
     # Create formatters
     json_formatter = JsonFormatter()
-    text_formatter = ColoredFormatter(
+    colored_formatter = ColoredFormatter(
         "%(asctime)s - %(name)s - %(levelname)s - %(message)s [%(pathname)s:%(lineno)d (%(funcName)s)]"
     )
 
-    # Configure console logging based on config
+    # Configure file logging first (so it gets clean record before console colors)
+    if config.file_path:
+        # Create log directory if needed
+        log_path = Path(config.file_path)
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # Create rotating file handler
+        file_handler = logging.handlers.RotatingFileHandler(
+            filename=str(log_path),
+            maxBytes=config.max_size,
+            backupCount=config.backup_count,
+        )
+        file_handler.setFormatter(json_formatter)
+        root_logger.addHandler(file_handler)
+
+    # Configure console logging after file logging
     # Use ConfigurationManager to get console_enabled value
     from config.manager import get_config_manager
 
@@ -182,23 +197,8 @@ def setup_logging(config: LoggingConfig) -> None:
 
     if console_enabled:
         console_handler = logging.StreamHandler()
-        console_handler.setFormatter(text_formatter)
+        console_handler.setFormatter(colored_formatter)  # Use colors for console
         root_logger.addHandler(console_handler)
-
-    # Configure file logging if path provided
-    if config.file_path:
-        # Create log directory if needed
-        log_path = Path(config.file_path)
-        log_path.parent.mkdir(parents=True, exist_ok=True)
-
-        # Create rotating file handler
-        file_handler = logging.handlers.RotatingFileHandler(
-            filename=str(log_path),
-            maxBytes=config.max_size,
-            backupCount=config.backup_count,
-        )
-        file_handler.setFormatter(json_formatter)
-        root_logger.addHandler(file_handler)
 
     # Set default logging levels for third-party libraries
     get_logger("boto3").setLevel(logging.WARNING)
