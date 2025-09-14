@@ -16,22 +16,22 @@ class ColoredFormatter(logging.Formatter):
     """Formatter that adds colors to log levels."""
 
     COLORS = {
-        'DEBUG': '\033[36m',    # Cyan
-        'INFO': '\033[32m',     # Green
-        'WARNING': '\033[33m',  # Yellow
-        'ERROR': '\033[31m',    # Red
-        'CRITICAL': '\033[35m', # Magenta
+        "DEBUG": "\033[36m",  # Cyan
+        "INFO": "\033[32m",  # Green
+        "WARNING": "\033[33m",  # Yellow
+        "ERROR": "\033[31m",  # Red
+        "CRITICAL": "\033[35m",  # Magenta
     }
-    RESET = '\033[0m'
+    RESET = "\033[0m"
 
     def format(self, record):
-        log_color = self.COLORS.get(record.levelname, '')
+        log_color = self.COLORS.get(record.levelname, "")
         record.levelname = f"{log_color}{record.levelname}{self.RESET}"
 
         # Shorten pathname by removing first 5 folders
-        path_parts = record.pathname.split('/')
+        path_parts = record.pathname.split("/")
         if len(path_parts) > 5:
-            record.pathname = '/'.join(path_parts[5:])
+            record.pathname = "/".join(path_parts[5:])
 
         return super().format(record)
 
@@ -192,7 +192,7 @@ def setup_logging(config: LoggingConfig) -> None:
             console_enabled = console_enabled.lower() in ("true", "1", "yes")
     except Exception as e:
         # Fallback to config if ConfigurationManager fails
-        logger.debug(f"Could not get console_enabled from ConfigurationManager: {str(e)}")
+        logger.debug(f"Could not get console_enabled from ConfigurationManager: {e!s}")
         console_enabled = config.console_enabled
 
     if console_enabled:
