@@ -2,28 +2,29 @@
 
 import os
 import tempfile
-from unittest.mock import Mock
 from datetime import datetime
-
+from unittest.mock import Mock
 
 import pytest
 
 # Import repository components
 try:
-    from domain.request.aggregate import Request
-    from domain.request.value_objects import RequestStatus
     from domain.base.domain_interfaces import Repository
-    from domain.request.value_objects import RequestType
-    from infrastructure.persistence.json.strategy import JSONStorageStrategy
-
-    from domain.request.repository import RequestRepository as RequestRepositoryInterface
     from domain.machine.repository import MachineRepository as MachineRepositoryInterface
+    from domain.request.aggregate import Request
+    from domain.request.repository import RequestRepository as RequestRepositoryInterface
+    from domain.request.value_objects import RequestStatus, RequestType
     from domain.template.repository import TemplateRepository as TemplateRepositoryInterface
-
-    from infrastructure.persistence.repositories.machine_repository import MachineRepositoryImpl as MachineRepository
-    from infrastructure.persistence.repositories.request_repository import RequestRepositoryImpl as RequestRepository
-    from infrastructure.persistence.repositories.template_repository import TemplateRepositoryImpl as TemplateRepository
-
+    from infrastructure.persistence.json.strategy import JSONStorageStrategy
+    from infrastructure.persistence.repositories.machine_repository import (
+        MachineRepositoryImpl as MachineRepository,
+    )
+    from infrastructure.persistence.repositories.request_repository import (
+        RequestRepositoryImpl as RequestRepository,
+    )
+    from infrastructure.persistence.repositories.template_repository import (
+        TemplateRepositoryImpl as TemplateRepository,
+    )
 
     IMPORTS_AVAILABLE = True
 except ImportError as e:
@@ -71,9 +72,7 @@ class TestRepositoryPatternCompliance:
         assert hasattr(request_repo, "find_by_status"), (
             "RequestRepository should have find_by_status"
         )
-        assert hasattr(request_repo, "find_by_type"), (
-            "RequestRepository should have find_by_type"
-        )
+        assert hasattr(request_repo, "find_by_type"), "RequestRepository should have find_by_type"
         assert hasattr(request_repo, "find_pending_requests"), (
             "RequestRepository should have find_pending_requests"
         )
@@ -89,14 +88,16 @@ class TestRepositoryPatternCompliance:
         mock_storage = Mock()
         mock_event_publisher = Mock()
 
-        request_repo = RequestRepository(storage_port=mock_storage, event_publisher=mock_event_publisher)
+        request_repo = RequestRepository(
+            storage_port=mock_storage, event_publisher=mock_event_publisher
+        )
 
         # Create request with events
         request = Request.create_new_request(
             request_type=RequestType.ACQUIRE,
             template_id="test-template",
             machine_count=2,
-            provider_type="aws"
+            provider_type="aws",
         )
 
         # Mock storage save
@@ -125,7 +126,7 @@ class TestRepositoryPatternCompliance:
                 request_type=RequestType.ACQUIRE,
                 template_id="test-template",
                 machine_count=2,
-                provider_type="aws"
+                provider_type="aws",
             )
 
             request_repo.save(request)
@@ -151,6 +152,7 @@ class TestJSONRepositoryImplementation:
         """Clean up test fixtures."""
         # There are likely to be backup files, so it is not enough to just delete repository
         import shutil
+
         if os.path.exists(self.temp_dir):
             shutil.rmtree(self.temp_dir)
 
@@ -165,7 +167,7 @@ class TestJSONRepositoryImplementation:
             request_type=RequestType.ACQUIRE,
             template_id="test-template",
             machine_count=2,
-            provider_type="aws"
+            provider_type="aws",
         )
 
         request_repo.save(request)
@@ -190,7 +192,7 @@ class TestJSONRepositoryImplementation:
                 request_type=RequestType.ACQUIRE,
                 template_id=f"template-{i}",
                 machine_count=2,
-                provider_type="aws"
+                provider_type="aws",
             )
 
             requests.append(request)
@@ -213,21 +215,23 @@ class TestJSONRepositoryImplementation:
             request_type=RequestType.ACQUIRE,
             template_id="test-template-1",
             machine_count=1,
-            provider_type="aws"
+            provider_type="aws",
         )
 
         processing_request = Request.create_new_request(
             request_type=RequestType.ACQUIRE,
             template_id="test-template-2",
             machine_count=2,
-            provider_type="aws"
+            provider_type="aws",
         )
 
-        processing_request = Request.model_validate({
-            **processing_request.model_dump(),
-            "status": RequestStatus.IN_PROGRESS,
-            "started_at": datetime.utcnow()
-        })
+        processing_request = Request.model_validate(
+            {
+                **processing_request.model_dump(),
+                "status": RequestStatus.IN_PROGRESS,
+                "started_at": datetime.utcnow(),
+            }
+        )
 
         # Save requests
         request_repo.save(pending_request)
@@ -279,7 +283,7 @@ class TestSQLRepositoryImplementation:
             request_type=RequestType.ACQUIRE,
             template_id="test-template-1",
             machine_count=1,
-            provider_type="aws"
+            provider_type="aws",
         )
 
         request_repo.save(request)
@@ -364,14 +368,16 @@ class TestRepositoryEventPublishing:
         mock_storage = Mock()
         mock_event_publisher = Mock()
 
-        request_repo = RequestRepository(storage_port=mock_storage, event_publisher=mock_event_publisher)
+        request_repo = RequestRepository(
+            storage_port=mock_storage, event_publisher=mock_event_publisher
+        )
 
         # Create request (generates events)
         request = Request.create_new_request(
             request_type=RequestType.ACQUIRE,
             template_id="test-template",
             machine_count=2,
-            provider_type="aws"
+            provider_type="aws",
         )
 
         # Verify events exist
@@ -393,14 +399,16 @@ class TestRepositoryEventPublishing:
         mock_storage = Mock()
         mock_event_publisher = Mock()
 
-        request_repo = RequestRepository(storage_port=mock_storage, event_publisher=mock_event_publisher)
+        request_repo = RequestRepository(
+            storage_port=mock_storage, event_publisher=mock_event_publisher
+        )
 
         # Create request and perform multiple operations
         request = Request.create_new_request(
             request_type=RequestType.ACQUIRE,
             template_id="test-template",
             machine_count=2,
-            provider_type="aws"
+            provider_type="aws",
         )
 
         request.start_processing()
@@ -421,13 +429,15 @@ class TestRepositoryEventPublishing:
         mock_event_publisher = Mock()
         mock_event_publisher.publish_events.side_effect = Exception("Event publishing failed")
 
-        request_repo = RequestRepository(storage_port=mock_storage, event_publisher=mock_event_publisher)
+        request_repo = RequestRepository(
+            storage_port=mock_storage, event_publisher=mock_event_publisher
+        )
 
         request = Request.create_new_request(
             request_type=RequestType.ACQUIRE,
             template_id="test-template",
             machine_count=2,
-            provider_type="aws"
+            provider_type="aws",
         )
 
         # Should handle event publishing failure
@@ -442,13 +452,15 @@ class TestRepositoryEventPublishing:
         mock_storage = Mock()
         mock_event_publisher = Mock()
 
-        request_repo = RequestRepository(storage_port=mock_storage, event_publisher=mock_event_publisher)
+        request_repo = RequestRepository(
+            storage_port=mock_storage, event_publisher=mock_event_publisher
+        )
 
         request = Request.create_new_request(
             request_type=RequestType.ACQUIRE,
             template_id="test-template",
             machine_count=2,
-            provider_type="aws"
+            provider_type="aws",
         )
 
         # Save same request multiple times
@@ -473,12 +485,11 @@ class TestRepositoryPerformanceOptimization:
         # Create multiple requests
         requests = []
         for i in range(10):
-
             request = Request.create_new_request(
                 request_type=RequestType.ACQUIRE,
                 template_id=f"template-{i}",
                 machine_count=i + 1,
-                provider_type="aws"
+                provider_type="aws",
             )
 
             requests.append(request)
@@ -503,6 +514,7 @@ class TestRepositoryPerformanceOptimization:
 
         # Generate valid RequestId
         from domain.request.value_objects import RequestId, RequestType
+
         valid_request_id = RequestId.generate(RequestType.ACQUIRE)
 
         # Mock request data without related entities
@@ -528,7 +540,9 @@ class TestRepositoryPerformanceOptimization:
             request.machines()
 
             # Should trigger additional query
-            mock_storage.find_machines_by_request.assert_called_once_with(str(valid_request_id.value))
+            mock_storage.find_machines_by_request.assert_called_once_with(
+                str(valid_request_id.value)
+            )
 
     def test_repository_supports_caching(self):
         """Test that repository supports result caching."""
@@ -568,7 +582,7 @@ class TestRepositoryPerformanceOptimization:
             request_type=RequestType.ACQUIRE,
             template_id="test-template",
             machine_count=2,
-            provider_type="aws"
+            provider_type="aws",
         )
 
         request_repo.save(request)
@@ -622,7 +636,7 @@ class TestRepositoryErrorHandling:
             request_type=RequestType.ACQUIRE,
             template_id="test-template",
             machine_count=2,
-            provider_type="aws"
+            provider_type="aws",
         )
 
         # Should succeed after retries
@@ -667,7 +681,7 @@ class TestRepositoryErrorHandling:
             request_type=RequestType.ACQUIRE,
             template_id="test-template",
             machine_count=2,
-            provider_type="aws"
+            provider_type="aws",
         )
 
         # Should handle concurrency conflict
