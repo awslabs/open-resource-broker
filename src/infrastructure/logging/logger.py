@@ -12,6 +12,31 @@ from typing import Any, Dict, Optional
 from config import LoggingConfig
 
 
+class ColoredFormatter(logging.Formatter):
+    """Formatter that adds colors to log levels."""
+
+    COLORS = {
+        "DEBUG": "\033[36m",  # Cyan
+        "INFO": "\033[32m",  # Green
+        "WARNING": "\033[33m",  # Yellow
+        "ERROR": "\033[31m",  # Red
+        "CRITICAL": "\033[35m",  # Magenta
+    }
+    RESET = "\033[0m"
+
+    def format(self, record):
+        """Format log record with colors."""
+        log_color = self.COLORS.get(record.levelname, "")
+        record.levelname = f"{log_color}{record.levelname}{self.RESET}"
+
+        # Shorten pathname by removing first 5 folders
+        path_parts = record.pathname.split("/")
+        if len(path_parts) > 5:
+            record.pathname = "/".join(path_parts[5:])
+
+        return super().format(record)
+
+
 class JsonFormatter(logging.Formatter):
     """Format log records as JSON."""
 
@@ -71,7 +96,7 @@ class ContextLogger(logging.Logger):
     def __init__(self, name: str, level: int = logging.NOTSET) -> None:
         """Initialize context logger with name and level."""
         super().__init__(name, level)
-        self._context: dict[str, Any] = {}
+        self._context: Dict[str, Any] = {}
 
     def bind(self, **kwargs: Any) -> None:
         """Bind context values to logger."""
@@ -130,7 +155,7 @@ def setup_logging(config: LoggingConfig) -> None:
 
     # Log the level being set
     logger = get_logger(__name__)
-    logger.info("Setting root logger level to: %s", level_name)
+    logger.info(f"Setting root logger level to: {level_name}")
 
     # Remove any existing handlers to prevent duplicates
     for handler in list(root_logger.handlers):
@@ -138,30 +163,11 @@ def setup_logging(config: LoggingConfig) -> None:
 
     # Create formatters
     json_formatter = JsonFormatter()
-    text_formatter = logging.Formatter(
+    colored_formatter = ColoredFormatter(
         "%(asctime)s - %(name)s - %(levelname)s - %(message)s [%(pathname)s:%(lineno)d (%(funcName)s)]"
     )
 
-    # Configure console logging based on config
-    # Use ConfigurationManager to get console_enabled value
-    from config.manager import get_config_manager
-
-    try:
-        config_manager = get_config_manager()
-        console_enabled = config_manager.get("logging.console_enabled", config.console_enabled)
-        if isinstance(console_enabled, str):
-            console_enabled = console_enabled.lower() in ("true", "1", "yes")
-    except Exception as e:
-        # Fallback to config if ConfigurationManager fails
-        logger.debug("Could not get console_enabled from ConfigurationManager: %s", str(e))
-        console_enabled = config.console_enabled
-
-    if console_enabled:
-        console_handler = logging.StreamHandler()
-        console_handler.setFormatter(text_formatter)
-        root_logger.addHandler(console_handler)
-
-    # Configure file logging if path provided
+    # Configure file logging first (so it gets clean record before console colors)
     if config.file_path:
         # Create log directory if needed
         log_path = Path(config.file_path)
@@ -175,6 +181,25 @@ def setup_logging(config: LoggingConfig) -> None:
         )
         file_handler.setFormatter(json_formatter)
         root_logger.addHandler(file_handler)
+
+    # Configure console logging after file logging
+    # Use ConfigurationManager to get console_enabled value
+    from config.manager import get_config_manager
+
+    try:
+        config_manager = get_config_manager()
+        console_enabled = config_manager.get("logging.console_enabled", config.console_enabled)
+        if isinstance(console_enabled, str):
+            console_enabled = console_enabled.lower() in ("true", "1", "yes")
+    except Exception as e:
+        # Fallback to config if ConfigurationManager fails
+        logger.debug(f"Could not get console_enabled from ConfigurationManager: {e!s}")
+        console_enabled = config.console_enabled
+
+    if console_enabled:
+        console_handler = logging.StreamHandler()
+        console_handler.setFormatter(colored_formatter)  # Use colors for console
+        root_logger.addHandler(console_handler)
 
     # Set default logging levels for third-party libraries
     get_logger("boto3").setLevel(logging.WARNING)
@@ -204,7 +229,7 @@ def get_logger(name: str) -> ContextLogger:
 class LoggerAdapter(logging.LoggerAdapter):
     """Adapter that adds context to log records."""
 
-    def process(self, msg: str, kwargs: dict[str, Any]) -> tuple[str, dict[str, Any]]:
+    def process(self, msg: str, kwargs: Dict[str, Any]) -> tuple[str, Dict[str, Any]]:
         """Process log record to add context."""
         if "extra" not in kwargs:
             kwargs["extra"] = {}
@@ -278,12 +303,7 @@ class AuditLogger:
             details: Additional event details
         """
         self.logger.info(
-            "%s: %s on %s by %s - %s",
-            event_type,
-            action,
-            resource,
-            user,
-            status,
+            f"{event_type}: {action} on {resource} by {user} - {status}",
             extra={
                 "event_type": event_type,
                 "user": user,
@@ -315,9 +335,7 @@ class MetricsLogger:
             **tags: Additional metric tags
         """
         self.logger.info(
-            "%s took %.2fms",
-            operation,
-            duration_ms,
+            f"{operation} took {duration_ms:.2f}ms",
             extra={
                 "metric_type": "timing",
                 "operation": operation,
@@ -338,9 +356,7 @@ class MetricsLogger:
             **tags: Additional metric tags
         """
         self.logger.info(
-            "%s: %s",
-            metric,
-            value,
+            f"{metric}: {value}",
             extra={
                 "metric_type": "counter",
                 "metric": metric,
@@ -360,9 +376,7 @@ class MetricsLogger:
             **tags: Additional metric tags
         """
         self.logger.info(
-            "%s: %s",
-            metric,
-            value,
+            f"{metric}: {value}",
             extra={
                 "metric_type": "gauge",
                 "metric": metric,

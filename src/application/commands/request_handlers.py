@@ -28,6 +28,7 @@ from domain.base.ports import (
 )
 from domain.machine.repository import MachineRepository
 from domain.request.repository import RequestRepository
+from domain.template.repository import TemplateRepository
 from infrastructure.di.buses import QueryBus
 
 
@@ -441,17 +442,19 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
         self,
         request_repository: RequestRepository,
         machine_repository: MachineRepository,
-        template_repository,  # Add template repository
+        template_repository: TemplateRepository,  # Add template repository
         logger: LoggingPort,
         container: ContainerPort,
         event_publisher: EventPublisherPort,
         error_handler: ErrorHandlingPort,
+        provider_port: ProviderPort,
     ) -> None:
         super().__init__(logger, event_publisher, error_handler)
         self._request_repository = request_repository
         self._machine_repository = machine_repository
         self._template_repository = template_repository
         self._container = container
+        self._provider_context = provider_port
 
     async def validate_command(self, command: CreateReturnRequestCommand):
         """Validate create return request command."""
@@ -470,18 +473,25 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
             from domain.request.value_objects import RequestType
 
             config_manager = self._container.get(ConfigurationPort)
-            provider_type = config_manager.get("provider.type", "aws")
-
+            # provider_type = config_manager.get_provider_config("provider.type", "aws")
+            # provider_config = config_manager.get_provider_config()
+            # print(f"KBG provider_config: {provider_config}")
+            provider_type = "aws"  # KBG TODO
             # Create return request with business logic
             # Use first machine's template if available, otherwise use generic return
             # template
             template_id = "return-machines"  # Business template for return operations
+            print(f"KBG [{command.machine_ids}]")
             if command.machine_ids:
+                self.logger.debug(f"KBG machine_ids provided: {command.machine_ids}")
                 # Try to get template from first machine
                 try:
+                    self.logger.debug(f"KBG looking up machine with ID: {command.machine_ids[0]}")
                     machine = self._machine_repository.find_by_id(command.machine_ids[0])
+                    self.logger.debug(f"KBG found machine: {machine}")
                     if machine and machine.template_id:
                         template_id = f"return-{machine.template_id}"
+                        self.logger.debug(f"KBG using template_id from machine: {template_id}")
                 except Exception as e:
                     # Fallback to generic return template
                     self.logger.warning(
@@ -508,11 +518,56 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
                 self.event_publisher.publish(event)
 
             self.logger.info("Return request created: %s", request.request_id)
+
+            try:
+                provisioning_result = await self._execute_deprovisioning(
+                    command.machine_ids, request
+                )
+
+            except:
+                # Handle provisioning errors
+                # Log the error and raise a custom exception
+                self.logger.error("Provisioning failed for return request: %s", request.request_id)
+                raise ValueError("Provisioning failed for return request")
+
             return str(request.request_id)
 
         except Exception as e:
             self.logger.error("Failed to create return request: %s", e)
             raise
+
+    async def _execute_deprovisioning(self, machine_ids: list[str], request) -> dict[str, Any]:
+        """Execute De-Provisioning release machines"""
+
+        try:
+            # Import required types (using existing imports)
+            from providers.base.strategy import ProviderOperation, ProviderOperationType
+
+            self.logger.debug(f"KBG De-Provisioning request {request} \n {self._provider_context}")
+            # Create provider operation using existing pattern
+            operation = ProviderOperation(
+                operation_type=ProviderOperationType.TERMINATE_INSTANCES,
+                parameters={
+                    # "template_config": template.to_dict(),
+                    # "count": request.requested_count,
+                },
+                context={
+                    # "correlation_id": str(request.request_id),
+                    # "dry_run": request.metadata.get("dry_run", False),
+                },
+            )
+
+            result = await self._provider_context.terminate_resources(machine_ids, operation)
+
+            pass
+        except Exception as e:
+            self.logger.error("De-Provisioning execution failed: %s", e)
+            return {
+                "success": False,
+                "instance_ids": [],
+                "provider_data": {},
+                "error_message": str(e),
+            }
 
 
 @command_handler(UpdateRequestStatusCommand)
