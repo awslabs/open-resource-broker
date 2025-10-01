@@ -13,37 +13,35 @@ class LoggingAdapter(LoggingPort):
         """Initialize with logger name."""
         self._logger = get_logger(name)
 
+    def _prepare_kwargs(self, kwargs: dict[str, Any]) -> dict[str, Any]:
+        """Prepare kwargs with default stacklevel."""
+        kwargs.setdefault("stacklevel", 2)
+        return kwargs
+
     def debug(self, message: str, *args: Any, **kwargs: Any) -> None:
         """Log debug message."""
-        kwargs.setdefault("stacklevel", 2)
-        self._logger.debug(message, *args, **kwargs)
+        self._logger.debug(message, *args, **self._prepare_kwargs(kwargs))
 
     def info(self, message: str, *args: Any, **kwargs: Any) -> None:
         """Log info message."""
-        kwargs.setdefault("stacklevel", 2)
-        self._logger.info(message, *args, **kwargs)
+        self._logger.info(message, *args, **self._prepare_kwargs(kwargs))
 
     def warning(self, message: str, *args: Any, **kwargs: Any) -> None:
         """Log warning message."""
-        kwargs.setdefault("stacklevel", 2)
-        self._logger.warning(message, *args, **kwargs)
+        self._logger.warning(message, *args, **self._prepare_kwargs(kwargs))
 
     def error(self, message: str, *args: Any, **kwargs: Any) -> None:
         """Log error message."""
-        kwargs.setdefault("stacklevel", 2)
-        self._logger.error(message, *args, **kwargs)
+        self._logger.error(message, *args, **self._prepare_kwargs(kwargs))
 
     def critical(self, message: str, *args: Any, **kwargs: Any) -> None:
         """Log critical message."""
-        kwargs.setdefault("stacklevel", 2)
-        self._logger.critical(message, *args, **kwargs)
+        self._logger.critical(message, *args, **self._prepare_kwargs(kwargs))
 
     def exception(self, message: str, *args: Any, **kwargs: Any) -> None:
         """Log exception with traceback."""
-        kwargs.setdefault("stacklevel", 2)
-        self._logger.exception(message, *args, **kwargs)
+        self._logger.exception(message, *args, **self._prepare_kwargs(kwargs))
 
     def log(self, level: int, message: str, *args: Any, **kwargs: Any) -> None:
         """Log message at specified level."""
-        kwargs.setdefault("stacklevel", 2)
-        self._logger.log(level, message, *args, **kwargs)
+        self._logger.log(level, message, *args, **self._prepare_kwargs(kwargs))
