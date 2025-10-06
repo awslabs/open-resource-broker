@@ -440,9 +440,7 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
 
     def __init__(
         self,
-        request_repository: RequestRepository,
-        machine_repository: MachineRepository,
-        template_repository: TemplateRepository,  # Add template repository
+        uow_factory: UnitOfWorkFactory,
         logger: LoggingPort,
         container: ContainerPort,
         event_publisher: EventPublisherPort,
@@ -450,9 +448,7 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
         provider_port: ProviderPort,
     ) -> None:
         super().__init__(logger, event_publisher, error_handler)
-        self._request_repository = request_repository
-        self._machine_repository = machine_repository
-        self._template_repository = template_repository
+        self.uow_factory = uow_factory
         self._container = container
         self._provider_context = provider_port
 
@@ -481,25 +477,22 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
             # Use first machine's template if available, otherwise use generic return
             # template
             template_id = "return-machines"  # Business template for return operations
-            print(f"KBG [{command.machine_ids}]")
             if command.machine_ids:
-                self.logger.debug(f"KBG machine_ids provided: {command.machine_ids}")
                 # Try to get template from first machine
                 try:
-                    self.logger.debug(f"KBG looking up machine with ID: {command.machine_ids[0]}")
-                    machine = self._machine_repository.find_by_id(command.machine_ids[0])
-                    self.logger.debug(f"KBG found machine: {machine}")
-                    if machine and machine.template_id:
-                        template_id = f"return-{machine.template_id}"
-                        self.logger.debug(f"KBG using template_id from machine: {template_id}")
+                    with self.uow_factory.create_unit_of_work() as uow:
+                        machine = self.machines.find_by_id(command.machine_ids[0])
+
+                        if machine and machine.template_id:
+                            template_id = f"return-{machine.template_id}"
+
                 except Exception as e:
                     # Fallback to generic return template
                     self.logger.warning(
                         "Failed to determine return template ID from machine: %s",
                         e,
                         extra={
-                            "machine_ids": command.machine_ids,
-                            "request_id": command.request_id,
+                            "machine_ids": command.machine_ids
                         },
                     )
 
@@ -511,11 +504,11 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
                 metadata=command.metadata or {},
             )
 
-            # Save request and get extracted events
-            events = self._request_repository.save(request)
-            # Publish events
-            for event in events:
-                self.event_publisher.publish(event)
+
+            with self.uow_factory.create_unit_of_work() as uow:
+                events = uow.requests.save(request)
+                for event in events:
+                    self.event_publisher.publish(event)
 
             self.logger.info("Return request created: %s", request.request_id)
 

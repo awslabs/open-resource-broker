@@ -22,9 +22,9 @@ class ProviderContextAdapter(ProviderPort):
         # For now, return empty list to maintain interface compliance
         return []
 
-    def terminate_resources(self, machine_ids: list[str]) -> None:
+    def terminate_resources(self, *args, **kwargs) -> None:
         """Terminate resources using existing ProviderContext."""
-        # Implementation would delegate to ProviderContext
+        return self.provider_context.terminate_resources(*args, **kwargs)
 
     def get_available_templates(self) -> list[Template]:
         """Get available templates using existing ProviderContext."""

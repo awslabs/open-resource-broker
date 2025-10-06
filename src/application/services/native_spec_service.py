@@ -1,6 +1,5 @@
 """Generic native spec processing service."""
 
-import logging
 from typing import Any
 
 from domain.base.dependency_injection import injectable
@@ -15,7 +14,6 @@ class NativeSpecService:
     def __init__(self, config_port: ConfigurationPort, spec_renderer: SpecRenderingPort):
         self.config_port = config_port
         self.spec_renderer = spec_renderer
-        self.logger = logging.getLogger(__name__)
 
     def is_native_spec_enabled(self) -> bool:
         """Check if native specs are enabled."""
