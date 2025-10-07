@@ -61,73 +61,89 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
                     return cached_result
 
             # Cache miss - get request from storage
+            machine_ids_from_db = []
+
             with self.uow_factory.create_unit_of_work() as uow:
                 from domain.request.value_objects import RequestId
-
                 request_id = RequestId(value=query.request_id)
+
                 request = uow.requests.get_by_id(request_id)
+
+                self.logger.debug(f"Searching for request_id: {request_id} request object retrieved: {request}")
+
                 if not request:
                     raise EntityNotFoundError("Request", query.request_id)
 
-            # Get machines from storage
-            machines = await self._get_machines_from_storage(query.request_id)
-            self.logger.info(
-                "DEBUG: Found %s machines in storage for request %s",
-                len(machines),
-                query.request_id,
-            )
+                machine_ids_from_db = request.instance_ids
+                if len(request.instance_ids) == 0:
+                    self.logger.info("No machines in request, returning empty list")
+
+            # Fetch actual full Machine object from DB
+            machine_obj_from_db = []
+            with self.uow_factory.create_unit_of_work() as uow:
+                for m in machine_ids_from_db:
+                    res = uow.machines.get_by_id(m)
+                    machine_obj_from_db.append(res)
+
+            self.logger.debug(f"Machines associated with this request in DB: {machine_obj_from_db}")
 
             # Update machine status if needed
-            if not machines and request.resource_ids:
+            machine_objects_from_provider = []
+            if not machine_obj_from_db and request.resource_ids:
                 self.logger.info(
                     "DEBUG: No machines in storage but have resource IDs %s, checking provider",
                     request.resource_ids,
                 )
                 # No machines in storage but we have resource IDs - check provider and
                 # create machines
-                machines = await self._check_provider_and_create_machines(request)
-                self.logger.info("DEBUG: Provider check returned %s machines", len(machines))
-            elif machines:
-                self.logger.info("DEBUG: Have %s machines, updating status from AWS", len(machines))
+                machine_objects_from_provider = await self._check_provider_and_create_machines(request)
+                self.logger.info("DEBUG: Provider check returned %s machines", len(machine_obj_from_db))
+            elif machine_obj_from_db:
+                self.logger.info("DEBUG: Have %s machines, updating status from AWS", len(machine_obj_from_db))
                 # We have machines - update their status from AWS
-                machines = await self._update_machine_status_from_aws(machines)
+                machine_objects_from_provider = await self._update_machine_status_from_aws(machine_obj_from_db)
             else:
                 self.logger.info(
                     "DEBUG: No machines and no resource IDs for request %s",
                     query.request_id,
                 )
+            print(f"Machines from DB:  {machine_obj_from_db}")
+            print(f"Machines from cloud provider:  {machine_objects_from_provider}")
 
-            # Convert to DTO with machine data
-            machines_data = []
-            for machine in machines:
-                machines_data.append(
-                    {
-                        "instance_id": str(machine.instance_id.value),
-                        "status": machine.status.value,
-                        "private_ip": machine.private_ip,
-                        "public_ip": machine.public_ip,
-                        "launch_time": machine.launch_time,
-                        "launch_time_timestamp": (
-                            machine.launch_time.timestamp() if machine.launch_time else 0
-                        ),
-                    }
-                )
+            # Determine if request status needs updating based on machine states
+            new_status, status_message = self._determine_request_status_from_machines(
+                machine_obj_from_db,
+                machine_objects_from_provider,
+                request
+            )
 
-            # Create machine references from machine data
+            # Update request status if needed
+            if new_status:
+                from domain.request.request_types import RequestStatus
+                updated_request = request.update_status(RequestStatus(new_status), status_message)
+
+                # Save updated request
+                with self.uow_factory.create_unit_of_work() as uow:
+                    uow.requests.save(updated_request)
+
+                # Update the request object for DTO creation
+                request = updated_request
+
+            # Convert machines directly to DTOs
             from application.request.dto import MachineReferenceDTO
 
-            machine_references = []
-            for machine_data in machines_data:
-                machine_ref = MachineReferenceDTO(
-                    machine_id=machine_data["instance_id"],
-                    name=machine_data.get("private_ip", machine_data["instance_id"]),
-                    result=self._map_machine_status_to_result(machine_data["status"]),
-                    status=machine_data["status"],
-                    private_ip_address=machine_data.get("private_ip", ""),
-                    public_ip_address=machine_data.get("public_ip"),
-                    launch_time=int(machine_data.get("launch_time_timestamp", 0)),
+            machine_references = [
+                MachineReferenceDTO(
+                    machine_id=str(machine.instance_id.value),
+                    name=machine.private_ip or str(machine.instance_id.value),
+                    result=self._map_machine_status_to_result(machine.status.value),
+                    status=machine.status.value,
+                    private_ip_address=machine.private_ip or "",
+                    public_ip_address=machine.public_ip,
+                    launch_time=int(machine.launch_time.timestamp() if machine.launch_time else 0),
                 )
-                machine_references.append(machine_ref)
+                for machine in machine_objects_from_provider
+            ]
 
             request_dto = RequestDTO(
                 request_id=str(request.request_id),
@@ -145,7 +161,7 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
 
             self.logger.info(
                 "Retrieved request with %s machines: %s",
-                len(machines_data),
+                len(machine_references),
                 query.request_id,
             )
             return request_dto
@@ -264,6 +280,8 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
             if not machines:
                 return []
 
+            print(f"KBG machine type: {type(machines[0])}")
+
             # Get the request for the first machine (all should be same request)
             request_id = str(machines[0].request_id)
             with self.uow_factory.create_unit_of_work() as uow:
@@ -280,7 +298,9 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
             from providers.base.strategy import ProviderOperation, ProviderOperationType
 
             # Extract instance IDs from machines
+            print(f"KBG --1")
             instance_ids = [str(machine.instance_id.value) for machine in machines]
+            print(f"KBG --2: {instance_ids}")
 
             operation = ProviderOperation(
                 operation_type=ProviderOperationType.GET_INSTANCE_STATUS,
@@ -295,8 +315,10 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
             # Use the correct strategy identifier format:
             # provider_type-provider_type-instance
             strategy_identifier = f"{request.provider_type}-{request.provider_type}-{request.provider_instance or 'default'}"
+            print(f"KBG --3: {strategy_identifier}")
+            # success
             result = await provider_context.execute_with_strategy(strategy_identifier, operation)
-
+            print(f"KBG --4: {result}")
             if not result.success:
                 self.logger.warning("Failed to check resource status: %s", result.error_message)
                 return machines
@@ -506,6 +528,157 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
                     """Publish event (no-op implementation)."""
 
             return NoOpEventPublisher()
+
+    def _determine_request_status_from_machines(
+        self,
+        machine_objects_from_database: list,
+        machine_objects_from_provider: list,
+        request
+    ) -> tuple[str, str]:
+        """
+        Compare machine objects from database and provider to determine if request status needs updating.
+        Handles both ACQUIRE and RETURN request types with different logic.
+
+        Args:
+            machine_objects_from_database: List of machine objects from local database
+            machine_objects_from_provider: List of machine objects from cloud provider
+            request: The request object containing requested_count, current status, and request_type
+
+        Returns:
+            Tuple of (new_status, status_message) or (None, None) if no change needed
+        """
+        from domain.machine.machine_status import MachineStatus
+        from domain.request.request_types import RequestStatus, RequestType
+
+        try:
+            requested_count = request.requested_count
+            current_status = request.status
+            request_type = request.request_type
+
+            # Count machines by status from provider data (most up-to-date)
+            provider_machine_count = len(machine_objects_from_provider)
+            database_machine_count = len(machine_objects_from_database)
+
+            # Analyze provider machine statuses
+            running_count = 0
+            pending_count = 0
+            failed_count = 0
+            terminated_count = 0
+            shutting_down_count = 0
+
+            for machine in machine_objects_from_provider:
+                status = machine.status if hasattr(machine, 'status') else machine.get('status')
+                if isinstance(status, str):
+                    status = MachineStatus(status)
+
+                if status == MachineStatus.RUNNING:
+                    running_count += 1
+                elif status in [MachineStatus.PENDING]:
+                    pending_count += 1
+                elif status in [MachineStatus.FAILED]:
+                    failed_count += 1
+                elif status in [MachineStatus.TERMINATED, MachineStatus.STOPPED]:
+                    terminated_count += 1
+                elif status == MachineStatus.SHUTTING_DOWN:
+                    shutting_down_count += 1
+
+            total_accounted = running_count + pending_count + failed_count + terminated_count + shutting_down_count
+
+            self.logger.debug(
+                "Machine status analysis for request %s (type: %s): "
+                "requested=%d, provider_total=%d, running=%d, pending=%d, failed=%d, terminated=%d, shutting_down=%d",
+                request.request_id, request_type.value, requested_count, provider_machine_count,
+                running_count, pending_count, failed_count, terminated_count, shutting_down_count
+            )
+
+            # Determine new status based on request type and machine states
+            new_status = None
+            status_message = None
+
+            if request_type == RequestType.RETURN:
+                # RETURN REQUEST LOGIC
+
+                # Case 1: All machines terminated or no machines found (terminated long ago)
+                if provider_machine_count == 0 or (terminated_count > 0 and running_count == 0 and pending_count == 0 and shutting_down_count == 0):
+                    if current_status != RequestStatus.COMPLETED:
+                        new_status = RequestStatus.COMPLETED.value
+                        if provider_machine_count == 0:
+                            status_message = f"Return request completed: all machines terminated (no longer visible in provider) (total in DB: {database_machine_count})"
+                        else:
+                            status_message = f"Return request completed: {terminated_count} machines terminated (total in DB: {database_machine_count})"
+
+                # Case 2: Machines are shutting down (in progress)
+                elif shutting_down_count > 0:
+                    if current_status != RequestStatus.IN_PROGRESS:
+                        new_status = RequestStatus.IN_PROGRESS.value
+                        status_message = f"Return in progress: {shutting_down_count} machines shutting down, {terminated_count} terminated (total in DB: {database_machine_count})"
+
+                # Case 3: Still have running machines (return not yet initiated or failed)
+                elif running_count > 0:
+                    if current_status not in [RequestStatus.IN_PROGRESS, RequestStatus.PENDING]:
+                        new_status = RequestStatus.IN_PROGRESS.value
+                        status_message = f"Return in progress: {running_count} machines still running, awaiting termination (total in DB: {database_machine_count})"
+
+                # Case 4: Return request failed (machines failed to terminate properly)
+                elif failed_count > 0 and running_count == 0 and shutting_down_count == 0:
+                    if current_status != RequestStatus.FAILED:
+                        new_status = RequestStatus.FAILED.value
+                        status_message = f"Return request failed: {failed_count} machines failed to terminate properly (total in DB: {database_machine_count})"
+
+            elif request_type == RequestType.ACQUIRE:
+                # ACQUIRE REQUEST LOGIC (original logic)
+
+                # Case 1: All requested machines are running successfully
+                if running_count == requested_count and failed_count == 0:
+                    if current_status != RequestStatus.COMPLETED:
+                        new_status = RequestStatus.COMPLETED.value
+                        status_message = f"All {requested_count} machines are running successfully (total in DB: {database_machine_count})"
+
+                # Case 2: Some machines running, some failed (partial success)
+                elif running_count > 0 and failed_count > 0 and (running_count + failed_count) >= requested_count:
+                    if current_status != RequestStatus.PARTIAL:
+                        new_status = RequestStatus.PARTIAL.value
+                        status_message = f"Partial success: {running_count}/{requested_count} machines running, {failed_count} failed (total in DB: {database_machine_count})"
+
+                # Case 3: All machines failed
+                elif failed_count >= requested_count and running_count == 0:
+                    if current_status != RequestStatus.FAILED:
+                        new_status = RequestStatus.FAILED.value
+                        status_message = f"All {requested_count} machines failed to start (total in DB: {database_machine_count})"
+
+                # Case 4: Still have pending machines (in progress)
+                elif pending_count > 0 and failed_count < requested_count:
+                    if current_status not in [RequestStatus.IN_PROGRESS, RequestStatus.PENDING]:
+                        new_status = RequestStatus.IN_PROGRESS.value
+                        status_message = f"Processing: {running_count} running, {pending_count} pending, {failed_count} failed (total in DB: {database_machine_count})"
+
+                # Case 5: No machines found but request expects them (potential timeout or provider issue)
+                elif provider_machine_count == 0 and requested_count > 0:
+                    if current_status in [RequestStatus.IN_PROGRESS] and hasattr(request, 'created_at'):
+                        # Check if request has been in progress too long (e.g., 30 minutes)
+                        from datetime import datetime, timedelta
+                        time_elapsed = datetime.utcnow() - request.created_at
+                        if time_elapsed > timedelta(minutes=30):
+                            new_status = RequestStatus.TIMEOUT.value
+                            status_message = f"Request timed out - no machines found after 30 minutes (total in DB: {database_machine_count})"
+
+            # Log the decision
+            if new_status:
+                self.logger.info(
+                    "Request %s (%s) status change determined: %s -> %s (%s)",
+                    request.request_id, request_type.value, current_status.value, new_status, status_message
+                )
+            else:
+                self.logger.debug(
+                    "Request %s (%s) status remains unchanged: %s",
+                    request.request_id, request_type.value, current_status.value
+                )
+
+            return (new_status, status_message)
+
+        except Exception as e:
+            self.logger.error("Failed to determine request status from machines: %s", e)
+            return (None, None)
 
 
 @query_handler(GetRequestStatusQuery)

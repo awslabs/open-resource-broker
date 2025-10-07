@@ -496,14 +496,17 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
                         },
                     )
 
-            request = Request.create_new_request(
-                request_type=RequestType.RETURN,
-                template_id=template_id,
-                machine_count=len(command.machine_ids),
+            request = Request.create_return_request(
+                instance_ids = command.machine_ids,
                 provider_type=provider_type,
-                metadata=command.metadata or {},
+                metadata=command.metadata or {}
             )
 
+            # Add machine IDs to the request
+            # from domain.base.value_objects import InstanceId
+            # for machine_id in command.machine_ids:
+            #     request = request.add_instance_id(InstanceId(value=machine_id))
+            # KBG TODO
 
             with self.uow_factory.create_unit_of_work() as uow:
                 events = uow.requests.save(request)
@@ -569,12 +572,14 @@ class UpdateRequestStatusHandler(BaseCommandHandler[UpdateRequestStatusCommand, 
 
     def __init__(
         self,
+        uow_factory: UnitOfWorkFactory,
         request_repository: RequestRepository,
         logger: LoggingPort,
         event_publisher: EventPublisherPort,
         error_handler: ErrorHandlingPort,
     ) -> None:
         super().__init__(logger, event_publisher, error_handler)
+        self.uow_factory = uow_factory
         self._request_repository = request_repository
 
     async def validate_command(self, command: UpdateRequestStatusCommand) -> None:
@@ -590,10 +595,11 @@ class UpdateRequestStatusHandler(BaseCommandHandler[UpdateRequestStatusCommand, 
         self.logger.info("Updating request status: %s -> %s", command.request_id, command.status)
 
         try:
-            # Get request
-            request = self._request_repository.get_by_id(command.request_id)
-            if not request:
-                raise EntityNotFoundError("Request", command.request_id)
+            # Find request in the storage
+            with self.uow_factory.create_unit_of_work() as uow:
+                request = uow.requests.find_by_id(command.request_id)
+                if not request:
+                    raise EntityNotFoundError("Request", command.request_id)
 
             # Update status
             request.update_status(
@@ -603,10 +609,11 @@ class UpdateRequestStatusHandler(BaseCommandHandler[UpdateRequestStatusCommand, 
             )
 
             # Save changes and get extracted events
-            events = self._request_repository.save(request)
-            # Publish events
-            for event in events:
-                self.event_publisher.publish(event)
+            with self.uow_factory.create_unit_of_work() as uow:
+                events = self.requests.save(request)
+                # Publish events
+                for event in events:
+                    self.event_publisher.publish(event)
 
             self.logger.info("Request status updated: %s -> %s", command.request_id, command.status)
 
