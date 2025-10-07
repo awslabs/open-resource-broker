@@ -131,7 +131,7 @@ class MachineRepositoryImpl(MachineRepositoryInterface):
 
     def __init__(self, storage_port: StoragePort) -> None:
         """Initialize repository with storage port."""
-        if hasattr(storage_port, 'entity_type'):
+        if hasattr(storage_port, "entity_type"):
             storage_port.entity_type = "machines"
 
         self.storage_port = storage_port

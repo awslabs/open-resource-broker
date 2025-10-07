@@ -367,7 +367,6 @@ class Request(AggregateRoot):
         instance_ids: list[str],
         provider_type: str,
         metadata: Optional[dict[str, Any]] = None,
-
     ) -> "Request":
         """
         Create a return/terminate request.

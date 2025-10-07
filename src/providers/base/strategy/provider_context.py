@@ -306,7 +306,9 @@ class ProviderContext:
                 f"Operation execution failed: {e!s}", "EXECUTION_ERROR"
             )
 
-    async def terminate_resources(self, machine_ids: list[str], operation: ProviderOperation) -> None:
+    async def terminate_resources(
+        self, machine_ids: list[str], operation: ProviderOperation
+    ) -> None:
         """
         Terminate resources on all strategies.
 
@@ -318,7 +320,7 @@ class ProviderContext:
         self._logger.debug(f"terminate_resources: _current_strategy {self._current_strategy}")
         self._logger.debug(f"terminate_resources: _strategies {self._strategies}")
 
-        strategy = self._strategies.get("aws-aws-default") # KBG TODO
+        strategy = self._strategies.get("aws-aws-default")  # KBG TODO
 
         await self._current_strategy.execute_operation(operation)
 

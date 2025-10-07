@@ -26,9 +26,7 @@ from domain.base.ports import (
     LoggingPort,
     ProviderPort,
 )
-from domain.machine.repository import MachineRepository
 from domain.request.repository import RequestRepository
-from domain.template.repository import TemplateRepository
 from infrastructure.di.buses import QueryBus
 
 
@@ -466,7 +464,6 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
             # Create return request aggregate
             # Get provider type from configuration using injected container
             from domain.request.aggregate import Request
-            from domain.request.value_objects import RequestType
 
             config_manager = self._container.get(ConfigurationPort)
             # provider_type = config_manager.get_provider_config("provider.type", "aws")
@@ -491,15 +488,13 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
                     self.logger.warning(
                         "Failed to determine return template ID from machine: %s",
                         e,
-                        extra={
-                            "machine_ids": command.machine_ids
-                        },
+                        extra={"machine_ids": command.machine_ids},
                     )
 
             request = Request.create_return_request(
-                instance_ids = command.machine_ids,
+                instance_ids=command.machine_ids,
                 provider_type=provider_type,
-                metadata=command.metadata or {}
+                metadata=command.metadata or {},
             )
 
             # Add machine IDs to the request

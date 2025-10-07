@@ -163,6 +163,7 @@ def setup_logging(config: LoggingConfig) -> None:
 
     # Create formatters
     json_formatter = JsonFormatter()
+
     # Create a custom formatter that highlights filenames
     class FileHighlightFormatter(ColoredFormatter):
         def format(self, record):
@@ -171,6 +172,7 @@ def setup_logging(config: LoggingConfig) -> None:
 
             # Extract just the filename from the pathname
             import os
+
             filename = os.path.basename(record.pathname)
 
             # Replace the full pathname with bold blue filename in the formatted string
