@@ -255,7 +255,6 @@ class AWSProviderStrategy(ProviderStrategy):
         Returns:
             Result of the operation execution
         """
-        print(f"KBG _execute_operation_internal    {operation}")
         # Route operation to appropriate handler
         if operation.operation_type == ProviderOperationType.CREATE_INSTANCES:
             return self._handle_create_instances(operation)

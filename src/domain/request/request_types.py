@@ -81,7 +81,7 @@ class RequestStatus(str, Enum):
 
     PENDING = "pending"
     IN_PROGRESS = "in_progress"
-    COMPLETED = "completed"
+    COMPLETED = "complete" #KBG TODO
     FAILED = "failed"
     CANCELLED = "cancelled"
     PARTIAL = "partial"
