@@ -204,7 +204,8 @@ class AWSTemplate(Template):
             "fleet_role": data.get("fleet_role"),
             "key_name": data.get("key_name"),
             "user_data": data.get("user_data"),
-            "root_device_volume_size": data.get("root_device_volume_size") or data.get("rootDeviceVolumeSize"),
+            "root_device_volume_size": data.get("root_device_volume_size")
+            or data.get("rootDeviceVolumeSize"),
             "volume_type": data.get("volume_type") or data.get("volumeType"),
             "iops": data.get("iops"),
             "instance_profile": data.get("instance_profile"),

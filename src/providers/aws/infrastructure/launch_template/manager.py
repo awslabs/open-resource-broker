@@ -360,9 +360,7 @@ class AWSLaunchTemplateManager:
                 else "gp3"
             ),
             "iops": (
-                template.iops
-                if hasattr(template, "iops") and template.iops is not None
-                else None
+                template.iops if hasattr(template, "iops") and template.iops is not None else None
             ),
             # Conditional flags
             "has_subnet": hasattr(template, "subnet_id") and bool(template.subnet_id),
@@ -376,8 +374,7 @@ class AWSLaunchTemplateManager:
             and template.monitoring_enabled is not None,
             "has_root_device_volume_size": hasattr(template, "root_device_volume_size")
             and template.root_device_volume_size is not None,
-            "has_iops": hasattr(template, "iops")
-            and template.iops is not None,
+            "has_iops": hasattr(template, "iops") and template.iops is not None,
             "has_custom_tags": bool(custom_tags),
             # Dynamic values
             "created_by": created_by,
@@ -440,10 +437,12 @@ class AWSLaunchTemplateManager:
         self._logger.info("Creating launch template with resolved image_id: %s", image_id)
 
         # Debug logging for volume parameters
-        self._logger.info("DEBUG: AWSTemplate attributes: root_device_volume_size=%s, volume_type=%s, hasattr(root_device_volume_size)=%s",
-                         getattr(aws_template, 'root_device_volume_size', 'NOT_SET'),
-                         getattr(aws_template, 'volume_type', 'NOT_SET'),
-                         hasattr(aws_template, 'root_device_volume_size'))
+        self._logger.info(
+            "DEBUG: AWSTemplate attributes: root_device_volume_size=%s, volume_type=%s, hasattr(root_device_volume_size)=%s",
+            getattr(aws_template, "root_device_volume_size", "NOT_SET"),
+            getattr(aws_template, "volume_type", "NOT_SET"),
+            hasattr(aws_template, "root_device_volume_size"),
+        )
 
         # Get instance name using the helper function
         get_instance_name(request.request_id)
@@ -522,7 +521,7 @@ class AWSLaunchTemplateManager:
                     "VolumeSize": aws_template.root_device_volume_size,
                     "VolumeType": volume_type,
                     "DeleteOnTermination": True,
-                }
+                },
             }
 
             # Add IOPS if specified and volume type supports it
