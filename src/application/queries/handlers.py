@@ -889,6 +889,7 @@ class GetTemplateHandler(BaseQueryHandler[GetTemplateQuery, Template]):
                 "security_group_ids": config.get("security_group_ids")
                 or config.get("securityGroupIds")
                 or [],
+                "user_data": config.get("user_data"),
                 "tags": config.get("tags") or {},
                 "metadata": config,
             }
@@ -964,6 +965,7 @@ class ListTemplatesHandler(BaseQueryHandler[ListTemplatesQuery, list[Template]])
                             "security_group_ids": config.get("security_group_ids")
                             or config.get("securityGroupIds")
                             or [],
+                            "user_data": config.get("user_data"),
                             "tags": config.get("tags") or {},
                             "metadata": {},
                         }

@@ -4,6 +4,7 @@ from typing import Any
 
 from domain.base.dependency_injection import injectable
 from domain.base.ports.configuration_port import ConfigurationPort
+from domain.base.ports.logging_port import LoggingPort
 from domain.base.ports.spec_rendering_port import SpecRenderingPort
 
 
@@ -11,9 +12,10 @@ from domain.base.ports.spec_rendering_port import SpecRenderingPort
 class NativeSpecService:
     """Generic native spec processing service - provider agnostic."""
 
-    def __init__(self, config_port: ConfigurationPort, spec_renderer: SpecRenderingPort):
+    def __init__(self, config_port: ConfigurationPort, spec_renderer: SpecRenderingPort, logger: LoggingPort):
         self.config_port = config_port
         self.spec_renderer = spec_renderer
+        self.logger = logger
 
     def is_native_spec_enabled(self) -> bool:
         """Check if native specs are enabled."""
