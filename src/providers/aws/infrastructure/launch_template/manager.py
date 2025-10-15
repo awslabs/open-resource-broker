@@ -347,6 +347,23 @@ class AWSLaunchTemplateManager:
                 and template.monitoring_enabled is not None
                 else None
             ),
+            # Block device configuration
+            "root_device_volume_size": (
+                template.root_device_volume_size
+                if hasattr(template, "root_device_volume_size")
+                and template.root_device_volume_size is not None
+                else None
+            ),
+            "volume_type": (
+                template.volume_type
+                if hasattr(template, "volume_type") and template.volume_type
+                else "gp3"
+            ),
+            "iops": (
+                template.iops
+                if hasattr(template, "iops") and template.iops is not None
+                else None
+            ),
             # Conditional flags
             "has_subnet": hasattr(template, "subnet_id") and bool(template.subnet_id),
             "has_security_groups": bool(template.security_group_ids),
@@ -357,6 +374,10 @@ class AWSLaunchTemplateManager:
             and template.ebs_optimized is not None,
             "has_monitoring": hasattr(template, "monitoring_enabled")
             and template.monitoring_enabled is not None,
+            "has_root_device_volume_size": hasattr(template, "root_device_volume_size")
+            and template.root_device_volume_size is not None,
+            "has_iops": hasattr(template, "iops")
+            and template.iops is not None,
             "has_custom_tags": bool(custom_tags),
             # Dynamic values
             "created_by": created_by,
@@ -418,6 +439,12 @@ class AWSLaunchTemplateManager:
         # Log the image_id being used
         self._logger.info("Creating launch template with resolved image_id: %s", image_id)
 
+        # Debug logging for volume parameters
+        self._logger.info("DEBUG: AWSTemplate attributes: root_device_volume_size=%s, volume_type=%s, hasattr(root_device_volume_size)=%s",
+                         getattr(aws_template, 'root_device_volume_size', 'NOT_SET'),
+                         getattr(aws_template, 'volume_type', 'NOT_SET'),
+                         hasattr(aws_template, 'root_device_volume_size'))
+
         # Get instance name using the helper function
         get_instance_name(request.request_id)
 
@@ -477,6 +504,36 @@ class AWSLaunchTemplateManager:
             and aws_template.monitoring_enabled is not None
         ):
             launch_template_data["Monitoring"] = {"Enabled": aws_template.monitoring_enabled}
+
+        # Add block device mappings for root volume if specified
+        if (
+            hasattr(aws_template, "root_device_volume_size")
+            and aws_template.root_device_volume_size is not None
+        ):
+            volume_type = getattr(aws_template, "volume_type", "gp3")
+            self._logger.info(
+                "Adding block device mapping: volume_size=%s, volume_type=%s",
+                aws_template.root_device_volume_size,
+                volume_type,
+            )
+            block_device_mapping = {
+                "DeviceName": "/dev/xvda",
+                "Ebs": {
+                    "VolumeSize": aws_template.root_device_volume_size,
+                    "VolumeType": volume_type,
+                    "DeleteOnTermination": True,
+                }
+            }
+
+            # Add IOPS if specified and volume type supports it
+            if (
+                hasattr(aws_template, "iops")
+                and aws_template.iops is not None
+                and volume_type in ["io1", "io2", "gp3"]
+            ):
+                block_device_mapping["Ebs"]["Iops"] = aws_template.iops
+
+            launch_template_data["BlockDeviceMappings"] = [block_device_mapping]
 
         return launch_template_data
 

@@ -146,6 +146,23 @@ class HostFactoryTransformations:
                     len(mapped_data["user_data"]) if mapped_data["user_data"] else 0,
                 )
 
+        # Transform volume-related camelCase fields to snake_case
+        if "rootDeviceVolumeSize" in mapped_data:
+            mapped_data["root_device_volume_size"] = mapped_data["rootDeviceVolumeSize"]
+            logger.debug(
+                "HostFactory: Transformed rootDeviceVolumeSize: %s -> root_device_volume_size: %s",
+                mapped_data["rootDeviceVolumeSize"],
+                mapped_data["root_device_volume_size"],
+            )
+
+        if "volumeType" in mapped_data:
+            mapped_data["volume_type"] = mapped_data["volumeType"]
+            logger.debug(
+                "HostFactory: Transformed volumeType: %s -> volume_type: %s",
+                mapped_data["volumeType"],
+                mapped_data["volume_type"],
+            )
+
         # Ensure instance type consistency
         mapped_data = HostFactoryTransformations.ensure_instance_type_consistency(mapped_data)
 

@@ -27,9 +27,9 @@ class HostFactoryFieldMappings:
             "maxSpotPrice": "max_price",
             "allocationStrategy": "allocation_strategy",
             # Storage configuration
-            "rootDeviceVolumeSize": "root_volume_size",
-            "volumeType": "root_volume_type",
-            "iops": "root_volume_iops",
+            "rootDeviceVolumeSize": "root_device_volume_size",
+            "volumeType": "volume_type",
+            "iops": "iops",
             # Tags and metadata
             "instanceTags": "tags",  # Will be parsed from string format
         },

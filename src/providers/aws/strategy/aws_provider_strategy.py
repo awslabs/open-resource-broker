@@ -309,23 +309,39 @@ class AWSProviderStrategy(ProviderStrategy):
             # Convert template_config to AWSTemplate domain object
             from providers.aws.domain.template.aws_template_aggregate import AWSTemplate
 
+            # Extract metadata for additional fields
+            metadata = template_config.get("metadata", {})
+
+            # Create enhanced template config with metadata fields
+            enhanced_config = template_config.copy()
+
+            # Extract volume parameters from metadata if not in main config
+            if not enhanced_config.get("root_device_volume_size") and metadata.get("root_device_volume_size"):
+                enhanced_config["root_device_volume_size"] = metadata.get("root_device_volume_size")
+            if not enhanced_config.get("volume_type") and metadata.get("volume_type"):
+                enhanced_config["volume_type"] = metadata.get("volume_type")
+            if not enhanced_config.get("iops") and metadata.get("iops"):
+                enhanced_config["iops"] = metadata.get("iops")
+
+            # Extract other AWS-specific fields from metadata
+            for field in ["fleet_role", "fleet_type", "instance_profile", "key_name", "user_data"]:
+                if not enhanced_config.get(field) and metadata.get(field):
+                    enhanced_config[field] = metadata.get(field)
+
             try:
-                self._logger.debug(f"Creating AWSTemplate object from template: {template_config}")
-                aws_template = AWSTemplate.model_validate(template_config)
+                self._logger.debug(f"Creating AWSTemplate object from enhanced template: {enhanced_config}")
+                aws_template = AWSTemplate.model_validate(enhanced_config)
 
             except Exception as e:
-                self._logger.error("Failed to create AWSTemplate from config: %s", e)
+                self._logger.error("Failed to create AWSTemplate from enhanced config: %s", e)
                 # Fallback: create minimal AWSTemplate with required fields
-                # Check metadata for additional fields if they're not in the main config
-                metadata = template_config.get("metadata", {})
                 aws_template = AWSTemplate(
                     template_id=template_config.get("template_id", "unknown"),
                     image_id=template_config.get("image_id", ""),
                     instance_type=template_config.get("instance_type", "t2.micro"),
                     subnet_ids=template_config.get("subnet_ids", []),
                     security_group_ids=template_config.get("security_group_ids", []),
-                    instance_profile=template_config.get("instance_profile")
-                    or metadata.get("instance_profile"),
+                    instance_profile=template_config.get("instance_profile") or metadata.get("instance_profile"),
                     key_name=template_config.get("key_name") or metadata.get("key_name"),
                     user_data=template_config.get("user_data") or metadata.get("user_data"),
                     fleet_role=template_config.get("fleet_role") or metadata.get("fleet_role"),
