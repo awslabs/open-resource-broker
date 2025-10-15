@@ -332,7 +332,7 @@ class AWSLaunchTemplateManager:
                 else None
             ),
             "instance_profile": (
-                template.instance_profile
+                self._extract_instance_profile_name(template.instance_profile)
                 if hasattr(template, "instance_profile") and template.instance_profile
                 else None
             ),
@@ -352,8 +352,7 @@ class AWSLaunchTemplateManager:
             "has_security_groups": bool(template.security_group_ids),
             "has_key_name": hasattr(template, "key_name") and bool(template.key_name),
             "has_user_data": hasattr(template, "user_data") and bool(template.user_data),
-            "has_instance_profile": hasattr(template, "instance_profile")
-            and bool(template.instance_profile),
+            "has_instance_profile": bool(template.instance_profile),
             "has_ebs_optimized": hasattr(template, "ebs_optimized")
             and template.ebs_optimized is not None,
             "has_monitoring": hasattr(template, "monitoring_enabled")
@@ -460,7 +459,13 @@ class AWSLaunchTemplateManager:
             launch_template_data["UserData"] = encoded_user_data
 
         if aws_template.instance_profile:
-            launch_template_data["IamInstanceProfile"] = {"Name": aws_template.instance_profile}
+            # Extract instance profile name from ARN if needed
+            instance_profile_name = aws_template.instance_profile
+            if instance_profile_name.startswith("arn:aws:iam::"):
+                # Extract the role name from the ARN
+                # ARN format: arn:aws:iam::account-id:role/role-name
+                instance_profile_name = instance_profile_name.split("/")[-1]
+            launch_template_data["IamInstanceProfile"] = {"Name": instance_profile_name}
 
         # Add EBS optimization if specified (check if attribute exists)
         if hasattr(aws_template, "ebs_optimized") and aws_template.ebs_optimized is not None:
@@ -546,6 +551,22 @@ class AWSLaunchTemplateManager:
             {"Key": "TemplateId", "Value": str(aws_template.template_id)},
             {"Key": "CreatedBy", "Value": created_by},
         ]
+
+    def _extract_instance_profile_name(self, instance_profile: str) -> str:
+        """
+        Extract instance profile name from ARN if needed.
+
+        Args:
+            instance_profile: Instance profile ARN or name
+
+        Returns:
+            Instance profile name (without ARN prefix)
+        """
+        if instance_profile and instance_profile.startswith("arn:aws:iam::"):
+            # Extract the role name from the ARN
+            # ARN format: arn:aws:iam::account-id:role/role-name
+            return instance_profile.split("/")[-1]
+        return instance_profile
 
     def _generate_client_token(self, request: Request, aws_template: AWSTemplate) -> str:
         """

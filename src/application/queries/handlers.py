@@ -890,6 +890,8 @@ class GetTemplateHandler(BaseQueryHandler[GetTemplateQuery, Template]):
                 or config.get("securityGroupIds")
                 or [],
                 "user_data": config.get("user_data"),
+                "instance_profile": config.get("instance_profile"),
+                "key_pair_name": config.get("key_name"),
                 "tags": config.get("tags") or {},
                 "metadata": config,
             }
