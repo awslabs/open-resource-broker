@@ -346,6 +346,12 @@ class AWSHandler(ABC):
             AWSEntityNotFoundError: If any instance is not found
             InfrastructureError: For other AWS API errors
         """
+        # KBG TODO: Replace this sleep with proper retry logic with exponential backoff
+        # This is a temporary fix for AWS eventual consistency issues where instances
+        # are created but not immediately available for describe_instances calls
+        import time
+        time.sleep(2)
+
         try:
             # Use AWS client's EC2 client for describe_instances
             response = self.aws_client.ec2_client.describe_instances(InstanceIds=instance_ids)
