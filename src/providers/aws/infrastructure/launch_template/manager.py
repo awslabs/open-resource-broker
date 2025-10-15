@@ -452,8 +452,11 @@ class AWSLaunchTemplateManager:
 
         if aws_template.user_data:
             import base64
+
             # AWS requires user data to be Base64 encoded
-            encoded_user_data = base64.b64encode(aws_template.user_data.encode('utf-8')).decode('ascii')
+            encoded_user_data = base64.b64encode(aws_template.user_data.encode("utf-8")).decode(
+                "ascii"
+            )
             launch_template_data["UserData"] = encoded_user_data
 
         if aws_template.instance_profile:

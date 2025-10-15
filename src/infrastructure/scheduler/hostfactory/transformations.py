@@ -51,23 +51,28 @@ class HostFactoryTransformations:
             return value
 
         # Check if it looks like a file path
-        if (value.startswith('/') or
-            value.endswith('.sh') or
-            value.endswith('.ps1') or
-            value.endswith('.bat') or
-            '/' in value):
+        if (
+            value.startswith("/")
+            or value.endswith(".sh")
+            or value.endswith(".ps1")
+            or value.endswith(".bat")
+            or "/" in value
+        ):
             try:
                 import os
+
                 # Convert to absolute path if relative
                 if not os.path.isabs(value):
                     # Assume relative to current working directory
                     value = os.path.abspath(value)
 
                 if os.path.isfile(value):
-                    with open(value, 'r', encoding='utf-8') as f:
+                    with open(value, encoding="utf-8") as f:
                         content = f.read()
                     logger = get_logger(__name__)
-                    logger.info("Read user data script from file: %s (%d bytes)", value, len(content))
+                    logger.info(
+                        "Read user data script from file: %s (%d bytes)", value, len(content)
+                    )
                     return content
                 else:
                     logger = get_logger(__name__)
@@ -131,7 +136,9 @@ class HostFactoryTransformations:
         # Transform user_data (read file content if it's a file path)
         if "user_data" in mapped_data:
             original_value = mapped_data["user_data"]
-            mapped_data["user_data"] = HostFactoryTransformations.transform_user_data(original_value)
+            mapped_data["user_data"] = HostFactoryTransformations.transform_user_data(
+                original_value
+            )
             if mapped_data["user_data"] != original_value:
                 logger.debug(
                     "HostFactory: Transformed user_data from file path: %s -> %d bytes of content",

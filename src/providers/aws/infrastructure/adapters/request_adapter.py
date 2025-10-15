@@ -66,7 +66,9 @@ class AWSRequestAdapter(RequestAdapterPort):
                     "InstanceType": instance_type,
                     "SecurityGroupIds": security_group_ids,
                     "KeyName": key_name,
-                    "UserData": base64.b64encode(user_data.encode('utf-8')).decode('ascii') if user_data else None,
+                    "UserData": base64.b64encode(user_data.encode("utf-8")).decode("ascii")
+                    if user_data
+                    else None,
                     "TagSpecifications": [
                         {
                             "ResourceType": "instance",

@@ -129,7 +129,8 @@ def create_instance(
 
         if user_data:
             import base64
-            params["UserData"] = base64.b64encode(user_data.encode('utf-8')).decode('ascii')
+
+            params["UserData"] = base64.b64encode(user_data.encode("utf-8")).decode("ascii")
 
         # Create instance with retry built-in
         response = _run_instance(ec2_client, params)
