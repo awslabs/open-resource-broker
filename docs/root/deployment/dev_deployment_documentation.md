@@ -67,7 +67,7 @@ There are 2 ways to configure OHFP:
 
 ### 1.1 Create Provider Directory
 
-Navigate to the providers folder and create folder for the new provider.
+Navigate to the providers folder and create a folder for the new provider.
 ```bash
 cd /opt/ibm/spectrumcomputing/hostfactory/conf/providers
 mkdir aws_ohfp_provider
@@ -82,10 +82,11 @@ Copy these 3 configuration files from the OHFP repository:
 
 
 - `config.json`
-  - Change according to your setup. See example in the appendix. Need to use existing key pair.
+  - Change according to your setup. See example in the appendix. Needs to use existing key pair.
 
 - `awsprov_templates.json`
   - Templates configuration for AWS resources. Needs to be updated
+
 **Base Configuration:**
 ```bash
 cp /opt/ibm/spectrumcomputing/hostfactory/1.2/providerplugins/ohfp/config/default_config.json opt/ibm/spectrumcomputing/hostfactory/work/config/
@@ -162,13 +163,13 @@ Update the requestor configuration:
 }
 ```
 
-## Set Environmental variables in invoke_provider.sh
+## Set Environment Variables in invoke_provider.sh
 
 ```
 /opt/ibm/spectrumcomputing/hostfactory/1.2/providerplugins/ohfp/scripts/invoke_provider.sh
 export USE_LOCAL_DEV="true"         # Set true for this type of deployment
-export LOG_CONSOLE_ENABLED=false    # STDOUT will intefere with HF expected output.
-export LOG_SCRIPTS="true"           # For debug purposees log raw IO between HF and the plugin
+export LOG_CONSOLE_ENABLED=false    # STDOUT will interfere with HF expected output.
+export LOG_SCRIPTS="true"           # For debug purposes log raw IO between HF and the plugin
 export LOG_LEVEL=DEBUG              # Enable for plugin logging
 ```
 
@@ -236,7 +237,7 @@ sleep 2
 egosh service start HostFactory
 ```
 
-To have clean run, you can remove all the previous state associated with HF and requestor plugin (adjust to your paths):
+To have a clean run, you can remove all the previous state associated with HF and requestor plugin (adjust to your paths):
 
 ```bash
 rm /opt/ibm/spectrumcomputing/hostfactory/work/*.json -f
@@ -247,7 +248,7 @@ rm /opt/ibm/spectrumcomputing/hostfactory/db/hf.db -f
 rm /opt/ibm/spectrumcomputing/hostfactory/1.2/providerplugins/ohfp/awscpinst/data/*.json -f
 ```
 
-Note: symAinst-requestor.log is visible only if plugin succesfully started and returned list of availabe templates.
+Note: symAinst-requestor.log is visible only if plugin successfully started and returned list of available templates.
 
 # Appendix
 
