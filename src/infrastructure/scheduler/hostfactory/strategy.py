@@ -365,7 +365,7 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         hf_template = {
             "templateId": template_dict.get("template_id", template_dict.get("templateId", "")),
             "maxNumber": template_dict.get("max_instances", template_dict.get("maxNumber", 1)),
-            "attributes": self._create_hf_attributes(template_dict),
+            "attributes": self._create_hf_attributes_from_template(template_dict),
         }
 
         # Add optional HostFactory fields if present
@@ -412,41 +412,40 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         }
         return mapping.get(hf_field, hf_field)
 
-    def _create_hf_attributes(self, template_data: dict[str, Any]) -> dict[str, Any]:
-        """Create HF-compatible attributes object with CPU/RAM specs.
+    def _create_hf_attributes_from_template(self, template) -> dict[str, Any]:
+        """Create HF-compatible attributes object from Template domain object or dict.
 
         This method handles the creation of HostFactory attributes with
-        CPU and RAM specifications based on instance type.
+        CPU and RAM specifications based on the template's instance type.
+
+        Args:
+            template: Template domain object or dict with template data
         """
-        # Handle both snake_case and camelCase field names
-        instance_type = template_data.get("instance_type") or template_data.get(
-            "instanceType", "t2.micro"
-        )
+        # Handle both Template objects and dictionaries
+        if hasattr(template, 'instance_type'):
+            # Template domain object - direct property access
+            instance_type = template.instance_type or "t2.micro"
+        elif isinstance(template, dict):
+            # Dictionary - handle both snake_case and camelCase field names
+            instance_type = template.get("instance_type") or template.get(
+                "instanceType", "t2.micro"
+            )
+        else:
+            # Fallback for other types
+            instance_type = "t2.micro"
 
-        # CPU/RAM mapping for common instance types
-        cpu_ram_mapping = {
-            "t2.micro": {"ncpus": "1", "nram": "1024"},
-            "t2.small": {"ncpus": "1", "nram": "2048"},
-            "t2.medium": {"ncpus": "2", "nram": "4096"},
-            "t3.micro": {"ncpus": "2", "nram": "1024"},
-            "t3.small": {"ncpus": "2", "nram": "2048"},
-            "t3.medium": {"ncpus": "2", "nram": "4096"},
-            "m5.large": {"ncpus": "2", "nram": "8192"},
-            "m5.xlarge": {"ncpus": "4", "nram": "16384"},
-            "c5.large": {"ncpus": "2", "nram": "4096"},
-            "c5.xlarge": {"ncpus": "4", "nram": "8192"},
-            "r5.large": {"ncpus": "2", "nram": "16384"},
-            "r5.xlarge": {"ncpus": "4", "nram": "32768"},
-        }
+        # Use centralized function to derive CPU/RAM from instance type
+        from cli.field_mapping import derive_cpu_ram_from_instance_type
 
-        # Get specs for instance type, default to t2.micro specs
-        specs = cpu_ram_mapping.get(instance_type, {"ncpus": "1", "nram": "1024"})
+        ncpus, nram = derive_cpu_ram_from_instance_type(instance_type)
 
-        # Return HF-compatible attributes format
+        # Return HF-compatible attributes format matching the expected output
+        # Note: This method includes ncores for backward compatibility
         return {
+            "nram": ["Numeric", nram],
+            "ncpus": ["Numeric", ncpus],
+            "ncores": ["Numeric", ncpus],  # Use same value as ncpus for cores
             "type": ["String", "X86_64"],
-            "ncpus": ["Numeric", specs["ncpus"]],
-            "nram": ["Numeric", specs["nram"]],
         }
 
     def get_config_file_path(self) -> str:
@@ -575,38 +574,16 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         Format domain Templates to HostFactory response.
 
         This method handles the conversion from domain Template objects to HostFactory response format.
+        The format matches the expected HostFactory getAvailableTemplates output with minimal fields.
         """
         return {
             "templates": [
                 {
-                    # Core template fields - Domain -> HostFactory
                     "templateId": template.template_id,
-                    "name": template.name,
-                    "description": template.description,
-                    # Instance configuration - Domain -> HostFactory
-                    "vmType": template.instance_type,
-                    "imageId": template.image_id,
                     "maxNumber": template.max_instances,
-                    # Network configuration - Domain -> HostFactory
-                    "subnetIds": template.subnet_ids,
-                    "securityGroupIds": template.security_group_ids,
-                    # Pricing and allocation - Domain -> HostFactory
-                    "priceType": template.price_type,
-                    "allocationStrategy": template.allocation_strategy,
-                    "maxPrice": template.max_price,
-                    # Tags and metadata - Domain -> HostFactory
-                    "tags": template.tags,
-                    "metadata": template.metadata,
-                    # Provider API - Domain -> HostFactory
-                    "providerApi": template.provider_api,
-                    # Timestamps - Domain -> HostFactory
-                    "createdAt": template.created_at,
-                    "updatedAt": template.updated_at,
-                    "isActive": template.is_active,
-                    # HostFactory-specific fields - Domain -> HostFactory
-                    "keyName": template.key_name,
-                    "userData": template.user_data,
-                    "vmTypes": template.vm_types,
+                    "attributes": self._create_hf_attributes_from_template(template),
+                    "pgrpName": None,
+                    "onDemandCapacity": 0,
                 }
                 for template in templates
             ]
