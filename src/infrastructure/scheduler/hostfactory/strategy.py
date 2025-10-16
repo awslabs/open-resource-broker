@@ -422,7 +422,7 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
             template: Template domain object or dict with template data
         """
         # Handle both Template objects and dictionaries
-        if hasattr(template, 'instance_type'):
+        if hasattr(template, "instance_type"):
             # Template domain object - direct property access
             instance_type = template.instance_type or "t2.micro"
         elif isinstance(template, dict):
