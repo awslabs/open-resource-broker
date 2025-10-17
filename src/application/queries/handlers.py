@@ -856,7 +856,6 @@ class GetTemplateHandler(BaseQueryHandler[GetTemplateQuery, Template]):
 
     async def execute_query(self, query: GetTemplateQuery) -> Template:
         """Execute get template query."""
-        from domain.template.template_aggregate import Template
         from infrastructure.template.configuration_manager import (
             TemplateConfigurationManager,
         )
@@ -933,7 +932,6 @@ class ListTemplatesHandler(BaseQueryHandler[ListTemplatesQuery, list[Template]])
 
     async def execute_query(self, query: ListTemplatesQuery) -> list[Template]:
         """Execute list templates query."""
-        from domain.template.template_aggregate import Template
         from infrastructure.template.configuration_manager import (
             TemplateConfigurationManager,
         )
@@ -949,9 +947,7 @@ class ListTemplatesHandler(BaseQueryHandler[ListTemplatesQuery, list[Template]])
                 template_factory = get_default_template_factory()
 
             if query.provider_api:
-                template_dtos = await template_manager.get_templates_by_provider(
-                    query.provider_api
-                )
+                template_dtos = await template_manager.get_templates_by_provider(query.provider_api)
             else:
                 template_dtos = await template_manager.load_templates()
 
@@ -964,7 +960,8 @@ class ListTemplatesHandler(BaseQueryHandler[ListTemplatesQuery, list[Template]])
                     template_data.setdefault("name", dto.name or dto.template_id)
                     template_data.setdefault("provider_api", dto.provider_api or "aws")
                     template_data.setdefault(
-                        "image_id", config.get("image_id") or config.get("imageId") or "default-image"
+                        "image_id",
+                        config.get("image_id") or config.get("imageId") or "default-image",
                     )
                     template_data.setdefault(
                         "subnet_ids",
