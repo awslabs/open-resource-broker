@@ -36,6 +36,7 @@ class BaseSchedulerStrategy(SchedulerPort, ABC):
 
         Uses the Request's to_dict() method to serialize to native format.
         """
+        # KBG TODO requestId for hostfactory returned as request_id, but it does not trigger an error, likely ignored by HF
         return {
             "requests": [request.to_dict() for request in requests],
             "message": "Request status retrieved successfully",

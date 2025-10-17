@@ -641,20 +641,51 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
 
     def get_directory(self, file_type: str) -> str | None:
         """Get directory path for the given file type."""
+        self._logger.debug(
+            "[HF_STRATEGY] get_directory called with file_type=%s", file_type
+        )
+
         if file_type in ["conf", "template", "legacy"]:
-            return os.environ.get(
-                "HF_PROVIDER_CONFDIR",
-                os.path.join(os.environ.get("HF_PROVIDER_WORKDIR", os.getcwd()), "config"),
+            confdir = os.environ.get("HF_PROVIDER_CONFDIR")
+            workdir = os.environ.get("HF_PROVIDER_WORKDIR", os.getcwd())
+            result = confdir if confdir else os.path.join(workdir, "config")
+            self._logger.debug(
+                "[HF_STRATEGY] file_type=%s: HF_PROVIDER_CONFDIR=%s, HF_PROVIDER_WORKDIR=%s, result=%s",
+                file_type,
+                confdir,
+                workdir,
+                result,
             )
+            return result
         elif file_type == "log":
-            return os.environ.get(
-                "HF_PROVIDER_LOGDIR",
-                os.path.join(os.environ.get("HF_PROVIDER_WORKDIR", os.getcwd()), "logs"),
+            logdir = os.environ.get("HF_PROVIDER_LOGDIR")
+            workdir = os.environ.get("HF_PROVIDER_WORKDIR", os.getcwd())
+            result = logdir if logdir else os.path.join(workdir, "logs")
+            self._logger.info(
+                "[HF_STRATEGY] file_type=log: HF_PROVIDER_LOGDIR=%s, HF_PROVIDER_WORKDIR=%s, result=%s",
+                logdir,
+                workdir,
+                result,
             )
+            return result
         elif file_type in ["work", "data"]:
-            return os.environ.get("HF_PROVIDER_WORKDIR", os.getcwd())
+            result = os.environ.get("HF_PROVIDER_WORKDIR", os.getcwd())
+            self._logger.debug(
+                "[HF_STRATEGY] file_type=%s: HF_PROVIDER_WORKDIR=%s, result=%s",
+                file_type,
+                os.environ.get("HF_PROVIDER_WORKDIR"),
+                result,
+            )
+            return result
         else:
-            return os.environ.get("HF_PROVIDER_WORKDIR", os.getcwd())
+            result = os.environ.get("HF_PROVIDER_WORKDIR", os.getcwd())
+            self._logger.debug(
+                "[HF_STRATEGY] file_type=%s (default): HF_PROVIDER_WORKDIR=%s, result=%s",
+                file_type,
+                os.environ.get("HF_PROVIDER_WORKDIR"),
+                result,
+            )
+            return result
 
     def _format_machines_for_hostfactory(
         self, machines: list[dict[str, Any]]
