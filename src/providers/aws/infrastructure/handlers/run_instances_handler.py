@@ -28,7 +28,7 @@ Note:
 """
 
 from datetime import datetime
-from typing import Any, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Optional
 
 from botocore.exceptions import ClientError
 
@@ -127,7 +127,9 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
             # Get instance details immediately
             instance_ids = request.metadata.get("instance_ids", [])
             instance_details = self._get_instance_details(instance_ids)
-            instances = self._format_instance_data(instance_details, resource_id, request, aws_template)
+            instances = self._format_instance_data(
+                instance_details, resource_id, request, aws_template
+            )
 
             return {
                 "success": True,
@@ -233,16 +235,13 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
                     for inst in instance_details
                 ]
             except Exception as exc:
-                self._logger.error(
-                    "Failed to normalize instances with machine adapter: %s", exc
-                )
+                self._logger.error("Failed to normalize instances with machine adapter: %s", exc)
                 raise AWSInfrastructureError(
                     "Failed to normalize instance data with AWS machine adapter"
                 ) from exc
 
         return [
-            self._build_fallback_machine_payload(inst, resource_id)
-            for inst in instance_details
+            self._build_fallback_machine_payload(inst, resource_id) for inst in instance_details
         ]
 
     def _prepare_template_context(self, template: AWSTemplate, request: Request) -> dict[str, Any]:
@@ -516,7 +515,9 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
                 if reservation_id not in resource_ids:
                     continue
 
-                instance_ids = [instance.get("InstanceId") for instance in reservation.get("Instances", [])]
+                instance_ids = [
+                    instance.get("InstanceId") for instance in reservation.get("Instances", [])
+                ]
                 instance_ids = [instance_id for instance_id in instance_ids if instance_id]
 
                 if not instance_ids:
@@ -530,9 +531,7 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
             return formatted_instances
 
         except Exception as e:
-            self._logger.error(
-                "FALLBACK: Fallback method failed to find instances: %s", e
-            )
+            self._logger.error("FALLBACK: Fallback method failed to find instances: %s", e)
             return []
 
     def release_hosts(self, request: Request) -> None:

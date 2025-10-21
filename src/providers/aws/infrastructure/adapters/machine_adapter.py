@@ -77,15 +77,19 @@ class AWSMachineAdapter:
                 machine_data = aws_instance_data.copy()  # Start with existing data
 
                 # Ensure required fields are present
-                machine_data.update({
-                    "request_id": request_id,
-                    "provider_api": provider_api,
-                    "resource_id": resource_id,
-                })
+                machine_data.update(
+                    {
+                        "request_id": request_id,
+                        "provider_api": provider_api,
+                        "resource_id": resource_id,
+                    }
+                )
 
                 # Add name if not present
                 if "name" not in machine_data or not machine_data["name"]:
-                    machine_data["name"] = machine_data.get("private_ip", machine_data.get("instance_id", ""))
+                    machine_data["name"] = machine_data.get(
+                        "private_ip", machine_data.get("instance_id", "")
+                    )
 
                 # Ensure launch_time is present (might be missing in some cases)
                 if "launch_time" not in machine_data:
@@ -130,7 +134,9 @@ class AWSMachineAdapter:
                 try:
                     InstanceType(value=aws_instance_data["InstanceType"])
                 except ValueError:
-                    self._logger.error("Invalid instance type: %s", aws_instance_data["InstanceType"])
+                    self._logger.error(
+                        "Invalid instance type: %s", aws_instance_data["InstanceType"]
+                    )
                     raise AWSError(f"Invalid instance type: {aws_instance_data['InstanceType']}")
 
                 # Extract core machine data from PascalCase format
@@ -157,8 +163,12 @@ class AWSMachineAdapter:
                         "vpc_id": aws_instance_data["VpcId"],
                         "ami_id": aws_instance_data["ImageId"],
                         "ebs_optimized": aws_instance_data.get("EbsOptimized", False),
-                        "monitoring": aws_instance_data.get("Monitoring", {}).get("State", "disabled"),
-                        "tags": {tag["Key"]: tag["Value"] for tag in aws_instance_data.get("Tags", [])},
+                        "monitoring": aws_instance_data.get("Monitoring", {}).get(
+                            "State", "disabled"
+                        ),
+                        "tags": {
+                            tag["Key"]: tag["Value"] for tag in aws_instance_data.get("Tags", [])
+                        },
                     },
                 }
 

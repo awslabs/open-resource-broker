@@ -28,7 +28,7 @@ Note:
 
 import json
 from datetime import datetime
-from typing import Any, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Optional
 
 from domain.base.dependency_injection import injectable
 from domain.base.ports import LoggingPort
@@ -776,7 +776,9 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin):
             self._logger.error("Unexpected error checking Spot Fleet status: %s", str(e))
             raise AWSInfrastructureError(f"Failed to check Spot Fleet status: {e!s}")
 
-    def _get_spot_fleet_instances(self, fleet_id: str, request_id: str = None) -> list[dict[str, Any]]:
+    def _get_spot_fleet_instances(
+        self, fleet_id: str, request_id: str = None
+    ) -> list[dict[str, Any]]:
         """Get instances for a specific spot fleet."""
         # Get fleet information
         fleet_list = self._retry_with_backoff(
@@ -805,10 +807,7 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin):
 
         instance_ids = [instance["InstanceId"] for instance in active_instances]
         return self._get_instance_details(
-            instance_ids,
-            request_id=request_id,
-            resource_id=fleet_id,
-            provider_api="SpotFleet"
+            instance_ids, request_id=request_id, resource_id=fleet_id, provider_api="SpotFleet"
         )
 
     def _format_instance_data(
@@ -833,16 +832,13 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin):
                     for inst in instance_details
                 ]
             except Exception as exc:
-                self._logger.error(
-                    "Failed to normalize instances with machine adapter: %s", exc
-                )
+                self._logger.error("Failed to normalize instances with machine adapter: %s", exc)
                 raise AWSInfrastructureError(
                     "Failed to normalize instance data with AWS machine adapter"
                 ) from exc
 
         return [
-            self._build_fallback_machine_payload(inst, resource_id)
-            for inst in instance_details
+            self._build_fallback_machine_payload(inst, resource_id) for inst in instance_details
         ]
 
     def release_hosts(self, request: Request) -> None:

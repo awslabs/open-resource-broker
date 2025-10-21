@@ -272,7 +272,9 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
             return machines
 
         except Exception as e:
-            self.logger.exception("Failed to check provider and create machines: %s", e, exc_info=True)
+            self.logger.exception(
+                "Failed to check provider and create machines: %s", e, exc_info=True
+            )
             return []
 
     async def _update_machine_status_from_aws(self, machines: list) -> list:
@@ -465,8 +467,8 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
 
     def _create_machine_from_aws_data(self, aws_instance: dict[str, Any], request):
         """Create machine aggregate using Pydantic validation with format detection."""
-        from domain.machine.aggregate import Machine
         from domain.base.value_objects import InstanceId
+        from domain.machine.aggregate import Machine
 
         # Detect format and normalize to snake_case for Pydantic
         if "instance_id" in aws_instance:
@@ -476,7 +478,9 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
             # PascalCase format (from provider strategy) - convert to snake_case
             machine_data = {
                 "instance_id": aws_instance.get("InstanceId"),
-                "status": aws_instance.get("State", {}).get("Name") if isinstance(aws_instance.get("State"), dict) else aws_instance.get("State"),
+                "status": aws_instance.get("State", {}).get("Name")
+                if isinstance(aws_instance.get("State"), dict)
+                else aws_instance.get("State"),
                 "instance_type": aws_instance.get("InstanceType"),
                 "image_id": aws_instance.get("ImageId", "unknown"),
                 "private_ip": aws_instance.get("PrivateIpAddress"),
@@ -484,15 +488,22 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
                 "launch_time": aws_instance.get("LaunchTime"),
                 "subnet_id": aws_instance.get("SubnetId"),
                 "security_group_ids": aws_instance.get("SecurityGroups", []),
-                "tags": {"tags": {tag.get("Key", ""): tag.get("Value", "") for tag in aws_instance.get("Tags", [])}},
+                "tags": {
+                    "tags": {
+                        tag.get("Key", ""): tag.get("Value", "")
+                        for tag in aws_instance.get("Tags", [])
+                    }
+                },
                 "metadata": aws_instance,  # Store original data as metadata
             }
 
         # Add required context fields
-        machine_data.update({
-            "template_id": request.template_id,
-            "provider_type": "aws",
-        })
+        machine_data.update(
+            {
+                "template_id": request.template_id,
+                "provider_type": "aws",
+            }
+        )
 
         # Validate required fields before Pydantic validation
         if not machine_data.get("instance_id"):
@@ -503,7 +514,7 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
             machine_data["image_id"] = "unknown"  # Provide default
 
         # Create value objects explicitly for Pydantic
-        from domain.base.value_objects import InstanceId, InstanceType
+        from domain.base.value_objects import InstanceType
 
         # Convert strings to proper value objects
         machine_data["instance_id"] = InstanceId(value=machine_data["instance_id"])

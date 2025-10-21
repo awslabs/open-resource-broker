@@ -407,7 +407,7 @@ class AWSHandler(ABC):
         instance_ids: list[str],
         request_id: str = None,
         resource_id: str = None,
-        provider_api: str = "EC2"
+        provider_api: str = "EC2",
     ) -> list[dict[str, Any]]:
         """
         Get detailed information about EC2 instances using machine adapter for proper formatting.
@@ -438,7 +438,11 @@ class AWSHandler(ABC):
 
             instances: list[dict[str, Any]] = []
             reservations = response.get("Reservations", [])
-            self._logger.debug("Retrieved %d reservations for %d instance IDs", len(reservations), len(instance_ids))
+            self._logger.debug(
+                "Retrieved %d reservations for %d instance IDs",
+                len(reservations),
+                len(instance_ids),
+            )
 
             for reservation in reservations:
                 for instance in reservation.get("Instances", []):
@@ -450,19 +454,37 @@ class AWSHandler(ABC):
                                 instance,
                                 request_id=request_id,
                                 provider_api=provider_api,
-                                resource_id=resource_id
+                                resource_id=resource_id,
                             )
                             instances.append(machine_data)
-                            self._logger.debug("Successfully converted instance %s using machine adapter", instance.get("InstanceId"))
+                            self._logger.debug(
+                                "Successfully converted instance %s using machine adapter",
+                                instance.get("InstanceId"),
+                            )
                         except Exception as e:
-                            self._logger.warning("Machine adapter failed for instance %s, using fallback: %s", instance.get("InstanceId"), e)
+                            self._logger.warning(
+                                "Machine adapter failed for instance %s, using fallback: %s",
+                                instance.get("InstanceId"),
+                                e,
+                            )
                             # Fallback to existing method
-                            instances.append(self._build_fallback_machine_payload(instance, resource_id or "unknown"))
+                            instances.append(
+                                self._build_fallback_machine_payload(
+                                    instance, resource_id or "unknown"
+                                )
+                            )
                     else:
                         # Fallback when machine adapter not available or missing context
-                        self._logger.debug("Using fallback conversion for instance %s (adapter=%s, request_id=%s, resource_id=%s)",
-                                         instance.get("InstanceId"), bool(self._machine_adapter), bool(request_id), bool(resource_id))
-                        instances.append(self._build_fallback_machine_payload(instance, resource_id or "unknown"))
+                        self._logger.debug(
+                            "Using fallback conversion for instance %s (adapter=%s, request_id=%s, resource_id=%s)",
+                            instance.get("InstanceId"),
+                            bool(self._machine_adapter),
+                            bool(request_id),
+                            bool(resource_id),
+                        )
+                        instances.append(
+                            self._build_fallback_machine_payload(instance, resource_id or "unknown")
+                        )
 
             self._logger.debug("Converted %d instances to domain format", len(instances))
             return instances

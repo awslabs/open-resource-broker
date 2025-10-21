@@ -28,7 +28,7 @@ Note:
 
 import json
 from datetime import datetime
-from typing import Any, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Optional
 
 from botocore.exceptions import ClientError
 
@@ -139,7 +139,7 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin):
                         instance_ids,
                         request_id=str(request.request_id),
                         resource_id=fleet_id,
-                        provider_api="EC2Fleet"
+                        provider_api="EC2Fleet",
                     )
 
             if instance_details:
@@ -288,16 +288,13 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin):
                     for inst in instance_details
                 ]
             except Exception as exc:
-                self._logger.error(
-                    "Failed to normalize instances with machine adapter: %s", exc
-                )
+                self._logger.error("Failed to normalize instances with machine adapter: %s", exc)
                 raise AWSInfrastructureError(
                     "Failed to normalize instance data with AWS machine adapter"
                 ) from exc
 
         return [
-            self._build_fallback_machine_payload(inst, resource_id)
-            for inst in instance_details
+            self._build_fallback_machine_payload(inst, resource_id) for inst in instance_details
         ]
 
     def _prepare_template_context(self, template: AWSTemplate, request: Request) -> dict[str, Any]:
@@ -653,14 +650,18 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin):
             fleet_type_value = None
 
             # First, try template.fleet_type attribute (this should be the primary source)
-            if hasattr(template, 'fleet_type') and template.fleet_type:
+            if hasattr(template, "fleet_type") and template.fleet_type:
                 fleet_type_value = template.fleet_type
-                self._logger.debug(f" check_hosts_status fleet_type_value from template.fleet_type: {fleet_type_value} (type: {type(fleet_type_value)})")
+                self._logger.debug(
+                    f" check_hosts_status fleet_type_value from template.fleet_type: {fleet_type_value} (type: {type(fleet_type_value)})"
+                )
 
             # Fallback: check metadata directly (no "aws" nesting)
             if not fleet_type_value and template.metadata:
                 fleet_type_value = template.metadata.get("fleet_type")
-                self._logger.debug(f" check_hosts_status fleet_type_value from metadata: {fleet_type_value}")
+                self._logger.debug(
+                    f" check_hosts_status fleet_type_value from metadata: {fleet_type_value}"
+                )
 
             # If still not found, this is an error - don't default to instant
             if not fleet_type_value:
@@ -679,7 +680,9 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin):
                 operation_type="read_only",
             )
 
-            self._logger.debug(f" check_hosts_status fleet_type [{fleet_type}] [type: {type(fleet_list[0])}]fleet_list: {fleet_list}")
+            self._logger.debug(
+                f" check_hosts_status fleet_type [{fleet_type}] [type: {type(fleet_list[0])}]fleet_list: {fleet_list}"
+            )
 
             if not fleet_list:
                 raise AWSEntityNotFoundError(f"Fleet {fleet_id} not found")
@@ -711,7 +714,9 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin):
                     operation_type="read_only",
                 )
                 instance_ids = [instance["InstanceId"] for instance in active_instances]
-                self._logger.debug(f" check_hosts_status instance_ids: {fleet_id} :: {instance_ids}")
+                self._logger.debug(
+                    f" check_hosts_status instance_ids: {fleet_id} :: {instance_ids}"
+                )
 
             if not instance_ids:
                 self._logger.info("No active instances found in fleet %s", fleet_id)
@@ -722,7 +727,7 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin):
                 instance_ids,
                 request_id=str(request.request_id),
                 resource_id=fleet_id,
-                provider_api="EC2Fleet"
+                provider_api="EC2Fleet",
             )
             return self._format_instance_data(instance_details, fleet_id, request, template)
 

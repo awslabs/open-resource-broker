@@ -13,8 +13,8 @@ from domain.base.ports import LoggingPort
 
 # Import AWS-specific components
 from providers.aws.configuration.config import AWSProviderConfig
-from providers.aws.infrastructure.aws_client import AWSClient
 from providers.aws.infrastructure.adapters.machine_adapter import AWSMachineAdapter
+from providers.aws.infrastructure.aws_client import AWSClient
 from providers.aws.infrastructure.handlers.ec2_fleet_handler import EC2FleetHandler
 from providers.aws.infrastructure.handlers.run_instances_handler import (
     RunInstancesHandler,
@@ -611,12 +611,17 @@ class AWSProviderStrategy(ProviderStrategy):
 
                 # Handle both snake_case (from machine adapter) and PascalCase (legacy) formats
                 formatted_instance = {
-                    "InstanceId": instance_data.get("instance_id") or instance_data.get("InstanceId"),
+                    "InstanceId": instance_data.get("instance_id")
+                    or instance_data.get("InstanceId"),
                     "State": instance_data.get("status") or instance_data.get("State", "unknown"),
-                    "PrivateIpAddress": instance_data.get("private_ip") or instance_data.get("PrivateIpAddress"),
-                    "PublicIpAddress": instance_data.get("public_ip") or instance_data.get("PublicIpAddress"),
-                    "LaunchTime": instance_data.get("launch_time") or instance_data.get("LaunchTime"),
-                    "InstanceType": instance_data.get("instance_type") or instance_data.get("InstanceType"),
+                    "PrivateIpAddress": instance_data.get("private_ip")
+                    or instance_data.get("PrivateIpAddress"),
+                    "PublicIpAddress": instance_data.get("public_ip")
+                    or instance_data.get("PublicIpAddress"),
+                    "LaunchTime": instance_data.get("launch_time")
+                    or instance_data.get("LaunchTime"),
+                    "InstanceType": instance_data.get("instance_type")
+                    or instance_data.get("InstanceType"),
                     "SubnetId": instance_data.get("subnet_id") or instance_data.get("SubnetId"),
                     "VpcId": instance_data.get("vpc_id") or instance_data.get("VpcId"),
                 }
@@ -624,14 +629,14 @@ class AWSProviderStrategy(ProviderStrategy):
 
             self._logger.debug("formatted_instances: %s", formatted_instances)
             return ProviderResult.success_result(
-                data = {"instances": formatted_instances},
-                metadata = {
+                data={"instances": formatted_instances},
+                metadata={
                     "operation": "describe_resource_instances",
                     "resource_ids": resource_ids,
                     "provider_api": provider_api,
                     "handler_used": provider_api,
                     "instance_count": len(formatted_instances),
-                }
+                },
             )
 
         except Exception as e:

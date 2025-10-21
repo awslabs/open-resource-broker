@@ -26,7 +26,7 @@ Note:
     based on demand and maintain high availability across multiple AZs.
 """
 
-from typing import Any, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Optional
 
 from domain.base.dependency_injection import injectable
 from domain.base.ports import LoggingPort
@@ -348,16 +348,13 @@ class ASGHandler(AWSHandler, BaseContextMixin):
                     for inst in instance_details
                 ]
             except Exception as exc:
-                self._logger.error(
-                    "Failed to normalize instances with machine adapter: %s", exc
-                )
+                self._logger.error("Failed to normalize instances with machine adapter: %s", exc)
                 raise AWSInfrastructureError(
                     "Failed to normalize instance data with AWS machine adapter"
                 ) from exc
 
         return [
-            self._build_fallback_machine_payload(inst, resource_id)
-            for inst in instance_details
+            self._build_fallback_machine_payload(inst, resource_id) for inst in instance_details
         ]
 
     def release_hosts(self, request: Request) -> None:
