@@ -6,8 +6,13 @@ docs: docs-build  ## Build documentation (main docs entry point)
 
 docs-build: dev-install  ## Build documentation locally with mike (no push)
 	@echo "Building documentation locally with mike..."
-	cd $(DOCS_DIR) && ../$(BIN)/mike deploy --update-aliases latest
-	@echo "Documentation built with mike versioning"
+	@if [ -n "$$CI" ] || [ -n "$$GITHUB_ACTIONS" ]; then \
+		echo "CI environment detected, using ci-docs-build..."; \
+		$(MAKE) ci-docs-build; \
+	else \
+		cd $(DOCS_DIR) && ../$(BIN)/mike deploy --update-aliases latest; \
+		echo "Documentation built with mike versioning"; \
+	fi
 
 ci-docs-build:  ## Build documentation for CI PR testing (matches docs.yml PR builds)
 	@dev-tools/scripts/ci_docs_build.sh
@@ -141,6 +146,14 @@ version-bump:  ## Show version bump help
 # @SECTION Container Management
 container-build: dev-install  ## Build container image
 	@echo "Building container image..."
+	@PYTHON_VERSION=$${PYTHON_VERSION:-$(DEFAULT_PYTHON_VERSION)} \
+	IMAGE_NAME=$(CONTAINER_IMAGE) \
+	REGISTRY=$(CONTAINER_REGISTRY) \
+	VERSION=$(VERSION) \
+	PACKAGE_NAME_SHORT=$(PACKAGE_NAME_SHORT) \
+	AUTHOR="$(AUTHOR)" \
+	LICENSE="$(LICENSE)" \
+	REPO_URL="$(REPO_URL)" \
 	./dev-tools/scripts/container_build.sh
 
 container-build-single: dev-install  ## Build single-platform container image
