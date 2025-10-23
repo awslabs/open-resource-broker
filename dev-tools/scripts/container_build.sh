@@ -36,7 +36,7 @@ BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
 VCS_REF=$(git rev-parse --short HEAD 2>/dev/null || echo 'unknown')
 
 # Python version support (from Makefile environment variables)
-PYTHON_VERSION="${PYTHON_VERSION:-$(make -s print-DEFAULT_PYTHON_VERSION 2>/dev/null || echo '3.13')}"  # Dynamic from Makefile with fallback
+PYTHON_VERSION="${PYTHON_VERSION:-3.13}"  # Dynamic from Makefile with fallback
 MULTI_PYTHON="${MULTI_PYTHON:-false}"     # Flag for multi-Python builds
 SKIP_BUILD="${SKIP_BUILD:-false}"          # Flag to skip package building
 
@@ -124,7 +124,7 @@ build_image() {
     fi
 
     # Get values from Makefile if not provided
-    local MAKEFILE_PACKAGE_SHORT="${PACKAGE_NAME_SHORT:-$(make -s print-PACKAGE_NAME_SHORT 2>/dev/null || echo 'ohfp')}"
+    local MAKEFILE_PACKAGE_SHORT="${PACKAGE_NAME_SHORT:ohfp)}"
 
     # Prepare tags with Python version support
     local tags=()

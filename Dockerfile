@@ -6,14 +6,14 @@ ARG PACKAGE_NAME_SHORT=ohfp
 
 FROM python:${PYTHON_VERSION}-slim
 
-# Re-declare build arguments for this stage
-ARG PACKAGE_NAME_SHORT
+ARG PYTHON_VERSION=3.13
+ARG PACKAGE_NAME_SHORT=ohfp
 
 # Security: Update system packages and install security updates
 RUN apt-get update && \
     apt-get upgrade -y && \
     apt-get install -y --no-install-recommends \
-        ca-certificates=20250419 && \
+        ca-certificates && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* && \
     # Security: Upgrade setuptools to latest version
@@ -42,11 +42,11 @@ ENV BUILD_DATE="${BUILD_DATE}" \
 
 # Install runtime dependencies and create user in single layer
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates=20250419 \
+    ca-certificates \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean \
-    && groupadd -r "${PACKAGE_NAME_SHORT}" \
-    && useradd -r -g "${PACKAGE_NAME_SHORT}" -s /bin/false "${PACKAGE_NAME_SHORT}"
+    && groupadd -r "${PACKAGE_NAME_SHORT:-ohfp}" \
+    && useradd -r -g "${PACKAGE_NAME_SHORT:-ohfp}" -s /bin/false "${PACKAGE_NAME_SHORT:-ohfp}"
 
 # Set working directory and create directories
 WORKDIR /app
@@ -69,7 +69,7 @@ COPY deployment/docker/docker-entrypoint.sh ./docker-entrypoint.sh
 
 # Set permissions and environment in single layer
 RUN chmod +x ./docker-entrypoint.sh \
-    && chown -R "${PACKAGE_NAME_SHORT}":"${PACKAGE_NAME_SHORT}" /app
+    && chown -R "${PACKAGE_NAME_SHORT:-ohfp}":"${PACKAGE_NAME_SHORT:-ohfp}" /app
 
 # Set all environment variables in single layer
 ENV PYTHONPATH=/app \
