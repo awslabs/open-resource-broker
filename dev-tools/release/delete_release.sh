@@ -36,6 +36,13 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 PROJECT_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
 cd "$PROJECT_ROOT"
 
+# Configure Git for CI environment
+if [ -n "$CI" ] || [ -n "$GITHUB_ACTIONS" ]; then
+    log_info "Configuring Git for CI environment..."
+    git config --global user.name "github-actions[bot]"
+    git config --global user.email "github-actions[bot]@users.noreply.github.com"
+fi
+
 # Validate version exists
 if ! git tag -l | grep -q "^${VERSION}$"; then
     log_error "Tag $VERSION does not exist"

@@ -6,6 +6,13 @@ set -e
 
 echo "Deploying documentation to GitHub Pages..."
 
+# Configure Git for CI environment
+if [ -n "$CI" ] || [ -n "$GITHUB_ACTIONS" ]; then
+    echo "Configuring Git for CI environment..."
+    git config --global user.name "github-actions[bot]"
+    git config --global user.email "github-actions[bot]@users.noreply.github.com"
+fi
+
 cd docs
 
 # Try different mike installation methods in order of preference

@@ -31,9 +31,14 @@ docs-serve: dev-install  ## Serve versioned documentation locally with live relo
 
 docs-deploy: dev-install  ## Deploy documentation locally (for testing deployment)
 	@echo "Deploying documentation locally with mike..."
-	@echo "WARNING: This will commit to your local gh-pages branch"
-	cd $(DOCS_DIR) && ../$(BIN)/mike deploy --update-aliases latest
-	@echo "Documentation deployed locally. Use 'git push origin gh-pages' to publish."
+	@if [ -n "$$CI" ] || [ -n "$$GITHUB_ACTIONS" ]; then \
+		echo "CI environment detected, using ci-docs-deploy..."; \
+		$(MAKE) ci-docs-deploy; \
+	else \
+		echo "WARNING: This will commit to your local gh-pages branch"; \
+		cd $(DOCS_DIR) && ../$(BIN)/mike deploy --update-aliases latest; \
+		echo "Documentation deployed locally. Use 'git push origin gh-pages' to publish."; \
+	fi
 
 ci-docs-deploy:  ## Deploy documentation to GitHub Pages (matches docs.yml main branch)
 	@dev-tools/scripts/ci_docs_deploy.sh
@@ -42,6 +47,11 @@ docs-deploy-version: dev-install  ## Deploy specific version (usage: make docs-d
 	@if [ -z "$(VERSION)" ]; then \
 		echo "Error: VERSION is required. Usage: make docs-deploy-version VERSION=1.0.0"; \
 		exit 1; \
+	fi
+	@if [ -n "$$CI" ] || [ -n "$$GITHUB_ACTIONS" ]; then \
+		echo "CI environment detected, configuring Git..."; \
+		git config --global user.name "github-actions[bot]"; \
+		git config --global user.email "github-actions[bot]@users.noreply.github.com"; \
 	fi
 	cd $(DOCS_DIR) && ../$(BIN)/mike deploy --push --update-aliases $(VERSION) latest
 
