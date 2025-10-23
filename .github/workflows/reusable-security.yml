@@ -77,7 +77,7 @@ jobs:
 
       - name: Upload Semgrep SARIF results
         if: inputs.scan-type == 'semgrep' && always()
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: semgrep.sarif
 
@@ -93,7 +93,7 @@ jobs:
 
       - name: Upload Trivy filesystem scan results
         if: inputs.scan-type == 'trivy-fs' && always()
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: 'trivy-fs-results.sarif'
 
@@ -109,14 +109,14 @@ jobs:
 
       - name: Upload Hadolint SARIF results
         if: inputs.scan-type == 'hadolint' && always()
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: hadolint-results.sarif
 
       # CodeQL Analysis
       - name: Initialize CodeQL
         if: inputs.scan-type == 'codeql'
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@v4
         with:
           languages: python
           queries: security-extended,security-and-quality
@@ -125,13 +125,13 @@ jobs:
 
       - name: Initialize CodeQL (fallback)
         if: inputs.scan-type == 'codeql' && steps.codeql-init-extended.outcome == 'failure'
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@v4
         with:
           languages: python
           queries: security-and-quality
 
       - name: Perform CodeQL Analysis
         if: inputs.scan-type == 'codeql'
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@v4
         with:
           category: "/language:python"
