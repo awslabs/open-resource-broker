@@ -48,6 +48,11 @@ docs-deploy-version: dev-install  ## Deploy specific version (usage: make docs-d
 		echo "Error: VERSION is required. Usage: make docs-deploy-version VERSION=1.0.0"; \
 		exit 1; \
 	fi
+	@if [ -n "$$CI" ] || [ -n "$$GITHUB_ACTIONS" ]; then \
+		echo "CI environment detected, configuring Git..."; \
+		git config --global user.name "github-actions[bot]"; \
+		git config --global user.email "github-actions[bot]@users.noreply.github.com"; \
+	fi
 	cd $(DOCS_DIR) && ../$(BIN)/mike deploy --push --update-aliases $(VERSION) latest
 
 docs-list-versions:  ## List all documentation versions
