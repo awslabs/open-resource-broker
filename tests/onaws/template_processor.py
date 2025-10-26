@@ -104,6 +104,7 @@ class TemplateProcessor:
 
         # Set default values for fields that might be overridden
         extracted_config.setdefault("fleetType", "request")  # Default fleet type
+        extracted_config.setdefault("providerApi", "EC2Fleet")
 
         return extracted_config
 

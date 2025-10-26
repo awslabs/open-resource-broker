@@ -20,6 +20,7 @@ from providers.aws.infrastructure.handlers.run_instances_handler import (
     RunInstancesHandler,
 )
 from providers.aws.infrastructure.handlers.spot_fleet_handler import SpotFleetHandler
+from providers.aws.infrastructure.handlers.asg_handler import ASGHandler
 from providers.aws.infrastructure.launch_template.manager import (
     AWSLaunchTemplateManager,
 )
@@ -153,6 +154,13 @@ class AWSProviderStrategy(ProviderStrategy):
                     machine_adapter=machine_adapter,
                 ),
                 "RunInstances": RunInstancesHandler(
+                    aws_client=self.aws_client,
+                    logger=self._logger,
+                    aws_ops=aws_ops,
+                    launch_template_manager=self.launch_template_manager,
+                    machine_adapter=machine_adapter,
+                ),
+                "ASG": ASGHandler(
                     aws_client=self.aws_client,
                     logger=self._logger,
                     aws_ops=aws_ops,

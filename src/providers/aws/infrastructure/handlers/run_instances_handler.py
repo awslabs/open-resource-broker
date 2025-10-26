@@ -370,14 +370,7 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
 
         # Add additional tags for instances (beyond launch template)
         # Get package name for CreatedBy tag
-        created_by = "open-hostfactory-plugin"  # fallback
-        if hasattr(self, "config_port") and self.config_port:
-            try:
-                package_info = self.config_port.get_package_info()
-                created_by = package_info.get("name", "open-hostfactory-plugin")
-            except Exception:  # nosec B110
-                # Intentionally silent fallback for package info retrieval
-                pass
+        created_by = self._get_package_name()
 
         tag_specifications = [
             {

@@ -607,6 +607,18 @@ def test_sample(setup_host_factory_mock_with_scenario, test_case):
 
     res = hfm.get_available_templates()
 
+    template_id = test_case.get("template_id") or test_case["test_name"]
+    template_json = next(
+        (template for template in res["templates"] if template["templateId"] == template_id),
+        None,
+    )
+
+    if template_json is None:
+        log.warning(
+            "Template %s not found in HostFactory response; defaulting to first template.", template_id
+        )
+        template_json = res["templates"][0]
+
     provide_release_control_loop(
-        hfm, template_json=res["templates"][0], capacity_to_request=test_case["capacity_to_request"]
+        hfm, template_json=template_json, capacity_to_request=test_case["capacity_to_request"]
     )

@@ -1,8 +1,8 @@
 {
   "templates": [
     {
-      "templateId": "EC2FleetInstant",
-      "providerApi": "EC2Fleet",
+      "templateId": "BASE",
+      "providerApi": "{{providerApi}}",
       "fleetType": "{{fleetType}}",
       "maxNumber": 2,
       "attributes": {
@@ -23,7 +23,7 @@
     },
     {
       "templateId": "EC2FleetMaintain",
-      "providerApi": "EC2Fleet",
+      "providerApi": "{{providerApi}}",
       "fleetType": "{{fleetType}}",
       "maxNumber": 2,
       "attributes": {
@@ -40,7 +40,7 @@
     },
     {
       "templateId": "EC2FleetRequest",
-      "providerApi": "EC2Fleet",
+      "providerApi": "{{providerApi}}",
       "fleetType": "{{fleetType}}",
       "maxNumber": 2,
       "attributes": {

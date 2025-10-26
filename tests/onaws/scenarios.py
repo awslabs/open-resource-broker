@@ -8,16 +8,39 @@ def get_test_cases():
         #     }
         # },
         {
-            "test_name": "EC2FleetRequest",
+            "test_name": "SpotRequest",
+            "template_id": "BASE",
             "capacity_to_request": 2,
             "awsprov_base_template": "awsprov_templates.base.json",
-            "overrides": {"fleetType": "request"},
+            "overrides": {"fleetType": "request", "providerApi": "SpotFleet"},
+        },
+        {
+            "test_name": "EC2FleetRequest",
+            "template_id": "BASE",
+            "capacity_to_request": 2,
+            "awsprov_base_template": "awsprov_templates.base.json",
+            "overrides": {"fleetType": "request", "providerApi": "EC2Fleet"},
         },
         {
             "test_name": "EC2FleetInstant",
+            "template_id": "BASE",
             "capacity_to_request": 2,
             "awsprov_base_template": "awsprov_templates.base.json",
-            "overrides": {"fleetType": "instant"},
+            "overrides": {"fleetType": "instant", "providerApi": "EC2Fleet"},
+        },
+        {
+            "test_name": "RunInstances",
+            "template_id": "BASE",
+            "capacity_to_request": 2,
+            "awsprov_base_template": "awsprov_templates.base.json",
+            "overrides": {"fleetType": "instant", "providerApi": "RunInstances"},
+        },
+        {
+            "test_name": "ASG",
+            "template_id": "BASE",
+            "capacity_to_request": 2,
+            "awsprov_base_template": "awsprov_templates.base.json",
+            "overrides": {"fleetType": "instant", "providerApi": "ASG"},
         },
         # {
         #     "test_name": "EC2FleetRequest",
@@ -55,4 +78,9 @@ def get_test_case_by_name(test_name: str):
             return test_case
 
     # Return a default test case if not found
-    return {"test_name": test_name, "capacity_to_request": 2, "overrides": {}}
+    return {
+        "test_name": test_name,
+        "template_id": test_name,
+        "capacity_to_request": 2,
+        "overrides": {},
+    }
