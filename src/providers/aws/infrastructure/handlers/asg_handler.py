@@ -518,9 +518,7 @@ class ASGHandler(AWSHandler, BaseContextMixin):
                     if group_name and instance_id:
                         instance_group_map.setdefault(group_name, []).append(instance_id)
         except Exception as exc:
-            self._logger.warning(
-                "Failed to map instances to ASGs for capacity reduction: %s", exc
-            )
+            self._logger.warning("Failed to map instances to ASGs for capacity reduction: %s", exc)
             return
 
         if not instance_group_map:
@@ -581,11 +579,7 @@ class ASGHandler(AWSHandler, BaseContextMixin):
             if not machine_ids:
                 raise AWSInfrastructureError("Machine IDs are required")
 
-            self._logger.info(
-                "Releasing hosts for %d instances: %s",
-                len(machine_ids),
-                machine_ids
-            )
+            self._logger.info("Releasing hosts for %d instances: %s", len(machine_ids), machine_ids)
 
             # Group instances by ASG membership
             asg_instance_groups = self._group_instances_by_asg(machine_ids)
@@ -595,7 +589,9 @@ class ASGHandler(AWSHandler, BaseContextMixin):
             for asg_name, asg_data in asg_instance_groups.items():
                 if asg_name is not None:
                     # Handle ASG instances using dedicated method (primary case)
-                    self._release_hosts_for_single_asg(asg_name, asg_data["instance_ids"], asg_data["asg_details"])
+                    self._release_hosts_for_single_asg(
+                        asg_name, asg_data["instance_ids"], asg_data["asg_details"]
+                    )
                 else:
                     # Handle non-ASG instances (fallback case)
                     instance_ids = asg_data["instance_ids"]
@@ -610,7 +606,9 @@ class ASGHandler(AWSHandler, BaseContextMixin):
             self._logger.error("Failed to release ASG hosts: %s", str(e))
             raise AWSInfrastructureError(f"Failed to release ASG hosts: {e!s}")
 
-    def _release_hosts_for_single_asg(self, asg_name: str, asg_instance_ids: list[str], asg_details: dict) -> None:
+    def _release_hosts_for_single_asg(
+        self, asg_name: str, asg_instance_ids: list[str], asg_details: dict
+    ) -> None:
         """Release hosts for a single ASG with proper capacity management."""
         self._logger.info(f"Processing ASG {asg_name} with {len(asg_instance_ids)} instances")
 

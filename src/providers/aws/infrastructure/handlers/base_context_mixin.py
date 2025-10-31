@@ -49,7 +49,9 @@ class BaseContextMixin:
         elif price_type == "heterogeneous":
             on_demand_count = int(total_capacity * percent_on_demand / 100)
         else:
-            on_demand_count = int(total_capacity * percent_on_demand / 100) if percent_on_demand else 0
+            on_demand_count = (
+                int(total_capacity * percent_on_demand / 100) if percent_on_demand else 0
+            )
 
         on_demand_count = max(0, min(total_capacity, on_demand_count))
         spot_count = max(0, total_capacity - on_demand_count)

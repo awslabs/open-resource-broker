@@ -1,5 +1,5 @@
 import itertools
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List
 
 # Global default attribute combinations
 DEFAULT_ATTRIBUTE_COMBINATIONS = [
@@ -8,25 +8,18 @@ DEFAULT_ATTRIBUTE_COMBINATIONS = [
     # "fleetType": ["request", "instant"],
     # "priceType": ["ondemand", "spot"]
     # },
-
     # {
     # "providerApi": ["RunInstances", "ASG"],
     # "priceType": ["ondemand", "spot"]
     # }
-
-    {
-    "providerApi": ["EC2Fleet"],
-    "fleetType": ["instant"],
-    "priceType": ["spot"]
-    },
-
-    ]
+    {"providerApi": ["EC2Fleet"], "fleetType": ["instant"], "priceType": ["spot"]},
+]
 
 
 def generate_scenarios_from_attributes(
     attribute_combinations: Dict[str, List[Any]],
     base_template: Dict[str, Any] = None,
-    naming_template: str = None
+    naming_template: str = None,
 ) -> List[Dict[str, Any]]:
     """
     Generate test scenarios from all combinations of provided attributes.
@@ -74,17 +67,16 @@ def generate_scenarios_from_attributes(
 
         # Create the scenario
         scenario = base_template.copy()
-        scenario.update({
-            "test_name": test_name,
-            "overrides": overrides
-        })
+        scenario.update({"test_name": test_name, "overrides": overrides})
 
         scenarios.append(scenario)
 
     return scenarios
 
 
-def get_generated_test_cases(attribute_combinations: Dict[str, List[Any]] = None, apply_filters: bool = True) -> List[Dict[str, Any]]:
+def get_generated_test_cases(
+    attribute_combinations: Dict[str, List[Any]] = None, apply_filters: bool = True
+) -> List[Dict[str, Any]]:
     """
     Generate test cases from attribute combinations.
     This replaces the hardcoded scenarios with dynamically generated ones.
@@ -145,9 +137,6 @@ def get_custom_test_cases() -> List[Dict[str, Any]]:
     ]
 
 
-
-
-
 def get_test_case_by_name(test_name: str) -> Dict[str, Any]:
     """Get a specific test case by test name."""
     test_cases = get_test_cases()
@@ -165,8 +154,7 @@ def get_test_case_by_name(test_name: str) -> Dict[str, Any]:
 
 
 def add_custom_attribute_combinations(
-    additional_attributes: Dict[str, List[Any]],
-    base_template: Dict[str, Any] = None
+    additional_attributes: Dict[str, List[Any]], base_template: Dict[str, Any] = None
 ) -> List[Dict[str, Any]]:
     """
     Generate additional scenarios with custom attribute combinations.

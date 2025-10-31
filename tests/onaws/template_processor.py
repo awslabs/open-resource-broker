@@ -207,7 +207,9 @@ class TemplateProcessor:
                 elif provider_api in ["RunInstances", "ASG"]:
                     # RunInstances and ASG don't use percentOnDemand, they use different mechanisms
                     # For now, we'll skip price type validation for these APIs
-                    log.warning(f"Provider API {provider_api} may not support spot instances in the same way as EC2Fleet")
+                    log.warning(
+                        f"Provider API {provider_api} may not support spot instances in the same way as EC2Fleet"
+                    )
 
         # Generate each required file
         template_files = [

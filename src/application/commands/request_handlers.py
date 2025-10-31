@@ -532,6 +532,7 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
         try:
             # Step 1: Group instances by their original template
             from collections import defaultdict
+
             template_groups = defaultdict(list)
 
             for machine_id in machine_ids:
@@ -547,17 +548,20 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
                     self.logger.error("Failed to get template for machine %s: %s", machine_id, e)
                     raise ValueError(f"Cannot determine template for machine {machine_id}: {e}")
 
-            self.logger.info("Grouped instances by template: %s",
-                            {tid: len(instances) for tid, instances in template_groups.items()})
+            self.logger.info(
+                "Grouped instances by template: %s",
+                {tid: len(instances) for tid, instances in template_groups.items()},
+            )
 
             # Step 2: Create tasks for parallel execution
             import asyncio
+
             tasks = []
 
             for template_id, instance_group in template_groups.items():
                 task = asyncio.create_task(
                     self._process_template_group(template_id, instance_group, request),
-                    name=f"terminate-{template_id}"
+                    name=f"terminate-{template_id}",
                 )
                 tasks.append(task)
 
@@ -576,13 +580,15 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
                     template_id = list(template_groups.keys())[i]
                     instance_group = list(template_groups.values())[i]
                     self.logger.error("Task for template %s failed: %s", template_id, result)
-                    processed_results.append({
-                        "template_id": template_id,
-                        "instance_count": len(instance_group),
-                        "instance_ids": instance_group,
-                        "success": False,
-                        "error_message": str(result),
-                    })
+                    processed_results.append(
+                        {
+                            "template_id": template_id,
+                            "instance_count": len(instance_group),
+                            "instance_ids": instance_group,
+                            "success": False,
+                            "error_message": str(result),
+                        }
+                    )
                 else:
                     processed_results.append(result)
                     if result.get("success", False):
@@ -595,7 +601,7 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
                 "Parallel de-provisioning completed: %d successful, %d failed out of %d total instances",
                 total_success,
                 len(machine_ids) - total_success,
-                len(machine_ids)
+                len(machine_ids),
             )
 
             return {
@@ -604,7 +610,9 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
                 "successful_instances": total_success,
                 "failed_instances": len(machine_ids) - total_success,
                 "results_by_template": processed_results,
-                "handlers_used": list(set(r.get("provider_api") for r in processed_results if r.get("provider_api"))),
+                "handlers_used": list(
+                    set(r.get("provider_api") for r in processed_results if r.get("provider_api"))
+                ),
                 "parallel_execution": True,
                 "concurrent_operations": len(tasks),
             }
@@ -613,14 +621,19 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
             self.logger.error("Parallel de-provisioning execution failed: %s", e)
             return {"success": False, "error_message": str(e)}
 
-    async def _process_template_group(self, template_id: str, instance_group: list[str], request) -> dict[str, Any]:
+    async def _process_template_group(
+        self, template_id: str, instance_group: list[str], request
+    ) -> dict[str, Any]:
         """Process a single template group - designed for parallel execution"""
 
         try:
-            self.logger.info("Processing template group %s with %d instances", template_id, len(instance_group))
+            self.logger.info(
+                "Processing template group %s with %d instances", template_id, len(instance_group)
+            )
 
             # Get the actual template configuration
             from application.dto.queries import GetTemplateQuery
+
             template_query = GetTemplateQuery(template_id=template_id)
             template = await self._query_bus.execute(template_query)
 
@@ -650,7 +663,9 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
             )
 
             # Execute termination for this group
-            group_result = await self._provider_context.terminate_resources(instance_group, operation)
+            group_result = await self._provider_context.terminate_resources(
+                instance_group, operation
+            )
 
             # Handle case where terminate_resources returns None
             if group_result is None:
@@ -670,7 +685,7 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
                 template_id,
                 provider_api,
                 "SUCCESS" if success else "FAILED",
-                len(instance_group)
+                len(instance_group),
             )
 
             return {

@@ -2,13 +2,14 @@
 
 from unittest.mock import MagicMock, Mock, patch
 
+from providers.aws.infrastructure.adapters.provisioning_adapter import (
+    AWSProvisioningAdapter,
+)
+
 from application.commands.request_handlers import CreateMachineRequestHandler
 from application.dto.commands import CreateRequestCommand
 from infrastructure.mocking.dry_run_context import dry_run_context
 from providers.aws.configuration.config import AWSProviderConfig
-from providers.aws.infrastructure.adapters.provisioning_adapter import (
-    AWSProvisioningAdapter,
-)
 from providers.aws.strategy.aws_provider_strategy import AWSProviderStrategy
 
 

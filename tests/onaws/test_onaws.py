@@ -112,7 +112,9 @@ def get_instance_details(instance_id):
             "instance_type": instance.get("InstanceType"),
             "state": instance.get("State", {}).get("Name"),
             "launch_time": instance.get("LaunchTime"),
-            "instance_lifecycle": instance.get("InstanceLifecycle"),  # None for on-demand, "spot" for spot instances
+            "instance_lifecycle": instance.get(
+                "InstanceLifecycle"
+            ),  # None for on-demand, "spot" for spot instances
         }
 
     except ClientError as e:
@@ -268,7 +270,9 @@ def validate_instance_lifecycle(instance_details, expected_price_type, instance_
             )
             return False
     else:
-        log.warning(f"Instance {instance_id}: Unknown price type '{expected_price_type}', skipping validation")
+        log.warning(
+            f"Instance {instance_id}: Unknown price type '{expected_price_type}', skipping validation"
+        )
         return True
 
 
@@ -365,7 +369,9 @@ def validate_all_instances_price_type(status_response, test_case):
         log.info("No priceType specified in test case overrides, skipping price type validation")
         return True
 
-    log.info(f"Validating price type for all {len(machines)} instances - Expected: {expected_price_type}")
+    log.info(
+        f"Validating price type for all {len(machines)} instances - Expected: {expected_price_type}"
+    )
 
     all_validations_passed = True
 
@@ -391,7 +397,7 @@ def validate_all_instances_price_type(status_response, test_case):
     if all_validations_passed:
         log.info(f"Price type validation PASSED for all {len(machines)} instances")
     else:
-        log.error(f"Price type validation FAILED for one or more instances")
+        log.error("Price type validation FAILED for one or more instances")
 
     return all_validations_passed
 
@@ -564,7 +570,7 @@ def provide_release_control_loop(hfm, template_json, capacity_to_request, test_c
         request_id = res["request_id"]
     else:
         # This might be an error response - log more details
-        log.error(f"AWS provider response missing requestId field.")
+        log.error("AWS provider response missing requestId field.")
         log.error(f"Response keys: {list(res.keys())}")
         log.error(f"Full response: {json.dumps(res, indent=2)}")
         log.error(f"Template used: {json.dumps(template_json, indent=2)}")
@@ -638,10 +644,14 @@ def provide_release_control_loop(hfm, template_json, capacity_to_request, test_c
         expected_price_type = test_case.get("overrides", {}).get("priceType")
 
         if provider_api in ["RunInstances", "ASG"] and expected_price_type == "spot":
-            log.warning(f"Skipping price type validation for {provider_api} with spot instances - may not be supported")
+            log.warning(
+                f"Skipping price type validation for {provider_api} with spot instances - may not be supported"
+            )
         else:
             log.info("Starting price type validation for all instances")
-            price_type_validation_passed = validate_all_instances_price_type(status_response, test_case)
+            price_type_validation_passed = validate_all_instances_price_type(
+                status_response, test_case
+            )
 
             if not price_type_validation_passed:
                 pytest.fail(
@@ -761,5 +771,8 @@ def test_sample(setup_host_factory_mock_with_scenario, test_case):
         template_json = res["templates"][0]
 
     provide_release_control_loop(
-        hfm, template_json=template_json, capacity_to_request=test_case["capacity_to_request"], test_case=test_case
+        hfm,
+        template_json=template_json,
+        capacity_to_request=test_case["capacity_to_request"],
+        test_case=test_case,
     )

@@ -58,7 +58,7 @@ class AWSProviderStrategy(ProviderStrategy):
         self,
         config: AWSProviderConfig,
         logger: LoggingPort,
-        aws_provisioning_port: Optional["AWSProvisioningAdapter"] = None
+        aws_provisioning_port: Optional["AWSProvisioningAdapter"] = None,
     ) -> None:
         """
         Initialize AWS provider strategy.
@@ -213,7 +213,9 @@ class AWSProviderStrategy(ProviderStrategy):
             Result of the operation execution
         """
 
-        self._logger.debug(f" aws_provider_strategy execute_operation [{operation.operation_type}, {operation.parameters}, {operation.context}]")
+        self._logger.debug(
+            f" aws_provider_strategy execute_operation [{operation.operation_type}, {operation.parameters}, {operation.context}]"
+        )
         if not self._initialized:
             return ProviderResult.error_result(
                 "AWS provider strategy not initialized", "NOT_INITIALIZED"
@@ -455,7 +457,7 @@ class AWSProviderStrategy(ProviderStrategy):
                         machine_ids=instance_ids,
                         template_id=operation.parameters.get("template_id", "termination-template"),
                         provider_api=operation.parameters.get("provider_api", "RunInstances"),
-                        context={}
+                        context={},
                     )
 
                     self._logger.info("Successfully released all resources using provisioning port")
@@ -464,17 +466,18 @@ class AWSProviderStrategy(ProviderStrategy):
                         {
                             "operation": "terminate_instances",
                             "instance_ids": instance_ids,
-                            "method": "provisioning_port"
+                            "method": "provisioning_port",
                         },
                     )
 
                 except Exception as e:
-                    self._logger.warning("Failed to use provisioning port, falling back to direct termination: %s", e)
+                    self._logger.warning(
+                        "Failed to use provisioning port, falling back to direct termination: %s", e
+                    )
                     # Fall through to direct termination
 
             # Fallback to direct termination using AWS client
             self._logger.info("Using direct AWS client for instance termination")
-
 
             # Use AWS client property (with lazy initialization) for termination
             aws_client = self.aws_client
@@ -490,7 +493,11 @@ class AWSProviderStrategy(ProviderStrategy):
 
                 return ProviderResult.success_result(
                     {"success": success, "terminated_count": terminating_count},
-                    {"operation": "terminate_instances", "instance_ids": instance_ids, "method": "direct_client"},
+                    {
+                        "operation": "terminate_instances",
+                        "instance_ids": instance_ids,
+                        "method": "direct_client",
+                    },
                 )
 
             except Exception as e:

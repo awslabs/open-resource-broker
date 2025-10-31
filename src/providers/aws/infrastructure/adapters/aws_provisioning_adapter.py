@@ -230,11 +230,7 @@ class AWSProvisioningAdapter(ResourceProvisioningPort):
             raise InfrastructureError(f"Failed to check resource status: {e!s}")
 
     def release_resources(
-        self,
-        machine_ids: list[str],
-        template_id: str,
-        provider_api: str,
-        context: dict = None
+        self, machine_ids: list[str], template_id: str, provider_api: str, context: dict = None
     ) -> None:
         """
         Release provisioned AWS resources using direct parameters.
@@ -254,8 +250,8 @@ class AWSProvisioningAdapter(ResourceProvisioningPort):
         self._logger.info(
             "Releasing resources: %d instances from template %s using %s handler",
             len(machine_ids),
-            template_id, #KBG potentially remove alltogether.
-            provider_api
+            template_id,  # KBG potentially remove alltogether.
+            provider_api,
         )
 
         if not machine_ids:
@@ -280,9 +276,7 @@ class AWSProvisioningAdapter(ResourceProvisioningPort):
             )
 
         self._logger.info(
-            "Successfully released %d instances using %s handler",
-            len(machine_ids),
-            provider_api
+            "Successfully released %d instances using %s handler", len(machine_ids), provider_api
         )
 
     def get_resource_health(self, resource_id: str) -> dict[str, Any]:
@@ -390,7 +384,6 @@ class AWSProvisioningAdapter(ResourceProvisioningPort):
         except Exception as e:
             self._logger.error("Error getting resource health: %s", str(e))
             raise InfrastructureError(f"Failed to get resource health: {e!s}")
-
 
     def _get_handler_for_template(self, template: Template) -> AWSHandler:
         """
