@@ -465,7 +465,9 @@ class AWSProviderStrategy(ProviderStrategy):
         try:
             instance_ids = operation.parameters.get("instance_ids", [])
             resource_mapping = operation.parameters.get("resource_mapping", [])
-            self._logger.debug(f"Terminating instances: {instance_ids} {self._aws_provisioning_port} {resource_mapping}")
+            self._logger.debug(
+                f"Terminating instances: {instance_ids} {self._aws_provisioning_port} {resource_mapping}"
+            )
 
             if not instance_ids:
                 return ProviderResult.error_result(
@@ -483,7 +485,7 @@ class AWSProviderStrategy(ProviderStrategy):
                         template_id=operation.parameters.get("template_id", "termination-template"),
                         provider_api=operation.parameters.get("provider_api", "RunInstances"),
                         context={},
-                        resource_mapping=resource_mapping
+                        resource_mapping=resource_mapping,
                     )
 
                     self._logger.info("Successfully released all resources using provisioning port")

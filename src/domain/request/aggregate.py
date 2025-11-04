@@ -34,7 +34,9 @@ class Request(AggregateRoot):
     # Request configuration
     template_id: str
     requested_count: int = 1
-    desired_capacity: int = 1  # Initially set to same as requested_count, can be modified for capacity management
+    desired_capacity: int = (
+        1  # Initially set to same as requested_count, can be modified for capacity management
+    )
 
     # Provider tracking (which provider was used)
     provider_name: Optional[str] = None  # Specific provider instance name
@@ -422,7 +424,9 @@ class Request(AggregateRoot):
             "provider_type": provider_type,
             "template_id": data.get("template_id"),
             "requested_count": data.get("requested_count", 1),
-            "desired_capacity": data.get("desired_capacity", data.get("requested_count", 1)),  # Default to requested_count if not present
+            "desired_capacity": data.get(
+                "desired_capacity", data.get("requested_count", 1)
+            ),  # Default to requested_count if not present
             "status": RequestStatus(data.get("status", RequestStatus.PENDING.value)),
             "status_message": data.get("status_message"),
             "instance_ids": [InstanceId(value=id) for id in data.get("instance_ids", [])],

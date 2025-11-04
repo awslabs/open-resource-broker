@@ -573,7 +573,9 @@ class ASGHandler(AWSHandler, BaseContextMixin):
                     exc,
                 )
 
-    def release_hosts(self, machine_ids: list[str], resource_mapping: list[tuple[str, str, int]] = None) -> None:
+    def release_hosts(
+        self, machine_ids: list[str], resource_mapping: list[tuple[str, str, int]] = None
+    ) -> None:
         """Release hosts across multiple ASGs by detecting ASG membership.
 
         Args:
@@ -589,8 +591,12 @@ class ASGHandler(AWSHandler, BaseContextMixin):
 
             # Always use resource_mapping when available, but check each entry individually
             if resource_mapping:
-                asg_instance_groups = self._group_instances_by_asg_from_mapping(machine_ids, resource_mapping)
-                self._logger.info(f"Grouped instances by ASG using resource mapping: {asg_instance_groups}")
+                asg_instance_groups = self._group_instances_by_asg_from_mapping(
+                    machine_ids, resource_mapping
+                )
+                self._logger.info(
+                    f"Grouped instances by ASG using resource mapping: {asg_instance_groups}"
+                )
             else:
                 # Fallback to AWS API calls when no resource mapping is provided
                 self._logger.info("No resource mapping provided, falling back to AWS API calls")
@@ -682,9 +688,13 @@ class ASGHandler(AWSHandler, BaseContextMixin):
             # Log the error but don't fail the entire operation
             # ASG deletion is cleanup - the main termination should still succeed
             self._logger.warning(f"Failed to delete ASG {asg_name}: {e}")
-            self._logger.warning("ASG deletion failed, but instance termination completed successfully")
+            self._logger.warning(
+                "ASG deletion failed, but instance termination completed successfully"
+            )
 
-    def _group_instances_by_asg_from_mapping(self, machine_ids: list[str], resource_mapping: list[tuple[str, str, int]]) -> dict[Optional[str], dict]:
+    def _group_instances_by_asg_from_mapping(
+        self, machine_ids: list[str], resource_mapping: list[tuple[str, str, int]]
+    ) -> dict[Optional[str], dict]:
         """
         Group instances by their ASG membership using resource_mapping data.
         Only makes AWS API calls when resource_mapping doesn't have the necessary information.
@@ -704,7 +714,10 @@ class ASGHandler(AWSHandler, BaseContextMixin):
         asg_names_to_fetch = set()
 
         # Create a mapping for quick lookup
-        resource_map = {instance_id: (resource_id, desired_capacity) for instance_id, resource_id, desired_capacity in resource_mapping}
+        resource_map = {
+            instance_id: (resource_id, desired_capacity)
+            for instance_id, resource_id, desired_capacity in resource_mapping
+        }
 
         self._logger.info(f"Processing {len(machine_ids)} instances using resource mapping")
 
@@ -721,26 +734,36 @@ class ASGHandler(AWSHandler, BaseContextMixin):
                     asg_groups[asg_name]["instance_ids"].append(instance_id)
                     asg_names_to_fetch.add(asg_name)
 
-                    self._logger.debug(f"Instance {instance_id} mapped to ASG {asg_name} from resource mapping")
+                    self._logger.debug(
+                        f"Instance {instance_id} mapped to ASG {asg_name} from resource mapping"
+                    )
                 elif resource_id is None or desired_capacity == 0:
                     # Resource mapping indicates this is not an ASG instance
                     if None not in asg_groups:
                         asg_groups[None] = {"instance_ids": []}
                     asg_groups[None]["instance_ids"].append(instance_id)
 
-                    self._logger.debug(f"Instance {instance_id} marked as non-ASG from resource mapping")
+                    self._logger.debug(
+                        f"Instance {instance_id} marked as non-ASG from resource mapping"
+                    )
                 else:
                     # Resource mapping has incomplete information, need AWS API lookup
                     instances_needing_lookup.append(instance_id)
-                    self._logger.debug(f"Instance {instance_id} needs AWS API lookup (incomplete resource mapping)")
+                    self._logger.debug(
+                        f"Instance {instance_id} needs AWS API lookup (incomplete resource mapping)"
+                    )
             else:
                 # Instance not in resource_mapping, need AWS API lookup
                 instances_needing_lookup.append(instance_id)
-                self._logger.debug(f"Instance {instance_id} not in resource mapping, needs AWS API lookup")
+                self._logger.debug(
+                    f"Instance {instance_id} not in resource mapping, needs AWS API lookup"
+                )
 
         # Second pass: AWS API lookup for instances with missing/incomplete information
         if instances_needing_lookup:
-            self._logger.info(f"Making AWS API calls for {len(instances_needing_lookup)} instances with incomplete resource mapping")
+            self._logger.info(
+                f"Making AWS API calls for {len(instances_needing_lookup)} instances with incomplete resource mapping"
+            )
 
             try:
                 for chunk in self._chunk_list(instances_needing_lookup, 50):
@@ -774,7 +797,9 @@ class ASGHandler(AWSHandler, BaseContextMixin):
                             asg_groups[None]["instance_ids"].extend(non_asg_instances)
 
                     except Exception as e:
-                        self._logger.warning(f"Failed to describe ASG instances for chunk {chunk}: {e}")
+                        self._logger.warning(
+                            f"Failed to describe ASG instances for chunk {chunk}: {e}"
+                        )
                         # Add all instances in this chunk to non-ASG group as fallback
                         if None not in asg_groups:
                             asg_groups[None] = {"instance_ids": []}
@@ -808,8 +833,12 @@ class ASGHandler(AWSHandler, BaseContextMixin):
                 self._logger.warning(f"Failed to fetch ASG details: {e}")
                 # Continue without ASG details - methods will handle missing details
 
-        self._logger.info(f"Grouped {len(machine_ids)} instances into {len(asg_groups)} groups using optimized resource mapping")
-        self._logger.info(f"AWS API calls avoided for {len(machine_ids) - len(instances_needing_lookup)} instances")
+        self._logger.info(
+            f"Grouped {len(machine_ids)} instances into {len(asg_groups)} groups using optimized resource mapping"
+        )
+        self._logger.info(
+            f"AWS API calls avoided for {len(machine_ids) - len(instances_needing_lookup)} instances"
+        )
 
         return asg_groups
 

@@ -406,7 +406,9 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
             # Compare with stored metadata
             stored_capacity = request.metadata.get("asg_desired_capacity")
             current_capacity = current_asg_details.get("DesiredCapacity")
-            current_instances = len([m for m in machines if m.status.value in ["running", "pending"]])
+            current_instances = len(
+                [m for m in machines if m.status.value in ["running", "pending"]]
+            )
 
             # Check if capacity has changed or if this is the first time we're tracking it
             capacity_changed = stored_capacity != current_capacity
@@ -415,30 +417,37 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
             if capacity_changed or first_time_tracking:
                 # Update request metadata with new ASG capacity
                 updated_metadata = request.metadata.copy()
-                updated_metadata.update({
-                    "asg_desired_capacity": current_capacity,
-                    "asg_min_size": current_asg_details.get("MinSize", 0),
-                    "asg_max_size": current_asg_details.get("MaxSize", current_capacity * 2),
-                    "asg_current_instances": current_instances,
-                    "asg_capacity_last_updated": datetime.utcnow().isoformat(),
-                    "asg_capacity_change_detected": capacity_changed,
-                })
+                updated_metadata.update(
+                    {
+                        "asg_desired_capacity": current_capacity,
+                        "asg_min_size": current_asg_details.get("MinSize", 0),
+                        "asg_max_size": current_asg_details.get("MaxSize", current_capacity * 2),
+                        "asg_current_instances": current_instances,
+                        "asg_capacity_last_updated": datetime.utcnow().isoformat(),
+                        "asg_capacity_change_detected": capacity_changed,
+                    }
+                )
 
                 # If this is the first time, also set creation metadata
                 if first_time_tracking:
-                    updated_metadata.update({
-                        "asg_name": asg_name,
-                        "asg_capacity_created_at": datetime.utcnow().isoformat(),
-                        "asg_initial_capacity": current_capacity,
-                    })
+                    updated_metadata.update(
+                        {
+                            "asg_name": asg_name,
+                            "asg_capacity_created_at": datetime.utcnow().isoformat(),
+                            "asg_initial_capacity": current_capacity,
+                        }
+                    )
 
                 # Update request with new metadata
                 from domain.request.aggregate import Request
-                updated_request = Request.model_validate({
-                    **request.model_dump(),
-                    "metadata": updated_metadata,
-                    "version": request.version + 1
-                })
+
+                updated_request = Request.model_validate(
+                    {
+                        **request.model_dump(),
+                        "metadata": updated_metadata,
+                        "version": request.version + 1,
+                    }
+                )
 
                 # Save to database
                 with self.uow_factory.create_unit_of_work() as uow:
@@ -447,7 +456,11 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
                 action = "Initialized" if first_time_tracking else "Updated"
                 self.logger.info(
                     "%s ASG capacity metadata for request %s: %s -> %s (instances: %s)",
-                    action, request.request_id, stored_capacity, current_capacity, current_instances
+                    action,
+                    request.request_id,
+                    stored_capacity,
+                    current_capacity,
+                    current_instances,
                 )
 
         except Exception as e:

@@ -833,7 +833,9 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin):
             self._build_fallback_machine_payload(inst, resource_id) for inst in instance_details
         ]
 
-    def release_hosts(self, machine_ids: list[str], resource_mapping: list[tuple[str, str, int]] = None) -> None:
+    def release_hosts(
+        self, machine_ids: list[str], resource_mapping: list[tuple[str, str, int]] = None
+    ) -> None:
         """Release hosts across multiple Spot Fleets by detecting fleet membership.
 
         Args:
@@ -845,32 +847,38 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin):
                 self._logger.warning("No instance IDs provided for Spot Fleet termination")
                 return
 
-            self._logger.info(
-                "Releasing hosts for %d instances: %s",
-                len(machine_ids),
-                machine_ids
-            )
+            self._logger.info("Releasing hosts for %d instances: %s", len(machine_ids), machine_ids)
 
             # Use resource_mapping if available, otherwise fall back to AWS API calls
             if resource_mapping:
-                fleet_instance_groups = self._group_instances_by_spot_fleet_from_mapping(machine_ids, resource_mapping)
-                self._logger.info(f"Grouped instances by Spot Fleet using resource mapping: {fleet_instance_groups}")
+                fleet_instance_groups = self._group_instances_by_spot_fleet_from_mapping(
+                    machine_ids, resource_mapping
+                )
+                self._logger.info(
+                    f"Grouped instances by Spot Fleet using resource mapping: {fleet_instance_groups}"
+                )
             else:
                 # Fallback to AWS API calls when no resource mapping is provided
                 self._logger.info("No resource mapping provided, falling back to AWS API calls")
                 fleet_instance_groups = self._group_instances_by_spot_fleet(machine_ids)
-                self._logger.info(f"Grouped instances by Spot Fleet using AWS API: {fleet_instance_groups}")
+                self._logger.info(
+                    f"Grouped instances by Spot Fleet using AWS API: {fleet_instance_groups}"
+                )
 
             # Process each Spot Fleet group separately
             for fleet_id, fleet_data in fleet_instance_groups.items():
                 if fleet_id is not None:
                     # Handle Spot Fleet instances using dedicated method (primary case)
-                    self._release_hosts_for_single_spot_fleet(fleet_id, fleet_data["instance_ids"], fleet_data["fleet_details"])
+                    self._release_hosts_for_single_spot_fleet(
+                        fleet_id, fleet_data["instance_ids"], fleet_data["fleet_details"]
+                    )
                 else:
                     # Handle non-Spot Fleet instances (fallback case)
                     instance_ids = fleet_data["instance_ids"]
                     if instance_ids:
-                        self._logger.info(f"Terminating {len(instance_ids)} non-Spot Fleet instances")
+                        self._logger.info(
+                            f"Terminating {len(instance_ids)} non-Spot Fleet instances"
+                        )
                         self.aws_ops.terminate_instances_with_fallback(
                             instance_ids, self._request_adapter, "non-Spot Fleet instances"
                         )
@@ -880,7 +888,9 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin):
             self._logger.error("Failed to release Spot Fleet hosts: %s", str(e))
             raise AWSInfrastructureError(f"Failed to release Spot Fleet hosts: {e!s}")
 
-    def _group_instances_by_spot_fleet_from_mapping(self, machine_ids: list[str], resource_mapping: list[tuple[str, str, int]]) -> dict[Optional[str], dict]:
+    def _group_instances_by_spot_fleet_from_mapping(
+        self, machine_ids: list[str], resource_mapping: list[tuple[str, str, int]]
+    ) -> dict[Optional[str], dict]:
         """
         Group instances by their Spot Fleet membership using resource_mapping data.
         Only makes AWS API calls when resource_mapping doesn't have the necessary information.
@@ -900,7 +910,10 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin):
         fleet_ids_to_fetch = set()
 
         # Create a mapping for quick lookup
-        resource_map = {instance_id: (resource_id, desired_capacity) for instance_id, resource_id, desired_capacity in resource_mapping}
+        resource_map = {
+            instance_id: (resource_id, desired_capacity)
+            for instance_id, resource_id, desired_capacity in resource_mapping
+        }
 
         self._logger.info(f"Processing {len(machine_ids)} instances using resource mapping")
 
@@ -917,26 +930,36 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin):
                     fleet_groups[fleet_id]["instance_ids"].append(instance_id)
                     fleet_ids_to_fetch.add(fleet_id)
 
-                    self._logger.debug(f"Instance {instance_id} mapped to Spot Fleet {fleet_id} from resource mapping")
+                    self._logger.debug(
+                        f"Instance {instance_id} mapped to Spot Fleet {fleet_id} from resource mapping"
+                    )
                 elif resource_id is None or desired_capacity == 0:
                     # Resource mapping indicates this is not a Spot Fleet instance
                     if None not in fleet_groups:
                         fleet_groups[None] = {"instance_ids": []}
                     fleet_groups[None]["instance_ids"].append(instance_id)
 
-                    self._logger.debug(f"Instance {instance_id} marked as non-Spot Fleet from resource mapping")
+                    self._logger.debug(
+                        f"Instance {instance_id} marked as non-Spot Fleet from resource mapping"
+                    )
                 else:
                     # Resource mapping has incomplete information, need AWS API lookup
                     instances_needing_lookup.append(instance_id)
-                    self._logger.debug(f"Instance {instance_id} needs AWS API lookup (incomplete resource mapping)")
+                    self._logger.debug(
+                        f"Instance {instance_id} needs AWS API lookup (incomplete resource mapping)"
+                    )
             else:
                 # Instance not in resource_mapping, need AWS API lookup
                 instances_needing_lookup.append(instance_id)
-                self._logger.debug(f"Instance {instance_id} not in resource mapping, needs AWS API lookup")
+                self._logger.debug(
+                    f"Instance {instance_id} not in resource mapping, needs AWS API lookup"
+                )
 
         # Second pass: AWS API lookup for instances with missing/incomplete information
         if instances_needing_lookup:
-            self._logger.info(f"Making AWS API calls for {len(instances_needing_lookup)} instances with incomplete resource mapping")
+            self._logger.info(
+                f"Making AWS API calls for {len(instances_needing_lookup)} instances with incomplete resource mapping"
+            )
 
             try:
                 for chunk in self._chunk_list(instances_needing_lookup, 50):
@@ -967,19 +990,27 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin):
                                         break
 
                                 # If not found in tags, check if it's a spot instance and try to find fleet
-                                if not spot_fleet_id and instance.get("InstanceLifecycle") == "spot":
+                                if (
+                                    not spot_fleet_id
+                                    and instance.get("InstanceLifecycle") == "spot"
+                                ):
                                     # Try to find the fleet by querying all active spot fleets
                                     spot_fleet_id = self._find_spot_fleet_for_instance(instance_id)
 
                                 if spot_fleet_id:
                                     if spot_fleet_id not in fleet_groups:
-                                        fleet_groups[spot_fleet_id] = {"instance_ids": [], "fleet_details": None}
+                                        fleet_groups[spot_fleet_id] = {
+                                            "instance_ids": [],
+                                            "fleet_details": None,
+                                        }
                                     fleet_groups[spot_fleet_id]["instance_ids"].append(instance_id)
                                     spot_fleet_instance_ids.add(instance_id)
                                     fleet_ids_to_fetch.add(spot_fleet_id)
 
                         # Add non-Spot Fleet instances to None group
-                        non_spot_fleet_instances = [iid for iid in chunk if iid not in spot_fleet_instance_ids]
+                        non_spot_fleet_instances = [
+                            iid for iid in chunk if iid not in spot_fleet_instance_ids
+                        ]
                         if non_spot_fleet_instances:
                             if None not in fleet_groups:
                                 fleet_groups[None] = {"instance_ids": []}
@@ -1020,8 +1051,12 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin):
                 self._logger.warning(f"Failed to fetch Spot Fleet details: {e}")
                 # Continue without fleet details - methods will handle missing details
 
-        self._logger.info(f"Grouped {len(machine_ids)} instances into {len(fleet_groups)} groups using optimized resource mapping")
-        self._logger.info(f"AWS API calls avoided for {len(machine_ids) - len(instances_needing_lookup)} instances")
+        self._logger.info(
+            f"Grouped {len(machine_ids)} instances into {len(fleet_groups)} groups using optimized resource mapping"
+        )
+        self._logger.info(
+            f"AWS API calls avoided for {len(machine_ids) - len(instances_needing_lookup)} instances"
+        )
 
         return fleet_groups
 
@@ -1077,13 +1112,18 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin):
 
                             if spot_fleet_id:
                                 if spot_fleet_id not in fleet_groups:
-                                    fleet_groups[spot_fleet_id] = {"instance_ids": [], "fleet_details": None}
+                                    fleet_groups[spot_fleet_id] = {
+                                        "instance_ids": [],
+                                        "fleet_details": None,
+                                    }
                                 fleet_groups[spot_fleet_id]["instance_ids"].append(instance_id)
                                 spot_fleet_instance_ids.add(instance_id)
                                 fleet_ids_to_fetch.add(spot_fleet_id)
 
                     # Add non-Spot Fleet instances to None group
-                    non_spot_fleet_instances = [iid for iid in chunk if iid not in spot_fleet_instance_ids]
+                    non_spot_fleet_instances = [
+                        iid for iid in chunk if iid not in spot_fleet_instance_ids
+                    ]
                     if non_spot_fleet_instances:
                         if None not in fleet_groups:
                             fleet_groups[None] = {"instance_ids": []}
@@ -1140,7 +1180,7 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin):
                 lambda: self._paginate(
                     self.aws_client.ec2_client.describe_spot_fleet_requests,
                     "SpotFleetRequestConfigs",
-                    SpotFleetRequestStates=["active", "modifying"]
+                    SpotFleetRequestStates=["active", "modifying"],
                 ),
                 operation_type="read_only",
             )
@@ -1167,7 +1207,9 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin):
                             return fleet_id
 
                 except Exception as e:
-                    self._logger.debug(f"Failed to check fleet {fleet_id} for instance {instance_id}: {e}")
+                    self._logger.debug(
+                        f"Failed to check fleet {fleet_id} for instance {instance_id}: {e}"
+                    )
                     continue
 
         except Exception as e:
@@ -1175,9 +1217,13 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin):
 
         return None
 
-    def _release_hosts_for_single_spot_fleet(self, fleet_id: str, fleet_instance_ids: list[str], fleet_details: dict) -> None:
+    def _release_hosts_for_single_spot_fleet(
+        self, fleet_id: str, fleet_instance_ids: list[str], fleet_details: dict
+    ) -> None:
         """Release hosts for a single Spot Fleet with proper fleet management."""
-        self._logger.info(f"Processing Spot Fleet {fleet_id} with {len(fleet_instance_ids)} instances")
+        self._logger.info(
+            f"Processing Spot Fleet {fleet_id} with {len(fleet_instance_ids)} instances"
+        )
 
         try:
             if fleet_instance_ids:
@@ -1185,7 +1231,9 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin):
                 self.aws_ops.terminate_instances_with_fallback(
                     fleet_instance_ids, self._request_adapter, f"SpotFleet-{fleet_id} instances"
                 )
-                self._logger.info("Terminated Spot Fleet %s instances: %s", fleet_id, fleet_instance_ids)
+                self._logger.info(
+                    "Terminated Spot Fleet %s instances: %s", fleet_id, fleet_instance_ids
+                )
             else:
                 # If no specific instances provided, cancel entire spot fleet
                 self._retry_with_backoff(

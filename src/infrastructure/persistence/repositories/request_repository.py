@@ -93,7 +93,9 @@ class RequestSerializer:
                 "request_id": RequestId(value=data["request_id"]),
                 "template_id": data["template_id"],
                 "requested_count": data.get("machine_count", data.get("requested_count", 1)),
-                "desired_capacity": data.get("desired_capacity", data.get("machine_count", data.get("requested_count", 1))),  # Default to requested_count if not present
+                "desired_capacity": data.get(
+                    "desired_capacity", data.get("machine_count", data.get("requested_count", 1))
+                ),  # Default to requested_count if not present
                 "request_type": RequestType(data["request_type"]),
                 "status": RequestStatus(data["status"]),
                 "status_message": data.get("status_message", data.get("error_message")),

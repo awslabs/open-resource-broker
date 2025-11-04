@@ -732,7 +732,9 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin):
             self._logger.error("Unexpected error checking EC2 Fleet status: %s", str(e))
             raise AWSInfrastructureError(f"Failed to check EC2 Fleet status: {e!s}")
 
-    def release_hosts(self, machine_ids: list[str], resource_mapping: list[tuple[str, str, int]] = None) -> None:
+    def release_hosts(
+        self, machine_ids: list[str], resource_mapping: list[tuple[str, str, int]] = None
+    ) -> None:
         """Release hosts across multiple EC2 Fleets by detecting fleet membership.
 
         Args:
@@ -744,32 +746,38 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin):
                 self._logger.warning("No instance IDs provided for EC2 Fleet termination")
                 return
 
-            self._logger.info(
-                "Releasing hosts for %d instances: %s",
-                len(machine_ids),
-                machine_ids
-            )
+            self._logger.info("Releasing hosts for %d instances: %s", len(machine_ids), machine_ids)
 
             # Use resource_mapping if available, otherwise fall back to AWS API calls
             if resource_mapping:
-                fleet_instance_groups = self._group_instances_by_ec2_fleet_from_mapping(machine_ids, resource_mapping)
-                self._logger.info(f"Grouped instances by EC2 Fleet using resource mapping: {fleet_instance_groups}")
+                fleet_instance_groups = self._group_instances_by_ec2_fleet_from_mapping(
+                    machine_ids, resource_mapping
+                )
+                self._logger.info(
+                    f"Grouped instances by EC2 Fleet using resource mapping: {fleet_instance_groups}"
+                )
             else:
                 # Fallback to AWS API calls when no resource mapping is provided
                 self._logger.info("No resource mapping provided, falling back to AWS API calls")
                 fleet_instance_groups = self._group_instances_by_ec2_fleet(machine_ids)
-                self._logger.info(f"Grouped instances by EC2 Fleet using AWS API: {fleet_instance_groups}")
+                self._logger.info(
+                    f"Grouped instances by EC2 Fleet using AWS API: {fleet_instance_groups}"
+                )
 
             # Process each EC2 Fleet group separately
             for fleet_id, fleet_data in fleet_instance_groups.items():
                 if fleet_id is not None:
                     # Handle EC2 Fleet instances using dedicated method (primary case)
-                    self._release_hosts_for_single_ec2_fleet(fleet_id, fleet_data["instance_ids"], fleet_data["fleet_details"])
+                    self._release_hosts_for_single_ec2_fleet(
+                        fleet_id, fleet_data["instance_ids"], fleet_data["fleet_details"]
+                    )
                 else:
                     # Handle non-EC2 Fleet instances (fallback case)
                     instance_ids = fleet_data["instance_ids"]
                     if instance_ids:
-                        self._logger.info(f"Terminating {len(instance_ids)} non-EC2 Fleet instances")
+                        self._logger.info(
+                            f"Terminating {len(instance_ids)} non-EC2 Fleet instances"
+                        )
                         self.aws_ops.terminate_instances_with_fallback(
                             instance_ids, self._request_adapter, "non-EC2 Fleet instances"
                         )
@@ -783,7 +791,9 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin):
             self._logger.error("Failed to release EC2 Fleet hosts: %s", str(e))
             raise AWSInfrastructureError(f"Failed to release EC2 Fleet hosts: {e!s}")
 
-    def _group_instances_by_ec2_fleet_from_mapping(self, machine_ids: list[str], resource_mapping: list[tuple[str, str, int]]) -> dict[Optional[str], dict]:
+    def _group_instances_by_ec2_fleet_from_mapping(
+        self, machine_ids: list[str], resource_mapping: list[tuple[str, str, int]]
+    ) -> dict[Optional[str], dict]:
         """
         Group instances by their EC2 Fleet membership using resource_mapping data.
         Only makes AWS API calls when resource_mapping doesn't have the necessary information.
@@ -803,7 +813,10 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin):
         fleet_ids_to_fetch = set()
 
         # Create a mapping for quick lookup
-        resource_map = {instance_id: (resource_id, desired_capacity) for instance_id, resource_id, desired_capacity in resource_mapping}
+        resource_map = {
+            instance_id: (resource_id, desired_capacity)
+            for instance_id, resource_id, desired_capacity in resource_mapping
+        }
 
         self._logger.info(f"Processing {len(machine_ids)} instances using resource mapping")
 
@@ -820,26 +833,36 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin):
                     fleet_groups[fleet_id]["instance_ids"].append(instance_id)
                     fleet_ids_to_fetch.add(fleet_id)
 
-                    self._logger.debug(f"Instance {instance_id} mapped to EC2 Fleet {fleet_id} from resource mapping")
+                    self._logger.debug(
+                        f"Instance {instance_id} mapped to EC2 Fleet {fleet_id} from resource mapping"
+                    )
                 elif resource_id is None or desired_capacity == 0:
                     # Resource mapping indicates this is not an EC2 Fleet instance
                     if None not in fleet_groups:
                         fleet_groups[None] = {"instance_ids": []}
                     fleet_groups[None]["instance_ids"].append(instance_id)
 
-                    self._logger.debug(f"Instance {instance_id} marked as non-EC2 Fleet from resource mapping")
+                    self._logger.debug(
+                        f"Instance {instance_id} marked as non-EC2 Fleet from resource mapping"
+                    )
                 else:
                     # Resource mapping has incomplete information, need AWS API lookup
                     instances_needing_lookup.append(instance_id)
-                    self._logger.debug(f"Instance {instance_id} needs AWS API lookup (incomplete resource mapping)")
+                    self._logger.debug(
+                        f"Instance {instance_id} needs AWS API lookup (incomplete resource mapping)"
+                    )
             else:
                 # Instance not in resource_mapping, need AWS API lookup
                 instances_needing_lookup.append(instance_id)
-                self._logger.debug(f"Instance {instance_id} not in resource mapping, needs AWS API lookup")
+                self._logger.debug(
+                    f"Instance {instance_id} not in resource mapping, needs AWS API lookup"
+                )
 
         # Second pass: AWS API lookup for instances with missing/incomplete information
         if instances_needing_lookup:
-            self._logger.info(f"Making AWS API calls for {len(instances_needing_lookup)} instances with incomplete resource mapping")
+            self._logger.info(
+                f"Making AWS API calls for {len(instances_needing_lookup)} instances with incomplete resource mapping"
+            )
 
             try:
                 for chunk in self._chunk_list(instances_needing_lookup, 50):
@@ -875,13 +898,18 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin):
 
                                 if ec2_fleet_id:
                                     if ec2_fleet_id not in fleet_groups:
-                                        fleet_groups[ec2_fleet_id] = {"instance_ids": [], "fleet_details": None}
+                                        fleet_groups[ec2_fleet_id] = {
+                                            "instance_ids": [],
+                                            "fleet_details": None,
+                                        }
                                     fleet_groups[ec2_fleet_id]["instance_ids"].append(instance_id)
                                     ec2_fleet_instance_ids.add(instance_id)
                                     fleet_ids_to_fetch.add(ec2_fleet_id)
 
                         # Add non-EC2 Fleet instances to None group
-                        non_ec2_fleet_instances = [iid for iid in chunk if iid not in ec2_fleet_instance_ids]
+                        non_ec2_fleet_instances = [
+                            iid for iid in chunk if iid not in ec2_fleet_instance_ids
+                        ]
                         if non_ec2_fleet_instances:
                             if None not in fleet_groups:
                                 fleet_groups[None] = {"instance_ids": []}
@@ -922,8 +950,12 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin):
                 self._logger.warning(f"Failed to fetch EC2 Fleet details: {e}")
                 # Continue without fleet details - methods will handle missing details
 
-        self._logger.info(f"Grouped {len(machine_ids)} instances into {len(fleet_groups)} groups using optimized resource mapping")
-        self._logger.info(f"AWS API calls avoided for {len(machine_ids) - len(instances_needing_lookup)} instances")
+        self._logger.info(
+            f"Grouped {len(machine_ids)} instances into {len(fleet_groups)} groups using optimized resource mapping"
+        )
+        self._logger.info(
+            f"AWS API calls avoided for {len(machine_ids) - len(instances_needing_lookup)} instances"
+        )
 
         return fleet_groups
 
@@ -978,13 +1010,18 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin):
 
                             if ec2_fleet_id:
                                 if ec2_fleet_id not in fleet_groups:
-                                    fleet_groups[ec2_fleet_id] = {"instance_ids": [], "fleet_details": None}
+                                    fleet_groups[ec2_fleet_id] = {
+                                        "instance_ids": [],
+                                        "fleet_details": None,
+                                    }
                                 fleet_groups[ec2_fleet_id]["instance_ids"].append(instance_id)
                                 ec2_fleet_instance_ids.add(instance_id)
                                 fleet_ids_to_fetch.add(ec2_fleet_id)
 
                     # Add non-EC2 Fleet instances to None group
-                    non_ec2_fleet_instances = [iid for iid in chunk if iid not in ec2_fleet_instance_ids]
+                    non_ec2_fleet_instances = [
+                        iid for iid in chunk if iid not in ec2_fleet_instance_ids
+                    ]
                     if non_ec2_fleet_instances:
                         if None not in fleet_groups:
                             fleet_groups[None] = {"instance_ids": []}
@@ -1041,7 +1078,7 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin):
                 lambda: self._paginate(
                     self.aws_client.ec2_client.describe_fleets,
                     "Fleets",
-                    FleetStates=["active", "modifying"]
+                    FleetStates=["active", "modifying"],
                 ),
                 operation_type="read_only",
             )
@@ -1068,7 +1105,9 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin):
                             return fleet_id
 
                 except Exception as e:
-                    self._logger.debug(f"Failed to check fleet {fleet_id} for instance {instance_id}: {e}")
+                    self._logger.debug(
+                        f"Failed to check fleet {fleet_id} for instance {instance_id}: {e}"
+                    )
                     continue
 
         except Exception as e:
@@ -1076,9 +1115,13 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin):
 
         return None
 
-    def _release_hosts_for_single_ec2_fleet(self, fleet_id: str, fleet_instance_ids: list[str], fleet_details: dict) -> None:
+    def _release_hosts_for_single_ec2_fleet(
+        self, fleet_id: str, fleet_instance_ids: list[str], fleet_details: dict
+    ) -> None:
         """Release hosts for a single EC2 Fleet with proper fleet management."""
-        self._logger.info(f"Processing EC2 Fleet {fleet_id} with {len(fleet_instance_ids)} instances")
+        self._logger.info(
+            f"Processing EC2 Fleet {fleet_id} with {len(fleet_instance_ids)} instances"
+        )
 
         try:
             # Get fleet configuration with pagination and retry
@@ -1093,7 +1136,9 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin):
                 )
 
                 if not fleet_list:
-                    self._logger.warning(f"EC2 Fleet {fleet_id} not found, terminating instances directly")
+                    self._logger.warning(
+                        f"EC2 Fleet {fleet_id} not found, terminating instances directly"
+                    )
                     self.aws_ops.terminate_instances_with_fallback(
                         fleet_instance_ids, self._request_adapter, f"EC2Fleet-{fleet_id} instances"
                     )
@@ -1106,7 +1151,9 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin):
             if fleet_instance_ids:
                 if fleet_type == "maintain":
                     # For maintain fleets, reduce target capacity first to prevent replacements
-                    current_capacity = fleet_details["TargetCapacitySpecification"]["TotalTargetCapacity"]
+                    current_capacity = fleet_details["TargetCapacitySpecification"][
+                        "TotalTargetCapacity"
+                    ]
                     new_capacity = max(0, current_capacity - len(fleet_instance_ids))
 
                     self._logger.info(
@@ -1127,7 +1174,9 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin):
                 self.aws_ops.terminate_instances_with_fallback(
                     fleet_instance_ids, self._request_adapter, f"EC2Fleet-{fleet_id} instances"
                 )
-                self._logger.info("Terminated EC2 Fleet %s instances: %s", fleet_id, fleet_instance_ids)
+                self._logger.info(
+                    "Terminated EC2 Fleet %s instances: %s", fleet_id, fleet_instance_ids
+                )
 
                 # If capacity has reached zero for maintain fleets, delete the fleet
                 if fleet_type == "maintain" and new_capacity == 0:
@@ -1160,7 +1209,9 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin):
             # Log the error but don't fail the entire operation
             # Fleet deletion is cleanup - the main termination should still succeed
             self._logger.warning(f"Failed to delete EC2 Fleet {fleet_id}: {e}")
-            self._logger.warning("EC2 Fleet deletion failed, but instance termination completed successfully")
+            self._logger.warning(
+                "EC2 Fleet deletion failed, but instance termination completed successfully"
+            )
 
     @staticmethod
     def _chunk_list(items: list[str], chunk_size: int):

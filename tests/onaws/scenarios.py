@@ -4,28 +4,18 @@ from typing import Any, Dict, List
 # Global default attribute combinations
 DEFAULT_ATTRIBUTE_COMBINATIONS = [
     {
-    "providerApi": ["EC2Fleet"],
-    "fleetType": ["request", "instant"],
-    "priceType": ["ondemand", "spot"]
+        "providerApi": ["EC2Fleet"],
+        "fleetType": ["request", "instant"],
+        "priceType": ["ondemand", "spot"],
     },
-
-    {
-    "providerApi": ["ASG"],
-    "priceType": ["ondemand", "spot"]
-    },
-
-    {
-    "providerApi": ["RunInstances"],
-    "priceType": ["ondemand"]
-    }
-
+    {"providerApi": ["ASG"], "priceType": ["ondemand", "spot"]},
+    {"providerApi": ["RunInstances"], "priceType": ["ondemand"]},
     # {
     # "providerApi": ["EC2Fleet"],
     # "fleetType": ["instant"],
     # "priceType": ["spot"]
     # },
-
-    ]
+]
 
 
 def generate_scenarios_from_attributes(

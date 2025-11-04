@@ -425,7 +425,7 @@ class TestEC2FleetHandler:
         resource_mapping = [
             (instance_ids[0], fleet_id, 3),  # EC2 Fleet instance with capacity > 0
             (instance_ids[1], fleet_id, 3),  # EC2 Fleet instance with capacity > 0
-            (instance_ids[2], None, 0),      # Non-EC2 Fleet instance
+            (instance_ids[2], None, 0),  # Non-EC2 Fleet instance
         ]
 
         # Test release_hosts with resource mapping
@@ -465,7 +465,7 @@ class TestEC2FleetHandler:
             (instance_ids[0], "fleet-12345", 2),  # EC2 Fleet instance
             (instance_ids[1], "fleet-12345", 2),  # Same EC2 Fleet instance
             (instance_ids[2], "fleet-67890", 1),  # Different EC2 Fleet instance
-            (instance_ids[3], None, 0),           # Non-EC2 Fleet instance
+            (instance_ids[3], None, 0),  # Non-EC2 Fleet instance
         ]
 
         # Test release_hosts with mixed instances
@@ -542,9 +542,9 @@ class TestEC2FleetHandler:
         # This tests the scenario where some instances have missing fleet IDs or desired capacity
         resource_mapping = [
             (instance_ids[0], "fleet-12345", 4),  # Complete information
-            (instance_ids[1], None, 4),           # Missing resource_id
+            (instance_ids[1], None, 4),  # Missing resource_id
             (instance_ids[2], "fleet-12345", 0),  # Missing/zero desired_capacity
-            (instance_ids[3], None, 0),           # Missing both
+            (instance_ids[3], None, 0),  # Missing both
         ]
 
         # Test release_hosts with incomplete resource mapping
@@ -557,7 +557,9 @@ class TestEC2FleetHandler:
         # Verify that all instances are processed (either as EC2 Fleet or non-EC2 Fleet instances)
         call_args_list = aws_ops.terminate_instances_with_fallback.call_args_list
         total_instances_processed = sum(len(call[0][0]) for call in call_args_list)
-        assert total_instances_processed == len(instance_ids), f"Expected all {len(instance_ids)} instances to be processed"
+        assert total_instances_processed == len(instance_ids), (
+            f"Expected all {len(instance_ids)} instances to be processed"
+        )
 
     @mock_aws
     def test_ec2_fleet_handler_release_hosts_maintain_fleet_capacity_management(self):
@@ -637,7 +639,9 @@ class TestEC2FleetHandler:
         # Verify that all instances are processed
         call_args_list = aws_ops.terminate_instances_with_fallback.call_args_list
         total_instances_processed = sum(len(call[0][0]) for call in call_args_list)
-        assert total_instances_processed == len(instance_ids), f"Expected all {len(instance_ids)} instances to be processed"
+        assert total_instances_processed == len(instance_ids), (
+            f"Expected all {len(instance_ids)} instances to be processed"
+        )
 
 
 @pytest.mark.unit
@@ -739,9 +743,7 @@ class TestASGHandler:
         )
 
         # Test scaling functionality by checking if ASG exists
-        response = autoscaling.describe_auto_scaling_groups(
-            AutoScalingGroupNames=["test-asg"]
-        )
+        response = autoscaling.describe_auto_scaling_groups(AutoScalingGroupNames=["test-asg"])
 
         assert len(response["AutoScalingGroups"]) == 1
         asg = response["AutoScalingGroups"][0]
@@ -834,7 +836,7 @@ class TestASGHandler:
         resource_mapping = [
             (instance_ids[0], "test-asg", 3),  # ASG instance with capacity > 0
             (instance_ids[1], "test-asg", 3),  # ASG instance with capacity > 0
-            (instance_ids[2], None, 0),       # Non-ASG instance
+            (instance_ids[2], None, 0),  # Non-ASG instance
         ]
 
         # Test release_hosts with resource mapping
@@ -877,7 +879,7 @@ class TestASGHandler:
             (instance_ids[0], "test-asg-1", 2),  # ASG instance
             (instance_ids[1], "test-asg-1", 2),  # Same ASG instance
             (instance_ids[2], "test-asg-2", 1),  # Different ASG instance
-            (instance_ids[3], None, 0),          # Non-ASG instance
+            (instance_ids[3], None, 0),  # Non-ASG instance
         ]
 
         # Test release_hosts with mixed instances
@@ -958,10 +960,10 @@ class TestASGHandler:
         # Create resource mapping with incomplete information
         # This tests the scenario where some instances have missing ASG names or desired capacity
         resource_mapping = [
-            (instance_ids[0], "test-asg", 4),    # Complete information
-            (instance_ids[1], None, 4),          # Missing resource_id
-            (instance_ids[2], "test-asg", 0),    # Missing/zero desired_capacity
-            (instance_ids[3], None, 0),          # Missing both
+            (instance_ids[0], "test-asg", 4),  # Complete information
+            (instance_ids[1], None, 4),  # Missing resource_id
+            (instance_ids[2], "test-asg", 0),  # Missing/zero desired_capacity
+            (instance_ids[3], None, 0),  # Missing both
         ]
 
         # Test release_hosts with incomplete resource mapping
@@ -975,7 +977,9 @@ class TestASGHandler:
         # The exact grouping depends on the handler's logic for incomplete resource mapping
         call_args_list = aws_ops.terminate_instances_with_fallback.call_args_list
         total_instances_processed = sum(len(call[0][0]) for call in call_args_list)
-        assert total_instances_processed == len(instance_ids), f"Expected all {len(instance_ids)} instances to be processed"
+        assert total_instances_processed == len(instance_ids), (
+            f"Expected all {len(instance_ids)} instances to be processed"
+        )
 
 
 @pytest.mark.unit
@@ -1152,7 +1156,7 @@ class TestSpotFleetHandler:
         resource_mapping = [
             (instance_ids[0], fleet_id, 3),  # Spot Fleet instance with capacity > 0
             (instance_ids[1], fleet_id, 3),  # Spot Fleet instance with capacity > 0
-            (instance_ids[2], None, 0),      # Non-Spot Fleet instance
+            (instance_ids[2], None, 0),  # Non-Spot Fleet instance
         ]
 
         # Test release_hosts with resource mapping
@@ -1192,7 +1196,7 @@ class TestSpotFleetHandler:
             (instance_ids[0], "sfr-12345", 2),  # Spot Fleet instance
             (instance_ids[1], "sfr-12345", 2),  # Same Spot Fleet instance
             (instance_ids[2], "sfr-67890", 1),  # Different Spot Fleet instance
-            (instance_ids[3], None, 0),         # Non-Spot Fleet instance
+            (instance_ids[3], None, 0),  # Non-Spot Fleet instance
         ]
 
         # Test release_hosts with mixed instances
@@ -1269,9 +1273,9 @@ class TestSpotFleetHandler:
         # This tests the scenario where some instances have missing fleet IDs or desired capacity
         resource_mapping = [
             (instance_ids[0], "sfr-12345", 4),  # Complete information
-            (instance_ids[1], None, 4),         # Missing resource_id
+            (instance_ids[1], None, 4),  # Missing resource_id
             (instance_ids[2], "sfr-12345", 0),  # Missing/zero desired_capacity
-            (instance_ids[3], None, 0),         # Missing both
+            (instance_ids[3], None, 0),  # Missing both
         ]
 
         # Test release_hosts with incomplete resource mapping
@@ -1284,7 +1288,9 @@ class TestSpotFleetHandler:
         # Verify that all instances are processed (either as Spot Fleet or non-Spot Fleet instances)
         call_args_list = aws_ops.terminate_instances_with_fallback.call_args_list
         total_instances_processed = sum(len(call[0][0]) for call in call_args_list)
-        assert total_instances_processed == len(instance_ids), f"Expected all {len(instance_ids)} instances to be processed"
+        assert total_instances_processed == len(instance_ids), (
+            f"Expected all {len(instance_ids)} instances to be processed"
+        )
 
     @mock_aws
     def test_spot_fleet_handler_release_hosts_spot_instance_detection(self):
@@ -1362,7 +1368,9 @@ class TestSpotFleetHandler:
         # Verify that all instances are processed
         call_args_list = aws_ops.terminate_instances_with_fallback.call_args_list
         total_instances_processed = sum(len(call[0][0]) for call in call_args_list)
-        assert total_instances_processed == len(instance_ids), f"Expected all {len(instance_ids)} instances to be processed"
+        assert total_instances_processed == len(instance_ids), (
+            f"Expected all {len(instance_ids)} instances to be processed"
+        )
 
     @mock_aws
     def test_spot_fleet_handler_release_hosts_fleet_cancellation(self):
@@ -1694,10 +1702,7 @@ class TestRunInstancesHandler:
             MinCount=2,
             MaxCount=2,
             InstanceType="t2.micro",
-            InstanceMarketOptions={
-                "MarketType": "spot",
-                "SpotOptions": {"MaxPrice": "0.05"}
-            }
+            InstanceMarketOptions={"MarketType": "spot", "SpotOptions": {"MaxPrice": "0.05"}},
         )
         instance_ids = [i["InstanceId"] for i in response["Instances"]]
 
@@ -1781,14 +1786,15 @@ class TestRunInstancesHandler:
 
         # Mock AWS operations to raise a ClientError
         from botocore.exceptions import ClientError
+
         client_error = ClientError(
             error_response={
                 "Error": {
                     "Code": "InvalidInstanceID.NotFound",
-                    "Message": "The instance ID 'i-1234567890abcdef0' does not exist"
+                    "Message": "The instance ID 'i-1234567890abcdef0' does not exist",
                 }
             },
-            operation_name="TerminateInstances"
+            operation_name="TerminateInstances",
         )
         aws_ops.terminate_instances_with_fallback = Mock(side_effect=client_error)
 

@@ -2,7 +2,7 @@ import json
 import logging
 import os
 import time
-from typing import List, Dict, Any
+from typing import Any, Dict, List
 
 import boto3
 import pytest
@@ -70,9 +70,7 @@ def get_instance_state(instance_id):
 def get_asg_instances(asg_name: str) -> List[str]:
     """Get all instance IDs from an ASG."""
     try:
-        response = autoscaling_client.describe_auto_scaling_groups(
-            AutoScalingGroupNames=[asg_name]
-        )
+        response = autoscaling_client.describe_auto_scaling_groups(AutoScalingGroupNames=[asg_name])
         if not response["AutoScalingGroups"]:
             return []
 
@@ -89,9 +87,7 @@ def verify_asg_instances_detached(instance_ids: List[str]) -> bool:
         if not instance_ids:
             return True
 
-        response = autoscaling_client.describe_auto_scaling_instances(
-            InstanceIds=instance_ids
-        )
+        response = autoscaling_client.describe_auto_scaling_instances(InstanceIds=instance_ids)
 
         # If any instances are still in ASGs, they will appear in the response
         remaining_asg_instances = response.get("AutoScalingInstances", [])
@@ -99,7 +95,9 @@ def verify_asg_instances_detached(instance_ids: List[str]) -> bool:
         if remaining_asg_instances:
             log.warning(f"Found {len(remaining_asg_instances)} instances still in ASGs")
             for instance in remaining_asg_instances:
-                log.warning(f"Instance {instance['InstanceId']} still in ASG {instance['AutoScalingGroupName']}")
+                log.warning(
+                    f"Instance {instance['InstanceId']} still in ASG {instance['AutoScalingGroupName']}"
+                )
             return False
 
         log.info(f"All {len(instance_ids)} instances successfully detached from ASGs")
@@ -144,6 +142,7 @@ def setup_multi_asg_templates():
     test_config_dir = processor.run_templates_dir / test_name
     if test_config_dir.exists():
         import shutil
+
         shutil.rmtree(test_config_dir)
         log.info(f"Cleared existing test directory: {test_config_dir}")
 
@@ -158,7 +157,7 @@ def setup_multi_asg_templates():
                 "maxSize": 10,
                 "minSize": 0,
                 "desiredCapacity": 2,
-            }
+            },
         },
         {
             "template_name": "ASG_Template_2",
@@ -169,8 +168,8 @@ def setup_multi_asg_templates():
                 "maxSize": 8,
                 "minSize": 0,
                 "desiredCapacity": 3,
-            }
-        }
+            },
+        },
     ]
 
     # Generate both templates in separate directories
@@ -178,7 +177,7 @@ def setup_multi_asg_templates():
         processor.generate_test_templates(
             config["test_dir"],
             awsprov_base_template="awsprov_templates.base.json",
-            overrides=config["overrides"]
+            overrides=config["overrides"],
         )
 
     # Create a combined config directory that includes both templates
@@ -188,8 +187,11 @@ def setup_multi_asg_templates():
     # Copy config files from first template directory (they should be the same)
     first_template_dir = processor.run_templates_dir / template_configs[0]["test_dir"]
     import shutil
+
     shutil.copy2(first_template_dir / "config.json", combined_config_dir / "config.json")
-    shutil.copy2(first_template_dir / "default_config.json", combined_config_dir / "default_config.json")
+    shutil.copy2(
+        first_template_dir / "default_config.json", combined_config_dir / "default_config.json"
+    )
 
     # Combine awsprov_templates.json from both directories
     combined_templates = {"templates": []}
@@ -203,7 +205,7 @@ def setup_multi_asg_templates():
                 template_data = json.load(f)
 
             # Update template ID to include our custom name
-            if "templates" in template_data and template_data["templates"]:
+            if template_data.get("templates"):
                 template = template_data["templates"][0].copy()
                 template["templateId"] = config["template_name"]
                 combined_templates["templates"].append(template)
@@ -230,7 +232,9 @@ def setup_multi_asg_templates():
     return hfm, template_configs
 
 
-def provision_asg_capacity(hfm: HostFactoryMock, template_json: Dict[str, Any], capacity: int) -> Dict[str, Any]:
+def provision_asg_capacity(
+    hfm: HostFactoryMock, template_json: Dict[str, Any], capacity: int
+) -> Dict[str, Any]:
     """Provision capacity for a single ASG template and return the status response."""
     log.info(f"Provisioning {capacity} instances for template {template_json['templateId']}")
 
@@ -291,7 +295,9 @@ def provision_asg_capacity(hfm: HostFactoryMock, template_json: Dict[str, Any], 
         assert res["state"] in ["running", "pending"]
         log.debug(f"EC2 {instance_id} state: {res['state']}")
 
-    log.info(f"Successfully provisioned {len(machines)} instances for template {template_json['templateId']}")
+    log.info(
+        f"Successfully provisioned {len(machines)} instances for template {template_json['templateId']}"
+    )
     return status_response
 
 
@@ -332,13 +338,14 @@ def test_multi_asg_termination(setup_multi_asg_templates):
 
     # Debug: Log all available templates
     for template in available_templates:
-        log.info(f"Available template: {template.get('templateId')} - providerApi: {template.get('providerApi')}")
+        log.info(
+            f"Available template: {template.get('templateId')} - providerApi: {template.get('providerApi')}"
+        )
 
     for config in template_configs:
         template_name = config["template_name"]
         template_json = next(
-            (t for t in available_templates if template_name in t["templateId"]),
-            None
+            (t for t in available_templates if template_name in t["templateId"]), None
         )
 
         if template_json is None:
@@ -351,11 +358,15 @@ def test_multi_asg_termination(setup_multi_asg_templates):
         provider_api = template_json.get("providerApi") or template_json.get("provider_api")
         if provider_api != "ASG":
             # If it's not ASG, let's force it to be ASG for our test
-            log.warning(f"Template {template_name} has providerApi '{provider_api}', forcing to ASG")
+            log.warning(
+                f"Template {template_name} has providerApi '{provider_api}', forcing to ASG"
+            )
             template_json["providerApi"] = "ASG"
 
         asg_templates.append(template_json)
-        log.info(f"Found ASG template: {template_json['templateId']} with providerApi: {template_json.get('providerApi')}")
+        log.info(
+            f"Found ASG template: {template_json['templateId']} with providerApi: {template_json.get('providerApi')}"
+        )
 
     # Step 3: Provision capacity from both ASG templates
     log.info("Step 3: Provisioning capacity from both ASG templates")
@@ -364,13 +375,17 @@ def test_multi_asg_termination(setup_multi_asg_templates):
 
     for i, template_json in enumerate(asg_templates):
         capacity_to_request = template_configs[i]["overrides"]["desiredCapacity"]
-        log.info(f"Provisioning {capacity_to_request} instances from template {template_json['templateId']}")
+        log.info(
+            f"Provisioning {capacity_to_request} instances from template {template_json['templateId']}"
+        )
 
         status_response = provision_asg_capacity(hfm, template_json, capacity_to_request)
         all_status_responses.append(status_response)
 
         # Collect instance IDs
-        instance_ids = [machine["machineId"] for machine in status_response["requests"][0]["machines"]]
+        instance_ids = [
+            machine["machineId"] for machine in status_response["requests"][0]["machines"]
+        ]
         all_instance_ids.extend(instance_ids)
 
         log.info(f"Provisioned instances: {instance_ids}")
@@ -385,9 +400,7 @@ def test_multi_asg_termination(setup_multi_asg_templates):
     # Get ASG names from the instances
     asg_names = set()
     try:
-        response = autoscaling_client.describe_auto_scaling_instances(
-            InstanceIds=all_instance_ids
-        )
+        response = autoscaling_client.describe_auto_scaling_instances(InstanceIds=all_instance_ids)
 
         for instance_info in response.get("AutoScalingInstances", []):
             asg_name = instance_info.get("AutoScalingGroupName")
@@ -433,7 +446,9 @@ def test_multi_asg_termination(setup_multi_asg_templates):
             log.info("✓ All instances are now terminating or terminated")
             break
 
-        log.info(f"Waiting for termination to complete... ({int(time.time() - start_time)}s elapsed)")
+        log.info(
+            f"Waiting for termination to complete... ({int(time.time() - start_time)}s elapsed)"
+        )
         time.sleep(10)
 
     # Step 7: Verify instance termination
@@ -446,7 +461,9 @@ def test_multi_asg_termination(setup_multi_asg_templates):
     # Verify instances are detached from ASGs
     final_detached = verify_asg_instances_detached(all_instance_ids)
     if not final_detached:
-        log.info("Note: Some instances still show ASG attachment while terminating - this is expected AWS behavior")
+        log.info(
+            "Note: Some instances still show ASG attachment while terminating - this is expected AWS behavior"
+        )
         log.info("Instances will be fully detached once they reach 'terminated' state")
 
     # Step 8: Verify ASG deletion (NEW - this was missing!)
@@ -487,7 +504,9 @@ def test_multi_asg_termination(setup_multi_asg_templates):
                         asg = response["AutoScalingGroups"][0]
                         current_instances = len(asg.get("Instances", []))
                         desired_capacity = asg.get("DesiredCapacity", 0)
-                        log.info(f"ASG {asg_name} still exists: {current_instances} instances, desired capacity: {desired_capacity}")
+                        log.info(
+                            f"ASG {asg_name} still exists: {current_instances} instances, desired capacity: {desired_capacity}"
+                        )
                 except Exception as e:
                     log.warning(f"Could not get details for ASG {asg_name}: {e}")
             else:
@@ -498,7 +517,9 @@ def test_multi_asg_termination(setup_multi_asg_templates):
             break
 
         elapsed_time = int(time.time() - asg_deletion_start)
-        log.info(f"Waiting for {len(remaining_asgs)} ASGs to be deleted: {remaining_asgs} ({elapsed_time}s elapsed)")
+        log.info(
+            f"Waiting for {len(remaining_asgs)} ASGs to be deleted: {remaining_asgs} ({elapsed_time}s elapsed)"
+        )
         time.sleep(30)  # Check every 30 seconds
 
     # Final verification - all ASGs should be deleted
@@ -525,7 +546,9 @@ def test_multi_asg_termination(setup_multi_asg_templates):
                 log.error(f"Could not get details for remaining ASG {asg_name}: {e}")
 
         # This assertion will fail if ASGs are not deleted, helping identify the issue
-        assert not final_remaining_asgs, f"ASGs were not deleted after instance termination: {final_remaining_asgs}. This indicates the ASG handler may not be properly deleting ASGs when capacity reaches zero."
+        assert not final_remaining_asgs, (
+            f"ASGs were not deleted after instance termination: {final_remaining_asgs}. This indicates the ASG handler may not be properly deleting ASGs when capacity reaches zero."
+        )
 
     log.info("=== Multi-ASG Termination Test Completed Successfully ===")
     log.info(f"✓ Successfully provisioned {total_instances} instances across 2 ASGs")

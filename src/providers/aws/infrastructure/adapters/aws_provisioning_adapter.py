@@ -5,7 +5,7 @@ This module provides an adapter for AWS-specific resource provisioning operation
 It implements the ResourceProvisioningPort interface from the domain layer.
 """
 
-from typing import TYPE_CHECKING, Any, Optional
+from typing import Any, Optional
 
 from domain.base.dependency_injection import injectable
 from domain.base.exceptions import EntityNotFoundError
@@ -236,7 +236,7 @@ class AWSProvisioningAdapter(ResourceProvisioningPort):
         template_id: str,
         provider_api: str,
         context: dict = None,
-        resource_mapping: list[tuple[str, str]] = None
+        resource_mapping: list[tuple[str, str]] = None,
     ) -> None:
         """
         Release provisioned AWS resources using direct parameters.
@@ -258,9 +258,9 @@ class AWSProvisioningAdapter(ResourceProvisioningPort):
         self._logger.info(
             "Releasing resources: %d instances from template %s using %s handler (resource_mapping: %s)",
             len(machine_ids),
-            template_id, #KBG potentially remove alltogether.
+            template_id,  # KBG potentially remove alltogether.
             provider_api,
-            len(resource_mapping)
+            len(resource_mapping),
         )
 
         if not machine_ids:
@@ -276,14 +276,11 @@ class AWSProvisioningAdapter(ResourceProvisioningPort):
 
         # Call handler's release_hosts method for all provider APIs
         try:
-
             handler.release_hosts(machine_ids, resource_mapping=resource_mapping)
 
         except Exception as e:
             self._logger.error(
-                "Failed to release resources using %s handler: %s",
-                provider_api,
-                str(e)
+                "Failed to release resources using %s handler: %s", provider_api, str(e)
             )
             raise InfrastructureError(f"Failed to release {provider_api} resources: {e!s}")
 

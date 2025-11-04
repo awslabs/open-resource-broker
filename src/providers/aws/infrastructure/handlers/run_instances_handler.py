@@ -526,7 +526,9 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
             self._logger.error("FALLBACK: Fallback method failed to find instances: %s", e)
             return []
 
-    def release_hosts(self, machine_ids: list[str], resource_mapping: list[tuple[str, str, int]] = None) -> None:
+    def release_hosts(
+        self, machine_ids: list[str], resource_mapping: list[tuple[str, str, int]] = None
+    ) -> None:
         """
         Release hosts created by RunInstances.
 
