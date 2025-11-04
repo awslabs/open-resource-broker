@@ -202,6 +202,20 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
 
                         # Create machine aggregates for each instance
                         instance_data_list = provisioning_result.get("instances", [])
+
+                        # Store ASG-specific metadata for capacity tracking (after instance_data_list is defined)
+                        if template.provider_api == "ASG":
+                            request.metadata.update({
+                                "asg_current_capacity": len(instance_data_list),  # Changes over time
+                            })
+
+                            self.logger.info(
+                                "Stored ASG capacity metadata for %s: desired=%s, actual=%s",
+                                resource_ids[0] if resource_ids else "unknown",
+                                request.requested_count,
+                                len(instance_data_list)
+                            )
+
                         for instance_data in instance_data_list:
                             machine = self._create_machine_aggregate(
                                 instance_data, request, template.template_id
@@ -553,15 +567,25 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
                 {tid: len(instances) for tid, instances in template_groups.items()},
             )
 
-            # Step 2: Create tasks for parallel execution
+            # Step 2: Create instance ID to resource ID mapping
+            resource_mapping = self._get_instance_ids_to_resource_id_mapping(machine_ids)
+
+            # Step 3: Create tasks for parallel execution
             import asyncio
 
             tasks = []
 
             for template_id, instance_group in template_groups.items():
+                # Filter mapping for this template group
+                template_mapping = [
+                    (instance_id, resource_id, desired_capacity)
+                    for instance_id, resource_id, desired_capacity in resource_mapping
+                    if instance_id in instance_group
+                ]
+
                 task = asyncio.create_task(
-                    self._process_template_group(template_id, instance_group, request),
-                    name=f"terminate-{template_id}",
+                    self._process_template_group(template_id, instance_group, request, template_mapping),
+                    name=f"terminate-{template_id}"
                 )
                 tasks.append(task)
 
@@ -621,15 +645,90 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
             self.logger.error("Parallel de-provisioning execution failed: %s", e)
             return {"success": False, "error_message": str(e)}
 
-    async def _process_template_group(
-        self, template_id: str, instance_group: list[str], request
-    ) -> dict[str, Any]:
-        """Process a single template group - designed for parallel execution"""
+    def _get_instance_ids_to_resource_id_mapping(self, machine_ids: list[str]) -> list[tuple[str, str, int]]:
+        """
+        Determine resource ID and desired capacity for each instance ID by looking up the machine's request_id
+        in the database and getting the first resource_id and desired_capacity from that request.
+
+        Args:
+            machine_ids: List of instance IDs to get resource IDs for
+
+        Returns:
+            List of tuples (instance_id, resource_id or None, desired_capacity or 0)
+        """
+        mapping = []
+
+        for machine_id in machine_ids:
+            resource_id = None
+            desired_capacity = 0
+            try:
+                with self.uow_factory.create_unit_of_work() as uow:
+                    # Get the machine from database
+                    machine = uow.machines.find_by_id(machine_id)
+                    if machine and machine.request_id:
+                        # Get the request from database
+                        from domain.request.value_objects import RequestId
+                        request_id = RequestId(value=machine.request_id)
+                        request = uow.requests.get_by_id(request_id)
+
+                        if request:
+                            # Get first resource_id from the request
+                            if request.resource_ids:
+                                resource_id = request.resource_ids[0]
+                                self.logger.debug(
+                                    "Found resource_id %s for instance %s via request %s",
+                                    resource_id, machine_id, machine.request_id
+                                )
+                            else:
+                                self.logger.warning(
+                                    "No resource_ids found for request %s (machine %s)",
+                                    machine.request_id, machine_id
+                                )
+
+                            # Get desired_capacity from the request
+                            desired_capacity = getattr(request, 'desired_capacity', 0)
+                            self.logger.debug(
+                                "Found desired_capacity %s for instance %s via request %s",
+                                desired_capacity, machine_id, machine.request_id
+                            )
+                        else:
+                            self.logger.warning(
+                                "Request %s not found for machine %s",
+                                machine.request_id, machine_id
+                            )
+                    else:
+                        self.logger.warning(
+                            "Machine %s not found or has no request_id", machine_id
+                        )
+
+            except Exception as e:
+                self.logger.error(
+                    "Failed to get resource_id and desired_capacity for instance %s: %s", machine_id, e
+                )
+
+            mapping.append((machine_id, resource_id, desired_capacity))
+
+        self.logger.info(
+            "Created instance to resource ID mapping for %d instances: %s",
+            len(mapping),
+            [(iid, rid) for iid, rid in mapping if rid is not None]
+        )
+
+        return mapping
+
+    async def _process_template_group(self, template_id: str, instance_group: list[str], request, resource_mapping: list[tuple[str, str, int]]) -> dict[str, Any]:
+        """Process a single template group - designed for parallel execution
+
+        Args:
+            template_id: The template ID for this group
+            instance_group: List of instance IDs to process
+            request: The request object
+            resource_mapping: List of tuples (instance_id, resource_id or None, desired_capacity)
+        """
 
         try:
-            self.logger.info(
-                "Processing template group %s with %d instances", template_id, len(instance_group)
-            )
+            self.logger.info("Processing template group %s with %d instances", template_id, len(instance_group))
+            self.logger.debug("Instance to resource ID mapping: %s", resource_mapping)
 
             # Get the actual template configuration
             from application.dto.queries import GetTemplateQuery
@@ -654,6 +753,7 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
                     "template_config": template_config,
                     "template_id": template_id,
                     "provider_api": provider_api,
+                    "resource_mapping": resource_mapping,
                 },
                 context={
                     "correlation_id": str(request.request_id),

@@ -28,7 +28,7 @@ Note:
 
 import json
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Optional
+from typing import Any, Optional
 
 from botocore.exceptions import ClientError
 
@@ -49,15 +49,14 @@ from providers.aws.exceptions.aws_exceptions import (
     AWSInfrastructureError,
     AWSValidationError,
 )
+from providers.aws.infrastructure.adapters.machine_adapter import AWSMachineAdapter
+from providers.aws.infrastructure.aws_client import AWSClient
 from providers.aws.infrastructure.handlers.base_context_mixin import BaseContextMixin
 from providers.aws.infrastructure.handlers.base_handler import AWSHandler
 from providers.aws.infrastructure.launch_template.manager import (
     AWSLaunchTemplateManager,
 )
 from providers.aws.utilities.aws_operations import AWSOperations
-
-if TYPE_CHECKING:
-    from providers.aws.infrastructure.adapters.machine_adapter import AWSMachineAdapter
 
 
 @injectable
@@ -66,12 +65,12 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin):
 
     def __init__(
         self,
-        aws_client,
+        aws_client: AWSClient,
         logger: LoggingPort,
         aws_ops: AWSOperations,
         launch_template_manager: AWSLaunchTemplateManager,
         request_adapter: RequestAdapterPort = None,
-        machine_adapter: Optional["AWSMachineAdapter"] = None,
+        machine_adapter: Optional[AWSMachineAdapter] = None,
     ) -> None:
         """
         Initialize the EC2 Fleet handler.
@@ -733,73 +732,438 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin):
             self._logger.error("Unexpected error checking EC2 Fleet status: %s", str(e))
             raise AWSInfrastructureError(f"Failed to check EC2 Fleet status: {e!s}")
 
-    def release_hosts(self, request: Request) -> None:
-        """
-        Release specific hosts or entire EC2 Fleet.
+    def release_hosts(self, machine_ids: list[str], resource_mapping: list[tuple[str, str, int]] = None) -> None:
+        """Release hosts across multiple EC2 Fleets by detecting fleet membership.
 
         Args:
-            request: The request containing the fleet and machine information
+            machine_ids: List of instance IDs to terminate
+            resource_mapping: List of tuples (instance_id, resource_id or None, desired_capacity) for intelligent resource management
         """
         try:
-            if not request.resource_ids:
-                raise AWSInfrastructureError("No EC2 Fleet ID found in request")
+            if not machine_ids:
+                self._logger.warning("No instance IDs provided for EC2 Fleet termination")
+                return
 
-            fleet_id = request.resource_ids[0]  # Use first resource ID as fleet ID
+            self._logger.info(
+                "Releasing hosts for %d instances: %s",
+                len(machine_ids),
+                machine_ids
+            )
 
-            # Get fleet configuration with pagination and retry
-            fleet_list = self._retry_with_backoff(
+            # Use resource_mapping if available, otherwise fall back to AWS API calls
+            if resource_mapping:
+                fleet_instance_groups = self._group_instances_by_ec2_fleet_from_mapping(machine_ids, resource_mapping)
+                self._logger.info(f"Grouped instances by EC2 Fleet using resource mapping: {fleet_instance_groups}")
+            else:
+                # Fallback to AWS API calls when no resource mapping is provided
+                self._logger.info("No resource mapping provided, falling back to AWS API calls")
+                fleet_instance_groups = self._group_instances_by_ec2_fleet(machine_ids)
+                self._logger.info(f"Grouped instances by EC2 Fleet using AWS API: {fleet_instance_groups}")
+
+            # Process each EC2 Fleet group separately
+            for fleet_id, fleet_data in fleet_instance_groups.items():
+                if fleet_id is not None:
+                    # Handle EC2 Fleet instances using dedicated method (primary case)
+                    self._release_hosts_for_single_ec2_fleet(fleet_id, fleet_data["instance_ids"], fleet_data["fleet_details"])
+                else:
+                    # Handle non-EC2 Fleet instances (fallback case)
+                    instance_ids = fleet_data["instance_ids"]
+                    if instance_ids:
+                        self._logger.info(f"Terminating {len(instance_ids)} non-EC2 Fleet instances")
+                        self.aws_ops.terminate_instances_with_fallback(
+                            instance_ids, self._request_adapter, "non-EC2 Fleet instances"
+                        )
+                        self._logger.info("Terminated non-EC2 Fleet instances: %s", instance_ids)
+
+        except ClientError as e:
+            error = self._convert_client_error(e)
+            self._logger.error("Failed to release EC2 Fleet resources: %s", str(error))
+            raise error
+        except Exception as e:
+            self._logger.error("Failed to release EC2 Fleet hosts: %s", str(e))
+            raise AWSInfrastructureError(f"Failed to release EC2 Fleet hosts: {e!s}")
+
+    def _group_instances_by_ec2_fleet_from_mapping(self, machine_ids: list[str], resource_mapping: list[tuple[str, str, int]]) -> dict[Optional[str], dict]:
+        """
+        Group instances by their EC2 Fleet membership using resource_mapping data.
+        Only makes AWS API calls when resource_mapping doesn't have the necessary information.
+
+        Args:
+            machine_ids: List of EC2 instance IDs
+            resource_mapping: List of tuples (instance_id, resource_id or None, desired_capacity)
+
+        Returns:
+            Dictionary mapping EC2 Fleet IDs to fleet details dict containing:
+            - 'instance_ids': list of instance IDs
+            - 'fleet_details': full EC2 Fleet configuration (for EC2 Fleet instances only)
+            Non-EC2 Fleet instances are grouped under None key with only 'instance_ids'.
+        """
+        fleet_groups: dict[Optional[str], dict] = {}
+        instances_needing_lookup = []
+        fleet_ids_to_fetch = set()
+
+        # Create a mapping for quick lookup
+        resource_map = {instance_id: (resource_id, desired_capacity) for instance_id, resource_id, desired_capacity in resource_mapping}
+
+        self._logger.info(f"Processing {len(machine_ids)} instances using resource mapping")
+
+        # First pass: use resource_mapping data
+        for instance_id in machine_ids:
+            if instance_id in resource_map:
+                resource_id, desired_capacity = resource_map[instance_id]
+
+                if resource_id and desired_capacity > 0:
+                    # We have EC2 Fleet information from resource_mapping
+                    fleet_id = resource_id
+                    if fleet_id not in fleet_groups:
+                        fleet_groups[fleet_id] = {"instance_ids": [], "fleet_details": None}
+                    fleet_groups[fleet_id]["instance_ids"].append(instance_id)
+                    fleet_ids_to_fetch.add(fleet_id)
+
+                    self._logger.debug(f"Instance {instance_id} mapped to EC2 Fleet {fleet_id} from resource mapping")
+                elif resource_id is None or desired_capacity == 0:
+                    # Resource mapping indicates this is not an EC2 Fleet instance
+                    if None not in fleet_groups:
+                        fleet_groups[None] = {"instance_ids": []}
+                    fleet_groups[None]["instance_ids"].append(instance_id)
+
+                    self._logger.debug(f"Instance {instance_id} marked as non-EC2 Fleet from resource mapping")
+                else:
+                    # Resource mapping has incomplete information, need AWS API lookup
+                    instances_needing_lookup.append(instance_id)
+                    self._logger.debug(f"Instance {instance_id} needs AWS API lookup (incomplete resource mapping)")
+            else:
+                # Instance not in resource_mapping, need AWS API lookup
+                instances_needing_lookup.append(instance_id)
+                self._logger.debug(f"Instance {instance_id} not in resource mapping, needs AWS API lookup")
+
+        # Second pass: AWS API lookup for instances with missing/incomplete information
+        if instances_needing_lookup:
+            self._logger.info(f"Making AWS API calls for {len(instances_needing_lookup)} instances with incomplete resource mapping")
+
+            try:
+                for chunk in self._chunk_list(instances_needing_lookup, 50):
+                    try:
+                        response = self._retry_with_backoff(
+                            self.aws_client.ec2_client.describe_instances,
+                            operation_type="read_only",
+                            InstanceIds=chunk,
+                        )
+
+                        # Track which instances were found in EC2 Fleets
+                        ec2_fleet_instance_ids = set()
+
+                        # Group instances by EC2 Fleet
+                        for reservation in response.get("Reservations", []):
+                            for instance in reservation.get("Instances", []):
+                                instance_id = instance.get("InstanceId")
+                                if not instance_id:
+                                    continue
+
+                                # Check if instance has EC2 Fleet ID in tags or metadata
+                                ec2_fleet_id = None
+
+                                # Check tags for EC2 Fleet ID
+                                for tag in instance.get("Tags", []):
+                                    if tag.get("Key") == "aws:ec2:fleet-id":
+                                        ec2_fleet_id = tag.get("Value")
+                                        break
+
+                                # If not found in tags, try to find the fleet by querying all active fleets
+                                if not ec2_fleet_id:
+                                    ec2_fleet_id = self._find_ec2_fleet_for_instance(instance_id)
+
+                                if ec2_fleet_id:
+                                    if ec2_fleet_id not in fleet_groups:
+                                        fleet_groups[ec2_fleet_id] = {"instance_ids": [], "fleet_details": None}
+                                    fleet_groups[ec2_fleet_id]["instance_ids"].append(instance_id)
+                                    ec2_fleet_instance_ids.add(instance_id)
+                                    fleet_ids_to_fetch.add(ec2_fleet_id)
+
+                        # Add non-EC2 Fleet instances to None group
+                        non_ec2_fleet_instances = [iid for iid in chunk if iid not in ec2_fleet_instance_ids]
+                        if non_ec2_fleet_instances:
+                            if None not in fleet_groups:
+                                fleet_groups[None] = {"instance_ids": []}
+                            fleet_groups[None]["instance_ids"].extend(non_ec2_fleet_instances)
+
+                    except Exception as e:
+                        self._logger.warning(f"Failed to describe instances for chunk {chunk}: {e}")
+                        # Add all instances in this chunk to non-EC2 Fleet group as fallback
+                        if None not in fleet_groups:
+                            fleet_groups[None] = {"instance_ids": []}
+                        fleet_groups[None]["instance_ids"].extend(chunk)
+
+            except Exception as e:
+                self._logger.error(f"Failed to lookup EC2 Fleet information for instances: {e}")
+                # Fallback: treat lookup instances as non-EC2 Fleet
+                if None not in fleet_groups:
+                    fleet_groups[None] = {"instance_ids": []}
+                fleet_groups[None]["instance_ids"].extend(instances_needing_lookup)
+
+        # Third pass: fetch EC2 Fleet details only for fleets we need
+        if fleet_ids_to_fetch:
+            self._logger.info(f"Fetching EC2 Fleet details for {len(fleet_ids_to_fetch)} fleets")
+            try:
+                fleet_ids_list = list(fleet_ids_to_fetch)
+                for fleet_chunk in self._chunk_list(fleet_ids_list, 50):
+                    fleet_response = self._retry_with_backoff(
+                        self.aws_client.ec2_client.describe_fleets,
+                        operation_type="read_only",
+                        FleetIds=fleet_chunk,
+                    )
+
+                    for fleet_details in fleet_response.get("Fleets", []):
+                        fleet_id = fleet_details.get("FleetId")
+                        if fleet_id in fleet_groups:
+                            fleet_groups[fleet_id]["fleet_details"] = fleet_details
+
+            except Exception as e:
+                self._logger.warning(f"Failed to fetch EC2 Fleet details: {e}")
+                # Continue without fleet details - methods will handle missing details
+
+        self._logger.info(f"Grouped {len(machine_ids)} instances into {len(fleet_groups)} groups using optimized resource mapping")
+        self._logger.info(f"AWS API calls avoided for {len(machine_ids) - len(instances_needing_lookup)} instances")
+
+        return fleet_groups
+
+    def _group_instances_by_ec2_fleet(self, instance_ids: list[str]) -> dict[Optional[str], dict]:
+        """
+        Group instances by their EC2 Fleet membership and return full fleet details.
+
+        Args:
+            instance_ids: List of EC2 instance IDs
+
+        Returns:
+            Dictionary mapping EC2 Fleet IDs to fleet details dict containing:
+            - 'instance_ids': list of instance IDs
+            - 'fleet_details': full EC2 Fleet configuration (for EC2 Fleet instances only)
+            Non-EC2 Fleet instances are grouped under None key with only 'instance_ids'.
+        """
+        fleet_groups: dict[Optional[str], dict] = {}
+        fleet_ids_to_fetch = set()
+
+        try:
+            # First, group instances by EC2 Fleet ID
+            for chunk in self._chunk_list(instance_ids, 50):
+                try:
+                    response = self._retry_with_backoff(
+                        self.aws_client.ec2_client.describe_instances,
+                        operation_type="read_only",
+                        InstanceIds=chunk,
+                    )
+
+                    # Track which instances were found in EC2 Fleets
+                    ec2_fleet_instance_ids = set()
+
+                    # Group instances by EC2 Fleet
+                    for reservation in response.get("Reservations", []):
+                        for instance in reservation.get("Instances", []):
+                            instance_id = instance.get("InstanceId")
+                            if not instance_id:
+                                continue
+
+                            # Check if instance has EC2 Fleet ID in tags or metadata
+                            ec2_fleet_id = None
+
+                            # Check tags for EC2 Fleet ID
+                            for tag in instance.get("Tags", []):
+                                if tag.get("Key") == "aws:ec2:fleet-id":
+                                    ec2_fleet_id = tag.get("Value")
+                                    break
+
+                            # If not found in tags, try to find the fleet by querying all active fleets
+                            if not ec2_fleet_id:
+                                ec2_fleet_id = self._find_ec2_fleet_for_instance(instance_id)
+
+                            if ec2_fleet_id:
+                                if ec2_fleet_id not in fleet_groups:
+                                    fleet_groups[ec2_fleet_id] = {"instance_ids": [], "fleet_details": None}
+                                fleet_groups[ec2_fleet_id]["instance_ids"].append(instance_id)
+                                ec2_fleet_instance_ids.add(instance_id)
+                                fleet_ids_to_fetch.add(ec2_fleet_id)
+
+                    # Add non-EC2 Fleet instances to None group
+                    non_ec2_fleet_instances = [iid for iid in chunk if iid not in ec2_fleet_instance_ids]
+                    if non_ec2_fleet_instances:
+                        if None not in fleet_groups:
+                            fleet_groups[None] = {"instance_ids": []}
+                        fleet_groups[None]["instance_ids"].extend(non_ec2_fleet_instances)
+
+                except Exception as e:
+                    self._logger.warning(f"Failed to describe instances for chunk {chunk}: {e}")
+                    # Add all instances in this chunk to non-EC2 Fleet group as fallback
+                    if None not in fleet_groups:
+                        fleet_groups[None] = {"instance_ids": []}
+                    fleet_groups[None]["instance_ids"].extend(chunk)
+
+            # Now fetch EC2 Fleet details for all identified fleets
+            if fleet_ids_to_fetch:
+                try:
+                    fleet_ids_list = list(fleet_ids_to_fetch)
+                    for fleet_chunk in self._chunk_list(fleet_ids_list, 50):
+                        fleet_response = self._retry_with_backoff(
+                            self.aws_client.ec2_client.describe_fleets,
+                            operation_type="read_only",
+                            FleetIds=fleet_chunk,
+                        )
+
+                        for fleet_details in fleet_response.get("Fleets", []):
+                            fleet_id = fleet_details.get("FleetId")
+                            if fleet_id in fleet_groups:
+                                fleet_groups[fleet_id]["fleet_details"] = fleet_details
+
+                except Exception as e:
+                    self._logger.warning(f"Failed to fetch EC2 Fleet details: {e}")
+                    # Continue without fleet details - methods will handle missing details
+
+        except Exception as e:
+            self._logger.error(f"Failed to group instances by EC2 Fleet: {e}")
+            # Fallback: treat all instances as non-EC2 Fleet
+            fleet_groups = {None: {"instance_ids": instance_ids.copy()}}
+
+        self._logger.debug(f"Grouped {len(instance_ids)} instances into {len(fleet_groups)} groups")
+        return fleet_groups
+
+    def _find_ec2_fleet_for_instance(self, instance_id: str) -> Optional[str]:
+        """
+        Find the EC2 Fleet ID for a specific instance by querying active fleets.
+
+        Args:
+            instance_id: EC2 instance ID
+
+        Returns:
+            EC2 Fleet ID if found, None otherwise
+        """
+        try:
+            # Get all active EC2 fleets
+            response = self._retry_with_backoff(
                 lambda: self._paginate(
                     self.aws_client.ec2_client.describe_fleets,
                     "Fleets",
-                    FleetIds=[fleet_id],
+                    FleetStates=["active", "modifying"]
                 ),
                 operation_type="read_only",
             )
 
-            if not fleet_list:
-                raise AWSEntityNotFoundError(f"EC2 Fleet {fleet_id} not found")
+            # Check each fleet for the instance
+            for fleet in response:
+                fleet_id = fleet.get("FleetId")
+                if not fleet_id:
+                    continue
 
-            fleet = fleet_list[0]
-            fleet_type = fleet.get("Type", "maintain")
+                try:
+                    # Get instances for this fleet
+                    fleet_instances = self._retry_with_backoff(
+                        lambda fid=fleet_id: self._collect_with_next_token(
+                            self.aws_client.ec2_client.describe_fleet_instances,
+                            "ActiveInstances",
+                            FleetId=fid,
+                        )
+                    )
 
-            # Get instance IDs from machine references
-            instance_ids = []
-            if request.machine_references:
-                instance_ids = [m.machine_id for m in request.machine_references]
+                    # Check if our instance is in this fleet
+                    for instance in fleet_instances:
+                        if instance.get("InstanceId") == instance_id:
+                            return fleet_id
 
-            if instance_ids:
+                except Exception as e:
+                    self._logger.debug(f"Failed to check fleet {fleet_id} for instance {instance_id}: {e}")
+                    continue
+
+        except Exception as e:
+            self._logger.debug(f"Failed to find EC2 Fleet for instance {instance_id}: {e}")
+
+        return None
+
+    def _release_hosts_for_single_ec2_fleet(self, fleet_id: str, fleet_instance_ids: list[str], fleet_details: dict) -> None:
+        """Release hosts for a single EC2 Fleet with proper fleet management."""
+        self._logger.info(f"Processing EC2 Fleet {fleet_id} with {len(fleet_instance_ids)} instances")
+
+        try:
+            # Get fleet configuration with pagination and retry
+            if not fleet_details:
+                fleet_list = self._retry_with_backoff(
+                    lambda: self._paginate(
+                        self.aws_client.ec2_client.describe_fleets,
+                        "Fleets",
+                        FleetIds=[fleet_id],
+                    ),
+                    operation_type="read_only",
+                )
+
+                if not fleet_list:
+                    self._logger.warning(f"EC2 Fleet {fleet_id} not found, terminating instances directly")
+                    self.aws_ops.terminate_instances_with_fallback(
+                        fleet_instance_ids, self._request_adapter, f"EC2Fleet-{fleet_id} instances"
+                    )
+                    return
+
+                fleet_details = fleet_list[0]
+
+            fleet_type = fleet_details.get("Type", "maintain")
+
+            if fleet_instance_ids:
                 if fleet_type == "maintain":
-                    # For maintain fleets, reduce target capacity first
-                    current_capacity = fleet["TargetCapacitySpecification"]["TotalTargetCapacity"]
-                    new_capacity = max(0, current_capacity - len(instance_ids))
-                    # KBG TODO race condition on instance termination detach first.
+                    # For maintain fleets, reduce target capacity first to prevent replacements
+                    current_capacity = fleet_details["TargetCapacitySpecification"]["TotalTargetCapacity"]
+                    new_capacity = max(0, current_capacity - len(fleet_instance_ids))
+
+                    self._logger.info(
+                        "Reducing maintain fleet %s capacity from %s to %s before terminating instances",
+                        fleet_id,
+                        current_capacity,
+                        new_capacity,
+                    )
+
                     self._retry_with_backoff(
                         self.aws_client.ec2_client.modify_fleet,
                         operation_type="critical",
                         FleetId=fleet_id,
                         TargetCapacitySpecification={"TotalTargetCapacity": new_capacity},
                     )
-                    self._logger.info(
-                        "Reduced maintain fleet %s capacity to %s",
-                        fleet_id,
-                        new_capacity,
-                    )
 
-                # Use consolidated AWS operations utility for instance termination
+                # Terminate specific instances using existing utility
                 self.aws_ops.terminate_instances_with_fallback(
-                    instance_ids, self._request_adapter, "EC2 Fleet instances"
+                    fleet_instance_ids, self._request_adapter, f"EC2Fleet-{fleet_id} instances"
                 )
-            else:
-                # Delete entire fleet
-                self._retry_with_backoff(
-                    self.aws_client.ec2_client.delete_fleets,
-                    operation_type="critical",
-                    FleetIds=[fleet_id],
-                    TerminateInstances=True,
-                )
-                self._logger.info("Deleted EC2 Fleet: %s", fleet_id)
+                self._logger.info("Terminated EC2 Fleet %s instances: %s", fleet_id, fleet_instance_ids)
 
-        except ClientError as e:
-            error = self._convert_client_error(e)
-            self._logger.error("Failed to release EC2 Fleet resources: %s", str(error))
-            raise error
+                # If capacity has reached zero for maintain fleets, delete the fleet
+                if fleet_type == "maintain" and new_capacity == 0:
+                    self._logger.info("EC2 Fleet %s capacity is zero, deleting fleet", fleet_id)
+                    self._delete_ec2_fleet(fleet_id)
+            else:
+                # If no specific instances provided, delete entire fleet
+                self._delete_ec2_fleet(fleet_id)
+
+        except Exception as e:
+            self._logger.error("Failed to terminate EC2 fleet %s: %s", fleet_id, e)
+            raise
+
+    def _delete_ec2_fleet(self, fleet_id: str) -> None:
+        """Delete an EC2 Fleet when it's no longer needed."""
+        try:
+            self._logger.info(f"Deleting EC2 Fleet {fleet_id}")
+
+            # Delete the fleet with termination of instances
+            self._retry_with_backoff(
+                self.aws_client.ec2_client.delete_fleets,
+                operation_type="critical",
+                FleetIds=[fleet_id],
+                TerminateInstances=True,
+            )
+
+            self._logger.info(f"Successfully deleted EC2 Fleet {fleet_id}")
+
+        except Exception as e:
+            # Log the error but don't fail the entire operation
+            # Fleet deletion is cleanup - the main termination should still succeed
+            self._logger.warning(f"Failed to delete EC2 Fleet {fleet_id}: {e}")
+            self._logger.warning("EC2 Fleet deletion failed, but instance termination completed successfully")
+
+    @staticmethod
+    def _chunk_list(items: list[str], chunk_size: int):
+        """Yield successive chunk-sized lists from items."""
+        for index in range(0, len(items), chunk_size):
+            yield items[index : index + chunk_size]

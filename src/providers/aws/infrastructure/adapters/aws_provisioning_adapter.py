@@ -26,8 +26,9 @@ from providers.aws.infrastructure.aws_client import AWSClient
 from providers.aws.infrastructure.aws_handler_factory import AWSHandlerFactory
 from providers.aws.infrastructure.handlers.base_handler import AWSHandler
 
-if TYPE_CHECKING:
-    from providers.aws.strategy.aws_provider_strategy import AWSProviderStrategy
+# Removed TYPE_CHECKING import to avoid circular dependency issues during DI resolution
+# if TYPE_CHECKING:
+#     from providers.aws.strategy.aws_provider_strategy import AWSProviderStrategy
 
 
 @injectable
@@ -44,7 +45,7 @@ class AWSProvisioningAdapter(ResourceProvisioningPort):
         logger: LoggingPort,
         aws_handler_factory: AWSHandlerFactory,
         template_config_manager: Optional[TemplateConfigurationManager] = None,
-        provider_strategy: Optional["AWSProviderStrategy"] = None,
+        provider_strategy: Optional[Any] = None,
     ) -> None:
         """
         Initialize the adapter.
@@ -230,7 +231,12 @@ class AWSProvisioningAdapter(ResourceProvisioningPort):
             raise InfrastructureError(f"Failed to check resource status: {e!s}")
 
     def release_resources(
-        self, machine_ids: list[str], template_id: str, provider_api: str, context: dict = None
+        self,
+        machine_ids: list[str],
+        template_id: str,
+        provider_api: str,
+        context: dict = None,
+        resource_mapping: list[tuple[str, str]] = None
     ) -> None:
         """
         Release provisioned AWS resources using direct parameters.
@@ -240,18 +246,21 @@ class AWSProvisioningAdapter(ResourceProvisioningPort):
             template_id: Template ID used to create the instances
             provider_api: Provider API type (ASG, EC2Fleet, SpotFleet, RunInstances)
             context: Context dictionary (unused in new flow)
+            resource_mapping: List of tuples (instance_id, resource_id or None)
 
         Raises:
             AWSEntityNotFoundError: If the resource is not found
             InfrastructureError: For other infrastructure errors
         """
         context = context or {}
+        resource_mapping = resource_mapping or []
 
         self._logger.info(
-            "Releasing resources: %d instances from template %s using %s handler",
+            "Releasing resources: %d instances from template %s using %s handler (resource_mapping: %s)",
             len(machine_ids),
-            template_id,  # KBG potentially remove alltogether.
+            template_id, #KBG potentially remove alltogether.
             provider_api,
+            len(resource_mapping)
         )
 
         if not machine_ids:
@@ -265,15 +274,18 @@ class AWSProvisioningAdapter(ResourceProvisioningPort):
         # Get handler using caching helper method based on provider_api
         handler = self._get_handler_for_provider_api(provider_api)
 
-        # Call handler with machine_ids - handler will handle any ASG detection internally
-        if provider_api == "ASG":
-            # ASG handler has special release_hosts method that handles ASG detection
-            handler.release_hosts(machine_ids=machine_ids)
-        else:
-            # Other handlers use AWS operations utility for direct termination
-            handler.aws_ops.terminate_instances_with_fallback(
-                machine_ids, handler._request_adapter, f"{provider_api} instances"
+        # Call handler's release_hosts method for all provider APIs
+        try:
+
+            handler.release_hosts(machine_ids, resource_mapping=resource_mapping)
+
+        except Exception as e:
+            self._logger.error(
+                "Failed to release resources using %s handler: %s",
+                provider_api,
+                str(e)
             )
+            raise InfrastructureError(f"Failed to release {provider_api} resources: {e!s}")
 
         self._logger.info(
             "Successfully released %d instances using %s handler", len(machine_ids), provider_api

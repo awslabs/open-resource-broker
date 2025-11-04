@@ -26,7 +26,7 @@ Note:
     based on demand and maintain high availability across multiple AZs.
 """
 
-from typing import TYPE_CHECKING, Any, Optional
+from typing import Any, Optional
 
 from domain.base.dependency_injection import injectable
 from domain.base.ports import LoggingPort
@@ -36,12 +36,12 @@ from infrastructure.error.decorators import handle_infrastructure_exceptions
 from infrastructure.utilities.common.resource_naming import get_resource_prefix
 from providers.aws.domain.template.aws_template_aggregate import AWSTemplate
 from providers.aws.exceptions.aws_exceptions import AWSInfrastructureError
+from providers.aws.infrastructure.adapters.machine_adapter import AWSMachineAdapter
+from providers.aws.infrastructure.aws_client import AWSClient
 from providers.aws.infrastructure.handlers.base_context_mixin import BaseContextMixin
 from providers.aws.infrastructure.handlers.base_handler import AWSHandler
+from providers.aws.infrastructure.launch_template.manager import AWSLaunchTemplateManager
 from providers.aws.utilities.aws_operations import AWSOperations
-
-if TYPE_CHECKING:
-    from providers.aws.infrastructure.adapters.machine_adapter import AWSMachineAdapter
 
 
 @injectable
@@ -50,12 +50,12 @@ class ASGHandler(AWSHandler, BaseContextMixin):
 
     def __init__(
         self,
-        aws_client,
+        aws_client: AWSClient,
         logger: LoggingPort,
         aws_ops: AWSOperations,
-        launch_template_manager,
+        launch_template_manager: AWSLaunchTemplateManager,
         request_adapter: RequestAdapterPort = None,
-        machine_adapter: Optional["AWSMachineAdapter"] = None,
+        machine_adapter: Optional[AWSMachineAdapter] = None,
     ) -> None:
         """
         Initialize the ASG handler with integrated dependencies.
@@ -573,17 +573,29 @@ class ASGHandler(AWSHandler, BaseContextMixin):
                     exc,
                 )
 
-    def release_hosts(self, machine_ids: list[str]) -> None:
-        """Release hosts across multiple ASGs by detecting ASG membership."""
+    def release_hosts(self, machine_ids: list[str], resource_mapping: list[tuple[str, str, int]] = None) -> None:
+        """Release hosts across multiple ASGs by detecting ASG membership.
+
+        Args:
+            machine_ids: List of instance IDs to terminate
+            resource_mapping: List of tuples (instance_id, resource_id or None, desired_capacity) for intelligent resource management
+        """
         try:
             if not machine_ids:
-                raise AWSInfrastructureError("Machine IDs are required")
+                self._logger.warning("No instance IDs provided for ASG termination")
+                return
 
             self._logger.info("Releasing hosts for %d instances: %s", len(machine_ids), machine_ids)
 
-            # Group instances by ASG membership
-            asg_instance_groups = self._group_instances_by_asg(machine_ids)
-            self._logger.info(f"Grouped instances by ASG: {asg_instance_groups}")
+            # Always use resource_mapping when available, but check each entry individually
+            if resource_mapping:
+                asg_instance_groups = self._group_instances_by_asg_from_mapping(machine_ids, resource_mapping)
+                self._logger.info(f"Grouped instances by ASG using resource mapping: {asg_instance_groups}")
+            else:
+                # Fallback to AWS API calls when no resource mapping is provided
+                self._logger.info("No resource mapping provided, falling back to AWS API calls")
+                asg_instance_groups = self._group_instances_by_asg(machine_ids)
+                self._logger.info(f"Grouped instances by ASG using AWS API: {asg_instance_groups}")
 
             # Process each ASG group separately
             for asg_name, asg_data in asg_instance_groups.items():
@@ -645,6 +657,161 @@ class ASGHandler(AWSHandler, BaseContextMixin):
             asg_instance_ids, self._request_adapter, f"ASG {asg_name} instances"
         )
         self._logger.info("Terminated ASG %s instances: %s", asg_name, asg_instance_ids)
+
+        # If desired capacity has reached zero, delete the ASG
+        if new_capacity == 0:
+            self._logger.info("ASG %s capacity is zero, deleting ASG", asg_name)
+            self._delete_asg(asg_name)
+
+    def _delete_asg(self, asg_name: str) -> None:
+        """Delete an Auto Scaling Group when it's no longer needed."""
+        try:
+            self._logger.info(f"Deleting ASG {asg_name}")
+
+            # Delete the ASG with force delete to handle any remaining instances
+            self._retry_with_backoff(
+                self.aws_client.autoscaling_client.delete_auto_scaling_group,
+                operation_type="critical",
+                AutoScalingGroupName=asg_name,
+                ForceDelete=True,  # Force delete any remaining instances
+            )
+
+            self._logger.info(f"Successfully deleted ASG {asg_name}")
+
+        except Exception as e:
+            # Log the error but don't fail the entire operation
+            # ASG deletion is cleanup - the main termination should still succeed
+            self._logger.warning(f"Failed to delete ASG {asg_name}: {e}")
+            self._logger.warning("ASG deletion failed, but instance termination completed successfully")
+
+    def _group_instances_by_asg_from_mapping(self, machine_ids: list[str], resource_mapping: list[tuple[str, str, int]]) -> dict[Optional[str], dict]:
+        """
+        Group instances by their ASG membership using resource_mapping data.
+        Only makes AWS API calls when resource_mapping doesn't have the necessary information.
+
+        Args:
+            machine_ids: List of EC2 instance IDs
+            resource_mapping: List of tuples (instance_id, resource_id or None, desired_capacity)
+
+        Returns:
+            Dictionary mapping ASG names to ASG details dict containing:
+            - 'instance_ids': list of instance IDs
+            - 'asg_details': full ASG configuration (for ASG instances only)
+            Non-ASG instances are grouped under None key with only 'instance_ids'.
+        """
+        asg_groups: dict[Optional[str], dict] = {}
+        instances_needing_lookup = []
+        asg_names_to_fetch = set()
+
+        # Create a mapping for quick lookup
+        resource_map = {instance_id: (resource_id, desired_capacity) for instance_id, resource_id, desired_capacity in resource_mapping}
+
+        self._logger.info(f"Processing {len(machine_ids)} instances using resource mapping")
+
+        # First pass: use resource_mapping data
+        for instance_id in machine_ids:
+            if instance_id in resource_map:
+                resource_id, desired_capacity = resource_map[instance_id]
+
+                if resource_id and desired_capacity > 0:
+                    # We have ASG information from resource_mapping
+                    asg_name = resource_id
+                    if asg_name not in asg_groups:
+                        asg_groups[asg_name] = {"instance_ids": [], "asg_details": None}
+                    asg_groups[asg_name]["instance_ids"].append(instance_id)
+                    asg_names_to_fetch.add(asg_name)
+
+                    self._logger.debug(f"Instance {instance_id} mapped to ASG {asg_name} from resource mapping")
+                elif resource_id is None or desired_capacity == 0:
+                    # Resource mapping indicates this is not an ASG instance
+                    if None not in asg_groups:
+                        asg_groups[None] = {"instance_ids": []}
+                    asg_groups[None]["instance_ids"].append(instance_id)
+
+                    self._logger.debug(f"Instance {instance_id} marked as non-ASG from resource mapping")
+                else:
+                    # Resource mapping has incomplete information, need AWS API lookup
+                    instances_needing_lookup.append(instance_id)
+                    self._logger.debug(f"Instance {instance_id} needs AWS API lookup (incomplete resource mapping)")
+            else:
+                # Instance not in resource_mapping, need AWS API lookup
+                instances_needing_lookup.append(instance_id)
+                self._logger.debug(f"Instance {instance_id} not in resource mapping, needs AWS API lookup")
+
+        # Second pass: AWS API lookup for instances with missing/incomplete information
+        if instances_needing_lookup:
+            self._logger.info(f"Making AWS API calls for {len(instances_needing_lookup)} instances with incomplete resource mapping")
+
+            try:
+                for chunk in self._chunk_list(instances_needing_lookup, 50):
+                    try:
+                        response = self._retry_with_backoff(
+                            self.aws_client.autoscaling_client.describe_auto_scaling_instances,
+                            operation_type="read_only",
+                            InstanceIds=chunk,
+                        )
+
+                        # Track which instances were found in ASGs
+                        asg_instance_ids = set()
+
+                        # Group instances by ASG
+                        for entry in response.get("AutoScalingInstances", []):
+                            instance_id = entry.get("InstanceId")
+                            asg_name = entry.get("AutoScalingGroupName")
+
+                            if instance_id and asg_name:
+                                if asg_name not in asg_groups:
+                                    asg_groups[asg_name] = {"instance_ids": [], "asg_details": None}
+                                asg_groups[asg_name]["instance_ids"].append(instance_id)
+                                asg_instance_ids.add(instance_id)
+                                asg_names_to_fetch.add(asg_name)
+
+                        # Add non-ASG instances to None group
+                        non_asg_instances = [iid for iid in chunk if iid not in asg_instance_ids]
+                        if non_asg_instances:
+                            if None not in asg_groups:
+                                asg_groups[None] = {"instance_ids": []}
+                            asg_groups[None]["instance_ids"].extend(non_asg_instances)
+
+                    except Exception as e:
+                        self._logger.warning(f"Failed to describe ASG instances for chunk {chunk}: {e}")
+                        # Add all instances in this chunk to non-ASG group as fallback
+                        if None not in asg_groups:
+                            asg_groups[None] = {"instance_ids": []}
+                        asg_groups[None]["instance_ids"].extend(chunk)
+
+            except Exception as e:
+                self._logger.error(f"Failed to lookup ASG information for instances: {e}")
+                # Fallback: treat lookup instances as non-ASG
+                if None not in asg_groups:
+                    asg_groups[None] = {"instance_ids": []}
+                asg_groups[None]["instance_ids"].extend(instances_needing_lookup)
+
+        # Third pass: fetch ASG details only for ASGs we need
+        if asg_names_to_fetch:
+            self._logger.info(f"Fetching ASG details for {len(asg_names_to_fetch)} ASGs")
+            try:
+                asg_names_list = list(asg_names_to_fetch)
+                for asg_chunk in self._chunk_list(asg_names_list, 50):
+                    asg_response = self._retry_with_backoff(
+                        self.aws_client.autoscaling_client.describe_auto_scaling_groups,
+                        operation_type="read_only",
+                        AutoScalingGroupNames=asg_chunk,
+                    )
+
+                    for asg_details in asg_response.get("AutoScalingGroups", []):
+                        asg_name = asg_details.get("AutoScalingGroupName")
+                        if asg_name in asg_groups:
+                            asg_groups[asg_name]["asg_details"] = asg_details
+
+            except Exception as e:
+                self._logger.warning(f"Failed to fetch ASG details: {e}")
+                # Continue without ASG details - methods will handle missing details
+
+        self._logger.info(f"Grouped {len(machine_ids)} instances into {len(asg_groups)} groups using optimized resource mapping")
+        self._logger.info(f"AWS API calls avoided for {len(machine_ids) - len(instances_needing_lookup)} instances")
+
+        return asg_groups
 
     def _group_instances_by_asg(self, instance_ids: list[str]) -> dict[Optional[str], dict]:
         """

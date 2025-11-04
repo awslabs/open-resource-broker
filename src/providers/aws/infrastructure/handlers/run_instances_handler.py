@@ -28,7 +28,7 @@ Note:
 """
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Optional
+from typing import Any, Optional
 
 from botocore.exceptions import ClientError
 
@@ -40,15 +40,14 @@ from infrastructure.error.decorators import handle_infrastructure_exceptions
 from infrastructure.utilities.common.resource_naming import get_resource_prefix
 from providers.aws.domain.template.aws_template_aggregate import AWSTemplate
 from providers.aws.exceptions.aws_exceptions import AWSInfrastructureError
+from providers.aws.infrastructure.adapters.machine_adapter import AWSMachineAdapter
+from providers.aws.infrastructure.aws_client import AWSClient
 from providers.aws.infrastructure.handlers.base_context_mixin import BaseContextMixin
 from providers.aws.infrastructure.handlers.base_handler import AWSHandler
 from providers.aws.infrastructure.launch_template.manager import (
     AWSLaunchTemplateManager,
 )
 from providers.aws.utilities.aws_operations import AWSOperations
-
-if TYPE_CHECKING:
-    from providers.aws.infrastructure.adapters.machine_adapter import AWSMachineAdapter
 
 
 @injectable
@@ -57,12 +56,12 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
 
     def __init__(
         self,
-        aws_client,
+        aws_client: AWSClient,
         logger: LoggingPort,
         aws_ops: AWSOperations,
         launch_template_manager: AWSLaunchTemplateManager,
         request_adapter: RequestAdapterPort = None,
-        machine_adapter: Optional["AWSMachineAdapter"] = None,
+        machine_adapter: Optional[AWSMachineAdapter] = None,
         error_handler: ErrorHandlingPort = None,
     ) -> None:
         """
@@ -527,31 +526,24 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
             self._logger.error("FALLBACK: Fallback method failed to find instances: %s", e)
             return []
 
-    def release_hosts(self, request: Request) -> None:
+    def release_hosts(self, machine_ids: list[str], resource_mapping: list[tuple[str, str, int]] = None) -> None:
         """
         Release hosts created by RunInstances.
 
         Args:
-            request: The request containing the instance information
+            machine_ids: List of instance IDs to terminate
+            resource_mapping: List of tuples (instance_id, resource_id or None, desired_capacity) for intelligent resource management
         """
         try:
-            # Get instance IDs from machine references or metadata
-            instance_ids = []
-
-            if request.machine_references:
-                instance_ids = [m.machine_id for m in request.machine_references]
-            elif hasattr(request, "metadata") and request.metadata.get("instance_ids"):
-                instance_ids = request.metadata["instance_ids"]
-
-            if not instance_ids:
-                self._logger.warning("No instance IDs found for request %s", request.request_id)
+            if not machine_ids:
+                self._logger.warning("No instance IDs provided for RunInstances termination")
                 return
 
             # Use consolidated AWS operations utility for instance termination
             self.aws_ops.terminate_instances_with_fallback(
-                instance_ids, self._request_adapter, "RunInstances instances"
+                machine_ids, self._request_adapter, "RunInstances instances"
             )
-            self._logger.info("Terminated RunInstances instances: %s", instance_ids)
+            self._logger.info("Terminated RunInstances instances: %s", machine_ids)
 
         except ClientError as e:
             error = self._convert_client_error(e)

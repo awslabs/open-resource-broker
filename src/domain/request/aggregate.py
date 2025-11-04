@@ -34,6 +34,7 @@ class Request(AggregateRoot):
     # Request configuration
     template_id: str
     requested_count: int = 1
+    desired_capacity: int = 1  # Initially set to same as requested_count, can be modified for capacity management
 
     # Provider tracking (which provider was used)
     provider_name: Optional[str] = None  # Specific provider instance name
@@ -282,6 +283,7 @@ class Request(AggregateRoot):
             "provider_type": self.provider_type,
             "template_id": self.template_id,
             "requested_count": self.requested_count,
+            "desired_capacity": self.desired_capacity,
             "status": self.status.value,
             "status_message": self.status_message,
             "instance_ids": [id.value for id in self.instance_ids],
@@ -335,6 +337,7 @@ class Request(AggregateRoot):
             request_type=request_type,
             template_id=template_id,
             requested_count=machine_count,
+            desired_capacity=machine_count,  # Initially set to same as requested_count
             provider_type=provider_type,
             provider_instance=provider_instance,
             status=RequestStatus.PENDING,
@@ -386,6 +389,7 @@ class Request(AggregateRoot):
             request_type=RequestType.RETURN,
             template_id="return-request",
             requested_count=len(instance_ids),
+            desired_capacity=len(instance_ids),  # Initially set to same as requested_count
             provider_type=provider_type,
             status=RequestStatus.PENDING,
             instance_ids=[InstanceId(value=id_str) for id_str in instance_ids],
@@ -418,6 +422,7 @@ class Request(AggregateRoot):
             "provider_type": provider_type,
             "template_id": data.get("template_id"),
             "requested_count": data.get("requested_count", 1),
+            "desired_capacity": data.get("desired_capacity", data.get("requested_count", 1)),  # Default to requested_count if not present
             "status": RequestStatus(data.get("status", RequestStatus.PENDING.value)),
             "status_message": data.get("status_message"),
             "instance_ids": [InstanceId(value=id) for id in data.get("instance_ids", [])],

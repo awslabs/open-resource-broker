@@ -443,7 +443,24 @@ def _register_aws_provider_to_context(
         )
 
         # Create AWS provider strategy with correct parameters
-        aws_strategy = AWSProviderStrategy(config=aws_config, logger=logger)
+        aws_provisioning_port = None
+        try:
+            from providers.aws.infrastructure.adapters.aws_provisioning_adapter import (
+                AWSProvisioningAdapter,
+            )
+
+            aws_provisioning_port = container.get(AWSProvisioningAdapter)
+        except Exception as exc:  # nosec B110 - diagnostic logging only
+            logger.debug(
+                "AWS provisioning adapter unavailable during provider registration: %s",
+                exc,
+            )
+
+        aws_strategy = AWSProviderStrategy(
+            config=aws_config,
+            logger=logger,
+            aws_provisioning_port=aws_provisioning_port,
+        )
 
         # Register strategy with provider context
         provider_context.register_strategy(aws_strategy, provider_instance.name)
@@ -473,6 +490,9 @@ def _register_provider_specific_services(container: DIContainer) -> None:
             from providers.aws.registration import register_aws_services_with_di
 
             register_aws_services_with_di(container)
+
+            # Register core AWS provider services (handlers, adapters, ports)
+            _register_aws_services(container)
         else:
             logger.debug("AWS provider not available, skipping AWS service registration")
     except ImportError:

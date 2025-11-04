@@ -6,7 +6,7 @@ maintaining all existing AWS functionality and adding new capabilities.
 """
 
 import time
-from typing import Any, Optional
+from typing import Any, Callable, Optional
 
 from domain.base.dependency_injection import injectable
 from domain.base.ports import LoggingPort
@@ -58,7 +58,8 @@ class AWSProviderStrategy(ProviderStrategy):
         self,
         config: AWSProviderConfig,
         logger: LoggingPort,
-        aws_provisioning_port: Optional["AWSProvisioningAdapter"] = None,
+        aws_provisioning_port: Optional[Any] = None,
+        aws_provisioning_port_resolver: Optional[Callable[[], Any]] = None,
     ) -> None:
         """
         Initialize AWS provider strategy.
@@ -67,6 +68,7 @@ class AWSProviderStrategy(ProviderStrategy):
             config: AWS-specific configuration
             logger: Logger for logging messages
             aws_provisioning_port: Optional AWS provisioning adapter for resource management
+            aws_provisioning_port_resolver: Optional resolver function for lazy loading
 
         Raises:
             ValueError: If configuration is invalid
@@ -82,6 +84,28 @@ class AWSProviderStrategy(ProviderStrategy):
         self._launch_template_manager: Optional[AWSLaunchTemplateManager] = None
         self._handlers: dict[str, Any] = {}
         self._aws_provisioning_port = aws_provisioning_port
+        self._aws_provisioning_port_resolver = aws_provisioning_port_resolver
+
+    def _resolve_provisioning_port(self) -> Optional["AWSProvisioningAdapter"]:
+        """Lazily resolve the AWS provisioning adapter when first needed."""
+
+        if self._aws_provisioning_port is None and self._aws_provisioning_port_resolver:
+            try:
+                self._aws_provisioning_port = self._aws_provisioning_port_resolver()
+                self._logger.debug(
+                    "Resolved AWS provisioning adapter via resolver: %s",
+                    type(self._aws_provisioning_port).__name__
+                    if self._aws_provisioning_port
+                    else None,
+                )
+            except Exception as exc:  # nosec B110 - diagnostic logging only
+                self._logger.warning(
+                    "Failed to resolve AWS provisioning adapter lazily: %s",
+                    exc,
+                )
+                self._aws_provisioning_port_resolver = None
+
+        return self._aws_provisioning_port
 
     @property
     def provider_type(self) -> str:
@@ -440,7 +464,8 @@ class AWSProviderStrategy(ProviderStrategy):
         self._logger.debug(" _handle_terminate_instances")
         try:
             instance_ids = operation.parameters.get("instance_ids", [])
-            self._logger.debug(f"Terminating instances: {instance_ids}")
+            resource_mapping = operation.parameters.get("resource_mapping", [])
+            self._logger.debug(f"Terminating instances: {instance_ids} {self._aws_provisioning_port} {resource_mapping}")
 
             if not instance_ids:
                 return ProviderResult.error_result(
@@ -452,12 +477,13 @@ class AWSProviderStrategy(ProviderStrategy):
                 try:
                     self._logger.info("Using AWS provisioning port for resource release")
 
-                    # Simple call without ASG context - let adapter/handler handle ASG logic
+                    # Pass resource_mapping to adapter/handler for intelligent resource management
                     self._aws_provisioning_port.release_resources(
                         machine_ids=instance_ids,
                         template_id=operation.parameters.get("template_id", "termination-template"),
                         provider_api=operation.parameters.get("provider_api", "RunInstances"),
                         context={},
+                        resource_mapping=resource_mapping
                     )
 
                     self._logger.info("Successfully released all resources using provisioning port")
@@ -644,7 +670,7 @@ class AWSProviderStrategy(ProviderStrategy):
 
             # Use the handler's check_hosts_status method for resource-to-instance
             # discovery
-            instance_details = await handler.check_hosts_status(request)
+            instance_details = handler.check_hosts_status(request)
 
             if not instance_details:
                 self._logger.info("No instances found for resources: %s", resource_ids)

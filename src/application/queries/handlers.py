@@ -378,11 +378,107 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
                     # Domain machine not found - machine might be terminated
                     updated_machines.append(machine)
 
+            # Update ASG metadata if this is an ASG request
+            if request.metadata.get("provider_api") == "ASG":
+                await self._update_asg_metadata_if_needed(request, updated_machines)
+
             return updated_machines
 
         except Exception as e:
             self.logger.warning("Failed to update machine status from AWS: %s", e)
             return machines
+
+    async def _update_asg_metadata_if_needed(self, request, machines):
+        """Update ASG-specific metadata when capacity changes are detected."""
+        try:
+            from datetime import datetime
+
+            # Get current ASG details from AWS if we have resource IDs
+            if not request.resource_ids:
+                return
+
+            asg_name = request.resource_ids[0]  # ASG name is the resource_id
+            current_asg_details = await self._get_current_asg_details(asg_name)
+
+            if not current_asg_details:
+                return
+
+            # Compare with stored metadata
+            stored_capacity = request.metadata.get("asg_desired_capacity")
+            current_capacity = current_asg_details.get("DesiredCapacity")
+            current_instances = len([m for m in machines if m.status.value in ["running", "pending"]])
+
+            # Check if capacity has changed or if this is the first time we're tracking it
+            capacity_changed = stored_capacity != current_capacity
+            first_time_tracking = stored_capacity is None
+
+            if capacity_changed or first_time_tracking:
+                # Update request metadata with new ASG capacity
+                updated_metadata = request.metadata.copy()
+                updated_metadata.update({
+                    "asg_desired_capacity": current_capacity,
+                    "asg_min_size": current_asg_details.get("MinSize", 0),
+                    "asg_max_size": current_asg_details.get("MaxSize", current_capacity * 2),
+                    "asg_current_instances": current_instances,
+                    "asg_capacity_last_updated": datetime.utcnow().isoformat(),
+                    "asg_capacity_change_detected": capacity_changed,
+                })
+
+                # If this is the first time, also set creation metadata
+                if first_time_tracking:
+                    updated_metadata.update({
+                        "asg_name": asg_name,
+                        "asg_capacity_created_at": datetime.utcnow().isoformat(),
+                        "asg_initial_capacity": current_capacity,
+                    })
+
+                # Update request with new metadata
+                from domain.request.aggregate import Request
+                updated_request = Request.model_validate({
+                    **request.model_dump(),
+                    "metadata": updated_metadata,
+                    "version": request.version + 1
+                })
+
+                # Save to database
+                with self.uow_factory.create_unit_of_work() as uow:
+                    uow.requests.save(updated_request)
+
+                action = "Initialized" if first_time_tracking else "Updated"
+                self.logger.info(
+                    "%s ASG capacity metadata for request %s: %s -> %s (instances: %s)",
+                    action, request.request_id, stored_capacity, current_capacity, current_instances
+                )
+
+        except Exception as e:
+            self.logger.warning("Failed to update ASG metadata: %s", e)
+
+    async def _get_current_asg_details(self, asg_name: str) -> dict:
+        """Get current ASG details from AWS."""
+        try:
+            # Get provider context to make AWS calls
+            provider_context = self._get_provider_context()
+
+            # Create a simple AWS client call to get ASG details
+            # This is a simplified approach - in production you might want to use
+            # the provider context more directly
+            from providers.aws.infrastructure.adapters.aws_client import AWSClient
+
+            aws_client = self._container.get(AWSClient)
+
+            response = aws_client.autoscaling_client.describe_auto_scaling_groups(
+                AutoScalingGroupNames=[asg_name]
+            )
+
+            if response.get("AutoScalingGroups"):
+                return response["AutoScalingGroups"][0]
+            else:
+                self.logger.warning("ASG %s not found", asg_name)
+                return {}
+
+        except Exception as e:
+            self.logger.warning("Failed to get ASG details for %s: %s", asg_name, e)
+            return {}
 
     def _get_provider_context(self):
         """Get provider context for AWS operations."""
@@ -500,6 +596,7 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
         # Add required context fields
         machine_data.update(
             {
+                "request_id": str(request.request_id),
                 "template_id": request.template_id,
                 "provider_type": "aws",
             }
