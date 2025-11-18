@@ -672,7 +672,7 @@ class AWSProviderStrategy(ProviderStrategy):
 
             # Use the handler's check_hosts_status method for resource-to-instance
             # discovery
-            instance_details = handler.check_hosts_status(request)
+            instance_details = await handler.check_hosts_status(request)
 
             if not instance_details:
                 self._logger.info("No instances found for resources: %s", resource_ids)

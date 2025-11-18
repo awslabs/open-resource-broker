@@ -648,7 +648,7 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
             }
 
         except Exception as e:
-            self.logger.error("Parallel de-provisioning execution failed: %s", e)
+            self.logger.error("Parallel de-provisioning execution failed: %s", e, exc_info=True)
             return {"success": False, "error_message": str(e)}
 
     def _get_instance_ids_to_resource_id_mapping(
@@ -726,7 +726,7 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
         self.logger.info(
             "Created instance to resource ID mapping for %d instances: %s",
             len(mapping),
-            [(iid, rid) for iid, rid in mapping if rid is not None],
+            [(iid, rid) for iid, rid, _ in mapping if rid is not None]
         )
 
         return mapping
