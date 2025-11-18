@@ -726,7 +726,7 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
         self.logger.info(
             "Created instance to resource ID mapping for %d instances: %s",
             len(mapping),
-            [(iid, rid) for iid, rid, _ in mapping if rid is not None]
+            [(iid, rid) for iid, rid, _ in mapping if rid is not None],
         )
 
         return mapping
