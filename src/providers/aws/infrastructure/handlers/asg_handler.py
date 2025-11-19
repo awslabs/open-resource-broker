@@ -40,12 +40,13 @@ from providers.aws.infrastructure.adapters.machine_adapter import AWSMachineAdap
 from providers.aws.infrastructure.aws_client import AWSClient
 from providers.aws.infrastructure.handlers.base_context_mixin import BaseContextMixin
 from providers.aws.infrastructure.handlers.base_handler import AWSHandler
+from providers.aws.infrastructure.handlers.fleet_grouping_mixin import FleetGroupingMixin
 from providers.aws.infrastructure.launch_template.manager import AWSLaunchTemplateManager
 from providers.aws.utilities.aws_operations import AWSOperations
 
 
 @injectable
-class ASGHandler(AWSHandler, BaseContextMixin):
+class ASGHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
     """Handler for Auto Scaling Group operations."""
 
     def __init__(
@@ -578,13 +579,15 @@ class ASGHandler(AWSHandler, BaseContextMixin):
                 )
 
     def release_hosts(
-        self, machine_ids: list[str], resource_mapping: list[tuple[str, str, int]] = None
+        self,
+        machine_ids: list[str],
+        resource_mapping: Optional[dict[str, tuple[Optional[str], int]]] = None,
     ) -> None:
         """Release hosts across multiple ASGs by detecting ASG membership.
 
         Args:
             machine_ids: List of instance IDs to terminate
-            resource_mapping: List of tuples (instance_id, resource_id or None, desired_capacity) for intelligent resource management
+            resource_mapping: Dict mapping instance_id to (resource_id or None, desired_capacity) for intelligent resource management
         """
         try:
             if not machine_ids:
@@ -595,27 +598,27 @@ class ASGHandler(AWSHandler, BaseContextMixin):
 
             # Always use resource_mapping when available, but check each entry individually
             if resource_mapping:
-                # Ensure all machine_ids are covered by adding missing instances to resource_mapping
-                resource_mapping_dict = {
-                    instance_id: (resource_id, desired_capacity)
-                    for instance_id, resource_id, desired_capacity in resource_mapping
+                # Ensure every requested instance has an entry (fallback to AWS lookup when missing)
+                complete_resource_mapping = {
+                    instance_id: resource_mapping.get(instance_id, (None, 0))
+                    for instance_id in machine_ids
                 }
+                missing = [
+                    iid
+                    for iid, (resource_id, _) in complete_resource_mapping.items()
+                    if resource_id is None
+                ]
+                for instance_id in missing:
+                    self._logger.debug(
+                        "Instance %s not in resource mapping, will use AWS API lookup", instance_id
+                    )
 
-                # Add any missing machine_ids to resource_mapping with None values (requires AWS API lookup)
-                complete_resource_mapping = []
-                for instance_id in machine_ids:
-                    if instance_id in resource_mapping_dict:
-                        resource_id, desired_capacity = resource_mapping_dict[instance_id]
-                        complete_resource_mapping.append(
-                            (instance_id, resource_id, desired_capacity)
-                        )
-                    else:
-                        # Instance not in resource_mapping - add with None values to trigger AWS API lookup
-                        complete_resource_mapping.append((instance_id, None, 0))
-                        self._logger.debug(
-                            f"Instance {instance_id} not in resource mapping, will use AWS API lookup"
-                        )
-
+                asg_instance_groups = self._group_instances_by_asg_from_mapping(
+                    complete_resource_mapping
+                )
+                self._logger.info(
+                    f"Grouped instances by ASG using resource mapping: {asg_instance_groups}"
+                )
                 asg_instance_groups = self._group_instances_by_asg_from_mapping(
                     complete_resource_mapping
                 )
@@ -660,11 +663,20 @@ class ASGHandler(AWSHandler, BaseContextMixin):
             self._logger.warning(
                 f"ASG details missing for {asg_name}, terminating instances without ASG operations"
             )
+            self._logger.warning(
+                f"ASG details missing for {asg_name}, terminating instances without ASG operations"
+            )
             # Still terminate the instances even if ASG details are missing
             self.aws_ops.terminate_instances_with_fallback(
                 asg_instance_ids,
                 self._request_adapter,
                 f"ASG {asg_name} instances (no ASG details)",
+                asg_instance_ids,
+                self._request_adapter,
+                f"ASG {asg_name} instances (no ASG details)",
+            )
+            self._logger.info(
+                "Terminated ASG %s instances without ASG operations: %s", asg_name, asg_instance_ids
             )
             self._logger.info(
                 "Terminated ASG %s instances without ASG operations: %s", asg_name, asg_instance_ids
@@ -729,195 +741,38 @@ class ASGHandler(AWSHandler, BaseContextMixin):
             )
 
     def _group_instances_by_asg_from_mapping(
-        self, resource_mapping: list[tuple[str, str, int]]
+        self, resource_mapping: dict[str, tuple[Optional[str], int]]
     ) -> dict[Optional[str], dict]:
-        """
-        Group EC2 instances by their Auto Scaling Group (ASG) membership using resource mapping data.
-
-        This function performs the following main steps:
-        1. Separates instances into ASG and non-ASG groups based on resource mapping
-        2. For instances without ASG information in mapping, queries AWS API to determine ASG membership
-        3. Retrieves minimal ASG details (name and current capacity) for identified ASGs
-        4. Returns organized groups with instance IDs and ASG configuration data
-
-        Args:
-            resource_mapping: List of tuples containing:
-                - instance_id (str): EC2 instance identifier
-                - resource_id (str or None): ASG name if instance belongs to ASG, None otherwise
-                - desired_capacity (int): Target capacity for the ASG, 0 for non-ASG instances
-
-        Returns:
-            Dictionary mapping ASG names (or None for non-ASG instances) to group data:
-            {
-                "asg-name-1": {
-                    "instance_ids": ["i-1234567890abcdef0", "i-0987654321fedcba0"],
-                    "asg_details": {
-                        "AutoScalingGroupName": "asg-name-1",
-                        "DesiredCapacity": 2,
-                        "MinSize": 1,
-                        "MaxSize": 5
-                    }
-                },
-                None: {
-                    "instance_ids": ["i-abcdef1234567890", "i-fedcba0987654321"]
-                }
-            }
-
-        Note:
-            - ASG instances have both 'instance_ids' and 'asg_details' keys
-            - Non-ASG instances are grouped under None key with only 'instance_ids'
-            - AWS API calls are minimized by using resource mapping data when available
-        """
-        # Step 1: Initialize result containers and extract instance IDs from mapping
-        asg_groups: dict[Optional[str], dict] = {}
-        instances_without_asg_info = []
-        asg_names_requiring_details = set()
-
-        # Extract instance IDs from resource mapping and create lookup dict
-        resource_map = {
-            instance_id: (resource_id, desired_capacity)
-            for instance_id, resource_id, desired_capacity in resource_mapping
-        }
-        instance_ids = [mapping[0] for mapping in resource_mapping]
-        self._logger.info(f"Processing {len(instance_ids)} instances from resource mapping")
-
-        # Step 2: Process each instance in the resource mapping to determine ASG membership
-        for instance_id, resource_id, desired_capacity in resource_mapping:
-            # Check if instance belongs to an ASG based on mapping data
-            if resource_id and desired_capacity > 0:
-                # Instance belongs to an ASG - add to ASG group
-                asg_name = resource_id
-                if asg_name not in asg_groups:
-                    asg_groups[asg_name] = {"instance_ids": [], "asg_details": None}
-                asg_groups[asg_name]["instance_ids"].append(instance_id)
-                asg_names_requiring_details.add(asg_name)
-                self._logger.debug(f"Instance {instance_id} assigned to ASG {asg_name}")
-
-            elif resource_id is None and desired_capacity == 0:
-                # Definitive non-ASG instance - both resource_id and desired_capacity indicate no ASG
-                if None not in asg_groups:
-                    asg_groups[None] = {"instance_ids": []}
-                asg_groups[None]["instance_ids"].append(instance_id)
-                self._logger.debug(f"Instance {instance_id} marked as non-ASG")
-
-            else:
-                # Incomplete mapping data - requires AWS API lookup
-                # This includes cases like: (resource_id exists, desired_capacity=0) or (resource_id=None, desired_capacity>0)
-                instances_without_asg_info.append(instance_id)
-                self._logger.debug(
-                    f"Instance {instance_id} requires AWS API lookup (incomplete mapping: resource_id={resource_id}, desired_capacity={desired_capacity})"
-                )
-
-        # Step 3: Query AWS API for instances with incomplete mapping information
-        if instances_without_asg_info:
-            self._logger.info(
-                f"Querying AWS API for {len(instances_without_asg_info)} instances with incomplete mapping"
-            )
-
-            # Process instances in chunks to respect AWS API limits
-            for instance_chunk in self._chunk_list(instances_without_asg_info, 50):
-                try:
-                    # Query AWS to determine ASG membership for this chunk
-                    response = self._retry_with_backoff(
-                        self.aws_client.autoscaling_client.describe_auto_scaling_instances,
-                        operation_type="read_only",
-                        InstanceIds=instance_chunk,
-                    )
-
-                    # Track which instances are found in ASGs
-                    instances_found_in_asgs = set()
-
-                    # Process each instance found in an ASG
-                    for asg_instance_data in response.get("AutoScalingInstances", []):
-                        instance_id = asg_instance_data.get("InstanceId")
-                        asg_name = asg_instance_data.get("AutoScalingGroupName")
-
-                        if instance_id and asg_name:
-                            # Add instance to appropriate ASG group
-                            if asg_name not in asg_groups:
-                                asg_groups[asg_name] = {"instance_ids": [], "asg_details": None}
-                            asg_groups[asg_name]["instance_ids"].append(instance_id)
-                            instances_found_in_asgs.add(instance_id)
-                            asg_names_requiring_details.add(asg_name)
-
-                    # Add remaining instances to non-ASG group
-                    non_asg_instances = [
-                        iid for iid in instance_chunk if iid not in instances_found_in_asgs
-                    ]
-                    if non_asg_instances:
-                        if None not in asg_groups:
-                            asg_groups[None] = {"instance_ids": []}
-                        asg_groups[None]["instance_ids"].extend(non_asg_instances)
-
-                except Exception as api_error:
-                    self._logger.warning(f"AWS API call failed for instance chunk: {api_error}")
-                    # Fallback: treat all instances in failed chunk as non-ASG
-                    if None not in asg_groups:
-                        asg_groups[None] = {"instance_ids": []}
-                    asg_groups[None]["instance_ids"].extend(instance_chunk)
-
-        # Step 4: Retrieve essential ASG details (name and current capacity) for identified ASGs
-        if asg_names_requiring_details:
-            self._logger.info(f"Retrieving details for {len(asg_names_requiring_details)} ASGs")
-
-            # Process ASG names in chunks to respect AWS API limits
-            for asg_name_chunk in self._chunk_list(list(asg_names_requiring_details), 50):
-                try:
-                    # Query AWS for ASG configuration details
-                    asg_response = self._retry_with_backoff(
-                        self.aws_client.autoscaling_client.describe_auto_scaling_groups,
-                        operation_type="read_only",
-                        AutoScalingGroupNames=asg_name_chunk,
-                    )
-
-                    # Extract only essential ASG information (name and capacity)
-                    for full_asg_config in asg_response.get("AutoScalingGroups", []):
-                        asg_name = full_asg_config.get("AutoScalingGroupName")
-                        if asg_name in asg_groups:
-                            # Store only essential ASG details to minimize memory usage
-                            essential_asg_details = {
-                                "AutoScalingGroupName": asg_name,
-                                "DesiredCapacity": full_asg_config.get("DesiredCapacity", 0),
-                                "MinSize": full_asg_config.get("MinSize", 0),
-                                "MaxSize": full_asg_config.get("MaxSize", 0),
-                            }
-                            asg_groups[asg_name]["asg_details"] = essential_asg_details
-
-                except Exception as asg_details_error:
-                    self._logger.warning(f"Failed to retrieve ASG details: {asg_details_error}")
-                    # Continue without ASG details - calling methods will handle missing details gracefully
-
-        # Log summary of grouping results
-        total_instances = len(instance_ids)
-        api_lookups_performed = len(instances_without_asg_info)
-        api_calls_avoided = total_instances - api_lookups_performed
-
-        self._logger.info(f"Grouped {total_instances} instances into {len(asg_groups)} groups")
-        self._logger.info(
-            f"Avoided AWS API calls for {api_calls_avoided} instances using resource mapping"
-        )
-
-        return asg_groups
+        """Group ASG instances using shared mixin logic."""
+        instance_ids = list(resource_mapping.keys())
+        return self._group_instances_from_mapping(instance_ids, resource_mapping)
 
     def _group_instances_by_asg(self, instance_ids: list[str]) -> dict[Optional[str], dict]:
-        """
-        Group instances by their ASG membership and return full ASG details.
+        """Group ASG instances using shared mixin logic."""
+        return self._group_instances_direct(instance_ids)
 
-        Args:
-            instance_ids: List of EC2 instance IDs
+    # FleetGroupingMixin hooks
+    def _classify_mapping_entry(
+        self, resource_id: Optional[str], desired_capacity: int
+    ) -> tuple[str, Optional[str]]:
+        if resource_id and desired_capacity > 0:
+            return "group", resource_id
+        if resource_id is None and desired_capacity == 0:
+            return "non_group", None
+        return "unknown", None
 
-        Returns:
-            Dictionary mapping ASG names to ASG details dict containing:
-            - 'instance_ids': list of instance IDs
-            - 'asg_details': full ASG configuration (for ASG instances only)
-            Non-ASG instances are grouped under None key with only 'instance_ids'.
-        """
-        asg_groups: dict[Optional[str], dict] = {}
-        asg_names_to_fetch = set()
+    def _collect_groups_from_instances(
+        self,
+        instance_ids: list[str],
+        groups: dict[Optional[str], dict],
+        group_ids_to_fetch: set[str],
+    ) -> None:
+        """Populate ASG groups using describe_auto_scaling_instances."""
+        if not instance_ids:
+            return
 
         try:
-            # First, group instances by ASG name
-            for chunk in self._chunk_list(instance_ids, 50):
+            for chunk in self._chunk_list(instance_ids, self.grouping_chunk_size):
                 try:
                     response = self._retry_with_backoff(
                         self.aws_client.autoscaling_client.describe_auto_scaling_instances,
@@ -925,62 +780,68 @@ class ASGHandler(AWSHandler, BaseContextMixin):
                         InstanceIds=chunk,
                     )
 
-                    # Track which instances were found in ASGs
                     asg_instance_ids = set()
 
-                    # Group instances by ASG
                     for entry in response.get("AutoScalingInstances", []):
                         instance_id = entry.get("InstanceId")
                         asg_name = entry.get("AutoScalingGroupName")
 
                         if instance_id and asg_name:
-                            if asg_name not in asg_groups:
-                                asg_groups[asg_name] = {"instance_ids": [], "asg_details": None}
-                            asg_groups[asg_name]["instance_ids"].append(instance_id)
+                            self._add_instance_to_group(groups, asg_name, instance_id)
                             asg_instance_ids.add(instance_id)
-                            asg_names_to_fetch.add(asg_name)
+                            group_ids_to_fetch.add(asg_name)
 
-                    # Add non-ASG instances to None group
-                    non_asg_instances = [iid for iid in chunk if iid not in asg_instance_ids]
-                    if non_asg_instances:
-                        if None not in asg_groups:
-                            asg_groups[None] = {"instance_ids": []}
-                        asg_groups[None]["instance_ids"].extend(non_asg_instances)
+                    missing_instances = [iid for iid in chunk if iid not in asg_instance_ids]
+                    for iid in missing_instances:
+                        self._add_non_group_instance(groups, iid)
 
-                except Exception as e:
-                    self._logger.warning(f"Failed to describe ASG instances for chunk {chunk}: {e}")
-                    # Add all instances in this chunk to non-ASG group as fallback
-                    if None not in asg_groups:
-                        asg_groups[None] = {"instance_ids": []}
-                    asg_groups[None]["instance_ids"].extend(chunk)
+                except Exception as exc:
+                    self._logger.warning(
+                        "Failed to describe ASG instances for chunk %s: %s", chunk, exc
+                    )
+                    for iid in chunk:
+                        self._add_non_group_instance(groups, iid)
 
-            # Now fetch ASG details for all identified ASGs
-            if asg_names_to_fetch:
-                try:
-                    asg_names_list = list(asg_names_to_fetch)
-                    for asg_chunk in self._chunk_list(asg_names_list, 50):
-                        asg_response = self._retry_with_backoff(
-                            self.aws_client.autoscaling_client.describe_auto_scaling_groups,
-                            operation_type="read_only",
-                            AutoScalingGroupNames=asg_chunk,
-                        )
+        except Exception as exc:
+            self._logger.error("Failed to group instances by ASG: %s", exc)
+            groups.clear()
+            group_ids_to_fetch.clear()
+            groups[None] = {"instance_ids": instance_ids.copy()}
 
-                        for asg_details in asg_response.get("AutoScalingGroups", []):
-                            asg_name = asg_details.get("AutoScalingGroupName")
-                            if asg_name in asg_groups:
-                                asg_groups[asg_name]["asg_details"] = asg_details
+    def _fetch_and_attach_group_details(
+        self, group_ids: set[str], groups: dict[Optional[str], dict]
+    ) -> None:
+        """Fetch ASG configuration details for grouped ASGs."""
+        if not group_ids:
+            return
 
-                except Exception as e:
-                    self._logger.warning(f"Failed to fetch ASG details: {e}")
-                    # Continue without ASG details - methods will handle missing details
+        try:
+            asg_names_list = list(group_ids)
+            for asg_chunk in self._chunk_list(asg_names_list, self.grouping_chunk_size):
+                asg_response = self._retry_with_backoff(
+                    self.aws_client.autoscaling_client.describe_auto_scaling_groups,
+                    operation_type="read_only",
+                    AutoScalingGroupNames=asg_chunk,
+                )
 
-        except Exception as e:
-            self._logger.error(f"Failed to group instances by ASG: {e}")
-            # Fallback: treat all instances as non-ASG
-            asg_groups = {None: {"instance_ids": instance_ids.copy()}}
+                for asg_details in asg_response.get("AutoScalingGroups", []):
+                    asg_name = asg_details.get("AutoScalingGroupName")
+                    if asg_name in groups:
+                        groups[asg_name]["asg_details"] = {
+                            "AutoScalingGroupName": asg_name,
+                            "DesiredCapacity": asg_details.get("DesiredCapacity", 0),
+                            "MinSize": asg_details.get("MinSize", 0),
+                            "MaxSize": asg_details.get("MaxSize", 0),
+                        }
 
-        self._logger.debug(f"Grouped {len(instance_ids)} instances into {len(asg_groups)} groups")
-        return asg_groups
+        except Exception as exc:
+            self._logger.warning("Failed to fetch ASG details: %s", exc)
+
+    def _group_details_key(self) -> str:
+        return "asg_details"
+
+    def _grouping_label(self) -> str:
+        return "ASG"
 
     @staticmethod
     def _chunk_list(items: list[str], chunk_size: int):
@@ -988,7 +849,7 @@ class ASGHandler(AWSHandler, BaseContextMixin):
         for index in range(0, len(items), chunk_size):
             yield items[index : index + chunk_size]
 
-    async def check_hosts_status(self, request: Request) -> list[dict[str, Any]]:
+    def check_hosts_status(self, request: Request) -> list[dict[str, Any]]:
         """Check the status of instances across all ASGs in the request."""
         try:
             if not request.resource_ids:

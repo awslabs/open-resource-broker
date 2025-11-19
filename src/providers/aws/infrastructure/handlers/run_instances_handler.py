@@ -273,7 +273,36 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
         return {
             # RunInstances-specific values
             "instance_name": f"{get_resource_prefix('instance')}{request.request_id}",
+            # Pricing configuration
+            "default_capacity_type": self._get_default_capacity_type(template.price_type),
+            "has_spot_options": bool(template.allocation_strategy or template.max_price),
+            "max_spot_price": (str(template.max_price) if template.max_price is not None else None),
+            "spot_instance_type": (
+                self._get_spot_instance_type(template.allocation_strategy)
+                if template.allocation_strategy
+                else None
+            ),
         }
+
+    def _get_default_capacity_type(self, price_type: str) -> str:
+        """Get default target capacity type based on price type."""
+        if price_type == "spot":
+            return "spot"
+        elif price_type == "ondemand":
+            return "on-demand"
+        else:  # heterogeneous or None
+            return "on-demand"
+
+    def _get_spot_instance_type(self, allocation_strategy: str) -> str:
+        """Convert allocation strategy to spot instance type for RunInstances."""
+        # RunInstances doesn't support all EC2Fleet allocation strategies
+        # Map to supported spot instance types
+        strategy_map = {
+            "lowestPrice": "one-time",
+            "diversified": "one-time",  # RunInstances doesn't support diversified directly
+            "capacityOptimized": "one-time",  # RunInstances doesn't support capacity-optimized directly
+        }
+        return strategy_map.get(allocation_strategy, "one-time")
 
     def _create_run_instances_params(
         self,
@@ -531,14 +560,16 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
             return []
 
     def release_hosts(
-        self, machine_ids: list[str], resource_mapping: list[tuple[str, str, int]] = None
+        self,
+        machine_ids: list[str],
+        resource_mapping: Optional[dict[str, tuple[Optional[str], int]]] = None,
     ) -> None:
         """
         Release hosts created by RunInstances.
 
         Args:
             machine_ids: List of instance IDs to terminate
-            resource_mapping: List of tuples (instance_id, resource_id or None, desired_capacity) for intelligent resource management
+            resource_mapping: Dict mapping instance_id to (resource_id or None, desired_capacity)
         """
         try:
             if not machine_ids:

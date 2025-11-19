@@ -236,7 +236,7 @@ class AWSProvisioningAdapter(ResourceProvisioningPort):
         template_id: str,
         provider_api: str,
         context: dict = None,
-        resource_mapping: list[tuple[str, str]] = None,
+        resource_mapping: Optional[dict[str, tuple[Optional[str], int]]] = None,
     ) -> None:
         """
         Release provisioned AWS resources using direct parameters.
@@ -246,14 +246,14 @@ class AWSProvisioningAdapter(ResourceProvisioningPort):
             template_id: Template ID used to create the instances
             provider_api: Provider API type (ASG, EC2Fleet, SpotFleet, RunInstances)
             context: Context dictionary (unused in new flow)
-            resource_mapping: List of tuples (instance_id, resource_id or None)
+            resource_mapping: Dict mapping instance_id -> (resource_id or None, desired_capacity)
 
         Raises:
             AWSEntityNotFoundError: If the resource is not found
             InfrastructureError: For other infrastructure errors
         """
         context = context or {}
-        resource_mapping = resource_mapping or []
+        resource_mapping = resource_mapping or {}
 
         self._logger.info(
             "Releasing resources: %d instances from template %s using %s handler (resource_mapping: %s)",

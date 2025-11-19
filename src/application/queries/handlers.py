@@ -238,6 +238,9 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
 
             # Get instance details from result
             instance_details = result.data.get("instances", [])
+            if hasattr(instance_details, "__await__"):
+                self.logger.debug("Provider returned awaitable instances result, awaiting it")
+                instance_details = await instance_details
             if not instance_details:
                 self.logger.info("No instances found for request %s", request.request_id)
                 return []
@@ -512,40 +515,95 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
             def __init__(self, container) -> None:
                 self.container = container
 
+            async def execute_with_strategy(self, strategy_identifier: str, operation):
+                """Execute operation with strategy - simplified implementation."""
+                from providers.base.strategy import ProviderOperationType, ProviderResult
+
+                try:
+                    if (
+                        operation.operation_type
+                        == ProviderOperationType.DESCRIBE_RESOURCE_INSTANCES
+                    ):
+                        # Get resource IDs from operation parameters
+                        resource_ids = operation.parameters.get("resource_ids", [])
+                        if not resource_ids:
+                            return ProviderResult.error_result("No resource IDs provided")
+
+                        # Use the first resource ID to determine handler type
+                        resource_id = resource_ids[0]
+                        aws_handler = self._get_aws_handler_for_resource_id(resource_id)
+
+                        # Create a mock request object for the handler
+                        class MockRequest:
+                            def __init__(self, resource_ids, template_id):
+                                self.resource_ids = resource_ids
+                                self.template_id = template_id
+                                self.metadata = operation.parameters
+
+                        mock_request = MockRequest(
+                            resource_ids, operation.parameters.get("template_id")
+                        )
+
+                        # Call the handler's check_hosts_status method
+                        instances = aws_handler.check_hosts_status(mock_request)
+
+                        return ProviderResult.success_result({"instances": instances})
+
+                    elif operation.operation_type == ProviderOperationType.GET_INSTANCE_STATUS:
+                        # Handle instance status checking
+                        instance_ids = operation.parameters.get("instance_ids", [])
+                        if not instance_ids:
+                            return ProviderResult.error_result("No instance IDs provided")
+
+                        # For now, return empty machines list - this would need proper implementation
+                        return ProviderResult.success_result({"machines": []})
+
+                    else:
+                        return ProviderResult.error_result(
+                            f"Unsupported operation type: {operation.operation_type}"
+                        )
+
+                except Exception as e:
+                    return ProviderResult.error_result(str(e))
+
             async def check_resource_status(self, request) -> list[dict[str, Any]]:
                 """Use appropriate AWS handler based on resource type."""
                 aws_handler = self._get_aws_handler_for_request(request)
                 return aws_handler.check_hosts_status(request)
+
+            def _get_aws_handler_for_resource_id(self, resource_id: str):
+                """Get appropriate AWS handler based on resource ID."""
+                if resource_id.startswith("fleet-"):
+                    from providers.aws.infrastructure.handlers.ec2_fleet_handler import (
+                        EC2FleetHandler,
+                    )
+
+                    return self.container.get(EC2FleetHandler)
+                elif resource_id.startswith("sfr-"):
+                    from providers.aws.infrastructure.handlers.spot_fleet_handler import (
+                        SpotFleetHandler,
+                    )
+
+                    return self.container.get(SpotFleetHandler)
+                elif resource_id.startswith("run-instances-"):
+                    from providers.aws.infrastructure.handlers.run_instances_handler import (
+                        RunInstancesHandler,
+                    )
+
+                    return self.container.get(RunInstancesHandler)
+                else:
+                    from providers.aws.infrastructure.handlers.asg_handler import (
+                        ASGHandler,
+                    )
+
+                    return self.container.get(ASGHandler)
 
             def _get_aws_handler_for_request(self, request):
                 """Get appropriate AWS handler based on request/template."""
                 if request.resource_ids:
                     # Use first resource_id for handler selection logic
                     resource_id = request.resource_ids[0]
-                    if resource_id.startswith("fleet-"):
-                        from providers.aws.infrastructure.handlers.ec2_fleet_handler import (
-                            EC2FleetHandler,
-                        )
-
-                        return self.container.get(EC2FleetHandler)
-                    elif resource_id.startswith("sfr-"):
-                        from providers.aws.infrastructure.handlers.spot_fleet_handler import (
-                            SpotFleetHandler,
-                        )
-
-                        return self.container.get(SpotFleetHandler)
-                    elif resource_id.startswith("run-instances-"):
-                        from providers.aws.infrastructure.handlers.run_instances_handler import (
-                            RunInstancesHandler,
-                        )
-
-                        return self.container.get(RunInstancesHandler)
-                    else:
-                        from providers.aws.infrastructure.handlers.asg_handler import (
-                            ASGHandler,
-                        )
-
-                        return self.container.get(ASGHandler)
+                    return self._get_aws_handler_for_resource_id(resource_id)
 
                 # Fallback to RunInstances
                 from providers.aws.infrastructure.handlers.run_instances_handler import (

@@ -422,11 +422,11 @@ class TestEC2FleetHandler:
         aws_ops.terminate_instances_with_fallback = Mock()
 
         # Create resource mapping indicating these instances belong to the EC2 Fleet
-        resource_mapping = [
-            (instance_ids[0], fleet_id, 3),  # EC2 Fleet instance with capacity > 0
-            (instance_ids[1], fleet_id, 3),  # EC2 Fleet instance with capacity > 0
-            (instance_ids[2], None, 0),  # Non-EC2 Fleet instance
-        ]
+        resource_mapping = {
+            instance_ids[0]: (fleet_id, 3),  # EC2 Fleet instance with capacity > 0
+            instance_ids[1]: (fleet_id, 3),  # EC2 Fleet instance with capacity > 0
+            instance_ids[2]: (None, 0),  # Non-EC2 Fleet instance
+        }
 
         # Test release_hosts with resource mapping
         handler.release_hosts(instance_ids, resource_mapping)
@@ -461,12 +461,12 @@ class TestEC2FleetHandler:
         aws_ops.terminate_instances_with_fallback = Mock()
 
         # Create resource mapping with mixed instance types
-        resource_mapping = [
-            (instance_ids[0], "fleet-12345", 2),  # EC2 Fleet instance
-            (instance_ids[1], "fleet-12345", 2),  # Same EC2 Fleet instance
-            (instance_ids[2], "fleet-67890", 1),  # Different EC2 Fleet instance
-            (instance_ids[3], None, 0),  # Non-EC2 Fleet instance
-        ]
+        resource_mapping = {
+            instance_ids[0]: ("fleet-12345", 2),  # EC2 Fleet instance
+            instance_ids[1]: ("fleet-12345", 2),  # Same EC2 Fleet instance
+            instance_ids[2]: ("fleet-67890", 1),  # Different EC2 Fleet instance
+            instance_ids[3]: (None, 0),  # Non-EC2 Fleet instance
+        }
 
         # Test release_hosts with mixed instances
         handler.release_hosts(instance_ids, resource_mapping)
@@ -540,12 +540,12 @@ class TestEC2FleetHandler:
 
         # Create resource mapping with incomplete information
         # This tests the scenario where some instances have missing fleet IDs or desired capacity
-        resource_mapping = [
-            (instance_ids[0], "fleet-12345", 4),  # Complete information
-            (instance_ids[1], None, 4),  # Missing resource_id
-            (instance_ids[2], "fleet-12345", 0),  # Missing/zero desired_capacity
-            (instance_ids[3], None, 0),  # Missing both
-        ]
+        resource_mapping = {
+            instance_ids[0]: ("fleet-12345", 4),  # Complete information
+            instance_ids[1]: (None, 4),  # Missing resource_id
+            instance_ids[2]: ("fleet-12345", 0),  # Missing/zero desired_capacity
+            instance_ids[3]: (None, 0),  # Missing both
+        }
 
         # Test release_hosts with incomplete resource mapping
         # The handler should process all instances, even with incomplete mapping
@@ -625,10 +625,10 @@ class TestEC2FleetHandler:
         aws_ops.terminate_instances_with_fallback = Mock()
 
         # Create resource mapping for maintain fleet instances
-        resource_mapping = [
-            (instance_ids[0], fleet_id, 3),  # EC2 Fleet maintain instance
-            (instance_ids[1], fleet_id, 3),  # EC2 Fleet maintain instance
-        ]
+        resource_mapping = {
+            instance_ids[0]: (fleet_id, 3),  # EC2 Fleet maintain instance
+            instance_ids[1]: (fleet_id, 3),  # EC2 Fleet maintain instance
+        }
 
         # Test release_hosts with maintain fleet instances
         handler.release_hosts(instance_ids, resource_mapping)
@@ -833,11 +833,11 @@ class TestASGHandler:
         aws_ops.terminate_instances_with_fallback = Mock()
 
         # Create resource mapping indicating these instances belong to the ASG
-        resource_mapping = [
-            (instance_ids[0], "test-asg", 3),  # ASG instance with capacity > 0
-            (instance_ids[1], "test-asg", 3),  # ASG instance with capacity > 0
-            (instance_ids[2], None, 0),  # Non-ASG instance
-        ]
+        resource_mapping = {
+            instance_ids[0]: ("test-asg", 3),  # ASG instance with capacity > 0
+            instance_ids[1]: ("test-asg", 3),  # ASG instance with capacity > 0
+            instance_ids[2]: (None, 0),  # Non-ASG instance
+        }
 
         # Test release_hosts with resource mapping
         handler.release_hosts(instance_ids, resource_mapping)
@@ -875,12 +875,12 @@ class TestASGHandler:
         aws_ops.terminate_instances_with_fallback = Mock()
 
         # Create resource mapping with mixed instance types
-        resource_mapping = [
-            (instance_ids[0], "test-asg-1", 2),  # ASG instance
-            (instance_ids[1], "test-asg-1", 2),  # Same ASG instance
-            (instance_ids[2], "test-asg-2", 1),  # Different ASG instance
-            (instance_ids[3], None, 0),  # Non-ASG instance
-        ]
+        resource_mapping = {
+            instance_ids[0]: ("test-asg-1", 2),  # ASG instance
+            instance_ids[1]: ("test-asg-1", 2),  # Same ASG instance
+            instance_ids[2]: ("test-asg-2", 1),  # Different ASG instance
+            instance_ids[3]: (None, 0),  # Non-ASG instance
+        }
 
         # Test release_hosts with mixed instances
         handler.release_hosts(instance_ids, resource_mapping)
@@ -959,12 +959,12 @@ class TestASGHandler:
 
         # Create resource mapping with incomplete information
         # This tests the scenario where some instances have missing ASG names or desired capacity
-        resource_mapping = [
-            (instance_ids[0], "test-asg", 4),  # Complete information
-            (instance_ids[1], None, 4),  # Missing resource_id
-            (instance_ids[2], "test-asg", 0),  # Missing/zero desired_capacity
-            (instance_ids[3], None, 0),  # Missing both
-        ]
+        resource_mapping = {
+            instance_ids[0]: ("test-asg", 4),  # Complete information
+            instance_ids[1]: (None, 4),  # Missing resource_id
+            instance_ids[2]: ("test-asg", 0),  # Missing/zero desired_capacity
+            instance_ids[3]: (None, 0),  # Missing both
+        }
 
         # Test release_hosts with incomplete resource mapping
         # The handler should process all instances, even with incomplete mapping
@@ -1153,11 +1153,11 @@ class TestSpotFleetHandler:
         aws_ops.terminate_instances_with_fallback = Mock()
 
         # Create resource mapping indicating these instances belong to the Spot Fleet
-        resource_mapping = [
-            (instance_ids[0], fleet_id, 3),  # Spot Fleet instance with capacity > 0
-            (instance_ids[1], fleet_id, 3),  # Spot Fleet instance with capacity > 0
-            (instance_ids[2], None, 0),  # Non-Spot Fleet instance
-        ]
+        resource_mapping = {
+            instance_ids[0]: (fleet_id, 3),  # Spot Fleet instance with capacity > 0
+            instance_ids[1]: (fleet_id, 3),  # Spot Fleet instance with capacity > 0
+            instance_ids[2]: (None, 0),  # Non-Spot Fleet instance
+        }
 
         # Test release_hosts with resource mapping
         handler.release_hosts(instance_ids, resource_mapping)
@@ -1192,12 +1192,12 @@ class TestSpotFleetHandler:
         aws_ops.terminate_instances_with_fallback = Mock()
 
         # Create resource mapping with mixed instance types
-        resource_mapping = [
-            (instance_ids[0], "sfr-12345", 2),  # Spot Fleet instance
-            (instance_ids[1], "sfr-12345", 2),  # Same Spot Fleet instance
-            (instance_ids[2], "sfr-67890", 1),  # Different Spot Fleet instance
-            (instance_ids[3], None, 0),  # Non-Spot Fleet instance
-        ]
+        resource_mapping = {
+            instance_ids[0]: ("sfr-12345", 2),  # Spot Fleet instance
+            instance_ids[1]: ("sfr-12345", 2),  # Same Spot Fleet instance
+            instance_ids[2]: ("sfr-67890", 1),  # Different Spot Fleet instance
+            instance_ids[3]: (None, 0),  # Non-Spot Fleet instance
+        }
 
         # Test release_hosts with mixed instances
         handler.release_hosts(instance_ids, resource_mapping)
@@ -1271,12 +1271,12 @@ class TestSpotFleetHandler:
 
         # Create resource mapping with incomplete information
         # This tests the scenario where some instances have missing fleet IDs or desired capacity
-        resource_mapping = [
-            (instance_ids[0], "sfr-12345", 4),  # Complete information
-            (instance_ids[1], None, 4),  # Missing resource_id
-            (instance_ids[2], "sfr-12345", 0),  # Missing/zero desired_capacity
-            (instance_ids[3], None, 0),  # Missing both
-        ]
+        resource_mapping = {
+            instance_ids[0]: ("sfr-12345", 4),  # Complete information
+            instance_ids[1]: (None, 4),  # Missing resource_id
+            instance_ids[2]: ("sfr-12345", 0),  # Missing/zero desired_capacity
+            instance_ids[3]: (None, 0),  # Missing both
+        }
 
         # Test release_hosts with incomplete resource mapping
         # The handler should process all instances, even with incomplete mapping
@@ -1393,7 +1393,7 @@ class TestSpotFleetHandler:
         aws_ops.terminate_instances_with_fallback = Mock()
 
         # Create resource mapping for fleet cancellation scenario (empty instance list)
-        resource_mapping = []
+        resource_mapping = {}
 
         # Test release_hosts with empty instance list (should trigger fleet cancellation logic)
         handler.release_hosts([], resource_mapping)
@@ -1601,10 +1601,10 @@ class TestRunInstancesHandler:
         aws_ops.terminate_instances_with_fallback = Mock()
 
         # Create resource mapping (should be ignored by RunInstances handler)
-        resource_mapping = [
-            (instance_ids[0], "r-1234567890abcdef0", 2),  # RunInstances resource mapping
-            (instance_ids[1], "r-1234567890abcdef0", 2),  # Same reservation
-        ]
+        resource_mapping = {
+            instance_ids[0]: ("r-1234567890abcdef0", 2),  # RunInstances resource mapping
+            instance_ids[1]: ("r-1234567890abcdef0", 2),  # Same reservation
+        }
 
         # Test release_hosts with resource mapping
         handler.release_hosts(instance_ids, resource_mapping)

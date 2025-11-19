@@ -1,6 +1,6 @@
 """Command handlers for request operations."""
 
-from typing import Any
+from typing import Any, Optional
 
 from application.base.handlers import BaseCommandHandler
 from application.decorators import command_handler
@@ -581,11 +581,10 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
 
             for template_id, instance_group in template_groups.items():
                 # Filter mapping for this template group
-                template_mapping = [
-                    (instance_id, resource_id, desired_capacity)
-                    for instance_id, resource_id, desired_capacity in resource_mapping
-                    if instance_id in instance_group
-                ]
+                template_mapping = {
+                    instance_id: resource_mapping.get(instance_id, (None, 0))
+                    for instance_id in instance_group
+                }
 
                 task = asyncio.create_task(
                     self._process_template_group(
@@ -653,7 +652,7 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
 
     def _get_instance_ids_to_resource_id_mapping(
         self, machine_ids: list[str]
-    ) -> list[tuple[str, str, int]]:
+    ) -> dict[str, tuple[Optional[str], int]]:
         """
         Determine resource ID and desired capacity for each instance ID by looking up the machine's request_id
         in the database and getting the first resource_id and desired_capacity from that request.
@@ -662,9 +661,9 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
             machine_ids: List of instance IDs to get resource IDs for
 
         Returns:
-            List of tuples (instance_id, resource_id or None, desired_capacity or 0)
+            Dictionary mapping instance_id -> (resource_id or None, desired_capacity or 0)
         """
-        mapping = []
+        mapping: dict[str, tuple[Optional[str], int]] = {}
 
         for machine_id in machine_ids:
             resource_id = None
@@ -721,12 +720,12 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
                     e,
                 )
 
-            mapping.append((machine_id, resource_id, desired_capacity))
+            mapping[machine_id] = (resource_id, desired_capacity)
 
         self.logger.info(
             "Created instance to resource ID mapping for %d instances: %s",
             len(mapping),
-            [(iid, rid) for iid, rid, _ in mapping if rid is not None],
+            [(iid, rid) for iid, (rid, _) in mapping.items() if rid is not None],
         )
 
         return mapping
@@ -736,7 +735,7 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
         template_id: str,
         instance_group: list[str],
         request,
-        resource_mapping: list[tuple[str, str, int]],
+        resource_mapping: dict[str, tuple[Optional[str], int]],
     ) -> dict[str, Any]:
         """Process a single template group - designed for parallel execution
 
@@ -744,7 +743,7 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
             template_id: The template ID for this group
             instance_group: List of instance IDs to process
             request: The request object
-            resource_mapping: List of tuples (instance_id, resource_id or None, desired_capacity)
+            resource_mapping: Dict mapping instance_id to (resource_id or None, desired_capacity)
         """
 
         try:

@@ -69,9 +69,7 @@ class BaseContextMixin:
             "is_ondemand_only": on_demand_count > 0 and spot_count == 0,
         }
 
-    def _prepare_standard_tags(
-        self, template: AWSTemplate, request_id: str
-    ) -> dict[str, Any]:
+    def _prepare_standard_tags(self, template: AWSTemplate, request_id: str) -> dict[str, Any]:
         """Standard tag preparation for all handlers."""
         created_by = self._get_package_name()
 

@@ -47,6 +47,7 @@ from providers.aws.infrastructure.adapters.machine_adapter import AWSMachineAdap
 from providers.aws.infrastructure.aws_client import AWSClient
 from providers.aws.infrastructure.handlers.base_context_mixin import BaseContextMixin
 from providers.aws.infrastructure.handlers.base_handler import AWSHandler
+from providers.aws.infrastructure.handlers.fleet_grouping_mixin import FleetGroupingMixin
 from providers.aws.infrastructure.launch_template.manager import (
     AWSLaunchTemplateManager,
 )
@@ -54,7 +55,7 @@ from providers.aws.utilities.aws_operations import AWSOperations
 
 
 @injectable
-class SpotFleetHandler(AWSHandler, BaseContextMixin):
+class SpotFleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
     """Handler for Spot Fleet operations."""
 
     def __init__(
@@ -513,7 +514,8 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin):
         # Get package name for CreatedBy tag
         created_by = self._get_package_name()
 
-        capacity_distribution = self._calculate_capacity_distribution(template, request)
+        requested_count = int(getattr(request, "requested_count", 0) or 1)
+        capacity_distribution = self._calculate_capacity_distribution(template, requested_count)
         target_capacity = capacity_distribution["target_capacity"]
         on_demand_capacity = capacity_distribution["on_demand_count"]
 
@@ -527,6 +529,11 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin):
             {"Key": "ProviderApi", "Value": "SpotFleet"},
         ]
 
+        fleet_type_value = (
+            template.fleet_type.value
+            if hasattr(template.fleet_type, "value")
+            else template.fleet_type
+        )
         fleet_config = {
             "LaunchTemplateConfigs": [
                 {
@@ -539,7 +546,7 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin):
             "TargetCapacity": target_capacity,
             "IamFleetRole": fleet_role,
             "AllocationStrategy": self._get_allocation_strategy(template.allocation_strategy),
-            "Type": template.fleet_type,
+            "Type": fleet_type_value,
             "TagSpecifications": [{"ResourceType": "spot-fleet-request", "Tags": common_tags}],
         }
 
@@ -838,13 +845,15 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin):
         ]
 
     def release_hosts(
-        self, machine_ids: list[str], resource_mapping: list[tuple[str, str, int]] = None
+        self,
+        machine_ids: list[str],
+        resource_mapping: Optional[dict[str, tuple[Optional[str], int]]] = None,
     ) -> None:
         """Release hosts across multiple Spot Fleets by detecting fleet membership.
 
         Args:
             machine_ids: List of instance IDs to terminate
-            resource_mapping: List of tuples (instance_id, resource_id or None, desired_capacity) for intelligent resource management
+            resource_mapping: Dict mapping instance_id to (resource_id or None, desired_capacity)
         """
         try:
             if not machine_ids:
@@ -855,8 +864,12 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin):
 
             # Use resource_mapping if available, otherwise fall back to AWS API calls
             if resource_mapping:
+                filtered_mapping = {
+                    instance_id: resource_mapping.get(instance_id, (None, 0))
+                    for instance_id in machine_ids
+                }
                 fleet_instance_groups = self._group_instances_by_spot_fleet_from_mapping(
-                    machine_ids, resource_mapping
+                    machine_ids, filtered_mapping
                 )
                 self._logger.info(
                     f"Grouped instances by Spot Fleet using resource mapping: {fleet_instance_groups}"
@@ -893,196 +906,28 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin):
             raise AWSInfrastructureError(f"Failed to release Spot Fleet hosts: {e!s}")
 
     def _group_instances_by_spot_fleet_from_mapping(
-        self, machine_ids: list[str], resource_mapping: list[tuple[str, str, int]]
+        self, machine_ids: list[str], resource_mapping: dict[str, tuple[Optional[str], int]]
     ) -> dict[Optional[str], dict]:
-        """
-        Group instances by their Spot Fleet membership using resource_mapping data.
-        Only makes AWS API calls when resource_mapping doesn't have the necessary information.
-
-        Args:
-            machine_ids: List of EC2 instance IDs
-            resource_mapping: List of tuples (instance_id, resource_id or None, desired_capacity)
-
-        Returns:
-            Dictionary mapping Spot Fleet IDs to fleet details dict containing:
-            - 'instance_ids': list of instance IDs
-            - 'fleet_details': full Spot Fleet configuration (for Spot Fleet instances only)
-            Non-Spot Fleet instances are grouped under None key with only 'instance_ids'.
-        """
-        fleet_groups: dict[Optional[str], dict] = {}
-        instances_needing_lookup = []
-        fleet_ids_to_fetch = set()
-
-        # Create a mapping for quick lookup
-        resource_map = {
-            instance_id: (resource_id, desired_capacity)
-            for instance_id, resource_id, desired_capacity in resource_mapping
-        }
-
-        self._logger.info(f"Processing {len(machine_ids)} instances using resource mapping")
-
-        # First pass: use resource_mapping data
-        for instance_id in machine_ids:
-            if instance_id in resource_map:
-                resource_id, desired_capacity = resource_map[instance_id]
-
-                if resource_id and desired_capacity > 0:
-                    # We have Spot Fleet information from resource_mapping
-                    fleet_id = resource_id
-                    if fleet_id not in fleet_groups:
-                        fleet_groups[fleet_id] = {"instance_ids": [], "fleet_details": None}
-                    fleet_groups[fleet_id]["instance_ids"].append(instance_id)
-                    fleet_ids_to_fetch.add(fleet_id)
-
-                    self._logger.debug(
-                        f"Instance {instance_id} mapped to Spot Fleet {fleet_id} from resource mapping"
-                    )
-                elif resource_id is None or desired_capacity == 0:
-                    # Resource mapping indicates this is not a Spot Fleet instance
-                    if None not in fleet_groups:
-                        fleet_groups[None] = {"instance_ids": []}
-                    fleet_groups[None]["instance_ids"].append(instance_id)
-
-                    self._logger.debug(
-                        f"Instance {instance_id} marked as non-Spot Fleet from resource mapping"
-                    )
-                else:
-                    # Resource mapping has incomplete information, need AWS API lookup
-                    instances_needing_lookup.append(instance_id)
-                    self._logger.debug(
-                        f"Instance {instance_id} needs AWS API lookup (incomplete resource mapping)"
-                    )
-            else:
-                # Instance not in resource_mapping, need AWS API lookup
-                instances_needing_lookup.append(instance_id)
-                self._logger.debug(
-                    f"Instance {instance_id} not in resource mapping, needs AWS API lookup"
-                )
-
-        # Second pass: AWS API lookup for instances with missing/incomplete information
-        if instances_needing_lookup:
-            self._logger.info(
-                f"Making AWS API calls for {len(instances_needing_lookup)} instances with incomplete resource mapping"
-            )
-
-            try:
-                for chunk in self._chunk_list(instances_needing_lookup, 50):
-                    try:
-                        response = self._retry_with_backoff(
-                            self.aws_client.ec2_client.describe_instances,
-                            operation_type="read_only",
-                            InstanceIds=chunk,
-                        )
-
-                        # Track which instances were found in Spot Fleets
-                        spot_fleet_instance_ids = set()
-
-                        # Group instances by Spot Fleet
-                        for reservation in response.get("Reservations", []):
-                            for instance in reservation.get("Instances", []):
-                                instance_id = instance.get("InstanceId")
-                                if not instance_id:
-                                    continue
-
-                                # Check if instance has Spot Fleet request ID in tags or metadata
-                                spot_fleet_id = None
-
-                                # Check tags for SpotFleetRequestId
-                                for tag in instance.get("Tags", []):
-                                    if tag.get("Key") == "aws:ec2spot:fleet-request-id":
-                                        spot_fleet_id = tag.get("Value")
-                                        break
-
-                                # If not found in tags, check if it's a spot instance and try to find fleet
-                                if (
-                                    not spot_fleet_id
-                                    and instance.get("InstanceLifecycle") == "spot"
-                                ):
-                                    # Try to find the fleet by querying all active spot fleets
-                                    spot_fleet_id = self._find_spot_fleet_for_instance(instance_id)
-
-                                if spot_fleet_id:
-                                    if spot_fleet_id not in fleet_groups:
-                                        fleet_groups[spot_fleet_id] = {
-                                            "instance_ids": [],
-                                            "fleet_details": None,
-                                        }
-                                    fleet_groups[spot_fleet_id]["instance_ids"].append(instance_id)
-                                    spot_fleet_instance_ids.add(instance_id)
-                                    fleet_ids_to_fetch.add(spot_fleet_id)
-
-                        # Add non-Spot Fleet instances to None group
-                        non_spot_fleet_instances = [
-                            iid for iid in chunk if iid not in spot_fleet_instance_ids
-                        ]
-                        if non_spot_fleet_instances:
-                            if None not in fleet_groups:
-                                fleet_groups[None] = {"instance_ids": []}
-                            fleet_groups[None]["instance_ids"].extend(non_spot_fleet_instances)
-
-                    except Exception as e:
-                        self._logger.warning(f"Failed to describe instances for chunk {chunk}: {e}")
-                        # Add all instances in this chunk to non-Spot Fleet group as fallback
-                        if None not in fleet_groups:
-                            fleet_groups[None] = {"instance_ids": []}
-                        fleet_groups[None]["instance_ids"].extend(chunk)
-
-            except Exception as e:
-                self._logger.error(f"Failed to lookup Spot Fleet information for instances: {e}")
-                # Fallback: treat lookup instances as non-Spot Fleet
-                if None not in fleet_groups:
-                    fleet_groups[None] = {"instance_ids": []}
-                fleet_groups[None]["instance_ids"].extend(instances_needing_lookup)
-
-        # Third pass: fetch Spot Fleet details only for fleets we need
-        if fleet_ids_to_fetch:
-            self._logger.info(f"Fetching Spot Fleet details for {len(fleet_ids_to_fetch)} fleets")
-            try:
-                fleet_ids_list = list(fleet_ids_to_fetch)
-                for fleet_chunk in self._chunk_list(fleet_ids_list, 50):
-                    fleet_response = self._retry_with_backoff(
-                        self.aws_client.ec2_client.describe_spot_fleet_requests,
-                        operation_type="read_only",
-                        SpotFleetRequestIds=fleet_chunk,
-                    )
-
-                    for fleet_details in fleet_response.get("SpotFleetRequestConfigs", []):
-                        fleet_id = fleet_details.get("SpotFleetRequestId")
-                        if fleet_id in fleet_groups:
-                            fleet_groups[fleet_id]["fleet_details"] = fleet_details
-
-            except Exception as e:
-                self._logger.warning(f"Failed to fetch Spot Fleet details: {e}")
-                # Continue without fleet details - methods will handle missing details
-
-        self._logger.info(
-            f"Grouped {len(machine_ids)} instances into {len(fleet_groups)} groups using optimized resource mapping"
-        )
-        self._logger.info(
-            f"AWS API calls avoided for {len(machine_ids) - len(instances_needing_lookup)} instances"
-        )
-
-        return fleet_groups
+        """Group Spot Fleet instances using shared mixin logic."""
+        return self._group_instances_from_mapping(machine_ids, resource_mapping)
 
     def _group_instances_by_spot_fleet(self, instance_ids: list[str]) -> dict[Optional[str], dict]:
-        """
-        Group instances by their Spot Fleet membership and return full fleet details.
+        """Group Spot Fleet instances via AWS lookups."""
+        return self._group_instances_direct(instance_ids)
 
-        Args:
-            instance_ids: List of EC2 instance IDs
-
-        Returns:
-            Dictionary mapping Spot Fleet IDs to fleet details dict containing:
-            - 'instance_ids': list of instance IDs
-            - 'fleet_details': full Spot Fleet configuration (for Spot Fleet instances only)
-            Non-Spot Fleet instances are grouped under None key with only 'instance_ids'.
-        """
-        fleet_groups: dict[Optional[str], dict] = {}
-        fleet_ids_to_fetch = set()
+    # FleetGroupingMixin hooks
+    def _collect_groups_from_instances(
+        self,
+        instance_ids: list[str],
+        groups: dict[Optional[str], dict],
+        group_ids_to_fetch: set[str],
+    ) -> None:
+        """Populate Spot Fleet groups from AWS describe_instances lookups."""
+        if not instance_ids:
+            return
 
         try:
-            # First, group instances by Spot Fleet ID
-            for chunk in self._chunk_list(instance_ids, 50):
+            for chunk in self._chunk_list(instance_ids, self.grouping_chunk_size):
                 try:
                     response = self._retry_with_backoff(
                         self.aws_client.ec2_client.describe_instances,
@@ -1090,83 +935,73 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin):
                         InstanceIds=chunk,
                     )
 
-                    # Track which instances were found in Spot Fleets
                     spot_fleet_instance_ids = set()
 
-                    # Group instances by Spot Fleet
                     for reservation in response.get("Reservations", []):
                         for instance in reservation.get("Instances", []):
                             instance_id = instance.get("InstanceId")
                             if not instance_id:
                                 continue
 
-                            # Check if instance has Spot Fleet request ID in tags or metadata
                             spot_fleet_id = None
-
-                            # Check tags for SpotFleetRequestId
                             for tag in instance.get("Tags", []):
                                 if tag.get("Key") == "aws:ec2spot:fleet-request-id":
                                     spot_fleet_id = tag.get("Value")
                                     break
 
-                            # If not found in tags, check if it's a spot instance and try to find fleet
                             if not spot_fleet_id and instance.get("InstanceLifecycle") == "spot":
-                                # Try to find the fleet by querying all active spot fleets
                                 spot_fleet_id = self._find_spot_fleet_for_instance(instance_id)
 
                             if spot_fleet_id:
-                                if spot_fleet_id not in fleet_groups:
-                                    fleet_groups[spot_fleet_id] = {
-                                        "instance_ids": [],
-                                        "fleet_details": None,
-                                    }
-                                fleet_groups[spot_fleet_id]["instance_ids"].append(instance_id)
+                                self._add_instance_to_group(groups, spot_fleet_id, instance_id)
                                 spot_fleet_instance_ids.add(instance_id)
-                                fleet_ids_to_fetch.add(spot_fleet_id)
+                                group_ids_to_fetch.add(spot_fleet_id)
 
-                    # Add non-Spot Fleet instances to None group
-                    non_spot_fleet_instances = [
+                    non_spot_instances = [
                         iid for iid in chunk if iid not in spot_fleet_instance_ids
                     ]
-                    if non_spot_fleet_instances:
-                        if None not in fleet_groups:
-                            fleet_groups[None] = {"instance_ids": []}
-                        fleet_groups[None]["instance_ids"].extend(non_spot_fleet_instances)
+                    for iid in non_spot_instances:
+                        self._add_non_group_instance(groups, iid)
 
-                except Exception as e:
-                    self._logger.warning(f"Failed to describe instances for chunk {chunk}: {e}")
-                    # Add all instances in this chunk to non-Spot Fleet group as fallback
-                    if None not in fleet_groups:
-                        fleet_groups[None] = {"instance_ids": []}
-                    fleet_groups[None]["instance_ids"].extend(chunk)
+                except Exception as exc:
+                    self._logger.warning(
+                        "Failed to describe Spot Fleet instances for chunk %s: %s", chunk, exc
+                    )
+                    for iid in chunk:
+                        self._add_non_group_instance(groups, iid)
 
-            # Now fetch Spot Fleet details for all identified fleets
-            if fleet_ids_to_fetch:
-                try:
-                    fleet_ids_list = list(fleet_ids_to_fetch)
-                    for fleet_chunk in self._chunk_list(fleet_ids_list, 50):
-                        fleet_response = self._retry_with_backoff(
-                            self.aws_client.ec2_client.describe_spot_fleet_requests,
-                            operation_type="read_only",
-                            SpotFleetRequestIds=fleet_chunk,
-                        )
+        except Exception as exc:
+            self._logger.error("Failed to group instances by Spot Fleet: %s", exc)
+            groups.clear()
+            group_ids_to_fetch.clear()
+            groups[None] = {"instance_ids": instance_ids.copy()}
 
-                        for fleet_details in fleet_response.get("SpotFleetRequestConfigs", []):
-                            fleet_id = fleet_details.get("SpotFleetRequestId")
-                            if fleet_id in fleet_groups:
-                                fleet_groups[fleet_id]["fleet_details"] = fleet_details
+    def _fetch_and_attach_group_details(
+        self, group_ids: set[str], groups: dict[Optional[str], dict]
+    ) -> None:
+        """Fetch Spot Fleet request details for grouped fleets."""
+        if not group_ids:
+            return
 
-                except Exception as e:
-                    self._logger.warning(f"Failed to fetch Spot Fleet details: {e}")
-                    # Continue without fleet details - methods will handle missing details
+        try:
+            fleet_ids_list = list(group_ids)
+            for fleet_chunk in self._chunk_list(fleet_ids_list, self.grouping_chunk_size):
+                fleet_response = self._retry_with_backoff(
+                    self.aws_client.ec2_client.describe_spot_fleet_requests,
+                    operation_type="read_only",
+                    SpotFleetRequestIds=fleet_chunk,
+                )
 
-        except Exception as e:
-            self._logger.error(f"Failed to group instances by Spot Fleet: {e}")
-            # Fallback: treat all instances as non-Spot Fleet
-            fleet_groups = {None: {"instance_ids": instance_ids.copy()}}
+                for fleet_details in fleet_response.get("SpotFleetRequestConfigs", []):
+                    fleet_id = fleet_details.get("SpotFleetRequestId")
+                    if fleet_id in groups:
+                        groups[fleet_id]["fleet_details"] = fleet_details
 
-        self._logger.debug(f"Grouped {len(instance_ids)} instances into {len(fleet_groups)} groups")
-        return fleet_groups
+        except Exception as exc:
+            self._logger.warning("Failed to fetch Spot Fleet details: %s", exc)
+
+    def _grouping_label(self) -> str:
+        return "Spot Fleet"
 
     def _find_spot_fleet_for_instance(self, instance_id: str) -> Optional[str]:
         """

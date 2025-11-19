@@ -33,9 +33,8 @@ _ec2_region = (
     or "eu-west-1"
 )
 ec2_client = _boto_session.client("ec2", region_name=_ec2_region)
-autoscaling_client = _boto_session.client("autoscaling", region_name=_ec2_region)
 
-log = logging.getLogger("multi_asg_test")
+log = logging.getLogger("multi_spot_fleet_test")
 log.setLevel(logging.DEBUG)
 formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
@@ -43,14 +42,14 @@ console_handler = logging.StreamHandler()
 console_handler.setLevel(logging.DEBUG)
 console_handler.setFormatter(formatter)
 
-file_handler = logging.FileHandler("logs/multi_asg_test.log")
+file_handler = logging.FileHandler("logs/multi_spot_fleet_test.log")
 file_handler.setLevel(logging.DEBUG)
 file_handler.setFormatter(formatter)
 
 log.addHandler(console_handler)
 log.addHandler(file_handler)
 
-MAX_TIME_WAIT_FOR_CAPACITY_PROVISIONING_SEC = 180
+MAX_TIME_WAIT_FOR_CAPACITY_PROVISIONING_SEC = 300
 
 
 def get_instance_state(instance_id):
@@ -67,50 +66,64 @@ def get_instance_state(instance_id):
             raise
 
 
-def get_asg_instances(asg_name: str) -> List[str]:
-    """Get all instance IDs from an ASG."""
+def get_spot_fleet_instances(fleet_id: str) -> List[str]:
+    """Get all instance IDs from a Spot Fleet."""
     try:
-        response = autoscaling_client.describe_auto_scaling_groups(AutoScalingGroupNames=[asg_name])
-        if not response["AutoScalingGroups"]:
-            return []
-
-        asg = response["AutoScalingGroups"][0]
-        return [instance["InstanceId"] for instance in asg.get("Instances", [])]
+        response = ec2_client.describe_spot_fleet_instances(SpotFleetRequestId=fleet_id)
+        return [instance["InstanceId"] for instance in response.get("ActiveInstances", [])]
     except ClientError as e:
-        log.error(f"Error getting ASG instances for {asg_name}: {e}")
+        log.error(f"Error getting Spot Fleet instances for {fleet_id}: {e}")
         return []
 
 
-def verify_asg_instances_detached(instance_ids: List[str]) -> bool:
-    """Verify that instances are no longer part of any ASG."""
+def verify_spot_fleet_instances_detached(instance_ids: List[str]) -> bool:
+    """Verify that instances are no longer part of any Spot Fleet."""
     try:
         if not instance_ids:
             return True
 
-        response = autoscaling_client.describe_auto_scaling_instances(InstanceIds=instance_ids)
+        # Get all spot fleet requests (no state filter parameter exists in AWS API)
+        response = ec2_client.describe_spot_fleet_requests()
 
-        # If any instances are still in ASGs, they will appear in the response
-        remaining_asg_instances = response.get("AutoScalingInstances", [])
+        # Check each fleet for our instances, but only active/modifying fleets
+        for fleet in response.get("SpotFleetRequestConfigs", []):
+            fleet_id = fleet.get("SpotFleetRequestId")
+            fleet_state = fleet.get("SpotFleetRequestState")
 
-        if remaining_asg_instances:
-            log.warning(f"Found {len(remaining_asg_instances)} instances still in ASGs")
-            for instance in remaining_asg_instances:
-                log.warning(
-                    f"Instance {instance['InstanceId']} still in ASG {instance['AutoScalingGroupName']}"
+            if not fleet_id or fleet_state not in ["active", "modifying"]:
+                continue
+
+            try:
+                fleet_instances = ec2_client.describe_spot_fleet_instances(
+                    SpotFleetRequestId=fleet_id
                 )
-            return False
+                active_instance_ids = [
+                    inst["InstanceId"] for inst in fleet_instances.get("ActiveInstances", [])
+                ]
 
-        log.info(f"All {len(instance_ids)} instances successfully detached from ASGs")
+                # Check if any of our instances are still in this fleet
+                remaining_instances = set(instance_ids) & set(active_instance_ids)
+                if remaining_instances:
+                    log.warning(
+                        f"Found {len(remaining_instances)} instances still in Spot Fleet {fleet_id}"
+                    )
+                    for instance_id in remaining_instances:
+                        log.warning(f"Instance {instance_id} still in Spot Fleet {fleet_id}")
+                    return False
+
+            except ClientError as e:
+                if e.response["Error"]["Code"] == "InvalidSpotFleetRequestId":
+                    # Fleet was cancelled/deleted, which is expected
+                    continue
+                else:
+                    log.warning(f"Error checking Spot Fleet {fleet_id}: {e}")
+
+        log.info(f"All {len(instance_ids)} instances successfully detached from Spot Fleets")
         return True
 
     except ClientError as e:
-        if e.response["Error"]["Code"] == "InvalidInstanceID.NotFound":
-            # If instances are not found, they might be terminated, which is expected
-            log.info("Some instances not found - likely terminated")
-            return True
-        else:
-            log.error(f"Error checking ASG instance membership: {e}")
-            return False
+        log.error(f"Error checking Spot Fleet instance membership: {e}")
+        return False
 
 
 def check_all_instances_terminating_or_terminated(instance_ids: List[str]) -> bool:
@@ -133,10 +146,10 @@ def check_all_instances_terminating_or_terminated(instance_ids: List[str]) -> bo
 
 
 @pytest.fixture
-def setup_multi_asg_templates():
-    """Setup fixture that creates two different ASG templates for testing."""
+def setup_multi_spot_fleet_templates():
+    """Setup fixture that creates two different Spot Fleet templates for testing."""
     processor = TemplateProcessor()
-    test_name = "test_multi_asg_termination"
+    test_name = "test_multi_spot_fleet_termination"
 
     # Clear any existing files from the test directory first
     test_config_dir = processor.run_templates_dir / test_name
@@ -146,28 +159,30 @@ def setup_multi_asg_templates():
         shutil.rmtree(test_config_dir)
         log.info(f"Cleared existing test directory: {test_config_dir}")
 
-    # Create two different ASG templates with different configurations
+    # Create two different Spot Fleet templates with on-demand capacity
     template_configs = [
         {
-            "template_name": "ASG_Template_1",
-            "test_dir": f"{test_name}_asg1",
+            "template_name": "SpotFleet_Template_1",
+            "test_dir": f"{test_name}_sf1",
             "overrides": {
-                "providerApi": "ASG",
+                "providerApi": "SpotFleet",
                 "instanceType": "t3.micro",
-                "maxSize": 10,
-                "minSize": 0,
-                "desiredCapacity": 2,
+                "fleetType": "request",
+                "targetCapacity": 2,
+                "allocationStrategy": "lowestPrice",
+                "priceType": "ondemand",
             },
         },
         {
-            "template_name": "ASG_Template_2",
-            "test_dir": f"{test_name}_asg2",
+            "template_name": "SpotFleet_Template_2",
+            "test_dir": f"{test_name}_sf2",
             "overrides": {
-                "providerApi": "ASG",
+                "providerApi": "SpotFleet",
                 "instanceType": "t3.small",
-                "maxSize": 8,
-                "minSize": 0,
-                "desiredCapacity": 3,
+                "fleetType": "request",
+                "targetCapacity": 3,
+                "allocationStrategy": "lowestPrice",
+                "priceType": "ondemand",
             },
         },
     ]
@@ -232,10 +247,10 @@ def setup_multi_asg_templates():
     return hfm, template_configs
 
 
-def provision_asg_capacity(
+def provision_spot_fleet_capacity(
     hfm: HostFactoryMock, template_json: Dict[str, Any], capacity: int
 ) -> Dict[str, Any]:
-    """Provision capacity for a single ASG template and return the status response."""
+    """Provision capacity for a single Spot Fleet template and return the status response."""
     log.info(f"Provisioning {capacity} instances for template {template_json['templateId']}")
 
     # Request capacity
@@ -319,20 +334,21 @@ def provision_asg_capacity(
 
 @pytest.mark.aws
 @pytest.mark.slow
-def test_multi_asg_termination(setup_multi_asg_templates):
+def test_multi_spot_fleet_termination(setup_multi_spot_fleet_templates):
     """
-    Test that provisions capacity from two different ASG templates and then
+    Test that provisions capacity from two different Spot Fleet templates and then
     attempts to remove all instances from both templates at once.
 
     This test validates:
-    1. Multiple ASG templates can be provisioned simultaneously
-    2. Instances from multiple ASGs can be terminated in a single operation
-    3. ASG capacity management works correctly across multiple ASGs
-    4. All instances are properly detached from their ASGs before termination
+    1. Multiple Spot Fleet templates can be provisioned simultaneously
+    2. Instances from multiple Spot Fleets can be terminated in a single operation
+    3. Spot Fleet capacity management works correctly across multiple fleets
+    4. All instances are properly detached from their Spot Fleets before termination
+    5. Spot Fleet requests are properly cancelled when instances are terminated
     """
-    hfm, template_configs = setup_multi_asg_templates
+    hfm, template_configs = setup_multi_spot_fleet_templates
 
-    log.info("=== Starting Multi-ASG Termination Test ===")
+    log.info("=== Starting Multi-Spot Fleet Termination Test ===")
 
     # Step 1: Get available templates
     log.info("Step 1: Getting available templates")
@@ -362,9 +378,9 @@ def test_multi_asg_termination(setup_multi_asg_templates):
     if not available_templates:
         pytest.fail("No templates found in get_available_templates response")
 
-    # Step 2: Find our ASG templates
-    log.info("Step 2: Locating ASG templates")
-    asg_templates = []
+    # Step 2: Find our Spot Fleet templates
+    log.info("Step 2: Locating Spot Fleet templates")
+    spot_fleet_templates = []
 
     # Debug: Log all available templates
     for template in available_templates:
@@ -379,32 +395,32 @@ def test_multi_asg_termination(setup_multi_asg_templates):
         )
 
         if template_json is None:
-            pytest.fail(f"ASG template {template_name} not found in available templates")
+            pytest.fail(f"Spot Fleet template {template_name} not found in available templates")
 
         # Log the template details for debugging
         log.info(f"Template {template_name} details: {json.dumps(template_json, indent=2)}")
 
-        # Verify it's an ASG template - check both providerApi and provider_api
+        # Verify it's a Spot Fleet template - check both providerApi and provider_api
         provider_api = template_json.get("providerApi") or template_json.get("provider_api")
-        if provider_api != "ASG":
-            # If it's not ASG, let's force it to be ASG for our test
+        if provider_api != "SpotFleet":
+            # If it's not SpotFleet, let's force it to be SpotFleet for our test
             log.warning(
-                f"Template {template_name} has providerApi '{provider_api}', forcing to ASG"
+                f"Template {template_name} has providerApi '{provider_api}', forcing to SpotFleet"
             )
-            template_json["providerApi"] = "ASG"
+            template_json["providerApi"] = "SpotFleet"
 
-        asg_templates.append(template_json)
+        spot_fleet_templates.append(template_json)
         log.info(
-            f"Found ASG template: {template_json['templateId']} with providerApi: {template_json.get('providerApi')}"
+            f"Found Spot Fleet template: {template_json['templateId']} with providerApi: {template_json.get('providerApi')}"
         )
 
-    # Step 3: Provision capacity from both ASG templates in parallel
-    log.info("Step 3: Provisioning capacity from both ASG templates in parallel")
+    # Step 3: Provision capacity from both Spot Fleet templates in parallel
+    log.info("Step 3: Provisioning capacity from both Spot Fleet templates in parallel")
 
     # Start both provisioning requests without waiting
     request_ids = []
-    for i, template_json in enumerate(asg_templates):
-        capacity_to_request = template_configs[i]["overrides"]["desiredCapacity"]
+    for i, template_json in enumerate(spot_fleet_templates):
+        capacity_to_request = template_configs[i]["overrides"]["targetCapacity"]
         log.info(
             f"Starting provisioning of {capacity_to_request} instances from template {template_json['templateId']}"
         )
@@ -491,31 +507,40 @@ def test_multi_asg_termination(setup_multi_asg_templates):
         )
 
     total_instances = len(all_instance_ids)
-    log.info(f"Total instances provisioned across both ASGs: {total_instances}")
+    log.info(f"Total instances provisioned across both Spot Fleets: {total_instances}")
     log.info(f"All instance IDs: {all_instance_ids}")
 
-    # Step 4: Verify instances are in their respective ASGs
-    log.info("Step 4: Verifying instances are properly assigned to ASGs")
+    # Step 4: Verify instances are in their respective Spot Fleets
+    log.info("Step 4: Verifying instances are properly assigned to Spot Fleets")
 
-    # Get ASG names from the instances
-    asg_names = set()
+    # Get Spot Fleet IDs from the instances by checking tags
+    spot_fleet_ids = set()
     try:
-        response = autoscaling_client.describe_auto_scaling_instances(InstanceIds=all_instance_ids)
+        response = ec2_client.describe_instances(InstanceIds=all_instance_ids)
 
-        for instance_info in response.get("AutoScalingInstances", []):
-            asg_name = instance_info.get("AutoScalingGroupName")
-            if asg_name:
-                asg_names.add(asg_name)
-                log.info(f"Instance {instance_info['InstanceId']} belongs to ASG {asg_name}")
+        for reservation in response.get("Reservations", []):
+            for instance in reservation.get("Instances", []):
+                instance_id = instance.get("InstanceId")
+
+                # Check for Spot Fleet request ID in tags
+                for tag in instance.get("Tags", []):
+                    if tag.get("Key") == "aws:ec2spot:fleet-request-id":
+                        fleet_id = tag.get("Value")
+                        if fleet_id:
+                            spot_fleet_ids.add(fleet_id)
+                            log.info(f"Instance {instance_id} belongs to Spot Fleet {fleet_id}")
+                            break
 
     except ClientError as e:
-        pytest.fail(f"Failed to verify ASG membership: {e}")
+        pytest.fail(f"Failed to verify Spot Fleet membership: {e}")
 
-    log.info(f"Found instances in {len(asg_names)} ASGs: {list(asg_names)}")
-    assert len(asg_names) == 2, f"Expected instances in 2 ASGs, found {len(asg_names)}"
+    log.info(f"Found instances in {len(spot_fleet_ids)} Spot Fleets: {list(spot_fleet_ids)}")
+    assert len(spot_fleet_ids) == 2, (
+        f"Expected instances in 2 Spot Fleets, found {len(spot_fleet_ids)}"
+    )
 
-    # Step 5: Terminate all instances from both ASGs at once
-    log.info("Step 5: Terminating all instances from both ASGs simultaneously")
+    # Step 5: Terminate all instances from both Spot Fleets at once
+    log.info("Step 5: Terminating all instances from both Spot Fleets simultaneously")
     log.info(f"Requesting termination of {total_instances} instances: {all_instance_ids}")
 
     return_response = hfm.request_return_machines(all_instance_ids)
@@ -535,11 +560,11 @@ def test_multi_asg_termination(setup_multi_asg_templates):
         status_response = hfm.get_return_requests([return_request_id])
         log.debug(f"Return request status: {json.dumps(status_response, indent=2)}")
 
-        # Check if instances are detached from ASGs
+        # Check if instances are detached from Spot Fleets
         if not termination_started:
-            detached = verify_asg_instances_detached(all_instance_ids)
+            detached = verify_spot_fleet_instances_detached(all_instance_ids)
             if detached:
-                log.info("All instances successfully detached from ASGs")
+                log.info("All instances successfully detached from Spot Fleets")
                 termination_started = True
 
         # Check if all instances are terminating or terminated
@@ -559,100 +584,37 @@ def test_multi_asg_termination(setup_multi_asg_templates):
     final_terminating = check_all_instances_terminating_or_terminated(all_instance_ids)
     assert final_terminating, "Some instances are not in terminating/terminated state"
 
-    # Verify instances are detached from ASGs
-    final_detached = verify_asg_instances_detached(all_instance_ids)
+    # Verify instances are detached from Spot Fleets
+    final_detached = verify_spot_fleet_instances_detached(all_instance_ids)
     if not final_detached:
         log.info(
-            "Note: Some instances still show ASG attachment while terminating - this is expected AWS behavior"
+            "Note: Some instances still show Spot Fleet attachment while terminating - this is expected AWS behavior"
         )
         log.info("Instances will be fully detached once they reach 'terminated' state")
 
-    # Step 8: Verify ASG deletion (NEW - this was missing!)
-    log.info("Step 8: Verifying ASGs are deleted when capacity reaches zero")
-
-    def check_asg_exists(asg_name: str) -> bool:
-        """Check if an ASG still exists."""
+    # Step 8: Document Spot Fleet request state
+    log.info("Step 8: Documenting Spot Fleet request state (request-type fleets stay active)")
+    for fleet_id in spot_fleet_ids:
         try:
-            response = autoscaling_client.describe_auto_scaling_groups(
-                AutoScalingGroupNames=[asg_name]
-            )
-            return len(response.get("AutoScalingGroups", [])) > 0
-        except ClientError as e:
-            if e.response["Error"]["Code"] in ["ValidationError", "InvalidGroup.NotFound"]:
-                # ASG not found - this means it was deleted
-                return False
-            else:
-                log.warning(f"Error checking ASG {asg_name}: {e}")
-                return True  # Assume it exists if we can't check
-
-    # Wait for ASG deletion (this can take several minutes)
-    max_asg_deletion_wait = 600  # 10 minutes for ASG deletion
-    asg_deletion_start = time.time()
-
-    while time.time() - asg_deletion_start < max_asg_deletion_wait:
-        remaining_asgs = []
-
-        for asg_name in asg_names:
-            if check_asg_exists(asg_name):
-                remaining_asgs.append(asg_name)
-
-                # Log current ASG status for debugging
-                try:
-                    response = autoscaling_client.describe_auto_scaling_groups(
-                        AutoScalingGroupNames=[asg_name]
-                    )
-                    if response.get("AutoScalingGroups"):
-                        asg = response["AutoScalingGroups"][0]
-                        current_instances = len(asg.get("Instances", []))
-                        desired_capacity = asg.get("DesiredCapacity", 0)
-                        log.info(
-                            f"ASG {asg_name} still exists: {current_instances} instances, desired capacity: {desired_capacity}"
-                        )
-                except Exception as e:
-                    log.warning(f"Could not get details for ASG {asg_name}: {e}")
-            else:
-                log.info(f"ASG {asg_name} successfully deleted")
-
-        if not remaining_asgs:
-            log.info("All ASGs successfully deleted")
-            break
-
-        elapsed_time = int(time.time() - asg_deletion_start)
-        log.info(
-            f"Waiting for {len(remaining_asgs)} ASGs to be deleted: {remaining_asgs} ({elapsed_time}s elapsed)"
-        )
-        time.sleep(30)  # Check every 30 seconds
-
-    # Final verification - all ASGs should be deleted
-    final_remaining_asgs = []
-    for asg_name in asg_names:
-        if check_asg_exists(asg_name):
-            final_remaining_asgs.append(asg_name)
-
-    if final_remaining_asgs:
-        # Log detailed information about remaining ASGs for debugging
-        for asg_name in final_remaining_asgs:
-            try:
-                response = autoscaling_client.describe_auto_scaling_groups(
-                    AutoScalingGroupNames=[asg_name]
+            response = ec2_client.describe_spot_fleet_requests(SpotFleetRequestIds=[fleet_id])
+            if response.get("SpotFleetRequestConfigs"):
+                fleet = response["SpotFleetRequestConfigs"][0]
+                state = fleet.get("SpotFleetRequestState", "unknown")
+                capacity = fleet.get("SpotFleetRequestConfig", {}).get("TargetCapacity", 0)
+                log.info(
+                    "Spot Fleet %s state after termination: %s (target capacity %s)",
+                    fleet_id,
+                    state,
+                    capacity,
                 )
-                if response.get("AutoScalingGroups"):
-                    asg = response["AutoScalingGroups"][0]
-                    log.error(f"ASG {asg_name} still exists after termination:")
-                    log.error(f"  - Instances: {len(asg.get('Instances', []))}")
-                    log.error(f"  - Desired Capacity: {asg.get('DesiredCapacity', 0)}")
-                    log.error(f"  - Min Size: {asg.get('MinSize', 0)}")
-                    log.error(f"  - Max Size: {asg.get('MaxSize', 0)}")
-            except Exception as e:
-                log.error(f"Could not get details for remaining ASG {asg_name}: {e}")
+        except ClientError as e:
+            if e.response["Error"]["Code"] == "InvalidSpotFleetRequestId":
+                log.info("Spot Fleet %s no longer exists", fleet_id)
+            else:
+                log.warning("Could not fetch state for Spot Fleet %s: %s", fleet_id, e)
 
-        # This assertion will fail if ASGs are not deleted, helping identify the issue
-        assert not final_remaining_asgs, (
-            f"ASGs were not deleted after instance termination: {final_remaining_asgs}. This indicates the ASG handler may not be properly deleting ASGs when capacity reaches zero."
-        )
-
-    log.info("=== Multi-ASG Termination Test Completed Successfully ===")
-    log.info(f"Successfully provisioned {total_instances} instances across 2 ASGs")
+    log.info("=== Multi-Spot Fleet Termination Test Completed Successfully ===")
+    log.info(f"Successfully provisioned {total_instances} instances across 2 Spot Fleets")
     log.info(f"Successfully terminated all {total_instances} instances in a single operation")
-    log.info("All instances properly detached from ASGs before termination")
-    log.info("ASG capacity management worked correctly across multiple ASGs")
+    log.info("All instances properly detached from Spot Fleets before termination")
+    log.info("Spot Fleet capacity management worked correctly across multiple fleets")

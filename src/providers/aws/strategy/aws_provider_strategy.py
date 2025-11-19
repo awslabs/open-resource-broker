@@ -464,7 +464,7 @@ class AWSProviderStrategy(ProviderStrategy):
         self._logger.debug(" _handle_terminate_instances")
         try:
             instance_ids = operation.parameters.get("instance_ids", [])
-            resource_mapping = operation.parameters.get("resource_mapping", [])
+            resource_mapping = operation.parameters.get("resource_mapping", {})
             self._logger.debug(
                 f"Terminating instances: {instance_ids} {self._aws_provisioning_port} {resource_mapping}"
             )
@@ -672,7 +672,7 @@ class AWSProviderStrategy(ProviderStrategy):
 
             # Use the handler's check_hosts_status method for resource-to-instance
             # discovery
-            instance_details = await handler.check_hosts_status(request)
+            instance_details = handler.check_hosts_status(request)
 
             if not instance_details:
                 self._logger.info("No instances found for resources: %s", resource_ids)
