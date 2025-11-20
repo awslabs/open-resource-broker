@@ -16,7 +16,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.22">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.23">
     
     
       
@@ -3736,174 +3736,6 @@
   
 </li>
         
-          <li class="md-nav__item">
-  <a href="#configuration-override-system" class="md-nav__link">
-    <span class="md-ellipsis">
-      Configuration Override System
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#key-validation-points" class="md-nav__link">
-    <span class="md-ellipsis">
-      Key Validation Points
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Key Validation Points">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#api-response-validation" class="md-nav__link">
-    <span class="md-ellipsis">
-      API Response Validation
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#aws-resource-validation" class="md-nav__link">
-    <span class="md-ellipsis">
-      AWS Resource Validation
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#error-handling" class="md-nav__link">
-    <span class="md-ellipsis">
-      Error Handling
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#file-structure" class="md-nav__link">
-    <span class="md-ellipsis">
-      File Structure
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#running-tests" class="md-nav__link">
-    <span class="md-ellipsis">
-      Running Tests
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Running Tests">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#prerequisites" class="md-nav__link">
-    <span class="md-ellipsis">
-      Prerequisites
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#execution" class="md-nav__link">
-    <span class="md-ellipsis">
-      Execution
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#environment-variables" class="md-nav__link">
-    <span class="md-ellipsis">
-      Environment Variables
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#monitoring-and-debugging" class="md-nav__link">
-    <span class="md-ellipsis">
-      Monitoring and Debugging
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Monitoring and Debugging">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#logging" class="md-nav__link">
-    <span class="md-ellipsis">
-      Logging
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#common-issues" class="md-nav__link">
-    <span class="md-ellipsis">
-      Common Issues
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#extension-points" class="md-nav__link">
-    <span class="md-ellipsis">
-      Extension Points
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Extension Points">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#adding-new-scenarios" class="md-nav__link">
-    <span class="md-ellipsis">
-      Adding New Scenarios
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#custom-validations" class="md-nav__link">
-    <span class="md-ellipsis">
-      Custom Validations
-    </span>
-  </a>
-  
-</li>
-        
       </ul>
     </nav>
   
@@ -3931,6 +3763,10 @@
 <h1 id="onaws-system-tests-documentation">OnAWS System Tests Documentation<a class="headerlink" href="#onaws-system-tests-documentation" title="Permanent link">&para;</a></h1>
 <h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h2>
 <p>The onaws system tests provide end-to-end testing for AWS provider functionality in the Host Factory Plugin. These tests validate the complete lifecycle of EC2 instance provisioning, monitoring, and deallocation through the plugin's API.</p>
+<p>IMPORTANT: These test will create resources in your AWS account. In case of a failure or manual termination some resources might persist and will require manual termination.</p>
+<p>There are 2 primary sets of tests.
+- test_onaws.py - runs broad sweep across various configuration options defined in scenarios.py. Testing different APIs, purchasing models, flags, etc. It goes through full cycle of requesting capacity and releasing it. However, otherwise, tests are quite simple.
+- custom tests - cover more complex scenarios, with multiple APIs.</p>
 <h2 id="architecture">Architecture<a class="headerlink" href="#architecture" title="Permanent link">&para;</a></h2>
 <h3 id="core-components">Core Components<a class="headerlink" href="#core-components" title="Permanent link">&para;</a></h3>
 <ol>
@@ -4040,56 +3876,65 @@
 </tr>
 </tbody>
 </table>
-<h3 id="configuration-override-system">Configuration Override System<a class="headerlink" href="#configuration-override-system" title="Permanent link">&para;</a></h3>
-<p>Scenarios can override default values:
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="p">{</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>    <span class="s2">&quot;test_name&quot;</span><span class="p">:</span> <span class="s2">&quot;EC2FleetRequest&quot;</span><span class="p">,</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>    <span class="s2">&quot;capacity_to_request&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>    <span class="s2">&quot;awsprov_base_template&quot;</span><span class="p">:</span> <span class="s2">&quot;awsprov_templates2.base.json&quot;</span><span class="p">,</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>    <span class="s2">&quot;overrides&quot;</span><span class="p">:</span> <span class="p">{</span>
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>        <span class="s2">&quot;fleetType&quot;</span><span class="p">:</span> <span class="s2">&quot;request&quot;</span><span class="p">,</span>
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>        <span class="s2">&quot;region&quot;</span><span class="p">:</span> <span class="s2">&quot;us-west-2&quot;</span><span class="p">,</span>
-<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>        <span class="s2">&quot;imageId&quot;</span><span class="p">:</span> <span class="s2">&quot;ami-custom123&quot;</span>
-<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>    <span class="p">}</span>
-<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="p">}</span>
-</code></pre></div></p>
-<h2 id="key-validation-points">Key Validation Points<a class="headerlink" href="#key-validation-points" title="Permanent link">&para;</a></h2>
-<h3 id="api-response-validation">API Response Validation<a class="headerlink" href="#api-response-validation" title="Permanent link">&para;</a></h3>
-<ul>
-<li><strong>Templates</strong>: Structure, required fields, attribute arrays</li>
-<li><strong>Requests</strong>: UUID format, success messages</li>
-<li><strong>Status</strong>: Machine states, IP addresses, timestamps</li>
-</ul>
-<h3 id="aws-resource-validation">AWS Resource Validation<a class="headerlink" href="#aws-resource-validation" title="Permanent link">&para;</a></h3>
-<ul>
-<li><strong>Instance State</strong>: pending → running progression</li>
-<li><strong>Configuration Match</strong>: Template specs vs actual AWS attributes</li>
-<li><strong>Cleanup</strong>: Proper termination of all resources</li>
-</ul>
-<h3 id="error-handling">Error Handling<a class="headerlink" href="#error-handling" title="Permanent link">&para;</a></h3>
-<ul>
-<li>Timeout protection (120s for provisioning)</li>
-<li>JSON parsing error recovery</li>
-<li>AWS API error propagation</li>
-<li>Resource cleanup on test failure</li>
-</ul>
+<h1 id="custom-multi-resource-termination-tests">Custom Multi-Resource Termination Tests<a class="headerlink" href="#custom-multi-resource-termination-tests" title="Permanent link">&para;</a></h1>
+<p>These tests cover specific use cases.</p>
+<table>
+<thead>
+<tr>
+<th>Test File</th>
+<th>Resource Types</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>test_multi_asg_termination.py</code></td>
+<td>2x ASG</td>
+<td>Multi-ASG termination + ASG deletion validation</td>
+</tr>
+<tr>
+<td><code>test_multi_spot_fleet_termination.py</code></td>
+<td>2x SpotFleet</td>
+<td>Multi-SpotFleet termination + request cancellation</td>
+</tr>
+<tr>
+<td><code>test_multi_ec2_fleet_termination.py</code></td>
+<td>2x EC2Fleet</td>
+<td>Multi-EC2Fleet termination + maintain fleet deletion</td>
+</tr>
+<tr>
+<td><code>test_multi_resource_termination.py</code></td>
+<td>ASG + EC2Fleet + SpotFleet + RunInstances</td>
+<td>Cross-resource termination validation</td>
+</tr>
+</tbody>
+</table>
+<p>These tests validate:
+- Resource grouping logic across multiple instances of same type
+- Mixed resource type termination in single operation
+- Resource-specific cleanup (ASG deletion, fleet cancellation)
+- Performance optimization through resource mapping</p>
 <h2 id="file-structure">File Structure<a class="headerlink" href="#file-structure" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>tests/onaws/
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>├── test_onaws.py              # Main test file
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>├── scenarios.py               # Test case definitions
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>├── template_processor.py      # Config generation
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>├── plugin_io_schemas.py       # JSON validation schemas
-<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>├── config_templates/          # Base template files
-<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>│   ├── awsprov_templates.base.json
-<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>│   ├── awsprov_templates1.base.json
-<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>│   ├── awsprov_templates2.base.json
-<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>│   ├── config.base.json
-<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>│   └── default_config.base.json
-<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>└── run_templates/             # Generated test configs
-<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a>    └── test_sample[ScenarioName]/
-<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a>        ├── awsprov_templates.json
-<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a>        ├── config.json
-<a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a>        └── default_config.json
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>tests/onaws/
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>├──<span class="w"> </span>test_onaws.py<span class="w">              </span><span class="c1"># Main test file</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>├──<span class="w"> </span>scenarios.py<span class="w">               </span><span class="c1"># Test case definitions</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>├──<span class="w"> </span>template_processor.py<span class="w">      </span><span class="c1"># Config generation</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>├──<span class="w"> </span>plugin_io_schemas.py<span class="w">       </span><span class="c1"># JSON validation schemas</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>├──<span class="w"> </span>config_templates/<span class="w">          </span><span class="c1"># Base template files</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>│<span class="w">   </span>├──<span class="w"> </span>awsprov_templates.base.json
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>│<span class="w">   </span>├──<span class="w"> </span>awsprov_templates1.base.json
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>│<span class="w">   </span>├──<span class="w"> </span>awsprov_templates2.base.json
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>│<span class="w">   </span>├──<span class="w"> </span>config.base.json
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>│<span class="w">   </span>└──<span class="w"> </span>default_config.base.json
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>├──<span class="w"> </span>test_multi_asg_termination.py<span class="w">          </span><span class="c1"># Multi-ASG termination tests</span>
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>├──<span class="w"> </span>test_multi_spot_fleet_termination.py<span class="w">   </span><span class="c1"># Multi-SpotFleet termination tests</span>
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>├──<span class="w"> </span>test_multi_ec2_fleet_termination.py<span class="w">    </span><span class="c1"># Multi-EC2Fleet termination tests</span>
+<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>├──<span class="w"> </span>test_multi_resource_termination.py<span class="w">     </span><span class="c1"># Cross-resource termination tests</span>
+<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>└──<span class="w"> </span>run_templates/<span class="w">             </span><span class="c1"># Generated test configs</span>
+<a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="w">    </span>└──<span class="w"> </span>test_sample<span class="o">[</span>ScenarioName<span class="o">]</span>/
+<a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="w">        </span>├──<span class="w"> </span>awsprov_templates.json
+<a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span class="w">        </span>├──<span class="w"> </span>config.json
+<a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a><span class="w">        </span>└──<span class="w"> </span>default_config.json
 </code></pre></div>
 <h2 id="running-tests">Running Tests<a class="headerlink" href="#running-tests" title="Permanent link">&para;</a></h2>
 <h3 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">&para;</a></h3>
@@ -4098,15 +3943,22 @@
 <li>Required environment variables set</li>
 <li>pytest with aws markers</li>
 </ul>
-<h3 id="execution">Execution<a class="headerlink" href="#execution" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># Run all onaws tests</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>pytest<span class="w"> </span>tests/onaws/<span class="w"> </span>-m<span class="w"> </span>aws
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="c1"># Run specific scenario</span>
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>pytest<span class="w"> </span>tests/onaws/test_onaws.py::test_sample<span class="o">[</span>EC2FleetRequest<span class="o">]</span><span class="w"> </span>-m<span class="w"> </span>aws
-<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>
-<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="c1"># Run with verbose output</span>
-<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>pytest<span class="w"> </span>tests/onaws/<span class="w"> </span>-m<span class="w"> </span>aws<span class="w"> </span>-v<span class="w"> </span>-s
+<h3 id="execution-parameter-sweep">Execution Parameter Sweep<a class="headerlink" href="#execution-parameter-sweep" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>make<span class="w"> </span>system-tests
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="c1"># Run all onaws tests</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>pytest<span class="w"> </span>tests/onaws/<span class="w"> </span>-m<span class="w"> </span>aws
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="c1"># Run specific scenario</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>pytest<span class="w"> </span>tests/onaws/test_onaws.py::test_sample<span class="o">[</span>EC2FleetRequest<span class="o">]</span><span class="w"> </span>-m<span class="w"> </span>aws
+</code></pre></div>
+<h3 id="execution-custom-tests">Execution Custom Tests<a class="headerlink" href="#execution-custom-tests" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>pytest<span class="w"> </span>tests/onaws/test_multi_asg_termination.py<span class="w"> </span>-v
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>pytest<span class="w"> </span>tests/onaws/test_multi_spot_fleet_termination.py<span class="w"> </span>-v
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>pytest<span class="w"> </span>tests/onaws/test_multi_ec2_fleet_termination.py<span class="w"> </span>-v
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>pytest<span class="w"> </span>tests/onaws/test_multi_resource_termination.py<span class="w"> </span>-v
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>or
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>pytest<span class="w"> </span>tests/onaws/test_multi_*.py<span class="w"> </span>-n<span class="w"> </span><span class="m">4</span><span class="w"> </span>-v
 </code></pre></div>
 <h3 id="environment-variables">Environment Variables<a class="headerlink" href="#environment-variables" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nv">AWS_REGION</span><span class="o">=</span>us-east-1
@@ -4124,9 +3976,6 @@
 <h3 id="common-issues">Common Issues<a class="headerlink" href="#common-issues" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>Timeout</strong>: Increase <code>MAX_TIME_WAIT_FOR_CAPACITY_PROVISIONING_SEC</code></li>
-<li><strong>Template errors</strong>: Check placeholder substitution in generated configs</li>
-<li><strong>AWS permissions</strong>: Verify IAM roles and policies</li>
-<li><strong>Resource limits</strong>: Check AWS service quotas</li>
 </ul>
 <h2 id="extension-points">Extension Points<a class="headerlink" href="#extension-points" title="Permanent link">&para;</a></h2>
 <h3 id="adding-new-scenarios">Adding New Scenarios<a class="headerlink" href="#adding-new-scenarios" title="Permanent link">&para;</a></h3>
@@ -4142,7 +3991,6 @@
 <li>Include in <code>validate_instance_attributes()</code></li>
 <li>Update schemas if new fields required</li>
 </ol>
-<p>The onaws system tests provide comprehensive validation of AWS provider functionality while maintaining test isolation and reproducibility through dynamic configuration generation.</p>
 
 
 
