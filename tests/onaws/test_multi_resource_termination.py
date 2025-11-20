@@ -104,7 +104,6 @@ def categorize_instances_by_resource_type(instance_ids: List[str]) -> Dict[str, 
 
                 for tag in instance.get("Tags", []):
                     tag_key = tag.get("Key", "")
-                    tag_value = tag.get("Value", "")
 
                     if tag_key == "aws:autoscaling:groupName":
                         resource_type = "ASG"

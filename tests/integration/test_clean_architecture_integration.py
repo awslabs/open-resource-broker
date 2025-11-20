@@ -5,11 +5,10 @@ from unittest.mock import Mock
 import pytest
 
 from application.services.template_defaults_service import TemplateDefaultsService
-from config.manager import ConfigurationManager
 from domain.base.ports.logging_port import LoggingPort
-from domain.template.aggregate import Template
 from domain.template.extensions import TemplateExtensionRegistry
 from domain.template.factory import TemplateFactory
+from domain.template.template_aggregate import Template
 from providers.aws.configuration.template_extension import AWSTemplateExtensionConfig
 
 
@@ -24,7 +23,7 @@ class TestCleanArchitectureIntegration:
     @pytest.fixture
     def mock_config_manager(self):
         """Mock configuration manager with clean configuration."""
-        config_manager = Mock(spec=ConfigurationManager)
+        config_manager = Mock()
 
         # Mock template config (cleaned up)
         template_config = Mock()

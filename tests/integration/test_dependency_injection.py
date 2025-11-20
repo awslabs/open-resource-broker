@@ -61,17 +61,17 @@ def test_dependency_injection_updates():
 
         if passed == total:
             print("ALL DEPENDENCY INJECTION DEPENDENCY INJECTION TESTS PASSED!")
-            return True
+            assert True
         else:
             print("WARN:  Some dependency injection tests failed")
-            return False
+            assert False, f"Only {passed}/{total} tests passed"
 
     except Exception as e:
         print(f"FAIL: Test execution failed: {e!s}")
         import traceback
 
         traceback.print_exc()
-        return False
+        assert False, f"Test execution failed: {e!s}"
 
 
 def test_aws_launch_template_manager_registration():

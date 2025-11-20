@@ -10,7 +10,7 @@ from application.dto.queries import ListTemplatesQuery
 from bootstrap import Application
 from config.manager import ConfigurationManager
 from domain.base.value_objects import InstanceType
-from domain.template.aggregate import Template
+from domain.template.template_aggregate import Template
 from infrastructure.di.buses import CommandBus, QueryBus
 
 

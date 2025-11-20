@@ -63,8 +63,8 @@ class TestAWSDryRunIntegration:
 
         assert not is_dry_run_active()
 
-    @patch("src.providers.aws.infrastructure.dry_run_adapter.MOTO_AVAILABLE", True)
-    @patch("src.providers.aws.infrastructure.dry_run_adapter.mock_aws")
+    @patch("providers.aws.infrastructure.dry_run_adapter.MOTO_AVAILABLE", True)
+    @patch("providers.aws.infrastructure.dry_run_adapter.mock_aws")
     def test_aws_dry_run_context_with_moto(self, mock_aws_decorator):
         """Test AWS dry-run context uses moto when available."""
         mock_context = Mock()
@@ -87,7 +87,7 @@ class TestAWSDryRunIntegration:
         # Should use moto when dry-run is active
         mock_aws_decorator.assert_called_once()
 
-    @patch("src.providers.aws.infrastructure.dry_run_adapter.MOTO_AVAILABLE", False)
+    @patch("providers.aws.infrastructure.dry_run_adapter.MOTO_AVAILABLE", False)
     def test_aws_dry_run_context_without_moto(self):
         """Test AWS dry-run context when moto is not available."""
         with dry_run_context(True):
@@ -109,6 +109,7 @@ class TestAWSDryRunIntegration:
         # Mock EC2 client and response
         mock_ec2_client = Mock()
         mock_aws_client.get_client.return_value = mock_ec2_client
+        mock_aws_client.ec2_client = mock_ec2_client
 
         # Mock run_instances response
         mock_response = {
