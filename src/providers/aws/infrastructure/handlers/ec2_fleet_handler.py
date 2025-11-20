@@ -209,18 +209,10 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
 
         # Create the fleet with circuit breaker for critical operation
         try:
-            self._logger.debug(
-                "AWS EC2 Fleet create fleet payload:\n%s",
-                json.dumps(fleet_config, default=str, indent=2, sort_keys=True),
-            )
             response = self._retry_with_backoff(
                 self.aws_client.ec2_client.create_fleet,
                 operation_type="critical",
                 **fleet_config,
-            )
-            self._logger.debug(
-                "EC2 Fleet create_fleet response:\n%s",
-                json.dumps(response, default=str, indent=2, sort_keys=True),
             )
 
         except CircuitBreakerOpenError as e:

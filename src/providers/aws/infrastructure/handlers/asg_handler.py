@@ -727,7 +727,7 @@ class ASGHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                 self.aws_client.autoscaling_client.delete_auto_scaling_group,
                 operation_type="critical",
                 AutoScalingGroupName=asg_name,
-                ForceDelete=True,  # Force delete any remaining instances
+                ForceDelete=True,
             )
 
             self._logger.info(f"Successfully deleted ASG {asg_name}")

@@ -186,10 +186,6 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
         )
 
         # Request spot fleet with circuit breaker for critical operation
-        self._logger.debug(
-            "AWS Spot Fleet create fleet payload:\n%s",
-            json.dumps(fleet_config, default=str, indent=2, sort_keys=True),
-        )
         response = self._retry_with_backoff(
             self.aws_client.ec2_client.request_spot_fleet,
             operation_type="critical",
@@ -1076,10 +1072,10 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
             else:
                 # If no specific instances provided, cancel entire spot fleet
                 self._retry_with_backoff(
-                    lambda fid=fleet_id: self.aws_client.ec2_client.cancel_spot_fleet_requests(
-                        SpotFleetRequestIds=[fid], TerminateInstances=True
-                    ),
+                    self.aws_client.ec2_client.cancel_spot_fleet_requests,
                     operation_type="critical",
+                    SpotFleetRequestIds=[fleet_id],
+                    TerminateInstances=True,
                 )
                 self._logger.info("Cancelled entire Spot Fleet: %s", fleet_id)
 

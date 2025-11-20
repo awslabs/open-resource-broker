@@ -6,6 +6,7 @@ AWSHandler and BaseAWSHandler patterns while maintaining clean architecture prin
 and clean integration with our DI/CQRS system.
 """
 
+import json
 from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Any, Callable, Optional, TypeVar
@@ -165,6 +166,8 @@ class AWSHandler(ABC):
         *args,
         operation_type: str = "standard",
         non_retryable_errors: Optional[list[str]] = None,
+        log_payload: bool = True,
+        log_response: bool = True,
         **kwargs,
     ) -> T:
         """
@@ -193,14 +196,36 @@ class AWSHandler(ABC):
             operation_type, service_name, operation_name
         )
 
+        operation_name = getattr(func, "__name__", repr(func))
+
+        def _format_debug_data(data: Any) -> str:
+            try:
+                return json.dumps(data, default=str, indent=2, sort_keys=True)
+            except Exception:
+                return str(data)
+
         # Create retry decorator with appropriate strategy
         @retry(**strategy_config)
         def wrapped_operation():
             """Wrapped operation with retry logic applied."""
+            if log_payload:
+                payload_snapshot = {"args": args, "kwargs": kwargs}
+                self._logger.debug(
+                    "Calling AWS operation %s with payload:\n%s",
+                    operation_name,
+                    _format_debug_data(payload_snapshot),
+                )
             return func(*args, **kwargs)
 
         try:
-            return wrapped_operation()
+            result = wrapped_operation()
+            if log_response:
+                self._logger.debug(
+                    "AWS operation %s response:\n%s",
+                    operation_name,
+                    _format_debug_data(result),
+                )
+            return result
         except Exception as e:
             # Handle circuit breaker exceptions
             if hasattr(e, "__class__") and "CircuitBreakerOpenError" in str(type(e)):
