@@ -118,6 +118,10 @@ class AWSProvisioningAdapter(ResourceProvisioningPort):
         from providers.base.strategy import ProviderOperation, ProviderOperationType
 
         # Create provider operation with dry-run context
+        operation_context = {"skip_provisioning_port": True}
+        if dry_run:
+            operation_context["dry_run"] = True
+
         operation = ProviderOperation(
             operation_type=ProviderOperationType.CREATE_INSTANCES,
             parameters={
@@ -125,7 +129,7 @@ class AWSProvisioningAdapter(ResourceProvisioningPort):
                 "count": request.requested_count,
                 "request_id": str(request.request_id),
             },
-            context={"dry_run": dry_run} if dry_run else None,
+            context=operation_context,
         )
 
         # Execute operation via provider strategy

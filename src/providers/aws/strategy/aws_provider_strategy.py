@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """AWS Provider Strategy - Strategy pattern implementation for AWS provider.
 
 This module implements the ProviderStrategy interface for AWS cloud provider,
@@ -6,7 +8,7 @@ maintaining all existing AWS functionality and adding new capabilities.
 """
 
 import time
-from typing import Any, Callable, Optional
+from typing import TYPE_CHECKING, Any, Callable, Optional
 
 from domain.base.dependency_injection import injectable
 from domain.base.ports import LoggingPort
@@ -25,6 +27,11 @@ from providers.aws.infrastructure.launch_template.manager import (
     AWSLaunchTemplateManager,
 )
 from providers.aws.managers.aws_resource_manager import AWSResourceManager
+
+if TYPE_CHECKING:
+    from providers.aws.infrastructure.adapters.aws_provisioning_adapter import (
+        AWSProvisioningAdapter,
+    )
 
 # Import strategy pattern interfaces
 from providers.base.strategy import (
@@ -304,7 +311,7 @@ class AWSProviderStrategy(ProviderStrategy):
         """
         # Route operation to appropriate handler
         if operation.operation_type == ProviderOperationType.CREATE_INSTANCES:
-            return self._handle_create_instances(operation)
+            return await self._handle_create_instances(operation)
         elif operation.operation_type == ProviderOperationType.TERMINATE_INSTANCES:
             return self._handle_terminate_instances(operation)
         elif operation.operation_type == ProviderOperationType.GET_INSTANCE_STATUS:
@@ -323,8 +330,8 @@ class AWSProviderStrategy(ProviderStrategy):
                 "UNSUPPORTED_OPERATION",
             )
 
-    def _handle_create_instances(self, operation: ProviderOperation) -> ProviderResult:
-        """Handle instance creation operation using handler system."""
+    async def _handle_create_instances(self, operation: ProviderOperation) -> ProviderResult:
+        """Handle instance creation operation using provisioning adapter/handlers."""
         try:
             template_config = operation.parameters.get("template_config", {})
             count = operation.parameters.get("count", 1)
@@ -405,15 +412,82 @@ class AWSProviderStrategy(ProviderStrategy):
             from domain.request.value_objects import RequestType
 
             # Use the domain aggregate's factory method - it handles RequestId generation
+            request_metadata = dict(operation.parameters.get("request_metadata", {}) or {})
+
             request = Request.create_new_request(
                 request_type=RequestType.ACQUIRE,
                 template_id=aws_template.template_id,
                 machine_count=count,
                 provider_type="aws",
                 provider_instance="aws-default",
+                metadata=request_metadata,
             )
+            request.provider_api = provider_api
 
-            # Use the handler to acquire hosts
+            # Try provisioning adapter first unless explicitly skipped
+            skip_provisioning_port = bool(
+                operation.context and operation.context.get("skip_provisioning_port")
+            )
+            if not skip_provisioning_port:
+                provisioning_port = self._resolve_provisioning_port()
+            else:
+                provisioning_port = None
+
+            if provisioning_port:
+                try:
+                    self._logger.info(
+                        "Using AWS provisioning adapter for provider_api=%s request_id=%s",
+                        provider_api,
+                        request.request_id,
+                    )
+                    adapter_result = await provisioning_port.provision_resources(
+                        request, aws_template
+                    )
+
+                    adapter_success = True
+                    resource_ids: list[str] = []
+                    instances: list[dict[str, Any]] = []
+
+                    if isinstance(adapter_result, dict):
+                        resource_ids = adapter_result.get("resource_ids") or []
+                        if not resource_ids and adapter_result.get("resource_id"):
+                            resource_ids = [adapter_result["resource_id"]]
+                        instances = adapter_result.get("instances") or []
+                        adapter_success = adapter_result.get("success", True)
+
+                        if not adapter_success:
+                            error_message = adapter_result.get(
+                                "error_message", "Provisioning adapter reported failure"
+                            )
+                            return ProviderResult.error_result(
+                                error_message, "PROVISIONING_ADAPTER_ERROR"
+                            )
+                    else:
+                        resource_ids = [adapter_result] if adapter_result else []
+
+                    return ProviderResult.success_result(
+                        {
+                            "resource_ids": resource_ids,
+                            "instances": instances,
+                            "provider_api": provider_api,
+                            "count": count,
+                            "template_id": aws_template.template_id,
+                        },
+                        {
+                            "operation": "create_instances",
+                            "template_config": template_config,
+                            "handler_used": provider_api,
+                            "method": "provisioning_port",
+                        },
+                    )
+                except Exception as e:
+                    self._logger.warning(
+                        "Provisioning adapter failed for provider_api=%s, falling back to handler: %s",
+                        provider_api,
+                        e,
+                    )
+
+            # Use the handler to acquire hosts as a fallback path
             handler_result = handler.acquire_hosts(request, aws_template)
 
             # Extract resource IDs and instances from handler result
@@ -451,6 +525,7 @@ class AWSProviderStrategy(ProviderStrategy):
                     "operation": "create_instances",
                     "template_config": template_config,
                     "handler_used": provider_api,
+                    "method": "handler",
                 },
             )
 
@@ -475,12 +550,13 @@ class AWSProviderStrategy(ProviderStrategy):
                 )
 
             # Try to use the injected AWS provisioning port first
-            if self._aws_provisioning_port:
+            provisioning_port = self._resolve_provisioning_port()
+            if provisioning_port:
                 try:
                     self._logger.info("Using AWS provisioning port for resource release")
 
                     # Pass resource_mapping to adapter/handler for intelligent resource management
-                    self._aws_provisioning_port.release_resources(
+                    provisioning_port.release_resources(
                         machine_ids=instance_ids,
                         template_id=operation.parameters.get("template_id", "termination-template"),
                         provider_api=operation.parameters.get("provider_api", "RunInstances"),

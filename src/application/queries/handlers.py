@@ -472,9 +472,6 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
     async def _get_current_asg_details(self, asg_name: str) -> dict:
         """Get current ASG details from AWS."""
         try:
-            # Get provider context to make AWS calls
-            provider_context = self._get_provider_context()
-
             # Create a simple AWS client call to get ASG details
             # This is a simplified approach - in production you might want to use
             # the provider context more directly

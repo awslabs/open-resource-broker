@@ -26,7 +26,6 @@ Note:
     launches and is suitable for large-scale, complex deployments.
 """
 
-import json
 from datetime import datetime
 from typing import Any, Optional
 
@@ -625,15 +624,17 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
             # The fleet_type should be available in the request metadata from when the fleet was created
             fleet_type_value = request.metadata.get("fleet_type")
 
-            # If not in metadata, default to "maintain" which is the most common EC2Fleet type
-            if not fleet_type_value:
-                self._logger.debug(
-                    "Fleet type not found in request metadata, defaulting to 'maintain'"
-                )
-                fleet_type_value = "maintain"
-
-            fleet_type = AWSFleetType(fleet_type_value.lower())
-            self._logger.debug(f" check_hosts_status final fleet_type: {fleet_type}")
+            # If not in metadata, derive it from the DescribeFleets response (preferred), else default
+            fleet_type = None
+            if fleet_type_value:
+                try:
+                    fleet_type = AWSFleetType(fleet_type_value.lower())
+                except Exception:
+                    self._logger.warning(
+                        "Invalid fleet_type '%s' in metadata for request %s; will derive from AWS response",
+                        fleet_type_value,
+                        request.request_id,
+                    )
 
             # Get fleet information with pagination and retry
             fleet_list = self._retry_with_backoff(
@@ -654,6 +655,18 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
 
             fleet = fleet_list[0]
 
+            # If fleet_type still unknown, derive from AWS response now that we have it
+            if fleet_type is None:
+                derived_type = fleet.get("Type") or fleet.get("FleetType") or "maintain"
+                fleet_type = AWSFleetType(str(derived_type).lower())
+                self._logger.debug(
+                    "Derived fleet_type '%s' from DescribeFleets response for fleet %s",
+                    fleet_type,
+                    fleet_id,
+                )
+
+            self._logger.debug(f" check_hosts_status final fleet_type: {fleet_type}")
+
             # Log fleet status
             self._logger.debug(
                 "Fleet status: %s, Target capacity: %s, Fulfilled capacity: %s",
@@ -665,11 +678,28 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
             # Get instance IDs based on fleet type
             instance_ids = []
             if fleet_type == AWSFleetType.INSTANT:
-                # For instant fleets, get instance IDs from metadata
-                instance_ids = request.metadata.get("instance_ids", [])
+                # Instant fleets do not support DescribeFleetInstances. Use metadata or the DescribeFleets response.
+                metadata_instance_ids = request.metadata.get("instance_ids", [])
+                if metadata_instance_ids:
+                    instance_ids = metadata_instance_ids
+                    self._logger.debug(
+                        "Instant fleet %s using instance_ids from metadata: %s",
+                        fleet_id,
+                        instance_ids,
+                    )
+                else:
+                    instance_ids = [
+                        instance_id
+                        for instance in fleet.get("Instances", [])
+                        for instance_id in instance.get("InstanceIds", [])
+                    ]
+                    self._logger.debug(
+                        "Instant fleet %s derived instance_ids from DescribeFleets response: %s",
+                        fleet_id,
+                        instance_ids,
+                    )
             else:
-                # For request/maintain fleets, describe fleet instances with manual
-                # pagination support
+                # For request/maintain fleets, describe fleet instances with manual pagination support
                 active_instances = self._retry_with_backoff(
                     lambda: self._collect_with_next_token(
                         self.aws_client.ec2_client.describe_fleet_instances,
