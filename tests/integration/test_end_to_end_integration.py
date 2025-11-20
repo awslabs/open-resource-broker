@@ -16,10 +16,9 @@ import pytest
 # Add project root to path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
-from providers.aws.domain.template.aggregate import AWSTemplate
-
 from domain.machine.aggregate import Machine
-from domain.request.aggregate import Request, RequestStatus
+from domain.request.aggregate import Request
+from domain.request.value_objects import RequestStatus
 from infrastructure.persistence.repositories.machine_repository import (
     MachineRepositoryImpl,
 )
@@ -29,6 +28,7 @@ from infrastructure.persistence.repositories.request_repository import (
 from infrastructure.persistence.repositories.template_repository import (
     TemplateRepositoryImpl,
 )
+from providers.aws.domain.template.aws_template_aggregate import AWSTemplate
 from providers.aws.infrastructure.handlers.ec2_fleet_handler import EC2FleetHandler
 from providers.aws.infrastructure.handlers.spot_fleet_handler import SpotFleetHandler
 from providers.aws.infrastructure.launch_template.manager import (
@@ -56,14 +56,9 @@ class TestAdditionalEndToEnd:
         self.request_repository = RequestRepositoryImpl(self.mock_storage_strategy)
         self.machine_repository = MachineRepositoryImpl(self.mock_storage_strategy)
 
-        # Create launch template manager
-        self.mock_config = Mock()
-        self.mock_config.launch_template.create_per_request = True
-        self.mock_config.launch_template.naming_strategy = "request_based"
-
+        # Create launch template manager (no config parameter needed)
         self.launch_template_manager = AWSLaunchTemplateManager(
             aws_client=self.mock_aws_client,
-            config=self.mock_config,
             logger=self.mock_logger,
         )
 
@@ -89,10 +84,11 @@ class TestAdditionalEndToEnd:
             template_id="integration-test-template",
             image_id="ami-12345678",
             primary_instance_type="t2.micro",
-            network_zones=["subnet-123"],
-            security_groups=["sg-123"],
-            key_pair_name="test-key",
+            subnet_ids=["subnet-123"],  # Changed from network_zones
+            security_group_ids=["sg-123"],  # Changed from security_groups
+            key_name="test-key",  # Changed from key_pair_name
             max_instances=5,
+            provider_api="SpotFleet",  # Required field
             tags={"Environment": "test", "Project": "integration"},
         )
 
@@ -335,9 +331,8 @@ class TestAdditionalEndToEnd:
 
     def test_configuration_driven_behavior(self):
         """Test that configuration drives behavior throughout the flow."""
-        # Test with create_per_request disabled
-        self.mock_config.launch_template.create_per_request = False
-        self.mock_config.launch_template.reuse_existing = True
+        # Test with existing launch template (simulating reuse behavior)
+        # Note: Configuration is now handled internally by the launch template manager
 
         # Mock existing launch template
         self.mock_aws_client.ec2_client.describe_launch_templates.return_value = {

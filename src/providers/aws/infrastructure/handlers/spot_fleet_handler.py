@@ -28,7 +28,7 @@ Note:
 
 import json
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Optional
+from typing import Any, Optional
 
 from domain.base.dependency_injection import injectable
 from domain.base.ports import LoggingPort
@@ -43,29 +43,29 @@ from providers.aws.exceptions.aws_exceptions import (
     AWSValidationError,
     IAMError,
 )
+from providers.aws.infrastructure.adapters.machine_adapter import AWSMachineAdapter
+from providers.aws.infrastructure.aws_client import AWSClient
 from providers.aws.infrastructure.handlers.base_context_mixin import BaseContextMixin
 from providers.aws.infrastructure.handlers.base_handler import AWSHandler
+from providers.aws.infrastructure.handlers.fleet_grouping_mixin import FleetGroupingMixin
 from providers.aws.infrastructure.launch_template.manager import (
     AWSLaunchTemplateManager,
 )
 from providers.aws.utilities.aws_operations import AWSOperations
 
-if TYPE_CHECKING:
-    from providers.aws.infrastructure.adapters.machine_adapter import AWSMachineAdapter
-
 
 @injectable
-class SpotFleetHandler(AWSHandler, BaseContextMixin):
+class SpotFleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
     """Handler for Spot Fleet operations."""
 
     def __init__(
         self,
-        aws_client,
+        aws_client: AWSClient,
         logger: LoggingPort,
         aws_ops: AWSOperations,
         launch_template_manager: AWSLaunchTemplateManager,
         request_adapter: RequestAdapterPort = None,
-        machine_adapter: Optional["AWSMachineAdapter"] = None,
+        machine_adapter: Optional[AWSMachineAdapter] = None,
     ) -> None:
         """
         Initialize the Spot Fleet handler.
@@ -356,16 +356,20 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin):
         """Prepare context with all computed values for template rendering."""
 
         # Start with base context
-        context = self._prepare_base_context(template, request)
+        context = self._prepare_base_context(
+            template,
+            str(request.request_id),
+            request.requested_count,
+        )
 
         # Add capacity distribution
-        context.update(self._calculate_capacity_distribution(template, request))
+        context.update(self._calculate_capacity_distribution(template, request.requested_count))
 
         # Add standard flags
         context.update(self._prepare_standard_flags(template))
 
         # Add standard tags
-        tag_context = self._prepare_standard_tags(template, request)
+        tag_context = self._prepare_standard_tags(template, str(request.request_id))
         context.update(tag_context)
 
         # Add SpotFleet-specific context
@@ -485,9 +489,18 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin):
         launch_template_version: str,
     ) -> dict[str, Any]:
         """Create Spot Fleet configuration using legacy logic."""
-        # Strip the full ARN for service-linked role
+        # Handle fleet role - convert EC2Fleet role to SpotFleet role if needed
         fleet_role = template.fleet_role
-        if fleet_role == "AWSServiceRoleForEC2SpotFleet":
+
+        # If using EC2Fleet service role, convert to SpotFleet service role
+        if fleet_role and "ec2fleet.amazonaws.com/AWSServiceRoleForEC2Fleet" in fleet_role:
+            account_id = self.aws_client.sts_client.get_caller_identity()["Account"]
+            fleet_role = (
+                f"arn:aws:iam::{account_id}:role/aws-service-role/"
+                f"spotfleet.amazonaws.com/AWSServiceRoleForEC2SpotFleet"
+            )
+            self._logger.info("Converted EC2Fleet role to SpotFleet role: %s", fleet_role)
+        elif fleet_role == "AWSServiceRoleForEC2SpotFleet":
             account_id = self.aws_client.sts_client.get_caller_identity()["Account"]
             fleet_role = (
                 f"arn:aws:iam::{account_id}:role/aws-service-role/"
@@ -495,14 +508,12 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin):
             )
 
         # Get package name for CreatedBy tag
-        created_by = "open-hostfactory-plugin"  # fallback
-        if hasattr(self, "config_port") and self.config_port:
-            try:
-                package_info = self.config_port.get_package_info()
-                created_by = package_info.get("name", "open-hostfactory-plugin")
-            except Exception:  # nosec B110
-                # Intentionally silent fallback for package info retrieval
-                pass
+        created_by = self._get_package_name()
+
+        requested_count = int(getattr(request, "requested_count", 0) or 1)
+        capacity_distribution = self._calculate_capacity_distribution(template, requested_count)
+        target_capacity = capacity_distribution["target_capacity"]
+        on_demand_capacity = capacity_distribution["on_demand_count"]
 
         # Common tags for both fleet and instances
         common_tags = [
@@ -511,8 +522,14 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin):
             {"Key": "TemplateId", "Value": str(template.template_id)},
             {"Key": "CreatedBy", "Value": created_by},
             {"Key": "CreatedAt", "Value": datetime.utcnow().isoformat()},
+            {"Key": "ProviderApi", "Value": "SpotFleet"},
         ]
 
+        fleet_type_value = (
+            template.fleet_type.value
+            if hasattr(template.fleet_type, "value")
+            else template.fleet_type
+        )
         fleet_config = {
             "LaunchTemplateConfigs": [
                 {
@@ -522,37 +539,19 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin):
                     }
                 }
             ],
-            "TargetCapacity": request.requested_count,
+            "TargetCapacity": target_capacity,
             "IamFleetRole": fleet_role,
             "AllocationStrategy": self._get_allocation_strategy(template.allocation_strategy),
-            "Type": template.fleet_type,
+            "Type": fleet_type_value,
             "TagSpecifications": [{"ResourceType": "spot-fleet-request", "Tags": common_tags}],
         }
 
         # Configure based on price type
         price_type = template.price_type or "spot"  # Default to spot for SpotFleet
 
-        if price_type == "ondemand":
-            # For ondemand, set all capacity as on-demand
-            fleet_config["OnDemandTargetCapacity"] = request.requested_count
-            fleet_config["SpotTargetCapacity"] = 0
-            fleet_config["DefaultTargetCapacity"] = "onDemand"
-
-        elif price_type == "heterogeneous":
-            # For heterogeneous, split capacity based on percent_on_demand
-            percent_on_demand = template.percent_on_demand or 0
-            on_demand_count = int(request.requested_count * percent_on_demand / 100)
-            spot_count = request.requested_count - on_demand_count
-
-            fleet_config["OnDemandTargetCapacity"] = on_demand_count
-            fleet_config["SpotTargetCapacity"] = spot_count
-            fleet_config["DefaultTargetCapacity"] = "spot"
-
-        else:  # "spot" (default)
-            # For spot, set all capacity as spot
-            fleet_config["OnDemandTargetCapacity"] = 0
-            fleet_config["SpotTargetCapacity"] = request.requested_count
-            fleet_config["DefaultTargetCapacity"] = "spot"
+        if price_type in ("ondemand", "heterogeneous") or on_demand_capacity > 0:
+            # SpotFleet API: TargetCapacity is total, OnDemandTargetCapacity is on-demand portion
+            fleet_config["OnDemandTargetCapacity"] = on_demand_capacity
 
         # Add template tags if any
         if template.tags:
@@ -841,35 +840,251 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin):
             self._build_fallback_machine_payload(inst, resource_id) for inst in instance_details
         ]
 
-    def release_hosts(self, request: Request) -> None:
-        """Release hosts across all spot fleets in the request."""
-        try:
-            if not request.resource_ids:
-                raise AWSInfrastructureError("No Spot Fleet Request IDs found in request")
+    def release_hosts(
+        self,
+        machine_ids: list[str],
+        resource_mapping: Optional[dict[str, tuple[Optional[str], int]]] = None,
+    ) -> None:
+        """Release hosts across multiple Spot Fleets by detecting fleet membership.
 
-            # Process all fleet IDs instead of just the first one
-            for fleet_id in request.resource_ids:
-                try:
-                    if request.machine_references:
-                        # Terminate specific instances using existing utility
-                        instance_ids = [m.machine_id for m in request.machine_references]
+        Args:
+            machine_ids: List of instance IDs to terminate
+            resource_mapping: Dict mapping instance_id to (resource_id or None, desired_capacity)
+        """
+        try:
+            if not machine_ids:
+                self._logger.warning("No instance IDs provided for Spot Fleet termination")
+                return
+
+            self._logger.info("Releasing hosts for %d instances: %s", len(machine_ids), machine_ids)
+
+            # Use resource_mapping if available, otherwise fall back to AWS API calls
+            if resource_mapping:
+                filtered_mapping = {
+                    instance_id: resource_mapping.get(instance_id, (None, 0))
+                    for instance_id in machine_ids
+                }
+                fleet_instance_groups = self._group_instances_by_spot_fleet_from_mapping(
+                    machine_ids, filtered_mapping
+                )
+                self._logger.info(
+                    f"Grouped instances by Spot Fleet using resource mapping: {fleet_instance_groups}"
+                )
+            else:
+                # Fallback to AWS API calls when no resource mapping is provided
+                self._logger.info("No resource mapping provided, falling back to AWS API calls")
+                fleet_instance_groups = self._group_instances_by_spot_fleet(machine_ids)
+                self._logger.info(
+                    f"Grouped instances by Spot Fleet using AWS API: {fleet_instance_groups}"
+                )
+
+            # Process each Spot Fleet group separately
+            for fleet_id, fleet_data in fleet_instance_groups.items():
+                if fleet_id is not None:
+                    # Handle Spot Fleet instances using dedicated method (primary case)
+                    self._release_hosts_for_single_spot_fleet(
+                        fleet_id, fleet_data["instance_ids"], fleet_data["fleet_details"]
+                    )
+                else:
+                    # Handle non-Spot Fleet instances (fallback case)
+                    instance_ids = fleet_data["instance_ids"]
+                    if instance_ids:
+                        self._logger.info(
+                            f"Terminating {len(instance_ids)} non-Spot Fleet instances"
+                        )
                         self.aws_ops.terminate_instances_with_fallback(
-                            instance_ids=instance_ids,
-                            context=f"SpotFleet-{fleet_id}",
+                            instance_ids, self._request_adapter, "non-Spot Fleet instances"
                         )
-                    else:
-                        # Cancel entire spot fleet
-                        self._retry_with_backoff(
-                            lambda fid=fleet_id: self.aws_client.ec2_client.cancel_spot_fleet_requests(
-                                SpotFleetRequestIds=[fid], TerminateInstances=True
-                            ),
-                            operation_type="critical",
-                        )
-                        self._logger.info("Cancelled Spot Fleet: %s", fleet_id)
-                except Exception as e:
-                    self._logger.error("Failed to terminate spot fleet %s: %s", fleet_id, e)
-                    continue
+                        self._logger.info("Terminated non-Spot Fleet instances: %s", instance_ids)
 
         except Exception as e:
             self._logger.error("Failed to release Spot Fleet hosts: %s", str(e))
             raise AWSInfrastructureError(f"Failed to release Spot Fleet hosts: {e!s}")
+
+    def _group_instances_by_spot_fleet_from_mapping(
+        self, machine_ids: list[str], resource_mapping: dict[str, tuple[Optional[str], int]]
+    ) -> dict[Optional[str], dict]:
+        """Group Spot Fleet instances using shared mixin logic."""
+        return self._group_instances_from_mapping(machine_ids, resource_mapping)
+
+    def _group_instances_by_spot_fleet(self, instance_ids: list[str]) -> dict[Optional[str], dict]:
+        """Group Spot Fleet instances via AWS lookups."""
+        return self._group_instances_direct(instance_ids)
+
+    # FleetGroupingMixin hooks
+    def _collect_groups_from_instances(
+        self,
+        instance_ids: list[str],
+        groups: dict[Optional[str], dict],
+        group_ids_to_fetch: set[str],
+    ) -> None:
+        """Populate Spot Fleet groups from AWS describe_instances lookups."""
+        if not instance_ids:
+            return
+
+        try:
+            for chunk in self._chunk_list(instance_ids, self.grouping_chunk_size):
+                try:
+                    response = self._retry_with_backoff(
+                        self.aws_client.ec2_client.describe_instances,
+                        operation_type="read_only",
+                        InstanceIds=chunk,
+                    )
+
+                    spot_fleet_instance_ids = set()
+
+                    for reservation in response.get("Reservations", []):
+                        for instance in reservation.get("Instances", []):
+                            instance_id = instance.get("InstanceId")
+                            if not instance_id:
+                                continue
+
+                            spot_fleet_id = None
+                            for tag in instance.get("Tags", []):
+                                if tag.get("Key") == "aws:ec2spot:fleet-request-id":
+                                    spot_fleet_id = tag.get("Value")
+                                    break
+
+                            if not spot_fleet_id and instance.get("InstanceLifecycle") == "spot":
+                                spot_fleet_id = self._find_spot_fleet_for_instance(instance_id)
+
+                            if spot_fleet_id:
+                                self._add_instance_to_group(groups, spot_fleet_id, instance_id)
+                                spot_fleet_instance_ids.add(instance_id)
+                                group_ids_to_fetch.add(spot_fleet_id)
+
+                    non_spot_instances = [
+                        iid for iid in chunk if iid not in spot_fleet_instance_ids
+                    ]
+                    for iid in non_spot_instances:
+                        self._add_non_group_instance(groups, iid)
+
+                except Exception as exc:
+                    self._logger.warning(
+                        "Failed to describe Spot Fleet instances for chunk %s: %s", chunk, exc
+                    )
+                    for iid in chunk:
+                        self._add_non_group_instance(groups, iid)
+
+        except Exception as exc:
+            self._logger.error("Failed to group instances by Spot Fleet: %s", exc)
+            groups.clear()
+            group_ids_to_fetch.clear()
+            groups[None] = {"instance_ids": instance_ids.copy()}
+
+    def _fetch_and_attach_group_details(
+        self, group_ids: set[str], groups: dict[Optional[str], dict]
+    ) -> None:
+        """Fetch Spot Fleet request details for grouped fleets."""
+        if not group_ids:
+            return
+
+        try:
+            fleet_ids_list = list(group_ids)
+            for fleet_chunk in self._chunk_list(fleet_ids_list, self.grouping_chunk_size):
+                fleet_response = self._retry_with_backoff(
+                    self.aws_client.ec2_client.describe_spot_fleet_requests,
+                    operation_type="read_only",
+                    SpotFleetRequestIds=fleet_chunk,
+                )
+
+                for fleet_details in fleet_response.get("SpotFleetRequestConfigs", []):
+                    fleet_id = fleet_details.get("SpotFleetRequestId")
+                    if fleet_id in groups:
+                        groups[fleet_id]["fleet_details"] = fleet_details
+
+        except Exception as exc:
+            self._logger.warning("Failed to fetch Spot Fleet details: %s", exc)
+
+    def _grouping_label(self) -> str:
+        return "Spot Fleet"
+
+    def _find_spot_fleet_for_instance(self, instance_id: str) -> Optional[str]:
+        """
+        Find the Spot Fleet request ID for a specific instance by querying active fleets.
+
+        Args:
+            instance_id: EC2 instance ID
+
+        Returns:
+            Spot Fleet request ID if found, None otherwise
+        """
+        try:
+            # Get all active spot fleet requests
+            response = self._retry_with_backoff(
+                lambda: self._paginate(
+                    self.aws_client.ec2_client.describe_spot_fleet_requests,
+                    "SpotFleetRequestConfigs",
+                    SpotFleetRequestStates=["active", "modifying"],
+                ),
+                operation_type="read_only",
+            )
+
+            # Check each fleet for the instance
+            for fleet in response:
+                fleet_id = fleet.get("SpotFleetRequestId")
+                if not fleet_id:
+                    continue
+
+                try:
+                    # Get instances for this fleet
+                    fleet_instances = self._retry_with_backoff(
+                        lambda fid=fleet_id: self._paginate(
+                            self.aws_client.ec2_client.describe_spot_fleet_instances,
+                            "ActiveInstances",
+                            SpotFleetRequestId=fid,
+                        )
+                    )
+
+                    # Check if our instance is in this fleet
+                    for instance in fleet_instances:
+                        if instance.get("InstanceId") == instance_id:
+                            return fleet_id
+
+                except Exception as e:
+                    self._logger.debug(
+                        f"Failed to check fleet {fleet_id} for instance {instance_id}: {e}"
+                    )
+                    continue
+
+        except Exception as e:
+            self._logger.debug(f"Failed to find Spot Fleet for instance {instance_id}: {e}")
+
+        return None
+
+    def _release_hosts_for_single_spot_fleet(
+        self, fleet_id: str, fleet_instance_ids: list[str], fleet_details: dict
+    ) -> None:
+        """Release hosts for a single Spot Fleet with proper fleet management."""
+        self._logger.info(
+            f"Processing Spot Fleet {fleet_id} with {len(fleet_instance_ids)} instances"
+        )
+
+        try:
+            if fleet_instance_ids:
+                # Terminate specific instances using existing utility
+                self.aws_ops.terminate_instances_with_fallback(
+                    fleet_instance_ids, self._request_adapter, f"SpotFleet-{fleet_id} instances"
+                )
+                self._logger.info(
+                    "Terminated Spot Fleet %s instances: %s", fleet_id, fleet_instance_ids
+                )
+            else:
+                # If no specific instances provided, cancel entire spot fleet
+                self._retry_with_backoff(
+                    self.aws_client.ec2_client.cancel_spot_fleet_requests,
+                    operation_type="critical",
+                    SpotFleetRequestIds=[fleet_id],
+                    TerminateInstances=True,
+                )
+                self._logger.info("Cancelled entire Spot Fleet: %s", fleet_id)
+
+        except Exception as e:
+            self._logger.error("Failed to terminate spot fleet %s: %s", fleet_id, e)
+            raise
+
+    @staticmethod
+    def _chunk_list(items: list[str], chunk_size: int):
+        """Yield successive chunk-sized lists from items."""
+        for index in range(0, len(items), chunk_size):
+            yield items[index : index + chunk_size]

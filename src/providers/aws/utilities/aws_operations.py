@@ -60,7 +60,6 @@ class AWSOperations:
         """
         Integrated instance termination with adapter fallback.
 
-        Eliminates 60+ lines of duplication across 4 handlers.
 
         Args:
             instance_ids: List of instance IDs to terminate

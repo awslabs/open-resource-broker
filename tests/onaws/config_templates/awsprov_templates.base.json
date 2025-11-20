@@ -1,9 +1,11 @@
 {
   "templates": [
     {
-      "templateId": "EC2FleetInstant",
-      "providerApi": "EC2Fleet",
+      "templateId": "BASE",
+      "providerApi": "{{providerApi}}",
       "fleetType": "{{fleetType}}",
+      "priceType": "{{priceType}}",
+      "percentOnDemand": "{{percentOnDemand}}",
       "maxNumber": 2,
       "attributes": {
         "type": ["String", "X86_64"],
@@ -23,8 +25,10 @@
     },
     {
       "templateId": "EC2FleetMaintain",
-      "providerApi": "EC2Fleet",
+      "providerApi": "{{providerApi}}",
       "fleetType": "{{fleetType}}",
+      "priceType": "{{priceType}}",
+      "percentOnDemand": "{{percentOnDemand}}",
       "maxNumber": 2,
       "attributes": {
         "type": ["String", "X86_64"],
@@ -40,8 +44,10 @@
     },
     {
       "templateId": "EC2FleetRequest",
-      "providerApi": "EC2Fleet",
+      "providerApi": "{{providerApi}}",
       "fleetType": "{{fleetType}}",
+      "priceType": "{{priceType}}",
+      "percentOnDemand": "{{percentOnDemand}}",
       "maxNumber": 2,
       "attributes": {
         "type": ["String", "X86_64"],

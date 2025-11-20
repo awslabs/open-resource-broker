@@ -1,14 +1,18 @@
 """End-to-end integration tests for dry-run functionality."""
 
-from unittest.mock import MagicMock, Mock, patch
+import asyncio
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 from application.commands.request_handlers import CreateMachineRequestHandler
 from application.dto.commands import CreateRequestCommand
+from config.manager import ConfigurationManager
+from domain.request.aggregate import Request
+from domain.request.value_objects import RequestId, RequestType
+from domain.template.template_aggregate import Template
 from infrastructure.mocking.dry_run_context import dry_run_context
+from infrastructure.ports.resource_provisioning_port import ResourceProvisioningPort
 from providers.aws.configuration.config import AWSProviderConfig
-from providers.aws.infrastructure.adapters.provisioning_adapter import (
-    AWSProvisioningAdapter,
-)
+from providers.aws.infrastructure.adapters import AWSProvisioningAdapter
 from providers.aws.strategy.aws_provider_strategy import AWSProviderStrategy
 
 
@@ -50,10 +54,10 @@ class TestEndToEndDryRun:
         )
 
         # Mock the provisioning adapter methods to track calls
-        self.provisioning_adapter.provision_resources = Mock(
+        self.provisioning_adapter.provision_resources = AsyncMock(
             wraps=self.provisioning_adapter.provision_resources
         )
-        self.provisioning_adapter._provision_via_strategy = Mock(
+        self.provisioning_adapter._provision_via_strategy = AsyncMock(
             wraps=self.provisioning_adapter._provision_via_strategy
         )
         self.provisioning_adapter._provision_via_handlers = Mock(
@@ -61,11 +65,6 @@ class TestEndToEndDryRun:
         )
 
         # Mock container to return appropriate services
-        from config.manager import ConfigurationManager
-        from infrastructure.ports.resource_provisioning_port import (
-            ResourceProvisioningPort,
-        )
-
         mock_config_manager = Mock()
         mock_config_manager.get.return_value = "aws"
 
@@ -90,12 +89,10 @@ class TestEndToEndDryRun:
             query_bus=self.mock_query_bus,
         )
 
-    @patch("src.providers.aws.infrastructure.dry_run_adapter.aws_dry_run_context")
+    @patch("providers.aws.infrastructure.dry_run_adapter.aws_dry_run_context")
     def test_dry_run_command_propagates_to_provider_strategy(self, mock_dry_run_context):
         """Test that dry-run context from command propagates to provider strategy."""
         # Mock template query response
-        from domain.template.aggregate import Template
-
         mock_template = Template(
             template_id="test-template",
             provider_api="EC2Fleet",
@@ -191,7 +188,7 @@ class TestEndToEndDryRun:
         # Verify instance manager was NOT called (legacy path used)
         self.mock_instance_manager.create_instances.assert_not_called()
 
-    @patch("src.providers.aws.infrastructure.dry_run_adapter.aws_dry_run_context")
+    @patch("providers.aws.infrastructure.dry_run_adapter.aws_dry_run_context")
     def test_global_dry_run_context_with_command_dry_run(self, mock_dry_run_context):
         """Test interaction between global dry-run context and command dry-run flag."""
         # Mock template query response
@@ -238,10 +235,6 @@ class TestEndToEndDryRun:
 
     def test_provisioning_adapter_strategy_selection(self):
         """Test that provisioning adapter correctly selects strategy vs handlers."""
-        from domain.request.aggregate import Request
-        from domain.request.value_objects import RequestId, RequestType
-        from domain.template.aggregate import Template
-
         # Create test request with dry-run metadata
         request = Request(
             request_id=RequestId.generate(RequestType.ACQUIRE),
@@ -264,7 +257,7 @@ class TestEndToEndDryRun:
         self.mock_instance_manager.create_instances.return_value = ["i-1234567890abcdef0"]
 
         # Execute provisioning
-        resource_id = self.provisioning_adapter.provision_resources(request, template)
+        resource_id = asyncio.run(self.provisioning_adapter.provision_resources(request, template))
 
         # Verify strategy path was used
         assert resource_id == "i-1234567890abcdef0"
@@ -275,10 +268,6 @@ class TestEndToEndDryRun:
 
     def test_provisioning_adapter_handler_selection(self):
         """Test that provisioning adapter uses handlers for normal operations."""
-        from domain.request.aggregate import Request
-        from domain.request.value_objects import RequestId, RequestType
-        from domain.template.aggregate import Template
-
         # Create test request without dry-run metadata
         request = Request(
             request_id=RequestId.generate(RequestType.ACQUIRE),
@@ -303,7 +292,7 @@ class TestEndToEndDryRun:
         self.mock_handler_factory.get_handler.return_value = mock_handler
 
         # Execute provisioning
-        resource_id = self.provisioning_adapter.provision_resources(request, template)
+        resource_id = asyncio.run(self.provisioning_adapter.provision_resources(request, template))
 
         # Verify handler path was used
         assert resource_id == "fleet-12345"

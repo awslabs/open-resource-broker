@@ -71,7 +71,7 @@ class TestCQRSArchitectureIntegration:
         bus = Mock(spec=QueryBus)
 
         # Mock template query response
-        from domain.template.aggregate import Template
+        from domain.template.template_aggregate import Template
 
         mock_template = Template(
             template_id="web-server-template",
@@ -171,7 +171,7 @@ class TestCQRSArchitectureIntegration:
             query_bus=mock_query_bus,
             provider_selection_service=mock_provider_selection_service,
             provider_capability_service=mock_provider_capability_service,
-            provider_context=mock_provider_context,
+            provider_port=mock_provider_context,
         )
 
     @pytest.fixture
@@ -223,7 +223,7 @@ class TestCQRSArchitectureIntegration:
 
     def test_provider_capability_service_integration(self, mock_provider_capability_service):
         """Test provider capability service integration."""
-        from domain.template.aggregate import Template
+        from domain.template.template_aggregate import Template
 
         # Create test template
         template = Template(
@@ -251,7 +251,7 @@ class TestCQRSArchitectureIntegration:
 
     def test_provider_selection_service_integration(self, mock_provider_selection_service):
         """Test provider selection service integration."""
-        from domain.template.aggregate import Template
+        from domain.template.template_aggregate import Template
 
         # Create test template
         template = Template(

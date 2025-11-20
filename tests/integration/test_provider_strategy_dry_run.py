@@ -32,7 +32,7 @@ class TestProviderStrategyDryRun:
         self.mock_instance_manager = Mock()
         self.aws_strategy._instance_manager = self.mock_instance_manager
 
-    @patch("src.providers.aws.infrastructure.dry_run_adapter.aws_dry_run_context")
+    @patch("providers.aws.infrastructure.dry_run_adapter.aws_dry_run_context")
     def test_provider_operation_without_dry_run_context(self, mock_dry_run_context):
         """Test provider operation execution without dry-run context."""
         # Mock instance manager response
@@ -63,7 +63,7 @@ class TestProviderStrategyDryRun:
         # Verify instance manager was called
         self.mock_instance_manager.create_instances.assert_called_once()
 
-    @patch("src.providers.aws.infrastructure.dry_run_adapter.aws_dry_run_context")
+    @patch("providers.aws.infrastructure.dry_run_adapter.aws_dry_run_context")
     def test_provider_operation_with_dry_run_context(self, mock_dry_run_context):
         """Test provider operation execution with dry-run context."""
         # Mock instance manager response
@@ -143,7 +143,7 @@ class TestProviderStrategyDryRun:
         assert result.metadata["provider"] == "aws"
         assert "Unsupported operation" in result.error_message
 
-    @patch("src.providers.aws.infrastructure.dry_run_adapter.aws_dry_run_context")
+    @patch("providers.aws.infrastructure.dry_run_adapter.aws_dry_run_context")
     def test_multiple_operations_with_mixed_dry_run_contexts(self, mock_dry_run_context):
         """Test multiple operations with different dry-run contexts."""
         # Mock instance manager responses

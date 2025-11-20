@@ -10,16 +10,18 @@ from providers.aws.domain.template.aws_template_aggregate import AWSTemplate
 class BaseContextMixin:
     """Shared context preparation methods for all AWS handlers."""
 
-    def _prepare_base_context(self, template: AWSTemplate, request: Request) -> dict[str, Any]:
+    def _prepare_base_context(
+        self, template: AWSTemplate, request_id: str, requested_count: int
+    ) -> dict[str, Any]:
         """Base context used by all handlers."""
         return {
             # Standard identifiers
-            "request_id": str(request.request_id),
+            "request_id": str(request_id),
             "template_id": str(template.template_id),
             # Standard capacity values
-            "requested_count": request.requested_count,
+            "requested_count": requested_count,
             "min_count": 1,
-            "max_count": request.requested_count,
+            "max_count": requested_count,
             # Standard timestamps
             "timestamp": datetime.utcnow().isoformat(),
             # Standard package info
@@ -37,18 +39,24 @@ class BaseContextMixin:
         return "open-hostfactory-plugin"
 
     def _calculate_capacity_distribution(
-        self, template: AWSTemplate, request: Request
+        self, template: AWSTemplate, requested_count: int
     ) -> dict[str, Any]:
         """Standard capacity calculation for all fleet types."""
-        total_capacity = request.requested_count
+        total_capacity = requested_count
+        price_type = getattr(template, "price_type", None)
+        percent_on_demand = template.percent_on_demand or 0
 
-        if template.price_type == "heterogeneous":
-            percent_on_demand = template.percent_on_demand or 0
+        if price_type == "ondemand":
+            on_demand_count = total_capacity
+        elif price_type == "heterogeneous":
             on_demand_count = int(total_capacity * percent_on_demand / 100)
-            spot_count = total_capacity - on_demand_count
         else:
-            on_demand_count = 0 if template.price_type == "spot" else total_capacity
-            spot_count = total_capacity if template.price_type == "spot" else 0
+            on_demand_count = (
+                int(total_capacity * percent_on_demand / 100) if percent_on_demand else 0
+            )
+
+        on_demand_count = max(0, min(total_capacity, on_demand_count))
+        spot_count = max(0, total_capacity - on_demand_count)
 
         return {
             "total_capacity": total_capacity,
@@ -56,17 +64,17 @@ class BaseContextMixin:
             "desired_capacity": total_capacity,  # For ASG
             "on_demand_count": on_demand_count,
             "spot_count": spot_count,
-            "is_heterogeneous": template.price_type == "heterogeneous",
-            "is_spot_only": template.price_type == "spot",
-            "is_ondemand_only": template.price_type == "ondemand",
+            "is_heterogeneous": on_demand_count > 0 and spot_count > 0,
+            "is_spot_only": spot_count > 0 and on_demand_count == 0,
+            "is_ondemand_only": on_demand_count > 0 and spot_count == 0,
         }
 
-    def _prepare_standard_tags(self, template: AWSTemplate, request: Request) -> dict[str, Any]:
+    def _prepare_standard_tags(self, template: AWSTemplate, request_id: str) -> dict[str, Any]:
         """Standard tag preparation for all handlers."""
         created_by = self._get_package_name()
 
         base_tags = [
-            {"key": "RequestId", "value": str(request.request_id)},
+            {"key": "RequestId", "value": str(request_id)},
             {"key": "TemplateId", "value": str(template.template_id)},
             {"key": "CreatedBy", "value": created_by},
             {"key": "CreatedAt", "value": datetime.utcnow().isoformat()},

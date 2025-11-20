@@ -29,6 +29,7 @@ class TestBaseContextMixin:
         self.template.security_group_ids = ["sg-123", "sg-456"]
         self.template.tags = {"Environment": "test", "Project": "hostfactory"}
         self.template.instance_types = {"t3.medium": 1, "t3.large": 2}
+        self.template.percent_on_demand = None
 
         # Mock request
         self.request = Mock(spec=Request)
@@ -105,6 +106,20 @@ class TestBaseContextMixin:
         assert result["on_demand_count"] == 0
         assert result["spot_count"] == 5
         assert result["is_spot_only"] is True
+        assert result["is_ondemand_only"] is False
+
+    def test_calculate_capacity_distribution_spot_with_percent(self):
+        """Test capacity distribution when percent_on_demand is set for spot."""
+        self.template.price_type = "spot"
+        self.template.percent_on_demand = 40
+
+        result = self.mixin._calculate_capacity_distribution(self.template, self.request)
+
+        assert result["total_capacity"] == 5
+        assert result["on_demand_count"] == 2  # 40% of 5
+        assert result["spot_count"] == 3
+        assert result["is_heterogeneous"] is True
+        assert result["is_spot_only"] is False
         assert result["is_ondemand_only"] is False
 
     def test_calculate_capacity_distribution_heterogeneous(self):

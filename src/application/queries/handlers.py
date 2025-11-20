@@ -238,6 +238,9 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
 
             # Get instance details from result
             instance_details = result.data.get("instances", [])
+            if hasattr(instance_details, "__await__"):
+                self.logger.debug("Provider returned awaitable instances result, awaiting it")
+                instance_details = await instance_details
             if not instance_details:
                 self.logger.info("No instances found for request %s", request.request_id)
                 return []
@@ -378,11 +381,117 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
                     # Domain machine not found - machine might be terminated
                     updated_machines.append(machine)
 
+            # Update ASG metadata if this is an ASG request
+            if request.metadata.get("provider_api") == "ASG":
+                await self._update_asg_metadata_if_needed(request, updated_machines)
+
             return updated_machines
 
         except Exception as e:
             self.logger.warning("Failed to update machine status from AWS: %s", e)
             return machines
+
+    async def _update_asg_metadata_if_needed(self, request, machines):
+        """Update ASG-specific metadata when capacity changes are detected."""
+        try:
+            from datetime import datetime
+
+            # Get current ASG details from AWS if we have resource IDs
+            if not request.resource_ids:
+                return
+
+            asg_name = request.resource_ids[0]  # ASG name is the resource_id
+            current_asg_details = await self._get_current_asg_details(asg_name)
+
+            if not current_asg_details:
+                return
+
+            # Compare with stored metadata
+            stored_capacity = request.metadata.get("asg_desired_capacity")
+            current_capacity = current_asg_details.get("DesiredCapacity")
+            current_instances = len(
+                [m for m in machines if m.status.value in ["running", "pending"]]
+            )
+
+            # Check if capacity has changed or if this is the first time we're tracking it
+            capacity_changed = stored_capacity != current_capacity
+            first_time_tracking = stored_capacity is None
+
+            if capacity_changed or first_time_tracking:
+                # Update request metadata with new ASG capacity
+                updated_metadata = request.metadata.copy()
+                updated_metadata.update(
+                    {
+                        "asg_desired_capacity": current_capacity,
+                        "asg_min_size": current_asg_details.get("MinSize", 0),
+                        "asg_max_size": current_asg_details.get("MaxSize", current_capacity * 2),
+                        "asg_current_instances": current_instances,
+                        "asg_capacity_last_updated": datetime.utcnow().isoformat(),
+                        "asg_capacity_change_detected": capacity_changed,
+                    }
+                )
+
+                # If this is the first time, also set creation metadata
+                if first_time_tracking:
+                    updated_metadata.update(
+                        {
+                            "asg_name": asg_name,
+                            "asg_capacity_created_at": datetime.utcnow().isoformat(),
+                            "asg_initial_capacity": current_capacity,
+                        }
+                    )
+
+                # Update request with new metadata
+                from domain.request.aggregate import Request
+
+                updated_request = Request.model_validate(
+                    {
+                        **request.model_dump(),
+                        "metadata": updated_metadata,
+                        "version": request.version + 1,
+                    }
+                )
+
+                # Save to database
+                with self.uow_factory.create_unit_of_work() as uow:
+                    uow.requests.save(updated_request)
+
+                action = "Initialized" if first_time_tracking else "Updated"
+                self.logger.info(
+                    "%s ASG capacity metadata for request %s: %s -> %s (instances: %s)",
+                    action,
+                    request.request_id,
+                    stored_capacity,
+                    current_capacity,
+                    current_instances,
+                )
+
+        except Exception as e:
+            self.logger.warning("Failed to update ASG metadata: %s", e)
+
+    async def _get_current_asg_details(self, asg_name: str) -> dict:
+        """Get current ASG details from AWS."""
+        try:
+            # Create a simple AWS client call to get ASG details
+            # This is a simplified approach - in production you might want to use
+            # the provider context more directly
+            from providers.aws.infrastructure.adapters.aws_client import AWSClient
+
+            aws_client = self._container.get(AWSClient)
+
+            response = aws_client.autoscaling_client.describe_auto_scaling_groups(
+                AutoScalingGroupNames=[asg_name]
+            )
+
+            if response.get("AutoScalingGroups"):
+                return response["AutoScalingGroups"][0]
+            else:
+                self.logger.warning("ASG %s not found", asg_name)
+                return {}
+
+        except Exception as e:
+            self.logger.warning("Failed to get ASG details for %s: %s", asg_name, e)
+            return {}
 
     def _get_provider_context(self):
         """Get provider context for AWS operations."""
@@ -403,40 +512,95 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
             def __init__(self, container) -> None:
                 self.container = container
 
+            async def execute_with_strategy(self, strategy_identifier: str, operation):
+                """Execute operation with strategy - simplified implementation."""
+                from providers.base.strategy import ProviderOperationType, ProviderResult
+
+                try:
+                    if (
+                        operation.operation_type
+                        == ProviderOperationType.DESCRIBE_RESOURCE_INSTANCES
+                    ):
+                        # Get resource IDs from operation parameters
+                        resource_ids = operation.parameters.get("resource_ids", [])
+                        if not resource_ids:
+                            return ProviderResult.error_result("No resource IDs provided")
+
+                        # Use the first resource ID to determine handler type
+                        resource_id = resource_ids[0]
+                        aws_handler = self._get_aws_handler_for_resource_id(resource_id)
+
+                        # Create a mock request object for the handler
+                        class MockRequest:
+                            def __init__(self, resource_ids, template_id):
+                                self.resource_ids = resource_ids
+                                self.template_id = template_id
+                                self.metadata = operation.parameters
+
+                        mock_request = MockRequest(
+                            resource_ids, operation.parameters.get("template_id")
+                        )
+
+                        # Call the handler's check_hosts_status method
+                        instances = aws_handler.check_hosts_status(mock_request)
+
+                        return ProviderResult.success_result({"instances": instances})
+
+                    elif operation.operation_type == ProviderOperationType.GET_INSTANCE_STATUS:
+                        # Handle instance status checking
+                        instance_ids = operation.parameters.get("instance_ids", [])
+                        if not instance_ids:
+                            return ProviderResult.error_result("No instance IDs provided")
+
+                        # For now, return empty machines list - this would need proper implementation
+                        return ProviderResult.success_result({"machines": []})
+
+                    else:
+                        return ProviderResult.error_result(
+                            f"Unsupported operation type: {operation.operation_type}"
+                        )
+
+                except Exception as e:
+                    return ProviderResult.error_result(str(e))
+
             async def check_resource_status(self, request) -> list[dict[str, Any]]:
                 """Use appropriate AWS handler based on resource type."""
                 aws_handler = self._get_aws_handler_for_request(request)
                 return aws_handler.check_hosts_status(request)
+
+            def _get_aws_handler_for_resource_id(self, resource_id: str):
+                """Get appropriate AWS handler based on resource ID."""
+                if resource_id.startswith("fleet-"):
+                    from providers.aws.infrastructure.handlers.ec2_fleet_handler import (
+                        EC2FleetHandler,
+                    )
+
+                    return self.container.get(EC2FleetHandler)
+                elif resource_id.startswith("sfr-"):
+                    from providers.aws.infrastructure.handlers.spot_fleet_handler import (
+                        SpotFleetHandler,
+                    )
+
+                    return self.container.get(SpotFleetHandler)
+                elif resource_id.startswith("run-instances-"):
+                    from providers.aws.infrastructure.handlers.run_instances_handler import (
+                        RunInstancesHandler,
+                    )
+
+                    return self.container.get(RunInstancesHandler)
+                else:
+                    from providers.aws.infrastructure.handlers.asg_handler import (
+                        ASGHandler,
+                    )
+
+                    return self.container.get(ASGHandler)
 
             def _get_aws_handler_for_request(self, request):
                 """Get appropriate AWS handler based on request/template."""
                 if request.resource_ids:
                     # Use first resource_id for handler selection logic
                     resource_id = request.resource_ids[0]
-                    if resource_id.startswith("fleet-"):
-                        from providers.aws.infrastructure.handlers.ec2_fleet_handler import (
-                            EC2FleetHandler,
-                        )
-
-                        return self.container.get(EC2FleetHandler)
-                    elif resource_id.startswith("sfr-"):
-                        from providers.aws.infrastructure.handlers.spot_fleet_handler import (
-                            SpotFleetHandler,
-                        )
-
-                        return self.container.get(SpotFleetHandler)
-                    elif resource_id.startswith("run-instances-"):
-                        from providers.aws.infrastructure.handlers.run_instances_handler import (
-                            RunInstancesHandler,
-                        )
-
-                        return self.container.get(RunInstancesHandler)
-                    else:
-                        from providers.aws.infrastructure.handlers.asg_handler import (
-                            ASGHandler,
-                        )
-
-                        return self.container.get(ASGHandler)
+                    return self._get_aws_handler_for_resource_id(resource_id)
 
                 # Fallback to RunInstances
                 from providers.aws.infrastructure.handlers.run_instances_handler import (
@@ -500,6 +664,7 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
         # Add required context fields
         machine_data.update(
             {
+                "request_id": str(request.request_id),
                 "template_id": request.template_id,
                 "provider_type": "aws",
             }

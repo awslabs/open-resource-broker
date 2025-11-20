@@ -31,31 +31,31 @@ class TestOCPComplianceIntegration:
 
         # Register test provider
         registry.register_provider(
-            provider_type="test_provider",
+            provider_type="aws",
             strategy_factory=mock_strategy_factory,
             config_factory=mock_config_factory,
         )
 
         # Verify registration
-        assert "test_provider" in registry.get_registered_providers()
+        assert "aws" in registry.get_registered_providers()
 
-        # Test strategy creation
+        # Test strategy creation using supported provider type
         config = ProviderInstanceConfig(
             name="test-instance",
-            type="test_provider",
+            type="aws",
             enabled=True,
             config={"key": "value"},
         )
 
         strategy = registry.create_strategy("test_provider", config)
-        assert strategy == "strategy_test-instance_test_provider"
+        assert strategy == "strategy_test-instance_aws"
 
         # Test config creation
-        config_obj = registry.create_config("test_provider", {"test": "data"})
+        config_obj = registry.create_config("aws", {"test": "data"})
         assert config_obj == "config_{'test': 'data'}"
 
-    @patch("src.providers.aws.registration.AWSProviderStrategy")
-    @patch("src.providers.aws.registration.AWSConfig")
+    @patch("providers.aws.registration.AWSProviderStrategy")
+    @patch("providers.aws.registration.AWSConfig")
     def test_aws_provider_registration_integration(self, mock_aws_config, mock_aws_strategy):
         """Test AWS provider registration integration."""
         from providers.aws.registration import register_aws_provider
@@ -88,7 +88,7 @@ class TestOCPComplianceIntegration:
         mock_aws_strategy.assert_called_once()
         assert strategy == mock_strategy_instance
 
-    @patch("src.infrastructure.factories.provider_strategy_factory.get_provider_registry")
+    @patch("infrastructure.factories.provider_strategy_factory.get_provider_registry")
     def test_provider_strategy_factory_integration(self, mock_get_registry):
         """Test provider strategy factory integration with registry."""
         from config.manager import ConfigurationManager
@@ -225,7 +225,7 @@ class TestOCPComplianceIntegration:
 
         # Execute command
         with patch(
-            "src.application.commands.provider_handlers.get_provider_registry",
+            "application.commands.provider_handlers.get_provider_registry",
             return_value=registry,
         ):
             result = handler.handle(command)

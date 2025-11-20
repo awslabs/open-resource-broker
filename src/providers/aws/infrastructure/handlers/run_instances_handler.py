@@ -28,7 +28,7 @@ Note:
 """
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Optional
+from typing import Any, Optional
 
 from botocore.exceptions import ClientError
 
@@ -40,15 +40,14 @@ from infrastructure.error.decorators import handle_infrastructure_exceptions
 from infrastructure.utilities.common.resource_naming import get_resource_prefix
 from providers.aws.domain.template.aws_template_aggregate import AWSTemplate
 from providers.aws.exceptions.aws_exceptions import AWSInfrastructureError
+from providers.aws.infrastructure.adapters.machine_adapter import AWSMachineAdapter
+from providers.aws.infrastructure.aws_client import AWSClient
 from providers.aws.infrastructure.handlers.base_context_mixin import BaseContextMixin
 from providers.aws.infrastructure.handlers.base_handler import AWSHandler
 from providers.aws.infrastructure.launch_template.manager import (
     AWSLaunchTemplateManager,
 )
 from providers.aws.utilities.aws_operations import AWSOperations
-
-if TYPE_CHECKING:
-    from providers.aws.infrastructure.adapters.machine_adapter import AWSMachineAdapter
 
 
 @injectable
@@ -57,12 +56,12 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
 
     def __init__(
         self,
-        aws_client,
+        aws_client: AWSClient,
         logger: LoggingPort,
         aws_ops: AWSOperations,
         launch_template_manager: AWSLaunchTemplateManager,
         request_adapter: RequestAdapterPort = None,
-        machine_adapter: Optional["AWSMachineAdapter"] = None,
+        machine_adapter: Optional[AWSMachineAdapter] = None,
         error_handler: ErrorHandlingPort = None,
     ) -> None:
         """
@@ -248,13 +247,17 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
         """Prepare context with all computed values for template rendering."""
 
         # Start with base context
-        context = self._prepare_base_context(template, request)
+        context = self._prepare_base_context(
+            template,
+            str(request.request_id),
+            request.requested_count,
+        )
 
         # Add standard flags
         context.update(self._prepare_standard_flags(template))
 
         # Add standard tags
-        tag_context = self._prepare_standard_tags(template, request)
+        tag_context = self._prepare_standard_tags(template, str(request.request_id))
         context.update(tag_context)
 
         # Add RunInstances-specific context
@@ -270,7 +273,36 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
         return {
             # RunInstances-specific values
             "instance_name": f"{get_resource_prefix('instance')}{request.request_id}",
+            # Pricing configuration
+            "default_capacity_type": self._get_default_capacity_type(template.price_type),
+            "has_spot_options": bool(template.allocation_strategy or template.max_price),
+            "max_spot_price": (str(template.max_price) if template.max_price is not None else None),
+            "spot_instance_type": (
+                self._get_spot_instance_type(template.allocation_strategy)
+                if template.allocation_strategy
+                else None
+            ),
         }
+
+    def _get_default_capacity_type(self, price_type: str) -> str:
+        """Get default target capacity type based on price type."""
+        if price_type == "spot":
+            return "spot"
+        elif price_type == "ondemand":
+            return "on-demand"
+        else:  # heterogeneous or None
+            return "on-demand"
+
+    def _get_spot_instance_type(self, allocation_strategy: str) -> str:
+        """Convert allocation strategy to spot instance type for RunInstances."""
+        # RunInstances doesn't support all EC2Fleet allocation strategies
+        # Map to supported spot instance types
+        strategy_map = {
+            "lowestPrice": "one-time",
+            "diversified": "one-time",  # RunInstances doesn't support diversified directly
+            "capacityOptimized": "one-time",  # RunInstances doesn't support capacity-optimized directly
+        }
+        return strategy_map.get(allocation_strategy, "one-time")
 
     def _create_run_instances_params(
         self,
@@ -370,14 +402,7 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
 
         # Add additional tags for instances (beyond launch template)
         # Get package name for CreatedBy tag
-        created_by = "open-hostfactory-plugin"  # fallback
-        if hasattr(self, "config_port") and self.config_port:
-            try:
-                package_info = self.config_port.get_package_info()
-                created_by = package_info.get("name", "open-hostfactory-plugin")
-            except Exception:  # nosec B110
-                # Intentionally silent fallback for package info retrieval
-                pass
+        created_by = self._get_package_name()
 
         tag_specifications = [
             {
@@ -534,31 +559,28 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
             self._logger.error("FALLBACK: Fallback method failed to find instances: %s", e)
             return []
 
-    def release_hosts(self, request: Request) -> None:
+    def release_hosts(
+        self,
+        machine_ids: list[str],
+        resource_mapping: Optional[dict[str, tuple[Optional[str], int]]] = None,
+    ) -> None:
         """
         Release hosts created by RunInstances.
 
         Args:
-            request: The request containing the instance information
+            machine_ids: List of instance IDs to terminate
+            resource_mapping: Dict mapping instance_id to (resource_id or None, desired_capacity)
         """
         try:
-            # Get instance IDs from machine references or metadata
-            instance_ids = []
-
-            if request.machine_references:
-                instance_ids = [m.machine_id for m in request.machine_references]
-            elif hasattr(request, "metadata") and request.metadata.get("instance_ids"):
-                instance_ids = request.metadata["instance_ids"]
-
-            if not instance_ids:
-                self._logger.warning("No instance IDs found for request %s", request.request_id)
+            if not machine_ids:
+                self._logger.warning("No instance IDs provided for RunInstances termination")
                 return
 
             # Use consolidated AWS operations utility for instance termination
             self.aws_ops.terminate_instances_with_fallback(
-                instance_ids, self._request_adapter, "RunInstances instances"
+                machine_ids, self._request_adapter, "RunInstances instances"
             )
-            self._logger.info("Terminated RunInstances instances: %s", instance_ids)
+            self._logger.info("Terminated RunInstances instances: %s", machine_ids)
 
         except ClientError as e:
             error = self._convert_client_error(e)

@@ -4,6 +4,13 @@
 
 The onaws system tests provide end-to-end testing for AWS provider functionality in the Host Factory Plugin. These tests validate the complete lifecycle of EC2 instance provisioning, monitoring, and deallocation through the plugin's API.
 
+IMPORTANT: These test will create resources in your AWS account. In case of a failure or manual termination some resources might persist and will require manual termination.
+
+There are 2 primary sets of tests.
+- test_onaws.py - runs broad sweep across various configuration options defined in scenarios.py. Testing different APIs, purchasing models, flags, etc. It goes through full cycle of requesting capacity and releasing it. However, otherwise, tests are quite simple.
+- custom tests - cover more complex scenarios, with multiple APIs.
+
+
 ## Architecture
 
 ### Core Components
@@ -87,43 +94,27 @@ TemplateProcessor.generate_test_templates()
 | EC2FleetRequest | request | awsprov_templates2.base.json | 2 |
 | EC2FleetInstant | instant | awsprov_templates1.base.json | 2 |
 
-### Configuration Override System
+# Custom Multi-Resource Termination Tests
 
-Scenarios can override default values:
-```python
-{
-    "test_name": "EC2FleetRequest",
-    "capacity_to_request": 2,
-    "awsprov_base_template": "awsprov_templates2.base.json",
-    "overrides": {
-        "fleetType": "request",
-        "region": "us-west-2",
-        "imageId": "ami-custom123"
-    }
-}
-```
+These tests cover specific use cases.
 
-## Key Validation Points
+| Test File | Resource Types | Purpose |
+|-----------|----------------|---------|
+| `test_multi_asg_termination.py` | 2x ASG | Multi-ASG termination + ASG deletion validation |
+| `test_multi_spot_fleet_termination.py` | 2x SpotFleet | Multi-SpotFleet termination + request cancellation |
+| `test_multi_ec2_fleet_termination.py` | 2x EC2Fleet | Multi-EC2Fleet termination + maintain fleet deletion |
+| `test_multi_resource_termination.py` | ASG + EC2Fleet + SpotFleet + RunInstances | Cross-resource termination validation |
 
-### API Response Validation
-- **Templates**: Structure, required fields, attribute arrays
-- **Requests**: UUID format, success messages
-- **Status**: Machine states, IP addresses, timestamps
+These tests validate:
+- Resource grouping logic across multiple instances of same type
+- Mixed resource type termination in single operation
+- Resource-specific cleanup (ASG deletion, fleet cancellation)
+- Performance optimization through resource mapping
 
-### AWS Resource Validation
-- **Instance State**: pending → running progression
-- **Configuration Match**: Template specs vs actual AWS attributes
-- **Cleanup**: Proper termination of all resources
 
-### Error Handling
-- Timeout protection (120s for provisioning)
-- JSON parsing error recovery
-- AWS API error propagation
-- Resource cleanup on test failure
 
 ## File Structure
-
-```
+```bash
 tests/onaws/
 ├── test_onaws.py              # Main test file
 ├── scenarios.py               # Test case definitions
@@ -135,6 +126,10 @@ tests/onaws/
 │   ├── awsprov_templates2.base.json
 │   ├── config.base.json
 │   └── default_config.base.json
+├── test_multi_asg_termination.py          # Multi-ASG termination tests
+├── test_multi_spot_fleet_termination.py   # Multi-SpotFleet termination tests
+├── test_multi_ec2_fleet_termination.py    # Multi-EC2Fleet termination tests
+├── test_multi_resource_termination.py     # Cross-resource termination tests
 └── run_templates/             # Generated test configs
     └── test_sample[ScenarioName]/
         ├── awsprov_templates.json
@@ -149,16 +144,28 @@ tests/onaws/
 - Required environment variables set
 - pytest with aws markers
 
-### Execution
+### Execution Parameter Sweep
 ```bash
+make system-tests
+
 # Run all onaws tests
 pytest tests/onaws/ -m aws
 
 # Run specific scenario
 pytest tests/onaws/test_onaws.py::test_sample[EC2FleetRequest] -m aws
 
-# Run with verbose output
-pytest tests/onaws/ -m aws -v -s
+
+```
+
+
+### Execution Custom Tests
+```bash
+pytest tests/onaws/test_multi_asg_termination.py -v
+pytest tests/onaws/test_multi_spot_fleet_termination.py -v
+pytest tests/onaws/test_multi_ec2_fleet_termination.py -v
+pytest tests/onaws/test_multi_resource_termination.py -v
+or
+pytest tests/onaws/test_multi_*.py -n 4 -v
 ```
 
 ### Environment Variables
@@ -178,9 +185,6 @@ LOG_DESTINATION=file
 
 ### Common Issues
 - **Timeout**: Increase `MAX_TIME_WAIT_FOR_CAPACITY_PROVISIONING_SEC`
-- **Template errors**: Check placeholder substitution in generated configs
-- **AWS permissions**: Verify IAM roles and policies
-- **Resource limits**: Check AWS service quotas
 
 ## Extension Points
 
@@ -194,6 +198,4 @@ LOG_DESTINATION=file
 1. Add validation function to `test_onaws.py`
 2. Include in `validate_instance_attributes()`
 3. Update schemas if new fields required
-
-The onaws system tests provide comprehensive validation of AWS provider functionality while maintaining test isolation and reproducibility through dynamic configuration generation.
 

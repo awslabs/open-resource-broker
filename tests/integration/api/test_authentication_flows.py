@@ -5,10 +5,12 @@ from unittest.mock import Mock
 
 import pytest
 from fastapi.testclient import TestClient
+from starlette.datastructures import URL
 
 from api.server import create_fastapi_app
 from config.schemas.server_schema import AuthConfig, ServerConfig
-from infrastructure.auth.strategies import BearerTokenStrategy, NoAuthStrategy
+from infrastructure.auth.strategy.bearer_token_strategy import BearerTokenStrategy
+from infrastructure.auth.strategy.no_auth_strategy import NoAuthStrategy
 
 
 class TestAuthenticationFlows:
@@ -147,8 +149,8 @@ class TestAuthenticationFlows:
         class MockRequest:
             def __init__(self):
                 self.method = "GET"
-                self.url = Mock()
-                self.url.path = "/api/v1/templates"
+                self.url = URL("http://testserver/api/v1/templates")
+                self.base_url = URL("http://testserver/")
                 self.headers = {"authorization": "Bearer test-token"}
                 self.query_params = {"limit": "10"}
                 self.client = Mock()
