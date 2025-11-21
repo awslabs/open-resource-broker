@@ -1,7 +1,5 @@
 ## Attribute-Based Instance Selection (ABIS) Support
 
-This document summarizes how the plugin supports AWS attribute-based instance selection (ABIS) across schedulers and handlers.
-
 ### Overview
 
 ABIS lets you describe compute requirements (CPU, memory, hardware attributes) instead of enumerating instance types. Templates can now include an `abis_instance_requirements` block (snake_case) or `abisInstanceRequirements` (camelCase) mirroring the `InstanceRequirements` structure from `EC2 Fleet`, `Spot Fleet`, and `ASG`
@@ -53,6 +51,29 @@ The scheduler strategies normalize these keys so `AWSTemplate.abis_instance_requ
 | **EC2 Fleet** | `_create_fleet_config_legacy` swaps instance-type overrides with `InstanceRequirements` overrides (one per subnet if provided). This feeds the `InstanceRequirements` block directly into EC2 Fleet API calls. |
 | **Spot Fleet** | `_create_spot_fleet_config_legacy` mirrors the EC2 Fleet behavior: when ABIS data exists, LaunchTemplate overrides contain `InstanceRequirements` instead of enumerated types. |
 | **ASG** | `_create_asg_config_legacy` emits a `MixedInstancesPolicy` that references the launch template and supplies the `InstanceRequirements` override so ASG can resolve matching instance types at scale. When no ABIS block exists, the handler falls back to the previous single LaunchTemplate configuration. |
+
+> Note: When an ABIS block is present, handlers ignore any explicit `vmType`/`vmTypes` (`instance_type`/`instance_types`) and let AWS select matching types from the `InstanceRequirements` payload.
+
+### Example Workflow (HostFactory scheduler)
+
+1. Add an ABIS block to a HostFactory template (camelCase) in `config/awsprov_templates.json`:
+
+```json
+{
+  "template_id": "ABIS_DEMO",
+  "provider_api": "EC2Fleet",
+  "abisInstanceRequirements": {
+    "VCpuCount": { "Min": 2, "Max": 4 },
+    "MemoryMiB": { "Min": 4096, "Max": 8192 },
+    "CpuManufacturers": ["intel", "amd"],
+    "LocalStorage": "required"
+  }
+}
+```
+
+2. The scheduler strategy normalizes this to `abis_instance_requirements` internally.
+3. The EC2 Fleet handler injects the normalized `InstanceRequirements` into the fleet launch template overrides (one per subnet if multiple subnets are provided).
+4. AWS selects any matching instance type at provisioning time; no explicit `instance_types` list is required. If the block is absent, the handler falls back to the legacy explicit instance list.
 
 ### When ABIS Is Absent
 

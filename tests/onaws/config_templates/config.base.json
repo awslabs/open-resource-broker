@@ -41,7 +41,7 @@
     }
   },
   "scheduler": {
-    "type": "hostfactory",
+    "type": "{{scheduler}}",
     "config_root": "$HF_PROVIDER_CONFDIR"
   },
   "logging": {

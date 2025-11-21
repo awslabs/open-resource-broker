@@ -3,23 +3,27 @@ from typing import Any, Dict, List
 
 # Global default attribute combinations
 DEFAULT_ATTRIBUTE_COMBINATIONS = [
-    # {
-    #     "providerApi": ["EC2Fleet", "SpotFleet"],
-    #     "fleetType": ["request", "instant"],
-    #     "priceType": ["ondemand", "spot"],
-    # },
-    # {
-    #     "providerApi": ["ASG"],
-    #     "priceType": ["ondemand"]
-    # },
-    # {
-    #     "providerApi": ["RunInstances"],
-    #     "priceType": ["ondemand"]
-    # },
+    {
+        "providerApi": ["EC2Fleet"],
+        "fleetType": ["request", "instant"],
+        "priceType": ["ondemand", "spot"],
+        "scheduler": ["default", "hostfactory"],
+    },
+    {
+        "providerApi": ["ASG"],
+        "priceType": ["ondemand"],
+        "scheduler": ["default", "hostfactory"],
+    },
+    {
+        "providerApi": ["RunInstances"],
+        "priceType": ["ondemand"],
+        "scheduler": ["default", "hostfactory"],
+    },
     {
         "providerApi": ["SpotFleet"],
         "fleetType": ["request"],
         "priceType": ["ondemand", "spot"],
+        "scheduler": ["default", "hostfactory"],
     },
     # { INTENTIONALLY NOT SUPPORTED
     #     "providerApi": ["RunInstances"],
@@ -69,7 +73,10 @@ def generate_scenarios_from_attributes(
             # Default naming: concatenate attribute values with dots as separators
             name_parts = []
             for attr_name, attr_value in overrides.items():
-                if attr_name == "providerApi":
+                if attr_name == "scheduler":
+                    # Add scheduler at the beginning
+                    name_parts.insert(0, str(attr_value))
+                elif attr_name == "providerApi":
                     name_parts.append(str(attr_value))
                 elif attr_name == "fleetType":
                     name_parts.append(str(attr_value).title())

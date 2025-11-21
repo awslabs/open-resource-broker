@@ -52,6 +52,20 @@ log.addHandler(file_handler)
 MAX_TIME_WAIT_FOR_CAPACITY_PROVISIONING_SEC = 120
 
 
+def get_scheduler_from_scenario(test_case: dict) -> str:
+    """
+    Extract scheduler type from test scenario.
+
+    Args:
+        test_case: Test case dictionary containing overrides
+
+    Returns:
+        Scheduler type: "default" or "hostfactory"
+        Defaults to "hostfactory" if not present
+    """
+    return test_case.get("overrides", {}).get("scheduler", "hostfactory")
+
+
 def get_instance_state(instance_id):
     """
     Check if an EC2 instance exists and return its state
@@ -338,7 +352,7 @@ def validate_random_instance_attributes(status_response, template):
 
     # Select a random machine
     selected_machine = random.choice(machines)
-    instance_id = selected_machine["machineId"]
+    instance_id = selected_machine.get("machineId") or selected_machine.get("machine_id")
 
     log.info(
         f"Selected random instance {instance_id} for attribute validation (out of {len(machines)} instances)"
@@ -376,7 +390,7 @@ def validate_all_instances_price_type(status_response, test_case):
     all_validations_passed = True
 
     for machine in machines:
-        instance_id = machine["machineId"]
+        instance_id = machine.get("machineId") or machine.get("machine_id")
 
         try:
             # Get instance details from AWS
@@ -436,6 +450,7 @@ def setup_host_factory_mock(request):
     os.environ["HF_PROVIDER_CONFDIR"] = str(test_config_dir)
     os.environ["HF_PROVIDER_LOGDIR"] = str(test_config_dir / "logs")
     os.environ["HF_PROVIDER_WORKDIR"] = str(test_config_dir / "work")
+    os.environ["DEFAULT_PROVIDER_WORKDIR"] = str(test_config_dir / "work")
     os.environ["AWS_PROVIDER_LOG_DIR"] = str(test_config_dir / "logs")
     os.environ["HF_LOGDIR"] = str(test_config_dir / "logs")
 
@@ -443,7 +458,9 @@ def setup_host_factory_mock(request):
     (test_config_dir / "logs").mkdir(exist_ok=True)
     (test_config_dir / "work").mkdir(exist_ok=True)
 
-    hfm = HostFactoryMock()
+    # Get scheduler type from overrides, default to "hostfactory"
+    scheduler_type = overrides.get("scheduler", "hostfactory")
+    hfm = HostFactoryMock(scheduler=scheduler_type)
 
     return hfm
 
@@ -489,6 +506,7 @@ def setup_host_factory_mock_with_scenario(request):
     os.environ["HF_PROVIDER_CONFDIR"] = str(test_config_dir)
     os.environ["HF_PROVIDER_LOGDIR"] = str(test_config_dir / "logs")
     os.environ["HF_PROVIDER_WORKDIR"] = str(test_config_dir / "work")
+    os.environ["DEFAULT_PROVIDER_WORKDIR"] = str(test_config_dir / "work")
     os.environ["AWS_PROVIDER_LOG_DIR"] = str(test_config_dir / "logs")
     os.environ["HF_LOGDIR"] = str(test_config_dir / "logs")
 
@@ -496,7 +514,9 @@ def setup_host_factory_mock_with_scenario(request):
     (test_config_dir / "logs").mkdir(exist_ok=True)
     (test_config_dir / "work").mkdir(exist_ok=True)
 
-    hfm = HostFactoryMock()
+    # Get scheduler type from overrides, default to "hostfactory"
+    scheduler_type = overrides.get("scheduler", "hostfactory")
+    hfm = HostFactoryMock(scheduler=scheduler_type)
 
     return hfm
 
@@ -510,7 +530,7 @@ def _check_request_machines_response_status(status_response):
 
 def _check_all_ec2_hosts_are_being_provisioned(status_response):
     for machine in status_response["requests"][0]["machines"]:
-        ec2_instance_id = machine["machineId"]
+        ec2_instance_id = machine.get("machineId") or machine.get("machine_id")
         res = get_instance_state(ec2_instance_id)
 
         assert res["exists"] == True
@@ -557,7 +577,7 @@ def provide_release_control_loop(hfm, template_json, capacity_to_request, test_c
     # <1.> Request capacity. #######################################################################
     log.debug(f"Requesting capacity for the template \n {json.dumps(template_json, indent=4)}")
 
-    res = hfm.request_machines(template_json["templateId"], capacity_to_request)
+    res = hfm.request_machines(template_json.get("templateId") or template_json.get("template_id"), capacity_to_request)
     parse_and_print_output(res)
 
     # Debug: Log the full response to understand the structure
@@ -584,12 +604,14 @@ def provide_release_control_loop(hfm, template_json, capacity_to_request, test_c
 
     # log.debug(json.dumps(res, indent=4))
 
+    # Get scheduler type for validation
+    scheduler_type = get_scheduler_from_scenario(test_case) if test_case else "hostfactory"
+    request_machines_schema = plugin_io_schemas.get_schema_for_scheduler("request_machines", scheduler_type)
+
     try:
-        validate_json_schema(
-            instance=res, schema=plugin_io_schemas.expected_request_machines_schema
-        )
+        validate_json_schema(instance=res, schema=request_machines_schema)
     except ValidationError as e:
-        pytest.fail(f"JSON validation failed for request_machines response json: {e}")
+        pytest.fail(f"JSON validation failed for request_machines response json ({scheduler_type} scheduler): {e}")
 
     # <2.> Wait until request is completed. ########################################################
 
@@ -604,12 +626,12 @@ def provide_release_control_loop(hfm, template_json, capacity_to_request, test_c
 
         sys.stdout.flush()
 
+        request_status_schema = plugin_io_schemas.get_schema_for_scheduler("request_status", scheduler_type)
+
         try:
-            validate_json_schema(
-                instance=status_response, schema=plugin_io_schemas.expected_request_status_schema
-            )
+            validate_json_schema(instance=status_response, schema=request_status_schema)
         except ValidationError as e:
-            pytest.fail(f"JSON validation failed for get_reqest_status response json: {e}")
+            pytest.fail(f"JSON validation failed for get_reqest_status response json ({scheduler_type} scheduler): {e}")
 
         if time.time() - start_time > MAX_TIME_WAIT_FOR_CAPACITY_PROVISIONING_SEC:
             break
@@ -640,7 +662,7 @@ def provide_release_control_loop(hfm, template_json, capacity_to_request, test_c
     # Validate price type for all instances if test_case is provided
     if test_case:
         # Check if this provider API supports spot instance validation
-        provider_api = template_json.get("providerApi", "EC2Fleet")
+        provider_api = template_json.get("providerApi") or template_json.get("provider_api") or "EC2Fleet"
         expected_price_type = test_case.get("overrides", {}).get("priceType")
 
         if provider_api in ["RunInstances", "ASG"] and expected_price_type == "spot":
@@ -665,7 +687,7 @@ def provide_release_control_loop(hfm, template_json, capacity_to_request, test_c
     # <3.> Deallocate capacity and verify that capacity is released. ###############################
 
     ec2_instance_ids = [
-        machine["machineId"] for machine in status_response["requests"][0]["machines"]
+        machine.get("machineId") or machine.get("machine_id") for machine in status_response["requests"][0]["machines"]
     ]
     # ec2_instance_ids = [machine["name"] for machine in status_response["requests"][0]["machines"]] #TODO
     log.debug(f"Deallocating instances: {ec2_instance_ids}")
@@ -697,12 +719,14 @@ def test_get_available_templates(setup_host_factory_mock):
 
     res = hfm.get_available_templates()
 
+    # Use default hostfactory schema for backward compatibility
+    scheduler_type = "hostfactory"
+    schema = plugin_io_schemas.get_schema_for_scheduler("get_available_templates", scheduler_type)
+
     try:
-        validate_json_schema(
-            instance=res, schema=plugin_io_schemas.expected_get_available_templates_schema
-        )
+        validate_json_schema(instance=res, schema=schema)
     except ValidationError as e:
-        pytest.fail(f"JSON validation failed: {e}")
+        pytest.fail(f"JSON validation failed for {scheduler_type} scheduler: {e}")
 
 
 @pytest.mark.aws
@@ -759,7 +783,7 @@ def test_sample(setup_host_factory_mock_with_scenario, test_case):
 
     template_id = test_case.get("template_id") or test_case["test_name"]
     template_json = next(
-        (template for template in res["templates"] if template["templateId"] == template_id),
+        (template for template in res["templates"] if template.get("templateId") == template_id or template.get("template_id") == template_id),
         None,
     )
 

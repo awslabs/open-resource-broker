@@ -29,6 +29,41 @@ class TemplateProcessor:
         self.config_source_dir = base_dir.parent.parent / "config"
         self.run_templates_dir = base_dir / "run_templates"
 
+    def detect_scheduler_type(self, overrides: dict) -> str:
+        """
+        Detect scheduler type from overrides.
+
+        Args:
+            overrides: Dictionary containing test overrides
+
+        Returns:
+            Scheduler type: "default" or "hostfactory"
+            Defaults to "hostfactory" for backward compatibility
+        """
+        scheduler_type = overrides.get("scheduler", "hostfactory") if overrides else "hostfactory"
+        log.info(f"Detected scheduler type: {scheduler_type}")
+        return scheduler_type
+
+    def select_base_template_for_scheduler(self, base_name: str, scheduler_type: str) -> str:
+        """
+        Select appropriate base template based on scheduler type.
+
+        Args:
+            base_name: Base template name (e.g., "awsprov_templates")
+            scheduler_type: "default" or "hostfactory"
+
+        Returns:
+            Template filename to use
+
+        Mapping:
+            - templates + default → templates.base.json (snake_case fields)
+            - awsprov_templates + hostfactory → awsprov_templates.base.json (camelCase fields)
+            - default_config/config → corresponding *.base.json files
+        """
+        if base_name == "awsprov_templates" and scheduler_type == "default":
+            return "templates"
+        return base_name
+
     def load_config_source(self) -> Dict[str, Any]:
         """Load configuration values from the main config directory."""
         # Load from config.json
@@ -176,6 +211,9 @@ class TemplateProcessor:
             awsprov_base_template: Optional base template name for awsprov_templates (e.g., "awsprov_templates1", "awsprov_templates2")
             overrides: Optional dictionary of configuration overrides
         """
+        # Detect scheduler type from overrides
+        scheduler_type = self.detect_scheduler_type(overrides)
+
         # Create test directory
         test_dir = self.run_templates_dir / test_name
         test_dir.mkdir(parents=True, exist_ok=True)
@@ -210,13 +248,21 @@ class TemplateProcessor:
                     log.warning(
                         f"Provider API {provider_api} may not support spot instances in the same way as EC2Fleet"
                     )
+        
+        # Set scheduler type in config for template replacement (after overrides)
+        config["scheduler"] = scheduler_type
+        log.info(f"Config scheduler value for template replacement: {config.get('scheduler')}")
 
         # Generate each required file
+        # Note: awsprov_templates.json is only for hostfactory scheduler
         template_files = [
-            ("awsprov_templates", "awsprov_templates.json"),
             ("config", "config.json"),
-            ("default_config", "default_config.json"),
         ]
+
+        if scheduler_type == "hostfactory":
+            template_files.insert(0, ("awsprov_templates", "awsprov_templates.json"))
+        elif scheduler_type == "default":
+            template_files.insert(0, ("templates", "templates.json"))
 
         for base_name, output_name in template_files:
             try:
@@ -228,8 +274,8 @@ class TemplateProcessor:
                     # Use specified config base template
                     template_name = base_template
                 else:
-                    # Use default base template
-                    template_name = base_name
+                    # Use scheduler-aware template selection
+                    template_name = self.select_base_template_for_scheduler(base_name, scheduler_type)
 
                 # Load base template
                 base_template_data = self.load_base_template(template_name)
@@ -248,6 +294,7 @@ class TemplateProcessor:
                     if template_name.endswith(".base.json")
                     else f"{template_name}.base.json"
                 )
+                log.info(f"Selected base template: {actual_template_name} for scheduler: {scheduler_type}")
                 print(f"Generated {output_file} from {actual_template_name}")
 
             except Exception as e:

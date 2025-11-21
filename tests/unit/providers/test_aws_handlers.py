@@ -347,9 +347,6 @@ class TestEC2FleetHandler:
             launch_template_manager=Mock(),
         )
 
-        # Create test request with proper machine_ids list
-        machine_ids = ["i-1234567890abcdef0", "i-0987654321fedcba0"]
-
         # Test release_hosts method with empty machine_ids to trigger early return
         try:
             handler.release_hosts([])  # Empty list should trigger early return
@@ -496,6 +493,7 @@ class TestEC2FleetHandler:
         response = ec2.run_instances(
             ImageId="ami-12345678", MinCount=2, MaxCount=2, InstanceType="t2.micro"
         )
+        instance_ids = [i["InstanceId"] for i in response["Instances"]]
         instance_ids = [i["InstanceId"] for i in response["Instances"]]
 
         # Mock AWS operations to raise an exception
@@ -734,14 +732,6 @@ class TestASGHandler:
             VPCZoneIdentifier=subnet["Subnet"]["SubnetId"],  # Add subnet requirement
         )
 
-        aws_ops = AWSOperations(aws_client=aws_client, logger=Mock())
-        handler = ASGHandler(
-            aws_client=aws_client,
-            logger=Mock(),
-            aws_ops=aws_ops,
-            launch_template_manager=Mock(),
-        )
-
         # Test scaling functionality by checking if ASG exists
         response = autoscaling.describe_auto_scaling_groups(AutoScalingGroupNames=["test-asg"])
 
@@ -768,13 +758,6 @@ class TestASGHandler:
             aws_ops=aws_ops,
             launch_template_manager=Mock(),
         )
-
-        # Create instances to terminate
-        response = ec2.run_instances(
-            ImageId="ami-12345678", MinCount=2, MaxCount=2, InstanceType="t2.micro"
-        )
-
-        instance_ids = [i["InstanceId"] for i in response["Instances"]]
 
         # Test release_hosts method with empty machine_ids to trigger early return
         try:
@@ -1323,7 +1306,7 @@ class TestSpotFleetHandler:
         )
 
         # Create Spot Fleet Request
-        fleet_response = ec2.request_spot_fleet(
+        ec2.request_spot_fleet(
             SpotFleetRequestConfig={
                 "LaunchTemplateConfigs": [
                     {
@@ -1340,8 +1323,6 @@ class TestSpotFleetHandler:
                 "Type": "request",
             }
         )
-        fleet_id = fleet_response["SpotFleetRequestId"]
-
         # Create instances that would be spot instances
         response = ec2.run_instances(
             ImageId="ami-12345678", MinCount=2, MaxCount=2, InstanceType="t2.micro"
