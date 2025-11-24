@@ -1,6 +1,7 @@
 """Tests for AWS handler implementations."""
 
 from unittest.mock import Mock
+from types import SimpleNamespace
 
 import boto3
 import pytest
@@ -17,6 +18,8 @@ try:
         SpotFleetHandler,
     )
     from providers.aws.utilities.aws_operations import AWSOperations
+    from providers.aws.domain.template.value_objects import AWSFleetType
+    from providers.aws.exceptions.aws_exceptions import AWSValidationError
 
     IMPORTS_AVAILABLE = True
 except ImportError as e:
@@ -114,6 +117,7 @@ class TestContextFieldSupport:
         template.price_type = "spot"  # Fix: Add missing price_type attribute
         template.instance_type = "t3.micro"  # Fix: Add missing instance_type
         template.template_id = "test-template"  # Fix: Add missing template_id
+        template.get_instance_requirements_payload = Mock(return_value=None)
 
         # Mock request
         request = Mock()
@@ -158,6 +162,7 @@ class TestContextFieldSupport:
         template.percent_on_demand = 50
         template.allocation_strategy_on_demand = None
         template.template_id = "test-template"
+        template.get_instance_requirements_payload = Mock(return_value=None)
 
         request = Mock()
         request.requested_count = 4
@@ -1790,3 +1795,207 @@ class TestRunInstancesHandler:
         except ClientError as e:
             # Should catch and re-raise the ClientError
             assert e.response["Error"]["Code"] == "InvalidInstanceID.NotFound"
+
+
+@pytest.mark.unit
+@pytest.mark.aws
+@pytest.mark.skipif(not IMPORTS_AVAILABLE, reason="AWS provider imports not available")
+class TestABISOverrides:
+    """ABIS-specific behavior tests to ensure InstanceRequirements take precedence."""
+
+    @staticmethod
+    def _abis_template(template_id="abis-demo", subnet_ids=None, price_type="spot"):
+        """Create a minimal template object exposing ABIS requirements."""
+        subnet_ids = subnet_ids or ["subnet-1", "subnet-2"]
+        instance_requirements_payload = {
+            "VCpuCount": {"Min": 2, "Max": 2},
+            "MemoryMiB": {"Min": 4096, "Max": 4096},
+        }
+        return SimpleNamespace(
+            template_id=template_id,
+            fleet_type="request",
+            price_type=price_type,
+            allocation_strategy=None,
+            allocation_strategy_on_demand=None,
+            max_price=None,
+            percent_on_demand=0,
+            instance_types={"m5.large": 1},  # Should be ignored when ABIS is present
+            instance_types_ondemand=None,
+            subnet_ids=subnet_ids,
+            tags=None,
+            context=None,
+            fleet_role="arn:aws:iam::123456789012:role/aws-service-role/spotfleet.amazonaws.com/AWSServiceRoleForEC2SpotFleet",
+            spot_fleet_request_expiry=30,
+            abis_instance_requirements=instance_requirements_payload,
+            get_instance_requirements_payload=lambda: instance_requirements_payload,
+        )
+
+    def test_ec2_fleet_uses_instance_requirements_overrides(self):
+        """EC2 Fleet should ignore instance_types when ABIS is provided."""
+        template = self._abis_template()
+        request = SimpleNamespace(requested_count=2, request_id="req-abis-1", metadata={})
+
+        handler = EC2FleetHandler(Mock(), Mock(), Mock(), Mock(), Mock())
+        handler.aws_native_spec_service = None  # Force legacy path for deterministic config
+
+        config = handler._create_fleet_config(
+            template=template,
+            request=request,
+            launch_template_id="lt-abis",
+            launch_template_version="1",
+        )
+
+        overrides = config["LaunchTemplateConfigs"][0].get("Overrides", [])
+        assert overrides, "Overrides should be populated when ABIS is present"
+        assert all("InstanceRequirements" in o for o in overrides)
+        assert all("InstanceType" not in o for o in overrides)
+
+    def test_spot_fleet_uses_instance_requirements_overrides(self):
+        """Spot Fleet should ignore instance_types when ABIS is provided."""
+        template = self._abis_template()
+        request = SimpleNamespace(requested_count=2, request_id="req-abis-2", metadata={})
+
+        aws_client = Mock()
+        aws_client.sts_client.get_caller_identity.return_value = {"Account": "123456789012"}
+        handler = SpotFleetHandler(aws_client, Mock(), Mock(), Mock(), Mock())
+        handler.aws_native_spec_service = None
+
+        config = handler._create_spot_fleet_config(
+            template=template,
+            request=request,
+            launch_template_id="lt-abis",
+            launch_template_version="1",
+        )
+
+        overrides = config["LaunchTemplateConfigs"][0].get("Overrides", [])
+        assert overrides, "Overrides should be populated when ABIS is present"
+        assert all("InstanceRequirements" in o for o in overrides)
+        assert all("InstanceType" not in o for o in overrides)
+
+    def test_asg_uses_instance_requirements_mixed_policy(self):
+        """ASG should emit MixedInstancesPolicy with InstanceRequirements."""
+        template = self._abis_template(subnet_ids=["subnet-1"])
+        request = SimpleNamespace(requested_count=1, metadata={})
+
+        handler = ASGHandler(Mock(), Mock(), Mock(), Mock(), Mock())
+        handler.aws_native_spec_service = None
+
+        config = handler._create_asg_config(
+            asg_name="asg-abis",
+            aws_template=template,
+            request=request,
+            launch_template_id="lt-abis",
+            launch_template_version="1",
+        )
+
+        mixed_policy = config.get("MixedInstancesPolicy")
+        assert mixed_policy, "MixedInstancesPolicy should be set when ABIS is present"
+        overrides = mixed_policy["LaunchTemplate"].get("Overrides", [])
+        assert overrides and "InstanceRequirements" in overrides[0]
+        assert "InstanceType" not in overrides[0]
+
+
+@pytest.mark.unit
+@pytest.mark.aws
+@pytest.mark.skipif(not IMPORTS_AVAILABLE, reason="AWS provider imports not available")
+class TestMultiInstanceOverrides:
+    """Multi-instance type propagation tests."""
+
+    @staticmethod
+    def _multi_type_template(provider_api="EC2Fleet", fleet_type=AWSFleetType.INSTANT):
+        return SimpleNamespace(
+            template_id="multi",
+            provider_api=provider_api,
+            fleet_type=fleet_type,
+            price_type="spot",
+            allocation_strategy=None,
+            allocation_strategy_on_demand=None,
+            max_price=None,
+            percent_on_demand=0,
+            instance_types={"t2.micro": 1, "t2.small": 2, "t2.medium": 4},
+            instance_types_ondemand=None,
+            subnet_ids=["subnet-1"],
+            tags=None,
+            context=None,
+            fleet_role="arn:aws:iam::123456789012:role/aws-service-role/ec2fleet.amazonaws.com/AWSServiceRoleForEC2Fleet",
+            spot_fleet_request_expiry=30,
+            abis_instance_requirements=None,
+            get_instance_requirements_payload=lambda: None,
+        )
+
+    def test_ec2_fleet_overrides_from_instance_types(self):
+        template = self._multi_type_template(provider_api="EC2Fleet")
+        request = SimpleNamespace(requested_count=3, request_id="req-multi", metadata={})
+
+        handler = EC2FleetHandler(Mock(), Mock(), Mock(), Mock(), Mock())
+        handler.aws_native_spec_service = None
+
+        config = handler._create_fleet_config_legacy(
+            template=template,
+            request=request,
+            launch_template_id="lt-multi",
+            launch_template_version="1",
+        )
+
+        overrides = config["LaunchTemplateConfigs"][0].get("Overrides", [])
+        assert len(overrides) == len(template.instance_types)
+        instance_types = {o["InstanceType"] for o in overrides}
+        assert instance_types == set(template.instance_types.keys())
+
+    def test_spot_fleet_overrides_from_instance_types(self):
+        template = self._multi_type_template(provider_api="EC2Fleet", fleet_type=AWSFleetType.REQUEST)
+        request = SimpleNamespace(requested_count=3, request_id="req-spot", metadata={})
+
+        aws_client = Mock()
+        aws_client.sts_client.get_caller_identity.return_value = {"Account": "123456789012"}
+        handler = SpotFleetHandler(aws_client, Mock(), Mock(), Mock(), Mock())
+        handler.aws_native_spec_service = None
+
+        config = handler._create_spot_fleet_config(
+            template=template,
+            request=request,
+            launch_template_id="lt-spot",
+            launch_template_version="1",
+        )
+
+        overrides = config["LaunchTemplateConfigs"][0].get("Overrides", [])
+        assert len(overrides) == len(template.instance_types)
+        instance_types = {o["InstanceType"] for o in overrides}
+        assert instance_types == set(template.instance_types.keys())
+
+    def test_asg_overrides_from_instance_types(self):
+        template = self._multi_type_template(provider_api="ASG")
+        request = SimpleNamespace(requested_count=2, metadata={}, request_id="req-asg")
+
+        handler = ASGHandler(Mock(), Mock(), Mock(), Mock(), Mock())
+        handler.aws_native_spec_service = None
+
+        config = handler._create_asg_config_legacy(
+            asg_name="asg-multi",
+            aws_template=template,
+            request=request,
+            launch_template_id="lt-asg",
+            launch_template_version="1",
+        )
+
+        policy = config.get("MixedInstancesPolicy")
+        assert policy, "MixedInstancesPolicy should be present when instance_types are provided"
+        overrides = policy["LaunchTemplate"].get("Overrides", [])
+        assert len(overrides) == len(template.instance_types)
+        instance_types = {o["InstanceType"] for o in overrides}
+        assert instance_types == set(template.instance_types.keys())
+        # WeightedCapacity should be string per AWS API
+        assert all(isinstance(o.get("WeightedCapacity"), str) for o in overrides if "WeightedCapacity" in o)
+
+    def test_conflicting_instance_type_and_instance_types_raises(self):
+        template = SimpleNamespace(
+            image_id="ami-123",
+            instance_type="t2.micro",
+            instance_types={"t2.small": 1},
+            subnet_ids=["subnet-1"],
+            security_group_ids=["sg-1"],
+        )
+
+        handler = EC2FleetHandler(Mock(), Mock(), Mock(), Mock(), Mock())
+        with pytest.raises(AWSValidationError):
+            handler._validate_prerequisites(template)

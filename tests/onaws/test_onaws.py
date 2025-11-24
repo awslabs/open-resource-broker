@@ -32,6 +32,10 @@ _ec2_region = (
     or "eu-west-1"
 )
 ec2_client = _boto_session.client("ec2", region_name=_ec2_region)
+asg_client = _boto_session.client("autoscaling", region_name=_ec2_region)
+
+# Enable to verify ABIS on the created resource (fleet/ASG) via AWS APIs
+VERIFY_ABIS = os.environ.get("VERIFY_ABIS", "0") in ("1", "true", "True")
 
 log = logging.getLogger("awsome_test")
 log.setLevel(logging.DEBUG)
@@ -49,7 +53,7 @@ log.addHandler(console_handler)
 log.addHandler(file_handler)
 
 
-MAX_TIME_WAIT_FOR_CAPACITY_PROVISIONING_SEC = 120
+MAX_TIME_WAIT_FOR_CAPACITY_PROVISIONING_SEC = 300
 
 
 def get_scheduler_from_scenario(test_case: dict) -> str:
@@ -134,6 +138,64 @@ def get_instance_details(instance_id):
     except ClientError as e:
         log.error(f"Error getting instance details for {instance_id}: {e}")
         raise
+
+
+def _get_tag_value(tags, key):
+    for tag in tags or []:
+        if tag.get("Key") == key:
+            return tag.get("Value")
+    return None
+
+
+def verify_abis_enabled_for_instance(instance_id):
+    """
+    Given an instance ID, trace back to the parent resource (Fleet or ASG) and
+    assert that InstanceRequirements/ABIS are present in the resource config.
+    """
+
+    try:
+        desc = ec2_client.describe_instances(InstanceIds=[instance_id])
+        tags = desc["Reservations"][0]["Instances"][0].get("Tags", [])
+    except Exception as e:
+        pytest.fail(f"Failed to describe instance {instance_id} to verify ABIS: {e}")
+
+    fleet_id = _get_tag_value(tags, "aws:ec2:fleet-id")
+    asg_name = _get_tag_value(tags, "aws:autoscaling:groupName")
+
+    if fleet_id:
+        try:
+            fleets = ec2_client.describe_fleets(FleetIds=[fleet_id]).get("Fleets", [])
+            if not fleets:
+                pytest.fail(f"No fleet data found for {fleet_id} while verifying ABIS")
+            overrides = fleets[0].get("LaunchTemplateConfigs", [{}])[0].get("Overrides", [])
+            has_abis = any("InstanceRequirements" in ov for ov in overrides)
+            assert has_abis, f"ABIS not present in fleet overrides for {fleet_id}"
+            return
+        except Exception as e:
+            pytest.fail(f"Failed to verify ABIS on fleet {fleet_id}: {e}")
+
+    if asg_name:
+        try:
+            asgs = asg_client.describe_auto_scaling_groups(
+                AutoScalingGroupNames=[asg_name]
+            ).get("AutoScalingGroups", [])
+            if not asgs:
+                pytest.fail(f"No ASG data found for {asg_name} while verifying ABIS")
+            overrides = (
+                asgs[0]
+                .get("MixedInstancesPolicy", {})
+                .get("LaunchTemplate", {})
+                .get("Overrides", [])
+            )
+            has_abis = any("InstanceRequirements" in ov for ov in overrides)
+            assert has_abis, f"ABIS not present in ASG overrides for {asg_name}"
+            return
+        except Exception as e:
+            pytest.fail(f"Failed to verify ABIS on ASG {asg_name}: {e}")
+
+    pytest.fail(
+        f"Could not determine parent resource (fleet or ASG) for instance {instance_id} to verify ABIS"
+    )
 
 
 def validate_root_device_volume_size(instance_details, template, instance_id):
@@ -669,6 +731,21 @@ def provide_release_control_loop(hfm, template_json, capacity_to_request, test_c
             "Instance attribute validation PASSED - EC2 instance attributes match template configuration"
         )
 
+    # Optional: verify ABIS was applied on the created resource
+    abis_requested = (
+        test_case
+        and isinstance(test_case, dict)
+        and (
+            test_case.get("overrides", {}).get("abisInstanceRequirements")
+            or test_case.get("overrides", {}).get("abis_instance_requirements")
+        )
+    )
+    if VERIFY_ABIS and abis_requested:
+        first_machine = status_response["requests"][0]["machines"][0]
+        instance_id = first_machine.get("machineId") or first_machine.get("machine_id")
+        log.info("Verifying ABIS on resource for instance %s", instance_id)
+        verify_abis_enabled_for_instance(instance_id)
+
     # Validate price type for all instances if test_case is provided
     if test_case:
         # Check if this provider API supports spot instance validation
@@ -811,6 +888,14 @@ def test_sample(setup_host_factory_mock_with_scenario, test_case):
             template_id,
         )
         template_json = res["templates"][0]
+
+    # If ABIS is requested in overrides, prefer verifying via AWS (when enabled)
+    abis_override = test_case.get("overrides", {}).get("abisInstanceRequirements") or test_case.get(
+        "overrides", {}
+    ).get("abis_instance_requirements")
+    if abis_override and VERIFY_ABIS:
+        # Defer to runtime verification after instances are created
+        log.info("ABIS override requested; will verify via AWS after provisioning")
 
     provide_release_control_loop(
         hfm,

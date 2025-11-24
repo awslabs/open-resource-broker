@@ -25,6 +25,7 @@ DEFAULT_ATTRIBUTE_COMBINATIONS = [
         "priceType": ["ondemand", "spot"],
         "scheduler": ["default", "hostfactory"],
     },
+
     # { INTENTIONALLY NOT SUPPORTED
     #     "providerApi": ["RunInstances"],
     #     "priceType": ["spot"]
@@ -144,15 +145,91 @@ def get_custom_test_cases() -> List[Dict[str, Any]]:
     This allows for special cases and edge scenarios.
     """
     return [
-        # Add custom scenarios here as needed
-        # Example:
-        # {
-        #     "test_name": "CustomScenario",
-        #     "template_id": "CUSTOM",
-        #     "capacity_to_request": 5,
-        #     "awsprov_base_template": "awsprov_templates.custom.json",
-        #     "overrides": {"specialAttribute": "specialValue"},
-        # },
+        # EC2Fleet with ABIS
+        {
+            "test_name": "hostfactory.EC2FleetRequest.ABIS",
+            "template_id": "EC2FleetRequest",
+            "capacity_to_request": 2,
+            "awsprov_base_template": "awsprov_templates.base.json",
+            "overrides": {
+                "providerApi": "EC2Fleet",
+                "fleetType": "request",
+                "scheduler": "hostfactory",
+                "abisInstanceRequirements": {
+                    "VCpuCount": {"Min": 1, "Max": 2},
+                    "MemoryMiB": {"Min": 1024, "Max": 2048},
+                },
+            },
+        },
+        # SpotFleet with ABIS
+        {
+            "test_name": "hostfactory.SpotFleetRequest.ABIS",
+            "template_id": "SpotFleetRequest",
+            "capacity_to_request": 2,
+            "awsprov_base_template": "awsprov_templates.base.json",
+            "overrides": {
+                "providerApi": "SpotFleet",
+                "fleetType": "request",
+                "scheduler": "hostfactory",
+                "abisInstanceRequirements": {
+                    "VCpuCount": {"Min": 1, "Max": 2},
+                    "MemoryMiB": {"Min": 1024, "Max": 2048},
+                },
+            },
+        },
+        # EC2Fleet with multiTypes
+        {
+            "test_name": "hostfactory.EC2FleetRequest.MultiTypes",
+            "template_id": "EC2FleetRequest",
+            "capacity_to_request": 3,
+            "awsprov_base_template": "awsprov_templates.base.json",
+            "overrides": {
+                "providerApi": "EC2Fleet",
+                "fleetType": "request",
+                "scheduler": "hostfactory",
+                "vmTypes": {"t2.micro": 1, "t2.small": 2, "t2.medium": 4},
+            },
+        },
+        # SpotFleet with multiTypes
+        {
+            "test_name": "hostfactory.SpotFleetRequest.MultiTypes",
+            "template_id": "SpotFleetRequest",
+            "capacity_to_request": 3,
+            "awsprov_base_template": "awsprov_templates.base.json",
+            "overrides": {
+                "providerApi": "SpotFleet",
+                "fleetType": "request",
+                "scheduler": "hostfactory",
+                "vmTypes": {"t2.micro": 1, "t2.small": 2, "t2.medium": 4},
+            },
+        },
+        # ASG with ABIS
+        {
+            "test_name": "hostfactory.ASG.ABIS",
+            "template_id": "ASG",
+            "capacity_to_request": 2,
+            "awsprov_base_template": "awsprov_templates.base.json",
+            "overrides": {
+                "providerApi": "ASG",
+                "scheduler": "hostfactory",
+                "abisInstanceRequirements": {
+                    "VCpuCount": {"Min": 1, "Max": 2},
+                    "MemoryMiB": {"Min": 1024, "Max": 2048},
+                },
+            },
+        },
+        # ASG with multiTypes
+        {
+            "test_name": "hostfactory.ASG.MultiTypes",
+            "template_id": "ASG",
+            "capacity_to_request": 3,
+            "awsprov_base_template": "awsprov_templates.base.json",
+            "overrides": {
+                "providerApi": "ASG",
+                "scheduler": "hostfactory",
+                "vmTypes": {"t2.micro": 1, "t2.small": 2, "t2.medium": 4},
+            },
+        },
     ]
 
 

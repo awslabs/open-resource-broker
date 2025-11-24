@@ -373,6 +373,15 @@ class AWSTemplate(Template):
             "tags": AWSTags.from_dict(data.get("tags", data.get("instance_tags", {}))),
         }
 
+        # Support multi-instance mappings (vmTypes/instance_types) when provided
+        instance_types_map = (
+            data.get("instance_types")
+            or data.get("vm_types")
+            or data.get("vmTypes")
+        )
+        if instance_types_map:
+            core_data["instance_types"] = instance_types_map
+
         # Add AWS-specific fields
         aws_data = {
             **core_data,

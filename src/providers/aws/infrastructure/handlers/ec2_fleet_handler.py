@@ -128,21 +128,23 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
             # Get instance details based on fleet type
             instances: list[dict[str, Any]] = []
             instance_details: list[dict[str, Any]] = []
-            if aws_template.fleet_type == "instant":
+            fleet_type = aws_template.fleet_type
+            if not isinstance(fleet_type, AWSFleetType):
+                try:
+                    fleet_type = AWSFleetType(str(fleet_type))
+                except Exception:
+                    fleet_type = None
+
+            if fleet_type is AWSFleetType.INSTANT:
                 # For instant fleets, instance IDs are in metadata
                 instance_ids = request.metadata.get("instance_ids", [])
                 if instance_ids:
-                    instance_details = self._get_instance_details(
+                    instances = self._get_instance_details(
                         instance_ids,
                         request_id=str(request.request_id),
                         resource_id=fleet_id,
                         provider_api="EC2Fleet",
                     )
-
-            if instance_details:
-                instances = self._format_instance_data(
-                    instance_details, fleet_id, request, aws_template
-                )
 
             return {
                 "success": True,
