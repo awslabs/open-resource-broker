@@ -1,7 +1,7 @@
 """Comprehensive tests for native spec validation."""
 
 import pytest
-from providers.aws.domain.template.aggregate import AWSTemplate
+from providers.aws.domain.template.aws_template_aggregate import AWSTemplate
 from pydantic import ValidationError
 
 from config.schemas.native_spec_schema import NativeSpecConfig

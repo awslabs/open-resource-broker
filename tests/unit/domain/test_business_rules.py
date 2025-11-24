@@ -19,7 +19,7 @@ try:
         RequestValidationError,
     )
     from domain.request.value_objects import RequestStatus
-    from domain.template.aggregate import Template
+    from domain.template.template_aggregate import Template
     from domain.template.exceptions import TemplateValidationError
 
     IMPORTS_AVAILABLE = True

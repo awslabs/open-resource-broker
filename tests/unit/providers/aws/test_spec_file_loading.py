@@ -114,7 +114,7 @@ class TestSpecFileLoading:
 
     def test_resolve_launch_template_spec_inline(self):
         """Test resolving inline launch template spec."""
-        from providers.aws.domain.template.aggregate import AWSTemplate
+        from providers.aws.domain.template.aws_template_aggregate import AWSTemplate
 
         inline_spec = {
             "LaunchTemplateName": "test-lt",
@@ -134,7 +134,7 @@ class TestSpecFileLoading:
 
     def test_resolve_launch_template_spec_file(self):
         """Test resolving launch template spec from file."""
-        from providers.aws.domain.template.aggregate import AWSTemplate
+        from providers.aws.domain.template.aws_template_aggregate import AWSTemplate
 
         file_spec = {
             "LaunchTemplateName": "file-lt",
@@ -158,7 +158,7 @@ class TestSpecFileLoading:
 
     def test_resolve_launch_template_spec_none(self):
         """Test resolving launch template spec when none specified."""
-        from providers.aws.domain.template.aggregate import AWSTemplate
+        from providers.aws.domain.template.aws_template_aggregate import AWSTemplate
 
         template = AWSTemplate(
             template_id="test-template", image_id="ami-12345", instance_type="t3.micro"
@@ -170,7 +170,7 @@ class TestSpecFileLoading:
 
     def test_resolve_provider_api_spec_inline(self):
         """Test resolving inline provider API spec."""
-        from providers.aws.domain.template.aggregate import AWSTemplate
+        from providers.aws.domain.template.aws_template_aggregate import AWSTemplate
 
         inline_spec = {
             "Type": "instant",
@@ -190,7 +190,7 @@ class TestSpecFileLoading:
 
     def test_resolve_provider_api_spec_file(self):
         """Test resolving provider API spec from file."""
-        from providers.aws.domain.template.aggregate import AWSTemplate
+        from providers.aws.domain.template.aws_template_aggregate import AWSTemplate
 
         file_spec = {
             "Type": "maintain",
@@ -214,7 +214,7 @@ class TestSpecFileLoading:
 
     def test_resolve_provider_api_spec_none(self):
         """Test resolving provider API spec when none specified."""
-        from providers.aws.domain.template.aggregate import AWSTemplate
+        from providers.aws.domain.template.aws_template_aggregate import AWSTemplate
 
         template = AWSTemplate(
             template_id="test-template", image_id="ami-12345", instance_type="t3.micro"
@@ -301,7 +301,7 @@ class TestSpecFileLoading:
 
     def test_spec_resolution_priority(self):
         """Test that inline specs take priority over file specs."""
-        from providers.aws.domain.template.aggregate import AWSTemplate
+        from providers.aws.domain.template.aws_template_aggregate import AWSTemplate
 
         # This should not be possible due to validation, but test the resolution logic
         inline_spec = {"Type": "instant"}

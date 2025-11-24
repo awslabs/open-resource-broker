@@ -285,6 +285,21 @@ class TemplateProcessor:
                 # Replace placeholders
                 populated_template = self.replace_placeholders(base_template_data, config)
 
+                # Apply explicit overrides for fields not covered by placeholders
+                if overrides and isinstance(populated_template, dict):
+                    templates_list = populated_template.get("templates", [])
+                    for tmpl in templates_list:
+                        for key in [
+                            "vmType",
+                            "vmTypes",
+                            "abisInstanceRequirements",
+                            "abis_instance_requirements",
+                            "instance_types",
+                            "instanceTypes",
+                        ]:
+                            if key in overrides:
+                                tmpl[key] = overrides[key]
+
                 # Write populated template (always use standard output name)
                 output_file = test_dir / output_name
                 with open(output_file, "w") as f:

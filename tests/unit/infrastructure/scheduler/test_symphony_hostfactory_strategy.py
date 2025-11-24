@@ -2,7 +2,7 @@
 
 from unittest.mock import Mock, patch
 
-from domain.template.aggregate import Template
+from domain.template.template_aggregate import Template
 from infrastructure.scheduler.hostfactory.hostfactory_strategy import HostFactorySchedulerStrategy
 
 

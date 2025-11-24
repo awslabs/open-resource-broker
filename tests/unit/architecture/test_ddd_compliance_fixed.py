@@ -12,7 +12,7 @@ import pytest
 
 from domain.base.exceptions import DomainException
 from domain.base.value_objects import InstanceId, ResourceId, ResourceQuota
-from domain.template.aggregate import Template
+from domain.template.template_aggregate import Template
 
 
 @pytest.mark.unit

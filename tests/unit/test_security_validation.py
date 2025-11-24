@@ -12,7 +12,7 @@ import pytest
 try:
     from domain.request.aggregate import Request
     from domain.request.exceptions import RequestValidationError
-    from domain.template.aggregate import Template
+    from domain.template.template_aggregate import Template
     from domain.template.exceptions import TemplateValidationError
 
     IMPORTS_AVAILABLE = True
