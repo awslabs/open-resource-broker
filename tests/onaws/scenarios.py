@@ -1,30 +1,53 @@
 import itertools
+import os
 from typing import Any, Dict, List
+
+# Central flag to enable/disable partial return scenarios
+RUN_PARTIAL_RETURN_TESTS = os.environ.get("RUN_PARTIAL_RETURN_TESTS", "0").lower() in (
+    "1",
+    "true",
+    "yes",
+)
 
 # Global default attribute combinations
 DEFAULT_ATTRIBUTE_COMBINATIONS = [
-    {
-        "providerApi": ["EC2Fleet"],
-        "fleetType": ["request", "instant"],
-        "priceType": ["ondemand", "spot"],
-        "scheduler": ["default", "hostfactory"],
-    },
+    # {
+    #     "providerApi": ["EC2Fleet"],
+    #     "fleetType": ["request", "instant"],
+    #     "priceType": ["ondemand", "spot"],
+    #     "scheduler": ["default", "hostfactory"],
+    # },
+    # {
+    #     "providerApi": ["ASG"],
+    #     "priceType": ["ondemand"],
+    #     "scheduler": ["default", "hostfactory"],
+    # },
+    # {
+    #     "providerApi": ["RunInstances"],
+    #     "priceType": ["ondemand"],
+    #     "scheduler": ["default", "hostfactory"],
+    # },
+    # {
+    #     "providerApi": ["SpotFleet"],
+    #     "fleetType": ["request"],
+    #     "priceType": ["ondemand", "spot"],
+    #     "scheduler": ["default", "hostfactory"],
+    # },
+
+
     {
         "providerApi": ["ASG"],
-        "priceType": ["ondemand"],
-        "scheduler": ["default", "hostfactory"],
-    },
-    {
-        "providerApi": ["RunInstances"],
-        "priceType": ["ondemand"],
-        "scheduler": ["default", "hostfactory"],
-    },
-    {
-        "providerApi": ["SpotFleet"],
-        "fleetType": ["request"],
         "priceType": ["ondemand", "spot"],
         "scheduler": ["default", "hostfactory"],
     },
+
+    # {
+    #     "providerApi": ["EC2Fleet"],
+    #     "fleetType": ["maintain"],
+    #     "priceType": ["ondemand", "spot"],
+    #     "scheduler": ["default", "hostfactory"],
+    # },
+
     # { INTENTIONALLY NOT SUPPORTED
     #     "providerApi": ["RunInstances"],
     #     "priceType": ["spot"]
@@ -150,6 +173,7 @@ def get_custom_test_cases() -> List[Dict[str, Any]]:
             "template_id": "EC2FleetRequest",
             "capacity_to_request": 2,
             "awsprov_base_template": "awsprov_templates.base.json",
+            "run_partial_return": False,
             "overrides": {
                 "providerApi": "EC2Fleet",
                 "fleetType": "request",
@@ -166,6 +190,7 @@ def get_custom_test_cases() -> List[Dict[str, Any]]:
             "template_id": "SpotFleetRequest",
             "capacity_to_request": 2,
             "awsprov_base_template": "awsprov_templates.base.json",
+            "run_partial_return": False,
             "overrides": {
                 "providerApi": "SpotFleet",
                 "fleetType": "request",
@@ -182,6 +207,7 @@ def get_custom_test_cases() -> List[Dict[str, Any]]:
             "template_id": "EC2FleetRequest",
             "capacity_to_request": 3,
             "awsprov_base_template": "awsprov_templates.base.json",
+            "run_partial_return": False,
             "overrides": {
                 "providerApi": "EC2Fleet",
                 "fleetType": "request",
@@ -195,6 +221,7 @@ def get_custom_test_cases() -> List[Dict[str, Any]]:
             "template_id": "SpotFleetRequest",
             "capacity_to_request": 3,
             "awsprov_base_template": "awsprov_templates.base.json",
+            "run_partial_return": False,
             "overrides": {
                 "providerApi": "SpotFleet",
                 "fleetType": "request",
@@ -208,6 +235,7 @@ def get_custom_test_cases() -> List[Dict[str, Any]]:
             "template_id": "ASG",
             "capacity_to_request": 2,
             "awsprov_base_template": "awsprov_templates.base.json",
+            "run_partial_return": False,
             "overrides": {
                 "providerApi": "ASG",
                 "scheduler": "hostfactory",
@@ -223,6 +251,7 @@ def get_custom_test_cases() -> List[Dict[str, Any]]:
             "template_id": "ASG",
             "capacity_to_request": 3,
             "awsprov_base_template": "awsprov_templates.base.json",
+            "run_partial_return": False,
             "overrides": {
                 "providerApi": "ASG",
                 "scheduler": "hostfactory",

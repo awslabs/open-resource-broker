@@ -16,12 +16,12 @@ from application.services.provider_capability_service import ProviderCapabilityS
 from application.services.provider_selection_service import ProviderSelectionService
 from domain.base import UnitOfWorkFactory
 from domain.base.ports import (
-    ContainerPort,
     ErrorHandlingPort,
     EventPublisherPort,
     LoggingPort,
 )
 from infrastructure.di.buses import CommandBus, QueryBus
+from infrastructure.di.container import DIContainer
 from providers.base.strategy import ProviderContext
 
 
@@ -37,7 +37,7 @@ class TestCQRSArchitectureIntegration:
     @pytest.fixture
     def mock_container(self):
         """Create mock container."""
-        container = Mock(spec=ContainerPort)
+        container = Mock(spec=DIContainer)
         # Mock the get method to return mocks for any requested service
         container.get.return_value = Mock()
         return container
