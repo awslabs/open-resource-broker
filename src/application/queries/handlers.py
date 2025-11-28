@@ -840,36 +840,10 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
             )
 
             # Capacity info from provider metadata (e.g., fleets/ASGs)
-<<<<<<< HEAD
-            fleet_capacity = provider_metadata.get("fleet_capacity") or {}
-            asg_capacity = provider_metadata.get("asg_capacity") or {}
-            capacity_target = (
-                fleet_capacity.get("target")
-                if fleet_capacity
-                else asg_capacity.get("desired")
-                if asg_capacity
-                else None
-            )
-            capacity_fulfilled = (
-                fleet_capacity.get("fulfilled")
-                if fleet_capacity
-                else asg_capacity.get("in_service")
-                if asg_capacity
-                else None
-            )
-            capacity_state = (
-                fleet_capacity.get("state")
-                if fleet_capacity
-                else asg_capacity.get("state")
-                if asg_capacity
-                else None
-            )
-=======
             fleet_capacity_fulfilment = provider_metadata.get("fleet_capacity_fulfilment") or {}
             providers_target_capacity_units = fleet_capacity_fulfilment.get("target_capacity_units", None)
             providers_fulfilled_capacity_units = fleet_capacity_fulfilment.get("fulfilled_capacity_units", None)
             providers_capacity_state = fleet_capacity_fulfilment.get("state", None)
->>>>>>> c2eee141 (Fix: corrected process of determining fleet fulfillment state.)
 
             # Determine new status based on request type and machine states
             new_status = None
