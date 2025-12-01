@@ -9,9 +9,11 @@ import inspect
 from functools import wraps
 from typing import Any, Callable, Optional
 
-from infrastructure.error.exception_handler import (ExceptionContext,
-                                                    ExceptionHandler,
-                                                    get_exception_handler)
+from infrastructure.error.exception_handler import (
+    ExceptionContext,
+    ExceptionHandler,
+    get_exception_handler,
+)
 
 
 def handle_exceptions(
@@ -60,10 +62,12 @@ def handle_exceptions(
                     context_data = _build_context_data(func, args, kwargs, additional_context)
 
                     # Filter out 'layer' from context_data to avoid duplicate parameter
-                    filtered_context = {k: v for k, v in context_data.items() if k != 'layer'}
+                    filtered_context = {k: v for k, v in context_data.items() if k != "layer"}
 
                     # Create exception context
-                    exc_context = ExceptionContext(operation=context, layer=layer, **filtered_context)
+                    exc_context = ExceptionContext(
+                        operation=context, layer=layer, **filtered_context
+                    )
 
                     # Handle exception
                     handled_exception = exception_handler.handle(e, exc_context)
@@ -87,10 +91,12 @@ def handle_exceptions(
                     context_data = _build_context_data(func, args, kwargs, additional_context)
 
                     # Filter out 'layer' from context_data to avoid duplicate parameter
-                    filtered_context = {k: v for k, v in context_data.items() if k != 'layer'}
+                    filtered_context = {k: v for k, v in context_data.items() if k != "layer"}
 
                     # Create exception context
-                    exc_context = ExceptionContext(operation=context, layer=layer, **filtered_context)
+                    exc_context = ExceptionContext(
+                        operation=context, layer=layer, **filtered_context
+                    )
 
                     # Handle exception
                     handled_exception = exception_handler.handle(e, exc_context)

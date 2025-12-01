@@ -14,13 +14,11 @@ class TestSymphonyHostFactorySchedulerStrategy:
         """Set up test fixtures."""
         with patch("infrastructure.di.container.get_container") as mock_get_container:
             mock_container = Mock()
-            
+
             # Mock ProviderSelectionService to return proper ProviderSelectionResult
             mock_provider_service = Mock()
             mock_provider_service.select_active_provider.return_value = ProviderSelectionResult(
-                provider_type="aws",
-                provider_instance="aws-default",
-                selection_reason="test"
+                provider_type="aws", provider_instance="aws-default", selection_reason="test"
             )
             mock_container.get.return_value = mock_provider_service
             mock_get_container.return_value = mock_container

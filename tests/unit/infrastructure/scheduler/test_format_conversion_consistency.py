@@ -18,12 +18,12 @@ class TestFormatConversionConsistency:
 
         # Create scheduler strategies
         self.default_strategy = DefaultSchedulerStrategy(self.config_manager, self.logger)
-        
+
         # Mock the container to avoid DI issues
         mock_container = MagicMock()
         mock_provider_service = MagicMock()
         mock_container.get.return_value = mock_provider_service
-        
+
         with patch("infrastructure.di.container.get_container", return_value=mock_container):
             self.symphony_strategy = HostFactorySchedulerStrategy(self.config_manager, self.logger)
 

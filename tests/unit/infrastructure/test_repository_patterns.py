@@ -3,7 +3,7 @@
 import os
 import tempfile
 from datetime import datetime
-from unittest.mock import Mock, MagicMock, call
+from unittest.mock import Mock
 
 import pytest
 

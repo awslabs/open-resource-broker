@@ -46,9 +46,7 @@ class TestStorageRegistryIntegration:
         mock_container.get.return_value = mock_storage_port
 
         with (
-            patch(
-                "infrastructure.di.container.get_container"
-            ) as mock_get_container,
+            patch("infrastructure.di.container.get_container") as mock_get_container,
             patch(
                 "infrastructure.persistence.repositories.request_repository.RequestRepositoryImpl"
             ) as mock_repo_class,

@@ -224,7 +224,9 @@ class TestBootstrapIntegration:
         mock_get_config_manager.return_value = self.mock_config_manager
 
         self.mock_config_manager.get.return_value = {"type": "aws"}
-        self.mock_config_manager.get_provider_config.side_effect = AttributeError("Method not available")
+        self.mock_config_manager.get_provider_config.side_effect = AttributeError(
+            "Method not available"
+        )
 
         # Mock AppConfig with complete LoggingConfig attributes
         mock_app_config = Mock()

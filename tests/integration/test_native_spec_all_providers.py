@@ -4,6 +4,9 @@ from unittest.mock import Mock, patch
 
 import pytest
 
+from application.services.native_spec_service import NativeSpecService
+from domain.base.ports import ConfigurationPort, LoggingPort
+from domain.base.ports.spec_rendering_port import SpecRenderingPort
 from domain.request.aggregate import Request
 from domain.request.request_identifiers import RequestId
 from domain.request.request_types import RequestType
@@ -12,9 +15,6 @@ from providers.aws.domain.template.value_objects import ProviderApi
 from providers.aws.infrastructure.services.aws_native_spec_service import (
     AWSNativeSpecService,
 )
-from application.services.native_spec_service import NativeSpecService
-from domain.base.ports import ConfigurationPort, LoggingPort
-from domain.base.ports.spec_rendering_port import SpecRenderingPort
 
 
 class TestNativeSpecAllProviders:
@@ -27,11 +27,12 @@ class TestNativeSpecAllProviders:
         mock_config_port.get_native_spec_config.return_value = {"enabled": True}
         mock_config_port.get_package_info.return_value = {
             "name": "open-hostfactory-plugin",
-            "version": "1.0.0"
+            "version": "1.0.0",
         }
-        
+
         mock_logger = Mock(spec=LoggingPort)
         mock_spec_renderer = Mock(spec=SpecRenderingPort)
+
         # Default renderer behavior: render string placeholders using provided context
         def _render(spec, ctx):
             if isinstance(spec, dict):
@@ -39,31 +40,32 @@ class TestNativeSpecAllProviders:
                 rendered = {}
                 for k, v in spec.items():
                     if isinstance(v, str):
-                        rendered[k] = v.replace("{{ requested_count }}", str(ctx.get("requested_count", ""))) \
-                                       .replace("{{ request_id }}", str(ctx.get("request_id", ""))) \
-                                       .replace("{{ template_id }}", str(ctx.get("template_id", ""))) \
-                                       .replace("{{ image_id }}", str(ctx.get("image_id", ""))) \
-                                       .replace("{{ instance_type }}", str(ctx.get("instance_type", ""))) \
-                                       .replace("{{ package_name }}", str(ctx.get("package_name", ""))) \
-                                       .replace("{{ package_version }}", str(ctx.get("package_version", "")))
+                        rendered[k] = (
+                            v.replace("{{ requested_count }}", str(ctx.get("requested_count", "")))
+                            .replace("{{ request_id }}", str(ctx.get("request_id", "")))
+                            .replace("{{ template_id }}", str(ctx.get("template_id", "")))
+                            .replace("{{ image_id }}", str(ctx.get("image_id", "")))
+                            .replace("{{ instance_type }}", str(ctx.get("instance_type", "")))
+                            .replace("{{ package_name }}", str(ctx.get("package_name", "")))
+                            .replace("{{ package_version }}", str(ctx.get("package_version", "")))
+                        )
                     else:
                         rendered[k] = v
                 return rendered
             return spec
 
         mock_spec_renderer.render_spec.side_effect = _render
-        mock_spec_renderer.render_spec_from_file = Mock(side_effect=lambda path, ctx: _render({}, ctx))
-        
+        mock_spec_renderer.render_spec_from_file = Mock(
+            side_effect=lambda path, ctx: _render({}, ctx)
+        )
+
         # Create real service instances with mocked dependencies
         native_spec_service = NativeSpecService(
-            config_port=mock_config_port,
-            spec_renderer=mock_spec_renderer,
-            logger=mock_logger
+            config_port=mock_config_port, spec_renderer=mock_spec_renderer, logger=mock_logger
         )
-        
+
         self.aws_native_spec_service = AWSNativeSpecService(
-            native_spec_service=native_spec_service,
-            config_port=mock_config_port
+            native_spec_service=native_spec_service, config_port=mock_config_port
         )
 
     def test_ec2fleet_native_spec_integration(self):

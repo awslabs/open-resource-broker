@@ -50,7 +50,9 @@ class TestMachineStatusCQRSMigration:
         return Mock()
 
     @pytest.fixture
-    def convert_handler(self, mock_provider_context, mock_logger, mock_event_publisher, mock_error_handler):
+    def convert_handler(
+        self, mock_provider_context, mock_logger, mock_event_publisher, mock_error_handler
+    ):
         """Create ConvertMachineStatusCommandHandler."""
         return ConvertMachineStatusCommandHandler(
             mock_provider_context, mock_logger, mock_event_publisher, mock_error_handler
@@ -62,7 +64,9 @@ class TestMachineStatusCQRSMigration:
         return ConvertBatchMachineStatusCommandHandler(convert_handler)
 
     @pytest.fixture
-    def validate_handler(self, mock_provider_context, mock_logger, mock_event_publisher, mock_error_handler):
+    def validate_handler(
+        self, mock_provider_context, mock_logger, mock_event_publisher, mock_error_handler
+    ):
         """Create ValidateProviderStateCommandHandler."""
         return ValidateProviderStateCommandHandler(
             mock_provider_context, mock_logger, mock_event_publisher, mock_error_handler
@@ -89,7 +93,9 @@ class TestMachineStatusCQRSMigration:
         assert result.provider_type == "aws"
         assert result.metadata["test"] == "migration"
 
-    def test_convert_machine_status_fallback(self, mock_provider_context, mock_logger, mock_event_publisher, mock_error_handler):
+    def test_convert_machine_status_fallback(
+        self, mock_provider_context, mock_logger, mock_event_publisher, mock_error_handler
+    ):
         """Test ConvertMachineStatusCommandHandler fallback behavior."""
         # Configure provider context to fail
         mock_provider_context.set_strategy.side_effect = Exception("Provider error")
@@ -178,7 +184,9 @@ class TestMachineStatusCQRSMigration:
         assert validate_handler.can_handle(batch_command) is False
         assert validate_handler.can_handle(validate_command)
 
-    def test_fallback_conversion_mapping(self, mock_provider_context, mock_logger, mock_event_publisher, mock_error_handler):
+    def test_fallback_conversion_mapping(
+        self, mock_provider_context, mock_logger, mock_event_publisher, mock_error_handler
+    ):
         """Test fallback conversion mapping matches original service."""
         handler = ConvertMachineStatusCommandHandler(
             mock_provider_context, mock_logger, mock_event_publisher, mock_error_handler
@@ -199,7 +207,9 @@ class TestMachineStatusCQRSMigration:
             result = handler._fallback_conversion(provider_state)
             assert result == expected_status, f"Failed for state: {provider_state}"
 
-    def test_error_handling(self, mock_provider_context, mock_logger, mock_event_publisher, mock_error_handler):
+    def test_error_handling(
+        self, mock_provider_context, mock_logger, mock_event_publisher, mock_error_handler
+    ):
         """Test error handling in handlers."""
         # Create handler with failing provider context
         mock_provider_context.set_strategy.side_effect = Exception("Critical error")
