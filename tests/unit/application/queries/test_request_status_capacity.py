@@ -41,7 +41,14 @@ class DummyHandler(GetRequestHandler):
 def test_fleet_capacity_completed_even_with_few_instances():
     handler = DummyHandler()
     request = _request(RequestType.ACQUIRE, RequestStatus.IN_PROGRESS, requested_count=10)
-    provider_metadata = {"fleet_capacity": {"target": 10, "fulfilled": 10, "state": "active"}}
+    provider_metadata = {
+        "fleet_capacity_fulfilment": {
+            "target_capacity_units": 10,
+            "fulfilled_capacity_units": 10,
+            "provisioned_instance_count": 10,
+            "state": "active",
+        }
+    }
     machines = _machines(MachineStatus.RUNNING, MachineStatus.RUNNING)  # fewer than target
 
     new_status, msg = handler._determine_request_status_from_machines(
@@ -55,7 +62,14 @@ def test_fleet_capacity_completed_even_with_few_instances():
 def test_fleet_capacity_in_progress_when_under_target():
     handler = DummyHandler()
     request = _request(RequestType.ACQUIRE, RequestStatus.IN_PROGRESS, requested_count=10)
-    provider_metadata = {"fleet_capacity": {"target": 10, "fulfilled": 6, "state": "modifying"}}
+    provider_metadata = {
+        "fleet_capacity_fulfilment": {
+            "target_capacity_units": 10,
+            "fulfilled_capacity_units": 6,
+            "provisioned_instance_count": 6,
+            "state": "modifying",
+        }
+    }
     machines = _machines(MachineStatus.RUNNING, MachineStatus.PENDING)
 
     new_status, msg = handler._determine_request_status_from_machines(
@@ -69,7 +83,14 @@ def test_fleet_capacity_in_progress_when_under_target():
 def test_fleet_capacity_partial_with_failures():
     handler = DummyHandler()
     request = _request(RequestType.ACQUIRE, RequestStatus.IN_PROGRESS, requested_count=5)
-    provider_metadata = {"fleet_capacity": {"target": 5, "fulfilled": 5, "state": "active"}}
+    provider_metadata = {
+        "fleet_capacity_fulfilment": {
+            "target_capacity_units": 5,
+            "fulfilled_capacity_units": 5,
+            "provisioned_instance_count": 5,
+            "state": "active",
+        }
+    }
     machines = _machines(
         MachineStatus.RUNNING,
         MachineStatus.RUNNING,
@@ -89,7 +110,14 @@ def test_fleet_capacity_partial_with_failures():
 def test_fleet_capacity_all_failed():
     handler = DummyHandler()
     request = _request(RequestType.ACQUIRE, RequestStatus.IN_PROGRESS, requested_count=4)
-    provider_metadata = {"fleet_capacity": {"target": 4, "fulfilled": 0, "state": "deleted"}}
+    provider_metadata = {
+        "fleet_capacity_fulfilment": {
+            "target_capacity_units": 4,
+            "fulfilled_capacity_units": 0,
+            "provisioned_instance_count": 0,
+            "state": "deleted",
+        }
+    }
     machines = _machines(
         MachineStatus.FAILED,
         MachineStatus.FAILED,
@@ -108,7 +136,14 @@ def test_fleet_capacity_all_failed():
 def test_asg_capacity_completed():
     handler = DummyHandler()
     request = _request(RequestType.ACQUIRE, RequestStatus.IN_PROGRESS, requested_count=6)
-    provider_metadata = {"asg_capacity": {"desired": 6, "in_service": 6, "state": None}}
+    provider_metadata = {
+        "fleet_capacity_fulfilment": {
+            "target_capacity_units": 6,
+            "fulfilled_capacity_units": 6,
+            "provisioned_instance_count": 6,
+            "state": None,
+        }
+    }
     machines = _machines(MachineStatus.RUNNING)
 
     new_status, msg = handler._determine_request_status_from_machines(
@@ -122,7 +157,14 @@ def test_asg_capacity_completed():
 def test_asg_capacity_in_progress():
     handler = DummyHandler()
     request = _request(RequestType.ACQUIRE, RequestStatus.IN_PROGRESS, requested_count=6)
-    provider_metadata = {"asg_capacity": {"desired": 6, "in_service": 2, "state": None}}
+    provider_metadata = {
+        "fleet_capacity_fulfilment": {
+            "target_capacity_units": 6,
+            "fulfilled_capacity_units": 2,
+            "provisioned_instance_count": 2,
+            "state": None,
+        }
+    }
     machines = _machines(MachineStatus.RUNNING, MachineStatus.PENDING)
 
     new_status, msg = handler._determine_request_status_from_machines(

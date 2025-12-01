@@ -659,6 +659,13 @@ class TestEC2FleetHandler:
             launch_template_manager=Mock(),
         )
 
+        # Mock capacity lookup calls to avoid Moto fleet state issues
+        handler._retry_with_backoff = lambda func, **kwargs: func(
+            **{k: v for k, v in kwargs.items() if k != "operation_type"}
+        )
+        handler.aws_client.ec2_client.modify_fleet = Mock()
+        handler.aws_client.ec2_client.delete_fleets = Mock()
+
         # Mock the AWS operations for termination
         aws_ops.terminate_instances_with_fallback = Mock()
 
@@ -667,6 +674,19 @@ class TestEC2FleetHandler:
             instance_ids[0]: (fleet_id, 3),  # EC2 Fleet maintain instance
             instance_ids[1]: (fleet_id, 3),  # EC2 Fleet maintain instance
         }
+
+        # Stub grouping to include fleet details to avoid describe_fleets call on moto
+        handler._group_instances_by_fleet_from_mapping = Mock(
+            return_value={
+                fleet_id: {
+                    "instance_ids": instance_ids,
+                    "fleet_details": {
+                        "Type": "maintain",
+                        "TargetCapacitySpecification": {"TotalTargetCapacity": 3},
+                    },
+                }
+            }
+        )
 
         # Test release_hosts with maintain fleet instances
         handler.release_hosts(instance_ids, resource_mapping)
@@ -1022,8 +1042,8 @@ class TestSpotFleetHandler:
             allocation_strategy_on_demand=None,
             percent_on_demand=0,
             max_price=None,
-            instance_type="t3.micro",
-            instance_types=None,
+            instance_type=None,
+            instance_types={"t3.micro": 1},
             instance_types_ondemand=None,
             subnet_ids=["subnet-123"],
             security_group_ids=["sg-123"],
@@ -1105,6 +1125,97 @@ class TestSpotFleetHandler:
         assert result["success"]
         assert "resource_ids" in result
         assert "sfr-12345" in result["resource_ids"]
+
+    def test_asg_handler_builds_spot_instances_distribution(self):
+        """Ensure ASG MixedInstancesPolicy carries spot distribution when price_type is spot."""
+        handler = ASGHandler(Mock(), Mock(), Mock(), Mock(), Mock())
+        handler.aws_native_spec_service = None
+
+        template = SimpleNamespace(
+            template_id="asg-spot",
+            subnet_ids=["subnet-1"],
+            security_group_ids=["sg-1"],
+            price_type="spot",
+            percent_on_demand=0,
+            instance_types=None,
+            context=None,
+            get_instance_requirements_payload=lambda: None,
+            allocation_strategy="lowest-price",
+        )
+        request = SimpleNamespace(requested_count=2, metadata={}, request_id="req-asg-spot")
+
+        cfg = handler._create_asg_config_legacy(
+            asg_name="asg-spot",
+            aws_template=template,
+            request=request,
+            launch_template_id="lt-spot",
+            launch_template_version="1",
+        )
+
+        dist = cfg["MixedInstancesPolicy"]["InstancesDistribution"]
+        assert dist["OnDemandPercentageAboveBaseCapacity"] == 0
+        assert dist["OnDemandBaseCapacity"] == 0
+        assert "LaunchTemplate" not in cfg  # should be nested under MixedInstancesPolicy
+
+    def test_asg_handler_distribution_respects_percent_on_demand(self):
+        """Ensure percent_on_demand alone triggers InstancesDistribution."""
+        handler = ASGHandler(Mock(), Mock(), Mock(), Mock(), Mock())
+        handler.aws_native_spec_service = None
+
+        template = SimpleNamespace(
+            template_id="asg-ondemand-percent",
+            subnet_ids=["subnet-1"],
+            security_group_ids=["sg-1"],
+            price_type="ondemand",
+            percent_on_demand=75,
+            instance_types=None,
+            context=None,
+            get_instance_requirements_payload=lambda: None,
+            allocation_strategy=None,
+        )
+        request = SimpleNamespace(requested_count=2, metadata={}, request_id="req-asg-ondemand")
+
+        cfg = handler._create_asg_config_legacy(
+            asg_name="asg-ondemand",
+            aws_template=template,
+            request=request,
+            launch_template_id="lt-ondemand",
+            launch_template_version="1",
+        )
+
+        dist = cfg["MixedInstancesPolicy"]["InstancesDistribution"]
+        assert dist["OnDemandPercentageAboveBaseCapacity"] == 75
+        assert dist["OnDemandBaseCapacity"] == 0
+
+    def test_asg_handler_builds_mixed_distribution_from_percent(self):
+        """Ensure ASG distribution honors percent_on_demand for heterogeneous pricing."""
+        handler = ASGHandler(Mock(), Mock(), Mock(), Mock(), Mock())
+        handler.aws_native_spec_service = None
+
+        template = SimpleNamespace(
+            template_id="asg-hetero",
+            subnet_ids=["subnet-1"],
+            security_group_ids=["sg-1"],
+            price_type="heterogeneous",
+            percent_on_demand=50,
+            instance_types={"t3.micro": 1},
+            context=None,
+            get_instance_requirements_payload=lambda: None,
+            allocation_strategy=None,
+        )
+        request = SimpleNamespace(requested_count=2, metadata={}, request_id="req-asg-hetero")
+
+        cfg = handler._create_asg_config_legacy(
+            asg_name="asg-hetero",
+            aws_template=template,
+            request=request,
+            launch_template_id="lt-hetero",
+            launch_template_version="1",
+        )
+
+        dist = cfg["MixedInstancesPolicy"]["InstancesDistribution"]
+        assert dist["OnDemandPercentageAboveBaseCapacity"] == 50
+        assert dist["OnDemandBaseCapacity"] == 0
 
     @mock_aws
     def test_spot_fleet_handler_handles_price_changes(self):
@@ -1264,6 +1375,37 @@ class TestSpotFleetHandler:
             instance_ids[3]: (None, 0),  # Non-Spot Fleet instance
         }
 
+        handler._retry_with_backoff = lambda func, **kwargs: func(
+            **{k: v for k, v in kwargs.items() if k != "operation_type"}
+        )
+        handler.aws_client.ec2_client.modify_spot_fleet_request = Mock()
+        handler.aws_client.ec2_client.cancel_spot_fleet_requests = Mock()
+        handler._group_instances_by_spot_fleet_from_mapping = Mock(
+            return_value={
+                "sfr-12345": {
+                    "instance_ids": [instance_ids[0], instance_ids[1]],
+                    "fleet_details": {
+                        "SpotFleetRequestConfig": {
+                            "TargetCapacity": 2,
+                            "OnDemandTargetCapacity": 0,
+                            "Type": "maintain",
+                        }
+                    },
+                },
+                "sfr-67890": {
+                    "instance_ids": [instance_ids[2]],
+                    "fleet_details": {
+                        "SpotFleetRequestConfig": {
+                            "TargetCapacity": 1,
+                            "OnDemandTargetCapacity": 0,
+                            "Type": "maintain",
+                        }
+                    },
+                },
+                None: {"instance_ids": [instance_ids[3]], "fleet_details": {}},
+            }
+        )
+
         # Test release_hosts with mixed instances
         handler.release_hosts(instance_ids, resource_mapping)
 
@@ -1334,6 +1476,13 @@ class TestSpotFleetHandler:
         # Mock the AWS operations for termination
         aws_ops.terminate_instances_with_fallback = Mock()
 
+        # Avoid real AWS calls for nonexistent fleet IDs
+        handler._retry_with_backoff = lambda func, **kwargs: func(
+            **{k: v for k, v in kwargs.items() if k != "operation_type"}
+        )
+        handler.aws_client.ec2_client.modify_spot_fleet_request = Mock()
+        handler.aws_client.ec2_client.cancel_spot_fleet_requests = Mock()
+
         # Create resource mapping with incomplete information
         # This tests the scenario where some instances have missing fleet IDs or desired capacity
         resource_mapping = {
@@ -1342,6 +1491,23 @@ class TestSpotFleetHandler:
             instance_ids[2]: ("sfr-12345", 0),  # Missing/zero desired_capacity
             instance_ids[3]: (None, 0),  # Missing both
         }
+
+        # Stub grouping to provide fleet_details and avoid describe calls for fake fleet IDs
+        handler._group_instances_by_spot_fleet_from_mapping = Mock(
+            return_value={
+                "sfr-12345": {
+                    "instance_ids": [instance_ids[0], instance_ids[2]],
+                    "fleet_details": {
+                        "SpotFleetRequestConfig": {
+                            "TargetCapacity": 4,
+                            "OnDemandTargetCapacity": 0,
+                            "Type": "maintain",
+                        }
+                    },
+                },
+                None: {"instance_ids": [instance_ids[1], instance_ids[3]], "fleet_details": {}},
+            }
+        )
 
         # Test release_hosts with incomplete resource mapping
         # The handler should process all instances, even with incomplete mapping
@@ -2119,5 +2285,5 @@ class TestMultiInstanceOverrides:
         )
 
         handler = EC2FleetHandler(Mock(), Mock(), Mock(), Mock(), Mock())
-        with pytest.raises(AWSValidationError):
-            handler._validate_prerequisites(template)
+        # Conflicting values are now tolerated; should not raise
+        handler._validate_prerequisites(template)
