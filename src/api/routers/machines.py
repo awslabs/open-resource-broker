@@ -49,14 +49,23 @@ async def request_machines(
     - **machine_count**: Number of machines to request
     - **additional_data**: Optional additional configuration data
     """
-    result = await handler.handle(
-        template_id=request_data.template_id,
-        machine_count=request_data.machine_count,
-        input_data=request_data.additional_data,
-        context={"endpoint": "/machines/request", "method": "POST"},
-    )
+    # Translate incoming request into the internal request model expected by the handler
+    template_payload = {
+        "templateId": request_data.template_id,
+        "machineCount": request_data.machine_count,
+    }
+    if request_data.additional_data:
+        template_payload.update(request_data.additional_data)
 
-    return JSONResponse(content=result)
+    from api.models.requests import RequestMachinesModel
+
+    request_model = RequestMachinesModel(template=template_payload)
+
+    result = await handler.handle(request_model)
+
+    return JSONResponse(
+        content=result.model_dump() if hasattr(result, "model_dump") else result
+    )
 
 
 @router.post("/return", summary="Return Machines", description="Return machines to the provider")
