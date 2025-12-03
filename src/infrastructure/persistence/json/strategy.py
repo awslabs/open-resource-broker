@@ -4,7 +4,6 @@ from typing import Any, Optional
 
 from infrastructure.logging.logger import get_logger
 from infrastructure.persistence.base.strategy import BaseStorageStrategy
-from infrastructure.persistence.metrics_decorators import instrument_storage
 
 # Import components
 from infrastructure.persistence.components import (
@@ -14,6 +13,7 @@ from infrastructure.persistence.components import (
     MemoryTransactionManager,
 )
 from infrastructure.persistence.exceptions import PersistenceError
+from infrastructure.persistence.metrics_decorators import instrument_storage
 
 
 class JSONStorageStrategy(BaseStorageStrategy):
@@ -25,8 +25,11 @@ class JSONStorageStrategy(BaseStorageStrategy):
     """
 
     def __init__(
-        self, file_path: str, create_dirs: bool = True, entity_type: str = "entities",
-        metrics: Optional[object] = None
+        self,
+        file_path: str,
+        create_dirs: bool = True,
+        entity_type: str = "entities",
+        metrics: Optional[object] = None,
     ) -> None:
         """
         Initialize JSON storage strategy with components.

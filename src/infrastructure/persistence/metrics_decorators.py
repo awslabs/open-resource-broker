@@ -20,6 +20,7 @@ def instrument_storage(get_metrics: Callable[[object], Optional[object]], op_nam
 
     If metrics collector is None, operations proceed without instrumentation.
     """
+
     def decorator(func):
         @wraps(func)
         def wrapper(self, *args, **kwargs):
@@ -44,4 +45,5 @@ def instrument_storage(get_metrics: Callable[[object], Optional[object]], op_nam
                     metrics.record_time(f"storage.json.{op_name}_duration", duration)
 
         return wrapper
+
     return decorator

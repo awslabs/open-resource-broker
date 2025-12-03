@@ -45,14 +45,16 @@ def create_json_strategy(config: Any) -> Any:
     try:
         from infrastructure.di.container import get_container
         from monitoring.metrics import MetricsCollector
-        
+
         container = get_container()
         metrics = container.get_optional(MetricsCollector)
     except Exception:
         # If metrics collector not available, proceed without instrumentation
         pass
 
-    return JSONStorageStrategy(file_path=file_path, create_dirs=True, entity_type="generic", metrics=metrics)
+    return JSONStorageStrategy(
+        file_path=file_path, create_dirs=True, entity_type="generic", metrics=metrics
+    )
 
 
 def create_json_config(data: dict[str, Any]) -> Any:

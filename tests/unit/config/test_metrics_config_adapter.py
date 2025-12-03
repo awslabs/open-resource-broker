@@ -1,4 +1,3 @@
-
 from infrastructure.adapters.configuration_adapter import ConfigurationAdapter
 
 

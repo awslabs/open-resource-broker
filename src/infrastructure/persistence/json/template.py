@@ -164,7 +164,7 @@ class TemplateJSONRepository(StrategyBasedRepository, TemplateRepository):
         try:
             from infrastructure.di.container import get_container
             from monitoring.metrics import MetricsCollector
-            
+
             container = get_container()
             metrics = container.get_optional(MetricsCollector)
         except Exception:
