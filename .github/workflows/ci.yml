@@ -26,7 +26,7 @@ jobs:
       default-python-version: ${{ steps.config.outputs.default-python-version }}
     steps:
     - name: Checkout code
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
 
     - name: Get project configuration
       id: config
@@ -39,7 +39,7 @@ jobs:
     needs: get-config
     
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
       with:
         fetch-depth: 0  # Fetch full history for git diff
     
@@ -67,7 +67,7 @@ jobs:
       cache-key: ${{ steps.cache-key.outputs.key }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Generate cache key
         id: cache-key
@@ -103,7 +103,7 @@ jobs:
       contents: write
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           ref: ${{ github.head_ref }}
@@ -132,7 +132,7 @@ jobs:
     needs: [get-config, setup-dependencies]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Setup UV with cached environment
         uses: ./.github/actions/setup-uv-cached
@@ -149,7 +149,7 @@ jobs:
     needs: [get-config, setup-dependencies]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Restore UV environment
         uses: actions/cache/restore@v4
@@ -171,7 +171,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
 
     - name: Restore UV environment
       uses: actions/cache/restore@v4
@@ -193,7 +193,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
 
     - name: Restore UV environment
       uses: actions/cache/restore@v4
@@ -215,7 +215,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
 
     - name: Restore UV environment
       uses: actions/cache/restore@v4
@@ -237,7 +237,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
 
     - name: Restore UV environment
       uses: actions/cache/restore@v4
@@ -259,7 +259,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
 
     - name: Restore UV environment
       uses: actions/cache/restore@v4
@@ -306,7 +306,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
 
     - name: Setup UV with cached environment
       uses: ./.github/actions/setup-uv-cached
@@ -333,7 +333,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
 
     - name: Restore UV environment
       uses: actions/cache/restore@v4
