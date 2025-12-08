@@ -3,9 +3,10 @@
 import itertools
 from typing import Any, Dict, List
 
-from tests.onaws.scenarios import CUSTOM_TEST_CASES as CUSTOM_TEST_CASES
-from tests.onaws.scenarios import \
-    DEFAULT_ATTRIBUTE_COMBINATIONS as _DEFAULT_ATTRIBUTE_COMBINATIONS
+from tests.onaws.scenarios import (
+    CUSTOM_TEST_CASES as CUSTOM_TEST_CASES,
+    DEFAULT_ATTRIBUTE_COMBINATIONS as _DEFAULT_ATTRIBUTE_COMBINATIONS,
+)
 
 REST_API_RUN_DEFAULT_COMBINATIONS = False
 REST_API_RUN_CUSTOM_CASES = False
