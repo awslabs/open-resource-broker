@@ -138,7 +138,6 @@ dev = [
 ]
 [project.scripts]
 orb = "run:cli_main"
-open-resource-broker = "run:cli_main"
 
 [project.urls]
 Homepage = "https://github.com/awslabs/open-resource-broker"
