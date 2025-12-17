@@ -3931,7 +3931,7 @@
 <a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>├──<span class="w"> </span>test_multi_ec2_fleet_termination.py<span class="w">    </span><span class="c1"># Multi-EC2Fleet termination tests</span>
 <a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>├──<span class="w"> </span>test_multi_resource_termination.py<span class="w">     </span><span class="c1"># Cross-resource termination tests</span>
 <a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>└──<span class="w"> </span>run_templates/<span class="w">             </span><span class="c1"># Generated test configs</span>
-<a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="w">    </span>└──<span class="w"> </span>test_sample<span class="o">[</span>ScenarioName<span class="o">]</span>/
+<a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="w">    </span>└──<span class="w"> </span>full_cycle_test<span class="o">[</span>ScenarioName<span class="o">]</span>/
 <a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="w">        </span>├──<span class="w"> </span>awsprov_templates.json
 <a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span class="w">        </span>├──<span class="w"> </span>config.json
 <a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a><span class="w">        </span>└──<span class="w"> </span>default_config.json
@@ -3946,11 +3946,18 @@
 <h3 id="execution-parameter-sweep">Execution Parameter Sweep<a class="headerlink" href="#execution-parameter-sweep" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>make<span class="w"> </span>system-tests
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="c1"># Run all onaws tests</span>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>pytest<span class="w"> </span>tests/onaws/<span class="w"> </span>-m<span class="w"> </span>aws
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="c1"># Run all tests, stop on the first failure</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests/onaws/test_onaws.py<span class="w"> </span>-v<span class="w"> </span>-x
 <a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>
-<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="c1"># Run specific scenario</span>
-<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>pytest<span class="w"> </span>tests/onaws/test_onaws.py::test_sample<span class="o">[</span>EC2FleetRequest<span class="o">]</span><span class="w"> </span>-m<span class="w"> </span>aws
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="c1">#Run a specific parameterized configuration of a test</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>pytest<span class="w"> </span><span class="s2">&quot;tests/onaws/test_onaws.py::full_cycle_test[hostfactory.SpotFleetRequest.ABIS]&quot;</span><span class="w"> </span>-v<span class="w"> </span>-x
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="c1">#Execute all system tests in parallel</span>
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests/onaws/test_onaws.py<span class="w"> </span>-v<span class="w"> </span>-m<span class="w"> </span>manual_aws<span class="w"> </span>--no-cov<span class="w"> </span>--tb<span class="o">=</span>long<span class="w"> </span>-n<span class="w"> </span><span class="m">10</span>
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>
+<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>
+<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="c1"># Run specific scenario</span>
+<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a>pytest<span class="w"> </span>tests/onaws/test_onaws.py::full_cycle_test<span class="o">[</span>EC2FleetRequest<span class="o">]</span><span class="w"> </span>-m<span class="w"> </span>aws
 </code></pre></div>
 <h3 id="execution-custom-tests">Execution Custom Tests<a class="headerlink" href="#execution-custom-tests" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>pytest<span class="w"> </span>tests/onaws/test_multi_asg_termination.py<span class="w"> </span>-v
