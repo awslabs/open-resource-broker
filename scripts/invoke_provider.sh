@@ -13,9 +13,9 @@ PACKAGE_COMMAND=${ORB_COMMAND:-"orb"}
 if [ "$LOG_SCRIPTS" = "true" ] || [ "$LOG_SCRIPTS" = "1" ]; then
 {
 
-    echo "=== Input Arguments Start ==="
-    echo "Timestamp: $(date '+%Y-%m-%d %H:%M:%S')"
-    echo "Arguments: $@"
+	    echo "=== Input Arguments Start ==="
+	    echo "Timestamp: $(date '+%Y-%m-%d %H:%M:%S')"
+	    echo "Arguments:" "$@"
 
     prev_arg=""
     for i in "$@"; do
@@ -103,8 +103,8 @@ if [ "$USE_LOCAL_DEV" = "true" ] || [ "$USE_LOCAL_DEV" = "1" ]; then
     done
 
     # Execute the Python script with global args first, then command args
-    $PYTHON_CMD "${PROJECT_ROOT}/src/run.py" "${global_args[@]}" "${command_args[@]}" 2>&1 | tee -a "$SCRIPTS_LOG_FILE"
-    exit ${PIPESTATUS[0]}
+	    "$PYTHON_CMD" "${PROJECT_ROOT}/src/run.py" "${global_args[@]}" "${command_args[@]}" 2>&1 | tee -a "$SCRIPTS_LOG_FILE"
+	    exit "${PIPESTATUS[0]}"
 
 else
     # Package mode - use installed command
@@ -121,7 +121,7 @@ else
         exit 1
     fi
 
-    # Execute the installed command with all arguments
-    "$PACKAGE_COMMAND" "$@" 2>&1 | tee -a "$SCRIPTS_LOG_FILE"
-    exit ${PIPESTATUS[0]}
-fi
+	    # Execute the installed command with all arguments
+	    "$PACKAGE_COMMAND" "$@" 2>&1 | tee -a "$SCRIPTS_LOG_FILE"
+	    exit "${PIPESTATUS[0]}"
+	fi
