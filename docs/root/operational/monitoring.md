@@ -1,6 +1,6 @@
 # Monitoring Setup
 
-This document provides guidance on setting up monitoring and alerting for the Open Host Factory Plugin.
+This document provides guidance on setting up monitoring and alerting for the Open Resource Broker.
 
 ## Overview
 
@@ -20,10 +20,10 @@ The plugin provides built-in health check endpoints:
 
 ```bash
 # Check provider health
-ohfp providers health
+orb providers health
 
 # Check system status
-ohfp system status
+orb system status
 ```
 
 ### Metrics Collection

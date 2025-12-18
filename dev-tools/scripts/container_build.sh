@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-# Docker build script for Open Host Factory Plugin REST API
+# Docker build script for Open Resource Broker REST API
 # Supports multi-architecture builds and tagging
 
 # Colors for output
@@ -24,7 +24,7 @@ log_error() {
 }
 
 # Configuration
-IMAGE_NAME="${IMAGE_NAME:-open-hostfactory-plugin}"  # Will be overridden by Makefile with $(CONTAINER_IMAGE)
+IMAGE_NAME="${IMAGE_NAME:-open-resource-broker}"  # Will be overridden by Makefile with $(CONTAINER_IMAGE)
 REGISTRY="${REGISTRY:-}"
 
 # Use VERSION as provided (unified format works for all systems)
@@ -91,13 +91,13 @@ setup_builder() {
     log_info "Setting up Docker Buildx builder..."
 
     # Create builder if it doesn't exist
-    if ! docker buildx inspect ohfp-builder &> /dev/null; then
-        log_info "Creating new buildx builder: ohfp-builder"
-        docker buildx create --name ohfp-builder --driver docker-container --bootstrap
+    if ! docker buildx inspect orb-builder &> /dev/null; then
+        log_info "Creating new buildx builder: orb-builder"
+        docker buildx create --name orb-builder --driver docker-container --bootstrap
     fi
 
     # Use the builder
-    docker buildx use ohfp-builder
+    docker buildx use orb-builder
 
     log_info "Buildx builder ready"
 }
@@ -124,7 +124,7 @@ build_image() {
     fi
 
     # Get values from Makefile if not provided
-    local MAKEFILE_PACKAGE_SHORT="${PACKAGE_NAME_SHORT:-ohfp}"
+    local MAKEFILE_PACKAGE_SHORT="${PACKAGE_NAME_SHORT:-orb}"
 
     # Prepare tags with Python version support
     local tags=()

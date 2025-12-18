@@ -1,10 +1,10 @@
-# Open Host Factory Plugin
+# Open Resource Broker
 
 A cloud provider integration plugin for IBM Spectrum Symphony Host Factory, enabling dynamic provisioning of compute resources with a REST API interface and structured architecture implementation.
 
 ## Overview
 
-The Open Host Factory Plugin provides integration between IBM Spectrum Symphony Host Factory and cloud providers, implementing industry-standard patterns including Domain-Driven Design (DDD), Command Query Responsibility Segregation (CQRS), and structured architecture principles.
+The Open Resource Broker provides integration between IBM Spectrum Symphony Host Factory and cloud providers, implementing industry-standard patterns including Domain-Driven Design (DDD), Command Query Responsibility Segregation (CQRS), and structured architecture principles.
 
 **Currently Supported Providers:**
 - **AWS** - Amazon Web Services (RunInstances, EC2Fleet, SpotFleet, Auto Scaling Groups)
@@ -38,8 +38,8 @@ The Open Host Factory Plugin provides integration between IBM Spectrum Symphony 
 
 ```bash
 # Clone repository
-git clone https://github.com/awslabs/open-hostfactory-plugin.git
-cd open-hostfactory-plugin
+git clone https://github.com/awslabs/open-resource-broker.git
+cd open-resource-broker
 
 # Configure environment
 cp .env.example .env
@@ -56,11 +56,11 @@ curl http://localhost:8000/health
 
 ```bash
 # Install from PyPI
-pip install open-hostfactory-plugin
+pip install open-resource-broker
 
 # Verify installation
-ohfp --version
-ohfp --help
+orb --version
+orb --help
 ```
 
 ### Fast Development Setup with UV (Recommended)
@@ -72,8 +72,8 @@ For faster dependency resolution and installation, use [uv](https://github.com/a
 pip install uv
 
 # Clone repository
-git clone https://github.com/awslabs/open-hostfactory-plugin.git
-cd open-hostfactory-plugin
+git clone https://github.com/awslabs/open-resource-broker.git
+cd open-resource-broker
 
 # Fast development setup with uv
 make dev-install-uv
@@ -92,8 +92,8 @@ make uv-sync-dev
 
 ```bash
 # Clone repository
-git clone https://github.com/awslabs/open-hostfactory-plugin.git
-cd open-hostfactory-plugin
+git clone https://github.com/awslabs/open-resource-broker.git
+cd open-resource-broker
 
 # Traditional setup with pip
 make dev-install-pip
@@ -110,13 +110,13 @@ The plugin provides a Model Context Protocol (MCP) server for AI assistant integ
 
 ```bash
 # Start MCP server in stdio mode (recommended for AI assistants)
-ohfp mcp serve --stdio
+orb mcp serve --stdio
 
 # Start MCP server as TCP server (for development/testing)
-ohfp mcp serve --port 3000 --host localhost
+orb mcp serve --port 3000 --host localhost
 
 # Configure logging level
-ohfp mcp serve --stdio --log-level DEBUG
+orb mcp serve --stdio --log-level DEBUG
 ```
 
 #### Available MCP Tools
@@ -151,7 +151,7 @@ Pre-built prompts for common infrastructure tasks:
 {
   "mcpServers": {
     "open-hostfactory": {
-      "command": "ohfp",
+      "command": "orb",
       "args": ["mcp", "serve", "--stdio"]
     }
   }
@@ -165,7 +165,7 @@ from mcp import ClientSession, StdioServerParameters
 
 async def use_hostfactory():
     server_params = StdioServerParameters(
-        command="ohfp", 
+        command="orb",
         args=["mcp", "serve", "--stdio"]
     )
 
@@ -186,57 +186,57 @@ async def use_hostfactory():
 
 ```bash
 # List available templates
-ohfp templates list
-ohfp templates list --long                    # Detailed information
-ohfp templates list --format table           # Table format
+orb templates list
+orb templates list --long                    # Detailed information
+orb templates list --format table           # Table format
 
 # Show specific template
-ohfp templates show TEMPLATE_ID
+orb templates show TEMPLATE_ID
 
 # Create new template
-ohfp templates create --file template.json
-ohfp templates create --file template.yaml --validate-only
+orb templates create --file template.json
+orb templates create --file template.yaml --validate-only
 
 # Update existing template
-ohfp templates update TEMPLATE_ID --file updated-template.json
+orb templates update TEMPLATE_ID --file updated-template.json
 
 # Delete template
-ohfp templates delete TEMPLATE_ID
-ohfp templates delete TEMPLATE_ID --force    # Force without confirmation
+orb templates delete TEMPLATE_ID
+orb templates delete TEMPLATE_ID --force    # Force without confirmation
 
 # Validate template configuration
-ohfp templates validate --file template.json
+orb templates validate --file template.json
 
 # Refresh template cache
-ohfp templates refresh
-ohfp templates refresh --force               # Force complete refresh
+orb templates refresh
+orb templates refresh --force               # Force complete refresh
 ```
 
 #### Machine and Request Management
 
 ```bash
 # Request machines
-ohfp requests create --template-id my-template --count 5
+orb requests create --template-id my-template --count 5
 
 # Check request status
-ohfp requests status --request-id req-12345
+orb requests status --request-id req-12345
 
 # List active machines
-ohfp machines list
+orb machines list
 
 # Return machines
-ohfp requests return --request-id req-12345
+orb requests return --request-id req-12345
 ```
 
 #### Storage Management
 
 ```bash
-ohfp storage list                    # List available storage strategies
-ohfp storage show                    # Show current storage configuration
-ohfp storage health                  # Check storage health
-ohfp storage validate                # Validate storage configuration
-ohfp storage test                    # Test storage connectivity
-ohfp storage metrics                 # Show storage performance metrics
+orb storage list                    # List available storage strategies
+orb storage show                    # Show current storage configuration
+orb storage health                  # Check storage health
+orb storage validate                # Validate storage configuration
+orb storage test                    # Test storage connectivity
+orb storage metrics                 # Show storage performance metrics
 ```
 
 ### REST API
@@ -334,8 +334,8 @@ providers:
 
 ```bash
 # Clone repository
-git clone https://github.com/awslabs/open-hostfactory-plugin.git
-cd open-hostfactory-plugin
+git clone https://github.com/awslabs/open-resource-broker.git
+cd open-resource-broker
 
 # Create virtual environment
 python -m venv .venv
@@ -397,7 +397,7 @@ make release-analysis
 **Release Process:**
 - Uses conventional commits for version calculation
 - `feat:` → minor version bump
-- `fix:` → patch version bump  
+- `fix:` → patch version bump
 - `BREAKING CHANGE:` → major version bump
 
 Releases automatically trigger PyPI publishing, container builds, and documentation deployment.

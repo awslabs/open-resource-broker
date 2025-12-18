@@ -2,12 +2,12 @@
 # Multi-architecture compatible with minimal layers
 
 ARG PYTHON_VERSION=3.13
-ARG PACKAGE_NAME_SHORT=ohfp
+ARG PACKAGE_NAME_SHORT=orb
 
 FROM python:${PYTHON_VERSION}-slim
 
 ARG PYTHON_VERSION=3.13
-ARG PACKAGE_NAME_SHORT=ohfp
+ARG PACKAGE_NAME_SHORT=orb
 
 # Security: Update system packages and install security updates
 RUN apt-get update && \
@@ -26,8 +26,8 @@ ARG LICENSE
 ARG REPO_URL
 
 # Add metadata labels and set environment variables in single layer
-LABEL org.opencontainers.image.title="Open Host Factory Plugin API" \
-      org.opencontainers.image.description="REST API for Open Host Factory Plugin - Dynamic cloud resource provisioning" \
+LABEL org.opencontainers.image.title="Open Resource Broker API" \
+      org.opencontainers.image.description="REST API for Open Resource Broker - Dynamic cloud resource provisioning" \
       org.opencontainers.image.source="${REPO_URL}" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.created="${BUILD_DATE}" \
@@ -45,8 +45,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean \
-    && groupadd -r "${PACKAGE_NAME_SHORT:-ohfp}" \
-    && useradd -r -g "${PACKAGE_NAME_SHORT:-ohfp}" -s /bin/false "${PACKAGE_NAME_SHORT:-ohfp}"
+    && groupadd -r "${PACKAGE_NAME_SHORT:-orb}" \
+    && useradd -r -g "${PACKAGE_NAME_SHORT:-orb}" -s /bin/false "${PACKAGE_NAME_SHORT:-orb}"
 
 # Set working directory and create directories
 WORKDIR /app
@@ -69,7 +69,7 @@ COPY deployment/docker/docker-entrypoint.sh ./docker-entrypoint.sh
 
 # Set permissions and environment in single layer
 RUN chmod +x ./docker-entrypoint.sh \
-    && chown -R "${PACKAGE_NAME_SHORT:-ohfp}":"${PACKAGE_NAME_SHORT:-ohfp}" /app
+    && chown -R "${PACKAGE_NAME_SHORT:-orb}":"${PACKAGE_NAME_SHORT:-orb}" /app
 
 # Set all environment variables in single layer
 ENV PYTHONPATH=/app \

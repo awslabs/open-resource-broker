@@ -1,10 +1,10 @@
 # MCP Integration Guide
 
-This guide explains how to integrate the Open Host Factory Plugin with AI assistants using the Model Context Protocol (MCP).
+This guide explains how to integrate the Open Resource Broker with AI assistants using the Model Context Protocol (MCP).
 
 ## Overview
 
-The Open Host Factory Plugin provides direct MCP integration through its tools implementation, allowing AI assistants to:
+The Open Resource Broker provides direct MCP integration through its tools implementation, allowing AI assistants to:
 
 1. Discover available cloud infrastructure operations
 2. Execute infrastructure provisioning commands
@@ -15,10 +15,10 @@ The Open Host Factory Plugin provides direct MCP integration through its tools i
 
 ### Direct Tools Integration
 
-The Open Host Factory Plugin implements direct MCP tools integration without requiring a separate server process:
+The Open Resource Broker implements direct MCP tools integration without requiring a separate server process:
 
 ```python
-from ohfpsdk.mcp import OpenHFPluginMCPTools
+from orbsdk.mcp import OpenHFPluginMCPTools
 
 async with OpenHFPluginMCPTools(provider="aws") as mcp_tools:
     # List available tools
@@ -26,7 +26,7 @@ async with OpenHFPluginMCPTools(provider="aws") as mcp_tools:
 
     # Call a specific tool
     result = await mcp_tools.call_tool(
-        "list_templates", 
+        "list_templates",
         {"active_only": True}
     )
 ```
@@ -37,10 +37,10 @@ For AI assistants that support external tool execution, you can use the CLI-base
 
 ```bash
 # Start MCP server in stdio mode (recommended for AI assistants)
-ohfp mcp serve --stdio
+orb mcp serve --stdio
 
 # Start MCP server as TCP server (for development/testing)
-ohfp mcp serve --port 3000 --host localhost
+orb mcp serve --port 3000 --host localhost
 ```
 
 ## Available MCP Tools
@@ -174,7 +174,7 @@ Access cloud providers.
 {
   "mcpServers": {
     "open-hostfactory": {
-      "command": "ohfp",
+      "command": "orb",
       "args": ["mcp", "serve", "--stdio"]
     }
   }
@@ -189,7 +189,7 @@ from mcp import ClientSession, StdioServerParameters
 
 async def use_hostfactory():
     server_params = StdioServerParameters(
-        command="ohfp", 
+        command="orb",
         args=["mcp", "serve", "--stdio"]
     )
 
@@ -264,7 +264,7 @@ if function_call and function_call.name == "request_machines":
 
     # Execute the MCP tool via CLI
     result = subprocess.run(
-        ["ohfp", "mcp", "call", "request_machines", 
+        ["orb", "mcp", "call", "request_machines",
          "--args", json.dumps(args)],
         capture_output=True, text=True
     )
@@ -310,8 +310,8 @@ For debugging MCP integration issues:
 
 ```bash
 # Enable debug logging
-ohfp mcp serve --stdio --log-level DEBUG
+orb mcp serve --stdio --log-level DEBUG
 
 # Test a specific tool call
-ohfp mcp call list_templates --args '{"active_only": true}'
+orb mcp call list_templates --args '{"active_only": true}'
 ```

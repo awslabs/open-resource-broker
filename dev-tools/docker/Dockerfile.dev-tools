@@ -1,7 +1,7 @@
 # Development tools container with security hardening
 
 ARG PYTHON_VERSION=3.13
-ARG PACKAGE_NAME_SHORT=ohfp
+ARG PACKAGE_NAME_SHORT=orb
 
 FROM python:${PYTHON_VERSION}-slim
 
@@ -14,8 +14,8 @@ ARG AUTHOR
 ARG LICENSE
 
 # Add metadata labels
-LABEL org.opencontainers.image.title="Open Host Factory Plugin Dev Tools" \
-      org.opencontainers.image.description="Development and CI tools for Open Host Factory Plugin" \
+LABEL org.opencontainers.image.title="Open Resource Broker Dev Tools" \
+      org.opencontainers.image.description="Development and CI tools for Open Resource Broker" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.created="${BUILD_DATE}" \
       org.opencontainers.image.revision="${VCS_REF}" \
