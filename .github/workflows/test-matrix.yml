@@ -27,7 +27,7 @@ jobs:
       default-python-version: ${{ steps.config.outputs.default-python-version }}
     steps:
     - name: Checkout code
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
 
     - name: Get project configuration
       id: config
@@ -95,7 +95,7 @@ jobs:
 
     steps:
     - name: Download all test results
-      uses: actions/download-artifact@v6
+      uses: actions/download-artifact@v7
       with:
         path: test-results/
 
