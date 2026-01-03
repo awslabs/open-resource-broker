@@ -9,12 +9,12 @@ import sys
 def parse_args(args):
     """Parse command line arguments."""
     return {
-        'serve': "serve" in args,
-        'deploy': "deploy" in args,
-        'clean': "clean" in args,
-        'list_versions': "list" in args,
-        'version': next((arg.split("=")[1] for arg in args if arg.startswith("version=")), None),
-        'delete': next((arg.split("=")[1] for arg in args if arg.startswith("delete=")), None)
+        "serve": "serve" in args,
+        "deploy": "deploy" in args,
+        "clean": "clean" in args,
+        "list_versions": "list" in args,
+        "version": next((arg.split("=")[1] for arg in args if arg.startswith("version=")), None),
+        "delete": next((arg.split("=")[1] for arg in args if arg.startswith("delete=")), None),
     }
 
 
@@ -56,9 +56,28 @@ def handle_deploy(version_num):
     """Handle deploy command."""
     if version_num:
         if os.getenv("CI") or os.getenv("GITHUB_ACTIONS"):
-            subprocess.run(["git", "config", "--global", "user.name", "github-actions[bot]"], check=True)
-            subprocess.run(["git", "config", "--global", "user.email", "github-actions[bot]@users.noreply.github.com"], check=True)
-        cmd = ["./dev-tools/scripts/run_tool.sh", "mike", "deploy", "--push", "--update-aliases", version_num, "latest"]
+            subprocess.run(
+                ["git", "config", "--global", "user.name", "github-actions[bot]"], check=True
+            )
+            subprocess.run(
+                [
+                    "git",
+                    "config",
+                    "--global",
+                    "user.email",
+                    "github-actions[bot]@users.noreply.github.com",
+                ],
+                check=True,
+            )
+        cmd = [
+            "./dev-tools/scripts/run_tool.sh",
+            "mike",
+            "deploy",
+            "--push",
+            "--update-aliases",
+            version_num,
+            "latest",
+        ]
         subprocess.run(cmd, cwd="docs", check=True)
     elif os.getenv("CI") or os.getenv("GITHUB_ACTIONS"):
         subprocess.run(["make", "ci-docs-deploy"], check=True)
@@ -84,18 +103,18 @@ def handle_default():
 
 def main():
     parsed = parse_args(sys.argv[1:])
-    
-    if parsed['clean']:
+
+    if parsed["clean"]:
         return handle_clean()
-    if parsed['list_versions']:
+    if parsed["list_versions"]:
         return handle_list()
-    if parsed['delete']:
-        return handle_delete(parsed['delete'])
-    if parsed['serve']:
+    if parsed["delete"]:
+        return handle_delete(parsed["delete"])
+    if parsed["serve"]:
         return handle_serve()
-    if parsed['deploy']:
-        return handle_deploy(parsed['version'])
-    
+    if parsed["deploy"]:
+        return handle_deploy(parsed["version"])
+
     return handle_default()
 
 

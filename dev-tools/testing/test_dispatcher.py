@@ -41,13 +41,13 @@ def parse_args(args):
             files.append(arg)
 
     return {
-        'test_type': test_type,
-        'coverage': coverage,
-        'parallel': parallel,
-        'fast': fast,
-        'markers': markers,
-        'files': files,
-        'html_coverage': "html-coverage" in args
+        "test_type": test_type,
+        "coverage": coverage,
+        "parallel": parallel,
+        "fast": fast,
+        "markers": markers,
+        "files": files,
+        "html_coverage": "html-coverage" in args,
     }
 
 
@@ -56,29 +56,29 @@ def build_pytest_cmd(parsed):
     cmd = ["uv", "run", "pytest"]
 
     # Add test scope
-    if parsed['test_type']:
-        cmd.append(parsed['test_type'])
-    elif parsed['files']:
-        cmd.extend(parsed['files'])
+    if parsed["test_type"]:
+        cmd.append(parsed["test_type"])
+    elif parsed["files"]:
+        cmd.extend(parsed["files"])
     else:
         cmd.append("tests/unit")
 
     # Add options
     cmd.extend(["-v", "--tb=short", "--durations=10"])
 
-    if parsed['coverage']:
+    if parsed["coverage"]:
         cmd.extend(["--cov=src", "--cov-report=term-missing", "--cov-branch"])
-        if parsed['html_coverage']:
+        if parsed["html_coverage"]:
             cmd.append("--cov-report=html")
 
-    if parsed['parallel']:
+    if parsed["parallel"]:
         cmd.extend(["-n", "auto"])
 
-    if parsed['fast']:
+    if parsed["fast"]:
         cmd.append("--maxfail=5")
 
-    if parsed['markers']:
-        cmd.extend(["-m", parsed['markers']])
+    if parsed["markers"]:
+        cmd.extend(["-m", parsed["markers"]])
 
     cmd.extend(["--timeout=300", "--maxfail=5"])
     return cmd
@@ -87,7 +87,7 @@ def build_pytest_cmd(parsed):
 def main():
     parsed = parse_args(sys.argv[1:])
     cmd = build_pytest_cmd(parsed)
-    
+
     try:
         subprocess.run(cmd, check=True)
         return 0

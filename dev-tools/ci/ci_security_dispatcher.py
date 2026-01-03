@@ -39,7 +39,9 @@ def main():
     args = sys.argv[1:]
 
     if not args:
-        print("ERROR: Security tool required (bandit, safety, trivy, hadolint, semgrep, trivy-fs, trufflehog)")
+        print(
+            "ERROR: Security tool required (bandit, safety, trivy, hadolint, semgrep, trivy-fs, trufflehog)"
+        )
         return 1
 
     cmd = get_command(args[0])

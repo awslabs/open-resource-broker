@@ -1,6 +1,7 @@
 """Tests for template defaults hierarchical resolution."""
 
-from unittest.mock import MagicMock, Mock
+from pathlib import Path
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
@@ -340,7 +341,6 @@ class TestTemplateDefaultsIntegration:
 
         # Create mock file metadata
         from datetime import datetime
-        from pathlib import Path
 
         from infrastructure.template.configuration_manager import TemplateFileMetadata
 

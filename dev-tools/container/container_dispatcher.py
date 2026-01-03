@@ -9,11 +9,11 @@ import sys
 def parse_args(args):
     """Parse command line arguments."""
     return {
-        'single': "single" in args,
-        'multi': "multi" in args,
-        'push': "push" in args,
-        'run': "run" in args,
-        'version': "version" in args
+        "single": "single" in args,
+        "multi": "multi" in args,
+        "push": "push" in args,
+        "run": "run" in args,
+        "version": "version" in args,
     }
 
 
@@ -45,15 +45,22 @@ def handle_single():
     version_val = os.getenv("VERSION", "0.1.0-dev")
 
     cmd = [
-        "docker", "build", "--load",
-        "--build-arg", f"BUILD_DATE={subprocess.check_output(['date', '-u', '+%Y-%m-%dT%H:%M:%SZ']).decode().strip()}",
-        "--build-arg", f"VERSION={version_val}",
-        "--build-arg", f"VCS_REF={subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).decode().strip()}",
-        "--build-arg", f"PYTHON_VERSION={python_version}",
-        "-t", f"{registry}/{image}:{version_val}-python{python_version}",
-        "."
+        "docker",
+        "build",
+        "--load",
+        "--build-arg",
+        f"BUILD_DATE={subprocess.check_output(['date', '-u', '+%Y-%m-%dT%H:%M:%SZ']).decode().strip()}",
+        "--build-arg",
+        f"VERSION={version_val}",
+        "--build-arg",
+        f"VCS_REF={subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).decode().strip()}",
+        "--build-arg",
+        f"PYTHON_VERSION={python_version}",
+        "-t",
+        f"{registry}/{image}:{version_val}-python{python_version}",
+        ".",
     ]
-    
+
     try:
         subprocess.run(cmd, check=True)
         return 0
@@ -66,7 +73,7 @@ def handle_multi(push):
     cmd = ["./dev-tools/scripts/container_build.sh"]
     if push:
         os.environ["PUSH"] = "true"
-    
+
     try:
         subprocess.run(cmd, check=True)
         return 0
@@ -76,14 +83,14 @@ def handle_multi(push):
 
 def main():
     parsed = parse_args(sys.argv[1:])
-    
-    if parsed['version']:
+
+    if parsed["version"]:
         return handle_version()
-    if parsed['run']:
+    if parsed["run"]:
         return handle_run()
-    if parsed['multi']:
-        return handle_multi(parsed['push'])
-    
+    if parsed["multi"]:
+        return handle_multi(parsed["push"])
+
     # Default to single platform build
     return handle_single()
 
