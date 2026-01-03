@@ -40,34 +40,32 @@ ci-arch-imports:  ## Run import validation
 
 ci-arch-file-sizes:  ## Check file size compliance
 	@echo "Running file size checks..."
-	./dev-tools/scripts/check_file_sizes.py --warn-only
+	./dev-tools/scripts/dev_tools_runner.py check-file-sizes --warn-only
 
 # Composite target
 ci-architecture: ci-arch-cqrs ci-arch-clean ci-arch-imports ci-arch-file-sizes  ## Run all architecture checks
 
 # Individual security targets (with tool names)
 ci-security-bandit:  ## Run Bandit security scan
-	@echo "Running Bandit security scan..."
-	$(call run-tool,bandit,-r $(PACKAGE))
+	@./dev-tools/ci/ci_security_dispatcher.py bandit
 
 ci-security-safety:  ## Run Safety dependency scan
-	@echo "Running Safety dependency scan..."
-	$(call run-tool,safety,check)
+	@./dev-tools/ci/ci_security_dispatcher.py safety
 
 ci-security-trivy: dev-install  ## Run Trivy container scan
-	./dev-tools/scripts/ci_security.py trivy
+	@./dev-tools/ci/ci_security_dispatcher.py trivy
 
 ci-security-hadolint: dev-install  ## Run Hadolint Dockerfile scan
-	./dev-tools/scripts/ci_security.py hadolint
+	@./dev-tools/ci/ci_security_dispatcher.py hadolint
 
 ci-security-semgrep: dev-install  ## Run Semgrep static analysis
-	./dev-tools/scripts/ci_security.py semgrep
+	@./dev-tools/ci/ci_security_dispatcher.py semgrep
 
 ci-security-trivy-fs: dev-install  ## Run Trivy filesystem scan
-	./dev-tools/scripts/ci_security.py trivy-fs
+	@./dev-tools/ci/ci_security_dispatcher.py trivy-fs
 
 ci-security-trufflehog: dev-install  ## Run TruffleHog secrets scan
-	./dev-tools/scripts/ci_security.py trufflehog
+	@./dev-tools/ci/ci_security_dispatcher.py trufflehog
 
 # Composite target
 ci-security: ci-security-bandit ci-security-safety ci-security-semgrep ci-security-trivy-fs ci-security-trufflehog  ## Run all security scans
@@ -110,7 +108,7 @@ ci-check-quick:  ## Run quick CI checks (fast checks only)
 
 ci-check-verbose:  ## Run CI checks with verbose output
 	@echo "Running CI checks with verbose output..."
-	./dev-tools/scripts/ci_check.py --verbose
+	./dev-tools/scripts/workflow_orchestrator.py ci-check --verbose
 
 ci: ci-check ci-tests-integration ci-tests-e2e  ## Run full CI pipeline (comprehensive checks + all tests)
 	@echo "Full CI pipeline completed successfully!"
@@ -129,77 +127,78 @@ workflow-security: ci-security ci-security-container  ## Run security workflow l
 	@echo "Security workflow completed successfully!"
 
 # @SECTION Local Workflow Execution (using act)
-local-list: dev-install  ## List available workflows and jobs for local execution
-	@echo "Available workflows and jobs for local execution:"
-	@if command -v act >/dev/null 2>&1; then \
-		act -l; \
+local-workflow: dev-install  ## Run local workflows (usage: make local-workflow [list|dry-run|push|pr|release|ci|security|test-matrix|clean])
+	@if echo "$(MAKECMDGOALS)" | grep -q "list"; then \
+		if command -v act >/dev/null 2>&1; then \
+			act -l; \
+		else \
+			echo "Error: act not installed. Run 'make install-dev-tools' to install."; \
+		fi; \
+	elif echo "$(MAKECMDGOALS)" | grep -q "dry-run"; then \
+		if command -v act >/dev/null 2>&1; then \
+			act --dryrun; \
+		else \
+			echo "Error: act not installed. Run 'make install-dev-tools' to install."; \
+		fi; \
+	elif echo "$(MAKECMDGOALS)" | grep -q "push"; then \
+		if command -v act >/dev/null 2>&1; then \
+			act push; \
+		else \
+			echo "Error: act not installed. Run 'make install-dev-tools' to install."; \
+		fi; \
+	elif echo "$(MAKECMDGOALS)" | grep -q "pr"; then \
+		if command -v act >/dev/null 2>&1; then \
+			act pull_request; \
+		else \
+			echo "Error: act not installed. Run 'make install-dev-tools' to install."; \
+		fi; \
+	elif echo "$(MAKECMDGOALS)" | grep -q "release"; then \
+		if command -v act >/dev/null 2>&1; then \
+			act release; \
+		else \
+			echo "Error: act not installed. Run 'make install-dev-tools' to install."; \
+		fi; \
+	elif echo "$(MAKECMDGOALS)" | grep -q "ci"; then \
+		if command -v act >/dev/null 2>&1; then \
+			act -W .github/workflows/ci.yml; \
+		else \
+			echo "Error: act not installed. Run 'make install-dev-tools' to install."; \
+		fi; \
+	elif echo "$(MAKECMDGOALS)" | grep -q "security"; then \
+		if command -v act >/dev/null 2>&1; then \
+			act -W .github/workflows/security.yml; \
+		else \
+			echo "Error: act not installed. Run 'make install-dev-tools' to install."; \
+		fi; \
+	elif echo "$(MAKECMDGOALS)" | grep -q "test-matrix"; then \
+		if command -v act >/dev/null 2>&1; then \
+			act -W .github/workflows/test-matrix.yml; \
+		else \
+			echo "Error: act not installed. Run 'make install-dev-tools' to install."; \
+		fi; \
+	elif echo "$(MAKECMDGOALS)" | grep -q "clean"; then \
+		rm -rf .local/artifacts; \
+		if command -v docker >/dev/null 2>&1; then \
+			docker ps -a --filter "label=act" -q | xargs -r docker rm -f; \
+		fi; \
 	else \
-		echo "Error: act not installed. Run 'make install-dev-tools' to install."; \
+		echo "Usage: make local-workflow [list|dry-run|push|pr|release|ci|security|test-matrix|clean]"; \
 	fi
 
-local-dry-run: dev-install  ## Validate all workflows without running (dry run)
-	@echo "Validating workflows with act (dry run)..."
-	@if command -v act >/dev/null 2>&1; then \
-		act --dryrun; \
-	else \
-		echo "Error: act not installed. Run 'make install-dev-tools' to install."; \
-	fi
+# Dummy targets for local workflow flags
+dry-run pr test-matrix:
+	@:
 
-local-push: dev-install  ## Simulate push event (triggers CI workflow)
-	@echo "Simulating push event locally..."
-	@if command -v act >/dev/null 2>&1; then \
-		act push; \
-	else \
-		echo "Error: act not installed. Run 'make install-dev-tools' to install."; \
-	fi
-
-local-pr: dev-install  ## Simulate pull request event (triggers CI + security workflows)
-	@echo "Simulating pull request event locally..."
-	@if command -v act >/dev/null 2>&1; then \
-		act pull_request; \
-	else \
-		echo "Error: act not installed. Run 'make install-dev-tools' to install."; \
-	fi
-
-local-release: dev-install  ## Simulate release event (triggers publish workflow)
-	@echo "Simulating release event locally..."
-	@if command -v act >/dev/null 2>&1; then \
-		act release; \
-	else \
-		echo "Error: act not installed. Run 'make install-dev-tools' to install."; \
-	fi
-
-local-ci: dev-install  ## Run CI workflow locally (.github/workflows/ci.yml)
-	@echo "Running CI workflow locally..."
-	@if command -v act >/dev/null 2>&1; then \
-		act -W .github/workflows/ci.yml; \
-	else \
-		echo "Error: act not installed. Run 'make install-dev-tools' to install."; \
-	fi
-
-local-security: dev-install  ## Run security workflow locally (.github/workflows/security.yml)
-	@echo "Running security workflow locally..."
-	@if command -v act >/dev/null 2>&1; then \
-		act -W .github/workflows/security.yml; \
-	else \
-		echo "Error: act not installed. Run 'make install-dev-tools' to install."; \
-	fi
-
-local-test-matrix: dev-install  ## Run test matrix workflow locally (.github/workflows/test-matrix.yml)
-	@echo "Running test matrix workflow locally..."
-	@if command -v act >/dev/null 2>&1; then \
-		act -W .github/workflows/test-matrix.yml; \
-	else \
-		echo "Error: act not installed. Run 'make install-dev-tools' to install."; \
-	fi
-
-local-clean: ## Clean local act artifacts and containers
-	@echo "Cleaning local act artifacts..."
-	@rm -rf .local/artifacts
-	@if command -v docker >/dev/null 2>&1; then \
-		echo "Removing act containers..."; \
-		docker ps -a --filter "label=act" -q | xargs -r docker rm -f; \
-	fi
+# Backward compatibility aliases
+local-list: ; @$(MAKE) local-workflow list
+local-dry-run: ; @$(MAKE) local-workflow dry-run
+local-push: ; @$(MAKE) local-workflow push
+local-pr: ; @$(MAKE) local-workflow pr
+local-release: ; @$(MAKE) local-workflow release
+local-ci: ; @$(MAKE) local-workflow ci
+local-security: ; @$(MAKE) local-workflow security
+local-test-matrix: ; @$(MAKE) local-workflow test-matrix
+local-clean: ; @$(MAKE) local-workflow clean
 
 ci-git-setup:  ## Setup git configuration for CI automated commits
 	git config --local user.name "github-actions[bot]"

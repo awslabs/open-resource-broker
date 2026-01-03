@@ -783,6 +783,13 @@ class OutputManager:
                 workbook = writer.book
                 worksheet = writer.sheets["AWS_Resource_History"]
 
+                # Set workbook properties
+                workbook.properties.title = "AWS Resource History Analysis"
+                workbook.properties.creator = "Open Resource Broker"
+                workbook.properties.description = (
+                    "Historical analysis of AWS resource usage and costs"
+                )
+
                 # Auto-adjust column widths
                 for column in worksheet.columns:
                     max_length = 0

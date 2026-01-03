@@ -1,34 +1,24 @@
 # Development and testing targets
 
 # @SECTION Setup & Installation
-# System-wide installation with smart directory selection
-install-system:  ## Install system-wide (auto-detects: /usr/local/orb or ~/.local/orb, override: ORB_INSTALL_DIR=/custom/path)
-	@./dev-tools/scripts/dev_tools_runner.py system-install
+install: venv-setup  ## Install dependencies (auto-detects UV/pip, environment-aware)
+	@if [ -n "$$CI" ]; then \
+		echo "CI detected: using frozen UV sync"; \
+		uv sync --frozen --all-groups --quiet; \
+	elif command -v uv >/dev/null 2>&1; then \
+		echo "UV available"; \
+		if echo "$(MAKECMDGOALS)" | grep -q "_dev"; then \
+			uv sync --all-groups --quiet; \
+		else \
+			uv sync --no-dev --quiet; \
+		fi; \
+	else \
+		echo "Fallback to pip"; \
+		$(MAKE) _install-pip; \
+	fi
 
-# Local development environment setup
-local-install: venv-setup  ## Install local development environment
-	@./dev-tools/scripts/dev_tools_runner.py local-install
-
-# Development dependencies installation
-dev-install: generate-pyproject venv-setup  ## Install dev dependencies
-	@./dev-tools/scripts/dev_tools_runner.py dev-install
-
-# Backward compatibility alias
-install: local-install  ## Alias for local-install (backward compatibility)
-
-# Uninstall targets
-uninstall-system:  ## Remove system-wide installation (auto-detects location)
-	@./dev-tools/scripts/dev_tools_runner.py system-uninstall
-
-uninstall-local:  ## Remove local development environment (.venv)
-	@./dev-tools/scripts/dev_tools_runner.py local-uninstall
-
-uninstall-all:  ## Remove all installations (system + local + PyPI)
-	@./dev-tools/scripts/dev_tools_runner.py uninstall-all
-
-# Uninstall aliases
-dev-uninstall: uninstall-local  ## Alias for uninstall-local
-uninstall: uninstall-system     ## Alias for uninstall-system (backward compatibility)
+dev-install: generate-pyproject venv-setup  ## Install dev dependencies (preserves CI usage)
+	@$(MAKE) install _dev
 
 requirements: ## Generate/clean requirements (usage: make requirements _clean)
 	@if echo "$(MAKECMDGOALS)" | grep -q "_clean"; then \

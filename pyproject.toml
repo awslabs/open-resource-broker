@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "open-resource-broker"
-version = "0.1.1"
+version = "0.2.3"
 description = "Cloud provider integration plugin for IBM Spectrum Symphony Host Factory"
 readme = "README.md"
 license = "Apache-2.0"
@@ -241,7 +241,7 @@ explicit_package_bases = true
 namespace_packages = true
 
 [tool.semantic_release]
-version_pattern = [".project.yml:project.version"]
+version_variables = [".project.yml:project.version"]
 build_command = "./dev-tools/release/orchestrator.sh"
 major_on_zero = false
 allow_zero_version = true
@@ -249,11 +249,6 @@ tag_format = "v{version}"
 
 [tool.semantic_release.branches.main]
 match = "(main|master)"
-prerelease_token = "rc"
-prerelease = false
-
-[tool.semantic_release.branches.release]
-match = "release/.*"
 prerelease_token = "rc"
 prerelease = false
 

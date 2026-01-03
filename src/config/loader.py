@@ -339,9 +339,7 @@ class ConfigurationLoader:
             scheduler_dir = cls._get_scheduler_directory(file_type, config_manager)
             if scheduler_dir:
                 scheduler_path = os.path.join(scheduler_dir, filename)
-                get_config_logger().debug(
-                    "Using scheduler directory path: %s", scheduler_path
-                )
+                get_config_logger().debug("Using scheduler directory path: %s", scheduler_path)
                 return scheduler_path
         except Exception as e:
             get_config_logger().debug("Failed to get scheduler directory: %s", e)
@@ -516,9 +514,10 @@ class ConfigurationLoader:
         """
         if config_manager:
             return config_manager._get_scheduler_directory(file_type)
-        
+
         # During bootstrap, check environment variables directly
         import os
+
         if file_type in ["conf", "template", "legacy"]:
             confdir = os.environ.get("HF_PROVIDER_CONFDIR")
             if confdir:
@@ -537,5 +536,5 @@ class ConfigurationLoader:
             workdir = os.environ.get("HF_PROVIDER_WORKDIR")
             if workdir:
                 return workdir
-        
+
         return None

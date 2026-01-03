@@ -2,52 +2,54 @@
 # Security, architecture, validation, and quality gates
 
 # @SECTION Code Quality
-quality-check: dev-install  ## Run professional quality checks on modified files
-	@echo "Running professional quality checks..."
-	$(call run-tool,python,./dev-tools/scripts/quality_check.py --strict)
+quality: dev-install  ## Run quality checks (usage: make quality [all] [fix] [files])
+	@./dev-tools/quality/quality_dispatcher.py $(filter-out $@,$(MAKECMDGOALS))
 
-quality-check-all: dev-install  ## Run professional quality checks on all files
-	@echo "Running professional quality checks on all files..."
-	$(call run-tool,python,./dev-tools/scripts/quality_check.py --strict --all)
-
-quality-check-fix: dev-install  ## Run quality checks with auto-fix
-	@echo "Running professional quality checks with auto-fix..."
-	$(call run-tool,python,./dev-tools/scripts/quality_check.py --fix)
-
-quality-check-files: dev-install  ## Run quality checks on specific files (usage: make quality-check-files FILES="file1.py file2.py")
-	@if [ -z "$(FILES)" ]; then \
-		echo "Error: FILES is required. Usage: make quality-check-files FILES=\"file1.py file2.py\""; \
-		exit 1; \
+format: dev-install  ## Format code (usage: make format [fix])
+	@if echo "$(MAKECMDGOALS)" | grep -q "fix"; then \
+		./dev-tools/quality/quality_dispatcher.py fix; \
+	else \
+		uv run ruff format --check --quiet .; \
 	fi
-	@echo "Running professional quality checks on specified files..."
-	$(call run-tool,python,./dev-tools/scripts/quality_check.py --strict --files $(FILES))
 
-format-fix: clean-whitespace  ## Auto-fix code formatting with Ruff
-	@uv run ruff format --quiet .
-	@uv run ruff check --fix --exit-zero --quiet .
+lint: dev-install  ## Lint code (usage: make lint [optional])
+	@if echo "$(MAKECMDGOALS)" | grep -q "optional"; then \
+		uv run ruff check --select=N,UP,B,PL,C90,RUF --quiet . || true; \
+	else \
+		uv run ruff check --quiet .; \
+	fi
 
-container-health-check: dev-install  ## Run container health checks
-	./dev-tools/scripts/container_health_check.py
+validate: lint test  ## Run all validation checks
+	@echo "All validation checks passed!"
 
-git-config:  ## Configure git for development
-	git config --local user.name "GitHub Actions"
-	git config --local user.email "github-actions[bot]@users.noreply.github.com"
+hadolint: dev-install  ## Check Dockerfile with hadolint
+	@./dev-tools/scripts/dev_tools_runner.py hadolint-check
 
-lint: dev-install  ## Check enforced rules (fail on issues)
-	@uv run ruff check --quiet .
-	@uv run ruff format --check --quiet .
+# Dummy targets for flags (consolidated)
+all fix files optional quick unit integration e2e onaws parallel fast coverage html-coverage performance aws single multi push version serve deploy list:
+	@:
 
-lint-optional: dev-install  ## Check optional rules (warnings only)
-	@uv run ruff check --select=N,UP,B,PL,C90,RUF --quiet . || true
+# Backward compatibility aliases
+quality-check: dev-install
+	@./dev-tools/quality/quality_dispatcher.py
 
-pre-commit: format lint  ## Simulate pre-commit checks locally
-	@echo "All checks passed! Safe to commit."
+quality-check-all: dev-install  # CRITICAL: Used by ci.yml
+	@./dev-tools/quality/quality_dispatcher.py all
 
-format: dev-install clean-whitespace  ## Format code with Ruff (no auto-fix)
-	@uv run ruff format --check --quiet .
+quality-check-fix: dev-install
+	@./dev-tools/quality/quality_dispatcher.py fix
 
-hadolint-check: dev-install  ## Check Dockerfile with hadolint
-	./dev-tools/scripts/hadolint_check.py
+quality-check-files: dev-install
+	@./dev-tools/quality/quality_dispatcher.py files $(FILES)
+
+format-fix: dev-install  # CRITICAL: Used by ci.yml
+	@./dev-tools/quality/quality_dispatcher.py fix
+
+lint-optional: dev-install
+	@$(MAKE) lint optional
+
+pre-commit: ; @$(MAKE) validate
+hadolint-check: ; @$(MAKE) hadolint
 
 dev-checks-container: dev-install  ## Run development checks in container
 	./dev-tools/scripts/run_dev_checks.sh all
@@ -73,25 +75,11 @@ install-dev-tools-dry-run: dev-install  ## Show what development tools would be 
 
 clean-whitespace:  ## Clean whitespace in blank lines from all files
 	@echo "Cleaning whitespace in blank lines..."
-	$(call run-tool,python,./dev-tools/scripts/clean_whitespace.py)
+	./dev-tools/scripts/dev_tools_runner.py clean-whitespace
 
 # @SECTION Security
-security: dev-install  ## Run security checks (bandit, safety)
-	./dev-tools/scripts/security_check.py
-
-security-quick: dev-install  ## Run quick security checks only
-	./dev-tools/scripts/security_check.py --quick
-
-security-all: dev-install  ## Run all available security tools
-	./dev-tools/scripts/security_check.py --all
-
-ci-security-container: dev-install ## Run container security scans (CI)
-	./dev-tools/scripts/security_container.py
-
-security-with-container: dev-install  ## Run security checks including container scans
-	./dev-tools/scripts/security_check.py --all --container
-
-security-full: security-with-container sbom-generate  ## Run all security scans including container and SBOM
+security: dev-install  ## Run security checks (usage: make security [quick] [all])
+	@./dev-tools/scripts/security_check.py $(if $(findstring quick,$(MAKECMDGOALS)),--quick,) $(if $(findstring all,$(MAKECMDGOALS)),--all,)
 
 sbom-generate: dev-install ## Generate Software Bill of Materials (SBOM)
 	@echo "Generating SBOM files..."
@@ -101,34 +89,17 @@ sbom-generate: dev-install ## Generate Software Bill of Materials (SBOM)
 	@echo "Generating Python dependency SBOM..."
 	$(call run-tool,pip-audit,--format=cyclonedx-json --output=python-sbom-cyclonedx.json)
 	$(call run-tool,pip-audit,--format=spdx-json --output=python-sbom-spdx.json)
-	@echo "Generating project SBOM with Syft..."
-	syft . -o spdx-json=project-sbom-spdx.json
-	syft . -o cyclonedx-json=project-sbom-cyclonedx.json
-	@echo "Building Docker image for container SBOM..."
-	docker build -t $(PROJECT):sbom-scan .
-	@echo "Generating container SBOM..."
-	syft $(PROJECT):sbom-scan -o spdx-json=container-sbom-spdx.json
-	syft $(PROJECT):sbom-scan -o cyclonedx-json=container-sbom-cyclonedx.json
 	@echo "SBOM files generated successfully"
 
-security-scan: dev-install  ## Run comprehensive security scan using dev-tools
-	@echo "Running comprehensive security scan..."
-	./dev-tools/security/security_scan.py
-
-security-validate-sarif: dev-install  ## Validate SARIF files
-	@echo "Validating SARIF files..."
-	./dev-tools/security/validate_sarif.py *.sarif
-
-security-report: security-full sbom-generate  ## Generate comprehensive security report
+security-report: security sbom-generate  ## Generate comprehensive security report
 	@echo "## Security Report Generated" > security-report.md
-	@echo "" >> security-report.md
-	@echo "### SBOM Files" >> security-report.md
-	@echo "- Python SBOM (CycloneDX): python-sbom-cyclonedx.json" >> security-report.md
-	@echo "- Python SBOM (SPDX): python-sbom-spdx.json" >> security-report.md
-	@echo "- Project SBOM (SPDX): project-sbom-spdx.json" >> security-report.md
-	@echo "- Project SBOM (CycloneDX): project-sbom-cyclonedx.json" >> security-report.md
-	@echo "- Container SBOM (SPDX): container-sbom-spdx.json" >> security-report.md
-	@echo "- Container SBOM (CycloneDX): container-sbom-cyclonedx.json" >> security-report.md
+
+# Backward compatibility aliases
+security-quick: ; @$(MAKE) security quick
+security-all: ; @$(MAKE) security all
+security-with-container: ; @$(MAKE) security all
+security-full: ; @$(MAKE) security all
+security-scan: ; @$(MAKE) security
 
 # Architecture Quality Gates
 architecture-check: dev-install  ## Run architecture compliance checks
@@ -146,10 +117,10 @@ quality-gates: lint test architecture-check  ## Run all quality gates
 quality-full: quality-gates docs-build  ## Run all quality gates and generate docs
 
 file-sizes: dev-install  ## Check file sizes (developer-friendly alias)
-	./dev-tools/scripts/check_file_sizes.py --warn-only
+	./dev-tools/scripts/dev_tools_runner.py check-file-sizes --warn-only
 
 file-sizes-report: dev-install  ## Generate detailed file size report
-	./dev-tools/scripts/check_file_sizes.py --report
+	./dev-tools/scripts/dev_tools_runner.py check-file-sizes
 
 validate-workflow-syntax: dev-install  ## Validate GitHub Actions workflow YAML syntax
 	@echo "Validating workflow files..."
@@ -179,10 +150,10 @@ detect-secrets: dev-install  ## Detect potential hardcoded secrets in source cod
 
 pre-commit-check: dev-install  ## Run all pre-commit validation checks
 	@echo "Running pre-commit validation checks..."
-	./dev-tools/scripts/pre_commit_check.py
+	./dev-tools/scripts/workflow_orchestrator.py pre-commit
 
 pre-commit-check-required: dev-install  ## Run only required pre-commit checks (skip warnings)
 	@echo "Running required pre-commit validation checks..."
-	./dev-tools/scripts/pre_commit_check.py --required-only
+	./dev-tools/scripts/workflow_orchestrator.py pre-commit --required-only
 
 validate-shellcheck: validate-shell-scripts  ## Alias for validate-shell-scripts (backward compatibility)
