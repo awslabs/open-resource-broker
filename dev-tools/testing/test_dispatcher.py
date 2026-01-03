@@ -5,13 +5,8 @@ import subprocess
 import sys
 
 
-def main():
-    args = sys.argv[1:]
-
-    # Build pytest command
-    cmd = ["uv", "run", "pytest"]
-
-    # Parse arguments
+def parse_args(args):
+    """Parse command line arguments."""
     test_type = None
     coverage = False
     parallel = False
@@ -45,33 +40,54 @@ def main():
         elif arg.endswith(".py") or "/" in arg:
             files.append(arg)
 
+    return {
+        'test_type': test_type,
+        'coverage': coverage,
+        'parallel': parallel,
+        'fast': fast,
+        'markers': markers,
+        'files': files,
+        'html_coverage': "html-coverage" in args
+    }
+
+
+def build_pytest_cmd(parsed):
+    """Build pytest command from parsed arguments."""
+    cmd = ["uv", "run", "pytest"]
+
     # Add test scope
-    if test_type:
-        cmd.append(test_type)
-    elif files:
-        cmd.extend(files)
+    if parsed['test_type']:
+        cmd.append(parsed['test_type'])
+    elif parsed['files']:
+        cmd.extend(parsed['files'])
     else:
         cmd.append("tests/unit")
 
     # Add options
     cmd.extend(["-v", "--tb=short", "--durations=10"])
 
-    if coverage:
+    if parsed['coverage']:
         cmd.extend(["--cov=src", "--cov-report=term-missing", "--cov-branch"])
-        if "html-coverage" in args:
+        if parsed['html_coverage']:
             cmd.append("--cov-report=html")
 
-    if parallel:
+    if parsed['parallel']:
         cmd.extend(["-n", "auto"])
 
-    if fast:
+    if parsed['fast']:
         cmd.append("--maxfail=5")
 
-    if markers:
-        cmd.extend(["-m", markers])
+    if parsed['markers']:
+        cmd.extend(["-m", parsed['markers']])
 
     cmd.extend(["--timeout=300", "--maxfail=5"])
+    return cmd
 
+
+def main():
+    parsed = parse_args(sys.argv[1:])
+    cmd = build_pytest_cmd(parsed)
+    
     try:
         subprocess.run(cmd, check=True)
         return 0

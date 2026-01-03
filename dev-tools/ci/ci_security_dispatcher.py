@@ -5,31 +5,45 @@ import subprocess
 import sys
 
 
+def handle_bandit():
+    """Handle bandit security scan."""
+    print("Running Bandit security scan...")
+    return ["./dev-tools/scripts/run_tool.sh", "bandit", "-r", "src"]
+
+
+def handle_safety():
+    """Handle safety dependency scan."""
+    print("Running Safety dependency scan...")
+    return ["./dev-tools/scripts/run_tool.sh", "safety", "check"]
+
+
+def handle_other_tools(tool):
+    """Handle other security tools."""
+    return ["./dev-tools/scripts/ci_security.py", tool]
+
+
+def get_command(tool):
+    """Get command for security tool."""
+    if tool == "bandit":
+        return handle_bandit()
+    elif tool == "safety":
+        return handle_safety()
+    elif tool in ["trivy", "hadolint", "semgrep", "trivy-fs", "trufflehog"]:
+        return handle_other_tools(tool)
+    else:
+        print(f"ERROR: Unknown security tool: {tool}")
+        return None
+
+
 def main():
     args = sys.argv[1:]
 
     if not args:
-        print(
-            "ERROR: Security tool required (bandit, safety, trivy, hadolint, semgrep, trivy-fs, trufflehog)"
-        )
+        print("ERROR: Security tool required (bandit, safety, trivy, hadolint, semgrep, trivy-fs, trufflehog)")
         return 1
 
-    tool = args[0]
-
-    if tool == "bandit":
-        print("Running Bandit security scan...")
-        cmd = ["./dev-tools/scripts/run_tool.sh", "bandit", "-r", "src"]
-
-    elif tool == "safety":
-        print("Running Safety dependency scan...")
-        cmd = ["./dev-tools/scripts/run_tool.sh", "safety", "check"]
-
-    elif tool in ["trivy", "hadolint", "semgrep", "trivy-fs", "trufflehog"]:
-        # These use the existing ci_security.py script
-        cmd = ["./dev-tools/scripts/ci_security.py", tool]
-
-    else:
-        print(f"ERROR: Unknown security tool: {tool}")
+    cmd = get_command(args[0])
+    if not cmd:
         return 1
 
     try:
