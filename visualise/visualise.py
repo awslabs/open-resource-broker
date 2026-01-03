@@ -104,26 +104,39 @@ class HistoryFileProcessor:
 
     def validate_schema(self, data: dict) -> bool:
         """Validate input file structure"""
+        self._check_optional_fields(data)
+        provider_type = self.extract_provider_type(data).upper()
+        return self._validate_provider_data(data, provider_type)
+
+    def _check_optional_fields(self, data: dict) -> None:
+        """Check and warn about missing optional fields."""
         if "resource_id" not in data:
-            # Allow downstream inference; warn here
             self.logger.warning("Missing resource_id; will attempt to infer")
         if "provider_api" not in data:
             self.logger.warning("Missing provider_api; will attempt to infer")
 
-        provider_type = self.extract_provider_type(data).upper()
-
+    def _validate_provider_data(self, data: dict, provider_type: str) -> bool:
+        """Validate data structure based on provider type."""
         if provider_type == "ASG":
-            if "history" not in data or not isinstance(data["history"], list):
-                self.logger.error("ASG files must have 'history' array")
-                return False
+            return self._validate_asg_data(data)
         elif provider_type in ["EC2FLEET", "SPOTFLEET"]:
-            # Accept either 'events' (new format) or 'history' (describe_*_history response)
-            has_events = "events" in data and isinstance(data["events"], list)
-            has_history = "history" in data and isinstance(data["history"], list)
-            if not (has_events or has_history):
-                self.logger.error(f"{provider_type} files must have 'events' or 'history' array")
-                return False
+            return self._validate_fleet_data(data, provider_type)
+        return True
 
+    def _validate_asg_data(self, data: dict) -> bool:
+        """Validate ASG-specific data structure."""
+        if "history" not in data or not isinstance(data["history"], list):
+            self.logger.error("ASG files must have 'history' array")
+            return False
+        return True
+
+    def _validate_fleet_data(self, data: dict, provider_type: str) -> bool:
+        """Validate Fleet-specific data structure."""
+        has_events = "events" in data and isinstance(data["events"], list)
+        has_history = "history" in data and isinstance(data["history"], list)
+        if not (has_events or has_history):
+            self.logger.error(f"{provider_type} files must have 'events' or 'history' array")
+            return False
         return True
 
 
@@ -240,52 +253,65 @@ class EC2FleetHistoryParser:
 
         for event in history_data:
             try:
-                event_type = str(event.get("EventType", "")).lower()
-                info = event.get("EventInformation", {}) or {}
-                status = event.get("Status") or info.get("EventSubType")
-
-                if (
-                    event_type in ["instance-change", "instancechange", "instancechangeevent"]
-                    and status
-                ):
-                    instance_id = event.get("InstanceId") or info.get("InstanceId")
-                    creation_time = self.normalize_timestamp(event["Timestamp"])
-                    capacity = event.get("WeightedCapacity", 1)
-                    instance_type = self._extract_instance_type_from_event(event)
-
-                    if instance_id and creation_time:
-                        events.append(
-                            {
-                                "instance_id": instance_id,
-                                "creation_time": creation_time,
-                                "request_time": request_time,
-                                "activity_id": f"fleet-event-{event.get('Timestamp', 'unknown')}",
-                                "status": status,
-                                "capacity": capacity,
-                                "instance_type": instance_type,
-                            }
-                        )
+                if self._is_instance_change_event(event):
+                    instance_event = self._process_instance_event(event, request_time)
+                    if instance_event:
+                        events.append(instance_event)
                     else:
                         self.logger.warning("Skipping event: missing required data")
                 else:
-                    # Capture non-instance-change or informational events
-                    try:
-                        special_events.append(
-                            {
-                                "timestamp": self.normalize_timestamp(event["Timestamp"]),
-                                "event_type": event.get("EventType"),
-                                "event_subtype": info.get("EventSubType") or status,
-                                "description": info.get("EventDescription"),
-                            }
-                        )
-                    except Exception as exc:
-                        self.logger.debug(f"Failed to record special event: {exc}")
-
+                    special_event = self._process_special_event(event)
+                    if special_event:
+                        special_events.append(special_event)
             except Exception as e:
                 self.logger.warning(f"Error parsing event: {e}")
                 continue
 
         return events, special_events
+
+    def _is_instance_change_event(self, event: dict) -> bool:
+        """Check if event is an instance change event."""
+        event_type = str(event.get("EventType", "")).lower()
+        info = event.get("EventInformation", {}) or {}
+        status = event.get("Status") or info.get("EventSubType")
+        return (event_type in ["instance-change", "instancechange", "instancechangeevent"] and status)
+
+    def _process_instance_event(self, event: dict, request_time: datetime) -> Optional[dict]:
+        """Process an instance change event."""
+        info = event.get("EventInformation", {}) or {}
+        instance_id = event.get("InstanceId") or info.get("InstanceId")
+        
+        if not instance_id:
+            return None
+            
+        creation_time = self.normalize_timestamp(event["Timestamp"])
+        if not creation_time:
+            return None
+            
+        return {
+            "instance_id": instance_id,
+            "creation_time": creation_time,
+            "request_time": request_time,
+            "activity_id": f"fleet-event-{event.get('Timestamp', 'unknown')}",
+            "status": event.get("Status") or info.get("EventSubType"),
+            "capacity": event.get("WeightedCapacity", 1),
+            "instance_type": self._extract_instance_type_from_event(event),
+        }
+
+    def _process_special_event(self, event: dict) -> Optional[dict]:
+        """Process a special/informational event."""
+        try:
+            info = event.get("EventInformation", {}) or {}
+            status = event.get("Status") or info.get("EventSubType")
+            return {
+                "timestamp": self.normalize_timestamp(event["Timestamp"]),
+                "event_type": event.get("EventType"),
+                "event_subtype": info.get("EventSubType") or status,
+                "description": info.get("EventDescription"),
+            }
+        except Exception as exc:
+            self.logger.debug(f"Failed to record special event: {exc}")
+            return None
 
     def normalize_timestamp(self, timestamp_str: str) -> datetime:
         """Convert timestamp string to timezone-aware UTC datetime"""
@@ -323,52 +349,65 @@ class SpotFleetHistoryParser:
 
         for event in history_data:
             try:
-                event_type = str(event.get("EventType", "")).lower()
-                info = event.get("EventInformation", {}) or {}
-                status = event.get("Status") or info.get("EventSubType")
-
-                if (
-                    event_type in ["instance-change", "instancechange", "instancechangeevent"]
-                    and status
-                ):
-                    instance_id = event.get("InstanceId") or info.get("InstanceId")
-                    creation_time = self.normalize_timestamp(event["Timestamp"])
-                    capacity = event.get("WeightedCapacity", 1)
-                    instance_type = self._extract_instance_type_from_event(event)
-
-                    if instance_id and creation_time:
-                        events.append(
-                            {
-                                "instance_id": instance_id,
-                                "creation_time": creation_time,
-                                "request_time": request_time,
-                                "activity_id": f"spot-event-{event.get('Timestamp', 'unknown')}",
-                                "status": status,
-                                "capacity": capacity,
-                                "instance_type": instance_type,
-                            }
-                        )
+                if self._is_instance_change_event(event):
+                    instance_event = self._process_instance_event(event, request_time)
+                    if instance_event:
+                        events.append(instance_event)
                     else:
                         self.logger.warning("Skipping event: missing required data")
                 else:
-                    # Capture non-instance-change or informational events
-                    try:
-                        special_events.append(
-                            {
-                                "timestamp": self.normalize_timestamp(event["Timestamp"]),
-                                "event_type": event.get("EventType"),
-                                "event_subtype": info.get("EventSubType") or status,
-                                "description": info.get("EventDescription"),
-                            }
-                        )
-                    except Exception as exc:
-                        self.logger.debug(f"Failed to record special event: {exc}")
-
+                    special_event = self._process_special_event(event)
+                    if special_event:
+                        special_events.append(special_event)
             except Exception as e:
                 self.logger.warning(f"Error parsing event: {e}")
                 continue
 
         return events, special_events
+
+    def _is_instance_change_event(self, event: dict) -> bool:
+        """Check if event is an instance change event."""
+        event_type = str(event.get("EventType", "")).lower()
+        info = event.get("EventInformation", {}) or {}
+        status = event.get("Status") or info.get("EventSubType")
+        return (event_type in ["instance-change", "instancechange", "instancechangeevent"] and status)
+
+    def _process_instance_event(self, event: dict, request_time: datetime) -> Optional[dict]:
+        """Process an instance change event."""
+        info = event.get("EventInformation", {}) or {}
+        instance_id = event.get("InstanceId") or info.get("InstanceId")
+        
+        if not instance_id:
+            return None
+            
+        creation_time = self.normalize_timestamp(event["Timestamp"])
+        if not creation_time:
+            return None
+            
+        return {
+            "instance_id": instance_id,
+            "creation_time": creation_time,
+            "request_time": request_time,
+            "activity_id": f"spot-event-{event.get('Timestamp', 'unknown')}",
+            "status": event.get("Status") or info.get("EventSubType"),
+            "capacity": event.get("WeightedCapacity", 1),
+            "instance_type": self._extract_instance_type_from_event(event),
+        }
+
+    def _process_special_event(self, event: dict) -> Optional[dict]:
+        """Process a special/informational event."""
+        try:
+            info = event.get("EventInformation", {}) or {}
+            status = event.get("Status") or info.get("EventSubType")
+            return {
+                "timestamp": self.normalize_timestamp(event["Timestamp"]),
+                "event_type": event.get("EventType"),
+                "event_subtype": info.get("EventSubType") or status,
+                "description": info.get("EventDescription"),
+            }
+        except Exception as exc:
+            self.logger.debug(f"Failed to record special event: {exc}")
+            return None
 
     def normalize_timestamp(self, timestamp_str: str) -> datetime:
         """Convert timestamp string to timezone-aware UTC datetime"""
@@ -552,24 +591,32 @@ class DataProcessor:
 
     def _find_submission_time(self, events: list) -> Optional[datetime]:
         """Locate the fleet submission event and return its timestamp."""
-        candidates: list[datetime] = []
+        candidates = []
         for ev in events:
-            info = ev.get("EventInformation") or {}
-            if not isinstance(info, dict):
-                info = {}
-            subtype = info.get("EventSubType") or ev.get("EventSubType") or ev.get("Status")
-            if isinstance(subtype, str) and subtype.lower() == "submitted":
-                ts = ev.get("Timestamp")
-                if ts:
-                    try:
-                        candidates.append(self.normalize_timestamps(ts))
-                    except Exception as exc:
-                        self.logger.debug(
-                            "Skipping submitted event with invalid timestamp: %s", exc
-                        )
-        if candidates:
-            return min(candidates)
-        return None
+            if self._is_submission_event(ev):
+                timestamp = self._extract_valid_timestamp(ev)
+                if timestamp:
+                    candidates.append(timestamp)
+        return min(candidates) if candidates else None
+
+    def _is_submission_event(self, event: dict) -> bool:
+        """Check if event is a submission event."""
+        info = event.get("EventInformation") or {}
+        if not isinstance(info, dict):
+            info = {}
+        subtype = info.get("EventSubType") or event.get("EventSubType") or event.get("Status")
+        return isinstance(subtype, str) and subtype.lower() == "submitted"
+
+    def _extract_valid_timestamp(self, event: dict) -> Optional[datetime]:
+        """Extract and validate timestamp from event."""
+        ts = event.get("Timestamp")
+        if not ts:
+            return None
+        try:
+            return self.normalize_timestamps(ts)
+        except Exception as exc:
+            self.logger.debug("Skipping submitted event with invalid timestamp: %s", exc)
+            return None
 
     def _infer_request_time(self, events: list) -> Optional[datetime]:
         """Infer request_time from earliest event timestamp when no submitted event is found."""
