@@ -63,6 +63,10 @@ class TestBotocoreMetrics:
         metrics_collector.increment_counter.assert_called()
         metrics_collector.record_time.assert_called()
 
+        # Verify response is valid (basic validation)
+        assert response is not None
+        assert "Reservations" in response  # Standard EC2 describe_instances response structure
+
         # Check call arguments
         call_args = metrics_collector.increment_counter.call_args_list
         assert any(call.args[0] == "aws.ec2.describe_instances.calls_total" for call in call_args)

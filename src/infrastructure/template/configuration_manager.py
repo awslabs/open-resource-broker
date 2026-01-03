@@ -10,7 +10,9 @@ Architecture Principles:
 - Preserves existing public interface
 """
 
+from dataclasses import dataclass
 from datetime import datetime
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
 from domain.base.dependency_injection import injectable
@@ -41,6 +43,17 @@ class TemplateNotFoundError(EntityNotFoundError):
 
 class TemplateValidationError(ValidationError):
     """Exception raised when template validation fails."""
+
+
+@dataclass
+class TemplateFileMetadata:
+    """Metadata for template files."""
+
+    path: Path
+    provider: str
+    file_type: str
+    priority: int
+    last_modified: datetime
 
 
 @injectable
@@ -163,7 +176,9 @@ class TemplateConfigurationManager:
             self.logger.error("Failed to load templates from scheduler: %s", e)
             return []
 
-    def _convert_dict_to_template_dto(self, template_dict: dict[str, Any]) -> TemplateDTO:
+    def _convert_dict_to_template_dto(
+        self, template_dict: dict[str, Any], file_metadata: Optional[TemplateFileMetadata] = None
+    ) -> TemplateDTO:
         """Convert template dictionary to TemplateDTO with defaults applied."""
         # Extract template ID (scheduler strategy should have normalized this)
         template_id = template_dict.get("template_id", template_dict.get("templateId", ""))

@@ -21,7 +21,7 @@ case "$RELEASE_MODE" in
         echo "Building and testing..."
         cd "$PROJECT_ROOT"
         make build
-        make test-fast
+        make test-quick
         
         # Publish everything
         echo "Publishing release artifacts..."

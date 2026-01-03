@@ -4,7 +4,7 @@ import os
 from typing import TYPE_CHECKING, Any, Union
 
 if TYPE_CHECKING:
-    pass
+    from domain.request.aggregate import Request
 
 from domain.base.ports.configuration_port import ConfigurationPort
 from domain.base.ports.logging_port import LoggingPort
