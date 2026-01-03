@@ -814,8 +814,69 @@ class OutputManager:
                 self._adjust_column_widths(worksheet)
                 if not dataframe.empty and len(dataframe) > 1:
                     self._add_chart_to_worksheet(worksheet, dataframe, special_events)
-        except Exception:
+                
+                # Add special events sheet
+                if special_events:
+                    self._add_special_events_sheet(writer, special_events)
+                
+                # Add summary sheet
+                self._add_summary_sheet(writer, dataframe)
+                
+            self.logger.info(f"Successfully saved Excel with charts to: {output_path}")
+        except Exception as e:
+            self.logger.error(f"Error saving Excel file: {e}")
             raise
+
+    def _add_special_events_sheet(self, writer: pd.ExcelWriter, special_events: list[dict]) -> None:
+        """Add special events sheet to Excel workbook."""
+        special_rows = []
+        for ev in special_events:
+            special_rows.append({
+                "timestamp": ev.get("timestamp"),
+                "event_type": ev.get("event_type"),
+                "event_subtype": ev.get("event_subtype"),
+                "description": ev.get("description"),
+            })
+        special_df = pd.DataFrame(special_rows)
+        special_df.to_excel(writer, sheet_name="Special Events", index=False)
+
+    def _add_summary_sheet(self, writer: pd.ExcelWriter, dataframe: pd.DataFrame) -> None:
+        """Add summary sheet with key metrics."""
+        summary_data = {
+            "Metric": [
+                "Total Instances",
+                "Provider Type",
+                "Resource ID",
+                "Fastest Creation Time (seconds)",
+                "Slowest Creation Time (seconds)",
+                "Average Creation Time (seconds)",
+                "Success Rate (%)",
+                "First Instance Created",
+                "Last Instance Created",
+                "Total vCPUs",
+                "Average vCPUs per Instance",
+            ],
+            "Value": [
+                len(dataframe),
+                dataframe["provider_api"].iloc[0] if not dataframe.empty else "N/A",
+                dataframe["resource_id"].iloc[0] if not dataframe.empty else "N/A",
+                dataframe["time_from_request"].min() if not dataframe.empty else "N/A",
+                dataframe["time_from_request"].max() if not dataframe.empty else "N/A",
+                round(dataframe["time_from_request"].mean(), 2) if not dataframe.empty else "N/A",
+                100.0 if not dataframe.empty and (dataframe["status"] == "Successful").all() else "N/A",
+                dataframe["ec2_creation_time"].min() if not dataframe.empty else "N/A",
+                dataframe["ec2_creation_time"].max() if not dataframe.empty else "N/A",
+                dataframe["cumulative_vcpus"].max() if not dataframe.empty else "N/A",
+                round(dataframe["vcpu_count"].mean(), 2) if not dataframe.empty else "N/A",
+            ],
+        }
+        
+        summary_df = pd.DataFrame(summary_data)
+        summary_df.to_excel(writer, sheet_name="Summary", index=False)
+        
+        # Auto-adjust summary sheet columns
+        summary_sheet = writer.sheets["Summary"]
+        self._adjust_column_widths(summary_sheet)
 
     def _write_dataframe_to_excel(self, writer: pd.ExcelWriter, dataframe: pd.DataFrame) -> None:
         """Write DataFrame to Excel worksheet"""
@@ -919,13 +980,162 @@ class OutputManager:
         draw = ImageDraw.Draw(img)
         font = ImageFont.load_default()
         
-        # This is a simplified version - the full implementation would include
-        # all the drawing logic from the original function
-        # For now, just draw basic data points
+        # Draw axis titles and ticks
+        self._draw_axis_labels_and_ticks(draw, font, dimensions)
+        
+        # Setup marker mapping for instance types
+        marker_map = self._create_instance_type_markers(df)
+        
+        # Draw data points and collect legend entries
+        legend_entries = self._draw_data_points(draw, df, dimensions, marker_map)
+        
+        # Draw special events if present
+        if special_events:
+            special_legends = self._draw_special_events(draw, df, special_events, dimensions)
+        else:
+            special_legends = []
+        
+        # Draw legends
+        self._draw_plot_legends(draw, font, legend_entries, special_legends, dimensions)
+
+    def _draw_axis_labels_and_ticks(self, draw, font, dimensions: dict) -> None:
+        """Draw axis titles, labels and tick marks."""
+        x_axis_y = dimensions['height'] - dimensions['margin_bottom']
+        y_axis_x = dimensions['margin_left']
+        
+        # Axis titles
+        draw.text(
+            (y_axis_x + dimensions['plot_w'] / 2 - 140, dimensions['height'] - dimensions['margin_bottom'] + 50),
+            "Time from Request (seconds)", fill="black", font=font
+        )
+        draw.text((20, dimensions['margin_top'] + dimensions['plot_h'] / 2 - 20), "Cumulative vCPUs", fill="black", font=font)
+        
+        # Ticks and labels
+        ticks = 5
+        for i in range(ticks + 1):
+            # X ticks
+            tx = y_axis_x + int(dimensions['plot_w'] * i / ticks)
+            val = dimensions['x_max'] * i / ticks
+            draw.line((tx, x_axis_y, tx, x_axis_y + 6), fill="black")
+            label = f"{val:.1f}"
+            draw.text((tx - len(label) * 3, x_axis_y + 10), label, fill="black", font=font)
+            
+            # Y ticks
+            ty = x_axis_y - int(dimensions['plot_h'] * i / ticks)
+            y_val = dimensions['y_max'] * i / ticks
+            draw.line((y_axis_x - 6, ty, y_axis_x, ty), fill="black")
+            label_y = f"{y_val:.0f}"
+            draw.text((y_axis_x - (len(label_y) * 6 + 12), ty - 4), label_y, fill="black", font=font)
+
+    def _create_instance_type_markers(self, df: pd.DataFrame) -> dict:
+        """Create marker mapping for unique instance types."""
+        palette_shapes = ["circle", "triangle", "square", "diamond", "plus", "x", "circle", "square"]
+        palette_colors = ["#2f7d32", "#1f4e79", "#7f6000", "#9c27b0", "#ff6f00", "#00838f", "#795548", "#c62828"]
+        
+        unique_types = sorted(set(df["instance_type"]))
+        marker_map = {}
+        for idx, inst_type in enumerate(unique_types):
+            shape = palette_shapes[idx % len(palette_shapes)]
+            color = palette_colors[idx % len(palette_colors)]
+            marker_map[inst_type] = (shape, color)
+        
+        return marker_map
+
+    def _draw_data_points(self, draw, df: pd.DataFrame, dimensions: dict, marker_map: dict) -> dict:
+        """Draw data points and return legend entries."""
+        legend_entries = {}
+        y_axis_x = dimensions['margin_left']
+        x_axis_y = dimensions['height'] - dimensions['margin_bottom']
+        
         for _, row in df.iterrows():
-            x = dimensions['margin_left'] + int((row["time_from_request"] / dimensions['x_max']) * dimensions['plot_w'])
-            y = dimensions['height'] - dimensions['margin_bottom'] - int((row["cumulative_vcpus"] / dimensions['y_max']) * dimensions['plot_h'])
-            draw.ellipse((x-3, y-3, x+3, y+3), fill="blue", outline="black")
+            sx = y_axis_x + int((row["time_from_request"] / dimensions['x_max']) * dimensions['plot_w'])
+            sy = x_axis_y - int((row["cumulative_vcpus"] / dimensions['y_max']) * dimensions['plot_h'])
+            shape, color = marker_map.get(row["instance_type"], ("circle", "#444444"))
+            
+            self._draw_marker(draw, sx, sy, shape, color)
+            
+            if row["instance_type"] not in legend_entries:
+                legend_entries[row["instance_type"]] = (shape, color)
+        
+        return legend_entries
+
+    def _draw_marker(self, draw, sx: int, sy: int, shape: str, color: str) -> None:
+        """Draw a single marker at the specified position."""
+        if shape == "circle":
+            r = 7
+            draw.ellipse((sx - r, sy - r, sx + r, sy + r), fill=color, outline="black")
+        elif shape == "square":
+            r = 7
+            draw.rectangle((sx - r, sy - r, sx + r, sy + r), fill=color, outline="black")
+        elif shape == "triangle":
+            r = 8
+            draw.polygon([(sx, sy - r), (sx - r, sy + r), (sx + r, sy + r)], fill=color, outline="black")
+        elif shape == "diamond":
+            r = 8
+            draw.polygon([(sx, sy - r), (sx - r, sy), (sx, sy + r), (sx + r, sy)], fill=color, outline="black")
+        elif shape == "plus":
+            draw.line((sx - 7, sy, sx + 7, sy), fill=color, width=2)
+            draw.line((sx, sy - 7, sx, sy + 7), fill=color, width=2)
+        elif shape == "x":
+            draw.line((sx - 7, sy - 7, sx + 7, sy + 7), fill=color, width=2)
+            draw.line((sx - 7, sy + 7, sx + 7, sy - 7), fill=color, width=2)
+
+    def _draw_special_events(self, draw, df: pd.DataFrame, special_events: list[dict], dimensions: dict) -> list:
+        """Draw special event markers and return legend entries."""
+        base_time = df["request_time"].min()
+        y_axis_x = dimensions['margin_left']
+        x_axis_y = dimensions['height'] - dimensions['margin_bottom']
+        
+        for ev in special_events:
+            ts = ev.get("timestamp")
+            if not ts or not base_time:
+                continue
+            offset = (ts - base_time).total_seconds()
+            sx = y_axis_x + int((offset / dimensions['x_max']) * dimensions['plot_w'])
+            sy = x_axis_y  # y=0 line
+            
+            subtype = (ev.get("event_subtype") or ev.get("event_type") or "").lower()
+            if subtype == "submitted":
+                self._draw_marker(draw, sx, sy, "circle", "#f5c400")  # yellow
+            elif subtype == "active":
+                self._draw_marker(draw, sx, sy, "circle", "#2e7d32")  # green
+            else:
+                self._draw_marker(draw, sx, sy, "x", "#d32f2f")  # red cross
+        
+        return [
+            ("submitted event", "circle", "#f5c400"),
+            ("active event", "circle", "#2e7d32"),
+            ("other event", "x", "#d32f2f"),
+        ]
+
+    def _draw_plot_legends(self, draw, font, legend_entries: dict, special_legends: list, dimensions: dict) -> None:
+        """Draw both instance type and special event legends."""
+        legend_x = dimensions['width'] - dimensions['margin_right'] + 40
+        legend_y = dimensions['margin_top'] + 20
+        
+        # Instance types legend
+        draw.text((legend_x, legend_y - 20), "Instance Types", fill="black", font=font)
+        for idx, (inst_type, (shape, color)) in enumerate(legend_entries.items()):
+            ly = legend_y + idx * 20
+            self._draw_marker(draw, legend_x + 10, ly + 5, shape, color)
+            draw.text((legend_x + 25, ly - 2), inst_type, fill="black", font=font)
+        
+        # Special events legend
+        if special_legends:
+            legend_y_extra = legend_y + (len(legend_entries) + 1) * 20
+            draw.text((legend_x, legend_y_extra - 20), "Special Events", fill="black", font=font)
+            for idx, (label, shape, color) in enumerate(special_legends):
+                ly = legend_y_extra + idx * 20
+                self._draw_marker(draw, legend_x + 10, ly + 5, shape, color)
+                draw.text((legend_x + 25, ly - 2), label, fill="black", font=font)
+        
+        # Draw border around legend area
+        legend_height = (len(legend_entries) + 1 + len(special_legends) + 1) * 20
+        border_padding = 8
+        draw.rectangle(
+            (legend_x - border_padding, legend_y - 30, legend_x + 220, legend_y + legend_height),
+            outline="black", width=1
+        )
 
     def validate_output(self, dataframe: pd.DataFrame) -> bool:
         """Validate DataFrame structure before export"""
