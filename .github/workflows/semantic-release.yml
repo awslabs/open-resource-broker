@@ -28,6 +28,7 @@ permissions:
   pull-requests: read
   id-token: write
   packages: write
+  actions: read
 
 jobs:
   release:
