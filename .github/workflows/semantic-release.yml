@@ -57,11 +57,19 @@ jobs:
           source .venv/bin/activate
           pip install python-semantic-release
 
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Run semantic release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REGISTRY: ${{ steps.config.outputs.container-registry }}
           IMAGE_NAME: ${{ steps.config.outputs.container-image }}
+          CONTAINER_IMAGE: ${{ steps.config.outputs.container-image }}
           RELEASE_MODE: ${{ inputs.mode || 'forward' }}
           RELEASE_COMMIT: ${{ inputs.commit }}
           RELEASE_VERSION: ${{ inputs.version }}
