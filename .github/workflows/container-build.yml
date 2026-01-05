@@ -197,7 +197,7 @@ jobs:
   container-manifest:
     name: Create Multi-Architecture Manifests
     runs-on: ubuntu-latest
-    needs: [config, calculate-tags, container-pipeline]
+    needs: [config, calculate-tags, setup-cache, container-pipeline]
     if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.event_name == 'release')
 
     permissions:
@@ -247,7 +247,7 @@ jobs:
   container-validation:
     name: Validate Container Tags
     runs-on: ubuntu-latest
-    needs: [config, calculate-tags, container-manifest]
+    needs: [config, calculate-tags, setup-cache, container-manifest]
     if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.event_name == 'release')
 
     permissions:
@@ -313,7 +313,7 @@ jobs:
   container-cleanup:
     name: Cleanup Old Container Images
     runs-on: ubuntu-latest
-    needs: [config, container-validation]
+    needs: [config, setup-cache, container-validation]
     if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.event_name == 'release')
 
     permissions:
