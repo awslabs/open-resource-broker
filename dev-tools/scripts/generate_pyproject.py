@@ -104,6 +104,17 @@ def update_pyproject_selective(pyproject_path: Path) -> None:
     lines = content.split("\n")
     new_lines = []
 
+    # Check if version was already updated by semantic-release
+    current_version = None
+    for line in lines:
+        if line.strip().startswith('version = "'):
+            current_version = line.strip().split('"')[1]
+            break
+
+    # If current version is different from .project.yml, don't overwrite it
+    # (semantic-release has already updated it)
+    use_current_version = current_version and current_version != version
+
     i = 0
     while i < len(lines):
         line = lines[i].strip()
@@ -115,7 +126,7 @@ def update_pyproject_selective(pyproject_path: Path) -> None:
                 [
                     "[project]",
                     f'name = "{package_name}"',
-                    f'version = "{version}"',
+                    f'version = "{current_version if use_current_version else version}"',
                     f'description = "{description}"',
                     'readme = "README.md"',
                     'license = "Apache-2.0"',
