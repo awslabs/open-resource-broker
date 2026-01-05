@@ -25,6 +25,7 @@ jobs:
     name: Bandit (Security Scan)
     needs: config
     permissions:
+      contents: read
       actions: read
       security-events: write
     uses: ./.github/workflows/reusable-security.yml
@@ -37,6 +38,7 @@ jobs:
     name: Safety (Dependency Scan)
     needs: config
     permissions:
+      contents: read
       actions: read
       security-events: write
     uses: ./.github/workflows/reusable-security.yml
@@ -49,6 +51,7 @@ jobs:
     name: Semgrep (Static Analysis)
     needs: config
     permissions:
+      contents: read
       actions: read
       security-events: write
     uses: ./.github/workflows/reusable-security.yml
@@ -60,6 +63,7 @@ jobs:
     name: Trivy (Filesystem Scan)
     needs: config
     permissions:
+      contents: read
       actions: read
       security-events: write
     uses: ./.github/workflows/reusable-security.yml
@@ -111,6 +115,7 @@ jobs:
     needs: config
     if: github.event_name == 'schedule' || contains(github.event.head_commit.message, '[security]')
     permissions:
+      contents: read
       actions: read
       security-events: write
     uses: ./.github/workflows/reusable-security.yml
