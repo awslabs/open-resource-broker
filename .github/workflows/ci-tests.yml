@@ -34,35 +34,29 @@ jobs:
     name: Configuration
     uses: ./.github/workflows/shared-config.yml
 
-  tests:
-    name: Run Tests
+  setup-cache:
+    name: Setup Test Cache
     needs: config
-    strategy:
-      matrix:
-        test-type: [unit, integration, e2e]
-      fail-fast: false
-    uses: ./.github/workflows/reusable-test.yml
+    uses: ./.github/workflows/cache-management.yml
     with:
-      test-type: ${{ matrix.test-type }}
+      cache-type: dependencies
+      cache-key-base: test-deps
       python-version: ${{ needs.config.outputs.default-python-version }}
-      default-python-version: ${{ needs.config.outputs.default-python-version }}
-      continue-on-error: true
 
-  performance-tests:
-    name: Performance Tests
-    needs: config
-    if: github.event_name == 'schedule' || contains(github.event.head_commit.message, '[perf]')
+  tests:
+    name: Quick Tests (Default Python)
+    needs: [config, setup-cache]
     uses: ./.github/workflows/reusable-test.yml
     with:
-      test-type: performance
+      test-type: unit
       python-version: ${{ needs.config.outputs.default-python-version }}
       default-python-version: ${{ needs.config.outputs.default-python-version }}
-      continue-on-error: true
+      continue-on-error: false
 
   build-and-package:
     name: Build & Package
     runs-on: ubuntu-latest
-    needs: config
+    needs: [config, setup-cache]
     permissions:
       contents: read
 
@@ -70,10 +64,10 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v6.0.1
 
-    - name: Setup UV with cached environment
+    - name: Setup UV with cache
       uses: ./.github/actions/setup-uv-cached
       with:
-        cache-key: deps-${{ needs.config.outputs.default-python-version }}-${{ hashFiles('.project.yml', 'pyproject.toml', 'requirements*.txt') }}
+        cache-key: ${{ needs.setup-cache.outputs.cache-key }}
         fail-on-cache-miss: false
 
     - name: Build package
@@ -90,7 +84,7 @@ jobs:
   test-report:
     name: Generate Test Report
     runs-on: ubuntu-latest
-    needs: [config, tests]
+    needs: [config, setup-cache, tests]
     if: always()
     permissions:
       contents: read
@@ -99,35 +93,35 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v6.0.1
 
-    - name: Setup UV with cached environment
+    - name: Setup UV with cache
       uses: ./.github/actions/setup-uv-cached
       with:
-        cache-key: deps-${{ needs.config.outputs.default-python-version }}-${{ hashFiles('.project.yml', 'pyproject.toml', 'requirements*.txt') }}
+        cache-key: ${{ needs.setup-cache.outputs.cache-key }}
         fail-on-cache-miss: false
 
-    - name: Download all test results
+    - name: Download test results
       uses: actions/download-artifact@v7.0.0
       with:
         path: test-results/
 
-    - name: Generate complete test report
+    - name: Generate test report
       run: make test-report
       continue-on-error: true
 
-    - name: Upload complete test report
+    - name: Upload test report
       uses: actions/upload-artifact@v6.0.0
       if: always()
       with:
-        name: complete-test-report
+        name: test-report
         path: |
           test-results-combined.xml
           coverage-combined.xml
           htmlcov/
 
-    - name: Upload final coverage to Codecov
+    - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v5
       if: always()
       with:
         files: coverage-combined.xml
-        flags: complete
-        name: complete-tests
+        flags: unit
+        name: unit-tests
