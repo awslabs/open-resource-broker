@@ -30,6 +30,7 @@ permissions:
   packages: write
   actions: read
   issues: read
+  releases: write
 
 jobs:
   release:
