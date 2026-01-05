@@ -1,0 +1,120 @@
+name: Security Code Scanning
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'src/**'
+      - 'requirements*.txt'
+      - 'pyproject.toml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'src/**'
+      - 'requirements*.txt'
+      - 'pyproject.toml'
+  schedule:
+    - cron: '0 3 * * 0'
+
+jobs:
+  config:
+    name: Configuration
+    uses: ./.github/workflows/shared-config.yml
+
+  security-bandit:
+    name: Bandit (Security Scan)
+    needs: config
+    permissions:
+      actions: read
+      security-events: write
+    uses: ./.github/workflows/reusable-security.yml
+    with:
+      scan-type: bandit
+      default-python-version: ${{ needs.config.outputs.default-python-version }}
+      python-version: ${{ needs.config.outputs.default-python-version }}
+
+  security-safety:
+    name: Safety (Dependency Scan)
+    needs: config
+    permissions:
+      actions: read
+      security-events: write
+    uses: ./.github/workflows/reusable-security.yml
+    with:
+      scan-type: safety
+      default-python-version: ${{ needs.config.outputs.default-python-version }}
+      python-version: ${{ needs.config.outputs.default-python-version }}
+
+  security-semgrep:
+    name: Semgrep (Static Analysis)
+    needs: config
+    permissions:
+      actions: read
+      security-events: write
+    uses: ./.github/workflows/reusable-security.yml
+    with:
+      scan-type: semgrep
+      default-python-version: ${{ needs.config.outputs.default-python-version }}
+
+  security-trivy-fs:
+    name: Trivy (Filesystem Scan)
+    needs: config
+    permissions:
+      actions: read
+      security-events: write
+    uses: ./.github/workflows/reusable-security.yml
+    with:
+      scan-type: trivy-fs
+      default-python-version: ${{ needs.config.outputs.default-python-version }}
+
+  security-trufflehog:
+    name: TruffleHog (Secrets Scan)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.event.before != '0000000000000000000000000000000000000000')
+
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6.0.1
+      with:
+        fetch-depth: 0
+
+    - name: Check for secrets with TruffleHog
+      uses: trufflesecurity/trufflehog@v3.92.4
+      with:
+        path: ./
+        base: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+        head: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.event.after }}
+        extra_args: --debug --only-verified
+
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6.0.1
+
+    - name: Dependency Review
+      uses: actions/dependency-review-action@v4
+      with:
+        fail-on-severity: moderate
+        allow-licenses: MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC
+
+  codeql-analysis:
+    name: CodeQL Analysis
+    needs: config
+    if: github.event_name == 'schedule' || contains(github.event.head_commit.message, '[security]')
+    permissions:
+      actions: read
+      security-events: write
+    uses: ./.github/workflows/reusable-security.yml
+    with:
+      scan-type: codeql
+      default-python-version: ${{ needs.config.outputs.default-python-version }}
+      python-version: ${{ needs.config.outputs.default-python-version }}
