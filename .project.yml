@@ -12,7 +12,7 @@ project:
   license: "Apache-2.0"
 python:
   versions: ["3.10", "3.11", "3.12", "3.13", "3.14"] # Supported Python versions
-  default_version: 3.13
+  default_version: 3.14
 repository:
   org: awslabs
   name: open-resource-broker
