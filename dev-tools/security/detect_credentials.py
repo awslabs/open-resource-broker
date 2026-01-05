@@ -11,7 +11,7 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
 
-def detect_secrets(source_dir: str = "src") -> bool:
+def detect_credentials(source_dir: str = "src") -> bool:
     """Detect potential hardcoded secrets in Python files."""
 
     # Pattern to match potential secrets
@@ -36,7 +36,7 @@ def detect_secrets(source_dir: str = "src") -> bool:
         logger.error(f"Source directory '{source_dir}' not found")
         return False
 
-    found_secrets = []
+    found_issues = []
 
     for py_file in source_path.rglob("*.py"):
         try:
@@ -48,15 +48,15 @@ def detect_secrets(source_dir: str = "src") -> bool:
                 if secret_pattern.search(line):
                     # Check if this is an exception
                     if not any(exc in line for exc in exceptions):
-                        # Store only file path and line number to avoid retaining secret content
-                        found_secrets.append((str(py_file), line_num))
+                        # Store only file path and line number to avoid retaining credential content
+                        found_issues.append((str(py_file), line_num))
 
         except Exception as e:
             logger.warning(f"Could not read {py_file}: {e}")
 
-    if found_secrets:
+    if found_issues:
         logger.error("Potential hardcoded credentials found:")
-        for file_path, line_number in found_secrets:
+        for file_path, line_number in found_issues:
             # Security: Log only file and line number, never the actual credential content
             logger.error(f"  Issue detected at: {file_path}:{line_number}")
         return False
@@ -67,7 +67,7 @@ def detect_secrets(source_dir: str = "src") -> bool:
 
 def main():
     """Main function."""
-    if not detect_secrets():
+    if not detect_credentials():
         sys.exit(1)
     sys.exit(0)
 
