@@ -48,8 +48,7 @@ EMOJI_PATTERN = re.compile(
     "\U0001f300-\U0001f5ff"  # symbols & pictographs
     "\U0001f680-\U0001f6ff"  # transport & map
     "\U0001f1e0-\U0001f1ff"  # flags
-    "\U00002702-\U000027b0"  # dingbats
-    "\U000024c2-\U0001f251"
+    "\U00002700-\U000027bf"  # dingbats (fixed range)
     "]+",
     flags=re.UNICODE,
 )
