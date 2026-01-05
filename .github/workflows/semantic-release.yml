@@ -43,6 +43,11 @@ jobs:
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
+          ref: ${{ github.ref_name }}
+
+      - name: Force branch to workflow SHA
+        run: |
+          git reset --hard ${{ github.sha }}
 
       - name: Setup Python and UV
         uses: ./.github/actions/setup-python-uv
