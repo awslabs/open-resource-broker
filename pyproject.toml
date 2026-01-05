@@ -286,6 +286,7 @@ namespace_packages = true
 
 [tool.semantic_release]
 version_variables = [".project.yml:project.version"]
+version_toml = ["pyproject.toml:project.version"]
 build_command = "make build"
 major_on_zero = true
 allow_zero_version = true
@@ -309,6 +310,7 @@ prerelease = true
 
 [tool.semantic_release.changelog.default_templates]
 changelog_file = "CHANGELOG.md"
+template_dir = ".release-notes-templates"
 
 [tool.semantic_release.commit_parser_options]
 minor_tags = ["feat"]
@@ -321,5 +323,6 @@ name = "origin"
 type = "github"
 
 [tool.semantic_release.publish]
-dist_glob_patterns = ["dist/*"]
+dist = false
+dist_glob_patterns = ["dist/*.whl", "dist/*.tar.gz", "checksums.txt"]
 upload_to_vcs_release = true

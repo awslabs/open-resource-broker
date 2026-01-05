@@ -1,0 +1,95 @@
+## {{ version.as_tag() }} ({{ version.commit_date.strftime("%Y-%m-%d") }})
+
+_This release is published under the Apache-2.0 License._
+
+{% if version.breaking_changes %}
+### Breaking Changes
+
+{% for commit in version.breaking_changes %}
+- {{ commit.descriptions[0] | capitalize }}{% if commit.scope %} ({{ commit.scope }}){% endif %} ([`{{ commit.short_hash }}`]({{ commit.hexsha | commit_hash_url }}))
+{% endfor %}
+
+{% endif %}
+{% if version.feature_commits %}
+### Features
+
+{% for commit in version.feature_commits %}
+- {{ commit.descriptions[0] | capitalize }}{% if commit.scope %} ({{ commit.scope }}){% endif %} ([`{{ commit.short_hash }}`]({{ commit.hexsha | commit_hash_url }}))
+{% endfor %}
+
+{% endif %}
+{% if version.fix_commits %}
+### Bug Fixes
+
+{% for commit in version.fix_commits %}
+- {{ commit.descriptions[0] | capitalize }}{% if commit.scope %} ({{ commit.scope }}){% endif %} ([`{{ commit.short_hash }}`]({{ commit.hexsha | commit_hash_url }}))
+{% endfor %}
+
+{% endif %}
+{% if version.performance_commits %}
+### Performance Improvements
+
+{% for commit in version.performance_commits %}
+- {{ commit.descriptions[0] | capitalize }}{% if commit.scope %} ({{ commit.scope }}){% endif %} ([`{{ commit.short_hash }}`]({{ commit.hexsha | commit_hash_url }}))
+{% endfor %}
+
+{% endif %}
+{% if version.refactor_commits %}
+### Refactoring
+
+{% for commit in version.refactor_commits %}
+- {{ commit.descriptions[0] | capitalize }}{% if commit.scope %} ({{ commit.scope }}){% endif %} ([`{{ commit.short_hash }}`]({{ commit.hexsha | commit_hash_url }}))
+{% endfor %}
+
+{% endif %}
+{% if version.chore_commits %}
+### Chores
+
+{% for commit in version.chore_commits %}
+- {{ commit.descriptions[0] | capitalize }}{% if commit.scope %} ({{ commit.scope }}){% endif %} ([`{{ commit.short_hash }}`]({{ commit.hexsha | commit_hash_url }}))
+{% endfor %}
+
+{% endif %}
+{% if version.documentation_commits %}
+### Documentation
+
+{% for commit in version.documentation_commits %}
+- {{ commit.descriptions[0] | capitalize }}{% if commit.scope %} ({{ commit.scope }}){% endif %} ([`{{ commit.short_hash }}`]({{ commit.hexsha | commit_hash_url }}))
+{% endfor %}
+
+{% endif %}
+{% if version.style_commits %}
+### Code Style
+
+{% for commit in version.style_commits %}
+- {{ commit.descriptions[0] | capitalize }}{% if commit.scope %} ({{ commit.scope }}){% endif %} ([`{{ commit.short_hash }}`]({{ commit.hexsha | commit_hash_url }}))
+{% endfor %}
+
+{% endif %}
+{% if version.test_commits %}
+### Tests
+
+{% for commit in version.test_commits %}
+- {{ commit.descriptions[0] | capitalize %}{% if commit.scope %} ({{ commit.scope }}){% endif %} ([`{{ commit.short_hash }}`]({{ commit.hexsha | commit_hash_url }}))
+{% endfor %}
+
+{% endif %}
+{% if version.build_commits %}
+### Build System
+
+{% for commit in version.build_commits %}
+- {{ commit.descriptions[0] | capitalize %}{% if commit.scope %} ({{ commit.scope }}){% endif %} ([`{{ commit.short_hash }}`]({{ commit.hexsha | commit_hash_url }}))
+{% endfor %}
+
+{% endif %}
+{% if version.ci_commits %}
+### Continuous Integration
+
+{% for commit in version.ci_commits %}
+- {{ commit.descriptions[0] | capitalize %}{% if commit.scope %} ({{ commit.scope }}){% endif %} ([`{{ commit.short_hash }}`]({{ commit.hexsha | commit_hash_url }}))
+{% endfor %}
+
+{% endif %}
+---
+
+**Detailed Changes**: [{{ version.previous_version.as_tag() }}...{{ version.as_tag() }}]({{ version.previous_version.as_tag() | compare_url(version.as_tag()) }})
