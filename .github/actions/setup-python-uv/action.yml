@@ -23,6 +23,7 @@ runs:
     - name: Install UV
       uses: astral-sh/setup-uv@v6
       with:
+        version: "0.9.6"
         enable-cache: true
         cache-dependency-glob: "pyproject.toml"
         cache-suffix: ${{ inputs.cache-key-suffix }}
@@ -37,6 +38,10 @@ runs:
     - name: Generate pyproject.toml
       shell: bash
       run: make generate-pyproject
+
+    - name: Upgrade pip to secure version
+      shell: bash
+      run: python -m pip install --upgrade pip>=25.3
 
     - name: Install dependencies
       if: inputs.install-deps == 'true'

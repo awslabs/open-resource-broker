@@ -6,6 +6,14 @@ ARG PACKAGE_NAME_SHORT=orb
 
 FROM python:${PYTHON_VERSION}-slim
 
+# Update system packages to fix security vulnerabilities
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    apt-get install -y --no-install-recommends \
+        ca-certificates=20250419 && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
 ARG PYTHON_VERSION=3.13
 ARG PACKAGE_NAME_SHORT=orb
 
@@ -13,7 +21,7 @@ ARG PACKAGE_NAME_SHORT=orb
 RUN apt-get update && \
     apt-get upgrade -y && \
     apt-get install -y --no-install-recommends \
-        ca-certificates && \
+        ca-certificates=20250419 && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* && \
     # Security: Upgrade setuptools to latest version
@@ -42,7 +50,7 @@ ENV BUILD_DATE="${BUILD_DATE}" \
 
 # Install runtime dependencies and create user in single layer
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates \
+    ca-certificates=20250419 \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean \
     && groupadd -r "${PACKAGE_NAME_SHORT:-orb}" \
