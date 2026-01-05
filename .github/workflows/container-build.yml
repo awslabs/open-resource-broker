@@ -32,6 +32,11 @@ on:
         default: false
         type: boolean
 
+permissions:
+  contents: read
+  packages: write
+  pull-requests: read
+
 jobs:
   config:
     name: Configuration
