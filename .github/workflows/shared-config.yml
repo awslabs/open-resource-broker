@@ -26,6 +26,8 @@ jobs:
   get-config:
     name: Get Configuration
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       python-versions: ${{ steps.config.outputs.python-versions }}
       default-python-version: ${{ steps.config.outputs.default-python-version }}

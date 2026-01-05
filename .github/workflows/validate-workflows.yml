@@ -12,6 +12,8 @@ jobs:
   get-config:
     name: Get Configuration
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       default-python-version: ${{ steps.config.outputs.default-python-version }}
 
@@ -27,6 +29,8 @@ jobs:
     name: Validate Workflow Files
     runs-on: ubuntu-latest
     needs: get-config
+    permissions:
+      contents: read
 
     steps:
     - name: Checkout code
