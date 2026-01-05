@@ -61,8 +61,7 @@ ci-docs-deploy:  ## Deploy documentation to GitHub Pages (matches docs.yml main 
 # Dummy targets removed (consolidated in quality.mk)
 
 # @SECTION Build & Deploy
-build: clean dev-install  ## Build package
-	VERSION=$${VERSION:-$$(make -s get-version)} $(MAKE) generate-pyproject && \
+build: clean venv-setup  ## Build package
 	VERSION=$${VERSION:-$$(make -s get-version)} BUILD_ARGS="$(BUILD_ARGS)" ./dev-tools/package/build.sh
 
 build-test: build  ## Build and test package installation

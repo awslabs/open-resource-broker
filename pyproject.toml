@@ -286,7 +286,8 @@ namespace_packages = true
 
 [tool.semantic_release]
 version_variables = [".project.yml:project.version"]
-build_command = "make build"
+version_toml = ["pyproject.toml:project.version"]
+build_command = "python -m build --sdist --wheel"
 major_on_zero = true
 allow_zero_version = true
 tag_format = "v{version}"
