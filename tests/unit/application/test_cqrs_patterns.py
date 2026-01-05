@@ -875,7 +875,16 @@ class TestCQRSIntegration:
 
     def test_cqrs_supports_saga_patterns(self):
         """Test that CQRS supports saga/process manager patterns."""
-        command_bus = CommandBus()
+        from unittest.mock import Mock
+
+        from domain.base.ports import LoggingPort
+        from infrastructure.di.container import DIContainer
+
+        # Create mocks for required dependencies
+        mock_container = Mock(spec=DIContainer)
+        mock_logger = Mock(spec=LoggingPort)
+
+        command_bus = CommandBus(mock_container, mock_logger)
 
         # Mock saga/process manager
         mock_saga = Mock()
@@ -885,11 +894,12 @@ class TestCQRSIntegration:
             command_bus.register_saga(mock_saga)
 
         # Execute command that triggers saga
-        command = CreateRequestCommand(
-            template_id="test-template", machine_count=2, requester_id="test-user"
-        )
+        command = CreateRequestCommand(template_id="test-template", requested_count=2)
 
-        command_bus.dispatch(command)
+        # Test that command bus can handle saga patterns (async execution)
+        import asyncio
+
+        asyncio.create_task(command_bus.execute(command))
 
         # Saga should be notified if supported
         if hasattr(command_bus, "register_saga"):

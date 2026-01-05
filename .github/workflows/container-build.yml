@@ -75,22 +75,11 @@ jobs:
 
     strategy:
       matrix:
-        include:
-          - python-version: "3.10"
-            scan-level: basic
-            push-to-registry: true
-          - python-version: "3.11"
-            scan-level: basic
-            push-to-registry: true
-          - python-version: "3.12"
-            scan-level: basic
-            push-to-registry: true
-          - python-version: "3.13"
-            scan-level: full
-            push-to-registry: true
-          - python-version: "3.14"
-            scan-level: basic
-            push-to-registry: true
+        python-version: ${{ fromJSON(needs.config.outputs.python-versions) }}
+      
+    env:
+      SCAN_LEVEL: ${{ matrix.python-version == needs.config.outputs.default-python-version && 'full' || 'basic' }}
+      PUSH_TO_REGISTRY: true
 
     permissions:
       contents: read
@@ -129,7 +118,7 @@ jobs:
         VERSION: ${{ needs.config.outputs.package-version }}
         PYTHON_VERSION: ${{ matrix.python-version }}
       run: |
-        if [[ "${{ matrix.push-to-registry }}" == "true" && "${{ github.event_name }}" != "pull_request" ]]; then
+        if [[ "${{ env.PUSH_TO_REGISTRY }}" == "true" && "${{ github.event_name }}" != "pull_request" ]]; then
           # Build multi-platform image and push to registry
           docker buildx build \
             --platform linux/amd64,linux/arm64 \
@@ -169,7 +158,7 @@ jobs:
         format: 'sarif'
         output: 'trivy-results-py${{ matrix.python-version }}.sarif'
         exit-code: '0'
-        severity: ${{ matrix.scan-level == 'full' && 'CRITICAL,HIGH,MEDIUM' || 'CRITICAL,HIGH' }}
+        severity: ${{ env.SCAN_LEVEL == 'full' && 'CRITICAL,HIGH,MEDIUM' || 'CRITICAL,HIGH' }}
 
     - name: Upload Trivy scan results
       uses: github/codeql-action/upload-sarif@v4
@@ -178,7 +167,7 @@ jobs:
         sarif_file: 'trivy-results-py${{ matrix.python-version }}.sarif'
 
     - name: Run Hadolint Dockerfile scan
-      if: matrix.python-version == '3.13'
+      if: matrix.python-version == needs.config.outputs.default-python-version
       uses: hadolint/hadolint-action@v3.1.0
       with:
         dockerfile: Dockerfile
@@ -187,7 +176,7 @@ jobs:
         no-fail: true
 
     - name: Upload Hadolint scan results
-      if: matrix.python-version == '3.13'
+      if: matrix.python-version == needs.config.outputs.default-python-version
       uses: github/codeql-action/upload-sarif@v4
       with:
         sarif_file: hadolint-dockerfile.sarif

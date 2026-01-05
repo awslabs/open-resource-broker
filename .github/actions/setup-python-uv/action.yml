@@ -27,6 +27,13 @@ runs:
         cache-dependency-glob: "pyproject.toml"
         cache-suffix: ${{ inputs.cache-key-suffix }}
 
+    - name: Install system dependencies for Python 3.14
+      if: inputs.python-version == '3.14'
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libxml2-dev libxslt1-dev
+
     - name: Generate pyproject.toml
       shell: bash
       run: make generate-pyproject

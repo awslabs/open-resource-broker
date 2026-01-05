@@ -48,6 +48,7 @@ dependencies = [
     "sqlalchemy>=2.0.0",
     "dynaconf>=3.2.0",
     "structlog>=23.1.0",
+    "urllib3>=2.6.0",  # Security: Fix CVE-2025-66471 and CVE-2025-66418
     "opentelemetry-api>=1.20.0",
     "opentelemetry-sdk>=1.20.0",
     "psutil>=5.9.0",
@@ -267,7 +268,7 @@ known-first-party = ["orb", "application", "domain", "infrastructure", "interfac
 combine-as-imports = true
 
 [tool.mypy]
-python_version = "3.13"
+python_version = "3.14"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = false
@@ -286,12 +287,18 @@ namespace_packages = true
 [tool.semantic_release]
 version_variables = [".project.yml:project.version"]
 build_command = "./dev-tools/release/orchestrator.sh"
-major_on_zero = false
+major_on_zero = true
 allow_zero_version = true
 tag_format = "v{version}"
+commit_parser = "conventional"
 
 [tool.semantic_release.branches.main]
 match = "(main|master)"
+prerelease_token = "rc"
+prerelease = false
+
+[tool.semantic_release.branches.release]
+match = "release/.*"
 prerelease_token = "rc"
 prerelease = false
 
@@ -306,6 +313,7 @@ changelog_file = "CHANGELOG.md"
 [tool.semantic_release.commit_parser_options]
 minor_tags = ["feat"]
 patch_tags = ["fix", "perf"]
+major_tags = ["release"]
 default_bump_level = 0
 
 [tool.semantic_release.remote]
