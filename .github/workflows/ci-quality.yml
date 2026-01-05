@@ -3,8 +3,24 @@ name: CI Quality
 on:
   push:
     branches: [ main, develop ]
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - 'pyproject.toml'
+      - 'requirements*.txt'
+      - '.ruff.toml'
+      - 'mypy.ini'
+      - '.github/workflows/ci-quality.yml'
   pull_request:
     branches: [ main, develop ]
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - 'pyproject.toml'
+      - 'requirements*.txt'
+      - '.ruff.toml'
+      - 'mypy.ini'
+      - '.github/workflows/ci-quality.yml'
 
 env:
   AWS_DEFAULT_REGION: us-east-1

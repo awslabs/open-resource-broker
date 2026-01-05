@@ -1,0 +1,70 @@
+name: Cache Management
+
+on:
+  workflow_call:
+    inputs:
+      cache-type:
+        description: 'Type of cache (dependencies, build, container)'
+        required: true
+        type: string
+      cache-key-base:
+        description: 'Base cache key'
+        required: true
+        type: string
+      python-version:
+        description: 'Python version for cache key'
+        required: false
+        type: string
+        default: '3.13'
+    outputs:
+      cache-key:
+        description: 'Generated cache key'
+        value: ${{ jobs.generate-cache-key.outputs.cache-key }}
+      cache-hit:
+        description: 'Whether cache was hit'
+        value: ${{ jobs.generate-cache-key.outputs.cache-hit }}
+
+jobs:
+  generate-cache-key:
+    name: Generate Cache Key
+    runs-on: ubuntu-latest
+    outputs:
+      cache-key: ${{ steps.cache-key.outputs.key }}
+      cache-hit: ${{ steps.cache.outputs.cache-hit }}
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6.0.1
+
+    - name: Generate cache key
+      id: cache-key
+      run: |
+        case "${{ inputs.cache-type }}" in
+          dependencies)
+            KEY="${{ inputs.cache-key-base }}-py${{ inputs.python-version }}-${{ hashFiles('.project.yml', 'pyproject.toml', 'uv.lock') }}"
+            ;;
+          build)
+            KEY="${{ inputs.cache-key-base }}-py${{ inputs.python-version }}-${{ hashFiles('src/**/*.py', 'pyproject.toml') }}"
+            ;;
+          container)
+            KEY="${{ inputs.cache-key-base }}-py${{ inputs.python-version }}-${{ hashFiles('Dockerfile', 'src/**/*.py', 'pyproject.toml') }}"
+            ;;
+          *)
+            KEY="${{ inputs.cache-key-base }}-${{ github.sha }}"
+            ;;
+        esac
+        echo "key=$KEY" >> "$GITHUB_OUTPUT"
+        echo "Generated cache key: $KEY"
+
+    - name: Restore cache
+      id: cache
+      uses: actions/cache@v5.0.0
+      with:
+        path: |
+          ~/.cache/uv
+          .venv
+          dist/
+          .pytest_cache
+        key: ${{ steps.cache-key.outputs.key }}
+        restore-keys: |
+          ${{ inputs.cache-key-base }}-py${{ inputs.python-version }}-
+          ${{ inputs.cache-key-base }}-

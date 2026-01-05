@@ -59,24 +59,29 @@ jobs:
       run: |
         make get-container-tags >> "$GITHUB_OUTPUT"
 
-  container-build:
-    name: Build Container Images
+  container-pipeline:
+    name: Build and Scan Container Images
     runs-on: ubuntu-latest
     needs: [config, calculate-tags]
 
     strategy:
       matrix:
-        python-version: ${{ fromJSON(needs.config.outputs.python-versions) }}
+        include:
+          - python-version: "3.9"
+            scan-level: basic
+            push-to-registry: true
+          - python-version: "3.13"
+            scan-level: full
+            push-to-registry: true
 
     permissions:
       contents: read
       packages: write
+      security-events: write
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v6.0.1
-      with:
-        ref: ${{ github.sha }}
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
@@ -99,7 +104,58 @@ jobs:
     - name: Build package wheel
       run: make build
 
-    - name: Build and push multi-arch container
+    - name: Build container image
+      env:
+        REGISTRY: ${{ needs.config.outputs.container-registry }}
+        IMAGE_NAME: ${{ needs.config.outputs.container-image }}
+        VERSION: ${{ needs.config.outputs.package-version }}
+        PYTHON_VERSION: ${{ matrix.python-version }}
+      run: |
+        docker buildx build \
+          --platform linux/amd64,linux/arm64 \
+          --build-arg "BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+          --build-arg "VERSION=$VERSION" \
+          --build-arg "VCS_REF=$(git rev-parse --short HEAD)" \
+          --build-arg "PYTHON_VERSION=$PYTHON_VERSION" \
+          --build-arg PACKAGE_NAME_SHORT=orb \
+          --cache-from type=gha \
+          --cache-to type=gha,mode=max \
+          --load \
+          -t "$REGISTRY/$IMAGE_NAME:$VERSION-python$PYTHON_VERSION" \
+          .
+
+    - name: Run Trivy security scan
+      uses: aquasecurity/trivy-action@0.33.1
+      with:
+        image-ref: "${{ needs.config.outputs.container-registry }}/${{ needs.config.outputs.container-image }}:${{ needs.config.outputs.package-version }}-python${{ matrix.python-version }}"
+        format: 'sarif'
+        output: 'trivy-results-py${{ matrix.python-version }}.sarif'
+        exit-code: '0'
+        severity: ${{ matrix.scan-level == 'full' && 'CRITICAL,HIGH,MEDIUM' || 'CRITICAL,HIGH' }}
+
+    - name: Upload Trivy scan results
+      uses: github/codeql-action/upload-sarif@v4
+      if: always()
+      with:
+        sarif_file: 'trivy-results-py${{ matrix.python-version }}.sarif'
+
+    - name: Run Hadolint Dockerfile scan
+      if: matrix.python-version == '3.13'
+      uses: hadolint/hadolint-action@v3.1.0
+      with:
+        dockerfile: Dockerfile
+        format: sarif
+        output-file: hadolint-dockerfile.sarif
+        no-fail: true
+
+    - name: Upload Hadolint scan results
+      if: matrix.python-version == '3.13'
+      uses: github/codeql-action/upload-sarif@v4
+      with:
+        sarif_file: hadolint-dockerfile.sarif
+
+    - name: Push to registry
+      if: matrix.push-to-registry && github.event_name != 'pull_request'
       env:
         REGISTRY: ${{ needs.config.outputs.container-registry }}
         IMAGE_NAME: ${{ needs.config.outputs.container-image }}
@@ -119,76 +175,10 @@ jobs:
           -t "$REGISTRY/$IMAGE_NAME:$VERSION-python$PYTHON_VERSION" \
           .
 
-  container-security:
-    name: Container Security Scan
-    runs-on: ubuntu-latest
-    needs: [config, container-build]
-
-    strategy:
-      matrix:
-        include:
-          - python-version: ${{ fromJSON(needs.config.outputs.python-versions)[0] }}  # Oldest Python
-            scan-level: basic
-          - python-version: ${{ needs.config.outputs.default-python-version }}  # Default Python
-            scan-level: full
-
-    permissions:
-      contents: read
-      security-events: write
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v6.0.1
-
-    - name: Set container URI
-      run: |
-        CONTAINER_URI="${{ needs.config.outputs.container-registry }}/${{ needs.config.outputs.container-image }}:${{ needs.config.outputs.package-version }}-python${{ matrix.python-version }}"
-        echo "CONTAINER_URI=$CONTAINER_URI" >> "$GITHUB_ENV"
-
-    - name: Run Trivy vulnerability scanner
-      uses: aquasecurity/trivy-action@0.33.1
-      with:
-        image-ref: ${{ env.CONTAINER_URI }}
-        format: 'sarif'
-        output: 'trivy-results-py${{ matrix.python-version }}.sarif'
-        exit-code: '1'
-        severity: 'CRITICAL,HIGH'
-
-    - name: Upload Trivy scan results to GitHub Security tab
-      uses: github/codeql-action/upload-sarif@v4
-      if: always()
-      with:
-        sarif_file: 'trivy-results-py${{ matrix.python-version }}.sarif'
-
-    - name: Run Dockerfile security scan with Hadolint (once)
-      if: matrix.scan-level == 'full'
-      uses: hadolint/hadolint-action@v3.3.0
-      with:
-        dockerfile: Dockerfile
-        format: sarif
-        output-file: hadolint-dockerfile.sarif
-        no-fail: true
-
-    - name: Upload Hadolint results
-      if: matrix.scan-level == 'full'
-      uses: github/codeql-action/upload-sarif@v4
-      with:
-        sarif_file: hadolint-dockerfile.sarif
-
-    - name: Upload container security reports
-      uses: actions/upload-artifact@v6.0.0
-      if: always()
-      with:
-        name: container-security-reports-py${{ matrix.python-version }}
-        path: |
-          trivy-results-py${{ matrix.python-version }}.sarif
-          hadolint-dockerfile.sarif
-        retention-days: 30
-
   container-manifest:
     name: Create Multi-Architecture Manifests
     runs-on: ubuntu-latest
-    needs: [config, calculate-tags, container-build]
+    needs: [config, calculate-tags, container-pipeline]
     if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.event_name == 'release')
 
     permissions:

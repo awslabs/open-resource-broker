@@ -3,8 +3,22 @@ name: CI Tests
 on:
   push:
     branches: [ main, develop ]
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - 'pyproject.toml'
+      - 'requirements*.txt'
+      - 'pytest.ini'
+      - '.github/workflows/ci-tests.yml'
   pull_request:
     branches: [ main, develop ]
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - 'pyproject.toml'
+      - 'requirements*.txt'
+      - 'pytest.ini'
+      - '.github/workflows/ci-tests.yml'
   schedule:
     - cron: '0 2 * * *'
 
