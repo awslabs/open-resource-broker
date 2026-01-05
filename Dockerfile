@@ -6,6 +6,14 @@ ARG PACKAGE_NAME_SHORT=orb
 
 FROM python:${PYTHON_VERSION}-slim
 
+# Update system packages to fix security vulnerabilities
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    apt-get install -y --no-install-recommends \
+        ca-certificates && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
 ARG PYTHON_VERSION=3.13
 ARG PACKAGE_NAME_SHORT=orb
 
