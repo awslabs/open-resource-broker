@@ -26,10 +26,11 @@ Note:
     based on demand and maintain high availability across multiple AZs.
 """
 
-from typing import Any, Optional
 import logging
+from typing import Any, Optional
 
 from botocore.exceptions import ClientError
+
 from domain.base.dependency_injection import injectable
 from domain.base.ports import LoggingPort
 from domain.request.aggregate import Request
