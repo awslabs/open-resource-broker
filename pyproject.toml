@@ -321,5 +321,5 @@ name = "origin"
 type = "github"
 
 [tool.semantic_release.publish]
-dist_glob_patterns = ["dist/*"]
+dist = false
 upload_to_vcs_release = true
