@@ -268,7 +268,7 @@ known-first-party = ["orb", "application", "domain", "infrastructure", "interfac
 combine-as-imports = true
 
 [tool.mypy]
-python_version = "3.13"
+python_version = "3.14"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = false
