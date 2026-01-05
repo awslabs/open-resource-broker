@@ -324,4 +324,4 @@ type = "github"
 [tool.semantic_release.publish]
 dist = true
 upload_to_vcs_release = true
-dist_glob_patterns = ["dist/*", "checksums.txt"]
+dist_glob_patterns = ["dist/*.whl", "dist/*.tar.gz", "checksums.txt"]
