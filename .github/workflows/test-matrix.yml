@@ -38,6 +38,8 @@ jobs:
   unit-tests:
     name: Unit Tests
     needs: get-config
+    permissions:
+      contents: read
     strategy:
       fail-fast: false
       matrix:
@@ -56,6 +58,8 @@ jobs:
   integration-tests:
     name: Integration Tests
     needs: [get-config, unit-tests]
+    permissions:
+      contents: read
     strategy:
       fail-fast: false
       matrix:
@@ -74,6 +78,8 @@ jobs:
   e2e-tests:
     name: End-to-End Tests
     needs: [get-config, unit-tests, integration-tests]
+    permissions:
+      contents: read
     strategy:
       fail-fast: false
       matrix:
