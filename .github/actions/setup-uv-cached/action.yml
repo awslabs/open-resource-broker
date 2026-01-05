@@ -17,7 +17,7 @@ runs:
 
     - name: Restore UV environment
       id: restore-cache
-      uses: actions/cache/restore@v4
+      uses: actions/cache/restore@v5.0.0
       with:
         path: |
           .venv

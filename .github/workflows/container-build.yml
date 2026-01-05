@@ -1,0 +1,340 @@
+name: Container Build and Publish
+
+env:
+  CONTAINER_TRIGGERS: "/container"
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'Dockerfile*'
+      - 'src/**'
+      - 'pyproject.toml'
+      - 'deployment/docker/**'
+      - 'dev-tools/scripts/container_build.sh'
+      - '.github/workflows/container-build.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'Dockerfile*'
+      - 'src/**'
+      - 'pyproject.toml'
+      - 'deployment/docker/**'
+      - 'dev-tools/scripts/container_build.sh'
+      - '.github/workflows/container-build.yml'
+  issue_comment:
+    types: [created]
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      push_images:
+        description: 'Push images to registry'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  config:
+    name: Configuration
+    uses: ./.github/workflows/shared-config.yml
+
+  calculate-tags:
+    name: Calculate Container Tags
+    runs-on: ubuntu-latest
+    needs: config
+    permissions:
+      contents: read
+    outputs:
+      primary-tags: ${{ steps.tags.outputs.primary-tags }}
+      python-tags: ${{ steps.tags.outputs.python-tags }}
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6.0.1
+
+    - name: Calculate container tags
+      id: tags
+      env:
+        IS_RELEASE: ${{ needs.config.outputs.is-release }}
+      run: |
+        make get-container-tags >> "$GITHUB_OUTPUT"
+
+  setup-cache:
+    name: Setup Build Cache
+    needs: config
+    uses: ./.github/workflows/cache-management.yml
+    with:
+      cache-type: build
+      cache-key-base: container-build
+      python-version: ${{ needs.config.outputs.default-python-version }}
+
+  container-pipeline:
+    name: Build and Scan Container Images
+    runs-on: ubuntu-latest
+    needs: [config, calculate-tags, setup-cache]
+
+    strategy:
+      matrix:
+        include:
+          - python-version: "3.10"
+            scan-level: basic
+            push-to-registry: true
+          - python-version: "3.11"
+            scan-level: basic
+            push-to-registry: true
+          - python-version: "3.12"
+            scan-level: basic
+            push-to-registry: true
+          - python-version: "3.13"
+            scan-level: full
+            push-to-registry: true
+          - python-version: "3.14"
+            scan-level: basic
+            push-to-registry: true
+
+    permissions:
+      contents: read
+      packages: write
+      security-events: write
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6.0.1
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      with:
+        platforms: linux/amd64,linux/arm64
+
+    - name: Log in to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ needs.config.outputs.container-registry }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Setup Python and UV
+      uses: ./.github/actions/setup-uv-cached
+      with:
+        cache-key: ${{ needs.setup-cache.outputs.cache-key }}
+        fail-on-cache-miss: false
+
+    - name: Build package wheel
+      run: make build
+
+    - name: Build and scan container image
+      env:
+        REGISTRY: ${{ needs.config.outputs.container-registry }}
+        IMAGE_NAME: ${{ needs.config.outputs.container-image }}
+        VERSION: ${{ needs.config.outputs.package-version }}
+        PYTHON_VERSION: ${{ matrix.python-version }}
+      run: |
+        if [[ "${{ matrix.push-to-registry }}" == "true" && "${{ github.event_name }}" != "pull_request" ]]; then
+          # Build multi-platform image and push to registry
+          docker buildx build \
+            --platform linux/amd64,linux/arm64 \
+            --build-arg "BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+            --build-arg "VERSION=$VERSION" \
+            --build-arg "VCS_REF=$(git rev-parse --short HEAD)" \
+            --build-arg "PYTHON_VERSION=$PYTHON_VERSION" \
+            --build-arg PACKAGE_NAME_SHORT=orb \
+            --cache-from type=gha \
+            --cache-to type=gha,mode=max \
+            --push \
+            -t "$REGISTRY/$IMAGE_NAME:$VERSION-python$PYTHON_VERSION" \
+            .
+          
+          # Pull back amd64 version for local scanning
+          docker pull --platform linux/amd64 "$REGISTRY/$IMAGE_NAME:$VERSION-python$PYTHON_VERSION"
+        else
+          # Build single platform for scanning only (PR/test builds)
+          docker buildx build \
+            --platform linux/amd64 \
+            --build-arg "BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+            --build-arg "VERSION=$VERSION" \
+            --build-arg "VCS_REF=$(git rev-parse --short HEAD)" \
+            --build-arg "PYTHON_VERSION=$PYTHON_VERSION" \
+            --build-arg PACKAGE_NAME_SHORT=orb \
+            --cache-from type=gha \
+            --cache-to type=gha,mode=max \
+            --load \
+            -t "$REGISTRY/$IMAGE_NAME:$VERSION-python$PYTHON_VERSION" \
+            .
+        fi
+
+    - name: Run Trivy security scan
+      uses: aquasecurity/trivy-action@0.33.1
+      with:
+        image-ref: "${{ needs.config.outputs.container-registry }}/${{ needs.config.outputs.container-image }}:${{ needs.config.outputs.package-version }}-python${{ matrix.python-version }}"
+        format: 'sarif'
+        output: 'trivy-results-py${{ matrix.python-version }}.sarif'
+        exit-code: '0'
+        severity: ${{ matrix.scan-level == 'full' && 'CRITICAL,HIGH,MEDIUM' || 'CRITICAL,HIGH' }}
+
+    - name: Upload Trivy scan results
+      uses: github/codeql-action/upload-sarif@v4
+      if: always()
+      with:
+        sarif_file: 'trivy-results-py${{ matrix.python-version }}.sarif'
+
+    - name: Run Hadolint Dockerfile scan
+      if: matrix.python-version == '3.13'
+      uses: hadolint/hadolint-action@v3.1.0
+      with:
+        dockerfile: Dockerfile
+        format: sarif
+        output-file: hadolint-dockerfile.sarif
+        no-fail: true
+
+    - name: Upload Hadolint scan results
+      if: matrix.python-version == '3.13'
+      uses: github/codeql-action/upload-sarif@v4
+      with:
+        sarif_file: hadolint-dockerfile.sarif
+
+
+
+  container-manifest:
+    name: Create Multi-Architecture Manifests
+    runs-on: ubuntu-latest
+    needs: [config, calculate-tags, setup-cache, container-pipeline]
+    if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.event_name == 'release')
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - name: Log in to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ needs.config.outputs.container-registry }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Create primary tag manifests
+      env:
+        REGISTRY: ${{ needs.config.outputs.container-registry }}
+        IMAGE: ${{ needs.config.outputs.container-image }}
+        VERSION: ${{ needs.config.outputs.package-version }}
+        DEFAULT_PYTHON: ${{ needs.config.outputs.default-python-version }}
+        PRIMARY_TAGS: ${{ needs.calculate-tags.outputs.primary-tags }}
+        PYTHON_TAGS: ${{ needs.calculate-tags.outputs.python-tags }}
+      run: |
+        # Create primary tags (latest, X.Y.Z) -> point to default Python
+        if [[ -n "$PRIMARY_TAGS" ]]; then
+          IFS=',' read -ra TAGS <<< "$PRIMARY_TAGS"
+          for tag in "${TAGS[@]}"; do
+            echo "Creating primary tag: $tag -> $VERSION-python$DEFAULT_PYTHON"
+            docker buildx imagetools create \
+              -t "$REGISTRY/$IMAGE:$tag" \
+              "$REGISTRY/$IMAGE:$VERSION-python$DEFAULT_PYTHON"
+          done
+        fi
+        
+        # Create Python variant tags (pythonX.Y) -> point to specific Python latest
+        if [[ -n "$PYTHON_TAGS" ]]; then
+          IFS=',' read -ra TAGS <<< "$PYTHON_TAGS"
+          for tag in "${TAGS[@]}"; do
+            py_ver=${tag#python}
+            echo "Creating Python variant tag: $tag -> $VERSION-python$py_ver"
+            docker buildx imagetools create \
+              -t "$REGISTRY/$IMAGE:$tag" \
+              "$REGISTRY/$IMAGE:$VERSION-python$py_ver"
+          done
+        fi
+
+  container-validation:
+    name: Validate Container Tags
+    runs-on: ubuntu-latest
+    needs: [config, calculate-tags, setup-cache, container-manifest]
+    if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.event_name == 'release')
+
+    permissions:
+      contents: read
+
+    steps:
+    - name: Log in to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ needs.config.outputs.container-registry }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Test primary tags
+      env:
+        REGISTRY: ${{ needs.config.outputs.container-registry }}
+        IMAGE: ${{ needs.config.outputs.container-image }}
+        PRIMARY_TAGS: ${{ needs.calculate-tags.outputs.primary-tags }}
+        PYTHON_TAGS: ${{ needs.calculate-tags.outputs.python-tags }}
+      run: |
+        # Test primary tags can be pulled and work
+        if [[ -n "$PRIMARY_TAGS" ]]; then
+          IFS=',' read -ra TAGS <<< "$PRIMARY_TAGS"
+          for tag in "${TAGS[@]}"; do
+            echo "Testing primary tag: $tag"
+            docker pull "$REGISTRY/$IMAGE:$tag"
+            docker run --rm "$REGISTRY/$IMAGE:$tag" version
+            echo "Primary tag $tag works"
+          done
+        fi
+        
+        # Test Python variant tags
+        if [[ -n "$PYTHON_TAGS" ]]; then
+          IFS=',' read -ra TAGS <<< "$PYTHON_TAGS"
+          for tag in "${TAGS[@]}"; do
+            echo "Testing Python variant tag: $tag"
+            docker pull "$REGISTRY/$IMAGE:$tag"
+            docker run --rm "$REGISTRY/$IMAGE:$tag" version
+            echo "Python variant tag $tag works"
+          done
+        fi
+
+    - name: Test multi-architecture support
+      env:
+        REGISTRY: ${{ needs.config.outputs.container-registry }}
+        IMAGE: ${{ needs.config.outputs.container-image }}
+        VERSION: ${{ needs.config.outputs.package-version }}
+        DEFAULT_PYTHON: ${{ needs.config.outputs.default-python-version }}
+      run: |
+        # Test that multi-arch manifests exist
+        echo "Testing multi-arch manifest for $VERSION-python$DEFAULT_PYTHON"
+        docker manifest inspect "$REGISTRY/$IMAGE:$VERSION-python$DEFAULT_PYTHON"
+        
+        # Verify both amd64 and arm64 are present
+        if docker manifest inspect "$REGISTRY/$IMAGE:$VERSION-python$DEFAULT_PYTHON" | grep -q "amd64" && \
+           docker manifest inspect "$REGISTRY/$IMAGE:$VERSION-python$DEFAULT_PYTHON" | grep -q "arm64"; then
+          echo "Multi-arch manifest contains both amd64 and arm64"
+        else
+          echo "Multi-arch manifest missing architectures"
+          exit 1
+        fi
+
+  container-cleanup:
+    name: Cleanup Old Container Images
+    runs-on: ubuntu-latest
+    needs: [config, setup-cache, container-validation]
+    if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.event_name == 'release')
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - name: Delete old untagged container images (keep 5 most recent)
+      uses: actions/delete-package-versions@v5
+      continue-on-error: true
+      with:
+        package-name: ${{ needs.config.outputs.container-image }}
+        package-type: container
+        min-versions-to-keep: 5
+        delete-only-untagged-versions: true
+
+    - name: Delete old tagged versions (preserve releases and special tags)
+      uses: actions/delete-package-versions@v5
+      continue-on-error: true
+      with:
+        package-name: ${{ needs.config.outputs.container-image }}
+        package-type: container
+        min-versions-to-keep: 5
+        ignore-versions: '^(latest|main|dev|develop|python.*|v?\d+\.\d+\.\d+.*)$'

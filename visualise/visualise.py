@@ -13,6 +13,7 @@ import logging
 import re
 import sys
 import tempfile
+import traceback
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
@@ -21,6 +22,7 @@ import boto3
 import pandas as pd
 from botocore.exceptions import ClientError
 from dateutil import parser as date_parser
+from openpyxl.drawing.image import Image as XLImage
 from PIL import Image, ImageDraw, ImageFont
 
 
@@ -51,55 +53,94 @@ class HistoryFileProcessor:
         """Determine AWS service type from file content"""
         provider_api = data.get("provider_api", "").upper()
 
-        if provider_api in ["ASG", "AUTOSCALING"]:
-            return "ASG"
-        elif provider_api in ["EC2FLEET", "EC2_FLEET"]:
-            return "EC2Fleet"
-        elif provider_api in ["SPOTFLEET", "SPOT_FLEET"]:
-            return "SpotFleet"
-        elif data.get("SpotFleetRequestId"):
-            return "SpotFleet"
-        else:
-            # Try to infer from structure
-            if "history" in data and isinstance(data["history"], list):
-                if data["history"] and "ActivityId" in data["history"][0]:
-                    return "ASG"
-            elif "events" in data and isinstance(data["events"], list):
-                return "EC2Fleet"  # Default for events structure
-            elif "HistoryRecords" in data and isinstance(data["HistoryRecords"], list):
-                # Spot/EC2 fleet describe history style
-                # Check for SpotFleetRequestId inside
-                for rec in data["HistoryRecords"]:
-                    if rec.get("SpotFleetRequestId"):
-                        return "SpotFleet"
-                return "EC2Fleet"
+        # Check explicit provider API first
+        explicit_type = self._get_explicit_provider_type(provider_api)
+        if explicit_type:
+            return explicit_type
 
-            raise ValueError(
-                f"Unable to determine provider type from data. Found provider_api: {provider_api}"
-            )
+        # Check for SpotFleet identifier
+        if data.get("SpotFleetRequestId"):
+            return "SpotFleet"
+
+        # Infer from data structure
+        inferred_type = self._infer_provider_from_structure(data)
+        if inferred_type:
+            return inferred_type
+
+        raise ValueError(
+            f"Unable to determine provider type from data. Found provider_api: {provider_api}"
+        )
+
+    def _get_explicit_provider_type(self, provider_api: str) -> Optional[str]:
+        """Get provider type from explicit API name."""
+        provider_mapping = {
+            "ASG": "ASG",
+            "AUTOSCALING": "ASG",
+            "EC2FLEET": "EC2Fleet",
+            "EC2_FLEET": "EC2Fleet",
+            "SPOTFLEET": "SpotFleet",
+            "SPOT_FLEET": "SpotFleet",
+        }
+        return provider_mapping.get(provider_api)
+
+    def _infer_provider_from_structure(self, data: dict) -> Optional[str]:
+        """Infer provider type from data structure."""
+        if "history" in data and isinstance(data["history"], list):
+            return self._check_history_structure(data["history"])
+        elif "events" in data and isinstance(data["events"], list):
+            return "EC2Fleet"
+        elif "HistoryRecords" in data and isinstance(data["HistoryRecords"], list):
+            return self._check_history_records(data["HistoryRecords"])
+        return None
+
+    def _check_history_structure(self, history: list) -> Optional[str]:
+        """Check history structure for ASG indicators."""
+        if history and "ActivityId" in history[0]:
+            return "ASG"
+        return None
+
+    def _check_history_records(self, records: list) -> str:
+        """Check HistoryRecords for SpotFleet indicators."""
+        for rec in records:
+            if rec.get("SpotFleetRequestId"):
+                return "SpotFleet"
+        return "EC2Fleet"
 
     def validate_schema(self, data: dict) -> bool:
         """Validate input file structure"""
+        self._check_optional_fields(data)
+        provider_type = self.extract_provider_type(data).upper()
+        return self._validate_provider_data(data, provider_type)
+
+    def _check_optional_fields(self, data: dict) -> None:
+        """Check and warn about missing optional fields."""
         if "resource_id" not in data:
-            # Allow downstream inference; warn here
             self.logger.warning("Missing resource_id; will attempt to infer")
         if "provider_api" not in data:
             self.logger.warning("Missing provider_api; will attempt to infer")
 
-        provider_type = self.extract_provider_type(data).upper()
-
+    def _validate_provider_data(self, data: dict, provider_type: str) -> bool:
+        """Validate data structure based on provider type."""
         if provider_type == "ASG":
-            if "history" not in data or not isinstance(data["history"], list):
-                self.logger.error("ASG files must have 'history' array")
-                return False
+            return self._validate_asg_data(data)
         elif provider_type in ["EC2FLEET", "SPOTFLEET"]:
-            # Accept either 'events' (new format) or 'history' (describe_*_history response)
-            has_events = "events" in data and isinstance(data["events"], list)
-            has_history = "history" in data and isinstance(data["history"], list)
-            if not (has_events or has_history):
-                self.logger.error(f"{provider_type} files must have 'events' or 'history' array")
-                return False
+            return self._validate_fleet_data(data, provider_type)
+        return True
 
+    def _validate_asg_data(self, data: dict) -> bool:
+        """Validate ASG-specific data structure."""
+        if "history" not in data or not isinstance(data["history"], list):
+            self.logger.error("ASG files must have 'history' array")
+            return False
+        return True
+
+    def _validate_fleet_data(self, data: dict, provider_type: str) -> bool:
+        """Validate Fleet-specific data structure."""
+        has_events = "events" in data and isinstance(data["events"], list)
+        has_history = "history" in data and isinstance(data["history"], list)
+        if not (has_events or has_history):
+            self.logger.error(f"{provider_type} files must have 'events' or 'history' array")
+            return False
         return True
 
 
@@ -188,7 +229,7 @@ class ASGHistoryParser:
                 dt = dt.replace(tzinfo=datetime.now().astimezone().tzinfo)
             return dt.astimezone(datetime.now().astimezone().tzinfo).replace(tzinfo=None)
         except Exception as e:
-            raise ValueError(f"Unable to parse timestamp '{timestamp_str}': {e}")
+            raise ValueError(f"Unable to parse timestamp '{timestamp_str}': {e}") from e
 
 
 class EC2FleetHistoryParser:
@@ -216,52 +257,65 @@ class EC2FleetHistoryParser:
 
         for event in history_data:
             try:
-                event_type = str(event.get("EventType", "")).lower()
-                info = event.get("EventInformation", {}) or {}
-                status = event.get("Status") or info.get("EventSubType")
-
-                if (
-                    event_type in ["instance-change", "instancechange", "instancechangeevent"]
-                    and status
-                ):
-                    instance_id = event.get("InstanceId") or info.get("InstanceId")
-                    creation_time = self.normalize_timestamp(event["Timestamp"])
-                    capacity = event.get("WeightedCapacity", 1)
-                    instance_type = self._extract_instance_type_from_event(event)
-
-                    if instance_id and creation_time:
-                        events.append(
-                            {
-                                "instance_id": instance_id,
-                                "creation_time": creation_time,
-                                "request_time": request_time,
-                                "activity_id": f"fleet-event-{event.get('Timestamp', 'unknown')}",
-                                "status": status,
-                                "capacity": capacity,
-                                "instance_type": instance_type,
-                            }
-                        )
+                if self._is_instance_change_event(event):
+                    instance_event = self._process_instance_event(event, request_time)
+                    if instance_event:
+                        events.append(instance_event)
                     else:
                         self.logger.warning("Skipping event: missing required data")
                 else:
-                    # Capture non-instance-change or informational events
-                    try:
-                        special_events.append(
-                            {
-                                "timestamp": self.normalize_timestamp(event["Timestamp"]),
-                                "event_type": event.get("EventType"),
-                                "event_subtype": info.get("EventSubType") or status,
-                                "description": info.get("EventDescription"),
-                            }
-                        )
-                    except Exception as exc:
-                        self.logger.debug(f"Failed to record special event: {exc}")
-
+                    special_event = self._process_special_event(event)
+                    if special_event:
+                        special_events.append(special_event)
             except Exception as e:
                 self.logger.warning(f"Error parsing event: {e}")
                 continue
 
         return events, special_events
+
+    def _is_instance_change_event(self, event: dict) -> bool:
+        """Check if event is an instance change event."""
+        event_type = str(event.get("EventType", "")).lower()
+        info = event.get("EventInformation", {}) or {}
+        status = event.get("Status") or info.get("EventSubType")
+        return event_type in ["instance-change", "instancechange", "instancechangeevent"] and status
+
+    def _process_instance_event(self, event: dict, request_time: datetime) -> Optional[dict]:
+        """Process an instance change event."""
+        info = event.get("EventInformation", {}) or {}
+        instance_id = event.get("InstanceId") or info.get("InstanceId")
+
+        if not instance_id:
+            return None
+
+        creation_time = self.normalize_timestamp(event["Timestamp"])
+        if not creation_time:
+            return None
+
+        return {
+            "instance_id": instance_id,
+            "creation_time": creation_time,
+            "request_time": request_time,
+            "activity_id": f"fleet-event-{event.get('Timestamp', 'unknown')}",
+            "status": event.get("Status") or info.get("EventSubType"),
+            "capacity": event.get("WeightedCapacity", 1),
+            "instance_type": self._extract_instance_type_from_event(event),
+        }
+
+    def _process_special_event(self, event: dict) -> Optional[dict]:
+        """Process a special/informational event."""
+        try:
+            info = event.get("EventInformation", {}) or {}
+            status = event.get("Status") or info.get("EventSubType")
+            return {
+                "timestamp": self.normalize_timestamp(event["Timestamp"]),
+                "event_type": event.get("EventType"),
+                "event_subtype": info.get("EventSubType") or status,
+                "description": info.get("EventDescription"),
+            }
+        except Exception as exc:
+            self.logger.debug(f"Failed to record special event: {exc}")
+            return None
 
     def normalize_timestamp(self, timestamp_str: str) -> datetime:
         """Convert timestamp string to timezone-aware UTC datetime"""
@@ -271,7 +325,7 @@ class EC2FleetHistoryParser:
                 dt = dt.replace(tzinfo=datetime.now().astimezone().tzinfo)
             return dt.astimezone(datetime.now().astimezone().tzinfo).replace(tzinfo=None)
         except Exception as e:
-            raise ValueError(f"Unable to parse timestamp '{timestamp_str}': {e}")
+            raise ValueError(f"Unable to parse timestamp '{timestamp_str}': {e}") from e
 
 
 class SpotFleetHistoryParser:
@@ -299,52 +353,65 @@ class SpotFleetHistoryParser:
 
         for event in history_data:
             try:
-                event_type = str(event.get("EventType", "")).lower()
-                info = event.get("EventInformation", {}) or {}
-                status = event.get("Status") or info.get("EventSubType")
-
-                if (
-                    event_type in ["instance-change", "instancechange", "instancechangeevent"]
-                    and status
-                ):
-                    instance_id = event.get("InstanceId") or info.get("InstanceId")
-                    creation_time = self.normalize_timestamp(event["Timestamp"])
-                    capacity = event.get("WeightedCapacity", 1)
-                    instance_type = self._extract_instance_type_from_event(event)
-
-                    if instance_id and creation_time:
-                        events.append(
-                            {
-                                "instance_id": instance_id,
-                                "creation_time": creation_time,
-                                "request_time": request_time,
-                                "activity_id": f"spot-event-{event.get('Timestamp', 'unknown')}",
-                                "status": status,
-                                "capacity": capacity,
-                                "instance_type": instance_type,
-                            }
-                        )
+                if self._is_instance_change_event(event):
+                    instance_event = self._process_instance_event(event, request_time)
+                    if instance_event:
+                        events.append(instance_event)
                     else:
                         self.logger.warning("Skipping event: missing required data")
                 else:
-                    # Capture non-instance-change or informational events
-                    try:
-                        special_events.append(
-                            {
-                                "timestamp": self.normalize_timestamp(event["Timestamp"]),
-                                "event_type": event.get("EventType"),
-                                "event_subtype": info.get("EventSubType") or status,
-                                "description": info.get("EventDescription"),
-                            }
-                        )
-                    except Exception as exc:
-                        self.logger.debug(f"Failed to record special event: {exc}")
-
+                    special_event = self._process_special_event(event)
+                    if special_event:
+                        special_events.append(special_event)
             except Exception as e:
                 self.logger.warning(f"Error parsing event: {e}")
                 continue
 
         return events, special_events
+
+    def _is_instance_change_event(self, event: dict) -> bool:
+        """Check if event is an instance change event."""
+        event_type = str(event.get("EventType", "")).lower()
+        info = event.get("EventInformation", {}) or {}
+        status = event.get("Status") or info.get("EventSubType")
+        return event_type in ["instance-change", "instancechange", "instancechangeevent"] and status
+
+    def _process_instance_event(self, event: dict, request_time: datetime) -> Optional[dict]:
+        """Process an instance change event."""
+        info = event.get("EventInformation", {}) or {}
+        instance_id = event.get("InstanceId") or info.get("InstanceId")
+
+        if not instance_id:
+            return None
+
+        creation_time = self.normalize_timestamp(event["Timestamp"])
+        if not creation_time:
+            return None
+
+        return {
+            "instance_id": instance_id,
+            "creation_time": creation_time,
+            "request_time": request_time,
+            "activity_id": f"spot-event-{event.get('Timestamp', 'unknown')}",
+            "status": event.get("Status") or info.get("EventSubType"),
+            "capacity": event.get("WeightedCapacity", 1),
+            "instance_type": self._extract_instance_type_from_event(event),
+        }
+
+    def _process_special_event(self, event: dict) -> Optional[dict]:
+        """Process a special/informational event."""
+        try:
+            info = event.get("EventInformation", {}) or {}
+            status = event.get("Status") or info.get("EventSubType")
+            return {
+                "timestamp": self.normalize_timestamp(event["Timestamp"]),
+                "event_type": event.get("EventType"),
+                "event_subtype": info.get("EventSubType") or status,
+                "description": info.get("EventDescription"),
+            }
+        except Exception as exc:
+            self.logger.debug(f"Failed to record special event: {exc}")
+            return None
 
     def normalize_timestamp(self, timestamp_str: str) -> datetime:
         """Convert timestamp string to timezone-aware UTC datetime"""
@@ -354,7 +421,7 @@ class SpotFleetHistoryParser:
                 dt = dt.replace(tzinfo=datetime.now().astimezone().tzinfo)
             return dt.astimezone(datetime.now().astimezone().tzinfo).replace(tzinfo=None)
         except Exception as e:
-            raise ValueError(f"Unable to parse timestamp '{timestamp_str}': {e}")
+            raise ValueError(f"Unable to parse timestamp '{timestamp_str}': {e}") from e
 
 
 class DataProcessor:
@@ -434,49 +501,67 @@ class DataProcessor:
         """Main processing method to convert history file to DataFrame"""
         machine_lookup = machine_lookup or {}
 
-        # Load and validate file
+        data = self._load_and_prepare_data(file_path)
+        detected_type = self._determine_provider_type(data, provider_type)
+        processed_data, special_events = self._parse_by_provider_type(
+            data, detected_type, file_path
+        )
+
+        df = self.generate_dataframe(
+            processed_data, data["resource_id"], detected_type, machine_lookup
+        )
+        self.logger.info(f"Successfully processed {len(df)} instances from {file_path}")
+        return df, special_events
+
+    def _load_and_prepare_data(self, file_path: str) -> dict:
+        """Load file and prepare data structure."""
         data = self.file_processor.load_file(file_path)
 
         # Normalize history key
         if "history" not in data and "HistoryRecords" in data:
             data["history"] = data["HistoryRecords"]
 
-        # Infer resource_id/provider_api if missing
+        # Infer resource_id if missing
         if "resource_id" not in data:
-            rid = data.get("SpotFleetRequestId")
-            if not rid and isinstance(data.get("history"), list):
-                for rec in data["history"]:
-                    rid = rec.get("SpotFleetRequestId") or rec.get("FleetId")
-                    if rid:
-                        break
-            if not rid:
-                # Fallback to filename stem
-                rid = Path(file_path).stem.replace("_history", "")
-            data["resource_id"] = rid
+            data["resource_id"] = self._infer_resource_id(data, file_path)
 
+        # Infer provider_api if missing
         if "provider_api" not in data:
             data["provider_api"] = self.file_processor.extract_provider_type(data)
 
         if not self.file_processor.validate_schema(data):
             raise ValueError(f"Invalid file schema: {file_path}")
 
-        # Determine provider type
-        if provider_type:
-            detected_type = provider_type.upper()
-        else:
-            detected_type = self.file_processor.extract_provider_type(data).upper()
+        return data
 
+    def _infer_resource_id(self, data: dict, file_path: str) -> str:
+        """Infer resource ID from data or filename."""
+        rid = data.get("SpotFleetRequestId")
+        if not rid and isinstance(data.get("history"), list):
+            for rec in data["history"]:
+                rid = rec.get("SpotFleetRequestId") or rec.get("FleetId")
+                if rid:
+                    break
+        if not rid:
+            rid = Path(file_path).stem.replace("_history", "")
+        return rid
+
+    def _determine_provider_type(self, data: dict, provider_type: Optional[str]) -> str:
+        """Determine the provider type to use."""
+        if provider_type:
+            return provider_type.upper()
+        return self.file_processor.extract_provider_type(data).upper()
+
+    def _parse_by_provider_type(self, data: dict, detected_type: str, file_path: str) -> tuple:
+        """Parse data based on provider type."""
         self.logger.info(f"Processing {detected_type} history file: {file_path}")
 
-        # Parse based on provider type
-        processed_data = []
-        special_events: list[dict] = []
-
-        # Normalize events/history list once for all provider types
         events = data.get("events") or data.get("history") or data.get("HistoryRecords") or []
         request_time = self._resolve_request_time(events, data.get("request_time"))
         if request_time is None:
             raise ValueError("request_time missing and could not infer from history")
+
+        special_events = []
 
         if detected_type == "ASG":
             processed_data = self.asg_parser.parse_activities(events, request_time)
@@ -489,13 +574,7 @@ class DataProcessor:
         else:
             raise ValueError(f"Unsupported provider type: {detected_type}")
 
-        # Generate DataFrame
-        df = self.generate_dataframe(
-            processed_data, data["resource_id"], detected_type, machine_lookup
-        )
-
-        self.logger.info(f"Successfully processed {len(df)} instances from {file_path}")
-        return df, special_events
+        return processed_data, special_events
 
     def _resolve_request_time(
         self, events: list, request_time_str: Optional[str]
@@ -520,24 +599,32 @@ class DataProcessor:
 
     def _find_submission_time(self, events: list) -> Optional[datetime]:
         """Locate the fleet submission event and return its timestamp."""
-        candidates: list[datetime] = []
+        candidates = []
         for ev in events:
-            info = ev.get("EventInformation") or {}
-            if not isinstance(info, dict):
-                info = {}
-            subtype = info.get("EventSubType") or ev.get("EventSubType") or ev.get("Status")
-            if isinstance(subtype, str) and subtype.lower() == "submitted":
-                ts = ev.get("Timestamp")
-                if ts:
-                    try:
-                        candidates.append(self.normalize_timestamps(ts))
-                    except Exception as exc:
-                        self.logger.debug(
-                            "Skipping submitted event with invalid timestamp: %s", exc
-                        )
-        if candidates:
-            return min(candidates)
-        return None
+            if self._is_submission_event(ev):
+                timestamp = self._extract_valid_timestamp(ev)
+                if timestamp:
+                    candidates.append(timestamp)
+        return min(candidates) if candidates else None
+
+    def _is_submission_event(self, event: dict) -> bool:
+        """Check if event is a submission event."""
+        info = event.get("EventInformation") or {}
+        if not isinstance(info, dict):
+            info = {}
+        subtype = info.get("EventSubType") or event.get("EventSubType") or event.get("Status")
+        return isinstance(subtype, str) and subtype.lower() == "submitted"
+
+    def _extract_valid_timestamp(self, event: dict) -> Optional[datetime]:
+        """Extract and validate timestamp from event."""
+        ts = event.get("Timestamp")
+        if not ts:
+            return None
+        try:
+            return self.normalize_timestamps(ts)
+        except Exception as exc:
+            self.logger.debug("Skipping submitted event with invalid timestamp: %s", exc)
+            return None
 
     def _infer_request_time(self, events: list) -> Optional[datetime]:
         """Infer request_time from earliest event timestamp when no submitted event is found."""
@@ -571,7 +658,7 @@ class DataProcessor:
                 dt = dt.replace(tzinfo=datetime.now().astimezone().tzinfo)
             return dt.astimezone(datetime.now().astimezone().tzinfo).replace(tzinfo=None)
         except Exception as e:
-            raise ValueError(f"Unable to parse timestamp '{timestamp_str}': {e}")
+            raise ValueError(f"Unable to parse timestamp '{timestamp_str}': {e}") from e
 
     def generate_dataframe(
         self, processed_data: list, resource_id: str, provider_api: str, machine_lookup: dict
@@ -773,330 +860,391 @@ class OutputManager:
     ) -> None:
         """Save DataFrame to Excel file with formatting and charts"""
         try:
-            # Create Excel writer with openpyxl engine for formatting and charts
+            special_events = special_events or []
             with pd.ExcelWriter(output_path, engine="openpyxl") as writer:
-                # Write the main data
-                dataframe.to_excel(writer, sheet_name="AWS_Resource_History", index=False)
-                special_events = special_events or []
-
-                # Get the workbook and worksheet
+                self._write_dataframe_to_excel(writer, dataframe)
                 workbook = writer.book
                 worksheet = writer.sheets["AWS_Resource_History"]
-
-                # Auto-adjust column widths
-                for column in worksheet.columns:
-                    max_length = 0
-                    column_letter = column[0].column_letter
-                    for cell in column:
-                        try:
-                            max_length = max(max_length, len(str(cell.value)))
-                        except:
-                            pass
-                    adjusted_width = min(max_length + 2, 50)  # Cap at 50 characters
-                    worksheet.column_dimensions[column_letter].width = adjusted_width
-
-                # Add PNG plot rendered in Python (Pillow)
+                self._setup_workbook_properties(workbook)
+                self._adjust_column_widths(worksheet)
                 if not dataframe.empty and len(dataframe) > 1:
-                    from openpyxl.drawing.image import Image as XLImage
+                    self._add_chart_to_worksheet(worksheet, dataframe, special_events)
 
-                    def render_plot_to_png(df: pd.DataFrame, special_events: list[dict]) -> str:
-                        """Render scatter plot with per-instance-type markers to PNG."""
-                        width, height = 2600, 1560
-                        margin_left, margin_right, margin_top, margin_bottom = 110, 180, 70, 120
-                        plot_w = width - margin_left - margin_right
-                        plot_h = height - margin_top - margin_bottom
-
-                        x_max = float(df["time_from_request"].max() or 1.0)
-                        # Include special events in x-range
-                        if special_events:
-                            # derive base time from request_time min
-                            base_time = df["request_time"].min()
-                            event_offsets = []
-                            for ev in special_events:
-                                ts = ev.get("timestamp")
-                                if ts and base_time:
-                                    event_offsets.append((ts - base_time).total_seconds())
-                            if event_offsets:
-                                x_max = max(x_max, max(event_offsets))
-
-                        y_max = float(df["cumulative_vcpus"].max() or 1.0)
-                        if x_max <= 0:
-                            x_max = 1.0
-                        if y_max <= 0:
-                            y_max = 1.0
-
-                        img = Image.new("RGB", (width, height), "white")
-                        draw = ImageDraw.Draw(img)
-                        font = ImageFont.load_default()
-
-                        # Axes
-                        x_axis_y = height - margin_bottom
-                        y_axis_x = margin_left
-                        draw.line((y_axis_x, margin_top, y_axis_x, x_axis_y), fill="black", width=2)
-                        draw.line(
-                            (y_axis_x, x_axis_y, width - margin_right, x_axis_y),
-                            fill="black",
-                            width=2,
-                        )
-
-                        # Axis titles
-                        draw.text(
-                            (y_axis_x + plot_w / 2 - 140, height - margin_bottom + 50),
-                            "Time from Request (seconds)",
-                            fill="black",
-                            font=font,
-                        )
-                        draw.text(
-                            (20, margin_top + plot_h / 2 - 20),
-                            "Cumulative vCPUs",
-                            fill="black",
-                            font=font,
-                        )
-
-                        # Ticks and labels
-                        ticks = 5
-                        for i in range(ticks + 1):
-                            # X ticks
-                            tx = y_axis_x + int(plot_w * i / ticks)
-                            val = x_max * i / ticks
-                            draw.line((tx, x_axis_y, tx, x_axis_y + 6), fill="black")
-                            label = f"{val:.1f}"
-                            draw.text(
-                                (tx - len(label) * 3, x_axis_y + 10), label, fill="black", font=font
-                            )
-                            # Y ticks
-                            ty = x_axis_y - int(plot_h * i / ticks)
-                            y_val = y_max * i / ticks
-                            draw.line((y_axis_x - 6, ty, y_axis_x, ty), fill="black")
-                            label_y = f"{y_val:.0f}"
-                            draw.text(
-                                (y_axis_x - (len(label_y) * 6 + 12), ty - 4),
-                                label_y,
-                                fill="black",
-                                font=font,
-                            )
-
-                        # Build a palette of shapes/colors and assign per unique instance type
-                        palette_shapes = [
-                            "circle",
-                            "triangle",
-                            "square",
-                            "diamond",
-                            "plus",
-                            "x",
-                            "circle",
-                            "square",
-                        ]
-                        palette_colors = [
-                            "#2f7d32",
-                            "#1f4e79",
-                            "#7f6000",
-                            "#9c27b0",
-                            "#ff6f00",
-                            "#00838f",
-                            "#795548",
-                            "#c62828",
-                        ]
-                        unique_types = sorted(set(df["instance_type"]))
-                        marker_map = {}
-                        for idx, inst_type in enumerate(unique_types):
-                            shape = palette_shapes[idx % len(palette_shapes)]
-                            color = palette_colors[idx % len(palette_colors)]
-                            marker_map[inst_type] = (shape, color)
-
-                        def data_to_px(px, py):
-                            sx = y_axis_x + int((px / x_max) * plot_w)
-                            sy = x_axis_y - int((py / y_max) * plot_h)
-                            return sx, sy
-
-                        def draw_marker(sx: int, sy: int, shape: str, color: str):
-                            if shape == "circle":
-                                r = 7
-                                draw.ellipse(
-                                    (sx - r, sy - r, sx + r, sy + r), fill=color, outline="black"
-                                )
-                            elif shape == "square":
-                                r = 7
-                                draw.rectangle(
-                                    (sx - r, sy - r, sx + r, sy + r), fill=color, outline="black"
-                                )
-                            elif shape == "triangle":
-                                r = 8
-                                draw.polygon(
-                                    [(sx, sy - r), (sx - r, sy + r), (sx + r, sy + r)],
-                                    fill=color,
-                                    outline="black",
-                                )
-                            elif shape == "diamond":
-                                r = 8
-                                draw.polygon(
-                                    [(sx, sy - r), (sx - r, sy), (sx, sy + r), (sx + r, sy)],
-                                    fill=color,
-                                    outline="black",
-                                )
-                            elif shape == "plus":
-                                draw.line((sx - 7, sy, sx + 7, sy), fill=color, width=2)
-                                draw.line((sx, sy - 7, sx, sy + 7), fill=color, width=2)
-                            elif shape == "x":
-                                draw.line((sx - 7, sy - 7, sx + 7, sy + 7), fill=color, width=2)
-                                draw.line((sx - 7, sy + 7, sx + 7, sy - 7), fill=color, width=2)
-
-                        legend_entries = {}
-                        special_legends: list[tuple[str, str, str]] = []
-
-                        # Draw points and collect legend entries
-                        for _, row in df.iterrows():
-                            sx, sy = data_to_px(row["time_from_request"], row["cumulative_vcpus"])
-                            shape, color = marker_map.get(
-                                row["instance_type"], ("circle", "#444444")
-                            )
-                            draw_marker(sx, sy, shape, color)
-                            if row["instance_type"] not in legend_entries:
-                                legend_entries[row["instance_type"]] = (shape, color)
-
-                        # Legend box
-                        legend_x = width - margin_right + 40  # move legend further right of plot
-                        legend_y = margin_top + 20
-                        draw.text(
-                            (legend_x, legend_y - 20), "Instance Types", fill="black", font=font
-                        )
-                        for idx, (inst_type, (shape, color)) in enumerate(legend_entries.items()):
-                            ly = legend_y + idx * 20
-                            draw_marker(legend_x + 10, ly + 5, shape, color)
-                            draw.text((legend_x + 25, ly - 2), inst_type, fill="black", font=font)
-
-                        # Special event markers along X-axis (y=0)
-                        if special_events:
-                            base_time = df["request_time"].min()
-                            for ev in special_events:
-                                ts = ev.get("timestamp")
-                                if not ts or not base_time:
-                                    continue
-                                offset = (ts - base_time).total_seconds()
-                                sx = y_axis_x + int((offset / x_max) * plot_w)
-                                sy = x_axis_y  # y=0 line
-                                subtype = (
-                                    ev.get("event_subtype") or ev.get("event_type") or ""
-                                ).lower()
-                                if subtype == "submitted":
-                                    draw_marker(sx, sy, "circle", "#f5c400")  # yellow
-                                elif subtype == "active":
-                                    draw_marker(sx, sy, "circle", "#2e7d32")  # green
-                                else:
-                                    draw_marker(sx, sy, "x", "#d32f2f")  # red cross
-
-                            # Legend entries for special events
-                            special_legends = [
-                                ("submitted event", "circle", "#f5c400"),
-                                ("active event", "circle", "#2e7d32"),
-                                ("other event", "x", "#d32f2f"),
-                            ]
-                            legend_y_extra = legend_y + (len(legend_entries) + 1) * 20
-                            draw.text(
-                                (legend_x, legend_y_extra - 20),
-                                "Special Events",
-                                fill="black",
-                                font=font,
-                            )
-                            for idx, (label, shape, color) in enumerate(special_legends):
-                                ly = legend_y_extra + idx * 20
-                                draw_marker(legend_x + 10, ly + 5, shape, color)
-                                draw.text((legend_x + 25, ly - 2), label, fill="black", font=font)
-
-                        # Draw border around legend area
-                        legend_height = (len(legend_entries) + 1 + len(special_legends) + 1) * 20
-                        border_padding = 8
-                        draw.rectangle(
-                            (
-                                legend_x - border_padding,
-                                legend_y - 30,
-                                legend_x + 220,
-                                legend_y + legend_height,
-                            ),
-                            outline="black",
-                            width=1,
-                        )
-
-                        tmp = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
-                        img.save(tmp.name, format="PNG")
-                        tmp.close()
-                        return tmp.name
-
-                    img_path = render_plot_to_png(dataframe, special_events)
-                    img = XLImage(img_path)
-                    img.anchor = "K2"
-                    worksheet.add_image(img)
-
-                # Special events sheet
+                # Add special events sheet
                 if special_events:
-                    special_rows = []
-                    for ev in special_events:
-                        special_rows.append(
-                            {
-                                "timestamp": ev.get("timestamp"),
-                                "event_type": ev.get("event_type"),
-                                "event_subtype": ev.get("event_subtype"),
-                                "description": ev.get("description"),
-                            }
-                        )
-                    special_df = pd.DataFrame(special_rows)
-                    special_df.to_excel(writer, sheet_name="Special Events", index=False)
+                    self._add_special_events_sheet(writer, special_events)
 
-                # Add a summary sheet
-                summary_data = {
-                    "Metric": [
-                        "Total Instances",
-                        "Provider Type",
-                        "Resource ID",
-                        "Fastest Creation Time (seconds)",
-                        "Slowest Creation Time (seconds)",
-                        "Average Creation Time (seconds)",
-                        "Success Rate (%)",
-                        "First Instance Created",
-                        "Last Instance Created",
-                        "Total vCPUs",
-                        "Average vCPUs per Instance",
-                    ],
-                    "Value": [
-                        len(dataframe),
-                        dataframe["provider_api"].iloc[0] if not dataframe.empty else "N/A",
-                        dataframe["resource_id"].iloc[0] if not dataframe.empty else "N/A",
-                        dataframe["time_from_request"].min() if not dataframe.empty else "N/A",
-                        dataframe["time_from_request"].max() if not dataframe.empty else "N/A",
-                        round(dataframe["time_from_request"].mean(), 2)
-                        if not dataframe.empty
-                        else "N/A",
-                        100.0
-                        if not dataframe.empty and (dataframe["status"] == "Successful").all()
-                        else "N/A",
-                        dataframe["ec2_creation_time"].min() if not dataframe.empty else "N/A",
-                        dataframe["ec2_creation_time"].max() if not dataframe.empty else "N/A",
-                        dataframe["cumulative_vcpus"].max() if not dataframe.empty else "N/A",
-                        round(dataframe["vcpu_count"].mean(), 2) if not dataframe.empty else "N/A",
-                    ],
-                }
-
-                summary_df = pd.DataFrame(summary_data)
-                summary_df.to_excel(writer, sheet_name="Summary", index=False)
-
-                # Auto-adjust summary sheet columns
-                summary_sheet = writer.sheets["Summary"]
-                for column in summary_sheet.columns:
-                    max_length = 0
-                    column_letter = column[0].column_letter
-                    for cell in column:
-                        try:
-                            max_length = max(max_length, len(str(cell.value)))
-                        except:
-                            pass
-                    adjusted_width = min(max_length + 2, 50)
-                    summary_sheet.column_dimensions[column_letter].width = adjusted_width
+                # Add summary sheet
+                self._add_summary_sheet(writer, dataframe)
 
             self.logger.info(f"Successfully saved Excel with charts to: {output_path}")
-
         except Exception as e:
             self.logger.error(f"Error saving Excel file: {e}")
             raise
+
+    def _add_special_events_sheet(self, writer: pd.ExcelWriter, special_events: list[dict]) -> None:
+        """Add special events sheet to Excel workbook."""
+        special_rows = []
+        for ev in special_events:
+            special_rows.append(
+                {
+                    "timestamp": ev.get("timestamp"),
+                    "event_type": ev.get("event_type"),
+                    "event_subtype": ev.get("event_subtype"),
+                    "description": ev.get("description"),
+                }
+            )
+        special_df = pd.DataFrame(special_rows)
+        special_df.to_excel(writer, sheet_name="Special Events", index=False)
+
+    def _add_summary_sheet(self, writer: pd.ExcelWriter, dataframe: pd.DataFrame) -> None:
+        """Add summary sheet with key metrics."""
+        summary_data = {
+            "Metric": [
+                "Total Instances",
+                "Provider Type",
+                "Resource ID",
+                "Fastest Creation Time (seconds)",
+                "Slowest Creation Time (seconds)",
+                "Average Creation Time (seconds)",
+                "Success Rate (%)",
+                "First Instance Created",
+                "Last Instance Created",
+                "Total vCPUs",
+                "Average vCPUs per Instance",
+            ],
+            "Value": [
+                len(dataframe),
+                dataframe["provider_api"].iloc[0] if not dataframe.empty else "N/A",
+                dataframe["resource_id"].iloc[0] if not dataframe.empty else "N/A",
+                dataframe["time_from_request"].min() if not dataframe.empty else "N/A",
+                dataframe["time_from_request"].max() if not dataframe.empty else "N/A",
+                round(dataframe["time_from_request"].mean(), 2) if not dataframe.empty else "N/A",
+                100.0
+                if not dataframe.empty and (dataframe["status"] == "Successful").all()
+                else "N/A",
+                dataframe["ec2_creation_time"].min() if not dataframe.empty else "N/A",
+                dataframe["ec2_creation_time"].max() if not dataframe.empty else "N/A",
+                dataframe["cumulative_vcpus"].max() if not dataframe.empty else "N/A",
+                round(dataframe["vcpu_count"].mean(), 2) if not dataframe.empty else "N/A",
+            ],
+        }
+
+        summary_df = pd.DataFrame(summary_data)
+        summary_df.to_excel(writer, sheet_name="Summary", index=False)
+
+        # Auto-adjust summary sheet columns
+        summary_sheet = writer.sheets["Summary"]
+        self._adjust_column_widths(summary_sheet)
+
+    def _write_dataframe_to_excel(self, writer: pd.ExcelWriter, dataframe: pd.DataFrame) -> None:
+        """Write DataFrame to Excel worksheet"""
+        dataframe.to_excel(writer, sheet_name="AWS_Resource_History", index=False)
+
+    def _setup_workbook_properties(self, workbook) -> None:
+        """Set workbook metadata properties"""
+        workbook.properties.title = "AWS Resource History Analysis"
+        workbook.properties.creator = "Open Resource Broker"
+        workbook.properties.description = "Historical analysis of AWS resource usage and costs"
+
+    def _adjust_column_widths(self, worksheet) -> None:
+        """Auto-adjust column widths based on content"""
+        for column in worksheet.columns:
+            max_length = 0
+            column_letter = column[0].column_letter
+            for cell in column:
+                try:
+                    max_length = max(max_length, len(str(cell.value)))
+                except (AttributeError, TypeError, ValueError):
+                    pass
+            adjusted_width = min(max_length + 2, 50)
+            worksheet.column_dimensions[column_letter].width = adjusted_width
+
+    def _add_chart_to_worksheet(
+        self, worksheet, dataframe: pd.DataFrame, special_events: list[dict]
+    ) -> None:
+        """Add PNG chart to worksheet"""
+        plot_path = self._render_plot_to_png(dataframe, special_events)
+        if plot_path:
+            img = XLImage(plot_path)
+            img.width = 650
+            img.height = 390
+            worksheet.add_image(img, "A" + str(len(dataframe) + 5))
+
+    def _render_plot_to_png(self, df: pd.DataFrame, special_events: list[dict]) -> str:
+        """Render scatter plot with per-instance-type markers to PNG."""
+
+        dimensions = self._calculate_plot_dimensions(df, special_events)
+        img = self._create_plot_image(dimensions)
+        self._draw_plot_elements(img, df, special_events, dimensions)
+
+        tmp = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
+        img.save(tmp.name, format="PNG")
+        tmp.close()
+        return tmp.name
+
+    def _calculate_plot_dimensions(self, df: pd.DataFrame, special_events: list[dict]) -> dict:
+        """Calculate plot dimensions and scales."""
+        width, height = 2600, 1560
+        margin_left, margin_right, margin_top, margin_bottom = 110, 180, 70, 120
+
+        x_max = float(df["time_from_request"].max() or 1.0)
+        if special_events:
+            base_time = df["request_time"].min()
+            event_offsets = []
+            for ev in special_events:
+                ts = ev.get("timestamp")
+                if ts and base_time:
+                    event_offsets.append((ts - base_time).total_seconds())
+            if event_offsets:
+                x_max = max(x_max, *event_offsets)
+
+        y_max = float(df["cumulative_vcpus"].max() or 1.0)
+        if x_max <= 0:
+            x_max = 1.0
+        if y_max <= 0:
+            y_max = 1.0
+
+        return {
+            "width": width,
+            "height": height,
+            "margin_left": margin_left,
+            "margin_right": margin_right,
+            "margin_top": margin_top,
+            "margin_bottom": margin_bottom,
+            "plot_w": width - margin_left - margin_right,
+            "plot_h": height - margin_top - margin_bottom,
+            "x_max": x_max,
+            "y_max": y_max,
+        }
+
+    def _create_plot_image(self, dimensions: dict):
+        """Create base plot image with axes."""
+
+        img = Image.new("RGB", (dimensions["width"], dimensions["height"]), "white")
+        draw = ImageDraw.Draw(img)
+
+        # Draw axes and labels
+        x_axis_y = dimensions["height"] - dimensions["margin_bottom"]
+        y_axis_x = dimensions["margin_left"]
+        draw.line((y_axis_x, dimensions["margin_top"], y_axis_x, x_axis_y), fill="black", width=2)
+        draw.line(
+            (y_axis_x, x_axis_y, dimensions["width"] - dimensions["margin_right"], x_axis_y),
+            fill="black",
+            width=2,
+        )
+
+        return img
+
+    def _draw_plot_elements(
+        self, img, df: pd.DataFrame, special_events: list[dict], dimensions: dict
+    ) -> None:
+        """Draw all plot elements including data points and events."""
+
+        draw = ImageDraw.Draw(img)
+        font = ImageFont.load_default()
+
+        # Draw axis titles and ticks
+        self._draw_axis_labels_and_ticks(draw, font, dimensions)
+
+        # Setup marker mapping for instance types
+        marker_map = self._create_instance_type_markers(df)
+
+        # Draw data points and collect legend entries
+        legend_entries = self._draw_data_points(draw, df, dimensions, marker_map)
+
+        # Draw special events if present
+        if special_events:
+            special_legends = self._draw_special_events(draw, df, special_events, dimensions)
+        else:
+            special_legends = []
+
+        # Draw legends
+        self._draw_plot_legends(draw, font, legend_entries, special_legends, dimensions)
+
+    def _draw_axis_labels_and_ticks(self, draw, font, dimensions: dict) -> None:
+        """Draw axis titles, labels and tick marks."""
+        x_axis_y = dimensions["height"] - dimensions["margin_bottom"]
+        y_axis_x = dimensions["margin_left"]
+
+        # Axis titles
+        draw.text(
+            (
+                y_axis_x + dimensions["plot_w"] / 2 - 140,
+                dimensions["height"] - dimensions["margin_bottom"] + 50,
+            ),
+            "Time from Request (seconds)",
+            fill="black",
+            font=font,
+        )
+        draw.text(
+            (20, dimensions["margin_top"] + dimensions["plot_h"] / 2 - 20),
+            "Cumulative vCPUs",
+            fill="black",
+            font=font,
+        )
+
+        # Ticks and labels
+        ticks = 5
+        for i in range(ticks + 1):
+            # X ticks
+            tx = y_axis_x + int(dimensions["plot_w"] * i / ticks)
+            val = dimensions["x_max"] * i / ticks
+            draw.line((tx, x_axis_y, tx, x_axis_y + 6), fill="black")
+            label = f"{val:.1f}"
+            draw.text((tx - len(label) * 3, x_axis_y + 10), label, fill="black", font=font)
+
+            # Y ticks
+            ty = x_axis_y - int(dimensions["plot_h"] * i / ticks)
+            y_val = dimensions["y_max"] * i / ticks
+            draw.line((y_axis_x - 6, ty, y_axis_x, ty), fill="black")
+            label_y = f"{y_val:.0f}"
+            draw.text(
+                (y_axis_x - (len(label_y) * 6 + 12), ty - 4), label_y, fill="black", font=font
+            )
+
+    def _create_instance_type_markers(self, df: pd.DataFrame) -> dict:
+        """Create marker mapping for unique instance types."""
+        palette_shapes = [
+            "circle",
+            "triangle",
+            "square",
+            "diamond",
+            "plus",
+            "x",
+            "circle",
+            "square",
+        ]
+        palette_colors = [
+            "#2f7d32",
+            "#1f4e79",
+            "#7f6000",
+            "#9c27b0",
+            "#ff6f00",
+            "#00838f",
+            "#795548",
+            "#c62828",
+        ]
+
+        unique_types = sorted(set(df["instance_type"]))
+        marker_map = {}
+        for idx, inst_type in enumerate(unique_types):
+            shape = palette_shapes[idx % len(palette_shapes)]
+            color = palette_colors[idx % len(palette_colors)]
+            marker_map[inst_type] = (shape, color)
+
+        return marker_map
+
+    def _draw_data_points(self, draw, df: pd.DataFrame, dimensions: dict, marker_map: dict) -> dict:
+        """Draw data points and return legend entries."""
+        legend_entries = {}
+        y_axis_x = dimensions["margin_left"]
+        x_axis_y = dimensions["height"] - dimensions["margin_bottom"]
+
+        for _, row in df.iterrows():
+            sx = y_axis_x + int(
+                (row["time_from_request"] / dimensions["x_max"]) * dimensions["plot_w"]
+            )
+            sy = x_axis_y - int(
+                (row["cumulative_vcpus"] / dimensions["y_max"]) * dimensions["plot_h"]
+            )
+            shape, color = marker_map.get(row["instance_type"], ("circle", "#444444"))
+
+            self._draw_marker(draw, sx, sy, shape, color)
+
+            if row["instance_type"] not in legend_entries:
+                legend_entries[row["instance_type"]] = (shape, color)
+
+        return legend_entries
+
+    def _draw_marker(self, draw, sx: int, sy: int, shape: str, color: str) -> None:
+        """Draw a single marker at the specified position."""
+        if shape == "circle":
+            r = 7
+            draw.ellipse((sx - r, sy - r, sx + r, sy + r), fill=color, outline="black")
+        elif shape == "square":
+            r = 7
+            draw.rectangle((sx - r, sy - r, sx + r, sy + r), fill=color, outline="black")
+        elif shape == "triangle":
+            r = 8
+            draw.polygon(
+                [(sx, sy - r), (sx - r, sy + r), (sx + r, sy + r)], fill=color, outline="black"
+            )
+        elif shape == "diamond":
+            r = 8
+            draw.polygon(
+                [(sx, sy - r), (sx - r, sy), (sx, sy + r), (sx + r, sy)],
+                fill=color,
+                outline="black",
+            )
+        elif shape == "plus":
+            draw.line((sx - 7, sy, sx + 7, sy), fill=color, width=2)
+            draw.line((sx, sy - 7, sx, sy + 7), fill=color, width=2)
+        elif shape == "x":
+            draw.line((sx - 7, sy - 7, sx + 7, sy + 7), fill=color, width=2)
+            draw.line((sx - 7, sy + 7, sx + 7, sy - 7), fill=color, width=2)
+
+    def _draw_special_events(
+        self, draw, df: pd.DataFrame, special_events: list[dict], dimensions: dict
+    ) -> list:
+        """Draw special event markers and return legend entries."""
+        base_time = df["request_time"].min()
+        y_axis_x = dimensions["margin_left"]
+        x_axis_y = dimensions["height"] - dimensions["margin_bottom"]
+
+        for ev in special_events:
+            ts = ev.get("timestamp")
+            if not ts or not base_time:
+                continue
+            offset = (ts - base_time).total_seconds()
+            sx = y_axis_x + int((offset / dimensions["x_max"]) * dimensions["plot_w"])
+            sy = x_axis_y  # y=0 line
+
+            subtype = (ev.get("event_subtype") or ev.get("event_type") or "").lower()
+            if subtype == "submitted":
+                self._draw_marker(draw, sx, sy, "circle", "#f5c400")  # yellow
+            elif subtype == "active":
+                self._draw_marker(draw, sx, sy, "circle", "#2e7d32")  # green
+            else:
+                self._draw_marker(draw, sx, sy, "x", "#d32f2f")  # red cross
+
+        return [
+            ("submitted event", "circle", "#f5c400"),
+            ("active event", "circle", "#2e7d32"),
+            ("other event", "x", "#d32f2f"),
+        ]
+
+    def _draw_plot_legends(
+        self, draw, font, legend_entries: dict, special_legends: list, dimensions: dict
+    ) -> None:
+        """Draw both instance type and special event legends."""
+        legend_x = dimensions["width"] - dimensions["margin_right"] + 40
+        legend_y = dimensions["margin_top"] + 20
+
+        # Instance types legend
+        draw.text((legend_x, legend_y - 20), "Instance Types", fill="black", font=font)
+        for idx, (inst_type, (shape, color)) in enumerate(legend_entries.items()):
+            ly = legend_y + idx * 20
+            self._draw_marker(draw, legend_x + 10, ly + 5, shape, color)
+            draw.text((legend_x + 25, ly - 2), inst_type, fill="black", font=font)
+
+        # Special events legend
+        if special_legends:
+            legend_y_extra = legend_y + (len(legend_entries) + 1) * 20
+            draw.text((legend_x, legend_y_extra - 20), "Special Events", fill="black", font=font)
+            for idx, (label, shape, color) in enumerate(special_legends):
+                ly = legend_y_extra + idx * 20
+                self._draw_marker(draw, legend_x + 10, ly + 5, shape, color)
+                draw.text((legend_x + 25, ly - 2), label, fill="black", font=font)
+
+        # Draw border around legend area
+        legend_height = (len(legend_entries) + 1 + len(special_legends) + 1) * 20
+        border_padding = 8
+        draw.rectangle(
+            (legend_x - border_padding, legend_y - 30, legend_x + 220, legend_y + legend_height),
+            outline="black",
+            width=1,
+        )
 
     def validate_output(self, dataframe: pd.DataFrame) -> bool:
         """Validate DataFrame structure before export"""
@@ -1150,6 +1298,29 @@ def setup_logging(verbose: bool = False) -> logging.Logger:
 
 def main():
     """Main entry point for the AWS Resource History Analyzer"""
+    args = _parse_arguments()
+    logger = setup_logging(args.verbose)
+
+    try:
+        processor = DataProcessor(logger)
+        output_manager = OutputManager(logger)
+
+        target_paths = _build_target_paths(args)
+        processed_datasets = _process_all_paths(
+            args, logger, processor, output_manager, target_paths
+        )
+        overall_status = _handle_cumulative_plot(args, logger, processed_datasets)
+
+        return overall_status
+    except Exception as e:
+        logger.error(f"Processing failed: {e}")
+        if args.verbose:
+            traceback.print_exc()
+        return 1
+
+
+def _parse_arguments():
+    """Parse command line arguments."""
     parser = argparse.ArgumentParser(
         description="AWS Resource History Analyzer - Process AWS resource history files",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -1187,7 +1358,6 @@ Examples:
         default="cumulative_report.png",
         help="Output path for the cumulative plot image",
     )
-
     parser.add_argument(
         "--provider-type",
         choices=["ASG", "EC2Fleet", "SpotFleet"],
@@ -1204,146 +1374,171 @@ Examples:
         help="Output format (default: csv)",
     )
 
-    args = parser.parse_args()
+    return parser.parse_args()
 
-    # Setup logging
-    logger = setup_logging(args.verbose)
 
-    try:
-        # Initialize processor
-        processor = DataProcessor(logger)
-        output_manager = OutputManager(logger)
+def _build_target_paths(args) -> list:
+    """Build list of target paths to process."""
+    target_paths = []
+    for input_arg in args.input_paths:
+        p = Path(input_arg)
+        if args.expand_dirs and p.is_dir():
+            for sub in sorted(p.iterdir()):
+                if sub.is_dir():
+                    target_paths.append(sub)
+        else:
+            target_paths.append(p)
+    return target_paths
 
-        overall_status = 0
-        processed_datasets: list[tuple[str, pd.DataFrame]] = []
 
-        # Build list of target folders
-        target_paths: list[Path] = []
-        for input_arg in args.input_paths:
-            p = Path(input_arg)
-            if args.expand_dirs and p.is_dir():
-                # Add all immediate subdirectories
-                for sub in sorted(p.iterdir()):
-                    if sub.is_dir():
-                        target_paths.append(sub)
-            else:
-                target_paths.append(p)
+def _process_all_paths(args, logger, processor, output_manager, target_paths) -> list:
+    """Process all target paths and return processed datasets."""
+    processed_datasets = []
 
-        for input_path in target_paths:
-            if not input_path.exists() or not input_path.is_dir():
-                logger.error(f"Input path must be an existing directory: {input_path}")
-                overall_status = 1
-                continue
+    for input_path in target_paths:
+        result = _process_single_path(args, logger, processor, output_manager, input_path)
+        if result:
+            processed_datasets.append(result)
 
-            # Locate history file inside metrics/
-            metrics_dir = input_path / "metrics"
-            history_files = list(metrics_dir.glob("*_history.json")) if metrics_dir.exists() else []
-            if not history_files:
-                logger.error(
-                    f"No history file found in metrics/ for {input_path} (expected *_history.json)"
-                )
-                overall_status = 1
-                continue
-            history_file = history_files[0]
+    return processed_datasets
 
-            # Load request database for instance type lookup
-            request_db_path = input_path / "work" / "data" / "request_database.json"
-            machine_lookup: dict[str, str] = {}
-            if request_db_path.exists():
-                try:
-                    request_db = json.load(open(request_db_path))
-                    machines = request_db.get("machines") or {}
-                    machine_lookup = {
-                        mid: (info.get("instance_type") or "unknown")
-                        for mid, info in machines.items()
-                    }
-                    logger.info(f"Loaded {len(machine_lookup)} machines from request_database.json")
-                except Exception as exc:
-                    logger.warning(f"Failed to load request database: {exc}")
-            else:
-                logger.warning("request_database.json not found; instance types may be unknown")
 
-            # Validate only mode
-            if args.validate_only:
-                data = processor.file_processor.load_file(str(history_file))
-                if processor.file_processor.validate_schema(data):
-                    provider_type = processor.file_processor.extract_provider_type(data)
-                    logger.info(
-                        f"[{input_path}] File validation successful. Detected provider: {provider_type}"
-                    )
-                else:
-                    logger.error(f"[{input_path}] File validation failed")
-                    overall_status = 1
-                continue
+def _process_single_path(args, logger, processor, output_manager, input_path):
+    """Process a single input path."""
+    if not input_path.exists() or not input_path.is_dir():
+        logger.error(f"Input path must be an existing directory: {input_path}")
+        return None
 
-            report_dir = input_path / "report"
-            report_dir.mkdir(exist_ok=True)
-            folder_name = input_path.name
-            test_name = (
-                folder_name.split("[")[-1].rstrip("]") if "[" in folder_name else folder_name
-            )
-            output_basename = f"{test_name}_{Path(args.output_name).name}"
-            output_path = report_dir / output_basename
-            logger.info(f"Outputs will be written to: {output_path}")
+    history_file, machine_lookup = _load_input_files(input_path, logger)
+    if not history_file:
+        return None
 
-            # Process the file
-            df, special_events = processor.process_history_file(
-                str(history_file), args.provider_type, machine_lookup
-            )
-            processed_datasets.append((test_name, df))
+    if args.validate_only:
+        return _validate_file_only(processor, history_file, input_path, logger)
 
-            # Validate output
-            if not output_manager.validate_output(df):
-                logger.error(f"[{input_path}] Output validation failed")
-                overall_status = 1
-                continue
+    return _process_and_save_output(
+        args, logger, processor, output_manager, input_path, history_file, machine_lookup
+    )
 
-            # Save output based on format
-            if args.output_format == "csv":
-                output_manager.save_to_csv(df, str(output_path))
-            elif args.output_format == "json":
-                output_manager.save_to_json(df, str(output_path))
-            elif args.output_format == "parquet":
-                output_manager.save_to_parquet(df, str(output_path))
-            elif args.output_format == "excel":
-                output_manager.save_to_excel(df, str(output_path), special_events=special_events)
 
-            logger.info(
-                f"[{input_path}] Processing completed successfully. Output saved to: {output_path}"
-            )
+def _load_input_files(input_path, logger):
+    """Load history file and machine lookup data."""
+    # Locate history file
+    metrics_dir = input_path / "metrics"
+    history_files = list(metrics_dir.glob("*_history.json")) if metrics_dir.exists() else []
+    if not history_files:
+        logger.error(
+            f"No history file found in metrics/ for {input_path} (expected *_history.json)"
+        )
+        return None, None
 
-        if args.cumulative_plot and processed_datasets:
-            try:
-                cumulative_path = Path(args.cumulative_plot_path)
-                render_cumulative_plot(processed_datasets, cumulative_path)
-                logger.info(f"Cumulative plot saved to: {cumulative_path}")
-            except Exception as exc:
-                logger.error(f"Failed to render cumulative plot: {exc}")
-                overall_status = 1
+    history_file = history_files[0]
 
-        return overall_status
+    # Load request database
+    request_db_path = input_path / "work" / "data" / "request_database.json"
+    machine_lookup = {}
+    if request_db_path.exists():
+        try:
+            request_db = json.load(open(request_db_path))
+            machines = request_db.get("machines") or {}
+            machine_lookup = {
+                mid: (info.get("instance_type") or "unknown") for mid, info in machines.items()
+            }
+            logger.info(f"Loaded {len(machine_lookup)} machines from request_database.json")
+        except Exception as exc:
+            logger.warning(f"Failed to load request database: {exc}")
+    else:
+        logger.warning("request_database.json not found; instance types may be unknown")
 
-    except Exception as e:
-        logger.error(f"Processing failed: {e}")
-        if args.verbose:
-            import traceback
+    return history_file, machine_lookup
 
-            traceback.print_exc()
-        return 1
+
+def _validate_file_only(processor, history_file, input_path, logger):
+    """Handle validate-only mode."""
+    data = processor.file_processor.load_file(str(history_file))
+    if processor.file_processor.validate_schema(data):
+        provider_type = processor.file_processor.extract_provider_type(data)
+        logger.info(
+            f"[{input_path}] File validation successful. Detected provider: {provider_type}"
+        )
+        return True
+    else:
+        logger.error(f"[{input_path}] File validation failed")
+        return None
+
+
+def _process_and_save_output(
+    args, logger, processor, output_manager, input_path, history_file, machine_lookup
+):
+    """Process file and save output."""
+    # Setup output path
+    report_dir = input_path / "report"
+    report_dir.mkdir(exist_ok=True)
+    folder_name = input_path.name
+    test_name = folder_name.split("[")[-1].rstrip("]") if "[" in folder_name else folder_name
+    output_basename = f"{test_name}_{Path(args.output_name).name}"
+    output_path = report_dir / output_basename
+    logger.info(f"Outputs will be written to: {output_path}")
+
+    # Process the file
+    df, special_events = processor.process_history_file(
+        str(history_file), args.provider_type, machine_lookup
+    )
+
+    # Validate and save output
+    if not output_manager.validate_output(df):
+        logger.error(f"[{input_path}] Output validation failed")
+        return None
+
+    _save_output_by_format(args, output_manager, df, output_path, special_events)
+    logger.info(f"[{input_path}] Processing completed successfully. Output saved to: {output_path}")
+
+    return (test_name, df)
+
+
+def _save_output_by_format(args, output_manager, df, output_path, special_events):
+    """Save output in the specified format."""
+    if args.output_format == "csv":
+        output_manager.save_to_csv(df, str(output_path))
+    elif args.output_format == "json":
+        output_manager.save_to_json(df, str(output_path))
+    elif args.output_format == "parquet":
+        output_manager.save_to_parquet(df, str(output_path))
+    elif args.output_format == "excel":
+        output_manager.save_to_excel(df, str(output_path), special_events=special_events)
+
+
+def _handle_cumulative_plot(args, logger, processed_datasets):
+    """Handle cumulative plot generation."""
+    if args.cumulative_plot and processed_datasets:
+        try:
+            cumulative_path = Path(args.cumulative_plot_path)
+            render_cumulative_plot(processed_datasets, cumulative_path)
+            logger.info(f"Cumulative plot saved to: {cumulative_path}")
+        except Exception as exc:
+            logger.error(f"Failed to render cumulative plot: {exc}")
+            return 1
+    return 0
 
 
 def render_cumulative_plot(
-    datasets: list[tuple[str, pd.DataFrame]] = None, output_path: Path = None
+    datasets: Optional[list[tuple[str, pd.DataFrame]]] = None, output_path: Optional[Path] = None
 ) -> None:
     """Render cumulative vCPU lines for multiple datasets."""
     datasets = datasets or []
     if not datasets:
         return
 
+    dimensions = _calculate_cumulative_plot_dimensions(datasets)
+    img = _create_cumulative_plot_canvas(dimensions)
+    _draw_cumulative_dataset_lines(img, datasets, dimensions)
+    _save_cumulative_plot(img, output_path)
+
+
+def _calculate_cumulative_plot_dimensions(datasets: list[tuple[str, pd.DataFrame]]) -> dict:
+    """Calculate plot dimensions and data ranges."""
     width, height = 2600, 1560
     margin_left, margin_right, margin_top, margin_bottom = 110, 200, 70, 120
-    plot_w = width - margin_left - margin_right
-    plot_h = height - margin_top - margin_bottom
 
     x_max = 0.0
     y_max = 0.0
@@ -1352,42 +1547,96 @@ def render_cumulative_plot(
             continue
         x_max = max(x_max, float(df["time_from_request"].max() or 0))
         y_max = max(y_max, float(df["cumulative_vcpus"].max() or 0))
+
     if x_max <= 0:
         x_max = 1.0
     if y_max <= 0:
         y_max = 1.0
 
-    img = Image.new("RGB", (width, height), "white")
+    return {
+        "width": width,
+        "height": height,
+        "margin_left": margin_left,
+        "margin_right": margin_right,
+        "margin_top": margin_top,
+        "margin_bottom": margin_bottom,
+        "plot_w": width - margin_left - margin_right,
+        "plot_h": height - margin_top - margin_bottom,
+        "x_max": x_max,
+        "y_max": y_max,
+    }
+
+
+def _create_cumulative_plot_canvas(dimensions: dict):
+    """Create plot canvas with axes and labels."""
+
+    img = Image.new("RGB", (dimensions["width"], dimensions["height"]), "white")
     draw = ImageDraw.Draw(img)
     font = ImageFont.load_default()
 
-    # Axes
-    x_axis_y = height - margin_bottom
-    y_axis_x = margin_left
-    draw.line((y_axis_x, margin_top, y_axis_x, x_axis_y), fill="black", width=2)
-    draw.line((y_axis_x, x_axis_y, width - margin_right, x_axis_y), fill="black", width=2)
+    # Draw axes
+    x_axis_y = dimensions["height"] - dimensions["margin_bottom"]
+    y_axis_x = dimensions["margin_left"]
+    draw.line((y_axis_x, dimensions["margin_top"], y_axis_x, x_axis_y), fill="black", width=2)
+    draw.line(
+        (y_axis_x, x_axis_y, dimensions["width"] - dimensions["margin_right"], x_axis_y),
+        fill="black",
+        width=2,
+    )
+
+    # Draw labels and ticks
+    _draw_cumulative_plot_labels_and_ticks(draw, font, dimensions)
+
+    return img
+
+
+def _draw_cumulative_plot_labels_and_ticks(draw, font, dimensions: dict) -> None:
+    """Draw axis labels and tick marks."""
+    x_axis_y = dimensions["height"] - dimensions["margin_bottom"]
+    y_axis_x = dimensions["margin_left"]
+
+    # Axis titles
     draw.text(
-        (y_axis_x + plot_w / 2 - 140, height - margin_bottom + 50),
+        (
+            y_axis_x + dimensions["plot_w"] / 2 - 140,
+            dimensions["height"] - dimensions["margin_bottom"] + 50,
+        ),
         "Time from Request (seconds)",
         fill="black",
         font=font,
     )
-    draw.text((20, margin_top + plot_h / 2 - 20), "Cumulative vCPUs", fill="black", font=font)
+    draw.text(
+        (20, dimensions["margin_top"] + dimensions["plot_h"] / 2 - 20),
+        "Cumulative vCPUs",
+        fill="black",
+        font=font,
+    )
 
     # Ticks
     ticks = 5
     for i in range(ticks + 1):
-        tx = y_axis_x + int(plot_w * i / ticks)
-        val = x_max * i / ticks
+        # X ticks
+        tx = y_axis_x + int(dimensions["plot_w"] * i / ticks)
+        val = dimensions["x_max"] * i / ticks
         draw.line((tx, x_axis_y, tx, x_axis_y + 6), fill="black")
         label = f"{val:.1f}"
         draw.text((tx - len(label) * 3, x_axis_y + 10), label, fill="black", font=font)
 
-        ty = x_axis_y - int(plot_h * i / ticks)
-        y_val = y_max * i / ticks
+        # Y ticks
+        ty = x_axis_y - int(dimensions["plot_h"] * i / ticks)
+        y_val = dimensions["y_max"] * i / ticks
         draw.line((y_axis_x - 6, ty, y_axis_x, ty), fill="black")
         label_y = f"{y_val:.0f}"
         draw.text((y_axis_x - (len(label_y) * 6 + 12), ty - 4), label_y, fill="black", font=font)
+
+
+def _draw_cumulative_dataset_lines(
+    img, datasets: list[tuple[str, pd.DataFrame]], dimensions: dict
+) -> None:
+    """Draw lines for each dataset and create legend."""
+
+    draw = ImageDraw.Draw(img)
+    font = ImageFont.load_default()
 
     palette_colors = [
         "#2f7d32",
@@ -1399,19 +1648,27 @@ def render_cumulative_plot(
         "#795548",
         "#c62828",
     ]
-
     legend_entries = []
+
+    y_axis_x = dimensions["margin_left"]
+    x_axis_y = dimensions["height"] - dimensions["margin_bottom"]
+
     for idx, (name, df) in enumerate(datasets):
         if df.empty:
             continue
         color = palette_colors[idx % len(palette_colors)]
         pts = []
-        # for _, row in df.sort_values("time_from_request").iterrows():
         for _, row in df.iterrows():
-            sx = y_axis_x + int((row["time_from_request"] / x_max) * plot_w)
-            sy = x_axis_y - int((row["cumulative_vcpus"] / y_max) * plot_h)
+            sx = y_axis_x + int(
+                (row["time_from_request"] / dimensions["x_max"]) * dimensions["plot_w"]
+            )
+            sy = x_axis_y - int(
+                (row["cumulative_vcpus"] / dimensions["y_max"]) * dimensions["plot_h"]
+            )
             pts.append((sx, sy))
-        if len(pts) >= 2:
+
+        min_points_for_line = 2
+        if len(pts) >= min_points_for_line:
             draw.line(pts, fill=color, width=3)
         elif len(pts) == 1:
             draw.ellipse(
@@ -1421,14 +1678,20 @@ def render_cumulative_plot(
             )
         legend_entries.append((name, color))
 
-    # Legend
-    legend_x = width - margin_right + 20
-    legend_y = margin_top + 20
+    _draw_cumulative_plot_legend(draw, font, legend_entries, dimensions)
+
+
+def _draw_cumulative_plot_legend(draw, font, legend_entries: list, dimensions: dict) -> None:
+    """Draw the plot legend."""
+    legend_x = dimensions["width"] - dimensions["margin_right"] + 20
+    legend_y = dimensions["margin_top"] + 20
     draw.text((legend_x, legend_y - 20), "Tests", fill="black", font=font)
+
     for idx, (label, color) in enumerate(legend_entries):
         ly = legend_y + idx * 20
         draw.line((legend_x + 5, ly + 5, legend_x + 25, ly + 5), fill=color, width=3)
         draw.text((legend_x + 30, ly - 2), label, fill="black", font=font)
+
     if legend_entries:
         border_padding = 8
         legend_height = (len(legend_entries) + 1) * 20
@@ -1437,6 +1700,10 @@ def render_cumulative_plot(
             outline="black",
             width=1,
         )
+
+
+def _save_cumulative_plot(img, output_path: Optional[Path]) -> None:
+    """Save the cumulative plot to file."""
 
     if output_path is None:
         output_path = Path("cumulative_report.png")

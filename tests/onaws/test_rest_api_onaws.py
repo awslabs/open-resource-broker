@@ -547,6 +547,7 @@ def log_resource_history(resource_id: str, provider_api: str) -> None:
                 params = {
                     "FleetId": resource_id,
                     "StartTime": buffered_start_time,
+                    "EndTime": end_time,  # Use calculated end time for bounded queries
                     "MaxResults": config["max_records_per_call"],
                 }
                 if next_token:

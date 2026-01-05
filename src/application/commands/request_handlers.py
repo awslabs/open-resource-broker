@@ -89,10 +89,11 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
 
             template_query = GetTemplateQuery(template_id=command.template_id)
             template = await self._query_bus.execute(template_query)
-            self.logger.debug("Template found: %s %s", type(template), template.to_dict())
 
             if not template:
                 raise EntityNotFoundError("Template", command.template_id)
+
+            self.logger.debug("Template found: %s %s", type(template), template.to_dict())
 
             # Select provider based on template requirements
             selection_result = self._provider_selection_service.select_provider_for_template(
@@ -533,11 +534,11 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
                 )
                 self.logger.info(f"Provisioning results: {provisioning_result}")
 
-            except:
+            except Exception as e:
                 # Handle provisioning errors
                 # Log the error and raise a custom exception
                 self.logger.error("Provisioning failed for return request: %s", request.request_id)
-                raise ValueError("Provisioning failed for return request")
+                raise ValueError("Provisioning failed for return request") from e
 
             return str(request.request_id)
 

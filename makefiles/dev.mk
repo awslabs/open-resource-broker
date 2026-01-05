@@ -1,107 +1,144 @@
 # Development and testing targets
 
 # @SECTION Setup & Installation
-install: venv-setup  ## Install production dependencies (UV-first)
-	@echo "Installing production dependencies with UV..."
-	uv sync --no-dev
+install: venv-setup  ## Install dependencies (auto-detects UV/pip, environment-aware)
+	@if [ -n "$$CI" ]; then \
+		echo "CI detected: using frozen UV sync"; \
+		uv sync --frozen --all-groups --quiet; \
+	elif command -v uv >/dev/null 2>&1; then \
+		echo "UV available"; \
+		if echo "$(MAKECMDGOALS)" | grep -q "_dev"; then \
+			uv sync --all-groups --quiet; \
+		else \
+			uv sync --no-dev --quiet; \
+		fi; \
+	else \
+		echo "Fallback to pip"; \
+		$(MAKE) _install-pip; \
+	fi
 
-install-pip: venv-setup  ## Install production dependencies (pip alternative)
-	@echo "Generating production requirements from uv.lock..."
-	uv export --no-dev --no-header --output-file requirements.txt
-	@echo "Installing with pip..."
-	$(BIN)/pip install -r requirements.txt
+dev-install: generate-pyproject venv-setup  ## Install dev dependencies (preserves CI usage)
+	@$(MAKE) install _dev
 
-dev-install: generate-pyproject venv-setup  ## Install development dependencies (UV-first)
-	@echo "Installing with UV (all dependencies)..."
-	@uv sync --all-groups --quiet
+requirements: ## Generate/clean requirements (usage: make requirements _clean)
+	@if echo "$(MAKECMDGOALS)" | grep -q "_clean"; then \
+		rm -f requirements*.txt; \
+	else \
+		uv export --no-dev --no-header --output-file requirements.txt; \
+		uv export --no-header --output-file requirements-dev.txt; \
+	fi
 
-dev-install-pip: generate-pyproject venv-setup  ## Install development dependencies (pip alternative)
+_install-pip: venv-setup  ## Internal pip installation
 	@echo "Generating requirements from uv.lock..."
 	uv export --no-dev --no-header --output-file requirements.txt
 	uv export --no-header --output-file requirements-dev.txt
 	@echo "Installing with pip..."
-	pip install -r requirements-dev.txt
+	$(BIN)/pip install -r requirements-dev.txt
 
-# CI installation targets
-ci-install: generate-pyproject  ## Install dependencies for CI (UV frozen)
-	@echo "Installing with UV (frozen mode - all dependencies)..."
-	@uv sync --frozen --all-groups --quiet
-
-# Requirements generation
-requirements-generate:  ## Generate requirements files from uv.lock
-	@echo "Generating requirements files from uv.lock..."
-	uv export --no-dev --no-header --output-file requirements.txt
-	uv export --no-header --output-file requirements-dev.txt
-
-clean-requirements:  ## Remove generated requirements files
-	rm -f requirements.txt requirements-dev.txt
-# Testing targets (using enhanced dispatcher)
-test: dev-install  ## Run tests (supports: make test path/to/tests -k pattern -v)
-	@./dev-tools/testing/run_tests.py $(filter-out $@,$(MAKECMDGOALS))
-
-test-unit: dev-install  ## Run unit tests (supports same args: make test-unit path -v)
-	@./dev-tools/testing/run_tests.py --unit $(filter-out $@,$(MAKECMDGOALS))
-
-test-integration: dev-install  ## Run integration tests (supports same args)
-	@./dev-tools/testing/run_tests.py --integration $(filter-out $@,$(MAKECMDGOALS))
-
-test-e2e: dev-install  ## Run end-to-end tests (supports same args)
-	@./dev-tools/testing/run_tests.py --e2e $(filter-out $@,$(MAKECMDGOALS))
-
-test-onaws: dev-install  ## Run AWS integration tests (supports same args)
-	@./dev-tools/testing/run_tests.py --onaws $(filter-out $@,$(MAKECMDGOALS))
-
-test-all: dev-install  ## Run all tests (supports same args)
-	@./dev-tools/testing/run_tests.py --all $(filter-out $@,$(MAKECMDGOALS))
-
-test-parallel: dev-install  ## Run tests in parallel (supports same args)
-	@./dev-tools/testing/run_tests.py --parallel $(filter-out $@,$(MAKECMDGOALS))
-
-test-quick: dev-install  ## Run quick test suite (supports same args)
-	@./dev-tools/testing/run_tests.py --unit --fast $(filter-out $@,$(MAKECMDGOALS))
-
-test-performance: dev-install  ## Run performance tests (supports same args)
-	@./dev-tools/testing/run_tests.py --markers slow $(filter-out $@,$(MAKECMDGOALS))
-
-test-aws: dev-install  ## Run AWS-specific tests (supports same args)
-	@./dev-tools/testing/run_tests.py --markers aws $(filter-out $@,$(MAKECMDGOALS))
-
-test-cov: dev-install  ## Run tests with coverage (supports same args)
-	@./dev-tools/testing/run_tests.py --coverage $(filter-out $@,$(MAKECMDGOALS))
-
-test-html: dev-install  ## Run tests with HTML coverage (supports same args)
-	@./dev-tools/testing/run_tests.py --html-coverage $(filter-out $@,$(MAKECMDGOALS))
-	@echo "Coverage report generated in htmlcov/index.html"
-
-# Dummy target to prevent "No rule to make target" errors
-%:
+# Dummy targets for flags
+_dev _clean _pip:
 	@:
 
-test-report: dev-install  ## Generate comprehensive test report
+# Backward compatibility aliases (removed duplicates)
+install-pip: ; @$(MAKE) install _pip
+dev-install-pip: ; @$(MAKE) dev-install _pip  
+ci-install: ; @$(MAKE) install  # Environment auto-detected
+dev-install-uv: ; @$(MAKE) dev-install  # CRITICAL: Preserve for ci.yml
+requirements-generate: ; @$(MAKE) requirements
+clean-requirements: ; @$(MAKE) requirements _clean
+# Testing targets
+test: dev-install  ## Run tests (usage: make test [unit|integration|e2e|coverage|parallel])
+	@./dev-tools/testing/test_dispatcher.py $(filter-out $@,$(MAKECMDGOALS))
+
+test-report: dev-install  ## Generate comprehensive test report (PRESERVE: used by ci.yml)
 	./dev-tools/testing/run_tests.py --all --coverage --junit-xml=test-results-combined.xml --cov-xml=coverage-combined.xml --html-coverage --maxfail=1 --timeout=60
 
-system-tests: dev-install  ## Run system integration tests (using pytest)
-	@echo "Running system integration tests..."
+system-tests: dev-install  ## Run system integration tests
 	@uv run python -m pytest tests/onaws/test_onaws.py -v -m manual_aws --no-cov --tb=long
 
-# @SECTION Development Tools
-generate-pyproject:  ## Update pyproject.toml metadata from .project.yml (preserves dependencies)
-	@echo "Updating pyproject.toml metadata from $(PROJECT_CONFIG)..."
-	@./dev-tools/scripts/generate_pyproject.py --config $(PROJECT_CONFIG)
+# Backward compatibility aliases (direct calls to avoid loops)
+test-unit: dev-install
+	@./dev-tools/testing/test_dispatcher.py unit
 
-deps-add:  ## Add new dependency (usage: make deps-add PACKAGE=package-name)
+test-integration: dev-install
+	@./dev-tools/testing/test_dispatcher.py integration
+
+test-e2e: dev-install
+	@./dev-tools/testing/test_dispatcher.py e2e
+
+test-onaws: dev-install
+	@./dev-tools/testing/test_dispatcher.py onaws
+
+test-all: dev-install
+	@./dev-tools/testing/test_dispatcher.py all
+
+test-parallel: dev-install
+	@./dev-tools/testing/test_dispatcher.py parallel
+
+test-quick: dev-install
+	@./dev-tools/testing/test_dispatcher.py unit fast
+
+test-performance: dev-install
+	@./dev-tools/testing/test_dispatcher.py performance
+
+test-aws: dev-install
+	@./dev-tools/testing/test_dispatcher.py aws
+
+test-cov: dev-install
+	@./dev-tools/testing/test_dispatcher.py coverage
+
+test-html: dev-install
+	@./dev-tools/testing/test_dispatcher.py html-coverage
+
+# Dummy targets removed (consolidated in quality.mk)
+
+# @SECTION Development Tools
+# @SECTION Development Tools
+# Core development workflow
+dev: dev-install format lint test-quick  ## Quick development workflow (format, lint, test)
+	@echo "Development workflow completed successfully!"
+
+dev-setup: dev-install  ## Set up development environment
+	@echo "Development environment setup complete!"
+	@echo "Available commands:"
+	@echo "  make test          - Run tests"
+	@echo "  make docs-serve    - Start documentation server"
+	@echo "  make lint          - Run code quality checks"
+	@echo "  make format        - Format code"
+
+# Dependency management  
+deps-add: ## Add new dependency (usage: make deps-add PACKAGE=package-name)
 	@if [ -z "$(PACKAGE)" ]; then \
 		echo "Error: PACKAGE is required. Usage: make deps-add PACKAGE=package-name"; \
 		exit 1; \
 	fi
-	./dev-tools/scripts/deps_manager.py add $(PACKAGE)
+	@uv add $(PACKAGE)
 
-deps-add-dev:  ## Add new dev dependency (usage: make deps-add-dev PACKAGE=package-name)
+deps-add-dev: ## Add new dev dependency (usage: make deps-add-dev PACKAGE=package-name)
 	@if [ -z "$(PACKAGE)" ]; then \
 		echo "Error: PACKAGE is required. Usage: make deps-add-dev PACKAGE=package-name"; \
 		exit 1; \
 	fi
-	./dev-tools/scripts/deps_manager.py add --dev $(PACKAGE)
+	@uv add --dev $(PACKAGE)
+
+deps-update: ## Update dependencies and regenerate lock file
+	@uv lock --upgrade
+
+# Show project status
+status:  ## Show project status and useful commands
+	@echo "=== $(PACKAGE_NAME) v$(VERSION) Status ==="
+	@echo ""
+	@echo "Python version: $(DEFAULT_PYTHON_VERSION)"
+	@echo "Package: $(PACKAGE_NAME)"
+	@echo "Version: $(VERSION)"
+	@echo ""
+	@echo "Available commands:"
+	@echo "  make dev-setup     - Set up development environment"
+	@echo "  make test          - Run tests"
+	@echo "  make lint          - Run linting"
+	@echo "  make format        - Format code"
+	@echo "  make docs-serve    - Start documentation server"
+	@echo "  make clean         - Clean build artifacts"
 
 # Cleanup
 clean:  ## Clean up build artifacts
@@ -123,29 +160,12 @@ clean-all: clean  ## Clean everything including virtual environment
 	@echo "Cleaning virtual environment..."
 	rm -rf $(VENV)/
 
-# Development targets
-dev-setup: dev-install  ## Set up development environment
-	@echo "Development environment setup complete!"
-	@echo "Available commands:"
-	@echo "  make test          - Run tests"
-	@echo "  make docs-serve    - Start documentation server"
-	@echo "  make lint          - Run code quality checks"
-	@echo "  make format        - Format code"
+# Quick start for new developers
+quick-start: dev-install create-config  ## Quick start for new developers
+	@echo "Running quick start setup..."
+	./dev-tools/scripts/quick_start.py
 
-install-package: dev-install  ## Install package in development mode
-	@echo "Installing package in development mode..."
-	uv pip install -e .
-
-uninstall-package:  ## Uninstall package
-	@echo "Uninstalling package..."
-	uv pip uninstall $(PACKAGE_NAME) -y || pip uninstall $(PACKAGE_NAME) -y
-
-reinstall-package: uninstall-package install-package  ## Reinstall package
-
-init-db:  ## Initialize database (if applicable)
-	@echo "Initializing database..."
-	# Add database initialization commands here
-
+# Configuration management
 create-config:  ## Create default configuration file
 	@echo "Creating default configuration..."
 	@mkdir -p config
@@ -161,28 +181,21 @@ validate-config:  ## Validate configuration file
 		echo "Run 'make create-config' to create a default configuration"; \
 	fi
 
-quick-start: dev-install create-config  ## Quick start for new developers
-	@echo "Running quick start setup..."
-	./dev-tools/scripts/quick_start.py
+# Package management
+install-package: dev-install  ## Install package in development mode
+	@echo "Installing package in development mode..."
+	uv pip install -e .
 
-dev: dev-install format lint test-quick  ## Quick development workflow (format, lint, test)
-	@echo "Development workflow completed successfully!"
+uninstall-package:  ## Uninstall package
+	@echo "Uninstalling package..."
+	uv pip uninstall $(PACKAGE_NAME) -y || pip uninstall $(PACKAGE_NAME) -y
 
-# Show project status
-status:  ## Show project status and useful commands
-	@echo "=== $(PACKAGE_NAME) v$(VERSION) Status ==="
-	@echo ""
-	@echo "Python version: $(DEFAULT_PYTHON_VERSION)"
-	@echo "Package: $(PACKAGE_NAME)"
-	@echo "Version: $(VERSION)"
-	@echo ""
-	@echo "Available commands:"
-	@echo "  make dev-setup     - Set up development environment"
-	@echo "  make test          - Run tests"
-	@echo "  make lint          - Run linting"
-	@echo "  make format        - Format code"
-	@echo "  make docs-serve    - Start documentation server"
-	@echo "  make clean         - Clean build artifacts"
+reinstall-package: uninstall-package install-package  ## Reinstall package
+
+# Database initialization (if applicable)
+init-db:  ## Initialize database (if applicable)
+	@echo "Initializing database..."
+	# Add database initialization commands here
 
 # UV management targets
 uv-lock: generate-pyproject  ## Update uv.lock file
@@ -201,9 +214,14 @@ uv-check:  ## Check UV configuration and dependencies
 	@echo "Checking UV configuration..."
 	./dev-tools/scripts/uv_manager.py check
 
-deps-update:  ## Update dependencies and regenerate lock file
-	@echo "Updating dependencies..."
-	uv lock --upgrade
+uv-benchmark:  ## Benchmark UV vs pip performance
+	@echo "Benchmarking UV vs pip performance..."
+	./dev-tools/scripts/uv_manager.py benchmark
+
+# Utility targets
+generate-pyproject:  ## Update pyproject.toml metadata from .project.yml (preserves dependencies)
+	@echo "Updating pyproject.toml metadata from $(PROJECT_CONFIG)..."
+	@./dev-tools/scripts/generate_pyproject.py --config $(PROJECT_CONFIG)
 
 show-package-info:  ## Show package information
 	@echo "Package Name: $(PACKAGE_NAME)"
@@ -217,6 +235,4 @@ show-package-info:  ## Show package information
 print-json-PYTHON_VERSIONS:  ## Print Python versions as JSON (for CI)
 	@echo '$(PYTHON_VERSIONS)' | tr ' ' '\n' | jq -R . | jq -s .
 
-uv-benchmark:  ## Benchmark UV vs pip performance
-	@echo "Benchmarking UV vs pip performance..."
-	./dev-tools/scripts/uv_manager.py benchmark
+

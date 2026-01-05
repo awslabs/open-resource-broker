@@ -43,10 +43,12 @@ jobs:
   test:
     name: ${{ inputs.test-type == 'unit' && 'Unit Tests' || inputs.test-type == 'integration' && 'Integration Tests' || inputs.test-type == 'e2e' && 'End-to-End Tests' || format('{0} Tests', inputs.test-type) }}
     runs-on: ${{ inputs.os }}
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v6.0.1
 
       - name: Setup UV with cached environment
         uses: ./.github/actions/setup-uv-cached
@@ -59,7 +61,7 @@ jobs:
         continue-on-error: ${{ inputs.continue-on-error }}
 
       - name: Upload test results
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v6.0.0
         if: always()
         with:
           name: ${{ inputs.test-type }}-test-results-${{ inputs.os }}-${{ inputs.python-version || inputs.default-python-version }}

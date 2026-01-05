@@ -1,0 +1,54 @@
+name: Shared Configuration
+
+on:
+  workflow_call:
+    outputs:
+      python-versions:
+        description: 'JSON array of Python versions'
+        value: ${{ jobs.get-config.outputs.python-versions }}
+      default-python-version:
+        description: 'Default Python version'
+        value: ${{ jobs.get-config.outputs.default-python-version }}
+      container-registry:
+        description: 'Container registry'
+        value: ${{ jobs.get-config.outputs.container-registry }}
+      container-image:
+        description: 'Container image name'
+        value: ${{ jobs.get-config.outputs.container-image }}
+      package-version:
+        description: 'Package version'
+        value: ${{ jobs.get-config.outputs.package-version }}
+      is-release:
+        description: 'Whether this is a release build'
+        value: ${{ jobs.get-config.outputs.is-release }}
+
+jobs:
+  get-config:
+    name: Get Configuration
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      python-versions: ${{ steps.config.outputs.python-versions }}
+      default-python-version: ${{ steps.config.outputs.default-python-version }}
+      container-registry: ${{ steps.config.outputs.container-registry }}
+      container-image: ${{ steps.config.outputs.container-image }}
+      package-version: ${{ steps.config.outputs.package-version }}
+      is-release: ${{ steps.config.outputs.is-release }}
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6.0.1
+
+    - name: Setup cache
+      uses: actions/cache@v5.0.0
+      with:
+        path: |
+          ~/.cache/uv
+          .venv
+        key: config-${{ hashFiles('.project.yml', 'pyproject.toml') }}
+        restore-keys: |
+          config-
+
+    - name: Get project configuration
+      id: config
+      uses: ./.github/actions/get-config

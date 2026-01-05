@@ -1,0 +1,184 @@
+name: CI Quality
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - 'pyproject.toml'
+      - 'requirements*.txt'
+      - '.ruff.toml'
+      - 'mypy.ini'
+      - '.github/workflows/ci-quality.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - 'pyproject.toml'
+      - 'requirements*.txt'
+      - '.ruff.toml'
+      - 'mypy.ini'
+      - '.github/workflows/ci-quality.yml'
+
+env:
+  AWS_DEFAULT_REGION: us-east-1
+  AWS_ACCESS_KEY_ID: testing
+  AWS_SECRET_ACCESS_KEY: testing
+  ENVIRONMENT: testing
+  TESTING: true
+
+jobs:
+  config:
+    name: Configuration
+    uses: ./.github/workflows/shared-config.yml
+
+  quality-check:
+    name: Professional Quality Standards
+    runs-on: ubuntu-latest
+    needs: config
+    permissions:
+      contents: read
+    
+    steps:
+    - uses: actions/checkout@v6.0.1
+      with:
+        fetch-depth: 0
+    
+    - name: Setup Python and UV
+      uses: ./.github/actions/setup-python-uv
+      with:
+        python-version: ${{ needs.config.outputs.default-python-version }}
+        cache-key-suffix: quality
+    
+    - name: Run professional quality checks
+      run: |
+        if [ "${{ github.event_name }}" = "schedule" ]; then
+          make quality-check-all
+        else
+          make quality-check
+        fi
+
+  setup-cache:
+    name: Setup Cache
+    needs: config
+    uses: ./.github/workflows/cache-management.yml
+    with:
+      cache-type: dependencies
+      cache-key-base: quality-deps
+      python-version: ${{ needs.config.outputs.default-python-version }}
+
+  auto-format:
+    name: Auto-Format Code  
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    needs: [config, setup-cache]
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6.0.1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: ${{ github.head_ref }}
+
+      - name: Setup UV with cache
+        uses: ./.github/actions/setup-uv-cached
+        with:
+          cache-key: ${{ needs.setup-cache.outputs.cache-key }}
+          fail-on-cache-miss: false
+
+      - name: Auto-format code
+        run: make format-fix
+
+      - name: Commit formatting changes
+        run: |
+          make ci-git-setup
+          git add .
+          if ! git diff --staged --quiet; then
+            git commit -m "style: auto-format code with ruff [skip ci]"
+            git push
+          fi
+
+  lint-ruff:
+    name: Ruff (Code Quality)
+    runs-on: ubuntu-latest
+    needs: [config, setup-cache]
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6.0.1
+
+      - name: Setup UV with cache
+        uses: ./.github/actions/setup-uv-cached
+        with:
+          cache-key: ${{ needs.setup-cache.outputs.cache-key }}
+          fail-on-cache-miss: false
+
+      - name: Check code quality
+        run: make ci-quality-ruff
+
+  lint-ruff-optional:
+    name: Ruff (Extended Checks)
+    runs-on: ubuntu-latest
+    needs: [config, setup-cache, lint-ruff]
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6.0.1
+
+      - name: Setup UV with cache
+        uses: ./.github/actions/setup-uv-cached
+        with:
+          cache-key: ${{ needs.setup-cache.outputs.cache-key }}
+          fail-on-cache-miss: false
+
+      - name: Extended linting (warnings)
+        run: make ci-quality-ruff-optional
+        continue-on-error: true
+
+  lint-mypy:
+    name: mypy (Type Checking)
+    runs-on: ubuntu-latest
+    needs: [config, setup-cache, lint-ruff]
+    permissions:
+      contents: read
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6.0.1
+
+    - name: Setup UV with cache
+      uses: ./.github/actions/setup-uv-cached
+      with:
+        cache-key: ${{ needs.setup-cache.outputs.cache-key }}
+        fail-on-cache-miss: false
+
+    - name: Run mypy type check
+      run: make ci-quality-mypy
+      continue-on-error: true
+
+  arch-validation:
+    name: Architecture Validation
+    runs-on: ubuntu-latest
+    needs: [config, setup-cache, lint-ruff]
+    permissions:
+      contents: read
+    strategy:
+      matrix:
+        check: [cqrs, clean, imports, file-sizes]
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6.0.1
+
+    - name: Setup UV with cache
+      uses: ./.github/actions/setup-uv-cached
+      with:
+        cache-key: ${{ needs.setup-cache.outputs.cache-key }}
+        fail-on-cache-miss: false
+
+    - name: Run architecture validation
+      run: make ci-arch-${{ matrix.check }}
+      continue-on-error: true

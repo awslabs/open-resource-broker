@@ -9,6 +9,7 @@ from unittest.mock import Mock
 
 import boto3
 import pytest
+from botocore.exceptions import ClientError
 from moto import mock_aws
 
 from domain.base.ports import LoggingPort
@@ -63,6 +64,10 @@ class TestBotocoreMetrics:
         metrics_collector.increment_counter.assert_called()
         metrics_collector.record_time.assert_called()
 
+        # Verify response is valid (basic validation)
+        assert response is not None
+        assert "Reservations" in response  # Standard EC2 describe_instances response structure
+
         # Check call arguments
         call_args = metrics_collector.increment_counter.call_args_list
         assert any(call.args[0] == "aws.ec2.describe_instances.calls_total" for call in call_args)
@@ -77,7 +82,7 @@ class TestBotocoreMetrics:
         ec2 = session.client("ec2", region_name="us-east-1")
 
         # Make a call that will fail
-        with pytest.raises(Exception):
+        with pytest.raises(ClientError):
             ec2.describe_instances(InstanceIds=["i-invalid"])
 
         # Verify error metrics were recorded
@@ -329,7 +334,7 @@ class TestIntegrationWithMoto:
         ec2 = session.client("ec2", region_name="us-east-1")
 
         # Test invalid instance ID error
-        with pytest.raises(Exception):
+        with pytest.raises(ClientError):
             ec2.describe_instances(InstanceIds=["i-invalid"])
 
         # Verify error metrics were collected

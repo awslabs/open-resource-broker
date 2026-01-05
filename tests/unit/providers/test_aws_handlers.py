@@ -10,7 +10,6 @@ from moto import mock_aws
 # Import AWS components
 try:
     from providers.aws.domain.template.value_objects import AWSFleetType
-    from providers.aws.exceptions.aws_exceptions import AWSValidationError
     from providers.aws.infrastructure.handlers.asg_handler import ASGHandler
     from providers.aws.infrastructure.handlers.ec2_fleet_handler import EC2FleetHandler
     from providers.aws.infrastructure.handlers.run_instances_handler import (
@@ -545,7 +544,7 @@ class TestEC2FleetHandler:
         try:
             handler.release_hosts(instance_ids)
             # Should not reach here if exception is properly raised
-            assert False, "Expected AWSInfrastructureError to be raised"
+            raise AssertionError("Expected AWSInfrastructureError to be raised")
         except Exception as e:
             # Should catch and re-raise as AWSInfrastructureError
             assert "Failed to release EC2 Fleet hosts" in str(e)
@@ -967,7 +966,7 @@ class TestASGHandler:
         try:
             handler.release_hosts(instance_ids)
             # Should not reach here if exception is properly raised
-            assert False, "Expected AWSInfrastructureError to be raised"
+            raise AssertionError("Expected AWSInfrastructureError to be raised")
         except Exception as e:
             # Should catch and re-raise as AWSInfrastructureError
             assert "Failed to release ASG hosts" in str(e)
@@ -1445,7 +1444,7 @@ class TestSpotFleetHandler:
         try:
             handler.release_hosts(instance_ids)
             # Should not reach here if exception is properly raised
-            assert False, "Expected AWSInfrastructureError to be raised"
+            raise AssertionError("Expected AWSInfrastructureError to be raised")
         except Exception as e:
             # Should catch and re-raise as AWSInfrastructureError
             assert "Failed to release Spot Fleet hosts" in str(e)
@@ -1918,7 +1917,7 @@ class TestRunInstancesHandler:
         try:
             handler.release_hosts(instance_ids)
             # Should not reach here if exception is properly raised
-            assert False, "Expected AWSInfrastructureError to be raised"
+            raise AssertionError("Expected AWSInfrastructureError to be raised")
         except Exception as e:
             # Should catch and re-raise as AWSInfrastructureError
             assert "Failed to release RunInstances resources" in str(e)
@@ -2075,7 +2074,7 @@ class TestRunInstancesHandler:
         try:
             handler.release_hosts(instance_ids)
             # Should not reach here if exception is properly raised
-            assert False, "Expected ClientError to be raised"
+            raise AssertionError("Expected ClientError to be raised")
         except ClientError as e:
             # Should catch and re-raise the ClientError
             assert e.response["Error"]["Code"] == "InvalidInstanceID.NotFound"

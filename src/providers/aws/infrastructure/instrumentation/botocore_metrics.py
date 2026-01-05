@@ -195,6 +195,13 @@ class BotocoreMetricsHandler:
                 duration_ms / 1000.0,
             )
 
+            # Record response size metrics
+            self.metrics.record_gauge(
+                f"aws.{context.service}.{context.operation}.response_size",
+                response_size,
+            )
+            self.metrics.record_gauge("aws_api_response_size", response_size)
+
             if status_code and status_code >= 400:
                 self.metrics.increment_counter(
                     f"aws.{context.service}.{context.operation}.errors_total"
@@ -253,6 +260,12 @@ class BotocoreMetricsHandler:
                 f"aws.{context.service}.{context.operation}.errors_total"
             )
             self.metrics.increment_counter("aws_api_errors_total")
+
+            # Record error type classification
+            self.metrics.increment_counter(
+                f"aws.{context.service}.{context.operation}.errors.{error_type.lower()}"
+            )
+            self.metrics.increment_counter(f"aws_api_errors_{error_type.lower()}_total")
 
             # Special handling for throttling
             if self._is_throttling_error(error_code):
@@ -382,7 +395,7 @@ class BotocoreMetricsHandler:
             import json
 
             return len(json.dumps(params, default=str))
-        except:
+        except Exception:
             return 0
 
     def _estimate_response_size(self, response: dict) -> int:
@@ -393,7 +406,7 @@ class BotocoreMetricsHandler:
             import json
 
             return len(json.dumps(response, default=str))
-        except:
+        except Exception:
             return 0
 
     def _should_sample(self) -> bool:

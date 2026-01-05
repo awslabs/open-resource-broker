@@ -12,7 +12,7 @@ try:
     from domain.machine.value_objects import MachineStatus
     from domain.request.aggregate import Request
     from domain.request.exceptions import InvalidRequestStateError, RequestValidationError
-    from domain.request.value_objects import RequestStatus, RequestType
+    from domain.request.value_objects import RequestStatus
     from domain.template.exceptions import TemplateValidationError
     from domain.template.template_aggregate import Template
 

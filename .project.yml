@@ -5,13 +5,13 @@
 project:
   name: open-resource-broker
   short_name: orb # CLI command name
-  version: 0.1.1
+  version: 0.2.3
   description: "Cloud provider integration plugin for IBM Spectrum Symphony Host Factory"
   author: "AWS Professional Services"
   email: "aws-proserve@amazon.com"
   license: "Apache-2.0"
 python:
-  versions: [3.9, 3.10, 3.11, 3.12, 3.13] # Supported Python versions
+  versions: ["3.10", "3.11", "3.12", "3.13", "3.14"] # Supported Python versions
   default_version: 3.13
 repository:
   org: awslabs

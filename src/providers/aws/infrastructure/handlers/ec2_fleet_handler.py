@@ -146,6 +146,31 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                         provider_api="EC2Fleet",
                     )
 
+                    # Collect detailed instance information for enhanced monitoring
+                    for instance in instances:
+                        instance_detail = {
+                            "instance_id": instance.get("instance_id"),
+                            "instance_type": instance.get("instance_type"),
+                            "availability_zone": instance.get("availability_zone"),
+                            "launch_time": instance.get("launch_time"),
+                            "state": instance.get("state"),
+                            "private_ip": instance.get("private_ip_address"),
+                            "public_ip": instance.get("public_ip_address"),
+                            "fleet_id": fleet_id,
+                            "fleet_type": aws_template.fleet_type,
+                        }
+                        instance_details.append(instance_detail)
+
+                    # Log detailed instance information for monitoring
+                    self._logger.info(
+                        "EC2Fleet instance details collected",
+                        extra={
+                            "fleet_id": fleet_id,
+                            "instance_count": len(instance_details),
+                            "instance_details": instance_details,
+                        },
+                    )
+
             return {
                 "success": True,
                 "resource_ids": [fleet_id],

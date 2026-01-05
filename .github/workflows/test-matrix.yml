@@ -22,12 +22,14 @@ jobs:
   get-config:
     name: Get Configuration
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       python-versions: ${{ steps.config.outputs.python-versions }}
       default-python-version: ${{ steps.config.outputs.default-python-version }}
     steps:
     - name: Checkout code
-      uses: actions/checkout@v6
+      uses: actions/checkout@v6.0.1
 
     - name: Get project configuration
       id: config
@@ -36,13 +38,15 @@ jobs:
   unit-tests:
     name: Unit Tests
     needs: get-config
+    permissions:
+      contents: read
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]  # Disabled windows-latest, macos-latest for now
         # Dynamic matrix from config with static fallback for act/dry-run
-        # Update static list when adding new Python versions (currently 3.9-3.13)
-        python-version: ${{ fromJSON(needs.get-config.outputs.python-versions || '["3.9", "3.10", "3.11", "3.12", "3.13"]') }}
+        # Update static list when adding new Python versions (currently 3.10-3.14)
+        python-version: ${{ fromJSON(needs.get-config.outputs.python-versions || '["3.10", "3.11", "3.12", "3.13", "3.14"]') }}
     uses: ./.github/workflows/reusable-test.yml
     with:
       test-type: unit
@@ -54,13 +58,15 @@ jobs:
   integration-tests:
     name: Integration Tests
     needs: [get-config, unit-tests]
+    permissions:
+      contents: read
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]  # Disabled windows-latest, macos-latest for now
         # Dynamic matrix from config with static fallback for act/dry-run
-        # Update static list when adding new Python versions (currently 3.9-3.13)
-        python-version: ${{ fromJSON(needs.get-config.outputs.python-versions || '["3.9", "3.10", "3.11", "3.12", "3.13"]') }}
+        # Update static list when adding new Python versions (currently 3.10-3.14)
+        python-version: ${{ fromJSON(needs.get-config.outputs.python-versions || '["3.10", "3.11", "3.12", "3.13", "3.14"]') }}
     uses: ./.github/workflows/reusable-test.yml
     with:
       test-type: integration
@@ -72,13 +78,15 @@ jobs:
   e2e-tests:
     name: End-to-End Tests
     needs: [get-config, unit-tests, integration-tests]
+    permissions:
+      contents: read
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]  # Disabled windows-latest, macos-latest for now
         # Dynamic matrix from config with static fallback for act/dry-run
-        # Update static list when adding new Python versions (currently 3.9-3.13)
-        python-version: ${{ fromJSON(needs.get-config.outputs.python-versions || '["3.9", "3.10", "3.11", "3.12", "3.13"]') }}
+        # Update static list when adding new Python versions (currently 3.10-3.14)
+        python-version: ${{ fromJSON(needs.get-config.outputs.python-versions || '["3.10", "3.11", "3.12", "3.13", "3.14"]') }}
     uses: ./.github/workflows/reusable-test.yml
     with:
       test-type: e2e
@@ -92,10 +100,12 @@ jobs:
     runs-on: ubuntu-latest
     needs: [unit-tests, integration-tests, e2e-tests]
     if: always()
+    permissions:
+      contents: read
 
     steps:
     - name: Download all test results
-      uses: actions/download-artifact@v7
+      uses: actions/download-artifact@v7.0.0
       with:
         path: test-results/
 
