@@ -1,0 +1,44 @@
+name: Software Bill of Materials (SBOM)
+
+on:
+  release:
+    types: [published]
+  push:
+    branches: [main]
+    paths:
+      - 'pyproject.toml'
+      - 'requirements*.txt'
+      - 'uv.lock'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  generate-sbom:
+    name: Generate SBOM
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6.0.1
+
+      - name: Setup Python and UV
+        uses: ./.github/actions/setup-python-uv
+        with:
+          python-version: '3.11'
+
+      - name: Generate SBOM
+        run: |
+          source .venv/bin/activate
+          make sbom-generate
+
+      - name: Upload SBOM artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-files
+          path: |
+            *.spdx.json
+            *.cyclonedx.json
+          retention-days: 30
