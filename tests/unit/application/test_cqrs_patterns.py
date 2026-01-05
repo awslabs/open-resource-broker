@@ -878,11 +878,11 @@ class TestCQRSIntegration:
         from unittest.mock import Mock
         from infrastructure.di.container import DIContainer
         from domain.base.ports import LoggingPort
-        
+
         # Create mocks for required dependencies
         mock_container = Mock(spec=DIContainer)
         mock_logger = Mock(spec=LoggingPort)
-        
+
         command_bus = CommandBus(mock_container, mock_logger)
 
         # Mock saga/process manager

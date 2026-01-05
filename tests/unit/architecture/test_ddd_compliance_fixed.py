@@ -152,12 +152,12 @@ class TestDDDComplianceFixed:
                 # Missing template_id - should fail validation
                 subnet_ids=["subnet-12345"],
             )
-            
+
         # Test max_instances validation
         with pytest.raises(ValueError, match="max_instances must be greater than 0"):
             Template(
                 template_id="test-template",
-                name="Test Template", 
+                name="Test Template",
                 max_instances=0,  # Invalid value
             )
 

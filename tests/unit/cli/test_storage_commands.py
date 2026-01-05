@@ -50,7 +50,7 @@ class TestStorageCommandHandlers:
             # Create mock query bus that returns expected result
             mock_query_bus = Mock()
             mock_query_bus.handle = AsyncMock(return_value={"strategies": ["json", "dynamodb"]})
-            
+
             # Create mock container that returns our mock query bus
             mock_container = Mock()
             mock_container.get.return_value = mock_query_bus
