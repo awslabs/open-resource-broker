@@ -56,6 +56,7 @@ jobs:
       - name: Run semantic release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REGISTRY: ghcr.io/awslabs
           RELEASE_MODE: ${{ inputs.mode || 'forward' }}
           RELEASE_COMMIT: ${{ inputs.commit }}
           RELEASE_VERSION: ${{ inputs.version }}
