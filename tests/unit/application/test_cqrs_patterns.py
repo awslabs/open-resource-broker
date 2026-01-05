@@ -893,12 +893,11 @@ class TestCQRSIntegration:
             command_bus.register_saga(mock_saga)
 
         # Execute command that triggers saga
-        command = CreateRequestCommand(
-            template_id="test-template", requested_count=2
-        )
+        command = CreateRequestCommand(template_id="test-template", requested_count=2)
 
         # Test that command bus can handle saga patterns (async execution)
         import asyncio
+
         asyncio.create_task(command_bus.execute(command))
 
         # Saga should be notified if supported

@@ -16,16 +16,32 @@ application.queries.system.GetStorageConfigQuery = MagicMock()
 application.queries.system.ValidateStorageConfigQuery = MagicMock()
 application.commands.system.TestStorageCommand = MagicMock()
 
+
 # Create a concrete LoggingPort implementation for testing
 class MockLoggingPort:
     """Mock implementation of LoggingPort for testing."""
-    def debug(self, message: str, **kwargs): pass
-    def info(self, message: str, **kwargs): pass
-    def warning(self, message: str, **kwargs): pass
-    def error(self, message: str, **kwargs): pass
-    def critical(self, message: str, **kwargs): pass
-    def exception(self, message: str, **kwargs): pass
-    def log(self, level: int, message: str, **kwargs): pass
+
+    def debug(self, message: str, **kwargs):
+        pass
+
+    def info(self, message: str, **kwargs):
+        pass
+
+    def warning(self, message: str, **kwargs):
+        pass
+
+    def error(self, message: str, **kwargs):
+        pass
+
+    def critical(self, message: str, **kwargs):
+        pass
+
+    def exception(self, message: str, **kwargs):
+        pass
+
+    def log(self, level: int, message: str, **kwargs):
+        pass
+
 
 from interface.storage_command_handlers import (
     handle_list_storage_strategies,
