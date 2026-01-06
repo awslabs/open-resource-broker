@@ -3,6 +3,10 @@ name: Semantic Release
 on:
   push:
     branches: [main]
+  workflow_run:
+    workflows: ["Development Container Build", "Development PyPI Publishing", "Deploy Documentation"]
+    types: [completed]
+    branches: [main]
   workflow_dispatch:
     inputs:
       mode:
@@ -35,7 +39,8 @@ jobs:
     runs-on: ubuntu-latest
     if: |
       (github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, 'release:')) ||
-      github.event_name == 'workflow_dispatch'
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && contains(github.event.workflow_run.head_commit.message, 'release:'))
     
     steps:
       - name: Generate GitHub App Token

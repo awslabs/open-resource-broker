@@ -1,4 +1,4 @@
-name: Container Build and Publish
+name: Development Container Build
 
 env:
   CONTAINER_TRIGGERS: "/container"

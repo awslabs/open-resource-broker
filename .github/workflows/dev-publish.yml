@@ -1,4 +1,4 @@
-name: Publish to PyPI
+name: Development PyPI Publishing
 
 # SECURITY NOTE: This workflow uses PyPI Trusted Publishing (OIDC)
 # No API tokens required - authentication is handled automatically via GitHub's OIDC token
