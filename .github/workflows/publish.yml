@@ -13,6 +13,8 @@ env:
   PUBLISH_TRIGGERS: "/package"
 
 on:
+  push:
+    branches: [main]
   release:
     types: [published]
   workflow_dispatch:
@@ -90,7 +92,6 @@ jobs:
         make test-install
 
     - name: Publish to Test PyPI
-      if: env.TARGET == 'testpypi'
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
         repository-url: https://test.pypi.org/legacy/
@@ -98,7 +99,7 @@ jobs:
         skip-existing: true
 
     - name: Publish to PyPI
-      if: env.TARGET == 'pypi'
+      if: github.event_name == 'release'
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
         verbose: true

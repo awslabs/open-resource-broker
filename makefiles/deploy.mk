@@ -65,6 +65,9 @@ build: clean dev-install  ## Build package
 	VERSION=$${VERSION:-$$(make -s get-version)} $(MAKE) generate-pyproject && \
 	VERSION=$${VERSION:-$$(make -s get-version)} BUILD_ARGS="$(BUILD_ARGS)" ./dev-tools/package/build.sh
 
+semantic-release-build:  ## Build package for semantic-release (minimal dependencies)
+	./dev-tools/package/build.sh
+
 build-test: build  ## Build and test package installation
 	@echo "Testing package installation..."
 	make test-install

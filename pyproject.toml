@@ -110,6 +110,8 @@ ci = [
     "cyclonedx-bom>=4.0.0,<8.0.0",
     # Security override for safety's vulnerable peewee dependency
     "peewee>=3.18.3",
+    # Security override for safety's vulnerable marshmallow dependency (CVE-2025-68480)
+    "marshmallow>=4.1.2",
 
     # Documentation
     "mkdocs>=1.5.0,<2.0.0",
@@ -285,8 +287,9 @@ explicit_package_bases = true
 namespace_packages = true
 
 [tool.semantic_release]
-version_variables = [".project.yml:project.version"]
-build_command = "make build"
+version_toml = ["pyproject.toml:project.version"]
+version_variables = [".project.yml:version"]
+build_command = "make semantic-release-build"
 major_on_zero = true
 allow_zero_version = true
 tag_format = "v{version}"
@@ -307,8 +310,20 @@ match = "fix/.*|feature/.*"
 prerelease_token = "alpha"
 prerelease = true
 
+[tool.semantic_release.changelog]
+exclude_commit_patterns = [
+    '''chore(?:\([^)]*?\))?:.+''',
+    '''ci(?:\([^)]*?\))?:.+''',
+    '''refactor(?:\([^)]*?\))?:.+''',
+    '''style(?:\([^)]*?\))?:.+''',
+    '''test(?:\([^)]*?\))?:.+''',
+    '''build\((?!deps\):.+)''',
+    '''Initial [Cc]ommit.*''',
+]
+
 [tool.semantic_release.changelog.default_templates]
 changelog_file = "CHANGELOG.md"
+output_format = "md"
 
 [tool.semantic_release.commit_parser_options]
 minor_tags = ["feat"]

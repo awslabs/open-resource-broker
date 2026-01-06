@@ -37,6 +37,7 @@ security-report.md
 *-sbom-*.json
 *-sbom-*.spdx
 *-sbom-*.cyclonedx
+sbom-vulnerabilities.json
 
 # Python
 __pycache__/
