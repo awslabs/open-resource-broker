@@ -15,8 +15,10 @@ env:
 on:
   push:
     branches: [main]
-  release:
-    types: [published]
+  workflow_run:
+    workflows: ["CI Quality", "CI Tests"]
+    types: [completed]
+    branches: [main]
   workflow_dispatch:
     inputs:
       environment:
@@ -32,6 +34,7 @@ jobs:
   get-config:
     name: Get Configuration
     runs-on: ubuntu-latest
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     outputs:
       default-python-version: ${{ steps.config.outputs.default-python-version }}
       package-version: ${{ steps.config.outputs.package-version }}

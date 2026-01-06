@@ -13,8 +13,10 @@ on:
       - 'deployment/docker/**'
       - 'dev-tools/scripts/container_build.sh'
       - '.github/workflows/container-build.yml'
-  release:
-    types: [published]
+  workflow_run:
+    workflows: ["CI Quality", "CI Tests"]
+    types: [completed]
+    branches: [main]
   pull_request:
     branches: [ main, develop ]
     paths:
@@ -41,6 +43,7 @@ jobs:
   config:
     name: Configuration
     uses: ./.github/workflows/shared-config.yml
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
 
   calculate-tags:
     name: Calculate Container Tags
