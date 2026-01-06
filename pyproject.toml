@@ -307,8 +307,20 @@ match = "fix/.*|feature/.*"
 prerelease_token = "alpha"
 prerelease = true
 
+[tool.semantic_release.changelog]
+exclude_commit_patterns = [
+    '''chore(?:\([^)]*?\))?:.+''',
+    '''ci(?:\([^)]*?\))?:.+''',
+    '''refactor(?:\([^)]*?\))?:.+''',
+    '''style(?:\([^)]*?\))?:.+''',
+    '''test(?:\([^)]*?\))?:.+''',
+    '''build\((?!deps\):.+)''',
+    '''Initial [Cc]ommit.*''',
+]
+
 [tool.semantic_release.changelog.default_templates]
 changelog_file = "CHANGELOG.md"
+output_format = "md"
 
 [tool.semantic_release.commit_parser_options]
 minor_tags = ["feat"]

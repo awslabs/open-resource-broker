@@ -14,21 +14,21 @@ TEST_ARGS ?=
 BUILD_ARGS ?=
 DOCS_ARGS ?=
 
-# Python version settings (loaded from project config)
-PYTHON_VERSIONS := $(shell yq '.python.versions | join(" ")' $(PROJECT_CONFIG))
-DEFAULT_PYTHON_VERSION := $(shell yq '.python.default_version' $(PROJECT_CONFIG))
+# Python version settings (loaded from project config, with fallbacks)
+PYTHON_VERSIONS := $(shell yq '.python.versions | join(" ")' $(PROJECT_CONFIG) 2>/dev/null || echo "3.10 3.11 3.12 3.13")
+DEFAULT_PYTHON_VERSION := $(shell yq '.python.default_version' $(PROJECT_CONFIG) 2>/dev/null || echo "3.12")
 
 # Package information (loaded from project config, but respect environment VERSION for CI)
-PACKAGE_NAME := $(shell yq '.project.name' $(PROJECT_CONFIG))
-PACKAGE_NAME_SHORT := $(shell yq '.project.short_name' $(PROJECT_CONFIG))
-VERSION ?= $(shell yq '.project.version' $(PROJECT_CONFIG))
-AUTHOR := $(shell yq '.project.author' $(PROJECT_CONFIG))
-LICENSE := $(shell yq '.project.license' $(PROJECT_CONFIG))
+PACKAGE_NAME := $(shell yq '.project.name' $(PROJECT_CONFIG) 2>/dev/null || echo "open-resource-broker")
+PACKAGE_NAME_SHORT := $(shell yq '.project.short_name' $(PROJECT_CONFIG) 2>/dev/null || echo "orb")
+VERSION ?= $(shell yq '.project.version' $(PROJECT_CONFIG) 2>/dev/null || echo "0.0.0")
+AUTHOR := $(shell yq '.project.author' $(PROJECT_CONFIG) 2>/dev/null || echo "AWS Labs")
+LICENSE := $(shell yq '.project.license' $(PROJECT_CONFIG) 2>/dev/null || echo "Apache-2.0")
 
 # Repository information (loaded from project config)
-REPO_ORG := $(shell yq '.repository.org' $(PROJECT_CONFIG))
+REPO_ORG := $(shell yq '.repository.org' $(PROJECT_CONFIG) 2>/dev/null || echo "awslabs")
 REPO_URL := https://github.com/$(REPO_ORG)/$(PACKAGE_NAME)
-CONTAINER_REGISTRY := $(shell yq '.repository.registry' $(PROJECT_CONFIG))/$(REPO_ORG)
+CONTAINER_REGISTRY := $(shell yq '.repository.registry' $(PROJECT_CONFIG) 2>/dev/null || echo "ghcr.io")/$(REPO_ORG)
 CONTAINER_IMAGE := $(PACKAGE_NAME)
 DOCS_URL := https://$(REPO_ORG).github.io/$(PACKAGE_NAME)
 

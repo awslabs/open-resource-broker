@@ -42,36 +42,17 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Setup Python and UV
-        uses: ./.github/actions/setup-python-uv
+      - name: Python Semantic Release
+        id: release
+        uses: python-semantic-release/python-semantic-release@v10.5.3
         with:
-          python-version: '3.11'
-
-      - name: Install semantic-release
-        run: |
-          source .venv/bin/activate
-          pip install python-semantic-release
-
-      - name: Run semantic release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RELEASE_MODE: ${{ inputs.mode || 'forward' }}
-          RELEASE_COMMIT: ${{ inputs.commit }}
-          RELEASE_VERSION: ${{ inputs.version }}
-        run: |
-          source .venv/bin/activate
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          git_committer_name: "github-actions[bot]"
+          git_committer_email: "github-actions[bot]@users.noreply.github.com"
           
-          if [ "${{ inputs.mode }}" = "historical" ]; then
-            if [ -z "${{ inputs.commit }}" ] || [ -z "${{ inputs.version }}" ]; then
-              echo "ERROR: Historical releases require both commit and version"
-              exit 1
-            fi
-            echo "Creating historical release ${{ inputs.version }} from commit ${{ inputs.commit }}"
-            RELEASE_MODE=historical RELEASE_COMMIT=${{ inputs.commit }} RELEASE_VERSION=${{ inputs.version }} semantic-release version
-          elif [ "${{ inputs.mode }}" = "analysis" ]; then
-            echo "Running release analysis"
-            RELEASE_MODE=analysis ./dev-tools/release/analyze_rc_readiness.sh
-          else
-            echo "Running forward release with semantic-release"
-            semantic-release version
-          fi
+      - name: Publish to GitHub Release Assets
+        uses: python-semantic-release/publish-action@v10.5.3
+        if: steps.release.outputs.released == 'true'
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ steps.release.outputs.tag }}
