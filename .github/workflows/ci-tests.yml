@@ -26,7 +26,6 @@ on:
 
 permissions:
   contents: read
-  pull-requests: read
 
 env:
   AWS_DEFAULT_REGION: ${{ needs.config.outputs.aws-region }}
@@ -117,7 +116,6 @@ jobs:
 
     - name: Generate test report
       run: make test-report
-      continue-on-error: true
 
     - name: Upload test report
       uses: actions/upload-artifact@v4

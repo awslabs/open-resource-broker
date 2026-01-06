@@ -36,8 +36,6 @@ on:
 
 permissions:
   contents: read
-  packages: write
-  pull-requests: read
 
 jobs:
   config:
