@@ -13,9 +13,8 @@ on:
         type: string
       python-version:
         description: 'Python version for cache key'
-        required: false
+        required: true
         type: string
-        default: '3.13'
     outputs:
       cache-key:
         description: 'Generated cache key'
