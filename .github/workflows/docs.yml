@@ -5,17 +5,23 @@ on:
     branches: [main]
     paths:
       - 'docs/**'
-      - 'src/**'
+      - 'src/**/cli/**'
+      - 'README.md'
+      - '*.md'
+      - 'pyproject.toml'
       - '.github/workflows/docs.yml'
   workflow_run:
-    workflows: ["CI Quality", "CI Tests"]
+    workflows: ["Quality Checks", "Unit Tests"]
     types: [completed]
     branches: [main]
   pull_request:
     branches: [main]
     paths:
       - 'docs/**'
-      - 'src/**'
+      - 'src/**/cli/**'
+      - 'README.md'
+      - '*.md'
+      - 'pyproject.toml'
   workflow_dispatch:
 
 permissions:

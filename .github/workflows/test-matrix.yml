@@ -1,4 +1,4 @@
-name: Test Matrix
+name: CI Test Matrix
 
 on:
   schedule:

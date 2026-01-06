@@ -20,9 +20,8 @@ on:
       - 'pyproject.toml'
       - 'requirements*.txt'
       - 'uv.lock'
-      - 'README.md'
   workflow_run:
-    workflows: ["CI Quality", "CI Tests"]
+    workflows: ["Quality Checks", "Unit Tests"]
     types: [completed]
     branches: [main]
   workflow_dispatch:

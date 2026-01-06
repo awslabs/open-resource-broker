@@ -1,12 +1,16 @@
-name: Validate Workflows
+name: Workflow Validation
 
 on:
   push:
     paths:
       - '.github/workflows/**'
+      - 'Makefile'
+      - 'makefiles/**'
   pull_request:
     paths:
       - '.github/workflows/**'
+      - 'Makefile'
+      - 'makefiles/**'
 
 jobs:
   get-config:

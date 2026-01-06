@@ -1,4 +1,4 @@
-name: CI Tests
+name: Unit Tests
 
 on:
   push:
@@ -8,6 +8,7 @@ on:
       - 'tests/**'
       - 'pyproject.toml'
       - 'requirements*.txt'
+      - 'uv.lock'
       - 'pytest.ini'
       - '.github/workflows/ci-tests.yml'
   pull_request:
@@ -17,6 +18,7 @@ on:
       - 'tests/**'
       - 'pyproject.toml'
       - 'requirements*.txt'
+      - 'uv.lock'
       - 'pytest.ini'
       - '.github/workflows/ci-tests.yml'
   schedule:

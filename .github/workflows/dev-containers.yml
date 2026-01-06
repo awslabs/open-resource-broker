@@ -14,7 +14,7 @@ on:
       - 'dev-tools/scripts/container_build.sh'
       - '.github/workflows/dev-containers.yml'
   workflow_run:
-    workflows: ["CI Quality", "CI Tests"]
+    workflows: ["Quality Checks", "Unit Tests"]
     types: [completed]
     branches: [main]
   pull_request:

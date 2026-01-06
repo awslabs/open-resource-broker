@@ -1,4 +1,4 @@
-name: CI Quality
+name: Quality Checks
 
 on:
   push:
@@ -8,6 +8,7 @@ on:
       - 'tests/**'
       - 'pyproject.toml'
       - 'requirements*.txt'
+      - 'uv.lock'
       - '.ruff.toml'
       - 'mypy.ini'
       - '.github/workflows/ci-quality.yml'
@@ -18,6 +19,7 @@ on:
       - 'tests/**'
       - 'pyproject.toml'
       - 'requirements*.txt'
+      - 'uv.lock'
       - '.ruff.toml'
       - 'mypy.ini'
       - '.github/workflows/ci-quality.yml'

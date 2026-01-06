@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
   workflow_run:
-    workflows: ["Development Container Build", "Development PyPI Publishing", "Deploy Documentation"]
+    workflows: ["Quality Checks", "Unit Tests", "Workflow Validation", "Development Container Build", "Development PyPI Publishing", "Deploy Documentation"]
     types: [completed]
     branches: [main]
   workflow_dispatch:
