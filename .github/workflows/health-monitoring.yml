@@ -102,13 +102,13 @@ jobs:
             success_color="red"
           fi
           
-          echo "SUCCESS_RATE=$overall_success" >> $GITHUB_ENV
-          echo "AVG_DURATION=${avg_duration}min" >> $GITHUB_ENV
-          echo "SUCCESS_COLOR=$success_color" >> $GITHUB_ENV
+          echo "SUCCESS_RATE=$overall_success" >> "$GITHUB_ENV"
+          echo "AVG_DURATION=${avg_duration}min" >> "$GITHUB_ENV"
+          echo "SUCCESS_COLOR=$success_color" >> "$GITHUB_ENV"
         else
-          echo "SUCCESS_RATE=0" >> $GITHUB_ENV
-          echo "AVG_DURATION=0min" >> $GITHUB_ENV
-          echo "SUCCESS_COLOR=lightgrey" >> $GITHUB_ENV
+          echo "SUCCESS_RATE=0" >> "$GITHUB_ENV"
+          echo "AVG_DURATION=0min" >> "$GITHUB_ENV"
+          echo "SUCCESS_COLOR=lightgrey" >> "$GITHUB_ENV"
         fi
 
     - name: Create success rate badge

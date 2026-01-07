@@ -73,8 +73,8 @@ jobs:
           loc_display="$total_lines"
         fi
         
-        echo "TOTAL_LOC=$loc_display" >> $GITHUB_ENV
-        echo "COMMENT_PERCENT=$comment_percent" >> $GITHUB_ENV
+        echo "TOTAL_LOC=$loc_display" >> "$GITHUB_ENV"
+        echo "COMMENT_PERCENT=$comment_percent" >> "$GITHUB_ENV"
 
     - name: Run performance test
       run: |
@@ -86,12 +86,12 @@ jobs:
         duration=$(echo "$end_time - $start_time" | bc)
         duration_formatted=$(printf "%.1fs" "$duration")
         
-        echo "TEST_DURATION=$duration_formatted" >> $GITHUB_ENV
+        echo "TEST_DURATION=$duration_formatted" >> "$GITHUB_ENV"
 
     - name: Extract coverage percentage
       run: |
         coverage_percent=$(cat coverage.txt)
-        echo "COVERAGE_PERCENT=$coverage_percent" >> $GITHUB_ENV
+        echo "COVERAGE_PERCENT=$coverage_percent" >> "$GITHUB_ENV"
         
         # Set coverage color
         if [ "$coverage_percent" -ge 90 ]; then
@@ -104,7 +104,7 @@ jobs:
           coverage_color="red"
         fi
         
-        echo "COVERAGE_COLOR=$coverage_color" >> $GITHUB_ENV
+        echo "COVERAGE_COLOR=$coverage_color" >> "$GITHUB_ENV"
 
     - name: Create coverage badge
       uses: schneegans/dynamic-badges-action@v1.7.0

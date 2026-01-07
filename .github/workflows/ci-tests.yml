@@ -27,13 +27,6 @@ on:
 permissions:
   contents: read
 
-env:
-  AWS_DEFAULT_REGION: ${{ needs.config.outputs.aws-region }}
-  AWS_ACCESS_KEY_ID: ${{ needs.config.outputs.aws-access-key }}
-  AWS_SECRET_ACCESS_KEY: ${{ needs.config.outputs.aws-secret-key }}
-  ENVIRONMENT: ${{ needs.config.outputs.environment }}
-  TESTING: ${{ needs.config.outputs.testing-flag }}
-
 jobs:
   config:
     name: Configuration

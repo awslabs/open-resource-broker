@@ -19,13 +19,6 @@ on:
       - '.github/workflows/test-matrix.yml'
     # Only run on main branch for comprehensive testing
 
-env:
-  AWS_DEFAULT_REGION: ${{ needs.get-config.outputs.aws-region }}
-  AWS_ACCESS_KEY_ID: ${{ needs.get-config.outputs.aws-access-key }}
-  AWS_SECRET_ACCESS_KEY: ${{ needs.get-config.outputs.aws-secret-key }}
-  ENVIRONMENT: ${{ needs.get-config.outputs.environment }}
-  TESTING: ${{ needs.get-config.outputs.testing-flag }}
-
 jobs:
   get-config:
     name: Get Configuration
