@@ -39,15 +39,15 @@ jobs:
 
     - name: Generate health report
       run: |
-        echo "# Weekly Workflow Health Report" > health-report.md
-        echo "" >> health-report.md
-        echo "**Period:** ${{ env.START_DATE }} to ${{ env.END_DATE }}" >> health-report.md
-        echo "**Repository:** ${{ github.repository }}" >> health-report.md
-        echo "" >> health-report.md
-        
-        # Convert CSV to markdown table
-        echo "## Workflow Statistics" >> health-report.md
-        echo "" >> health-report.md
+        {
+          echo "# Weekly Workflow Health Report"
+          echo ""
+          echo "**Period:** ${{ env.START_DATE }} to ${{ env.END_DATE }}"
+          echo "**Repository:** ${{ github.repository }}"
+          echo ""
+          echo "## Workflow Statistics"
+          echo ""
+        } > health-report.md
         if [ -f workflow-stats.csv ]; then
           header=$(head -n 1 workflow-stats.csv | sed 's/,/|/g' | sed 's/_/ /g')
           echo "|${header}|" >> health-report.md
@@ -58,9 +58,11 @@ jobs:
           echo "No workflow data available for this period." >> health-report.md
         fi
         
-        echo "" >> health-report.md
-        echo "## Health Alerts" >> health-report.md
-        echo "" >> health-report.md
+        {
+          echo ""
+          echo "## Health Alerts"
+          echo ""
+        } >> health-report.md
         
         # Check for workflows with low success rates
         if [ -f workflow-stats.csv ]; then
@@ -72,9 +74,11 @@ jobs:
           fi
         fi
         
-        echo "" >> health-report.md
-        echo "---" >> health-report.md
-        echo "*Generated automatically by [Workflow Health Monitoring](.github/workflows/health-monitoring.yml)*" >> health-report.md
+        {
+          echo ""
+          echo "---"
+          echo "*Generated automatically by [Workflow Health Monitoring](.github/workflows/health-monitoring.yml)*"
+        } >> health-report.md
 
     - name: Calculate badge metrics
       run: |
@@ -102,13 +106,17 @@ jobs:
             success_color="red"
           fi
           
-          echo "SUCCESS_RATE=$overall_success" >> "$GITHUB_ENV"
-          echo "AVG_DURATION=${avg_duration}min" >> "$GITHUB_ENV"
-          echo "SUCCESS_COLOR=$success_color" >> "$GITHUB_ENV"
+          {
+            echo "SUCCESS_RATE=$overall_success"
+            echo "AVG_DURATION=${avg_duration}min"
+            echo "SUCCESS_COLOR=$success_color"
+          } >> "$GITHUB_ENV"
         else
-          echo "SUCCESS_RATE=0" >> "$GITHUB_ENV"
-          echo "AVG_DURATION=0min" >> "$GITHUB_ENV"
-          echo "SUCCESS_COLOR=lightgrey" >> "$GITHUB_ENV"
+          {
+            echo "SUCCESS_RATE=0"
+            echo "AVG_DURATION=0min"
+            echo "SUCCESS_COLOR=lightgrey"
+          } >> "$GITHUB_ENV"
         fi
 
     - name: Create success rate badge
