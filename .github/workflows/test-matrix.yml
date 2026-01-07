@@ -16,6 +16,7 @@ on:
       - 'uv.lock'
       - 'Makefile'
       - 'makefiles/**'
+      - '.github/workflows/test-matrix.yml'
     # Only run on main branch for comprehensive testing
 
 env:
