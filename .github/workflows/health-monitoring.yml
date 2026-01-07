@@ -76,6 +76,61 @@ jobs:
         echo "---" >> health-report.md
         echo "*Generated automatically by [Workflow Health Monitoring](.github/workflows/health-monitoring.yml)*" >> health-report.md
 
+    - name: Calculate badge metrics
+      run: |
+        if [ -f workflow-stats.csv ]; then
+          # Calculate overall success rate
+          overall_success=$(tail -n +2 workflow-stats.csv | awk -F',' '
+            BEGIN { total_runs=0; weighted_success=0 }
+            { total_runs += $5; weighted_success += ($4 * $5) }
+            END { if(total_runs > 0) print int(weighted_success/total_runs); else print 0 }
+          ')
+          
+          # Calculate average duration
+          avg_duration=$(tail -n +2 workflow-stats.csv | awk -F',' '
+            BEGIN { total=0; count=0 }
+            { total += $2; count++ }
+            END { if(count > 0) printf "%.1f", total/count; else print "0" }
+          ')
+          
+          # Set badge colors based on success rate
+          if [ "$overall_success" -ge 95 ]; then
+            success_color="brightgreen"
+          elif [ "$overall_success" -ge 80 ]; then
+            success_color="yellow"
+          else
+            success_color="red"
+          fi
+          
+          echo "SUCCESS_RATE=$overall_success" >> $GITHUB_ENV
+          echo "AVG_DURATION=${avg_duration}min" >> $GITHUB_ENV
+          echo "SUCCESS_COLOR=$success_color" >> $GITHUB_ENV
+        else
+          echo "SUCCESS_RATE=0" >> $GITHUB_ENV
+          echo "AVG_DURATION=0min" >> $GITHUB_ENV
+          echo "SUCCESS_COLOR=lightgrey" >> $GITHUB_ENV
+        fi
+
+    - name: Create success rate badge
+      uses: schneegans/dynamic-badges-action@v1.7.0
+      with:
+        auth: ${{ secrets.GITHUB_TOKEN }}
+        gistID: ${{ secrets.HEALTH_GIST_ID }}
+        filename: success-rate.json
+        label: Success Rate
+        message: ${{ env.SUCCESS_RATE }}%
+        color: ${{ env.SUCCESS_COLOR }}
+
+    - name: Create performance badge
+      uses: schneegans/dynamic-badges-action@v1.7.0
+      with:
+        auth: ${{ secrets.GITHUB_TOKEN }}
+        gistID: ${{ secrets.HEALTH_GIST_ID }}
+        filename: avg-duration.json
+        label: Avg Duration
+        message: ${{ env.AVG_DURATION }}
+        color: blue
+
     - name: Create health report issue
       uses: peter-evans/create-issue-from-file@v5
       with:
