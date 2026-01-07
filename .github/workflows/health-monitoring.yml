@@ -1,0 +1,96 @@
+name: Workflow Health Monitoring
+
+on:
+  schedule:
+    - cron: '0 9 * * 1'  # Weekly on Monday at 9 AM UTC
+  workflow_dispatch:     # Manual trigger for testing
+
+jobs:
+  config:
+    name: Configuration
+    uses: ./.github/workflows/shared-config.yml
+
+  health-check:
+    name: Weekly Health Report
+    needs: config
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      actions: read
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6.0.1
+
+    - name: Set date range
+      run: |
+        echo "START_DATE=$(date -d '-7 days' +%Y-%m-%d)" >> "$GITHUB_ENV"
+        echo "END_DATE=$(date +%Y-%m-%d)" >> "$GITHUB_ENV"
+
+    - name: Collect workflow metrics
+      uses: kittychiu/workflow-metrics@v0.4.7
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        OWNER_NAME: ${{ github.repository_owner }}
+        REPO_NAME: ${{ github.event.repository.name }}
+        START_DATE: ${{ env.START_DATE }}
+        END_DATE: ${{ env.END_DATE }}
+
+    - name: Generate health report
+      run: |
+        echo "# 🏥 Weekly Workflow Health Report" > health-report.md
+        echo "" >> health-report.md
+        echo "**Period:** ${{ env.START_DATE }} to ${{ env.END_DATE }}" >> health-report.md
+        echo "**Repository:** ${{ github.repository }}" >> health-report.md
+        echo "" >> health-report.md
+        
+        # Convert CSV to markdown table
+        echo "## 📊 Workflow Statistics" >> health-report.md
+        echo "" >> health-report.md
+        if [ -f workflow-stats.csv ]; then
+          header=$(head -n 1 workflow-stats.csv | sed 's/,/|/g' | sed 's/_/ /g')
+          echo "|${header}|" >> health-report.md
+          metadata=$(head -n 1 workflow-stats.csv | sed 's/,/|/g' | sed 's/[^|]/-/g')
+          echo "|${metadata}|" >> health-report.md
+          tail -n +2 workflow-stats.csv | sed 's/,/|/g; s/^/|/; s/$/|/' >> health-report.md
+        else
+          echo "No workflow data available for this period." >> health-report.md
+        fi
+        
+        echo "" >> health-report.md
+        echo "## 🚨 Health Alerts" >> health-report.md
+        echo "" >> health-report.md
+        
+        # Check for workflows with low success rates
+        if [ -f workflow-stats.csv ]; then
+          low_success=$(tail -n +2 workflow-stats.csv | awk -F',' '$4 < 80 {print "- ⚠️ **" $1 "**: " $4 "% success rate"}')
+          if [ -n "$low_success" ]; then
+            echo "$low_success" >> health-report.md
+          else
+            echo "✅ All workflows have healthy success rates (≥80%)" >> health-report.md
+          fi
+        fi
+        
+        echo "" >> health-report.md
+        echo "---" >> health-report.md
+        echo "*Generated automatically by [Workflow Health Monitoring](.github/workflows/health-monitoring.yml)*" >> health-report.md
+
+    - name: Create health report issue
+      uses: peter-evans/create-issue-from-file@v5
+      with:
+        title: "🏥 Weekly Health Report (${{ env.START_DATE }} to ${{ env.END_DATE }})"
+        content-filepath: health-report.md
+        labels: |
+          health-monitoring
+          automated-report
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4.4.3
+      with:
+        name: health-report-${{ env.END_DATE }}
+        retention-days: 30
+        path: |
+          health-report.md
+          workflow-stats.csv
+          runs.json
