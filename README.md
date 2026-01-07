@@ -1,5 +1,13 @@
 # Open Resource Broker
 
+[![Test Matrix](https://github.com/awslabs/open-resource-broker/workflows/Test%20Matrix/badge.svg)](https://github.com/awslabs/open-resource-broker/actions/workflows/test-matrix.yml)
+[![Quality Checks](https://github.com/awslabs/open-resource-broker/workflows/Quality%20Checks/badge.svg)](https://github.com/awslabs/open-resource-broker/actions/workflows/ci-quality.yml)
+[![Security Scanning](https://github.com/awslabs/open-resource-broker/workflows/Security%20Scanning/badge.svg)](https://github.com/awslabs/open-resource-broker/actions/workflows/security-code.yml)
+[![Latest Release](https://img.shields.io/github/v/release/awslabs/open-resource-broker)](https://github.com/awslabs/open-resource-broker/releases)
+[![PyPI Version](https://img.shields.io/pypi/v/open-resource-broker)](https://pypi.org/project/open-resource-broker/)
+[![Python Versions](https://img.shields.io/pypi/pyversions/open-resource-broker)](https://pypi.org/project/open-resource-broker/)
+[![License](https://img.shields.io/github/license/awslabs/open-resource-broker)](LICENSE)
+
 A cloud provider integration plugin for IBM Spectrum Symphony Host Factory, enabling dynamic provisioning of compute resources with a REST API interface and structured architecture implementation.
 
 ## Overview
