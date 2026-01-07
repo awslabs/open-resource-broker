@@ -90,6 +90,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [config, setup-cache, tests]
     if: always()
+    continue-on-error: true  # TODO: Remove once test report generation is stable
     permissions:
       contents: read
 
