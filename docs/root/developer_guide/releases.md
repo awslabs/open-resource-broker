@@ -53,12 +53,12 @@ git push origin main
 ## Artifact Locations
 
 ### Development Artifacts (Every Push)
-- **PyPI**: `test.pypi.org/project/open-resource-broker`
+- **PyPI**: `test.pypi.org/project/orb-py`
 - **Containers**: `ghcr.io/awslabs/open-resource-broker:main`
 - **Documentation**: GitHub Pages (development)
 
 ### Production Artifacts (On Release)
-- **PyPI**: `pypi.org/project/open-resource-broker`
+- **PyPI**: `pypi.org/project/orb-py`
 - **Containers**: `ghcr.io/awslabs/open-resource-broker:latest`
 - **Documentation**: GitHub Pages (production)
 - **Assets**: GitHub Releases (wheel, source, SBOM)
@@ -137,7 +137,7 @@ make release-major              # 1.0.0 → 2.0.0
 - Alpha releases: `1.0.1-alpha.1`
 - Beta releases: `1.0.1-beta.1`
 - RC releases: `1.0.1-rc.1`
-- Installation: `pip install --index-url https://test.pypi.org/simple/ open-resource-broker`
+- Installation: `pip install --index-url https://test.pypi.org/simple/ orb-py`
 
 ### PyPI (Production Environment)
 - Stable releases: `1.0.1`

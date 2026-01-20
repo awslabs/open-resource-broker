@@ -119,7 +119,7 @@ To verify trusted publishing is working:
 3. **Verify Package:**
    ```bash
    # Test installation from Test PyPI
-   pip install --index-url https://test.pypi.org/simple/ open-resource-broker
+   pip install --index-url https://test.pypi.org/simple/ orb-py
 
    # Test installation from Production PyPI
    pip install orb-py
