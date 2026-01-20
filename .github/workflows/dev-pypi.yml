@@ -1,12 +1,14 @@
-name: PyPI Publishing
+name: TestPyPI Publishing
 
 # SECURITY NOTE: This workflow uses PyPI Trusted Publishing (OIDC)
 # No API tokens required - authentication is handled automatically via GitHub's OIDC token
 #
+# This workflow publishes to TestPyPI ONLY for development testing.
+# Production releases to PyPI are handled by prod-release.yml
+#
 # Prerequisites:
-# 1. Configure trusted publisher on PyPI: https://pypi.org/manage/account/publishing/
-# 2. Configure trusted publisher on TestPyPI: https://test.pypi.org/manage/account/publishing/
-# 3. See docs/deployment/pypi-setup.md for detailed setup instructions
+# 1. Configure trusted publisher on TestPyPI: https://test.pypi.org/manage/account/publishing/
+# 2. See docs/deployment/pypi-setup.md for detailed setup instructions
 
 env:
   # Comment trigger words for package publishing
@@ -26,14 +28,11 @@ on:
     branches: [main]
   workflow_dispatch:
     inputs:
-      environment:
-        description: 'Environment to publish to'
-        required: true
-        default: 'testpypi'
-        type: choice
-        options:
-        - testpypi
-        - pypi
+      force:
+        description: 'Force publish even if version exists'
+        required: false
+        default: false
+        type: boolean
 
 concurrency:
   group: "pypi-publishing"
@@ -61,8 +60,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: [get-config]
     environment:
-      name: ${{ needs.get-config.outputs.is-release == 'true' && 'pypi' || github.event.inputs.environment || 'testpypi' }}
-      url: ${{ needs.get-config.outputs.is-release == 'true' && 'https://pypi.org/p/orb-py' || 'https://test.pypi.org/p/orb-py' }}
+      name: testpypi
+      url: https://test.pypi.org/p/orb-py
     permissions:
       id-token: write  # IMPORTANT: mandatory for trusted publishing
       contents: read   # needed to checkout code
@@ -75,20 +74,11 @@ jobs:
 
     - name: Determine version and target
       run: |
-        if [[ "${{ needs.get-config.outputs.is-release }}" == "true" ]]; then
-          {
-            echo "VERSION=${{ needs.get-config.outputs.package-version }}"
-            echo "TARGET=pypi"
-            echo "IS_RELEASE=true"
-          } >> "$GITHUB_ENV"
-        else
-          # Dev version for TestPyPI - use centralized version
-          {
-            echo "VERSION=${{ needs.get-config.outputs.package-version }}"
-            echo "TARGET=testpypi"
-          } >> "$GITHUB_ENV"
-        fi
-        echo "Publishing to: $TARGET with version: $VERSION"
+        {
+          echo "VERSION=${{ needs.get-config.outputs.package-version }}"
+          echo "TARGET=testpypi"
+        } >> "$GITHUB_ENV"
+        echo "Publishing to: TestPyPI with version: $VERSION"
 
     - name: Setup Python and UV
       uses: ./.github/actions/setup-uv-cached
@@ -110,25 +100,13 @@ jobs:
         verbose: true
         skip-existing: true
 
-    - name: Publish to PyPI
-      if: github.event_name == 'release'
-      uses: pypa/gh-action-pypi-publish@release/v1
-      with:
-        verbose: true
-        skip-existing: true
-
     - name: Create deployment summary
       run: |
         {
           echo "## Package Published Successfully"
           echo ""
-          if [ "$TARGET" = "pypi" ]; then
-            echo "**Environment:** Production PyPI"
-            echo "**Installation:** \`pip install orb-py\`"
-          else
-            echo "**Environment:** Test PyPI"
-            echo "**Installation:** \`pip install --index-url https://test.pypi.org/simple/ orb-py\`"
-          fi
+          echo "**Environment:** Test PyPI"
+          echo "**Installation:** \`pip install --index-url https://test.pypi.org/simple/ orb-py\`"
           echo ""
           echo "**Version:** $VERSION"
           echo "**Commands:**"
@@ -139,7 +117,6 @@ jobs:
     name: Generate SBOM
     runs-on: ubuntu-latest
     needs: [get-config, publish]
-    if: github.event_name == 'release' || github.event.inputs.environment == 'pypi'
 
     permissions:
       contents: read
