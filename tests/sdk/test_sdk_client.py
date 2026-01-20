@@ -48,7 +48,9 @@ class TestOpenResourceBroker:
     async def test_sdk_context_manager_success(self):
         """Test SDK as async context manager with successful initialization."""
         with patch.object(OpenResourceBroker, "initialize", new_callable=AsyncMock) as mock_init:
-            with patch.object(OpenResourceBroker, "cleanup", new_callable=AsyncMock) as mock_cleanup:
+            with patch.object(
+                OpenResourceBroker, "cleanup", new_callable=AsyncMock
+            ) as mock_cleanup:
                 mock_init.return_value = True
 
                 async with OpenResourceBroker(provider="mock") as sdk:
@@ -61,7 +63,9 @@ class TestOpenResourceBroker:
     async def test_sdk_context_manager_with_exception(self):
         """Test SDK context manager cleanup on exception."""
         with patch.object(OpenResourceBroker, "initialize", new_callable=AsyncMock) as mock_init:
-            with patch.object(OpenResourceBroker, "cleanup", new_callable=AsyncMock) as mock_cleanup:
+            with patch.object(
+                OpenResourceBroker, "cleanup", new_callable=AsyncMock
+            ) as mock_cleanup:
                 mock_init.return_value = True
 
                 with pytest.raises(ValueError):

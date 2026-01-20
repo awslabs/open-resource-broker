@@ -16,21 +16,21 @@ Example:
 import sys
 from pathlib import Path
 
-# Re-export main SDK components at package level
-from sdk import (
-    OpenResourceBroker,
-    ORB,
-    orb,
-    SDKConfig,
-    SDKError,
-    ConfigurationError,
-    ProviderError,
-)
-
 # Re-export MCP components
 from mcp import (
-    OpenResourceBrokerMCPTools,
     MCPToolDiscovery,
+    OpenResourceBrokerMCPTools,
+)
+
+# Re-export main SDK components at package level
+from sdk import (
+    ORB,
+    ConfigurationError,
+    OpenResourceBroker,
+    ProviderError,
+    SDKConfig,
+    SDKError,
+    orb,
 )
 
 # Auto-discover and register all top-level packages as submodules
