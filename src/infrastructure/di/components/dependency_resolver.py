@@ -353,9 +353,9 @@ class DependencyResolver:
                 # Last resort: try to import from common locations
                 for module_name in [
                     "typing",
-                    "src.domain",
-                    "src.application",
-                    "src.infrastructure",
+                    "domain",
+                    "application",
+                    "infrastructure",
                 ]:
                     try:
                         module_obj = __import__(module_name, fromlist=[annotation])
