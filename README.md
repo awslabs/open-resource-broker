@@ -4,7 +4,7 @@
 [![Quality Checks](https://github.com/awslabs/open-resource-broker/workflows/Quality%20Checks/badge.svg)](https://github.com/awslabs/open-resource-broker/actions/workflows/ci-quality.yml)
 [![Security Scanning](https://github.com/awslabs/open-resource-broker/workflows/Security%20Scanning/badge.svg)](https://github.com/awslabs/open-resource-broker/actions/workflows/security-code.yml)
 [![Latest Release](https://img.shields.io/github/v/release/awslabs/open-resource-broker)](https://github.com/awslabs/open-resource-broker/releases)
-[![PyPI Version](https://img.shields.io/pypi/v/open-resource-broker)](https://pypi.org/project/open-resource-broker/)
+[![PyPI Version](https://img.shields.io/pypi/v/orb-py)](https://pypi.org/project/orb-py/)
 [![License](https://img.shields.io/github/license/awslabs/open-resource-broker)](LICENSE)
 
 A cloud provider integration plugin for IBM Spectrum Symphony Host Factory, enabling dynamic provisioning of compute resources with a REST API interface and structured architecture implementation.
@@ -65,7 +65,7 @@ curl http://localhost:8000/health
 
 ```bash
 # Install from PyPI
-pip install open-resource-broker
+pip install orb-py
 
 # Verify installation
 orb --version
@@ -104,7 +104,7 @@ make dev
 
 | Method | Location | Use Case | Command |
 |--------|----------|----------|---------|
-| **PyPI** | System Python | End users | `pip install open-resource-broker` |
+| **PyPI** | System Python | End users | `pip install orb-py` |
 | **System** | `/usr/local/orb/` or `~/.local/orb/` | Production deployment | `make install-system` |
 | **Local** | `./.venv/` | Development | `make dev-install` |
 
@@ -410,7 +410,7 @@ make test-performance
 
 ### Project Health & Metrics
 
-[![Python Versions](https://img.shields.io/pypi/pyversions/open-resource-broker)](https://pypi.org/project/open-resource-broker/)
+[![Python Versions](https://img.shields.io/pypi/pyversions/orb-py)](https://pypi.org/project/orb-py/)
 [![Success Rate](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/fgogolli/ec3393a523fa3a6b6ff89a0636de3085/raw/success-rate.json)](https://github.com/awslabs/open-resource-broker/actions/workflows/health-monitoring.yml)
 [![Avg Duration](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/fgogolli/ec3393a523fa3a6b6ff89a0636de3085/raw/avg-duration.json)](https://github.com/awslabs/open-resource-broker/actions/workflows/health-monitoring.yml)
 [![Coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/fgogolli/50bc37df3c178a0846dbd3682a71d50a/raw/coverage.json)](https://github.com/awslabs/open-resource-broker/actions/workflows/advanced-metrics.yml)
