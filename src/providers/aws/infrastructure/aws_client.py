@@ -47,7 +47,7 @@ class AWSClient:
         self._logger = logger
 
         # Get region from configuration
-        self.region_name = self._get_region_from_config_manager(self._config_manager) or "eu-west-1"
+        self.region_name = self._get_region_from_config_manager() or "eu-west-1"
 
         self._logger.debug("AWS client region determined: %s", self.region_name)
 
@@ -63,7 +63,7 @@ class AWSClient:
         )
 
         # Load performance configuration
-        self.perf_config = self._load_performance_config(self._config_manager)
+        self.perf_config = self._load_performance_config()
 
         # Initialize resource cache
         self._resource_cache: dict[str, Any] = {}
@@ -75,7 +75,7 @@ class AWSClient:
         self._batch_lock = threading.RLock()
 
         # Get profile from config manager
-        self.profile_name = self._get_profile_from_config_manager(self._config_manager)
+        self.profile_name = self._get_profile_from_config_manager()
 
         self._logger.debug("AWS client profile determined: %s", self.profile_name)
 
@@ -130,12 +130,9 @@ class AWSClient:
             else:
                 raise AWSConfigurationError(f"AWS client initialization failed: {error_message}")
 
-    def _get_region_from_config_manager(self, config_manager) -> Optional[str]:
+    def _get_region_from_config_manager(self) -> Optional[str]:
         """
         Get AWS region from ConfigurationManager.
-
-        Args:
-            config_manager: ConfigurationManager instance
 
         Returns:
             AWS region or None if not found
@@ -144,7 +141,7 @@ class AWSClient:
             # Try to get AWS config from ConfigurationManager
             from providers.aws.configuration.config import AWSProviderConfig
 
-            aws_config = config_manager.get_typed(AWSProviderConfig)
+            aws_config = self._config_manager.get_typed(AWSProviderConfig)
             if aws_config and aws_config.region:
                 self._logger.debug("Using region from ConfigurationManager: %s", aws_config.region)
                 return aws_config.region
@@ -153,12 +150,9 @@ class AWSClient:
 
         return None
 
-    def _get_profile_from_config_manager(self, config_manager) -> Optional[str]:
+    def _get_profile_from_config_manager(self) -> Optional[str]:
         """
         Get AWS profile from ConfigurationManager using provider selection.
-
-        Args:
-            config_manager: ConfigurationManager instance
 
         Returns:
             AWS profile or None if not found
@@ -186,7 +180,7 @@ class AWSClient:
                 return None
 
             # Get the provider instance configuration
-            provider_config = config_manager.get_provider_config()
+            provider_config = self._config_manager.get_provider_config()
             if not provider_config:
                 self._logger.debug("No provider config found")
                 return None
@@ -231,7 +225,7 @@ class AWSClient:
         try:
             from providers.aws.configuration.config import AWSProviderConfig
 
-            aws_config = config_manager.get_typed(AWSProviderConfig)
+            aws_config = self._config_manager.get_typed(AWSProviderConfig)
             if aws_config and aws_config.profile:
                 self._logger.debug(
                     "Using profile from legacy AWSProviderConfig: %s",
@@ -243,12 +237,9 @@ class AWSClient:
 
         return None
 
-    def _load_performance_config(self, config_manager) -> dict[str, Any]:
+    def _load_performance_config(self) -> dict[str, Any]:
         """
         Load performance configuration from ConfigurationManager.
-
-        Args:
-            config_manager: ConfigurationManager instance
 
         Returns:
             Performance configuration dictionary
@@ -257,7 +248,7 @@ class AWSClient:
             # Try to get performance config from ConfigurationManager
             from config import PerformanceConfig
 
-            perf_config = config_manager.get_typed(PerformanceConfig)
+            perf_config = self._config_manager.get_typed(PerformanceConfig)
             if perf_config:
                 self._logger.debug("Loaded performance configuration from ConfigurationManager")
                 return {
