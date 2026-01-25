@@ -42,7 +42,6 @@ class AWSClient:
             logger: Logger for logging messages
             metrics: Optional metrics collector for AWS API instrumentation
         """
-        self.config: dict[str, Any] = {}
         self._config_manager = config
         self._logger = logger
         self._aws_config: Optional["AWSProviderConfig"] = None
@@ -55,15 +54,22 @@ class AWSClient:
 
         self._logger.debug("AWS client region determined: %s", self.region_name)
 
+        aws_provider_config = self._get_selected_aws_provider_config()
+        max_attempts = int(aws_provider_config.max_retries) if aws_provider_config else 3
+        connect_timeout = (
+            int(aws_provider_config.connection_timeout_ms / 1000) if aws_provider_config else 5
+        )
+        read_timeout = int(aws_provider_config.timeout) if aws_provider_config else 10
+
         # Configure retry settings
         self.boto_config = Config(
             region_name=self.region_name,
             retries={
-                "max_attempts": self.config.get("AWS_MAX_RETRIES", 3),
+                "max_attempts": max_attempts,
                 "mode": "adaptive",
             },
-            connect_timeout=self.config.get("AWS_CONNECT_TIMEOUT", 5),
-            read_timeout=self.config.get("AWS_READ_TIMEOUT", 10),
+            connect_timeout=connect_timeout,
+            read_timeout=read_timeout,
         )
 
         # Load performance configuration
@@ -118,9 +124,9 @@ class AWSClient:
                 "AWS client initialized with region: %s, profile: %s, retries: %d, timeouts: connect=%ds, read=%ds",
                 self.region_name,
                 self.profile_name or "default",
-                self.config.get("AWS_MAX_RETRIES", 3),
-                self.config.get("AWS_CONNECT_TIMEOUT", 5),
-                self.config.get("AWS_READ_TIMEOUT", 10),
+                max_attempts,
+                connect_timeout,
+                read_timeout,
             )
 
         except ClientError as e:
@@ -141,10 +147,12 @@ class AWSClient:
         Returns:
             AWS region or None if not found
         """
-        aws_config = self._get_selected_aws_provider_config()
-        if aws_config and aws_config.region:
-            self._logger.debug("Using region from selected AWS config: %s", aws_config.region)
-            return aws_config.region
+        aws_provider_config = self._get_selected_aws_provider_config()
+        if aws_provider_config and aws_provider_config.region:
+            self._logger.debug(
+                "Using region from selected AWS config: %s", aws_provider_config.region
+            )
+            return aws_provider_config.region
 
         return None
 
@@ -155,13 +163,13 @@ class AWSClient:
         Returns:
             AWS profile or None if not found
         """
-        aws_config = self._get_selected_aws_provider_config()
-        if aws_config and aws_config.profile:
+        aws_provider_config = self._get_selected_aws_provider_config()
+        if aws_provider_config and aws_provider_config.profile:
             self._logger.debug(
                 "Using profile from selected AWS config: %s",
-                aws_config.profile,
+                aws_provider_config.profile,
             )
-            return aws_config.profile
+            return aws_provider_config.profile
 
         return None
 
@@ -259,9 +267,9 @@ class AWSClient:
 
         # Fallback: try legacy AWSProviderConfig approach
         try:
-            aws_config = self._config_manager.get_typed(AWSProviderConfig)
-            self._aws_config = aws_config
-            return aws_config
+            aws_provider_config = self._config_manager.get_typed(AWSProviderConfig)
+            self._aws_config = aws_provider_config
+            return aws_provider_config
         except Exception as e:
             self._logger.debug("Could not get AWS config from legacy config: %s", str(e))
 
