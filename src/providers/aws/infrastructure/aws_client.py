@@ -18,7 +18,7 @@ from providers.aws.exceptions.aws_exceptions import (
 from providers.aws.infrastructure.instrumentation.botocore_metrics import BotocoreMetricsHandler
 
 if TYPE_CHECKING:
-    pass
+    from providers.aws.configuration.config import AWSProviderConfig
 
 # Type variable for generic function return type
 T = TypeVar("T")
@@ -44,7 +44,7 @@ class AWSClient:
         """
         self._config_manager = config
         self._logger = logger
-        self._aws_config: Optional["AWSProviderConfig"] = None
+        self._aws_config: Optional[AWSProviderConfig] = None
         # Tracks whether we've attempted provider selection; we cache failures too.
         # This avoids repeated DI lookups and log spam when selection is unavailable.
         self._aws_config_loaded = False

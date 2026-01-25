@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
+
 import argparse
 import sys
 from typing import Iterable, List
 
 import boto3
 from botocore.exceptions import ClientError
-
 
 ACTIVE_STATES = [
     "pending",
