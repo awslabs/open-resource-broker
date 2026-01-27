@@ -167,26 +167,34 @@ class ConfigurationLoader:
     @classmethod
     def _load_default_config(cls) -> dict[str, Any]:
         """
-        Load default configuration from file.
-
-        First tries to load from scheduler config directory, then falls back to local config.
+        Load default configuration from embedded package file.
 
         Returns:
             Default configuration dictionary
         """
-        get_config_logger().debug("Loading default configuration")
+        get_config_logger().debug("Loading default configuration from package")
 
-        # Use file loading method
-        config = cls._load_config_file(
-            "conf", cls.DEFAULT_CONFIG_FILENAME, required=False, config_manager=None
-        )
-
-        if config:
-            get_config_logger().info("Loaded default configuration successfully")
-            return config
-        else:
+        try:
+            # Load from package
+            import config
+            from pathlib import Path
+            
+            default_config_path = Path(config.__file__).parent / cls.DEFAULT_CONFIG_FILENAME
+            
+            if default_config_path.exists():
+                with open(default_config_path) as f:
+                    import json
+                    config_data = json.load(f)
+                    get_config_logger().info("Loaded default configuration from package")
+                    return config_data
+            else:
+                get_config_logger().warning(
+                    f"Default config not found in package: {default_config_path}"
+                )
+                return {}
+        except Exception as e:
             get_config_logger().warning(
-                "Failed to load default configuration from any location. Using empty configuration."
+                f"Failed to load default configuration from package: {e}"
             )
             return {}
 

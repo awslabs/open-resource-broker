@@ -46,32 +46,14 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
             # Use provider selection service for provider selection
             selection_result = self._provider_selection_service.select_active_provider()
             provider_type = selection_result.provider_type
-            templates_file = f"{provider_type}prov_templates.json"
-
-            self._logger.debug(
-                "get_templates_file_path - provider_type: %s, templates_file: %s",
-                provider_type,
-                templates_file,
-            )
-
-            resolved_path = self.config_manager.resolve_file("template", templates_file)
-            self._logger.debug(
-                "get_templates_file_path - resolved_path: %s, exists: %s",
-                resolved_path,
-                os.path.exists(resolved_path),
-            )
-
-            return resolved_path
+            
+            # Use ConfigurationManager's unified template discovery
+            return self.config_manager.find_templates_file(provider_type)
+            
         except Exception as e:
             self._logger.error("Failed to determine templates file path: %s", e)
-            # Fallback to aws for backward compatibility
-            fallback_path = self.config_manager.resolve_file("template", "awsprov_templates.json")
-            self._logger.debug(
-                "get_templates_file_path - fallback_path: %s, exists: %s",
-                fallback_path,
-                os.path.exists(fallback_path),
-            )
-            return fallback_path
+            # Re-raise with context - let caller handle the error
+            raise
 
     def get_template_paths(self) -> list[str]:
         """Get template file paths."""
@@ -710,8 +692,60 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         workdir = self.get_working_directory()
         return os.path.join(workdir, "data")
 
+    def get_templates_filename(self, provider_name: str, provider_type: str) -> str:
+        """Get templates filename with config override support."""
+        # Check config override first
+        try:
+            config = self.config_manager.get_app_config()
+            scheduler_config = config.get("scheduler", {})
+            config_filename = scheduler_config.get("templates_filename")
+            if config_filename:
+                return config_filename
+        except Exception:
+            pass  # Fall back to default
+        
+        # Use HostFactory default: provider_type + '_templates.json'
+        return f"{provider_type}_templates.json"
+
+    def should_log_to_console(self) -> bool:
+        """Check if logs should be written to console for HostFactory.
+        
+        HostFactory scripts log to file by default, console only if enabled.
+        """
+        import os
+        return os.environ.get("HF_LOGGING_CONSOLE_ENABLED", "false").lower() == "true"
+
+    def format_error_response(self, error: Exception, context: dict[str, Any]) -> dict[str, Any]:
+        """Format error response for HostFactory (JSON only)."""
+        import traceback
+        
+        response = {
+            "success": False,
+            "error": str(error),
+            "error_type": type(error).__name__
+        }
+        
+        if context.get("verbose"):
+            response["traceback"] = traceback.format_exc()
+        
+        return response
+
+    def format_health_response(self, checks: list[dict[str, Any]]) -> dict[str, Any]:
+        """Format health check response for HostFactory."""
+        passed = sum(1 for c in checks if c.get("status") == "pass")
+        failed = len(checks) - passed
+        
+        return {
+            "success": failed == 0,
+            "checks": checks,
+            "summary": {
+                "total": len(checks),
+                "passed": passed,
+                "failed": failed
+            }
+        }
+
     def get_directory(self, file_type: str) -> str | None:
-        """Get directory path for the given file type."""
         self._logger.debug("[HF_STRATEGY] get_directory called with file_type=%s", file_type)
 
         if file_type in ["conf", "template", "legacy"]:

@@ -27,8 +27,8 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
 
     def get_templates_file_path(self) -> str:
         """Get templates file path - using native domain format."""
-        # Use templates.json with native domain format
-        return self.config_manager.resolve_file("template", "templates.json")
+        # Use ConfigurationManager's unified template discovery with "default" as provider type
+        return self.config_manager.find_templates_file("default")
 
     def get_template_paths(self) -> list[str]:
         """Get template file paths."""
@@ -160,6 +160,64 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
 
         workdir = self.get_working_directory()
         return os.path.join(workdir, "data")
+
+    def get_templates_filename(self, provider_name: str, provider_type: str) -> str:
+        """Get templates filename with config override support."""
+        # Check config override first
+        try:
+            config = self.config_manager.get_app_config()
+            scheduler_config = config.get("scheduler", {})
+            config_filename = scheduler_config.get("templates_filename")
+            if config_filename:
+                return config_filename
+        except Exception:
+            pass  # Fall back to default
+        
+        # Use Default scheduler default: 'templates.json'
+        return "templates.json"
+
+    def should_log_to_console(self) -> bool:
+        """Check if logs should be written to console for Default scheduler.
+        
+        Default scheduler is interactive, always log to console.
+        """
+        return True
+
+    def format_error_response(self, error: Exception, context: dict[str, Any]) -> dict[str, Any]:
+        """Format error response for Default scheduler (console + JSON)."""
+        import sys
+        import traceback
+        
+        # Print to console
+        print(f"ERROR: {error}", file=sys.stderr)
+        if context.get("verbose"):
+            traceback.print_exc()
+        
+        # Return JSON
+        response = {
+            "success": False,
+            "error": str(error)
+        }
+        
+        if context.get("verbose"):
+            response["traceback"] = traceback.format_exc()
+        
+        return response
+
+    def format_health_response(self, checks: list[dict[str, Any]]) -> dict[str, Any]:
+        """Format health check response for Default scheduler."""
+        passed = sum(1 for c in checks if c.get("status") == "pass")
+        failed = len(checks) - passed
+        
+        return {
+            "success": failed == 0,
+            "checks": checks,
+            "summary": {
+                "total": len(checks),
+                "passed": passed,
+                "failed": failed
+            }
+        }
 
     def get_directory(self, file_type: str) -> str | None:
         """Get directory path for the given file type."""
