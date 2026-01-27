@@ -14,12 +14,19 @@ import os
 import sys
 from typing import Any
 
-from _package import REPO_URL
+from _package import DOCS_URL
 from cli.completion import generate_bash_completion, generate_zsh_completion
 from cli.formatters import format_output
 from domain.base.exceptions import DomainException
 from domain.request.value_objects import RequestStatus
 from infrastructure.logging.logger import get_logger
+
+# Optional: Rich formatting for help text
+try:
+    from rich_argparse import RichHelpFormatter
+    HELP_FORMATTER = RichHelpFormatter
+except ImportError:
+    HELP_FORMATTER = argparse.RawDescriptionHelpFormatter
 
 
 def parse_args() -> tuple[argparse.Namespace, dict]:
@@ -33,7 +40,7 @@ def parse_args() -> tuple[argparse.Namespace, dict]:
     parser = argparse.ArgumentParser(
         prog=os.path.basename(sys.argv[0]),
         description="Open Resource Broker - Cloud resource management for IBM Spectrum Symphony",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
+        formatter_class=HELP_FORMATTER,
         epilog=f"""
 Examples:
   %(prog)s templates list                    # List all templates
@@ -42,7 +49,7 @@ Examples:
   %(prog)s machines request template-id 5    # Request 5 machines
   %(prog)s requests list --status pending    # List pending requests
 
-For more information, visit: {REPO_URL}
+For more information, visit: {DOCS_URL}
         """,
     )
 
@@ -153,6 +160,11 @@ For more information, visit: {REPO_URL}
     # Templates refresh
     templates_refresh = templates_subparsers.add_parser("refresh", help="Refresh template cache")
     templates_refresh.add_argument("--force", action="store_true", help="Force complete refresh")
+
+    # Templates generate
+    templates_generate = templates_subparsers.add_parser("generate", help="Generate example templates")
+    templates_generate.add_argument("--provider", help="Provider instance name")
+    templates_generate.add_argument("--provider-api", help="Specific provider API (EC2Fleet, SpotFleet, ASG, RunInstances)")
 
     # Machines resource
     machines_parser = subparsers.add_parser("machines", help="Manage compute instances")
@@ -501,6 +513,16 @@ For more information, visit: {REPO_URL}
         help="Logging level for MCP server",
     )
 
+    # Init command
+    init_parser = subparsers.add_parser("init", help="Initialize ORB configuration")
+    init_parser.add_argument("--non-interactive", action="store_true", help="Non-interactive mode")
+    init_parser.add_argument("--force", action="store_true", help="Force overwrite existing config")
+    init_parser.add_argument("--scheduler", choices=["default", "hostfactory"], help="Scheduler type")
+    init_parser.add_argument("--provider", default="aws", help="Provider type")
+    init_parser.add_argument("--region", help="AWS region")
+    init_parser.add_argument("--profile", help="AWS profile")
+    init_parser.add_argument("--config-dir", help="Custom configuration directory")
+
     return parser.parse_args(), resource_parsers
 
 
@@ -538,6 +560,8 @@ async def execute_command(args, app) -> dict[str, Any]:
     # Handle nested MCP commands
     if args.resource == "mcp" and args.action == "tools":
         handler_key = ("mcp", "tools", getattr(args, "tools_action", None))
+    elif args.resource == "init":
+        handler_key = ("init", None)
     else:
         handler_key = (args.resource, args.action)
 
@@ -590,6 +614,7 @@ async def execute_command(args, app) -> dict[str, Any]:
             handle_provider_metrics,
             handle_reload_provider_config,
             handle_select_provider_strategy,
+            handle_system_health,
             handle_system_metrics,
             handle_validate_provider_config,
         )
@@ -602,6 +627,8 @@ async def execute_command(args, app) -> dict[str, Any]:
             handle_update_template,
             handle_validate_template,
         )
+        from interface.init_command_handler import handle_init
+        from interface.templates_generate_handler import handle_templates_generate
 
         # Command handler mapping - all handlers are now async functions
         command_handlers = {
@@ -613,6 +640,7 @@ async def execute_command(args, app) -> dict[str, Any]:
             ("templates", "delete"): handle_delete_template,
             ("templates", "validate"): handle_validate_template,
             ("templates", "refresh"): handle_refresh_templates,
+            ("templates", "generate"): handle_templates_generate,
             # Machines
             ("machines", "request"): handle_request_machines,
             ("machines", "return"): handle_request_return_machines,
@@ -644,6 +672,7 @@ async def execute_command(args, app) -> dict[str, Any]:
             ("scheduler", "validate"): handle_validate_scheduler_config,
             # System commands
             ("system", "serve"): handle_serve_api,
+            ("system", "health"): handle_system_health,
             ("system", "metrics"): handle_system_metrics,
             # Configuration commands
             ("config", "show"): handle_provider_config,
@@ -655,6 +684,8 @@ async def execute_command(args, app) -> dict[str, Any]:
             ("mcp", "tools", "call"): handle_mcp_tools_call,
             ("mcp", "tools", "info"): handle_mcp_tools_info,
             ("mcp", "validate"): handle_mcp_validate,
+            # Init command
+            ("init", None): handle_init,
         }
 
         # All handlers are now async functions - no special handling needed
@@ -749,11 +780,34 @@ async def main() -> None:
 
         logger = get_logger(__name__)
 
+        # Skip application initialization for init and templates commands
+        if args.resource == "init":
+            # Execute init command directly without Application
+            from interface.init_command_handler import handle_init
+            result = await handle_init(args)
+            sys.exit(result)
+        
+        if args.resource == "templates":
+            # Templates commands don't need full validation (no AWS calls for list/generate)
+            skip_validation = True
+            if args.action == "generate":
+                # Execute templates generate without full app initialization
+                from interface.templates_generate_handler import handle_templates_generate
+                result = await handle_templates_generate(args)
+                # Print result
+                if result.get("status") == "success":
+                    sys.exit(0)
+                else:
+                    print(f"Error: {result.get('message')}", file=sys.stderr)
+                    sys.exit(1)
+        else:
+            skip_validation = False
+
         # Initialize application with dry-run mode if requested
         try:
             from bootstrap import Application
 
-            app = Application(args.config)
+            app = Application(args.config, skip_validation=skip_validation)
             if not await app.initialize(dry_run=args.dry_run):
                 raise RuntimeError("Failed to initialize application")
         except Exception as e:
