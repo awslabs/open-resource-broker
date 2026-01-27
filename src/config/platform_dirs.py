@@ -56,9 +56,19 @@ def get_logs_location() -> Path:
     For HostFactory: Uses HF_PROVIDER_LOGDIR if set
     Otherwise: Sibling to config directory
     """
-    # HostFactory environment variable
     if env_dir := os.environ.get("HF_PROVIDER_LOGDIR"):
         return Path(env_dir)
     
-    # Default: sibling to config
     return get_config_location().parent / "logs"
+
+
+def get_scripts_location() -> Path:
+    """Get scripts directory location.
+    
+    For HostFactory: Could use HF_PROVIDER_SCRIPTDIR if set (future)
+    Otherwise: Sibling to config directory
+    """
+    if env_dir := os.environ.get("HF_PROVIDER_SCRIPTDIR"):
+        return Path(env_dir)
+    
+    return get_config_location().parent / "scripts"

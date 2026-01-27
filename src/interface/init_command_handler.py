@@ -1,12 +1,14 @@
 """Init command handler for ORB configuration initialization."""
 
 import json
+import platform
+import shutil
 import sys
 from pathlib import Path
 from typing import Any, Dict
 
-from cli.console import print_separator, print_success, print_info, print_command
-from config.platform_dirs import get_config_location, get_work_location, get_logs_location
+from cli.console import print_separator, print_success, print_info, print_command, print_error
+from config.platform_dirs import get_config_location, get_work_location, get_logs_location, get_scripts_location
 from infrastructure.logging.logger import get_logger
 
 logger = get_logger(__name__)
@@ -18,12 +20,15 @@ async def handle_init(args) -> int:
         # Determine config directory
         if args.config_dir:
             config_dir = Path(args.config_dir)
-            work_dir = config_dir.parent / "work"
-            logs_dir = config_dir.parent / "logs"
+            run_dir = config_dir.parent
+            work_dir = run_dir / "work"
+            logs_dir = run_dir / "logs"
+            scripts_dir = run_dir / "scripts"
         else:
             config_dir = get_config_location()
             work_dir = get_work_location()
             logs_dir = get_logs_location()
+            scripts_dir = get_scripts_location()
 
         # Check if already initialized
         config_file = config_dir / "config.json"
@@ -46,6 +51,9 @@ async def handle_init(args) -> int:
 
         # Write config file
         _write_config_file(config_file, config)
+        
+        # Copy platform-specific scripts
+        _copy_scripts(scripts_dir)
 
         # Success message with separator
         print_separator(width=60, char="━", color="green")
@@ -53,9 +61,10 @@ async def handle_init(args) -> int:
         print_separator(width=60, char="━", color="green")
         print_info("")  # Empty line
         print_info("Created:")
-        print_info(f"  Config: {config_dir}")
-        print_info(f"  Work:   {work_dir}")
-        print_info(f"  Logs:   {logs_dir}")
+        print_info(f"  Config:  {config_dir}")
+        print_info(f"  Work:    {work_dir}")
+        print_info(f"  Logs:    {logs_dir}")
+        print_info(f"  Scripts: {scripts_dir}")
         print_info("")  # Empty line
         print_info("Next Steps:")
         print_command("  1. Generate templates: orb templates generate")
@@ -150,49 +159,55 @@ def _create_directories(config_dir: Path, work_dir: Path, logs_dir: Path):
 
 def _write_config_file(config_file: Path, user_config: Dict[str, Any]):
     """Write configuration file."""
-    try:
-        # Load default config template
-        try:
-            import config
-            template_path = Path(config.__file__).parent / "default_config.json"
-            with open(template_path) as f:
-                full_config = json.load(f)
-        except (ImportError, FileNotFoundError):
-            # Fallback minimal config
-            full_config = {
-                "version": "2.0.0",
-                "scheduler": {"type": "default"},
-                "provider": {
-                    "default_provider_type": "aws",
-                    "providers": []
-                }
+    import config
+    site_packages = Path(config.__file__).parent.parent
+    template_path = site_packages / "config" / "default_config.json"
+    
+    with open(template_path) as f:
+        full_config = json.load(f)
+
+    # Update with user values
+    full_config["scheduler"]["type"] = user_config["scheduler_type"]
+    
+    # Set config_root based on scheduler type
+    if user_config["scheduler_type"] == "hostfactory":
+        full_config["scheduler"]["config_root"] = "$HF_PROVIDER_CONFDIR"
+    else:
+        full_config["scheduler"]["config_root"] = "."
+    
+    full_config["provider"]["default_provider_type"] = user_config["provider_type"]
+    full_config["provider"]["providers"] = [
+        {
+            "name": f"{user_config['provider_type']}-default",
+            "type": user_config["provider_type"],
+            "enabled": True,
+            "config": {
+                "region": user_config["region"],
+                "profile": user_config["profile"]
             }
+        }
+    ]
 
-        # Update with user values
-        full_config["scheduler"]["type"] = user_config["scheduler_type"]
-        full_config["provider"]["default_provider_type"] = user_config["provider_type"]
-        full_config["provider"]["providers"] = [
-            {
-                "name": f"{user_config['provider_type']}-default",
-                "type": user_config["provider_type"],
-                "enabled": True,
-                "config": {
-                    "region": user_config["region"],
-                    "profile": user_config["profile"]
-                }
-            }
-        ]
+    with open(config_file, 'w') as f:
+        json.dump(full_config, f, indent=2)
 
-        # Write config file
-        with open(config_file, 'w') as f:
-            json.dump(full_config, f, indent=2)
+    logger.info("Created configuration file: %s", config_file)
 
-        logger.info("Created configuration file: %s", config_file)
-        
-    except Exception as e:
-        print_error(f"Failed to write config file: {config_file}")
-        print_error(f"  {e}")
-        print_info("")
-        print_info("To retry:")
-        print_info(f"  Check directory permissions: {config_file.parent}")
-        raise
+
+def _copy_scripts(scripts_dir: Path):
+    """Copy platform-specific scripts to scripts directory."""
+    import config
+    site_packages = Path(config.__file__).parent.parent
+    scripts_src = site_packages / "scripts"
+    scripts_dir.mkdir(parents=True, exist_ok=True)
+    
+    is_windows = platform.system() == "Windows"
+    extension = ".bat" if is_windows else ".sh"
+    
+    copied = 0
+    for script in scripts_src.glob(f"*{extension}"):
+        shutil.copy2(script, scripts_dir / script.name)
+        copied += 1
+    
+    if copied > 0:
+        logger.info(f"Copied {copied} scripts to {scripts_dir}")
