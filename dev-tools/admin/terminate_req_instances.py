@@ -2,6 +2,7 @@
 
 import argparse
 import sys
+import time
 from typing import Iterable, List
 
 import boto3
@@ -14,6 +15,10 @@ ACTIVE_STATES = [
     "stopped",
     "shutting-down",
 ]
+
+TERMINATE_RETRY_ERROR_CODES = {"RequestLimitExceeded"}
+TERMINATE_RETRY_SLEEP_SECONDS = 30
+TERMINATE_MAX_RETRIES = 5
 
 
 def _chunked(items: List[str], size: int) -> Iterable[List[str]]:
@@ -39,6 +44,11 @@ def _collect_instance_ids(ec2_client, name_prefix: str) -> List[str]:
     return instance_ids
 
 
+def _is_retryable_terminate_error(exc: ClientError) -> bool:
+    error_code = exc.response.get("Error", {}).get("Code")
+    return error_code in TERMINATE_RETRY_ERROR_CODES
+
+
 def _terminate_instances(ec2_client, instance_ids: List[str], dry_run: bool) -> None:
     if not instance_ids:
         print("No instances found to terminate.")
@@ -46,17 +56,33 @@ def _terminate_instances(ec2_client, instance_ids: List[str], dry_run: bool) -> 
 
     print(f"Found {len(instance_ids)} instance(s) to terminate.")
     for chunk in _chunked(instance_ids, 1000):
-        try:
-            ec2_client.terminate_instances(InstanceIds=chunk, DryRun=dry_run)
-            if dry_run:
-                print(f"Dry run succeeded for {len(chunk)} instance(s): {chunk}")
-            else:
-                print(f"Termination started for {len(chunk)} instance(s): {chunk}")
-        except ClientError as exc:
-            if dry_run and exc.response.get("Error", {}).get("Code") == "DryRunOperation":
-                print(f"Dry run succeeded for {len(chunk)} instance(s): {chunk}")
-                continue
-            raise
+        attempt = 0
+        while True:
+            attempt += 1
+            try:
+                ec2_client.terminate_instances(InstanceIds=chunk, DryRun=dry_run)
+                if dry_run:
+                    print(f"Dry run succeeded for {len(chunk)} instance(s): {chunk}")
+                else:
+                    print(f"Termination started for {len(chunk)} instance(s): {chunk}")
+                break
+            except ClientError as exc:
+                error_code = exc.response.get("Error", {}).get("Code")
+                if dry_run and error_code == "DryRunOperation":
+                    print(f"Dry run succeeded for {len(chunk)} instance(s): {chunk}")
+                    break
+                if (
+                    not dry_run
+                    and _is_retryable_terminate_error(exc)
+                    and attempt < TERMINATE_MAX_RETRIES
+                ):
+                    print(
+                        "TerminateInstances throttled (%s). Retrying in %ss (attempt %s/%s)."
+                        % (error_code, TERMINATE_RETRY_SLEEP_SECONDS, attempt, TERMINATE_MAX_RETRIES)
+                    )
+                    time.sleep(TERMINATE_RETRY_SLEEP_SECONDS)
+                    continue
+                raise
 
 
 def main() -> int:

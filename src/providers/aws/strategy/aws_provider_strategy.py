@@ -713,8 +713,17 @@ class AWSProviderStrategy(ProviderStrategy):
     async def _handle_describe_resource_instances(
         self, operation: ProviderOperation
     ) -> ProviderResult:
-        """Handle resource-to-instance discovery operation using appropriate handlers."""
+        """Handle resource-to-instance discovery operation using appropriate handlers.
+
+        Stages:
+            1. Extract inputs and normalize provider API identifiers.
+            2. Validate inputs and resolve the appropriate handler (with fallback).
+            3. Build a minimal request and discover instances via the handler.
+            4. Normalize/format instance details for consistent output.
+            5. Build metadata, augment capacity info, and return the result.
+        """
         try:
+            # <1.> Extract inputs and normalize provider API identifiers.
             resource_ids = operation.parameters.get("resource_ids", [])
             provider_api = operation.parameters.get("provider_api", "RunInstances")
             provider_api_value = (
@@ -729,6 +738,7 @@ class AWSProviderStrategy(ProviderStrategy):
             except Exception:
                 provider_api_enum = None
 
+            # <2.> Validate inputs and resolve the appropriate handler (with fallback).
             if not resource_ids:
                 return ProviderResult.error_result(
                     "Resource IDs are required for instance discovery",
@@ -750,6 +760,7 @@ class AWSProviderStrategy(ProviderStrategy):
                     provider_api,
                 )
 
+            # <3.> Build a minimal request and discover instances via the handler.
             # Create a minimal request object for the handler
             from domain.request.aggregate import Request
             from domain.request.value_objects import RequestType
@@ -785,6 +796,7 @@ class AWSProviderStrategy(ProviderStrategy):
                     },
                 )
 
+            # <4.> Normalize/format instance details for consistent output.
             # Format instance details for consistent output
             # KBG TODO: review code below.
             formatted_instances = []
@@ -811,6 +823,7 @@ class AWSProviderStrategy(ProviderStrategy):
 
             self._logger.debug("formatted_instances: %s", formatted_instances)
 
+            # <5.> Build metadata, augment capacity info, and return the result.
             metadata = {
                 "operation": "describe_resource_instances",
                 "resource_ids": resource_ids,
