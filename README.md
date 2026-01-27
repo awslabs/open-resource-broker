@@ -44,8 +44,20 @@ The Open Resource Broker provides integration between IBM Spectrum Symphony Host
 ### PyPI Installation (Recommended)
 
 ```bash
-# Install from PyPI
+# Minimal install (CLI only, 10 dependencies)
 pip install orb-py
+
+# With colored CLI output
+pip install orb-py[cli]
+
+# With API server (for REST API mode)
+pip install orb-py[api]
+
+# With monitoring (OpenTelemetry, Prometheus)
+pip install orb-py[monitoring]
+
+# Everything (all features)
+pip install orb-py[all]
 
 # Initialize configuration
 orb init
@@ -83,8 +95,20 @@ curl http://localhost:8000/health
 ### Package Installation (Recommended)
 
 ```bash
-# Install from PyPI
+# Minimal install (CLI only, 10 dependencies)
 pip install orb-py
+
+# With colored CLI output
+pip install orb-py[cli]
+
+# With API server (for REST API mode)
+pip install orb-py[api]
+
+# With monitoring (OpenTelemetry, Prometheus)
+pip install orb-py[monitoring]
+
+# Everything (all features)
+pip install orb-py[all]
 
 # Initialize configuration (required after installation)
 orb init

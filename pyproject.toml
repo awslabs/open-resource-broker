@@ -53,9 +53,6 @@ dependencies = [
     "requests>=2.31.0",
     "PyYAML>=6.0.0",  # Exported API (lazy-loaded)
     "jsonschema>=4.17.0",
-    "fastapi>=0.104.0",
-    "uvicorn>=0.24.0",
-    "jinja2>=3.1.0",
 ]
 
 [project.optional-dependencies]
@@ -63,6 +60,13 @@ dependencies = [
 cli = [
     "rich>=13.3.0",
     "rich-argparse>=1.0.0",
+]
+
+# API server (for REST API mode)
+api = [
+    "fastapi>=0.104.0",
+    "uvicorn>=0.24.0",
+    "jinja2>=3.1.0",
 ]
 
 # Monitoring & observability (for API/production deployments)
@@ -78,7 +82,7 @@ monitoring = [
 
 # All optional features
 all = [
-    "orb-py[cli,monitoring]",
+    "orb-py[cli,api,monitoring]",
 ]
 
 [dependency-groups]
