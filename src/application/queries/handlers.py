@@ -33,7 +33,9 @@ T = TypeVar("T")
 def _normalize_provider_entry(entry: Any) -> dict[str, Any]:
     """Normalize provider entry (dict or DomainMachine) to a common shape.
 
-    Uses local imports to avoid import-time circular dependencies.
+    Example (AWS-like dict -> normalized):
+        input:  {"InstanceId": "i-123", "State": "running", "PrivateIpAddress": "10.0.0.5"}
+        output: {"instance_id": "i-123", "status": MachineStatus.RUNNING, "private_ip": "10.0.0.5"}
     """
     from domain.machine.aggregate import Machine as DomainMachine
     from domain.machine.machine_status import MachineStatus
@@ -107,10 +109,18 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
         self.event_publisher = self._get_event_publisher()
 
     async def execute_query(self, query: GetRequestQuery) -> RequestDTO:
-        """Execute get request query with machine status checking and caching."""
+        """Execute get request query with machine status checking and caching.
+
+        Stages:
+            1. Check cache and return early on cache hit.
+            2. Load request and associated machines from storage.
+            3. Fetch provider view and reconcile machine state.
+            4. Update request status, build DTO, cache, and return.
+        """
         self.logger.info("Getting request details for: %s", query.request_id)
 
         try:
+            # <1.> Check cache and return early on cache hit.
             # Check cache first if enabled
             if self._cache_service and self._cache_service.is_caching_enabled():
                 cached_result = self._cache_service.get_cached_request(query.request_id)
@@ -118,8 +128,8 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
                     self.logger.info("Cache hit for request: %s", query.request_id)
                     return cached_result
 
+            # <2.> Load request and associated machines from storage.
             # Cache miss - get request from storage
-
             with self.uow_factory.create_unit_of_work() as uow:
                 from domain.request.value_objects import RequestId
 
@@ -138,7 +148,7 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
 
             self.logger.debug(f"Machines associated with this request in DB: {machine_obj_from_db}")
 
-            # Update machine status if needed
+            # <3.> Fetch provider view and reconcile machine state.
             # Always fetch provider view first
             machine_objects_from_provider, provider_metadata = await self._fetch_provider_machines(
                 request, machine_obj_from_db
@@ -154,6 +164,7 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
             self.logger.debug(f"Machines from DB:  {machine_obj_from_db}")
             self.logger.debug(f"Machines from cloud provider:  {machine_objects_from_provider}")
 
+            # <4.> Update request status, build DTO, cache, and return.
             # Determine if request status needs updating based on machine states
             new_status, status_message = self._determine_request_status_from_machines(
                 machine_obj_from_db, machine_objects_from_provider, request, provider_metadata
@@ -298,16 +309,9 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
             # Batch save machines for efficiency
             if machines:
                 with self.uow_factory.create_unit_of_work() as uow:
-                    # Save each machine individually
-                    for machine in machines:
-                        uow.machines.save(machine)
-
-                    # Publish events for all machines
-                    for machine in machines:
-                        events = machine.get_domain_events()
-                        for event in events:
-                            self.event_publisher.publish(event)
-                        machine.clear_domain_events()
+                    batch_events = uow.machines.save_batch(machines)
+                    for event in batch_events:
+                        self.event_publisher.publish(event)
 
                 self.logger.info(
                     "Created and saved %s machines for request %s",
@@ -425,8 +429,19 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
         If the provider reports instances we don't have locally, create them so the
         status decision logic can see the full picture. Provider calls should be made
         by the caller; this function only merges/updates/persists.
+
+        Stages:
+            1. Resolve request context and normalize inputs.
+            2. Prepare lookup maps and domain helpers.
+            3. Reconcile provider view with local machines (compute updates/creates).
+            4. Persist changes, finalize merged machine list, update metadata, and return.
+
+        Returns:
+            tuple[list, dict]: (updated_machines, provider_metadata) where the first
+            item is the merged machine list and the second is passthrough provider metadata.
         """
         try:
+            # <1.> Resolve request context and normalize inputs.
             # Group machines by request to use existing check_hosts_status methods
             if not machines:
                 machines = []
@@ -445,14 +460,17 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
             domain_machines = provider_machine_entities or []
             provider_metadata = provider_metadata or {}
 
+            # <2.> Prepare lookup maps and domain helpers.
             # Ensure we have a map of existing machines for quick lookup
             existing_by_id = {str(m.instance_id.value): m for m in machines}
             updated_machines = []
             new_machines = []
+            to_upsert = []
 
             from domain.machine.aggregate import Machine as DomainMachine
             from domain.machine.machine_status import MachineStatus
 
+            # <3.> Reconcile provider view with local machines (compute updates/creates).
             # Update existing machines and add new ones discovered from provider
             for dm in domain_machines:
                 normalized = _normalize_provider_entry(dm)
@@ -464,6 +482,8 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
 
                 if existing:
                     new_status = normalized.get("status") or MachineStatus.UNKNOWN
+
+                    # Do we need to update this machine in DB?
                     needs_update = (
                         existing.status != new_status
                         or existing.private_ip != normalized.get("private_ip")
@@ -481,8 +501,7 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
                         machine_data["version"] = existing.version + 1
 
                         updated_machine = DomainMachine.model_validate(machine_data)
-                        with self.uow_factory.create_unit_of_work() as uow:
-                            uow.machines.save(updated_machine)
+                        to_upsert.append(updated_machine)
                         updated_machines.append(updated_machine)
                     else:
                         updated_machines.append(existing)
@@ -528,14 +547,19 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
                                     metadata=normalized.get("metadata", {}),
                                 )
 
-                        with self.uow_factory.create_unit_of_work() as uow:
-                            uow.machines.save(created_machine)
-
+                        to_upsert.append(created_machine)
                         new_machines.append(created_machine)
                     except Exception as exc:
                         self.logger.warning(
                             "Failed to create machine %s from provider data: %s", dm_id, exc
                         )
+
+            # <4.> Persist changes, finalize merged machine list, update metadata, and return.
+            if to_upsert:
+                with self.uow_factory.create_unit_of_work() as uow:
+                    batch_events = uow.machines.save_batch(to_upsert)
+                    for event in batch_events:
+                        self.event_publisher.publish(event)
 
             # Merge existing updates and newly discovered machines
             if new_machines:

@@ -32,7 +32,7 @@ class TestCreateMachineRequestHandlerPartial:
         mock_uow.requests = Mock()
         mock_uow.machines = Mock()
         mock_uow.requests.save.return_value = []
-        mock_uow.machines.save.return_value = []
+        mock_uow.machines.save_batch.return_value = []
         mock_uow_factory.create_unit_of_work.return_value.__enter__ = Mock(
             return_value=mock_uow
         )
@@ -124,4 +124,6 @@ class TestCreateMachineRequestHandlerPartial:
         saved_request = mock_uow.requests.save.call_args[0][0]
         assert saved_request.status == RequestStatus.PARTIAL
         assert saved_request.metadata["fleet_errors"][0]["error_code"] == "InsufficientInstanceCapacity"
-        assert mock_uow.machines.save.call_count == 2
+        mock_uow.machines.save_batch.assert_called_once()
+        saved_machines = mock_uow.machines.save_batch.call_args[0][0]
+        assert len(saved_machines) == 2

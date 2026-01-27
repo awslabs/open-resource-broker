@@ -161,6 +161,43 @@ class MachineRepositoryImpl(MachineRepositoryInterface):
             self.logger.error("Failed to save machine %s: %s", machine.instance_id, e)
             raise
 
+    @handle_infrastructure_exceptions(context="machine_repository_save_batch")
+    def save_batch(self, machines: list[Machine]) -> list[Any]:
+        """Save multiple machines in a single storage operation when supported."""
+        try:
+            if not machines:
+                return []
+
+            entity_batch: dict[str, dict[str, Any]] = {}
+            events: list[Any] = []
+
+            for machine in machines:
+                entity_id = str(machine.instance_id.value)
+                entity_batch[entity_id] = self.serializer.to_dict(machine)
+                events.extend(machine.get_domain_events())
+
+            if hasattr(self.storage_port, "save_batch"):
+                self.storage_port.save_batch(entity_batch)
+            else:
+                # Fallback for storage ports without batch support.
+                for entity_id, machine_data in entity_batch.items():
+                    self.storage_port.save(entity_id, machine_data)
+
+            # Clear domain events only after a successful persistence call.
+            for machine in machines:
+                machine.clear_domain_events()
+
+            self.logger.debug(
+                "Saved batch of %s machines and extracted %s events",
+                len(entity_batch),
+                len(events),
+            )
+            return events
+
+        except Exception as e:
+            self.logger.error("Failed to save batch of %s machines: %s", len(machines), e)
+            raise
+
     @handle_infrastructure_exceptions(context="machine_repository_get_by_id")
     def get_by_id(self, machine_id: MachineId | str) -> Optional[Machine]:
         """Get machine by ID using storage strategy."""
