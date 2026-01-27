@@ -68,6 +68,7 @@ def format_generic_table(items: list[dict], title: str = "Items") -> str:
     try:
         from rich.console import Console
         from rich.table import Table
+        from cli.console import get_console
 
         # Get all unique keys from all items
         all_keys = set()
@@ -86,8 +87,8 @@ def format_generic_table(items: list[dict], title: str = "Items") -> str:
             row = [str(item.get(key, "N/A")) for key in sorted(all_keys)]
             table.add_row(*row)
 
-        # Capture output
-        console = Console()
+        # Capture output using shared console
+        console = get_console()
         with console.capture() as capture:
             console.print(table)
         return capture.get()
