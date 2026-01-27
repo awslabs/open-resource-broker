@@ -8,6 +8,19 @@ from infrastructure.error.decorators import handle_interface_exceptions
 from monitoring.metrics import MetricsCollector
 
 
+@handle_interface_exceptions(context="system_health", interface_type="cli")
+async def handle_system_health(args) -> dict[str, Any]:
+    """Handle system health check."""
+    import asyncio
+    from interface.health_command_handler import handle_health_check
+    
+    # Run sync health check in executor
+    loop = asyncio.get_event_loop()
+    result = await loop.run_in_executor(None, handle_health_check, args)
+    
+    return {"status": "success" if result == 0 else "error"}
+
+
 @handle_interface_exceptions(context="provider_health", interface_type="cli")
 async def handle_provider_health(args) -> dict[str, Any]:
     """Handle provider health operations."""
