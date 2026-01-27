@@ -159,12 +159,41 @@ def _create_directories(config_dir: Path, work_dir: Path, logs_dir: Path):
 
 def _write_config_file(config_file: Path, user_config: Dict[str, Any]):
     """Write configuration file."""
-    import config
-    site_packages = Path(config.__file__).parent.parent
-    template_path = site_packages / "config" / "default_config.json"
+    from config.installation_detector import get_template_location
     
-    with open(template_path) as f:
-        full_config = json.load(f)
+    try:
+        template_path = get_template_location()
+        
+        if template_path.exists():
+            with open(template_path) as f:
+                full_config = json.load(f)
+        else:
+            raise FileNotFoundError(f"Template not found: {template_path}")
+            
+    except Exception as e:
+        raise FileNotFoundError(f"Could not find default_config.json template: {e}")
+
+
+def _get_installed_template_path():
+    """Get template path for installed package using proper scheme detection."""
+    import sysconfig
+    import sys
+    
+    # Detect if this is a user install by checking if we're using user site-packages
+    try:
+        import site
+        if hasattr(site, 'USER_SITE') and site.USER_SITE in sys.path:
+            # User install - use posix_user scheme
+            scheme = 'posix_user' if os.name == 'posix' else 'nt_user'
+            data_path = Path(sysconfig.get_path('data', scheme))
+        else:
+            # System or venv install - use default scheme
+            data_path = Path(sysconfig.get_path('data'))
+    except:
+        # Fallback to default
+        data_path = Path(sysconfig.get_path('data'))
+    
+    return data_path / "orb_config" / "default_config.json"
 
     # Update with user values
     full_config["scheduler"]["type"] = user_config["scheduler_type"]
@@ -196,18 +225,41 @@ def _write_config_file(config_file: Path, user_config: Dict[str, Any]):
 
 def _copy_scripts(scripts_dir: Path):
     """Copy platform-specific scripts to scripts directory."""
-    import config
-    site_packages = Path(config.__file__).parent.parent
-    scripts_src = site_packages / "scripts"
-    scripts_dir.mkdir(parents=True, exist_ok=True)
+    from config.installation_detector import get_scripts_location
     
-    is_windows = platform.system() == "Windows"
-    extension = ".bat" if is_windows else ".sh"
+    try:
+        scripts_src = get_scripts_location()
+        
+        if not scripts_src.exists():
+            logger.warning(f"Scripts directory not found: {scripts_src}")
+            return
+        
+        scripts_dir.mkdir(parents=True, exist_ok=True)
+        
+        is_windows = platform.system() == "Windows"
+        extension = ".bat" if is_windows else ".sh"
+        
+        copied = 0
+        for script in scripts_src.glob(f"*{extension}"):
+            # Skip if source and destination are the same (development mode)
+            dest_script = scripts_dir / script.name
+            if script.resolve() == dest_script.resolve():
+                continue
+            shutil.copy2(script, dest_script)
+            copied += 1
+        
+        if copied > 0:
+            logger.info(f"Copied {copied} scripts to {scripts_dir}")
+            
+    except Exception as e:
+        logger.warning(f"Failed to copy scripts: {e}")
+
+
+def _get_installed_scripts_path():
+    """Get scripts path for installed package using proper scheme detection."""
+    import sysconfig
+    import sys
     
-    copied = 0
-    for script in scripts_src.glob(f"*{extension}"):
-        shutil.copy2(script, scripts_dir / script.name)
-        copied += 1
-    
-    if copied > 0:
-        logger.info(f"Copied {copied} scripts to {scripts_dir}")
+
+
+
