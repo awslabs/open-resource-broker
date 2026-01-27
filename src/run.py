@@ -16,8 +16,8 @@ if project_root not in sys.path:
 def setup_environment():
     """Setup environment variables using platform-specific directories."""
     # Only set if not already set by user
-    if os.environ.get("HF_PROVIDER_CONFDIR"):
-        return  # User has explicitly set it
+    if os.environ.get("ORB_CONFIG_DIR"):
+        return  # User has explicitly set ORB_* vars
     
     try:
         from config.platform_dirs import get_config_location, get_work_location, get_logs_location
@@ -26,11 +26,10 @@ def setup_environment():
         work_dir = str(get_work_location())
         logs_dir = str(get_logs_location())
         
-        os.environ.setdefault("HF_PROVIDER_CONFDIR", config_dir)
-        os.environ.setdefault("HF_PROVIDER_WORKDIR", work_dir)
-        os.environ.setdefault("HF_PROVIDER_LOGDIR", logs_dir)
-        os.environ.setdefault("DEFAULT_PROVIDER_CONFDIR", config_dir)
-        os.environ.setdefault("DEFAULT_PROVIDER_WORKDIR", work_dir)
+        # Set ORB_* vars (standard) - bootstrap only
+        os.environ.setdefault("ORB_CONFIG_DIR", config_dir)
+        os.environ.setdefault("ORB_WORK_DIR", work_dir)
+        os.environ.setdefault("ORB_LOG_DIR", logs_dir)
         
     except Exception as e:
         # Config discovery failed - will be caught later with helpful error

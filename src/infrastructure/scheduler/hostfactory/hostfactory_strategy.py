@@ -671,21 +671,19 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
             ]
         }
 
-    def get_working_directory(self) -> str:
-        """Get working directory from HF_PROVIDER_WORKDIR."""
-        return os.environ.get("HF_PROVIDER_WORKDIR", os.getcwd())
-
-    def get_config_directory(self) -> str:
-        """Get config directory from HF_PROVIDER_CONFDIR."""
-        return os.environ.get(
-            "HF_PROVIDER_CONFDIR", os.path.join(self.get_working_directory(), "config")
-        )
-
-    def get_logs_directory(self) -> str:
-        """Get logs directory from HF_PROVIDER_LOGDIR."""
-        return os.environ.get(
-            "HF_PROVIDER_LOGDIR", os.path.join(self.get_working_directory(), "logs")
-        )
+    def _get_scheduler_env_var(self, suffix: str) -> str | None:
+        """HostFactory checks HF_PROVIDER_* and HF_* vars."""
+        import os
+        
+        mapping = {
+            "CONFIG_DIR": "HF_PROVIDER_CONFDIR",
+            "WORK_DIR": "HF_PROVIDER_WORKDIR",
+            "LOG_DIR": "HF_PROVIDER_LOGDIR",
+            "LOG_LEVEL": "HF_LOGLEVEL"
+        }
+        if env_var := mapping.get(suffix):
+            return os.environ.get(env_var)
+        return None
 
     def get_storage_base_path(self) -> str:
         """Get storage base path within working directory."""

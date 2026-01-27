@@ -20,6 +20,22 @@ class SchedulerPort(ABC):
         """Get config file path for this scheduler."""
 
     @abstractmethod
+    def get_config_directory(self) -> str:
+        """Get config directory with coalesce pattern."""
+
+    @abstractmethod
+    def get_working_directory(self) -> str:
+        """Get working directory with coalesce pattern."""
+
+    @abstractmethod
+    def get_logs_directory(self) -> str:
+        """Get logs directory with coalesce pattern."""
+
+    @abstractmethod
+    def get_log_level(self) -> str:
+        """Get log level for this scheduler."""
+
+    @abstractmethod
     def parse_template_config(self, raw_data: dict[str, Any]) -> Template:
         """Parse scheduler template config to domain Template - SINGLE MAPPING POINT."""
 

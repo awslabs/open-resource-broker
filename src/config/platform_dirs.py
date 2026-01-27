@@ -14,12 +14,12 @@ def get_config_location() -> Path:
     """Get config location.
     
     Priority:
-    1. HF_PROVIDER_CONFDIR environment variable (HostFactory)
+    1. ORB_CONFIG_DIR environment variable (standard)
     2. Virtualenv: sibling to venv
     3. Development: ./config if pyproject.toml exists in parent chain
     """
-    # 1. HostFactory environment variable
-    if env_dir := os.environ.get("HF_PROVIDER_CONFDIR"):
+    # 1. Standard ORB environment variable
+    if env_dir := os.environ.get("ORB_CONFIG_DIR"):
         return Path(env_dir)
     
     # 2. Virtualenv - config sibling to venv
@@ -39,26 +39,30 @@ def get_config_location() -> Path:
 def get_work_location() -> Path:
     """Get work directory location.
     
-    For HostFactory: Uses HF_PROVIDER_WORKDIR if set
-    Otherwise: Sibling to config directory
+    Priority:
+    1. ORB_WORK_DIR environment variable (standard)
+    2. Sibling to config directory
     """
-    # HostFactory environment variable
-    if env_dir := os.environ.get("HF_PROVIDER_WORKDIR"):
+    # 1. Standard ORB environment variable
+    if env_dir := os.environ.get("ORB_WORK_DIR"):
         return Path(env_dir)
     
-    # Default: sibling to config
+    # 2. Default: sibling to config
     return get_config_location().parent / "work"
 
 
 def get_logs_location() -> Path:
     """Get logs directory location.
     
-    For HostFactory: Uses HF_PROVIDER_LOGDIR if set
-    Otherwise: Sibling to config directory
+    Priority:
+    1. ORB_LOG_DIR environment variable (standard)
+    2. Sibling to config directory
     """
-    if env_dir := os.environ.get("HF_PROVIDER_LOGDIR"):
+    # 1. Standard ORB environment variable
+    if env_dir := os.environ.get("ORB_LOG_DIR"):
         return Path(env_dir)
     
+    # 2. Default: sibling to config
     return get_config_location().parent / "logs"
 
 

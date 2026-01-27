@@ -130,30 +130,6 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
             "count": len(machines),
         }
 
-    def get_working_directory(self) -> str:
-        """Get working directory from DEFAULT_PROVIDER_WORKDIR or current directory."""
-        import os
-
-        return os.environ.get("DEFAULT_PROVIDER_WORKDIR", os.getcwd())
-
-    def get_config_directory(self) -> str:
-        """Get config directory from DEFAULT_PROVIDER_CONFDIR or working_dir/config."""
-        import os
-
-        confdir = os.environ.get("DEFAULT_PROVIDER_CONFDIR")
-        if confdir:
-            return confdir
-        return os.path.join(self.get_working_directory(), "config")
-
-    def get_logs_directory(self) -> str:
-        """Get logs directory from DEFAULT_PROVIDER_LOGDIR or working_dir/logs."""
-        import os
-
-        logdir = os.environ.get("DEFAULT_PROVIDER_LOGDIR")
-        if logdir:
-            return logdir
-        return os.path.join(self.get_working_directory(), "logs")
-
     def get_storage_base_path(self) -> str:
         """Get storage base path within working directory."""
         import os
