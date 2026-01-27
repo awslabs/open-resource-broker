@@ -117,8 +117,6 @@ def handle_health_check(args) -> int:
                 "status": "fail",
                 "error": str(e)
             })
-            "details": logs_dir
-        })
         
         # Format response using scheduler strategy
         response = scheduler_strategy.format_health_response(checks)
