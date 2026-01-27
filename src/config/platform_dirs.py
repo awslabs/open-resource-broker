@@ -21,16 +21,7 @@ def is_system_install() -> bool:
 
 
 def get_config_location() -> Path:
-    """Get configuration directory location.
-    
-    Priority:
-    1. ORB_CONFIG_DIR environment variable
-    2. Development mode detection
-    3. User installation
-    4. System installation  
-    5. Virtual environment
-    6. Current directory fallback
-    """
+    """Get basic configuration directory location for bootstrap."""
     # 1. Environment override
     if env_dir := os.environ.get("ORB_CONFIG_DIR"):
         return Path(env_dir)
@@ -58,12 +49,7 @@ def get_config_location() -> Path:
 
 
 def get_work_location() -> Path:
-    """Get work directory location.
-    
-    Priority:
-    1. ORB_WORK_DIR environment variable
-    2. Relative to configuration directory
-    """
+    """Get basic work directory location for bootstrap."""
     # 1. Environment override
     if env_dir := os.environ.get("ORB_WORK_DIR"):
         return Path(env_dir)
@@ -73,12 +59,7 @@ def get_work_location() -> Path:
 
 
 def get_logs_location() -> Path:
-    """Get logs directory location.
-    
-    Priority:
-    1. ORB_LOG_DIR environment variable
-    2. Relative to configuration directory
-    """
+    """Get basic logs directory location for bootstrap."""
     # 1. Environment override
     if env_dir := os.environ.get("ORB_LOG_DIR"):
         return Path(env_dir)
@@ -88,5 +69,5 @@ def get_logs_location() -> Path:
 
 
 def get_scripts_location() -> Path:
-    """Get scripts directory location relative to configuration directory."""
+    """Get basic scripts directory location for bootstrap."""
     return get_config_location().parent / "scripts"
