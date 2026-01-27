@@ -167,34 +167,34 @@ class ConfigurationLoader:
     @classmethod
     def _load_default_config(cls) -> dict[str, Any]:
         """
-        Load default configuration from embedded package file.
+        Load default configuration from project config directory.
 
         Returns:
             Default configuration dictionary
         """
-        get_config_logger().debug("Loading default configuration from package")
+        get_config_logger().debug("Loading default configuration")
 
         try:
-            # Load from package
-            import config
-            from pathlib import Path
+            # Use platform_dirs to get the correct config location
+            from config.platform_dirs import get_config_location
             
-            default_config_path = Path(config.__file__).parent / cls.DEFAULT_CONFIG_FILENAME
+            config_location = get_config_location()
+            default_config_path = config_location / cls.DEFAULT_CONFIG_FILENAME
             
             if default_config_path.exists():
                 with open(default_config_path) as f:
                     import json
                     config_data = json.load(f)
-                    get_config_logger().info("Loaded default configuration from package")
+                    get_config_logger().info("Loaded default configuration from %s", default_config_path)
                     return config_data
             else:
                 get_config_logger().warning(
-                    f"Default config not found in package: {default_config_path}"
+                    f"Default config not found: {default_config_path}"
                 )
                 return {}
         except Exception as e:
             get_config_logger().warning(
-                f"Failed to load default configuration from package: {e}"
+                f"Failed to load default configuration: {e}"
             )
             return {}
 
