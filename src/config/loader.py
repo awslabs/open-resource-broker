@@ -243,7 +243,6 @@ class ConfigurationLoader:
         try:
             path = Path(config_path)
             if not path.exists():
-                get_config_logger().warning("Configuration file not found: %s", config_path)
                 return None
 
             with path.open() as f:

@@ -10,29 +10,50 @@ def in_virtualenv() -> bool:
     return sys.prefix != sys.base_prefix
 
 
+def is_user_install() -> bool:
+    """Check if this is a user install (pip install --user)."""
+    return sys.prefix.startswith(str(Path.home()))
+
+
+def is_system_install() -> bool:
+    """Check if this is a system install."""
+    return sys.prefix.startswith(("/usr", "/opt"))
+
+
 def get_config_location() -> Path:
     """Get config location.
     
     Priority:
     1. ORB_CONFIG_DIR environment variable (standard)
-    2. Virtualenv: sibling to venv
-    3. Development: ./config if pyproject.toml exists in parent chain
+    2. Development: ./config if pyproject.toml exists in parent chain
+    3. User install: ~/.local/orb/config
+    4. System install: /usr/local/orb/config or /opt/orb/config
+    5. Virtualenv: sibling to venv
+    6. Fallback: current directory
     """
     # 1. Standard ORB environment variable
     if env_dir := os.environ.get("ORB_CONFIG_DIR"):
         return Path(env_dir)
     
-    # 2. Virtualenv - config sibling to venv
-    if in_virtualenv():
-        return Path(sys.prefix).parent / "config"
-    
-    # 3. Development mode - check parent directories for pyproject.toml
+    # 2. Development mode - check parent directories for pyproject.toml
     cwd = Path.cwd()
     for parent in [cwd] + list(cwd.parents):
         if (parent / "pyproject.toml").exists():
             return parent / "config"
     
-    # If none of the above, use current directory
+    # 3. User install (pip install --user)
+    if is_user_install():
+        return Path.home() / ".local" / "orb" / "config"
+    
+    # 4. System install
+    if is_system_install():
+        return Path(sys.prefix) / "orb" / "config"
+    
+    # 5. Virtualenv - config sibling to venv
+    if in_virtualenv():
+        return Path(sys.prefix).parent / "config"
+    
+    # 6. Fallback
     return cwd / "config"
 
 
