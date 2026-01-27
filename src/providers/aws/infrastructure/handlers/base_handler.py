@@ -29,6 +29,7 @@ from providers.aws.exceptions.aws_exceptions import (
     ResourceInUseError,
 )
 from providers.aws.infrastructure.aws_client import AWSClient
+from domain.template.template_aggregate import Template
 
 T = TypeVar("T")
 
@@ -158,6 +159,16 @@ class AWSHandler(ABC):
         Raises:
             AWSEntityNotFoundError: If the AWS resource is not found
             InfrastructureError: For other AWS API errors
+        """
+
+    @classmethod
+    @abstractmethod
+    def get_example_templates(cls) -> list[Template]:
+        """
+        Get example templates for this handler.
+
+        Returns:
+            List of example Template objects for this handler type
         """
 
     def _retry_with_backoff(

@@ -33,6 +33,7 @@ from typing import Any, Optional
 from domain.base.dependency_injection import injectable
 from domain.base.ports import LoggingPort
 from domain.request.aggregate import Request
+from domain.template.template_aggregate import Template
 from infrastructure.adapters.ports.request_adapter_port import RequestAdapterPort
 from infrastructure.error.decorators import handle_infrastructure_exceptions
 from infrastructure.utilities.common.resource_naming import get_resource_prefix
@@ -1164,3 +1165,107 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
         """Yield successive chunk-sized lists from items."""
         for index in range(0, len(items), chunk_size):
             yield items[index : index + chunk_size]
+
+    @classmethod
+    def get_example_templates(cls) -> list[Template]:
+        """Get example templates for SpotFleet handler."""
+        return [
+            # Request fleet type examples
+            Template(
+                template_id="SpotFleet-Request-LowestPrice",
+                name="Spot Fleet Request - Lowest Price",
+                description="Spot Fleet request with lowest price allocation",
+                provider_type="aws",
+                provider_api="SpotFleet",
+                instance_types={"t3.medium": 1, "t3.large": 2},
+                max_instances=20,
+                price_type="spot",
+                allocation_strategy="lowest_price",
+                fleet_type="request",
+                max_price=0.05,
+                subnet_ids=["subnet-xxxxx"],
+                security_group_ids=["sg-xxxxx"],
+                tags={"Environment": "dev", "ManagedBy": "ORB"}
+            ),
+            Template(
+                template_id="SpotFleet-Request-Diversified",
+                name="Spot Fleet Request - Diversified",
+                description="Spot Fleet request with diversified allocation",
+                provider_type="aws",
+                provider_api="SpotFleet",
+                instance_types={"t3.medium": 1, "t3.large": 2},
+                max_instances=25,
+                price_type="spot",
+                allocation_strategy="diversified",
+                fleet_type="request",
+                max_price=0.06,
+                subnet_ids=["subnet-xxxxx"],
+                security_group_ids=["sg-xxxxx"],
+                tags={"Environment": "dev", "ManagedBy": "ORB"}
+            ),
+            Template(
+                template_id="SpotFleet-Request-CapacityOptimized",
+                name="Spot Fleet Request - Capacity Optimized",
+                description="Spot Fleet request with capacity optimized allocation",
+                provider_type="aws",
+                provider_api="SpotFleet",
+                instance_types={"t3.medium": 1, "t3.large": 2},
+                max_instances=30,
+                price_type="spot",
+                allocation_strategy="capacity_optimized",
+                fleet_type="request",
+                max_price=0.07,
+                subnet_ids=["subnet-xxxxx"],
+                security_group_ids=["sg-xxxxx"],
+                tags={"Environment": "dev", "ManagedBy": "ORB"}
+            ),
+            # Maintain fleet type examples
+            Template(
+                template_id="SpotFleet-Maintain-LowestPrice",
+                name="Spot Fleet Maintain - Lowest Price",
+                description="Spot Fleet maintain with lowest price allocation",
+                provider_type="aws",
+                provider_api="SpotFleet",
+                instance_types={"t3.medium": 1, "t3.large": 2},
+                max_instances=15,
+                price_type="spot",
+                allocation_strategy="lowest_price",
+                fleet_type="maintain",
+                max_price=0.04,
+                subnet_ids=["subnet-xxxxx"],
+                security_group_ids=["sg-xxxxx"],
+                tags={"Environment": "prod", "ManagedBy": "ORB"}
+            ),
+            Template(
+                template_id="SpotFleet-Maintain-Diversified",
+                name="Spot Fleet Maintain - Diversified",
+                description="Spot Fleet maintain with diversified allocation",
+                provider_type="aws",
+                provider_api="SpotFleet",
+                instance_types={"t3.medium": 1, "t3.large": 2},
+                max_instances=20,
+                price_type="spot",
+                allocation_strategy="diversified",
+                fleet_type="maintain",
+                max_price=0.05,
+                subnet_ids=["subnet-xxxxx"],
+                security_group_ids=["sg-xxxxx"],
+                tags={"Environment": "prod", "ManagedBy": "ORB"}
+            ),
+            Template(
+                template_id="SpotFleet-Maintain-CapacityOptimized",
+                name="Spot Fleet Maintain - Capacity Optimized",
+                description="Spot Fleet maintain with capacity optimized allocation",
+                provider_type="aws",
+                provider_api="SpotFleet",
+                instance_types={"t3.medium": 1, "t3.large": 2},
+                max_instances=25,
+                price_type="spot",
+                allocation_strategy="capacity_optimized",
+                fleet_type="maintain",
+                max_price=0.06,
+                subnet_ids=["subnet-xxxxx"],
+                security_group_ids=["sg-xxxxx"],
+                tags={"Environment": "prod", "ManagedBy": "ORB"}
+            )
+        ]
