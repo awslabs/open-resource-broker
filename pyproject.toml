@@ -42,28 +42,43 @@ classifiers = [
 requires-python = ">=3.10"
 
 dependencies = [
+    # Core dependencies (always needed)
     "boto3>=1.42.21",
     "botocore>=1.42.21",
     "pydantic>=2.0.0",
     "sqlalchemy>=2.0.0",
-    "dynaconf>=3.2.0",
-    "structlog>=23.1.0",
     "urllib3>=2.6.0",  # Security: Fix CVE-2025-66471 and CVE-2025-66418
-    "opentelemetry-api>=1.20.0",
-    "opentelemetry-sdk>=1.20.0",
-    "psutil>=5.9.0",
-    "prometheus-client>=0.17.0",
-    "jsonschema>=4.17.0",
-    "rich>=13.3.0",
-    "python-dotenv>=1.0.0",
     "PyJWT>=2.8.0",
     "cryptography>=41.0.0",
     "requests>=2.31.0",
-    "PyYAML>=6.0.0",
-    "click>=8.0.0",
+    "PyYAML>=6.0.0",  # Exported API (lazy-loaded)
+    "jsonschema>=4.17.0",
     "fastapi>=0.104.0",
     "uvicorn>=0.24.0",
     "jinja2>=3.1.0",
+]
+
+[project.optional-dependencies]
+# CLI enhancements (colored output)
+cli = [
+    "rich>=13.3.0",
+    "rich-argparse>=1.0.0",
+]
+
+# Monitoring & observability (for API/production deployments)
+monitoring = [
+    "opentelemetry-api>=1.20.0",
+    "opentelemetry-sdk>=1.20.0",
+    "opentelemetry-instrumentation-fastapi>=0.41b0",
+    "opentelemetry-instrumentation-boto3>=0.41b0",
+    "opentelemetry-instrumentation-sqlalchemy>=0.41b0",
+    "prometheus-client>=0.17.0",
+    "psutil>=5.9.0",
+]
+
+# All optional features
+all = [
+    "orb-py[cli,monitoring]",
 ]
 
 [dependency-groups]
@@ -164,6 +179,7 @@ py-modules = ["run", "_package", "bootstrap"]
 
 [tool.setuptools.package-data]
 "*" = ["py.typed"]
+"config" = ["*.json"]
 
 
 
