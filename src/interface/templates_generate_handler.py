@@ -18,23 +18,19 @@ async def handle_templates_generate(args) -> Dict[str, Any]:
         provider_api = getattr(args, 'provider_api', None)
         examples = _generate_examples(provider_type, provider_api)
         
-        # Determine filename based on scheduler type
+        # Get scheduler strategy to determine filename
         from config.platform_dirs import get_config_location
+        from infrastructure.di.container import get_container
+        from domain.base.ports.scheduler_port import SchedulerPort
+        
         config_dir = get_config_location()
-        config_file = config_dir / "config.json"
         
-        # Load config to check scheduler type
-        scheduler_type = "default"
-        if config_file.exists():
-            with open(config_file) as f:
-                config = json.load(f)
-                scheduler_type = config.get("scheduler", {}).get("type", "default")
+        # Get scheduler strategy from DI container
+        container = get_container()
+        scheduler_strategy = container.get(SchedulerPort)
         
-        # Determine filename
-        if scheduler_type == "hostfactory":
-            filename = f"{provider_type}_templates.json"
-        else:
-            filename = "templates.json"
+        # Use strategy method (no if/else!)
+        filename = scheduler_strategy.get_templates_filename(provider_name, provider_type)
         
         # Get config directory
         config_dir.mkdir(parents=True, exist_ok=True)
