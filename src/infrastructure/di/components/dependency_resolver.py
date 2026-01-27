@@ -25,10 +25,11 @@ logger = logging.getLogger(__name__)
 class DependencyResolver:
     """Handles dependency resolution and instance creation."""
 
-    def __init__(self, service_registry, cqrs_registry) -> None:
+    def __init__(self, service_registry, cqrs_registry, container) -> None:
         """Initialize the instance."""
         self._service_registry = service_registry
         self._cqrs_registry = cqrs_registry
+        self._container = container
         self._lock = threading.RLock()
         self._resolution_cache: dict[type, Any] = {}
 
@@ -402,9 +403,7 @@ class DependencyResolver:
 
     def _get_container_instance(self):
         """Get the container instance for factory function parameters."""
-        from infrastructure.di.container import get_container
-
-        return get_container()
+        return self._container
 
     def clear_cache(self) -> None:
         """Clear resolution cache."""

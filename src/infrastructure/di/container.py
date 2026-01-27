@@ -89,7 +89,7 @@ class DIContainer(DIContainerPort, CQRSHandlerRegistrationPort, ContainerPort):
         """Initialize the DI container."""
         self._service_registry = ServiceRegistry()
         self._cqrs_registry = CQRSHandlerRegistry()
-        self._dependency_resolver = DependencyResolver(self._service_registry, self._cqrs_registry)
+        self._dependency_resolver = DependencyResolver(self._service_registry, self._cqrs_registry, self)
         self._lock = threading.RLock()
 
         # Lazy loading support
@@ -337,6 +337,9 @@ def get_container() -> DIContainer:
 def _create_configured_container() -> DIContainer:
     """Create and configure the DI container."""
     container = DIContainer()
+    
+    from infrastructure.di.services import register_all_services
+    register_all_services(container)
 
     logger.info("DI Container configured and ready")
     return container

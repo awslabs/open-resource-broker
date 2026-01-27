@@ -45,7 +45,7 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         try:
             # Use provider selection service for provider selection
             selection_result = self._provider_selection_service.select_active_provider()
-            provider_name = selection_result.name
+            provider_name = selection_result.provider_instance
             provider_type = selection_result.provider_type
             
             # Use scheduler strategy for filename (consistent with generation)

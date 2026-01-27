@@ -21,20 +21,17 @@ from infrastructure.di.server_services import register_server_services
 from infrastructure.di.storage_services import register_storage_services
 
 
-def register_all_services(container: Optional[DIContainer] = None) -> DIContainer:
+def register_all_services(container: DIContainer) -> DIContainer:
     """
     Register all services in the dependency injection container.
     Includes lazy loading support for improved startup performance.
 
     Args:
-        container: Optional container instance
+        container: Container instance (required)
 
     Returns:
         Configured container
     """
-    if container is None:
-        container = get_container()
-
     # Check if lazy loading is enabled
     if container.is_lazy_loading_enabled():
         return _register_services_lazy(container)
