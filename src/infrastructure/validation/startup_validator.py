@@ -79,12 +79,17 @@ class StartupValidator:
     
     def _validate_important(self) -> None:
         """Important validation - warn but continue."""
-        # 1. Templates file exists
+        # 1. Default config template exists
+        if not self._check_default_config():
+            print_info("Default config template not found")
+            print_command("  Run: orb init")
+        
+        # 2. Templates file exists
         if not self._check_templates_file():
             print_info("Templates file not found")
             print_command("  Run: orb templates generate")
         
-        # 2. AWS credentials configured
+        # 3. AWS credentials configured
         if not self._check_aws_credentials():
             print_warning("AWS credentials not configured")
             print_command("  Configure with: aws configure")
@@ -139,6 +144,17 @@ class StartupValidator:
         
         return resolved_path is not None and Path(resolved_path).exists()
     
+    def _check_default_config(self) -> bool:
+        """Check if default_config.json template exists."""
+        from config.loader import ConfigurationLoader
+        
+        # Use config loader's path resolution for default_config.json
+        resolved_path = ConfigurationLoader._resolve_file_path(
+            "template", "default_config.json", explicit_path=None, config_manager=None
+        )
+        
+        return resolved_path is not None and Path(resolved_path).exists()
+    
     def _check_aws_credentials(self) -> bool:
         """Check if AWS credentials are configured."""
         if not self.app_config:
@@ -174,12 +190,19 @@ class StartupValidator:
         print_info("")
         print_info("Configuration not found in:")
         
-        # Use the exact same path resolution logic as the config loader
-        resolved_path = ConfigurationLoader._resolve_file_path(
+        # Check for default_config.json template first
+        default_resolved = ConfigurationLoader._resolve_file_path(
+            "template", "default_config.json", explicit_path=None, config_manager=None
+        )
+        if default_resolved:
+            print_info(f"  - {default_resolved}")
+        
+        # Then check for config.json
+        config_resolved = ConfigurationLoader._resolve_file_path(
             "conf", "config.json", explicit_path=None, config_manager=None
         )
-        if resolved_path:
-            print_info(f"  - {resolved_path}")
+        if config_resolved:
+            print_info(f"  - {config_resolved}")
         
         print_info("")
         print_info("To initialize:")
