@@ -1141,6 +1141,34 @@ class AWSProviderStrategy(ProviderStrategy):
             },
         }
 
+    def generate_provider_name(self, config: dict[str, Any]) -> str:
+        """Generate AWS provider name: {provider_type}_{profile}_{region}"""
+        provider_type = self.provider_type  # Use dynamic provider type
+        profile = config.get("profile", "default")
+        region = config.get("region", "us-east-1")
+        return f"{provider_type}_{profile}_{region}"
+
+    def parse_provider_name(self, provider_name: str) -> dict[str, str]:
+        """Parse AWS provider name back to components."""
+        if "_" in provider_name:
+            parts = provider_name.split("_")
+            return {
+                "type": parts[0] if len(parts) > 0 else self.provider_type,
+                "profile": parts[1] if len(parts) > 1 else "default", 
+                "region": parts[2] if len(parts) > 2 else "us-east-1"
+            }
+        else:
+            # Legacy format: aws-default
+            return {
+                "type": provider_name.split("-")[0],
+                "profile": "default",
+                "region": "us-east-1"
+            }
+
+    def get_provider_name_pattern(self) -> str:
+        """AWS naming pattern."""
+        return "{type}_{profile}_{region}"
+
     def cleanup(self) -> None:
         """Clean up AWS provider resources."""
         try:

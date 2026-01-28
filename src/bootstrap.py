@@ -74,7 +74,7 @@ class Application:
     async def initialize(self, dry_run: bool = False) -> bool:
         """Initialize the application with DI container."""
         try:
-            # Ensure config manager is available (lazy)
+            # Ensure config manager is available
             self._ensure_config_manager()
 
             self.logger.info("Initializing application with provider: %s", self.provider_type)
@@ -94,11 +94,10 @@ class Application:
                 self._dry_run_context = dry_run_context(True)
                 self._dry_run_context.__enter__()
 
-            # Ensure container is available (lazy)
+            # Ensure container is available
             self._ensure_container()
 
-            # Register all services AFTER container creation but BEFORE service
-            # resolution
+            # Register all services after container creation but before service resolution
             from infrastructure.di.services import register_all_services
 
             register_all_services(self._container)

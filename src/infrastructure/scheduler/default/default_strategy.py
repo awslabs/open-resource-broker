@@ -26,16 +26,37 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
         self.config_manager = config_manager
         self._logger = logger
 
+        # Initialize provider selection service for provider selection
+        from application.services.provider_selection_service import (
+            ProviderSelectionService,
+        )
+        from infrastructure.di.container import get_container
+
+        container = get_container()
+        self._provider_selection_service = container.get(ProviderSelectionService)
+
         # Initialize field mapper
         self.field_mapper = DefaultFieldMapper()
 
     def get_templates_file_path(self) -> str:
         """Get templates file path using strategy pattern."""
-        # Use scheduler strategy for filename (consistent with generation)
-        filename = self.get_templates_filename("default", "default")
+        try:
+            # Use provider selection service that respects CLI override
+            selection_result = self._provider_selection_service.select_provider_for_template_loading()
+            provider_name = selection_result.provider_instance
+            provider_type = selection_result.provider_type
 
-        # Use ConfigurationManager to resolve the file path
-        return self.config_manager.resolve_file("template", filename)
+            # Use scheduler strategy for filename (consistent with generation)
+            filename = self.get_templates_filename(provider_name, provider_type)
+
+            # Use ConfigurationManager to resolve the file path
+            return self.config_manager.resolve_file("template", filename)
+
+        except Exception as e:
+            self._logger.error("Failed to determine templates file path: %s", e)
+            # Fallback to default behavior
+            filename = self.get_templates_filename("default", "default")
+            return self.config_manager.resolve_file("template", filename)
 
     def get_template_paths(self) -> list[str]:
         """Get template file paths."""

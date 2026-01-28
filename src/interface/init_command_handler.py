@@ -162,7 +162,7 @@ def _create_directories(config_dir: Path, work_dir: Path, logs_dir: Path):
 
 
 def _write_config_file(config_file: Path, user_config: Dict[str, Any]):
-    """Write configuration file."""
+    """Write configuration file with new provider naming."""
     from config.installation_detector import get_template_location
 
     try:
@@ -182,16 +182,26 @@ def _write_config_file(config_file: Path, user_config: Dict[str, Any]):
     with open(default_config_file, "w") as f:
         json.dump(full_config, f, indent=2)
 
+    # Generate provider name using provider-aware naming convention
+    provider_config = {
+        "profile": user_config["profile"],
+        "region": user_config["region"]
+    }
+    
+    # Use provider type from user config instead of hardcoded "aws"
+    provider_type = user_config["provider_type"]
+    provider_name = f"{provider_type}_{user_config['profile']}_{user_config['region']}"
+
     # Create config.json with user overrides only
     config = {
         "scheduler": {"type": user_config["scheduler_type"]},
         "provider": {
             "providers": [
                 {
-                    "name": f"{user_config['provider_type']}-{user_config['profile']}",
+                    "name": provider_name,  # NEW NAMING
                     "type": user_config["provider_type"],
                     "enabled": True,
-                    "config": {"region": user_config["region"], "profile": user_config["profile"]},
+                    "config": provider_config,
                 }
             ]
         },

@@ -2,6 +2,8 @@
 
 The scheduler management commands allow you to list, configure, and validate scheduler strategies in the Open Resource Broker.
 
+> **Note:** For complete CLI reference including all flags and argument patterns, see [CLI Reference](cli-reference.md).
+
 ## Available Commands
 
 ### List Scheduler Strategies

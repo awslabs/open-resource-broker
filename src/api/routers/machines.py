@@ -2,10 +2,13 @@
 
 from typing import Any, Optional
 
-from fastapi import APIRouter, Depends, Query
-from fastapi.encoders import jsonable_encoder
-from fastapi.responses import JSONResponse
-from pydantic import BaseModel
+try:
+    from fastapi import APIRouter, Depends, Query
+    from fastapi.encoders import jsonable_encoder
+    from fastapi.responses import JSONResponse
+    from pydantic import BaseModel
+except ImportError:
+    raise ImportError("FastAPI routing requires: pip install orb-py[api]") from None
 
 from api.dependencies import get_request_machines_handler, get_return_machines_handler
 from infrastructure.error.decorators import handle_rest_exceptions

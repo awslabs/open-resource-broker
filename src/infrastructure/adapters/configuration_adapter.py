@@ -270,3 +270,7 @@ class ConfigurationAdapter(ConfigurationPort):
         except ImportError:
             # If _package.py itself fails, we have bigger problems - let it fail
             raise
+
+    def get_active_provider_override(self) -> str | None:
+        """Get current provider override from CLI."""
+        return self._config_manager.get_active_provider_override()

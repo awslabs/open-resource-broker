@@ -2,6 +2,8 @@
 
 The template management commands provide CRUD (Create, Read, Update, Delete) operations for compute templates in the Open Resource Broker. These commands use the TemplateConfigurationManager as the single source of truth.
 
+> **Note:** For complete CLI reference including all flags and argument patterns, see [CLI Reference](cli-reference.md).
+
 ## Available Commands
 
 ### List Templates

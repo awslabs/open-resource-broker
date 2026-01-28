@@ -44,11 +44,15 @@ def parse_args() -> tuple[argparse.Namespace, dict]:
         formatter_class=HELP_FORMATTER,
         epilog=f"""
 Examples:
-  %(prog)s templates list                    # List all templates
-  %(prog)s templates list --legacy           # List in legacy format
-  %(prog)s templates list --format table     # Display as table
-  %(prog)s machines request template-id 5    # Request 5 machines
-  %(prog)s requests list --status pending    # List pending requests
+  %(prog)s templates list                              # List all templates
+  %(prog)s templates generate --all-providers          # Generate templates for all providers
+  %(prog)s --provider aws-prod templates list          # Use specific provider
+  %(prog)s requests status --request-id req-123        # Check request status (flag)
+  %(prog)s requests status req-123                     # Check request status (positional)
+  %(prog)s templates show --template-id template-id    # Show template details (flag)
+  %(prog)s templates show template-id                  # Show template details (positional)
+  %(prog)s machines request template-id 5              # Request 5 machines
+  %(prog)s machines request --template-id template-id --count 5  # Same using flags
 
 For more information, visit: {DOCS_URL}
         """,
@@ -80,6 +84,10 @@ For more information, visit: {DOCS_URL}
         "--scheduler",
         choices=["default", "hostfactory", "hf"],
         help="Override scheduler strategy for this command",
+    )
+    parser.add_argument(
+        "--provider",
+        help="Override provider instance for this command (e.g., aws-prod, aws-dev)"
     )
     parser.add_argument(
         "--completion", choices=["bash", "zsh"], help="Generate shell completion script"
@@ -127,8 +135,9 @@ For more information, visit: {DOCS_URL}
     )
 
     # Templates show
-    templates_show = templates_subparsers.add_parser("show", help="Show template details")
-    templates_show.add_argument("template_id", help="Template ID to show")
+    templates_show = templates_subparsers.add_parser("show", help="Show template details (supports both positional and --template-id flag)")
+    templates_show.add_argument("template_id", nargs="?", help="Template ID to show")
+    templates_show.add_argument("--template-id", "-t", dest="flag_template_id", help="Template ID to show")
     templates_show.add_argument(
         "--format", choices=["json", "yaml", "table", "list"], help="Output format"
     )
@@ -141,15 +150,17 @@ For more information, visit: {DOCS_URL}
     )
 
     # Templates update
-    templates_update = templates_subparsers.add_parser("update", help="Update existing template")
-    templates_update.add_argument("template_id", help="Template ID to update")
+    templates_update = templates_subparsers.add_parser("update", help="Update existing template (supports both positional and --template-id flag)")
+    templates_update.add_argument("template_id", nargs="?", help="Template ID to update")
+    templates_update.add_argument("--template-id", "-t", dest="flag_template_id", help="Template ID to update")
     templates_update.add_argument(
         "--file", required=True, help="Updated template configuration file"
     )
 
     # Templates delete
-    templates_delete = templates_subparsers.add_parser("delete", help="Delete template")
-    templates_delete.add_argument("template_id", help="Template ID to delete")
+    templates_delete = templates_subparsers.add_parser("delete", help="Delete template (supports both positional and --template-id flag)")
+    templates_delete.add_argument("template_id", nargs="?", help="Template ID to delete")
+    templates_delete.add_argument("--template-id", "-t", dest="flag_template_id", help="Template ID to delete")
     templates_delete.add_argument(
         "--force", action="store_true", help="Force deletion without confirmation"
     )
@@ -166,7 +177,11 @@ For more information, visit: {DOCS_URL}
     templates_generate = templates_subparsers.add_parser(
         "generate", help="Generate example templates"
     )
-    templates_generate.add_argument("--provider", help="Provider instance name")
+    templates_generate.add_argument("--provider", help="Generate for specific provider instance")
+    templates_generate.add_argument(
+        "--all-providers", action="store_true", 
+        help="Explicitly generate for all active providers"
+    )
     templates_generate.add_argument(
         "--provider-api", help="Specific provider API (EC2Fleet, SpotFleet, ASG, RunInstances)"
     )
@@ -187,14 +202,15 @@ For more information, visit: {DOCS_URL}
     )
 
     # Machines show
-    machines_show = machines_subparsers.add_parser("show", help="Show machine details")
-    machines_show.add_argument("machine_id", help="Machine ID to show")
+    machines_show = machines_subparsers.add_parser("show", help="Show machine details (supports both positional and --machine-id flag)")
+    machines_show.add_argument("machine_id", nargs="?", help="Machine ID to show")
+    machines_show.add_argument("--machine-id", "-m", dest="flag_machine_id", help="Machine ID to show")
     machines_show.add_argument(
         "--format", choices=["json", "yaml", "table", "list"], help="Output format"
     )
 
     # Machines request (create machines)
-    machines_request = machines_subparsers.add_parser("request", help="Request new machines")
+    machines_request = machines_subparsers.add_parser("request", help="Request new machines (supports both positional args and --template-id/--count flags)")
     machines_request.add_argument(
         "template_id",
         nargs="?",
@@ -206,6 +222,8 @@ For more information, visit: {DOCS_URL}
         type=int,
         help="Number of machines to request (optional if using -f/--file or -d/--data)",
     )
+    machines_request.add_argument("--template-id", "-t", dest="flag_template_id", help="Template ID to use")
+    machines_request.add_argument("--count", "-c", type=int, dest="flag_machine_count", help="Number of machines to request")
     machines_request.add_argument(
         "--wait", action="store_true", help="Wait for machines to be ready"
     )
@@ -258,8 +276,9 @@ For more information, visit: {DOCS_URL}
     requests_cancel.add_argument("--force", action="store_true", help="Force cancellation")
 
     # Requests status
-    requests_status = requests_subparsers.add_parser("status", help="Check request status")
+    requests_status = requests_subparsers.add_parser("status", help="Check request status (supports both positional args and --request-id flags)")
     requests_status.add_argument("request_ids", nargs="*", help="Request IDs to check")
+    requests_status.add_argument("--request-id", "-r", action="append", dest="flag_request_ids", help="Request ID to check (can be used multiple times)")
 
     # System resource
     system_parser = subparsers.add_parser("system", help="System operations")
@@ -583,6 +602,16 @@ async def execute_command(args, app) -> dict[str, Any]:
 
             logger = get_logger(__name__)
             logger.warning("Failed to override scheduler strategy: %s", e)
+
+    # Handle global provider override
+    if hasattr(args, "provider") and args.provider:
+        try:
+            app.config_manager().override_provider_instance(args.provider)
+        except Exception as e:
+            from infrastructure.logging.logger import get_logger
+
+            logger = get_logger(__name__)
+            logger.warning("Failed to override provider instance: %s", e)
 
     try:
         # Import function handlers - all are now async functions with decorators

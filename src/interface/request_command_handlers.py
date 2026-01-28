@@ -32,8 +32,11 @@ async def handle_get_request_status(args: "argparse.Namespace") -> dict[str, Any
         raw_request_data = args.input_data
     else:
         request_ids_from_args = []
+        # Merge positional and flag arguments
         if hasattr(args, "request_ids") and args.request_ids:
-            request_ids_from_args = args.request_ids
+            request_ids_from_args.extend(args.request_ids)
+        if hasattr(args, "flag_request_ids") and args.flag_request_ids:
+            request_ids_from_args.extend(args.flag_request_ids)
         elif hasattr(args, "request_id") and args.request_id:
             request_ids_from_args.append(args.request_id)
 
@@ -87,9 +90,15 @@ async def handle_request_machines(args: "argparse.Namespace") -> dict[str, Any]:
     if hasattr(args, "input_data") and args.input_data:
         raw_request_data = args.input_data
     else:
+        # Merge positional and flag arguments
+        template_id = getattr(args, "template_id", None) or getattr(args, "flag_template_id", None)
+        machine_count = getattr(args, "machine_count", None) or getattr(args, "flag_machine_count", None)
+        machine_id = getattr(args, "machine_id", None) or getattr(args, "flag_machine_id", None)
+        
         raw_request_data = {
-            "template_id": getattr(args, "template_id", None),
-            "requested_count": getattr(args, "machine_count", None),
+            "template_id": template_id,
+            "requested_count": machine_count,
+            "machine_id": machine_id,  # For show operations
         }
 
     # Let scheduler strategy parse the raw data (each scheduler handles its own format)

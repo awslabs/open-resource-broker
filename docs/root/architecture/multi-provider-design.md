@@ -1,8 +1,8 @@
-# Multi-Provider Architecture Design
+# AWS Provider Architecture Design
 
 ## Overview
 
-The Open Resource Broker implements a sophisticated multi-provider architecture that enables dynamic provisioning of compute resources across multiple cloud providers and provider instances. This document describes the design, implementation, and usage patterns of the multi-provider system.
+The Open Resource Broker implements a provider architecture that enables dynamic provisioning of compute resources across multiple AWS configurations and provider instances. This document describes the design, implementation, and usage patterns of the AWS provider system.
 
 ## Architecture Components
 
@@ -36,7 +36,7 @@ The `Template` aggregate has been extended with multi-provider fields:
 ```python
 class Template:
     template_id: str
-    provider_type: Optional[str]      # NEW: Provider type (aws, azure, gcp)
+    provider_type: Optional[str]      # NEW: Provider type (aws)
     provider_name: Optional[str]      # NEW: Provider instance name (aws-us-east-1)
     provider_api: Optional[str]       # NEW: Specific API to use (EC2Fleet, SpotFleet)
     # ... existing fields

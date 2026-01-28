@@ -221,7 +221,7 @@ class MetricsCollector:
             return list(self._trace_buffer) if self._trace_buffer is not None else []
 
     def flush_traces(self) -> None:
-        """Append traces to a single file and clear buffer."""
+        """Append traces to file and clear buffer."""
         if not self._trace_buffer:
             return
 
@@ -300,7 +300,6 @@ class MetricsCollector:
     def check_thresholds(self) -> list[dict[str, Any]]:
         """Check metrics against configured thresholds."""
         alerts = []
-        # TODO: unimplemented.
         thresholds = self.config.get("alert_thresholds", {})
 
         with self._lock:

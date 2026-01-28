@@ -96,7 +96,7 @@ class TemplateSerializer:
         try:
             self.logger.debug("Converting template data: %s", data)
 
-            # Apply configuration defaults BEFORE creating Template
+            # Apply configuration defaults before creating Template
             processed_data = data
             if self.defaults_service:
                 try:
@@ -126,8 +126,7 @@ class TemplateSerializer:
             if not template_id:
                 raise ValueError(f"No template_id found in data: {list(processed_data.keys())}")
 
-            # Normalize instance type mappings across legacy and new schemas.
-            # Prefer explicit instance_types, then camelCase vmTypes/instanceTypes, then legacy vm_types.
+            # Normalize instance type mappings across legacy and new schemas
             normalized_instance_types = (
                 processed_data.get("instance_types")
                 or processed_data.get("vmTypes")

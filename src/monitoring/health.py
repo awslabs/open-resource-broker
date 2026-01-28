@@ -185,7 +185,10 @@ class HealthCheck:
 
     def _check_system_health(self) -> HealthStatus:
         """Check system health."""
-        import psutil
+        try:
+            import psutil
+        except ImportError:
+            raise ImportError("System monitoring requires: pip install orb-py[monitoring]") from None
 
         try:
             cpu_percent = psutil.cpu_percent()

@@ -93,8 +93,8 @@ def format_generic_table(items: list[dict], title: str = "Items") -> str:
         return capture.get()
 
     except ImportError:
-        # Fallback to ASCII table if Rich is not available
-        return _format_generic_ascii_table(items, title)
+        # Rich formatting requires CLI package
+        raise ImportError("Rich table formatting requires: pip install orb-py[cli]") from None
 
 
 def format_generic_list(items: list[dict], title: str = "Items") -> str:

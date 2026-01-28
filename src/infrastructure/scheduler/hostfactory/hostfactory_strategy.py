@@ -47,8 +47,8 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
     def get_templates_file_path(self) -> str:
         """Get the templates file path for HostFactory using strategy pattern."""
         try:
-            # Use provider selection service for provider selection
-            selection_result = self._provider_selection_service.select_active_provider()
+            # Use provider selection service that respects CLI override
+            selection_result = self._provider_selection_service.select_provider_for_template_loading()
             provider_name = selection_result.provider_instance
             provider_type = selection_result.provider_type
 
@@ -107,19 +107,19 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
             return []
 
     def _map_template_fields(self, template: dict[str, Any]) -> dict[str, Any]:
-        """Map HostFactory fields to internal format with full business logic."""
+        """Map HostFactory fields to internal format with business logic."""
         if template is None:
             raise ValueError("Template cannot be None in field mapping")
         if not isinstance(template, dict):
             raise ValueError(f"Template must be a dictionary, got {type(template)}")
 
-        # Step 1: Field mapping (bidirectional)
+        # Field mapping (bidirectional)
         mapped = self.field_mapper.map_input_fields(template)
 
-        # Step 2: Apply HostFactory transformations
+        # Apply HostFactory transformations
         mapped = HostFactoryTransformations.apply_transformations(mapped)
 
-        # Step 3: Complex field handling
+        # Complex field handling
         if "vmTypes" in template and isinstance(template["vmTypes"], dict):
             mapped["instance_types"] = template["vmTypes"]
             if "instance_type" not in mapped or not mapped["instance_type"]:
@@ -128,7 +128,7 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         if "attributes" in template:
             mapped["attributes"] = template["attributes"]
 
-        # Step 4: Business logic - Apply template defaults
+        # Business logic - Apply template defaults
         if self.template_defaults_service:
             mapped["provider_api"] = self.template_defaults_service.resolve_provider_api_default(
                 template
@@ -248,22 +248,13 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         
         # Status-based message and response logic
         if status == "failed":
-            # TODO: Verify how returning requestId on failures affects HostFactory behavior
-            # Per IBM spec, failures should not return requestId
             return {"message": f"Request failed: {error_message or 'Unknown error'}"}
-            # return {"requestId": request_id, "message": f"Request failed: {error_message or 'Unknown error'}"}
         elif status == "cancelled":
-            # TODO: Verify how returning requestId on cancellation affects HostFactory behavior
             return {"message": "Request cancelled"}
-            # return {"requestId": request_id, "message": "Request cancelled"}
         elif status == "timeout":
-            # TODO: Verify how returning requestId on timeout affects HostFactory behavior
             return {"message": "Request timed out"}
-            # return {"requestId": request_id, "message": "Request timed out"}
         elif status == "partial":
-            # TODO: Verify how returning requestId on partial completion affects HostFactory behavior
             return {"message": f"Request partially completed: {error_message or 'Some resources failed'}"}
-            # return {"requestId": request_id, "message": f"Request partially completed: {error_message or 'Some resources failed'}"}
         elif status == "complete":
             return {"requestId": request_id, "message": "Request completed successfully"}
         elif status == "in_progress":

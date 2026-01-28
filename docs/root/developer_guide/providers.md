@@ -1,6 +1,6 @@
 # Provider Architecture
 
-The Open Resource Broker implements a sophisticated provider-agnostic architecture that enables seamless integration with multiple cloud providers while maintaining zero cloud dependencies in the core domain layer.
+The Open Resource Broker implements a provider architecture that enables integration with AWS while maintaining clean separation between the core domain layer and AWS-specific implementations.
 
 ## Provider Architecture Overview
 
@@ -31,16 +31,8 @@ graph TB
         AWSClient[AWS Client]
     end
 
-    subgraph "Future Providers"
-        AzureProvider[Provider1 Provider]
-        GCPProvider[Provider2 Provider]
-        CustomProvider[Custom Provider]
-    end
-
     AppService --> ProviderInterface
     ProviderFactory --> AWSProvider
-    ProviderFactory --> AzureProvider
-    ProviderFactory --> GCPProvider
 
     AWSProvider --> AWSHandlers
     AWSHandlers --> AWSOperations
