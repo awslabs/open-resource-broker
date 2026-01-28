@@ -16,9 +16,9 @@ async def handle_templates_generate(args) -> Dict[str, Any]:
         provider_name = getattr(args, 'provider', None) or "aws-default"
         provider_type = provider_name.split('-')[0] if '-' in provider_name else provider_name
         
-        # Generate examples
+        # Generate examples from handler factory
         provider_api = getattr(args, 'provider_api', None)
-        examples = _generate_examples(provider_type, provider_api)
+        examples = _generate_examples_from_factory(provider_type, provider_api)
         
         # Get scheduler strategy class to determine filename (no if/else!)
         from config.platform_dirs import get_config_location
@@ -82,82 +82,26 @@ async def handle_templates_generate(args) -> Dict[str, Any]:
         }
 
 
-def _generate_examples(provider_type: str, provider_api: str = None) -> list[Dict[str, Any]]:
-    """Generate example templates."""
+def _generate_examples_from_factory(provider_type: str, provider_api: str = None) -> list[Dict[str, Any]]:
+    """Generate example templates using handler factory."""
     if provider_type == "aws":
-        return _generate_aws_examples(provider_api)
+        from providers.aws.infrastructure.aws_handler_factory import AWSHandlerFactory
+        from infrastructure.di.container import get_container
+        
+        container = get_container()
+        factory = container.get(AWSHandlerFactory)
+        
+        # Get examples from handlers as Template domain objects
+        template_objects = factory.generate_example_templates()
+        
+        # Convert to dict format for processing
+        examples = []
+        for template in template_objects:
+            # Filter by provider_api if specified
+            if provider_api and template.provider_api != provider_api:
+                continue
+            examples.append(template.model_dump())
+        
+        return examples
     else:
         return []
-
-
-def _generate_aws_examples(provider_api: str = None) -> list[Dict[str, Any]]:
-    """Generate AWS example templates."""
-    examples = []
-    
-    # EC2Fleet example
-    if not provider_api or provider_api == "EC2Fleet":
-        examples.append({
-            "template_id": "EC2FleetInstant",
-            "name": "EC2 Fleet Instant",
-            "description": "EC2 Fleet with instant fulfillment",
-            "provider_type": "aws",
-            "provider_api": "EC2Fleet",
-            "instance_type": "t3.medium",
-            "max_instances": 10,
-            "price_type": "ondemand",
-            "subnet_ids": ["subnet-xxxxx"],
-            "security_group_ids": ["sg-xxxxx"],
-            "tags": {"Environment": "dev", "ManagedBy": "ORB"}
-        })
-    
-    # SpotFleet example
-    if not provider_api or provider_api == "SpotFleet":
-        examples.append({
-            "template_id": "SpotFleet",
-            "name": "Spot Fleet",
-            "description": "Spot Fleet for cost-effective compute",
-            "provider_type": "aws",
-            "provider_api": "SpotFleet",
-            "instance_types": {"t3.medium": 1, "t3.large": 2},
-            "max_instances": 20,
-            "price_type": "spot",
-            "max_price": 0.05,
-            "allocation_strategy": "lowest_price",
-            "subnet_ids": ["subnet-xxxxx"],
-            "security_group_ids": ["sg-xxxxx"],
-            "tags": {"Environment": "dev", "ManagedBy": "ORB"}
-        })
-    
-    # AutoScalingGroup example
-    if not provider_api or provider_api == "ASG":
-        examples.append({
-            "template_id": "AutoScalingGroup",
-            "name": "Auto Scaling Group",
-            "description": "Auto Scaling Group for dynamic scaling",
-            "provider_type": "aws",
-            "provider_api": "AutoScalingGroup",
-            "instance_type": "t3.medium",
-            "max_instances": 15,
-            "price_type": "ondemand",
-            "subnet_ids": ["subnet-xxxxx"],
-            "security_group_ids": ["sg-xxxxx"],
-            "tags": {"Environment": "dev", "ManagedBy": "ORB"}
-        })
-    
-    # RunInstances example
-    if not provider_api or provider_api == "RunInstances":
-        examples.append({
-            "template_id": "RunInstances",
-            "name": "Run Instances",
-            "description": "Simple EC2 instance launch",
-            "provider_type": "aws",
-            "provider_api": "RunInstances",
-            "instance_type": "t3.medium",
-            "max_instances": 5,
-            "price_type": "ondemand",
-            "subnet_ids": ["subnet-xxxxx"],
-            "security_group_ids": ["sg-xxxxx"],
-            "tags": {"Environment": "dev", "ManagedBy": "ORB"}
-        })
-    
-    return examples
