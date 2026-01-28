@@ -9,6 +9,8 @@ from typing import Any, Optional
 from infrastructure.logging.logger import get_logger
 from infrastructure.registry.scheduler_registry import get_scheduler_registry
 
+logger = get_logger(__name__)
+
 
 class SchedulerStrategyFactory:
     """Factory for creating scheduler strategy components using scheduler registry."""
@@ -25,6 +27,16 @@ class SchedulerStrategyFactory:
         """Lazy load scheduler registry."""
         if self._scheduler_registry is None:
             self._scheduler_registry = get_scheduler_registry()
+            # Ensure all scheduler types are registered when factory is created
+            # Only register if not already registered (idempotent)
+            if not self._scheduler_registry.is_registered("default"):
+                from infrastructure.scheduler.registration import register_default_scheduler
+
+                try:
+                    register_default_scheduler()
+                except Exception as e:  # nosec B110
+                    logger.debug("Failed to register default scheduler: %s", e)
+                    pass  # Ignore registration errors - scheduler may already be registered
         return self._scheduler_registry
 
     def create_strategy(self, scheduler_type: str, config: Any) -> Any:

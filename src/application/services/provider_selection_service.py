@@ -87,10 +87,11 @@ class ProviderSelectionService:
         Select provider type and instance for template.
 
         This method implements the core selection algorithm following these priorities:
-        1. Explicit provider instance selection (template.provider_name)
-        2. Provider type with load balancing (template.provider_type)
-        3. Auto-selection based on API capabilities (template.provider_api)
-        4. Fallback to configuration default
+        1. CLI override (--provider flag)
+        2. Explicit provider instance selection (template.provider_name)
+        3. Provider type with load balancing (template.provider_type)
+        4. Auto-selection based on API capabilities (template.provider_api)
+        5. Fallback to configuration default
 
         Args:
             template: Template requiring provider selection
@@ -103,20 +104,48 @@ class ProviderSelectionService:
         """
         self._logger.info("Selecting provider for template: %s", template.template_id)
 
-        # Strategy 1: Explicit provider instance selection
+        # Strategy 1: CLI override (highest precedence)
+        if override := self._config_manager.get_active_provider_override():
+            return self._select_override_provider(template, override)
+
+        # Strategy 2: Explicit provider instance selection
         if template.provider_name:
             return self._select_explicit_provider(template)
 
-        # Strategy 2: Provider type with load balancing
+        # Strategy 3: Provider type with load balancing
         if template.provider_type:
             return self._select_load_balanced_provider(template)
 
-        # Strategy 3: Auto-selection based on API capabilities
+        # Strategy 4: Auto-selection based on API capabilities
         if template.provider_api:
             return self._select_by_api_capability(template)
 
-        # Strategy 4: Fallback to default
+        # Strategy 5: Fallback to default
         return self._select_default_provider(template)
+
+    def select_provider_for_template_loading(self) -> ProviderSelectionResult:
+        """Select provider for template loading, respecting CLI override."""
+        # Check for CLI override first
+        if override := self._config_manager.get_active_provider_override():
+            return self._select_override_provider_for_templates(override)
+
+        # Use normal provider selection
+        return self.select_active_provider()
+
+    def _select_override_provider_for_templates(
+        self, provider_name: str
+    ) -> ProviderSelectionResult:
+        """Select overridden provider for template loading."""
+        provider_instance = self._get_provider_instance_config(provider_name)
+        if not provider_instance:
+            raise ValueError(f"Provider instance '{provider_name}' not found")
+
+        return ProviderSelectionResult(
+            provider_type=provider_instance.type,
+            provider_instance=provider_name,
+            selection_reason=f"CLI override for template loading (--provider {provider_name})",
+            confidence=1.0,
+        )
 
     def select_active_provider(self) -> ProviderSelectionResult:
         """
@@ -187,6 +216,23 @@ class ProviderSelectionService:
             provider_type=provider_instance.type,
             provider_instance=provider_name,
             selection_reason="Explicitly specified in template",
+            confidence=1.0,
+        )
+
+    def _select_override_provider(
+        self, template: Template, provider_name: str
+    ) -> ProviderSelectionResult:
+        """Select CLI-overridden provider with validation."""
+        provider_instance = self._get_provider_instance_config(provider_name)
+        if not provider_instance:
+            raise ValueError(f"Provider instance '{provider_name}' not found")
+        if not provider_instance.enabled:
+            raise ValueError(f"Provider instance '{provider_name}' is disabled")
+
+        return ProviderSelectionResult(
+            provider_type=provider_instance.type,
+            provider_instance=provider_name,
+            selection_reason=f"CLI override (--provider {provider_name})",
             confidence=1.0,
         )
 

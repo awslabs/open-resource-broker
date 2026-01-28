@@ -7,7 +7,7 @@
   "provider": {
     "providers": [
       {
-        "name": "aws-primary",
+        "name": "aws_default_us-east-1",
         "type": "aws",
         "enabled": true,
         "config": {
@@ -16,7 +16,7 @@
         }
       },
       {
-        "name": "aws-backup",
+        "name": "aws_default_us-west-2",
         "type": "aws",
         "enabled": true,
         "config": {

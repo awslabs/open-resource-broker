@@ -30,7 +30,13 @@ async def handle_serve_api(args) -> dict[str, Any]:
 
     try:
         # Import here to avoid circular dependencies
-        from api.server import create_fastapi_app
+        try:
+            import uvicorn
+
+            from api.server import create_fastapi_app
+        except ImportError:
+            raise ImportError("API server requires: pip install orb-py[api]") from None
+
         from config.schemas.server_schema import ServerConfig
         from domain.base.ports.configuration_port import ConfigurationPort
         from infrastructure.di.container import get_container
@@ -62,8 +68,6 @@ async def handle_serve_api(args) -> dict[str, Any]:
         app = create_fastapi_app(server_config)
 
         # Start the server
-        import uvicorn
-
         config = uvicorn.Config(
             app=app,
             host=server_config.host,

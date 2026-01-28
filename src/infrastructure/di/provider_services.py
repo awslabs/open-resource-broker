@@ -21,12 +21,12 @@ def register_provider_services(container: DIContainer) -> None:
     # Register ProviderContext with configuration-driven factory
     container.register_factory(ProviderContext, create_configured_provider_context)
 
-    # Register SelectorFactory (keep existing)
+    # Register SelectorFactory
     from providers.base.strategy import SelectorFactory
 
     container.register_singleton(SelectorFactory, lambda c: SelectorFactory())
 
-    # NEW: Register provider selection services
+    # Register provider selection services
     container.register_singleton(
         ProviderSelectionService,
         lambda c: ProviderSelectionService(
@@ -364,14 +364,14 @@ def _create_lazy_provider_context(
     config_manager: ConfigurationPort,
     metrics: Optional[MetricsCollector],
 ) -> ProviderContext:
-    """Create provider context with immediate provider registration (lazy loading fixed)."""
+    """Create provider context with immediate provider registration."""
     logger.info("Creating provider context with lazy loading enabled")
 
     # Create provider context
     provider_context = ProviderContext(logger, metrics=metrics)
 
     try:
-        # IMMEDIATE LOADING instead of broken lazy loading
+        # Load providers immediately (lazy loading was broken)
         logger.info("Loading providers immediately (lazy loading was broken)")
 
         # Get provider configuration

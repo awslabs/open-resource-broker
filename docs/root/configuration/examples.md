@@ -1,5 +1,28 @@
 # Provider Configuration Examples
 
+## Provider Naming Conventions
+
+### AWS Provider Naming Pattern
+
+AWS providers use the naming pattern: `aws_{profile}_{region}`
+
+**Standard Examples:**
+- `aws_default_us-east-1` - Default profile in US East 1
+- `aws_prod_us-west-2` - Production profile in US West 2  
+- `aws_dev_eu-west-1` - Development profile in EU West 1
+- `aws_staging_ap-southeast-1` - Staging profile in Asia Pacific Southeast 1
+
+**Multi-Account Examples:**
+- `aws_account-prod_us-east-1` - Production account in US East 1
+- `aws_account-dev_us-east-1` - Development account in US East 1
+
+### Template File Naming
+
+Template files are automatically named based on provider names:
+- `aws_default_us-east-1_templates.json`
+- `aws_prod_us-west-2_templates.json`
+- `aws_dev_eu-west-1_templates.json`
+
 ## AWS Context Field Support
 
 The AWS provider supports an optional `context` field for EC2 Fleet, Auto Scaling Group, and Spot Fleet operations. Context is a reserved field in EC2 APIs that should be used by customers when advised by the EC2 team at AWS. This field maps directly to the AWS Context parameter in the respective APIs and should follow AWS Context format (e.g., "c-abc1234567890123").
@@ -30,11 +53,12 @@ The AWS provider supports an optional `context` field for EC2 Fleet, Auto Scalin
     "selection_policy": "FIRST_AVAILABLE",
     "providers": [
       {
-        "name": "aws-default",
+        "name": "aws_default_us-east-1",
         "type": "aws",
         "enabled": true,
         "config": {
-          "region": "us-east-1"
+          "region": "us-east-1",
+          "profile": "default"
         }
       }
     ]
@@ -56,7 +80,7 @@ The AWS provider supports an optional `context` field for EC2 Fleet, Auto Scalin
     },
     "providers": [
       {
-        "name": "aws-production",
+        "name": "aws_production_us-east-1",
         "type": "aws",
         "enabled": true,
         "priority": 1,
@@ -99,7 +123,7 @@ The AWS provider supports an optional `context` field for EC2 Fleet, Auto Scalin
     },
     "providers": [
       {
-        "name": "aws-us-east-1",
+        "name": "aws_production_us-east-1",
         "type": "aws",
         "enabled": true,
         "priority": 1,
@@ -112,7 +136,7 @@ The AWS provider supports an optional `context` field for EC2 Fleet, Auto Scalin
         "capabilities": ["instances", "spot_instances", "fleet_management"]
       },
       {
-        "name": "aws-us-west-2",
+        "name": "aws_production_us-west-2",
         "type": "aws",
         "enabled": true,
         "priority": 1,
@@ -137,7 +161,7 @@ The AWS provider supports an optional `context` field for EC2 Fleet, Auto Scalin
     "health_check_interval": 120,
     "providers": [
       {
-        "name": "aws-primary",
+        "name": "aws_production_us-east-1",
         "type": "aws",
         "enabled": true,
         "priority": 1,
@@ -148,7 +172,7 @@ The AWS provider supports an optional `context` field for EC2 Fleet, Auto Scalin
         }
       },
       {
-        "name": "aws-backup",
+        "name": "aws_production_us-west-2",
         "type": "aws",
         "enabled": true,
         "priority": 2,
@@ -172,26 +196,26 @@ The AWS provider supports an optional `context` field for EC2 Fleet, Auto Scalin
     "selection_policy": "ROUND_ROBIN",
     "providers": [
       {
-        "name": "aws-account-prod",
+        "name": "aws_prod-account_us-east-1",
         "type": "aws",
         "enabled": true,
         "priority": 1,
         "weight": 70,
         "config": {
           "region": "us-east-1",
-          "profile": "production-account",
+          "profile": "prod-account",
           "role_arn": "arn:aws:iam::123456789012:role/HostFactoryRole"
         }
       },
       {
-        "name": "aws-account-dev",
+        "name": "aws_dev-account_us-east-1",
         "type": "aws",
         "enabled": true,
         "priority": 2,
         "weight": 30,
         "config": {
           "region": "us-east-1",
-          "profile": "development-account",
+          "profile": "dev-account",
           "role_arn": "arn:aws:iam::987654321098:role/HostFactoryRole"
         }
       }
@@ -213,12 +237,12 @@ The AWS provider supports an optional `context` field for EC2 Fleet, Auto Scalin
     },
     "providers": [
       {
-        "name": "aws-dev",
+        "name": "aws_dev_us-east-1",
         "type": "aws",
         "enabled": true,
         "config": {
           "region": "us-east-1",
-          "profile": "development",
+          "profile": "dev",
           "max_instances": 10,
           "instance_types": ["t3.micro", "t3.small"]
         }
@@ -241,14 +265,14 @@ The AWS provider supports an optional `context` field for EC2 Fleet, Auto Scalin
     },
     "providers": [
       {
-        "name": "aws-prod-primary",
+        "name": "aws_prod_us-east-1",
         "type": "aws",
         "enabled": true,
         "priority": 1,
         "weight": 80,
         "config": {
           "region": "us-east-1",
-          "profile": "production",
+          "profile": "prod",
           "max_instances": 1000,
           "instance_types": ["m5.large", "m5.xlarge", "c5.large"]
         },
@@ -260,14 +284,14 @@ The AWS provider supports an optional `context` field for EC2 Fleet, Auto Scalin
         }
       },
       {
-        "name": "aws-prod-secondary",
+        "name": "aws_prod_us-west-2",
         "type": "aws",
         "enabled": true,
         "priority": 2,
         "weight": 20,
         "config": {
           "region": "us-west-2",
-          "profile": "production",
+          "profile": "prod",
           "max_instances": 500,
           "instance_types": ["m5.large", "m5.xlarge", "c5.large"]
         },
@@ -292,18 +316,24 @@ The AWS provider supports an optional `context` field for EC2 Fleet, Auto Scalin
     "selection_policy": "ROUND_ROBIN",
     "providers": [
       {
-        "name": "aws-region-1",
+        "name": "aws_default_us-east-1",
         "type": "aws",
         "enabled": true,
         "weight": 50,
-        "config": {"region": "us-east-1"}
+        "config": {
+          "region": "us-east-1",
+          "profile": "default"
+        }
       },
       {
-        "name": "aws-region-2",
+        "name": "aws_default_us-west-2",
         "type": "aws",
         "enabled": true,
         "weight": 50,
-        "config": {"region": "us-west-2"}
+        "config": {
+          "region": "us-west-2",
+          "profile": "default"
+        }
       }
     ]
   }
@@ -317,32 +347,35 @@ The AWS provider supports an optional `context` field for EC2 Fleet, Auto Scalin
     "selection_policy": "WEIGHTED_ROUND_ROBIN",
     "providers": [
       {
-        "name": "aws-large-region",
+        "name": "aws_prod_us-east-1",
         "type": "aws",
         "enabled": true,
         "weight": 70,
         "config": {
           "region": "us-east-1",
+          "profile": "prod",
           "max_instances": 1000
         }
       },
       {
-        "name": "aws-medium-region",
+        "name": "aws_prod_us-west-2",
         "type": "aws",
         "enabled": true,
         "weight": 20,
         "config": {
           "region": "us-west-2",
+          "profile": "prod",
           "max_instances": 300
         }
       },
       {
-        "name": "aws-small-region",
+        "name": "aws_prod_eu-west-1",
         "type": "aws",
         "enabled": true,
         "weight": 10,
         "config": {
           "region": "eu-west-1",
+          "profile": "prod",
           "max_instances": 100
         }
       }
@@ -361,13 +394,13 @@ The AWS provider supports an optional `context` field for EC2 Fleet, Auto Scalin
     "health_check_interval": 30,
     "providers": [
       {
-        "name": "aws-primary-site",
+        "name": "aws_prod_us-east-1",
         "type": "aws",
         "enabled": true,
         "priority": 1,
         "config": {
           "region": "us-east-1",
-          "profile": "production"
+          "profile": "prod"
         },
         "health_check": {
           "enabled": true,
@@ -377,13 +410,13 @@ The AWS provider supports an optional `context` field for EC2 Fleet, Auto Scalin
         }
       },
       {
-        "name": "aws-dr-site",
+        "name": "aws_prod_us-west-2",
         "type": "aws",
         "enabled": true,
         "priority": 2,
         "config": {
           "region": "us-west-2",
-          "profile": "production"
+          "profile": "prod"
         },
         "health_check": {
           "enabled": true,
@@ -410,36 +443,36 @@ The AWS provider supports an optional `context` field for EC2 Fleet, Auto Scalin
     },
     "providers": [
       {
-        "name": "aws-site-east",
+        "name": "aws_prod_us-east-1",
         "type": "aws",
         "enabled": true,
         "priority": 1,
         "weight": 50,
         "config": {
           "region": "us-east-1",
-          "profile": "production"
+          "profile": "prod"
         }
       },
       {
-        "name": "aws-site-west",
+        "name": "aws_prod_us-west-2",
         "type": "aws",
         "enabled": true,
         "priority": 1,
         "weight": 50,
         "config": {
           "region": "us-west-2",
-          "profile": "production"
+          "profile": "prod"
         }
       },
       {
-        "name": "aws-site-europe",
+        "name": "aws_prod_eu-west-1",
         "type": "aws",
         "enabled": true,
         "priority": 2,
         "weight": 30,
         "config": {
           "region": "eu-west-1",
-          "profile": "production"
+          "profile": "prod"
         }
       }
     ]
@@ -460,11 +493,12 @@ The AWS provider supports an optional `context` field for EC2 Fleet, Auto Scalin
     },
     "providers": [
       {
-        "name": "aws-localstack",
+        "name": "aws_localstack_us-east-1",
         "type": "aws",
         "enabled": true,
         "config": {
           "region": "us-east-1",
+          "profile": "localstack",
           "endpoint_url": "http://localhost:4566",
           "aws_access_key_id": "test",
           "aws_secret_access_key": "test"
@@ -482,7 +516,7 @@ The AWS provider supports an optional `context` field for EC2 Fleet, Auto Scalin
     "selection_policy": "ROUND_ROBIN",
     "providers": [
       {
-        "name": "aws-test-1",
+        "name": "aws_test_us-east-1",
         "type": "aws",
         "enabled": true,
         "config": {
@@ -492,7 +526,7 @@ The AWS provider supports an optional `context` field for EC2 Fleet, Auto Scalin
         }
       },
       {
-        "name": "aws-test-2",
+        "name": "aws_test_us-west-2",
         "type": "aws",
         "enabled": false,
         "config": {
@@ -604,7 +638,7 @@ The scheduler configuration determines how the system interfaces with job schedu
     "selection_policy": "FIRST_AVAILABLE",
     "providers": [
       {
-        "name": "aws-migrated",
+        "name": "aws_default_us-east-1",
         "type": "aws",
         "enabled": true,
         "config": {
@@ -616,3 +650,55 @@ The scheduler configuration determines how the system interfaces with job schedu
   }
 }
 ```
+
+### Provider Name Migration Examples
+
+**Single Region Migration:**
+```json
+// Before: Generic naming
+{
+  "name": "aws-primary",
+  "config": {
+    "region": "us-east-1",
+    "profile": "default"
+  }
+}
+
+// After: Structured naming
+{
+  "name": "aws_default_us-east-1",
+  "config": {
+    "region": "us-east-1", 
+    "profile": "default"
+  }
+}
+```
+
+**Multi-Region Migration:**
+```json
+// Before: Generic naming
+{
+  "providers": [
+    {"name": "aws-east", "config": {"region": "us-east-1", "profile": "prod"}},
+    {"name": "aws-west", "config": {"region": "us-west-2", "profile": "prod"}}
+  ]
+}
+
+// After: Structured naming
+{
+  "providers": [
+    {"name": "aws_prod_us-east-1", "config": {"region": "us-east-1", "profile": "prod"}},
+    {"name": "aws_prod_us-west-2", "config": {"region": "us-west-2", "profile": "prod"}}
+  ]
+}
+```
+
+### Template File Migration
+
+**Before:**
+- `awsprov_templates.json` (generic)
+- `aws-primary_templates.json` (old naming)
+
+**After:**
+- `aws_default_us-east-1_templates.json` (structured naming)
+- `aws_prod_us-west-2_templates.json` (structured naming)

@@ -9,6 +9,11 @@ from infrastructure.logging.logger import get_logger
 def register_storage_services(container: DIContainer) -> None:
     """Register storage services with configuration-driven strategy loading."""
 
+    # Register all available storage types first
+    from infrastructure.persistence.registration import register_all_storage_types
+
+    register_all_storage_types()
+
     # Register storage strategy factory
     container.register_factory(StorageStrategyFactory, create_storage_strategy_factory)
 

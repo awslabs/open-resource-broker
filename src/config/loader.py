@@ -167,27 +167,34 @@ class ConfigurationLoader:
     @classmethod
     def _load_default_config(cls) -> dict[str, Any]:
         """
-        Load default configuration from file.
-
-        First tries to load from scheduler config directory, then falls back to local config.
+        Load default configuration from project config directory.
 
         Returns:
             Default configuration dictionary
         """
         get_config_logger().debug("Loading default configuration")
 
-        # Use file loading method
-        config = cls._load_config_file(
-            "conf", cls.DEFAULT_CONFIG_FILENAME, required=False, config_manager=None
-        )
+        try:
+            # Use platform_dirs to get the correct config location
+            from config.platform_dirs import get_config_location
 
-        if config:
-            get_config_logger().info("Loaded default configuration successfully")
-            return config
-        else:
-            get_config_logger().warning(
-                "Failed to load default configuration from any location. Using empty configuration."
-            )
+            config_location = get_config_location()
+            default_config_path = config_location / cls.DEFAULT_CONFIG_FILENAME
+
+            if default_config_path.exists():
+                with open(default_config_path) as f:
+                    import json
+
+                    config_data = json.load(f)
+                    get_config_logger().info(
+                        "Loaded default configuration from %s", default_config_path
+                    )
+                    return config_data
+            else:
+                get_config_logger().warning(f"Default config not found: {default_config_path}")
+                return {}
+        except Exception as e:
+            get_config_logger().warning(f"Failed to load default configuration: {e}")
             return {}
 
     @classmethod
@@ -235,7 +242,6 @@ class ConfigurationLoader:
         try:
             path = Path(config_path)
             if not path.exists():
-                get_config_logger().warning("Configuration file not found: %s", config_path)
                 return None
 
             with path.open() as f:
@@ -516,26 +522,14 @@ class ConfigurationLoader:
         if config_manager:
             return config_manager._get_scheduler_directory(file_type)
 
-        # During bootstrap, check environment variables directly
-        import os
+        # During bootstrap, use platform_dirs for consistent directory resolution
+        from config.platform_dirs import get_config_location, get_logs_location, get_work_location
 
         if file_type in ["conf", "template", "legacy"]:
-            confdir = os.environ.get("HF_PROVIDER_CONFDIR")
-            if confdir:
-                return confdir
-            workdir = os.environ.get("HF_PROVIDER_WORKDIR")
-            if workdir:
-                return os.path.join(workdir, "config")
+            return str(get_config_location())
         elif file_type == "log":
-            logdir = os.environ.get("HF_PROVIDER_LOGDIR")
-            if logdir:
-                return logdir
-            workdir = os.environ.get("HF_PROVIDER_WORKDIR")
-            if workdir:
-                return os.path.join(workdir, "logs")
+            return str(get_logs_location())
         elif file_type in ["work", "data"]:
-            workdir = os.environ.get("HF_PROVIDER_WORKDIR")
-            if workdir:
-                return workdir
+            return str(get_work_location())
 
         return None

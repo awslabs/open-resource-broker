@@ -34,6 +34,7 @@ from botocore.exceptions import ClientError
 from domain.base.dependency_injection import injectable
 from domain.base.ports import LoggingPort
 from domain.request.aggregate import Request
+from domain.template.template_aggregate import Template
 from infrastructure.adapters.ports.request_adapter_port import RequestAdapterPort
 from infrastructure.error.decorators import handle_infrastructure_exceptions
 from infrastructure.utilities.common.resource_naming import get_resource_prefix
@@ -948,3 +949,51 @@ class ASGHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
         except Exception as e:
             self._logger.error("Unexpected error checking ASG status: %s", str(e))
             raise AWSInfrastructureError(f"Failed to check ASG status: {e!s}")
+
+    @classmethod
+    def get_example_templates(cls) -> list[Template]:
+        """Get example templates for ASG handler."""
+        return [
+            Template(
+                template_id="ASG-OnDemand",
+                name="Auto Scaling Group On-Demand",
+                description="Auto Scaling Group with on-demand instances only",
+                provider_type="aws",
+                provider_api="AutoScalingGroup",
+                instance_type="t3.medium",
+                max_instances=15,
+                price_type="ondemand",
+                subnet_ids=["subnet-xxxxx"],
+                security_group_ids=["sg-xxxxx"],
+                tags={"Environment": "prod", "ManagedBy": "ORB"},
+            ),
+            Template(
+                template_id="ASG-Spot",
+                name="Auto Scaling Group Spot",
+                description="Auto Scaling Group with spot instances only",
+                provider_type="aws",
+                provider_api="AutoScalingGroup",
+                instance_type="t3.medium",
+                max_instances=20,
+                price_type="spot",
+                max_price=0.05,
+                subnet_ids=["subnet-xxxxx"],
+                security_group_ids=["sg-xxxxx"],
+                tags={"Environment": "dev", "ManagedBy": "ORB"},
+            ),
+            Template(
+                template_id="ASG-Mixed",
+                name="Auto Scaling Group Mixed",
+                description="Auto Scaling Group with mixed on-demand and spot instances",
+                provider_type="aws",
+                provider_api="AutoScalingGroup",
+                instance_types={"t3.medium": 1, "t3.large": 2},
+                max_instances=25,
+                price_type="heterogeneous",
+                percent_on_demand=30,
+                allocation_strategy="lowest_price",
+                subnet_ids=["subnet-xxxxx", "subnet-yyyyy"],
+                security_group_ids=["sg-xxxxx"],
+                tags={"Environment": "prod", "ManagedBy": "ORB"},
+            ),
+        ]

@@ -14,12 +14,20 @@ import os
 import sys
 from typing import Any
 
-from _package import REPO_URL
+from _package import DOCS_URL
 from cli.completion import generate_bash_completion, generate_zsh_completion
 from cli.formatters import format_output
 from domain.base.exceptions import DomainException
 from domain.request.value_objects import RequestStatus
 from infrastructure.logging.logger import get_logger
+
+# Optional: Rich formatting for help text
+try:
+    from rich_argparse import RichHelpFormatter
+
+    HELP_FORMATTER = RichHelpFormatter
+except ImportError:
+    HELP_FORMATTER = argparse.RawDescriptionHelpFormatter
 
 
 def parse_args() -> tuple[argparse.Namespace, dict]:
@@ -33,16 +41,20 @@ def parse_args() -> tuple[argparse.Namespace, dict]:
     parser = argparse.ArgumentParser(
         prog=os.path.basename(sys.argv[0]),
         description="Open Resource Broker - Cloud resource management for IBM Spectrum Symphony",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
+        formatter_class=HELP_FORMATTER,
         epilog=f"""
 Examples:
-  %(prog)s templates list                    # List all templates
-  %(prog)s templates list --legacy           # List in legacy format
-  %(prog)s templates list --format table     # Display as table
-  %(prog)s machines request template-id 5    # Request 5 machines
-  %(prog)s requests list --status pending    # List pending requests
+  %(prog)s templates list                              # List all templates
+  %(prog)s templates generate --all-providers          # Generate templates for all providers
+  %(prog)s --provider aws-prod templates list          # Use specific provider
+  %(prog)s requests status --request-id req-123        # Check request status (flag)
+  %(prog)s requests status req-123                     # Check request status (positional)
+  %(prog)s templates show --template-id template-id    # Show template details (flag)
+  %(prog)s templates show template-id                  # Show template details (positional)
+  %(prog)s machines request template-id 5              # Request 5 machines
+  %(prog)s machines request --template-id template-id --count 5  # Same using flags
 
-For more information, visit: {REPO_URL}
+For more information, visit: {DOCS_URL}
         """,
     )
 
@@ -72,6 +84,9 @@ For more information, visit: {REPO_URL}
         "--scheduler",
         choices=["default", "hostfactory", "hf"],
         help="Override scheduler strategy for this command",
+    )
+    parser.add_argument(
+        "--provider", help="Override provider instance for this command (e.g., aws-prod, aws-dev)"
     )
     parser.add_argument(
         "--completion", choices=["bash", "zsh"], help="Generate shell completion script"
@@ -119,8 +134,13 @@ For more information, visit: {REPO_URL}
     )
 
     # Templates show
-    templates_show = templates_subparsers.add_parser("show", help="Show template details")
-    templates_show.add_argument("template_id", help="Template ID to show")
+    templates_show = templates_subparsers.add_parser(
+        "show", help="Show template details (supports both positional and --template-id flag)"
+    )
+    templates_show.add_argument("template_id", nargs="?", help="Template ID to show")
+    templates_show.add_argument(
+        "--template-id", "-t", dest="flag_template_id", help="Template ID to show"
+    )
     templates_show.add_argument(
         "--format", choices=["json", "yaml", "table", "list"], help="Output format"
     )
@@ -133,15 +153,25 @@ For more information, visit: {REPO_URL}
     )
 
     # Templates update
-    templates_update = templates_subparsers.add_parser("update", help="Update existing template")
-    templates_update.add_argument("template_id", help="Template ID to update")
+    templates_update = templates_subparsers.add_parser(
+        "update", help="Update existing template (supports both positional and --template-id flag)"
+    )
+    templates_update.add_argument("template_id", nargs="?", help="Template ID to update")
+    templates_update.add_argument(
+        "--template-id", "-t", dest="flag_template_id", help="Template ID to update"
+    )
     templates_update.add_argument(
         "--file", required=True, help="Updated template configuration file"
     )
 
     # Templates delete
-    templates_delete = templates_subparsers.add_parser("delete", help="Delete template")
-    templates_delete.add_argument("template_id", help="Template ID to delete")
+    templates_delete = templates_subparsers.add_parser(
+        "delete", help="Delete template (supports both positional and --template-id flag)"
+    )
+    templates_delete.add_argument("template_id", nargs="?", help="Template ID to delete")
+    templates_delete.add_argument(
+        "--template-id", "-t", dest="flag_template_id", help="Template ID to delete"
+    )
     templates_delete.add_argument(
         "--force", action="store_true", help="Force deletion without confirmation"
     )
@@ -153,6 +183,18 @@ For more information, visit: {REPO_URL}
     # Templates refresh
     templates_refresh = templates_subparsers.add_parser("refresh", help="Refresh template cache")
     templates_refresh.add_argument("--force", action="store_true", help="Force complete refresh")
+
+    # Templates generate
+    templates_generate = templates_subparsers.add_parser(
+        "generate", help="Generate example templates"
+    )
+    templates_generate.add_argument("--provider", help="Generate for specific provider instance")
+    templates_generate.add_argument(
+        "--all-providers", action="store_true", help="Explicitly generate for all active providers"
+    )
+    templates_generate.add_argument(
+        "--provider-api", help="Specific provider API (EC2Fleet, SpotFleet, ASG, RunInstances)"
+    )
 
     # Machines resource
     machines_parser = subparsers.add_parser("machines", help="Manage compute instances")
@@ -170,14 +212,22 @@ For more information, visit: {REPO_URL}
     )
 
     # Machines show
-    machines_show = machines_subparsers.add_parser("show", help="Show machine details")
-    machines_show.add_argument("machine_id", help="Machine ID to show")
+    machines_show = machines_subparsers.add_parser(
+        "show", help="Show machine details (supports both positional and --machine-id flag)"
+    )
+    machines_show.add_argument("machine_id", nargs="?", help="Machine ID to show")
+    machines_show.add_argument(
+        "--machine-id", "-m", dest="flag_machine_id", help="Machine ID to show"
+    )
     machines_show.add_argument(
         "--format", choices=["json", "yaml", "table", "list"], help="Output format"
     )
 
     # Machines request (create machines)
-    machines_request = machines_subparsers.add_parser("request", help="Request new machines")
+    machines_request = machines_subparsers.add_parser(
+        "request",
+        help="Request new machines (supports both positional args and --template-id/--count flags)",
+    )
     machines_request.add_argument(
         "template_id",
         nargs="?",
@@ -188,6 +238,12 @@ For more information, visit: {REPO_URL}
         nargs="?",
         type=int,
         help="Number of machines to request (optional if using -f/--file or -d/--data)",
+    )
+    machines_request.add_argument(
+        "--template-id", "-t", dest="flag_template_id", help="Template ID to use"
+    )
+    machines_request.add_argument(
+        "--count", "-c", type=int, dest="flag_machine_count", help="Number of machines to request"
     )
     machines_request.add_argument(
         "--wait", action="store_true", help="Wait for machines to be ready"
@@ -241,8 +297,17 @@ For more information, visit: {REPO_URL}
     requests_cancel.add_argument("--force", action="store_true", help="Force cancellation")
 
     # Requests status
-    requests_status = requests_subparsers.add_parser("status", help="Check request status")
+    requests_status = requests_subparsers.add_parser(
+        "status", help="Check request status (supports both positional args and --request-id flags)"
+    )
     requests_status.add_argument("request_ids", nargs="*", help="Request IDs to check")
+    requests_status.add_argument(
+        "--request-id",
+        "-r",
+        action="append",
+        dest="flag_request_ids",
+        help="Request ID to check (can be used multiple times)",
+    )
 
     # System resource
     system_parser = subparsers.add_parser("system", help="System operations")
@@ -501,6 +566,18 @@ For more information, visit: {REPO_URL}
         help="Logging level for MCP server",
     )
 
+    # Init command
+    init_parser = subparsers.add_parser("init", help="Initialize ORB configuration")
+    init_parser.add_argument("--non-interactive", action="store_true", help="Non-interactive mode")
+    init_parser.add_argument("--force", action="store_true", help="Force overwrite existing config")
+    init_parser.add_argument(
+        "--scheduler", choices=["default", "hostfactory"], help="Scheduler type"
+    )
+    init_parser.add_argument("--provider", default="aws", help="Provider type")
+    init_parser.add_argument("--region", help="AWS region")
+    init_parser.add_argument("--profile", help="AWS profile")
+    init_parser.add_argument("--config-dir", help="Custom configuration directory")
+
     return parser.parse_args(), resource_parsers
 
 
@@ -538,6 +615,8 @@ async def execute_command(args, app) -> dict[str, Any]:
     # Handle nested MCP commands
     if args.resource == "mcp" and args.action == "tools":
         handler_key = ("mcp", "tools", getattr(args, "tools_action", None))
+    elif args.resource == "init":
+        handler_key = ("init", None)
     else:
         handler_key = (args.resource, args.action)
 
@@ -545,7 +624,7 @@ async def execute_command(args, app) -> dict[str, Any]:
     scheduler_override_active = False
     if hasattr(args, "scheduler") and args.scheduler:
         try:
-            app.config_manager.override_scheduler_strategy(args.scheduler)
+            app.config_manager().override_scheduler_strategy(args.scheduler)
             scheduler_override_active = True
         except Exception as e:
             from infrastructure.logging.logger import get_logger
@@ -553,8 +632,19 @@ async def execute_command(args, app) -> dict[str, Any]:
             logger = get_logger(__name__)
             logger.warning("Failed to override scheduler strategy: %s", e)
 
+    # Handle global provider override
+    if hasattr(args, "provider") and args.provider:
+        try:
+            app.config_manager().override_provider_instance(args.provider)
+        except Exception as e:
+            from infrastructure.logging.logger import get_logger
+
+            logger = get_logger(__name__)
+            logger.warning("Failed to override provider instance: %s", e)
+
     try:
         # Import function handlers - all are now async functions with decorators
+        from interface.init_command_handler import handle_init
         from interface.mcp.server.handler import handle_mcp_serve
         from interface.mcp_command_handlers import (
             handle_mcp_tools_call,
@@ -590,6 +680,7 @@ async def execute_command(args, app) -> dict[str, Any]:
             handle_provider_metrics,
             handle_reload_provider_config,
             handle_select_provider_strategy,
+            handle_system_health,
             handle_system_metrics,
             handle_validate_provider_config,
         )
@@ -602,6 +693,7 @@ async def execute_command(args, app) -> dict[str, Any]:
             handle_update_template,
             handle_validate_template,
         )
+        from interface.templates_generate_handler import handle_templates_generate
 
         # Command handler mapping - all handlers are now async functions
         command_handlers = {
@@ -613,6 +705,7 @@ async def execute_command(args, app) -> dict[str, Any]:
             ("templates", "delete"): handle_delete_template,
             ("templates", "validate"): handle_validate_template,
             ("templates", "refresh"): handle_refresh_templates,
+            ("templates", "generate"): handle_templates_generate,
             # Machines
             ("machines", "request"): handle_request_machines,
             ("machines", "return"): handle_request_return_machines,
@@ -644,6 +737,7 @@ async def execute_command(args, app) -> dict[str, Any]:
             ("scheduler", "validate"): handle_validate_scheduler_config,
             # System commands
             ("system", "serve"): handle_serve_api,
+            ("system", "health"): handle_system_health,
             ("system", "metrics"): handle_system_metrics,
             # Configuration commands
             ("config", "show"): handle_provider_config,
@@ -655,6 +749,8 @@ async def execute_command(args, app) -> dict[str, Any]:
             ("mcp", "tools", "call"): handle_mcp_tools_call,
             ("mcp", "tools", "info"): handle_mcp_tools_info,
             ("mcp", "validate"): handle_mcp_validate,
+            # Init command
+            ("init", None): handle_init,
         }
 
         # All handlers are now async functions - no special handling needed
@@ -732,15 +828,15 @@ async def main() -> None:
 
             # For other errors, show the original error message and re-raise
             if error_output.strip():
-                print(error_output.strip(), file=sys.stderr)  # noqa: CLI output
+                print(error_output.strip(), file=sys.stderr)
             raise
 
         # Handle completion generation
         if args.completion:
             if args.completion == "bash":
-                print(generate_bash_completion())  # noqa: CLI output
+                print(generate_bash_completion())
             elif args.completion == "zsh":
-                print(generate_zsh_completion())  # noqa: CLI output
+                print(generate_zsh_completion())
             return
 
         # Configure logging - let the application's structured logging system handle
@@ -749,11 +845,34 @@ async def main() -> None:
 
         logger = get_logger(__name__)
 
+        # Skip application initialization for init and templates generate commands only
+        if args.resource == "init":
+            # Execute init command directly without Application
+            from interface.init_command_handler import handle_init
+
+            result = await handle_init(args)
+            sys.exit(result)
+
+        if args.resource == "templates" and args.action == "generate":
+            # Templates generate doesn't need existing config (creates templates)
+            from interface.templates_generate_handler import handle_templates_generate
+
+            result = await handle_templates_generate(args)
+            # Print result
+            if result.get("status") == "success":
+                sys.exit(0)
+            else:
+                print(f"Error: {result.get('message')}", file=sys.stderr)
+                sys.exit(1)
+
+        # All other commands need full Application initialization
+        skip_validation = False
+
         # Initialize application with dry-run mode if requested
         try:
             from bootstrap import Application
 
-            app = Application(args.config)
+            app = Application(args.config, skip_validation=skip_validation)
             if not await app.initialize(dry_run=args.dry_run):
                 raise RuntimeError("Failed to initialize application")
         except Exception as e:
@@ -777,22 +896,32 @@ async def main() -> None:
             else:
                 result = await execute_command(args, app)
 
-            # Format and output result
+            # Handle exit codes from command handlers
             output_format = getattr(args, "format", None) or args.format
-            formatted_output = format_output(result, output_format)
+            if isinstance(result, tuple) and len(result) == 2:
+                formatted_result, exit_code = result
+                formatted_output = format_output(formatted_result, output_format)
+            else:
+                # Backward compatibility - assume success
+                formatted_output = format_output(result, output_format)
+                exit_code = 0
 
             if args.output:
                 with open(args.output, "w") as f:
                     f.write(formatted_output)
                 if not args.quiet:
-                    print(f"Output written to {args.output}")  # noqa: CLI output
+                    print(f"Output written to {args.output}")
             else:
-                print(formatted_output)  # noqa: CLI output
+                print(formatted_output)
+
+            # Exit with appropriate code
+            if exit_code != 0:
+                sys.exit(exit_code)
 
         except DomainException as e:
             logger.exception("Domain error: %s", e)
             if not args.quiet:
-                print(f"Error: {e}")  # noqa: CLI error
+                print(f"Error: {e}")
             sys.exit(1)
         except Exception as e:
             logger.exception("Unexpected error: %s", e)
@@ -801,14 +930,14 @@ async def main() -> None:
 
                 traceback.print_exc()
             if not args.quiet:
-                print(f"Unexpected error: {e}")  # noqa: CLI error
+                print(f"Unexpected error: {e}")
             sys.exit(1)
 
     except KeyboardInterrupt:
-        print("\nOperation cancelled by user.")  # noqa: CLI output
+        print("\nOperation cancelled by user.")
         sys.exit(130)
     except Exception as e:
-        print(f"Fatal error: {e}")  # noqa: CLI error
+        print(f"Fatal error: {e}")
         sys.exit(1)
 
 

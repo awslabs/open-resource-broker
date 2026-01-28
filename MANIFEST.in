@@ -1,1 +1,2 @@
-recursive-include src/orb/providers/aws/specs *.json
+recursive-include config *.json
+recursive-include scripts *.sh *.bat

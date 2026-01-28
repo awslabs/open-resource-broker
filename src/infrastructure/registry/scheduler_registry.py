@@ -79,6 +79,29 @@ class SchedulerRegistry(BaseRegistry):
         except ImportError as e:
             raise ConfigurationError(f"Scheduler type '{scheduler_type}' not available: {e}")
 
+    def get_strategy_class(self, scheduler_type: str) -> type:
+        """Get strategy class without instantiating it.
+
+        Useful for calling classmethods before app initialization.
+        """
+        self.ensure_type_registered(scheduler_type)
+
+        # Import the strategy class based on type
+        if scheduler_type in ["hostfactory", "hf"]:
+            from infrastructure.scheduler.hostfactory.hostfactory_strategy import (
+                HostFactorySchedulerStrategy,
+            )
+
+            return HostFactorySchedulerStrategy
+        elif scheduler_type == "default":
+            from infrastructure.scheduler.default.default_strategy import (
+                DefaultSchedulerStrategy,
+            )
+
+            return DefaultSchedulerStrategy
+        else:
+            raise ValueError(f"Unknown scheduler type: {scheduler_type}")
+
     def _create_registration(
         self,
         type_name: str,
@@ -90,6 +113,13 @@ class SchedulerRegistry(BaseRegistry):
         return SchedulerRegistration(type_name, strategy_factory, config_factory)
 
 
+# Global singleton instance
+_scheduler_registry_instance = None
+
+
 def get_scheduler_registry() -> SchedulerRegistry:
     """Get the singleton scheduler registry instance."""
-    return SchedulerRegistry()
+    global _scheduler_registry_instance
+    if _scheduler_registry_instance is None:
+        _scheduler_registry_instance = SchedulerRegistry()
+    return _scheduler_registry_instance

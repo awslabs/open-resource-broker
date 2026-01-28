@@ -474,53 +474,20 @@ class AWSProviderStrategy(ProviderStrategy):
                         },
                     )
                 except Exception as e:
-                    self._logger.warning(
-                        "Provisioning adapter failed for provider_api=%s, falling back to handler: %s",
+                    self._logger.error(
+                        "Provisioning adapter failed for provider_api=%s: %s",
                         provider_api,
                         e,
                     )
-
-            # Use the handler to acquire hosts as a fallback path
-            handler_result = handler.acquire_hosts(request, aws_template)
-
-            # Extract resource IDs and instances from handler result
-            if isinstance(handler_result, dict):
-                # Handler returned structured result
-                resource_ids = handler_result.get("resource_ids", [])
-                instances = handler_result.get("instances", [])
-                success = handler_result.get("success", True)
-                error_message = handler_result.get("error_message")
-
-                if not success:
                     return ProviderResult.error_result(
-                        error_message or "Handler reported failure", "HANDLER_ERROR"
+                        f"Provisioning failed: {e}", "PROVISIONING_ADAPTER_ERROR"
                     )
             else:
-                # Handler returned single resource ID (legacy format)
-                resource_ids = [handler_result] if handler_result else []
-                instances = []
-
-            self._logger.info(
-                "Handler returned resource_ids: %s, instances: %s",
-                resource_ids,
-                len(instances),
-            )
-
-            return ProviderResult.success_result(
-                {
-                    "resource_ids": resource_ids,
-                    "instances": instances,
-                    "provider_api": provider_api,
-                    "count": count,
-                    "template_id": aws_template.template_id,
-                },
-                {
-                    "operation": "create_instances",
-                    "template_config": template_config,
-                    "handler_used": provider_api,
-                    "method": "handler",
-                },
-            )
+                # No provisioning adapter available - this is a configuration error
+                return ProviderResult.error_result(
+                    "AWS provisioning adapter not available - check DI configuration",
+                    "CONFIGURATION_ERROR",
+                )
 
         except Exception as e:
             return ProviderResult.error_result(
@@ -979,9 +946,11 @@ class AWSProviderStrategy(ProviderStrategy):
         start_time = time.time()
 
         try:
-            if not self._aws_client:
+            # Trigger lazy initialization of AWS client
+            aws_client = self.aws_client
+            if not aws_client:
                 return ProviderHealthStatus.unhealthy(
-                    "AWS client not initialized", {"error": "client_not_initialized"}
+                    "AWS client initialization failed", {"error": "client_initialization_failed"}
                 )
 
             # Check if we're in dry-run mode
@@ -998,6 +967,8 @@ class AWSProviderStrategy(ProviderStrategy):
             # Perform basic AWS connectivity check
             # This is a lightweight operation to verify AWS access
             try:
+                # Use the initialized client for health check
+                aws_client.sts_client.get_caller_identity()
                 # Import dry-run context here to avoid circular imports
                 from providers.aws.infrastructure.dry_run_adapter import aws_dry_run_context
 
@@ -1169,6 +1140,34 @@ class AWSProviderStrategy(ProviderStrategy):
                 "aws_tags": aws_instance.get("Tags", []),
             },
         }
+
+    def generate_provider_name(self, config: dict[str, Any]) -> str:
+        """Generate AWS provider name: {provider_type}_{profile}_{region}"""
+        provider_type = self.provider_type  # Use dynamic provider type
+        profile = config.get("profile", "default")
+        region = config.get("region", "us-east-1")
+        return f"{provider_type}_{profile}_{region}"
+
+    def parse_provider_name(self, provider_name: str) -> dict[str, str]:
+        """Parse AWS provider name back to components."""
+        if "_" in provider_name:
+            parts = provider_name.split("_")
+            return {
+                "type": parts[0] if len(parts) > 0 else self.provider_type,
+                "profile": parts[1] if len(parts) > 1 else "default",
+                "region": parts[2] if len(parts) > 2 else "us-east-1",
+            }
+        else:
+            # Legacy format: aws-default
+            return {
+                "type": provider_name.split("-")[0],
+                "profile": "default",
+                "region": "us-east-1",
+            }
+
+    def get_provider_name_pattern(self) -> str:
+        """AWS naming pattern."""
+        return "{type}_{profile}_{region}"
 
     def cleanup(self) -> None:
         """Clean up AWS provider resources."""

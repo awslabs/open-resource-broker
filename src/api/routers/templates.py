@@ -3,9 +3,12 @@
 from datetime import datetime
 from typing import Any, Optional
 
-from fastapi import APIRouter, Body, HTTPException, Query
-from fastapi.responses import JSONResponse
-from pydantic import BaseModel
+try:
+    from fastapi import APIRouter, Body, HTTPException, Query
+    from fastapi.responses import JSONResponse
+    from pydantic import BaseModel
+except ImportError:
+    raise ImportError("FastAPI routing requires: pip install orb-py[api]") from None
 
 from application.dto.queries import GetTemplateQuery, ListTemplatesQuery, ValidateTemplateQuery
 from application.template.commands import (

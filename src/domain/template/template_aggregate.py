@@ -31,7 +31,7 @@ class Template(BaseModel):
 
     # Pricing and allocation
     price_type: str = "ondemand"
-    allocation_strategy: str = "lowest_price"
+    allocation_strategy: Optional[str] = None  # Will be set based on price_type
     max_price: Optional[float] = None
 
     # Instance types configuration (extensible for all providers)
@@ -105,6 +105,13 @@ class Template(BaseModel):
 
         if self.max_instances <= 0:
             raise ValueError("max_instances must be greater than 0")
+
+        # Set allocation strategy default based on price type
+        if self.allocation_strategy is None:
+            if self.price_type == "spot":
+                self.allocation_strategy = "price_capacity_optimized"
+            else:  # ondemand, heterogeneous
+                self.allocation_strategy = "lowest_price"
 
         return self
 
@@ -204,19 +211,6 @@ class Template(BaseModel):
         data["provider_config"] = {**self.provider_config, **config}
         data["updated_at"] = datetime.now()
         return Template.model_validate(data)
-
-    def to_dict(self) -> dict[str, Any]:
-        """Convert template to dictionary."""
-        return self.model_dump()
-
-    def to_legacy_format(self) -> dict[str, Any]:
-        """
-        Convert template to legacy camelCase format.
-
-        Returns:
-            Dictionary representation of template
-        """
-        return self.model_dump()
 
     def __str__(self) -> str:
         """Return string representation of template."""

@@ -35,6 +35,7 @@ from botocore.exceptions import ClientError
 from domain.base.dependency_injection import injectable
 from domain.base.ports import ErrorHandlingPort, LoggingPort
 from domain.request.aggregate import Request
+from domain.template.template_aggregate import Template
 from infrastructure.adapters.ports.request_adapter_port import RequestAdapterPort
 from infrastructure.error.decorators import handle_infrastructure_exceptions
 from infrastructure.utilities.common.resource_naming import get_resource_prefix
@@ -589,3 +590,36 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
         except Exception as e:
             self._logger.error("Unexpected error releasing RunInstances resources: %s", str(e))
             raise AWSInfrastructureError(f"Failed to release RunInstances resources: {e!s}")
+
+    @classmethod
+    def get_example_templates(cls) -> list[Template]:
+        """Get example templates for RunInstances handler."""
+        return [
+            Template(
+                template_id="RunInstances-OnDemand",
+                name="Run Instances On-Demand",
+                description="On-demand instances using RunInstances API",
+                provider_type="aws",
+                provider_api="RunInstances",
+                instance_type="t3.medium",
+                max_instances=5,
+                price_type="ondemand",
+                subnet_ids=["subnet-xxxxx"],
+                security_group_ids=["sg-xxxxx"],
+                tags={"Environment": "dev", "ManagedBy": "ORB"},
+            ),
+            Template(
+                template_id="RunInstances-Spot",
+                name="Run Instances Spot",
+                description="Spot instances using RunInstances API",
+                provider_type="aws",
+                provider_api="RunInstances",
+                instance_type="t3.medium",
+                max_instances=10,
+                price_type="spot",
+                max_price=0.05,
+                subnet_ids=["subnet-xxxxx"],
+                security_group_ids=["sg-xxxxx"],
+                tags={"Environment": "dev", "ManagedBy": "ORB"},
+            ),
+        ]

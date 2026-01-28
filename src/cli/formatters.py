@@ -66,8 +66,9 @@ def format_generic_table(items: list[dict], title: str = "Items") -> str:
         return f"No {title.lower()} found."
 
     try:
-        from rich.console import Console
         from rich.table import Table
+
+        from cli.console import get_console
 
         # Get all unique keys from all items
         all_keys = set()
@@ -86,15 +87,49 @@ def format_generic_table(items: list[dict], title: str = "Items") -> str:
             row = [str(item.get(key, "N/A")) for key in sorted(all_keys)]
             table.add_row(*row)
 
-        # Capture output
-        console = Console()
+        # Capture output using shared console
+        console = get_console()
         with console.capture() as capture:
             console.print(table)
         return capture.get()
 
     except ImportError:
-        # Fallback to ASCII table if Rich is not available
-        return _format_generic_ascii_table(items, title)
+        # Fallback to ASCII table when Rich not available
+        if not items:
+            return f"No {title.lower()} found."
+
+        # Get all unique keys from all items
+        all_keys = set()
+        for item in items:
+            all_keys.update(item.keys())
+
+        # Create ASCII table
+        headers = [key.replace("_", " ").replace("Id", " ID").title() for key in sorted(all_keys)]
+
+        # Calculate column widths
+        col_widths = [len(header) for header in headers]
+        for item in items:
+            for i, key in enumerate(sorted(all_keys)):
+                value_len = len(str(item.get(key, "N/A")))
+                col_widths[i] = max(col_widths[i], value_len)
+
+        # Build table
+        lines = [title, "=" * len(title), ""]
+
+        # Header row
+        header_row = " | ".join(header.ljust(width) for header, width in zip(headers, col_widths))
+        lines.append(header_row)
+        lines.append("-" * len(header_row))
+
+        # Data rows
+        for item in items:
+            row_values = [
+                str(item.get(key, "N/A")).ljust(width)
+                for key, width in zip(sorted(all_keys), col_widths)
+            ]
+            lines.append(" | ".join(row_values))
+
+        return "\n".join(lines)
 
 
 def format_generic_list(items: list[dict], title: str = "Items") -> str:

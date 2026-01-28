@@ -156,7 +156,7 @@ class TemplateConfigurationManager:
                     self.logger.error("Failed to load templates from %s: %s", template_path, e)
                     continue
 
-            # Apply batch AMI resolution BEFORE converting to DTOs
+            # Apply batch AMI resolution before converting to DTOs
             resolved_template_dicts = self._batch_resolve_amis(all_template_dicts)
 
             # Convert to DTOs with defaults applied

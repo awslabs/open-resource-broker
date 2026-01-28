@@ -32,8 +32,11 @@ async def handle_get_request_status(args: "argparse.Namespace") -> dict[str, Any
         raw_request_data = args.input_data
     else:
         request_ids_from_args = []
+        # Merge positional and flag arguments
         if hasattr(args, "request_ids") and args.request_ids:
-            request_ids_from_args = args.request_ids
+            request_ids_from_args.extend(args.request_ids)
+        if hasattr(args, "flag_request_ids") and args.flag_request_ids:
+            request_ids_from_args.extend(args.flag_request_ids)
         elif hasattr(args, "request_id") and args.request_id:
             request_ids_from_args.append(args.request_id)
 
@@ -87,9 +90,17 @@ async def handle_request_machines(args: "argparse.Namespace") -> dict[str, Any]:
     if hasattr(args, "input_data") and args.input_data:
         raw_request_data = args.input_data
     else:
+        # Merge positional and flag arguments
+        template_id = getattr(args, "template_id", None) or getattr(args, "flag_template_id", None)
+        machine_count = getattr(args, "machine_count", None) or getattr(
+            args, "flag_machine_count", None
+        )
+        machine_id = getattr(args, "machine_id", None) or getattr(args, "flag_machine_id", None)
+
         raw_request_data = {
-            "template_id": getattr(args, "template_id", None),
-            "requested_count": getattr(args, "machine_count", None),
+            "template_id": template_id,
+            "requested_count": machine_count,
+            "machine_id": machine_id,  # For show operations
         }
 
     # Let scheduler strategy parse the raw data (each scheduler handles its own format)
@@ -132,33 +143,47 @@ async def handle_request_machines(args: "argparse.Namespace") -> dict[str, Any]:
         resource_ids = getattr(request_dto, "resource_ids", []) if request_dto else []
 
         # Create response data with resource ID information
+        status = request_dto.status if request_dto else "unknown"
+        error_msg = None
+        if request_dto and hasattr(request_dto, "metadata"):
+            if isinstance(request_dto.metadata, dict):
+                error_msg = request_dto.metadata.get("error_message")
+            else:
+                error_msg = getattr(request_dto.metadata, "error_message", None)
+
         request_data = {
             "request_id": request_id,
             "resource_ids": resource_ids,
             "template_id": template_id,
+            "status": status,
+            "error_message": error_msg,
         }
 
         # Return success response using scheduler strategy formatting
         if scheduler_strategy:
-            return scheduler_strategy.format_request_response(request_data)
+            response = scheduler_strategy.format_request_response(request_data)
+            status = request_dto.status if request_dto else "unknown"
+            exit_code = scheduler_strategy.get_exit_code_for_status(status)
+            return response, exit_code
         else:
             # Fallback if no scheduler strategy (shouldn't happen)
             return {
                 "error": "No scheduler strategy available",
                 "message": "Unable to format response",
-            }
+            }, 1
     except Exception as e:
         # Fallback if we can't get request details
         from domain.base.ports import LoggingPort
 
         container.get(LoggingPort).warning("Could not get request details for resource ID: %s", e)
         if scheduler_strategy:
-            return scheduler_strategy.format_request_response({"request_id": request_id})
+            response = scheduler_strategy.format_request_response({"request_id": request_id})
+            return response, 0  # Command succeeded, just couldn't get details
         else:
             return {
                 "error": "No scheduler strategy available",
                 "message": "Unable to format response",
-            }
+            }, 1
 
 
 @handle_interface_exceptions(context="get_return_requests", interface_type="cli")

@@ -12,8 +12,8 @@ from jsonschema import ValidationError, validate as validate_json_schema
 from hfmock import HostFactoryMock
 from tests.onaws import plugin_io_schemas
 from tests.onaws.parse_output import parse_and_print_output
-from tests.onaws.test_onaws import get_instances_states
 from tests.onaws.template_processor import TemplateProcessor
+from tests.onaws.test_onaws import get_instances_states
 
 pytestmark = [  # Apply default markers to every test in this module
     pytest.mark.manual_aws,
@@ -592,9 +592,7 @@ def test_multi_resource_termination(setup_multi_resource_templates):
             if instances:
                 instance_states = get_instances_states(instances, ec2_client)
                 terminating_count = sum(
-                    1
-                    for state in instance_states
-                    if state in ["shutting-down", "terminated"]
+                    1 for state in instance_states if state in ["shutting-down", "terminated"]
                 )
                 log.info(
                     f"  {resource_type}: {terminating_count}/{len(instances)} instances terminating/terminated"
