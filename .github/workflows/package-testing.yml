@@ -397,7 +397,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install build
           python -m build
-          pip install .[all]
+          pip install ".[all]"
 
       - name: Run comprehensive test
         run: |
@@ -438,22 +438,24 @@ jobs:
     steps:
       - name: Display summary
         run: |
-          echo "## Package Testing Strategy Results" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "### Test Results:" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Package Variants: ${{ needs.package-variants.result }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Import Guard Validation: ${{ needs.import-guard-validation.result }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Dependency Isolation: ${{ needs.dependency-isolation.result }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Error Message Quality: ${{ needs.error-message-quality.result }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Integration Test: ${{ needs.integration-test.result }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          
-          if [[ "${{ needs.package-variants.result }}" == "success" && 
-                "${{ needs.import-guard-validation.result }}" == "success" && 
-                "${{ needs.dependency-isolation.result }}" == "success" && 
-                "${{ needs.error-message-quality.result }}" == "success" && 
-                "${{ needs.integration-test.result }}" == "success" ]]; then
-            echo "PASS: All package testing strategy tests passed!" >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo "FAIL: Some package testing strategy tests failed!" >> "$GITHUB_STEP_SUMMARY"
-          fi
+          {
+            echo "## Package Testing Strategy Results"
+            echo ""
+            echo "### Test Results:"
+            echo "- Package Variants: ${{ needs.package-variants.result }}"
+            echo "- Import Guard Validation: ${{ needs.import-guard-validation.result }}"
+            echo "- Dependency Isolation: ${{ needs.dependency-isolation.result }}"
+            echo "- Error Message Quality: ${{ needs.error-message-quality.result }}"
+            echo "- Integration Test: ${{ needs.integration-test.result }}"
+            echo ""
+            
+            if [[ "${{ needs.package-variants.result }}" == "success" && 
+                  "${{ needs.import-guard-validation.result }}" == "success" && 
+                  "${{ needs.dependency-isolation.result }}" == "success" && 
+                  "${{ needs.error-message-quality.result }}" == "success" && 
+                  "${{ needs.integration-test.result }}" == "success" ]]; then
+              echo "PASS: All package testing strategy tests passed!"
+            else
+              echo "FAIL: Some package testing strategy tests failed!"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
