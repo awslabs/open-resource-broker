@@ -30,10 +30,12 @@ def create_symphony_hostfactory_strategy(container: "DIContainer") -> "Scheduler
     from infrastructure.scheduler.hostfactory.hostfactory_strategy import (
         HostFactorySchedulerStrategy,
     )
+    from domain.template.ports.template_defaults_port import TemplateDefaultsPort
 
     config_manager = container.get(ConfigurationPort)
     logger = container.get(LoggingPort)
-    return HostFactorySchedulerStrategy(config_manager, logger)
+    template_defaults_service = container.get(TemplateDefaultsPort)
+    return HostFactorySchedulerStrategy(config_manager, logger, template_defaults_service)
 
 
 def create_hostfactory_config(data: dict[str, Any]) -> Any:
