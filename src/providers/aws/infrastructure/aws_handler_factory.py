@@ -148,23 +148,21 @@ class AWSHandlerFactory:
             List of example Template objects from all handlers
         """
         examples = []
-        
+
         for handler_type, handler_class in self._handler_classes.items():
-            if hasattr(handler_class, 'get_example_templates'):
+            if hasattr(handler_class, "get_example_templates"):
                 try:
                     handler_examples = handler_class.get_example_templates()
                     examples.extend(handler_examples)
                     self._logger.debug(
-                        "Added %d example templates from %s handler", 
-                        len(handler_examples), 
-                        handler_type
+                        "Added %d example templates from %s handler",
+                        len(handler_examples),
+                        handler_type,
                     )
                 except Exception as e:
                     self._logger.warning(
-                        "Failed to get example templates from %s handler: %s", 
-                        handler_type, 
-                        e
+                        "Failed to get example templates from %s handler: %s", handler_type, e
                     )
-        
+
         self._logger.info("Generated %d total example templates", len(examples))
         return examples

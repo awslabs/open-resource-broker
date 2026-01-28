@@ -24,6 +24,7 @@ class Application:
         # Skip validation for commands that don't need it (templates, init, help)
         if not skip_validation:
             from infrastructure.validation.startup_validator import StartupValidator
+
             validator = StartupValidator(config_path)
             validator.validate_startup()
 

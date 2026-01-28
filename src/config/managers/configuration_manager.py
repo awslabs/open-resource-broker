@@ -312,7 +312,7 @@ class ConfigurationManager:
         Uses platform_dirs for consistent directory resolution during bootstrap.
         """
         from config.platform_dirs import get_config_location, get_work_location, get_logs_location
-        
+
         logger.debug("[CONFIG_MGR] Getting directory for file_type=%s", file_type)
 
         if file_type in ["conf", "template", "legacy"]:
@@ -329,34 +329,34 @@ class ConfigurationManager:
 
     def find_templates_file(self, provider_type: str) -> str:
         """Find templates file with fallback logic.
-        
+
         Tries in order:
         1. {provider_type}prov_templates.json (e.g., awsprov_templates.json) - for real providers
         2. templates.json (generic) - for default scheduler or fallback
-        
+
         Args:
             provider_type: Provider type (e.g., "aws") or "default" for default scheduler
-            
+
         Returns:
             Path to templates file
-            
+
         Raises:
             FileNotFoundError: If no templates file found
         """
         import os
-        
+
         # For default scheduler, try templates.json first
         if provider_type == "default":
             candidates = [
-                "templates.json",                        # Generic (preferred for default)
-                "defaultprov_templates.json",            # Provider-specific (unlikely)
+                "templates.json",  # Generic (preferred for default)
+                "defaultprov_templates.json",  # Provider-specific (unlikely)
             ]
         else:
             candidates = [
                 f"{provider_type}prov_templates.json",  # Provider-specific
-                "templates.json",                        # Generic fallback
+                "templates.json",  # Generic fallback
             ]
-        
+
         for filename in candidates:
             try:
                 path = self.resolve_file("template", filename)
@@ -365,7 +365,7 @@ class ConfigurationManager:
                     return path
             except Exception:
                 continue
-        
+
         # No file found - fail with clear error
         template_dir = self._get_scheduler_directory("template") or "config"
         raise FileNotFoundError(

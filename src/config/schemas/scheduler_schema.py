@@ -12,18 +12,10 @@ class SchedulerConfig(BaseModel):
     config_root: Optional[str] = Field(
         None, description="Root path for configs (supports $ENV_VAR expansion)"
     )
-    config_dir: Optional[str] = Field(
-        None, description="Config directory override"
-    )
-    work_dir: Optional[str] = Field(
-        None, description="Work directory override"
-    )
-    log_dir: Optional[str] = Field(
-        None, description="Log directory override"
-    )
-    log_level: Optional[str] = Field(
-        None, description="Log level override"
-    )
+    config_dir: Optional[str] = Field(None, description="Config directory override")
+    work_dir: Optional[str] = Field(None, description="Work directory override")
+    log_dir: Optional[str] = Field(None, description="Log directory override")
+    log_level: Optional[str] = Field(None, description="Log level override")
     templates_filename: Optional[str] = Field(
         None, description="Override templates filename (null = use scheduler default)"
     )

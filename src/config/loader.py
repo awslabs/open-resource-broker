@@ -177,25 +177,24 @@ class ConfigurationLoader:
         try:
             # Use platform_dirs to get the correct config location
             from config.platform_dirs import get_config_location
-            
+
             config_location = get_config_location()
             default_config_path = config_location / cls.DEFAULT_CONFIG_FILENAME
-            
+
             if default_config_path.exists():
                 with open(default_config_path) as f:
                     import json
+
                     config_data = json.load(f)
-                    get_config_logger().info("Loaded default configuration from %s", default_config_path)
+                    get_config_logger().info(
+                        "Loaded default configuration from %s", default_config_path
+                    )
                     return config_data
             else:
-                get_config_logger().warning(
-                    f"Default config not found: {default_config_path}"
-                )
+                get_config_logger().warning(f"Default config not found: {default_config_path}")
                 return {}
         except Exception as e:
-            get_config_logger().warning(
-                f"Failed to load default configuration: {e}"
-            )
+            get_config_logger().warning(f"Failed to load default configuration: {e}")
             return {}
 
     @classmethod

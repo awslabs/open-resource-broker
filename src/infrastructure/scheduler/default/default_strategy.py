@@ -25,7 +25,7 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
         """Initialize the instance."""
         self.config_manager = config_manager
         self._logger = logger
-        
+
         # Initialize field mapper
         self.field_mapper = DefaultFieldMapper()
 
@@ -33,7 +33,7 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
         """Get templates file path using strategy pattern."""
         # Use scheduler strategy for filename (consistent with generation)
         filename = self.get_templates_filename("default", "default")
-        
+
         # Use ConfigurationManager to resolve the file path
         return self.config_manager.resolve_file("template", filename)
 
@@ -149,9 +149,11 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
         return os.path.join(workdir, "data")
 
     @classmethod
-    def get_templates_filename(cls, provider_name: str, provider_type: str, config: dict = None) -> str:
+    def get_templates_filename(
+        cls, provider_name: str, provider_type: str, config: dict = None
+    ) -> str:
         """Get templates filename with config override support.
-        
+
         Can be called as classmethod (before app init) or instance method.
         """
         # Check config override first
@@ -160,13 +162,13 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
             config_filename = scheduler_config.get("templates_filename")
             if config_filename:
                 return config_filename
-        
+
         # Use Default scheduler default: 'templates.json'
         return "templates.json"
 
     def should_log_to_console(self) -> bool:
         """Check if logs should be written to console for Default scheduler.
-        
+
         Default scheduler is interactive, always log to console.
         """
         return True
@@ -175,36 +177,29 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
         """Format error response for Default scheduler (console + JSON)."""
         import sys
         import traceback
-        
+
         # Print to console
         print(f"ERROR: {error}", file=sys.stderr)
         if context.get("verbose"):
             traceback.print_exc()
-        
+
         # Return JSON
-        response = {
-            "success": False,
-            "error": str(error)
-        }
-        
+        response = {"success": False, "error": str(error)}
+
         if context.get("verbose"):
             response["traceback"] = traceback.format_exc()
-        
+
         return response
 
     def format_health_response(self, checks: list[dict[str, Any]]) -> dict[str, Any]:
         """Format health check response for Default scheduler."""
         passed = sum(1 for c in checks if c.get("status") == "pass")
         failed = len(checks) - passed
-        
+
         return {
             "success": failed == 0,
             "checks": checks,
-            "summary": {
-                "total": len(checks),
-                "passed": passed,
-                "failed": failed
-            }
+            "summary": {"total": len(checks), "passed": passed, "failed": failed},
         }
 
     def get_directory(self, file_type: str) -> str | None:

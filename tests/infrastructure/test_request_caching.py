@@ -29,7 +29,7 @@ class TestRequestCacheService:
     def mock_config_manager(self):
         """Mock configuration manager for testing."""
         config_manager = Mock(spec=ConfigurationManager)
-        
+
         # Mock the app_config property with proper structure
         mock_app_config = Mock()
         mock_performance = Mock()
@@ -40,7 +40,7 @@ class TestRequestCacheService:
         mock_caching.request_status_caching = mock_request_caching
         mock_performance.caching = mock_caching
         mock_app_config.performance = mock_performance
-        
+
         config_manager.app_config = mock_app_config
         return config_manager
 
@@ -61,7 +61,7 @@ class TestRequestCacheService:
     def test_caching_disabled_when_config_missing(self, mock_uow_factory, mock_logger):
         """Test that caching is disabled when config is missing."""
         config_manager = Mock(spec=ConfigurationManager)
-        
+
         # Mock app_config that raises exception when accessing performance
         mock_app_config = Mock()
         mock_app_config.performance = Mock()
@@ -81,7 +81,7 @@ class TestRequestCacheService:
     def test_get_cached_request_when_disabled(self, mock_uow_factory, mock_logger):
         """Test that get_cached_request returns None when caching is disabled."""
         config_manager = Mock(spec=ConfigurationManager)
-        
+
         # Mock disabled caching
         mock_app_config = Mock()
         mock_performance = Mock()
@@ -92,7 +92,6 @@ class TestRequestCacheService:
         mock_performance.caching = mock_caching
         mock_app_config.performance = mock_performance
         config_manager.app_config = mock_app_config
-        }
 
         cache_service = RequestCacheService(
             uow_factory=mock_uow_factory,

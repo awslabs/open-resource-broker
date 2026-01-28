@@ -24,6 +24,7 @@ from infrastructure.logging.logger import get_logger
 # Optional: Rich formatting for help text
 try:
     from rich_argparse import RichHelpFormatter
+
     HELP_FORMATTER = RichHelpFormatter
 except ImportError:
     HELP_FORMATTER = argparse.RawDescriptionHelpFormatter
@@ -162,9 +163,13 @@ For more information, visit: {DOCS_URL}
     templates_refresh.add_argument("--force", action="store_true", help="Force complete refresh")
 
     # Templates generate
-    templates_generate = templates_subparsers.add_parser("generate", help="Generate example templates")
+    templates_generate = templates_subparsers.add_parser(
+        "generate", help="Generate example templates"
+    )
     templates_generate.add_argument("--provider", help="Provider instance name")
-    templates_generate.add_argument("--provider-api", help="Specific provider API (EC2Fleet, SpotFleet, ASG, RunInstances)")
+    templates_generate.add_argument(
+        "--provider-api", help="Specific provider API (EC2Fleet, SpotFleet, ASG, RunInstances)"
+    )
 
     # Machines resource
     machines_parser = subparsers.add_parser("machines", help="Manage compute instances")
@@ -517,7 +522,9 @@ For more information, visit: {DOCS_URL}
     init_parser = subparsers.add_parser("init", help="Initialize ORB configuration")
     init_parser.add_argument("--non-interactive", action="store_true", help="Non-interactive mode")
     init_parser.add_argument("--force", action="store_true", help="Force overwrite existing config")
-    init_parser.add_argument("--scheduler", choices=["default", "hostfactory"], help="Scheduler type")
+    init_parser.add_argument(
+        "--scheduler", choices=["default", "hostfactory"], help="Scheduler type"
+    )
     init_parser.add_argument("--provider", default="aws", help="Provider type")
     init_parser.add_argument("--region", help="AWS region")
     init_parser.add_argument("--profile", help="AWS profile")
@@ -784,12 +791,14 @@ async def main() -> None:
         if args.resource == "init":
             # Execute init command directly without Application
             from interface.init_command_handler import handle_init
+
             result = await handle_init(args)
             sys.exit(result)
-        
+
         if args.resource == "templates" and args.action == "generate":
             # Templates generate doesn't need existing config (creates templates)
             from interface.templates_generate_handler import handle_templates_generate
+
             result = await handle_templates_generate(args)
             # Print result
             if result.get("status") == "success":

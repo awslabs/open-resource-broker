@@ -66,7 +66,6 @@ def format_generic_table(items: list[dict], title: str = "Items") -> str:
         return f"No {title.lower()} found."
 
     try:
-        from rich.console import Console
         from rich.table import Table
         from cli.console import get_console
 

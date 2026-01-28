@@ -13,11 +13,11 @@ async def handle_system_health(args) -> dict[str, Any]:
     """Handle system health check."""
     import asyncio
     from interface.health_command_handler import handle_health_check
-    
+
     # Run sync health check in executor
     loop = asyncio.get_event_loop()
     result = await loop.run_in_executor(None, handle_health_check, args)
-    
+
     return {"status": "success" if result == 0 else "error"}
 
 

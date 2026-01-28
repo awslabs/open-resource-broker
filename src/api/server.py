@@ -5,6 +5,7 @@ try:
     from fastapi.middleware.cors import CORSMiddleware
     from fastapi.middleware.trustedhost import TrustedHostMiddleware
     from fastapi.responses import JSONResponse
+
     FASTAPI_AVAILABLE = True
 except ImportError:
     FASTAPI_AVAILABLE = False
@@ -23,7 +24,7 @@ def create_fastapi_app(server_config):
 
     Returns:
         Configured FastAPI application
-        
+
     Raises:
         ImportError: If FastAPI is not installed
     """
@@ -32,12 +33,11 @@ def create_fastapi_app(server_config):
             "FastAPI not installed. API mode requires FastAPI.\n"
             "Install with: pip install orb-py[api]"
         )
-    
+
     from api.documentation import configure_openapi
     from api.middleware import AuthMiddleware, LoggingMiddleware
-    from infrastructure.auth.registry import get_auth_registry
     from infrastructure.error.exception_handler import get_exception_handler
-    
+
     # Create FastAPI app with configuration
     app = FastAPI(
         title="Open Resource Broker API",

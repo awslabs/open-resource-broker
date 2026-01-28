@@ -7,25 +7,29 @@ from functools import wraps
 # Try to import Rich, fallback to plain print if not available
 try:
     from rich.console import Console
+
     RICH_AVAILABLE = True
     _console = Console()
     _error_console = Console(stderr=True)
 except ImportError:
     RICH_AVAILABLE = False
+
     # Create plain print wrappers
     class PlainConsole:
         def print(self, text="", **kwargs):
             # Strip Rich markup
             import re
-            clean = re.sub(r'\[.*?\]', '', str(text))
+
+            clean = re.sub(r"\[.*?\]", "", str(text))
             print(clean)
-    
+
     class PlainErrorConsole:
         def print(self, text="", **kwargs):
             import re
-            clean = re.sub(r'\[.*?\]', '', str(text))
+
+            clean = re.sub(r"\[.*?\]", "", str(text))
             print(clean, file=sys.stderr)
-    
+
     _console = PlainConsole()
     _error_console = PlainErrorConsole()
 
@@ -37,10 +41,12 @@ def _should_print() -> bool:
 
 def _console_output(func):
     """Decorator to check if console output is enabled."""
+
     @wraps(func)
     def wrapper(*args, **kwargs):
         if _should_print():
             return func(*args, **kwargs)
+
     return wrapper
 
 
@@ -101,4 +107,5 @@ def print_newline():
 def print_json(data: dict):
     """Print JSON data (always outputs, ignores LOG_CONSOLE_ENABLED)."""
     import json
+
     print(json.dumps(data, indent=2))

@@ -3,12 +3,16 @@
 import json
 import platform
 import shutil
-import sys
 from pathlib import Path
 from typing import Any, Dict
 
 from cli.console import print_separator, print_success, print_info, print_command, print_error
-from config.platform_dirs import get_config_location, get_work_location, get_logs_location, get_scripts_location
+from config.platform_dirs import (
+    get_config_location,
+    get_work_location,
+    get_logs_location,
+    get_scripts_location,
+)
 from infrastructure.logging.logger import get_logger
 
 logger = get_logger(__name__)
@@ -34,7 +38,7 @@ async def handle_init(args) -> int:
         config_file = config_dir / "config.json"
         if config_file.exists() and not args.force:
             print_error(f"Configuration already exists at {config_dir}")
-            print_info(f"  Use --force to reinitialize")
+            print_info("  Use --force to reinitialize")
             print_info("")
             print_info("To view current config:")
             print_command("  orb config show")
@@ -51,7 +55,7 @@ async def handle_init(args) -> int:
 
         # Write config file
         _write_config_file(config_file, config)
-        
+
         # Copy platform-specific scripts
         _copy_scripts(scripts_dir)
 
@@ -70,14 +74,14 @@ async def handle_init(args) -> int:
         print_command("  1. Generate templates: orb templates generate")
         print_command("  2. List templates:     orb templates list")
         print_command("  3. Show config:        orb config show")
-        
+
         return 0
 
     except KeyboardInterrupt:
         print_error("\nInitialization cancelled by user")
         return 1
     except Exception as e:
-        print_error(f"Failed to initialize ORB")
+        print_error("Failed to initialize ORB")
         print_error(f"  {e}")
         print_info("")
         print_info("To retry:")
@@ -160,67 +164,62 @@ def _create_directories(config_dir: Path, work_dir: Path, logs_dir: Path):
 def _write_config_file(config_file: Path, user_config: Dict[str, Any]):
     """Write configuration file."""
     from config.installation_detector import get_template_location
-    
+
     try:
         template_path = get_template_location()
-        
+
         if template_path.exists():
             with open(template_path) as f:
                 full_config = json.load(f)
         else:
             raise FileNotFoundError(f"Template not found: {template_path}")
-            
+
     except Exception as e:
         raise FileNotFoundError(f"Could not find default_config.json template: {e}")
 
     # Copy default_config.json to runtime config directory
     default_config_file = config_file.parent / "default_config.json"
-    with open(default_config_file, 'w') as f:
+    with open(default_config_file, "w") as f:
         json.dump(full_config, f, indent=2)
 
     # Create config.json with user overrides only
     config = {
-        "scheduler": {
-            "type": user_config["scheduler_type"]
-        },
+        "scheduler": {"type": user_config["scheduler_type"]},
         "provider": {
             "providers": [
                 {
                     "name": f"{user_config['provider_type']}-{user_config['profile']}",
                     "type": user_config["provider_type"],
                     "enabled": True,
-                    "config": {
-                        "region": user_config["region"],
-                        "profile": user_config["profile"]
-                    }
+                    "config": {"region": user_config["region"], "profile": user_config["profile"]},
                 }
             ]
-        }
+        },
     }
 
     if user_config["scheduler_type"] == "hostfactory":
         config["scheduler"]["config_root"] = "$ORB_CONFIG_DIR"
 
-    with open(config_file, 'w') as f:
+    with open(config_file, "w") as f:
         json.dump(config, f, indent=2)
 
 
 def _copy_scripts(scripts_dir: Path):
     """Copy platform-specific scripts to scripts directory."""
     from config.installation_detector import get_scripts_location
-    
+
     try:
         scripts_src = get_scripts_location()
-        
+
         if not scripts_src.exists():
             logger.warning(f"Scripts directory not found: {scripts_src}")
             return
-        
+
         scripts_dir.mkdir(parents=True, exist_ok=True)
-        
+
         is_windows = platform.system() == "Windows"
         extension = ".bat" if is_windows else ".sh"
-        
+
         copied = 0
         for script in scripts_src.glob(f"*{extension}"):
             # Skip if source and destination are the same (development mode)
@@ -229,19 +228,13 @@ def _copy_scripts(scripts_dir: Path):
                 continue
             shutil.copy2(script, dest_script)
             copied += 1
-        
+
         if copied > 0:
             logger.info(f"Copied {copied} scripts to {scripts_dir}")
-            
+
     except Exception as e:
         logger.warning(f"Failed to copy scripts: {e}")
 
 
 def _get_installed_scripts_path():
     """Get scripts path for installed package using proper scheme detection."""
-    import sysconfig
-    import sys
-    
-
-
-

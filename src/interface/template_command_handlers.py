@@ -10,7 +10,6 @@ following the same pattern as other entities in the system.
 from __future__ import annotations
 
 import argparse
-import sys
 from typing import Any
 
 from cli.console import print_info, print_command
@@ -99,7 +98,7 @@ async def handle_list_templates(args: argparse.Namespace) -> dict[str, Any]:
             "total_count": len(templates),
             "message": f"Retrieved {len(templates)} templates successfully",
         }
-        
+
         # Print helpful message to stderr when no templates found
         if len(templates) == 0:
             print_info("")  # Empty line
@@ -112,7 +111,7 @@ async def handle_list_templates(args: argparse.Namespace) -> dict[str, Any]:
             print_info("Example:")
             print_command("  $ orb templates generate")
             print_command("  $ orb templates list")
-        
+
         return result
 
     except Exception as e:

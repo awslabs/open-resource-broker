@@ -64,18 +64,6 @@ class SchedulerPort(ABC):
         """Format domain Machines to scheduler response - uses domain.model_dump()."""
 
     @abstractmethod
-    def get_working_directory(self) -> str:
-        """Get working directory for this scheduler."""
-
-    @abstractmethod
-    def get_config_directory(self) -> str:
-        """Get config directory for this scheduler."""
-
-    @abstractmethod
-    def get_logs_directory(self) -> str:
-        """Get logs directory for this scheduler."""
-
-    @abstractmethod
     def get_storage_base_path(self) -> str:
         """Get storage base path within working directory."""
 
@@ -97,7 +85,7 @@ class SchedulerPort(ABC):
     @abstractmethod
     def should_log_to_console(self) -> bool:
         """Check if logs should be written to console for this scheduler.
-        
+
         Returns:
             True if logs should go to console (Default/interactive mode)
             False if logs should only go to file (HostFactory script mode)

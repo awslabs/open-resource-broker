@@ -10,7 +10,7 @@ This module coordinates the registration of all services across different layers
 
 from typing import Any, Optional
 
-from infrastructure.di.container import DIContainer, get_container
+from infrastructure.di.container import DIContainer
 
 # Import focused service registration modules
 from infrastructure.di.core_services import register_core_services

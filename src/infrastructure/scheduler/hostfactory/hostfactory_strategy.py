@@ -15,9 +15,6 @@ from infrastructure.scheduler.hostfactory.field_mapper import HostFactoryFieldMa
 from infrastructure.scheduler.hostfactory.transformations import HostFactoryTransformations
 from infrastructure.utilities.common.serialization import serialize_enum
 
-from .field_mappings import HostFactoryFieldMappings
-from .transformations import HostFactoryTransformations
-
 
 class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
     """HostFactory scheduler strategy for field mapping and response formatting."""
@@ -41,7 +38,7 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
 
         container = get_container()
         self._provider_selection_service = container.get(ProviderSelectionService)
-        
+
         # Initialize field mapper
         provider_type = self._get_active_provider_type()
         self.field_mapper = HostFactoryFieldMapper(provider_type)
@@ -53,13 +50,13 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
             selection_result = self._provider_selection_service.select_active_provider()
             provider_name = selection_result.provider_instance
             provider_type = selection_result.provider_type
-            
+
             # Use scheduler strategy for filename (consistent with generation)
             filename = self.get_templates_filename(provider_name, provider_type)
-            
+
             # Use ConfigurationManager to resolve the file path
             return self.config_manager.resolve_file("template", filename)
-            
+
         except Exception as e:
             self._logger.error("Failed to determine templates file path: %s", e)
             raise
@@ -117,7 +114,7 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
 
         # Step 1: Field mapping (bidirectional)
         mapped = self.field_mapper.map_input_fields(template)
-        
+
         # Step 2: Apply HostFactory transformations
         mapped = HostFactoryTransformations.apply_transformations(mapped)
 
@@ -132,11 +129,17 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
 
         # Step 4: Business logic - Apply template defaults
         if self.template_defaults_service:
-            mapped["provider_api"] = self.template_defaults_service.resolve_provider_api_default(template)
+            mapped["provider_api"] = self.template_defaults_service.resolve_provider_api_default(
+                template
+            )
             # Apply all template defaults using the service
-            mapped = self.template_defaults_service.resolve_template_defaults(mapped, self._get_provider_instance_name())
+            mapped = self.template_defaults_service.resolve_template_defaults(
+                mapped, self._get_provider_instance_name()
+            )
         else:
-            mapped["provider_api"] = template.get("providerApi", template.get("provider_api", "EC2Fleet"))
+            mapped["provider_api"] = template.get(
+                "providerApi", template.get("provider_api", "EC2Fleet")
+            )
 
         if "template_id" in mapped:
             mapped["name"] = template.get("name", mapped["template_id"])
@@ -536,22 +539,22 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
             template_dict = template.model_dump()
             formatted_template = self.field_mapper.map_output_fields(template_dict)
             formatted_templates.append(formatted_template)
-        
+
         return {"templates": formatted_templates}
 
     def format_templates_for_generation(self, templates: list[dict]) -> list[dict]:
         """Convert internal templates to HostFactory input format with full business logic."""
         processed_templates = []
-        
+
         for template in templates:
             # Apply the same business logic as loading
             processed_template = self._map_template_fields(template)
-            
+
             # Convert back to HostFactory format for file storage
             hf_template = self.field_mapper.format_for_generation([processed_template])[0]
-            
+
             processed_templates.append(hf_template)
-        
+
         return processed_templates
 
     def format_request_status_response(self, requests: list["Request"]) -> dict[str, Any]:
@@ -631,12 +634,12 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
     def _get_scheduler_env_var(self, suffix: str) -> str | None:
         """HostFactory checks HF_PROVIDER_* and HF_* vars."""
         import os
-        
+
         mapping = {
             "CONFIG_DIR": "HF_PROVIDER_CONFDIR",
             "WORK_DIR": "HF_PROVIDER_WORKDIR",
             "LOG_DIR": "HF_PROVIDER_LOGDIR",
-            "LOG_LEVEL": "HF_LOGLEVEL"
+            "LOG_LEVEL": "HF_LOGLEVEL",
         }
         if env_var := mapping.get(suffix):
             return os.environ.get(env_var)
@@ -648,9 +651,11 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         return os.path.join(workdir, "data")
 
     @classmethod
-    def get_templates_filename(cls, provider_name: str, provider_type: str, config: dict = None) -> str:
+    def get_templates_filename(
+        cls, provider_name: str, provider_type: str, config: dict = None
+    ) -> str:
         """Get templates filename with config override support.
-        
+
         Can be called as classmethod (before app init) or instance method.
         """
         # Check config override first
@@ -659,46 +664,39 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
             config_filename = scheduler_config.get("templates_filename")
             if config_filename:
                 return config_filename
-        
+
         # Use HostFactory default: provider_name + '_templates.json'
         return f"{provider_name}_templates.json"
 
     def should_log_to_console(self) -> bool:
         """Check if logs should be written to console for HostFactory.
-        
+
         HostFactory scripts log to file by default, console only if enabled.
         """
         import os
+
         return os.environ.get("HF_LOGGING_CONSOLE_ENABLED", "false").lower() == "true"
 
     def format_error_response(self, error: Exception, context: dict[str, Any]) -> dict[str, Any]:
         """Format error response for HostFactory (JSON only)."""
         import traceback
-        
-        response = {
-            "success": False,
-            "error": str(error),
-            "error_type": type(error).__name__
-        }
-        
+
+        response = {"success": False, "error": str(error), "error_type": type(error).__name__}
+
         if context.get("verbose"):
             response["traceback"] = traceback.format_exc()
-        
+
         return response
 
     def format_health_response(self, checks: list[dict[str, Any]]) -> dict[str, Any]:
         """Format health check response for HostFactory."""
         passed = sum(1 for c in checks if c.get("status") == "pass")
         failed = len(checks) - passed
-        
+
         return {
             "success": failed == 0,
             "checks": checks,
-            "summary": {
-                "total": len(checks),
-                "passed": passed,
-                "failed": failed
-            }
+            "summary": {"total": len(checks), "passed": passed, "failed": failed},
         }
 
     def get_directory(self, file_type: str) -> str | None:

@@ -1195,7 +1195,7 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
 
     @classmethod
     def get_example_templates(cls) -> list[Template]:
-        """Get example templates for EC2Fleet handler covering all fleet type × price type combinations."""
+        """Get example templates for EC2Fleet handler covering all fleet type x price type combinations."""
         return [
             # Instant fleet types
             Template(
@@ -1210,7 +1210,7 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                 subnet_ids=["subnet-xxxxx"],
                 security_group_ids=["sg-xxxxx"],
                 tags={"Environment": "dev", "ManagedBy": "ORB"},
-                metadata={"fleet_type": "instant"}
+                metadata={"fleet_type": "instant"},
             ),
             Template(
                 template_id="EC2Fleet-Instant-Spot",
@@ -1221,12 +1221,11 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                 instance_type="t3.medium",
                 max_instances=10,
                 price_type="spot",
-                allocation_strategy="lowest_price",
                 max_price=0.05,
                 subnet_ids=["subnet-xxxxx"],
                 security_group_ids=["sg-xxxxx"],
                 tags={"Environment": "dev", "ManagedBy": "ORB"},
-                metadata={"fleet_type": "instant"}
+                metadata={"fleet_type": "instant"},
             ),
             Template(
                 template_id="EC2Fleet-Instant-Mixed",
@@ -1243,7 +1242,7 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                 subnet_ids=["subnet-xxxxx"],
                 security_group_ids=["sg-xxxxx"],
                 tags={"Environment": "dev", "ManagedBy": "ORB"},
-                metadata={"fleet_type": "instant", "percent_on_demand": 30}
+                metadata={"fleet_type": "instant", "percent_on_demand": 30},
             ),
             # Request fleet types
             Template(
@@ -1258,7 +1257,7 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                 subnet_ids=["subnet-xxxxx"],
                 security_group_ids=["sg-xxxxx"],
                 tags={"Environment": "test", "ManagedBy": "ORB"},
-                metadata={"fleet_type": "request"}
+                metadata={"fleet_type": "request"},
             ),
             Template(
                 template_id="EC2Fleet-Request-Spot",
@@ -1274,7 +1273,7 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                 subnet_ids=["subnet-xxxxx"],
                 security_group_ids=["sg-xxxxx"],
                 tags={"Environment": "test", "ManagedBy": "ORB"},
-                metadata={"fleet_type": "request"}
+                metadata={"fleet_type": "request"},
             ),
             Template(
                 template_id="EC2Fleet-Request-Mixed",
@@ -1292,7 +1291,7 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                 subnet_ids=["subnet-xxxxx", "subnet-yyyyy"],
                 security_group_ids=["sg-xxxxx"],
                 tags={"Environment": "test", "ManagedBy": "ORB"},
-                metadata={"fleet_type": "request", "percent_on_demand": 40}
+                metadata={"fleet_type": "request", "percent_on_demand": 40},
             ),
             # Maintain fleet types
             Template(
@@ -1307,7 +1306,7 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                 subnet_ids=["subnet-xxxxx"],
                 security_group_ids=["sg-xxxxx"],
                 tags={"Environment": "prod", "ManagedBy": "ORB"},
-                metadata={"fleet_type": "maintain"}
+                metadata={"fleet_type": "maintain"},
             ),
             Template(
                 template_id="EC2Fleet-Maintain-Spot",
@@ -1323,7 +1322,7 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                 subnet_ids=["subnet-xxxxx"],
                 security_group_ids=["sg-xxxxx"],
                 tags={"Environment": "prod", "ManagedBy": "ORB"},
-                metadata={"fleet_type": "maintain"}
+                metadata={"fleet_type": "maintain"},
             ),
             Template(
                 template_id="EC2Fleet-Maintain-Mixed",
@@ -1341,6 +1340,6 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                 subnet_ids=["subnet-xxxxx", "subnet-yyyyy", "subnet-zzzzz"],
                 security_group_ids=["sg-xxxxx"],
                 tags={"Environment": "prod", "ManagedBy": "ORB"},
-                metadata={"fleet_type": "maintain", "percent_on_demand": 50}
-            )
+                metadata={"fleet_type": "maintain", "percent_on_demand": 50},
+            ),
         ]
