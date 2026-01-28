@@ -18,18 +18,9 @@ jobs:
     name: Configuration
     uses: ./.github/workflows/shared-config.yml
 
-  setup-cache:
-    name: Setup Cache
-    needs: config
-    uses: ./.github/workflows/cache-management.yml
-    with:
-      cache-type: dependencies
-      cache-key-base: metrics-deps
-      python-version: ${{ needs.config.outputs.default-python-version }}
-
   metrics:
     name: Generate Advanced Metrics
-    needs: [config, setup-cache]
+    needs: config
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -40,16 +31,13 @@ jobs:
       uses: actions/checkout@v6.0.2
 
     - name: Setup Python and UV
-      uses: ./.github/actions/setup-uv-cached
+      uses: ./.github/actions/setup-uv-fresh
       with:
-        cache-key: ${{ needs.setup-cache.outputs.cache-key }}
-        fail-on-cache-miss: false
+        python-version: ${{ needs.config.outputs.default-python-version }}
+        cache-key-suffix: metrics
 
-    - name: Install dependencies
+    - name: Install additional tools
       run: |
-        # Install project with dependencies first
-        uv sync --frozen
-        # Install additional tools
         uv pip install coverage pytest cloc
 
     - name: Run tests with coverage
