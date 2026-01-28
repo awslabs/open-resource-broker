@@ -9,6 +9,7 @@ if TYPE_CHECKING:
 from domain.base.ports.configuration_port import ConfigurationPort
 from domain.base.ports.logging_port import LoggingPort
 from domain.machine.aggregate import Machine
+from domain.request.aggregate import Request
 from domain.template.template_aggregate import Template
 from infrastructure.scheduler.base.strategy import BaseSchedulerStrategy
 from infrastructure.scheduler.hostfactory.field_mapper import HostFactoryFieldMapper
@@ -349,15 +350,15 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
     def _convert_template_to_hostfactory(self, template: Template) -> dict[str, Any]:
         """Convert internal template to HostFactory format."""
         # Handle both domain Template objects and TemplateDTO objects
-        if hasattr(template, "to_dict"):
-            template_dict = template.to_dict()
+        if hasattr(template, "model_dump"):
+            template_dict = self.format_template_for_display(template)
         elif hasattr(template, "__dict__"):
             template_dict = template.__dict__
         else:
             template_dict = template
 
-        # Convert to HostFactory format using field mapper
-        hf_template = self.field_mapper.map_output_fields(template_dict)
+        # Already formatted by field mapper in format_template_for_display
+        return template_dict
 
         # Add optional HostFactory fields if present
         optional_fields = [
@@ -535,9 +536,8 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         """
         formatted_templates = []
         for template in templates:
-            # Convert to dict and apply field mapper transformations
-            template_dict = template.model_dump()
-            formatted_template = self.field_mapper.map_output_fields(template_dict)
+            # Use the new architecture-compliant method
+            formatted_template = self.format_template_for_display(template)
             formatted_templates.append(formatted_template)
 
         return {"templates": formatted_templates}
@@ -564,7 +564,7 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         """
         formatted_requests = []
         for request in requests:
-            req_dict = request.to_dict()
+            req_dict = self.format_request_for_display(request)
             # Convert machines to camelCase
             if "machines" in req_dict:
                 req_dict["machines"] = [
@@ -805,3 +805,16 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
             return ""  # HostFactory examples show empty message for running
         else:
             return ""
+
+    def format_template_for_display(self, template: Template) -> dict[str, Any]:
+        """Format template for display using HostFactory field mapper."""
+        internal_dict = template.model_dump(exclude_none=True)
+        return self.field_mapper.map_output_fields(internal_dict)
+
+    def format_template_for_provider(self, template: Template) -> dict[str, Any]:
+        """Format template for provider operations using internal format (no field mapping)."""
+        return template.model_dump(exclude_none=True)
+
+    def format_request_for_display(self, request: Request) -> dict[str, Any]:
+        """Format request for display using HostFactory field mapper."""
+        return request.model_dump(exclude_none=True)  # Requests don't need field mapping

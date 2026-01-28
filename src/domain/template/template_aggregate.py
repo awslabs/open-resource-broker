@@ -212,19 +212,6 @@ class Template(BaseModel):
         data["updated_at"] = datetime.now()
         return Template.model_validate(data)
 
-    def to_dict(self) -> dict[str, Any]:
-        """Convert template to dictionary."""
-        return self.model_dump()
-
-    def to_legacy_format(self) -> dict[str, Any]:
-        """
-        Convert template to legacy camelCase format.
-
-        Returns:
-            Dictionary representation of template
-        """
-        return self.model_dump()
-
     def __str__(self) -> str:
         """Return string representation of template."""
         return f"Template(id={self.template_id}, provider={self.provider_api}, instances={self.max_instances})"

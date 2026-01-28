@@ -9,6 +9,8 @@ from typing import Any
 
 from domain.base.ports.scheduler_port import SchedulerPort
 from domain.request.aggregate import Request
+from domain.template.template_aggregate import Template
+from domain.template.template_aggregate import Template
 
 
 class BaseSchedulerStrategy(SchedulerPort, ABC):
@@ -122,3 +124,15 @@ class BaseSchedulerStrategy(SchedulerPort, ABC):
         from config.platform_dirs import get_logs_location
 
         return str(get_logs_location())
+
+    def format_template_for_display(self, template: Template) -> dict[str, Any]:
+        """Default implementation - clean model dump without scheduler-specific formatting."""
+        return template.model_dump(exclude_none=True)
+
+    def format_template_for_provider(self, template: Template) -> dict[str, Any]:
+        """Default implementation - clean model dump without scheduler-specific formatting."""
+        return template.model_dump(exclude_none=True)
+
+    def format_request_for_display(self, request: Request) -> dict[str, Any]:
+        """Default implementation - clean model dump without scheduler-specific formatting."""
+        return request.model_dump(exclude_none=True)

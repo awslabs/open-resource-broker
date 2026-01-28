@@ -25,6 +25,7 @@ from domain.base.ports import (
     LoggingPort,
     ProviderPort,
 )
+from domain.base.ports.scheduler_port import SchedulerPort
 from domain.request.repository import RequestRepository
 from infrastructure.di.buses import QueryBus
 
@@ -93,7 +94,7 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
             if not template:
                 raise EntityNotFoundError("Template", command.template_id)
 
-            self.logger.debug("Template found: %s %s", type(template), template.to_dict())
+            self.logger.debug("Template found: %s (id=%s)", type(template), template.template_id)
 
             # Select provider based on template requirements
             selection_result = self._provider_selection_service.select_provider_for_template(
@@ -367,12 +368,16 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
         try:
             # Import required types (using existing imports)
             from providers.base.strategy import ProviderOperation, ProviderOperationType
+            from domain.base.ports.scheduler_port import SchedulerPort
+
+            # Get scheduler for template formatting
+            scheduler = self._container.get(SchedulerPort)
 
             # Create provider operation using existing pattern
             operation = ProviderOperation(
                 operation_type=ProviderOperationType.CREATE_INSTANCES,
                 parameters={
-                    "template_config": template.to_dict(),
+                    "template_config": scheduler.format_template_for_provider(template),
                     "count": request.requested_count,
                 },
                 context={
@@ -763,7 +768,9 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
             if not template:
                 raise ValueError(f"Template not found: {template_id}")
 
-            template_config = template.to_dict()
+            # Get scheduler for template formatting
+            scheduler = self._container.get(SchedulerPort)
+            template_config = scheduler.format_template_for_provider(template)
             provider_api = template.provider_api
             self.logger.info("Using %s handler for template %s", provider_api, template_id)
 

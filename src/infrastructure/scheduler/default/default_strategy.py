@@ -117,10 +117,10 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
         """
         Format domain Templates to native domain response format.
 
-        Uses the Template's model_dump() method to serialize to native format.
+        Uses the new architecture-compliant method for consistency.
         """
         return {
-            "templates": [template.model_dump() for template in templates],
+            "templates": [self.format_template_for_display(template) for template in templates],
             "message": "Templates retrieved successfully",
             "count": len(templates),
         }

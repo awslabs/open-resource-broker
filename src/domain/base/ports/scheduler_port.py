@@ -68,6 +68,21 @@ class SchedulerPort(ABC):
         """Get storage base path within working directory."""
 
     @abstractmethod
+    def format_template_for_display(self, template: Template) -> dict[str, Any]:
+        """Format template for CLI/API display using scheduler-specific field mapping."""
+        pass
+
+    @abstractmethod  
+    def format_template_for_provider(self, template: Template) -> dict[str, Any]:
+        """Format template for provider operations using scheduler-specific field mapping."""
+        pass
+
+    @abstractmethod
+    def format_request_for_display(self, request: Request) -> dict[str, Any]:
+        """Format request for CLI/API display using scheduler-specific field mapping."""
+        pass
+
+    @abstractmethod
     def get_directory(self, file_type: str) -> str | None:
         """Get directory path for the given file type.
 
