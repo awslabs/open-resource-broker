@@ -105,7 +105,7 @@ class TestRequestCacheService:
     def test_cache_request_when_disabled(self, mock_uow_factory, mock_logger):
         """Test that cache_request does nothing when caching is disabled."""
         config_manager = Mock(spec=ConfigurationManager)
-        
+
         # Mock the app_config property structure
         mock_app_config = Mock()
         mock_performance = Mock()
@@ -163,7 +163,7 @@ class TestRequestCacheService:
     def test_config_error_handling(self, mock_uow_factory, mock_logger):
         """Test that config errors are handled gracefully."""
         config_manager = Mock(spec=ConfigurationManager)
-        
+
         # Make app_config property raise exception when accessed
         type(config_manager).app_config = PropertyMock(side_effect=Exception("Config error"))
 
@@ -189,7 +189,7 @@ class TestRequestCacheIntegration:
         mock_uow_factory = Mock(spec=UnitOfWorkFactory)
         mock_logger = Mock(spec=LoggingPort)
         mock_config_manager = Mock(spec=ConfigurationManager)
-        
+
         # Mock the app_config property structure
         mock_app_config = Mock()
         mock_performance = Mock()

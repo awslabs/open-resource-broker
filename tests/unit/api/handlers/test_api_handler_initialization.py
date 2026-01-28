@@ -164,10 +164,10 @@ class TestAPIHandlerRegistration:
         # Mock FastAPI import to fail
         with patch("infrastructure.di.server_services._register_fastapi_services") as mock_fastapi:
             mock_fastapi.side_effect = ImportError("No module named 'fastapi'")
-            
+
             # Act - should not raise exception
             register_server_services(container)
-            
+
             # Assert - function completes without error
             assert True
 

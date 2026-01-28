@@ -299,8 +299,8 @@ class TestTemplateDefaultsIntegration:
 
         # Create scheduler strategy with template defaults service
         scheduler = HostFactorySchedulerStrategy(
-            mock_config_manager, 
-            mock_logger, 
+            mock_config_manager,
+            mock_logger,
             template_defaults_service=mock_template_defaults_service
         )
 

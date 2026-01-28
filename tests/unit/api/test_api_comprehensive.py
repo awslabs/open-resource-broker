@@ -490,7 +490,7 @@ class TestAPIRoutersComprehensive:
         """Test router FastAPI integration."""
         if not FASTAPI_AVAILABLE:
             pytest.skip("FastAPI not available")
-            
+
         modules = self.get_router_modules()
 
         for _module_name, module in modules:
