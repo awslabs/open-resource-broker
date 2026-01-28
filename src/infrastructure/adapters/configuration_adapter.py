@@ -114,19 +114,12 @@ class ConfigurationAdapter(ConfigurationPort):
         """Get template configuration."""
         try:
             template_config = self._config_manager.get_typed(TemplateConfig)
-            return {
-                "default_instance_tags": getattr(template_config, "default_instance_tags", {}),
-                "default_image_id": getattr(template_config, "default_image_id", ""),
-                "default_instance_type": getattr(
-                    template_config, "default_instance_type", "t2.micro"
-                ),
-            }
-        except Exception:
-            return {
-                "default_instance_tags": {},
-                "default_image_id": "",
-                "default_instance_type": "t2.micro",
-            }
+            return template_config.model_dump(exclude_none=True)
+        except Exception as e:
+            # Fallback to empty config if loading fails
+            from infrastructure.logging.logger import get_logger
+            get_logger(__name__).warning("Failed to get template config: %s", e)
+            return {}
 
     def get_metrics_config(self) -> dict[str, Any]:
         """Get metrics configuration."""
