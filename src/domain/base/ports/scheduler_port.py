@@ -83,6 +83,11 @@ class SchedulerPort(ABC):
         pass
 
     @abstractmethod
+    def get_exit_code_for_status(self, status: str) -> int:
+        """Get appropriate exit code for request status."""
+        pass
+
+    @abstractmethod
     def get_directory(self, file_type: str) -> str | None:
         """Get directory path for the given file type.
 

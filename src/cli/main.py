@@ -576,7 +576,7 @@ async def execute_command(args, app) -> dict[str, Any]:
     scheduler_override_active = False
     if hasattr(args, "scheduler") and args.scheduler:
         try:
-            app.config_manager.override_scheduler_strategy(args.scheduler)
+            app.config_manager().override_scheduler_strategy(args.scheduler)
             scheduler_override_active = True
         except Exception as e:
             from infrastructure.logging.logger import get_logger
@@ -838,9 +838,15 @@ async def main() -> None:
             else:
                 result = await execute_command(args, app)
 
-            # Format and output result
+            # Handle exit codes from command handlers
             output_format = getattr(args, "format", None) or args.format
-            formatted_output = format_output(result, output_format)
+            if isinstance(result, tuple) and len(result) == 2:
+                formatted_result, exit_code = result
+                formatted_output = format_output(formatted_result, output_format)
+            else:
+                # Backward compatibility - assume success
+                formatted_output = format_output(result, output_format)
+                exit_code = 0
 
             if args.output:
                 with open(args.output, "w") as f:
@@ -849,6 +855,10 @@ async def main() -> None:
                     print(f"Output written to {args.output}")  # noqa: CLI output
             else:
                 print(formatted_output)  # noqa: CLI output
+            
+            # Exit with appropriate code
+            if exit_code != 0:
+                sys.exit(exit_code)
 
         except DomainException as e:
             logger.exception("Domain error: %s", e)

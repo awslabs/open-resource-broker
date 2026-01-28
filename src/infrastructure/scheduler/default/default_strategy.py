@@ -191,6 +191,11 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
 
         return response
 
+    def get_exit_code_for_status(self, status: str) -> int:
+        """Default scheduler exit codes: 1 for any problem, 0 for success."""
+        problem_statuses = ["failed", "cancelled", "timeout", "partial"]
+        return 1 if status in problem_statuses else 0
+
     def format_health_response(self, checks: list[dict[str, Any]]) -> dict[str, Any]:
         """Format health check response for Default scheduler."""
         passed = sum(1 for c in checks if c.get("status") == "pass")
@@ -228,9 +233,25 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
                 "errors": request_data.get("errors"),
             }
 
-        return {
-            "request_id": request_data.get("request_id", request_data.get("requestId")),
-            "message": request_data.get("message", "Request submitted successfully"),
-            "template_id": request_data.get("template_id"),
-            "count": request_data.get("count"),
-        }
+        # Get status and error info
+        status = request_data.get("status", "pending")
+        error_message = request_data.get("error_message")
+        request_id = request_data.get("request_id", request_data.get("requestId"))
+        
+        # Status-based message and response logic
+        if status == "failed":
+            return {"error": f"Request failed: {error_message or 'Unknown error'}", "request_id": request_id}
+        elif status == "cancelled":
+            return {"error": "Request cancelled", "request_id": request_id}
+        elif status == "timeout":
+            return {"error": "Request timed out", "request_id": request_id}
+        elif status == "partial":
+            return {"warning": f"Request partially completed: {error_message or 'Some resources failed'}", "request_id": request_id}
+        elif status == "complete":
+            return {"request_id": request_id, "message": "Request completed successfully"}
+        elif status == "in_progress":
+            return {"request_id": request_id, "message": "Request in progress"}
+        elif status == "pending":
+            return {"request_id": request_id, "message": "Request submitted successfully"}
+        else:
+            return {"request_id": request_id, "message": request_data.get("message", "Request status unknown")}

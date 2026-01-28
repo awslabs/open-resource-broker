@@ -113,6 +113,13 @@ class SchedulerRegistry(BaseRegistry):
         return SchedulerRegistration(type_name, strategy_factory, config_factory)
 
 
+# Global singleton instance
+_scheduler_registry_instance = None
+
+
 def get_scheduler_registry() -> SchedulerRegistry:
     """Get the singleton scheduler registry instance."""
-    return SchedulerRegistry()
+    global _scheduler_registry_instance
+    if _scheduler_registry_instance is None:
+        _scheduler_registry_instance = SchedulerRegistry()
+    return _scheduler_registry_instance

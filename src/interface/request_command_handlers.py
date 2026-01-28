@@ -132,33 +132,44 @@ async def handle_request_machines(args: "argparse.Namespace") -> dict[str, Any]:
         resource_ids = getattr(request_dto, "resource_ids", []) if request_dto else []
 
         # Create response data with resource ID information
+        status = request_dto.status if request_dto else "unknown"
+        error_msg = None
+        if request_dto and hasattr(request_dto, 'metadata'):
+            error_msg = getattr(request_dto.metadata, "error_message", None)
+        
         request_data = {
             "request_id": request_id,
             "resource_ids": resource_ids,
             "template_id": template_id,
+            "status": status,
+            "error_message": error_msg,
         }
 
         # Return success response using scheduler strategy formatting
         if scheduler_strategy:
-            return scheduler_strategy.format_request_response(request_data)
+            response = scheduler_strategy.format_request_response(request_data)
+            status = request_dto.status if request_dto else "unknown"
+            exit_code = scheduler_strategy.get_exit_code_for_status(status)
+            return response, exit_code
         else:
             # Fallback if no scheduler strategy (shouldn't happen)
             return {
                 "error": "No scheduler strategy available",
                 "message": "Unable to format response",
-            }
+            }, 1
     except Exception as e:
         # Fallback if we can't get request details
         from domain.base.ports import LoggingPort
 
         container.get(LoggingPort).warning("Could not get request details for resource ID: %s", e)
         if scheduler_strategy:
-            return scheduler_strategy.format_request_response({"request_id": request_id})
+            response = scheduler_strategy.format_request_response({"request_id": request_id})
+            return response, 0  # Command succeeded, just couldn't get details
         else:
             return {
                 "error": "No scheduler strategy available",
                 "message": "Unable to format response",
-            }
+            }, 1
 
 
 @handle_interface_exceptions(context="get_return_requests", interface_type="cli")

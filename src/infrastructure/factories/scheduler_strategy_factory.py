@@ -25,6 +25,14 @@ class SchedulerStrategyFactory:
         """Lazy load scheduler registry."""
         if self._scheduler_registry is None:
             self._scheduler_registry = get_scheduler_registry()
+            # Ensure all scheduler types are registered when factory is created
+            # Only register if not already registered (idempotent)
+            if not self._scheduler_registry.is_registered("default"):
+                from infrastructure.scheduler.registration import register_default_scheduler
+                try:
+                    register_default_scheduler()
+                except Exception:
+                    pass  # Ignore errors
         return self._scheduler_registry
 
     def create_strategy(self, scheduler_type: str, config: Any) -> Any:

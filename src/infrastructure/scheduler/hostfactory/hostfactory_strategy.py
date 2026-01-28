@@ -243,18 +243,35 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         
         # Check request status to provide appropriate message
         status = request_dict.get("status", "pending")
-        if status == "failed":
-            message = "Request created but provisioning failed. Check status for details."
-        elif status in ["pending", "running", "provisioning"]:
-            message = "Request submitted for processing"
-        else:
-            message = request_dict.get("message", "Request VM success from AWS.")
+        error_message = request_dict.get("error_message")
+        request_id = request_dict.get("request_id", request_dict.get("requestId"))
         
-        return {
-            # HostFactory schema expects camelCase requestId
-            "requestId": request_id,
-            "message": message,
-        }
+        # Status-based message and response logic
+        if status == "failed":
+            # TODO: Verify how returning requestId on failures affects HostFactory behavior
+            # Per IBM spec, failures should not return requestId
+            return {"message": f"Request failed: {error_message or 'Unknown error'}"}
+            # return {"requestId": request_id, "message": f"Request failed: {error_message or 'Unknown error'}"}
+        elif status == "cancelled":
+            # TODO: Verify how returning requestId on cancellation affects HostFactory behavior
+            return {"message": "Request cancelled"}
+            # return {"requestId": request_id, "message": "Request cancelled"}
+        elif status == "timeout":
+            # TODO: Verify how returning requestId on timeout affects HostFactory behavior
+            return {"message": "Request timed out"}
+            # return {"requestId": request_id, "message": "Request timed out"}
+        elif status == "partial":
+            # TODO: Verify how returning requestId on partial completion affects HostFactory behavior
+            return {"message": f"Request partially completed: {error_message or 'Some resources failed'}"}
+            # return {"requestId": request_id, "message": f"Request partially completed: {error_message or 'Some resources failed'}"}
+        elif status == "complete":
+            return {"requestId": request_id, "message": "Request completed successfully"}
+        elif status == "in_progress":
+            return {"requestId": request_id, "message": "Request in progress"}
+        elif status == "pending":
+            return {"requestId": request_id, "message": "Request submitted for processing"}
+        else:
+            return {"requestId": request_id, "message": request_dict.get("message", "Request status unknown")}
 
     def convert_domain_to_hostfactory_output(
         self, operation: str, data: dict[str, Any]
@@ -697,6 +714,11 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
             response["traceback"] = traceback.format_exc()
 
         return response
+
+    def get_exit_code_for_status(self, status: str) -> int:
+        """HostFactory exit codes: 1 for failures, 0 for accepted requests."""
+        failure_statuses = ["failed", "cancelled", "timeout", "partial"]
+        return 1 if status in failure_statuses else 0
 
     def format_health_response(self, checks: list[dict[str, Any]]) -> dict[str, Any]:
         """Format health check response for HostFactory."""
