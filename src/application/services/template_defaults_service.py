@@ -195,7 +195,7 @@ class TemplateDefaultsService(TemplateDefaultsPort):
         try:
             template_config = self.config_manager.get_template_config()
             if hasattr(template_config, "model_dump"):
-                config_dict = template_config.model_dump()
+                config_dict = template_config.model_dump(exclude_none=True)
             else:
                 config_dict = template_config
 

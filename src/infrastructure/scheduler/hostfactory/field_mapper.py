@@ -35,6 +35,11 @@ class HostFactoryFieldMapper(SchedulerFieldMapper):
         if "vmType" in mapped:
             mapped["attributes"] = self._create_hf_attributes(mapped["vmType"])
         
+        # Convert subnetIds array to subnetId string (HF expects singular)
+        if "subnetIds" in mapped and mapped["subnetIds"]:
+            mapped["subnetId"] = mapped["subnetIds"][0]
+            del mapped["subnetIds"]
+        
         return mapped
     
     def _create_hf_attributes(self, instance_type: str) -> Dict[str, List[str]]:
