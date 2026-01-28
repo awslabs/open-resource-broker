@@ -128,7 +128,9 @@ class TestAPIHandlerRegistration:
 
     @patch("infrastructure.di.server_services._register_fastapi_services")
     @patch("infrastructure.di.server_services._register_api_handlers")
-    def test_register_server_services_with_fastapi(self, mock_register_api_handlers, mock_register_fastapi):
+    def test_register_server_services_with_fastapi(
+        self, mock_register_api_handlers, mock_register_fastapi
+    ):
         """Test that register_server_services calls handlers when server is enabled and FastAPI is available."""
         # Arrange
         from config.schemas.server_schema import ServerConfig

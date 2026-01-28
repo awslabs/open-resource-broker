@@ -12,8 +12,9 @@ from application.request.dto import RequestStatusResponse
 
 # Check if FastAPI is available
 try:
-    import fastapi
-    FASTAPI_AVAILABLE = True
+    import importlib.util
+
+    FASTAPI_AVAILABLE = importlib.util.find_spec("fastapi") is not None
 except ImportError:
     FASTAPI_AVAILABLE = False
 

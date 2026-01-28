@@ -82,7 +82,9 @@ class TestFullWorkflow:
             assert isinstance(template, Template)
 
     @pytest.mark.asyncio
-    async def test_machine_request_workflow(self, test_config_file: Path, aws_mocks, mock_ec2_resources):
+    async def test_machine_request_workflow(
+        self, test_config_file: Path, aws_mocks, mock_ec2_resources
+    ):
         """Test machine request workflow."""
         app = Application(config_path=str(test_config_file))
         await app.initialize()
@@ -129,7 +131,9 @@ class TestFullWorkflow:
             assert status["progress"] == 50.0
 
     @pytest.mark.asyncio
-    async def test_machine_return_workflow(self, test_config_file: Path, aws_mocks, mock_ec2_resources):
+    async def test_machine_return_workflow(
+        self, test_config_file: Path, aws_mocks, mock_ec2_resources
+    ):
         """Test machine return workflow."""
         app = Application(config_path=str(test_config_file))
         await app.initialize()
@@ -325,7 +329,9 @@ class TestFullWorkflow:
         assert query_bus is not None
 
     @pytest.mark.asyncio
-    async def test_provider_integration(self, test_config_file: Path, aws_mocks, mock_ec2_resources):
+    async def test_provider_integration(
+        self, test_config_file: Path, aws_mocks, mock_ec2_resources
+    ):
         """Test provider integration."""
         app = Application(config_path=str(test_config_file))
         await app.initialize()

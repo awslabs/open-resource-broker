@@ -33,7 +33,7 @@ class ConcreteSchedulerStrategy(BaseSchedulerStrategy):
         return templates
 
     def format_request_response(self, request_data: dict[str, Any]) -> dict[str, Any]:
-        return {"request": request_data}
+        return {"response": True}
 
     def format_machine_status_response(self, machines: list[Machine]) -> dict[str, Any]:
         return {"machines": []}
@@ -68,12 +68,6 @@ class ConcreteSchedulerStrategy(BaseSchedulerStrategy):
     def format_request_status_response(self, requests: list[Request]) -> dict[str, Any]:
         return {"requests": []}
 
-    def format_request_response(self, request_data: dict[str, Any]) -> dict[str, Any]:
-        return {"response": True}
-
-    def format_machine_status_response(self, machines: list[Machine]) -> dict[str, Any]:
-        return {"machines": []}
-
     def get_working_directory(self) -> str:
         return "/test/workdir"
 
@@ -82,12 +76,6 @@ class ConcreteSchedulerStrategy(BaseSchedulerStrategy):
 
     def get_logs_directory(self) -> str:
         return "/test/logsdir"
-
-    def get_directory(self, file_type: str) -> str | None:
-        return f"/test/{file_type}dir"
-
-    def get_storage_base_path(self) -> str:
-        return "/test/storage"
 
 
 class TestBaseSchedulerStrategy:
