@@ -83,8 +83,6 @@ def handle_health_check(args) -> int:
 
         # 5. Work directory check
         try:
-            from domain.base.ports.scheduler_port import SchedulerPort
-
             scheduler = container.get(SchedulerPort)
             work_dir = scheduler.get_working_directory()
             checks.append(

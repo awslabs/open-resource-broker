@@ -13,6 +13,7 @@ except ImportError:
 
 from _package import __version__
 from infrastructure.logging.logger import get_logger
+from infrastructure.auth.registry import get_auth_registry
 
 
 def create_fastapi_app(server_config):
