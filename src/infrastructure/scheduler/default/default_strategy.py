@@ -121,6 +121,10 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
             "count": len(templates),
         }
 
+    def format_templates_for_generation(self, templates: list[dict]) -> list[dict]:
+        """No conversion needed - use snake_case as-is."""
+        return templates
+
     def format_machine_status_response(self, machines: list[Machine]) -> dict[str, Any]:
         """
         Format domain Machines to native domain response format.

@@ -48,6 +48,10 @@ class SchedulerPort(ABC):
         """Format domain Templates to scheduler response - uses domain.model_dump()."""
 
     @abstractmethod
+    def format_templates_for_generation(self, templates: list[dict]) -> list[dict]:
+        """Convert internal templates to scheduler's expected input format."""
+
+    @abstractmethod
     def format_request_status_response(self, requests: list[Request]) -> dict[str, Any]:
         """Format domain Requests to scheduler response - uses domain.model_dump()."""
 

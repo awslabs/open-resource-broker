@@ -123,10 +123,12 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
 
         mapped = {}
 
-        # Apply HostFactory field mappings
+        # Apply HostFactory field mappings (bidirectional)
         for hf_field, internal_field in field_mappings.items():
-            if hf_field in template:
+            if hf_field in template:  # camelCase input
                 mapped[internal_field] = template[hf_field]
+            elif internal_field in template:  # snake_case input
+                mapped[internal_field] = template[internal_field]
 
         # Apply HostFactory transformations
         mapped = HostFactoryTransformations.apply_transformations(mapped)
@@ -599,6 +601,27 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
                 for template in templates
             ]
         }
+
+    def format_templates_for_generation(self, templates: list[dict]) -> list[dict]:
+        """Convert snake_case to camelCase for HostFactory input format."""
+        formatted = []
+        for template in templates:
+            formatted_template = {}
+            # Convert key fields to camelCase
+            if "template_id" in template:
+                formatted_template["templateId"] = template["template_id"]
+            if "max_instances" in template:
+                formatted_template["maxNumber"] = template["max_instances"]
+            if "instance_type" in template:
+                formatted_template["vmType"] = template["instance_type"]
+            
+            # Copy other fields as-is
+            for key, value in template.items():
+                if key not in ["template_id", "max_instances", "instance_type"]:
+                    formatted_template[key] = value
+            
+            formatted.append(formatted_template)
+        return formatted
 
     def format_request_status_response(self, requests: list["Request"]) -> dict[str, Any]:
         """

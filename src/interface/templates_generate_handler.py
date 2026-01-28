@@ -5,6 +5,8 @@ from pathlib import Path
 from typing import Any, Dict
 
 from cli.console import print_success, print_info, print_command
+from infrastructure.di.container import get_container
+from domain.base.ports.scheduler_port import SchedulerPort
 
 
 async def handle_templates_generate(args) -> Dict[str, Any]:
@@ -43,8 +45,13 @@ async def handle_templates_generate(args) -> Dict[str, Any]:
         # Get config directory
         config_dir.mkdir(parents=True, exist_ok=True)
         
+        # Format templates for scheduler's expected input format
+        container = get_container()
+        scheduler_strategy = container.get(SchedulerPort)
+        formatted_examples = scheduler_strategy.format_templates_for_generation(examples)
+        
         # Write templates file
-        templates_data = {"templates": examples}
+        templates_data = {"templates": formatted_examples}
         templates_file = config_dir / filename
         
         with open(templates_file, 'w') as f:
