@@ -372,7 +372,8 @@ class ConfigurationManager:
                 if os.path.exists(path):
                     logger.info("Using templates file: %s", filename)
                     return path
-            except Exception:
+            except Exception as e:  # nosec B112
+                logger.debug("Template file %s not found: %s", filename, e)
                 continue
 
         # No file found - fail with clear error
