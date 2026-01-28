@@ -7,6 +7,7 @@ from domain.base.ports.logging_port import LoggingPort
 from domain.machine.aggregate import Machine
 from domain.template.template_aggregate import Template
 from infrastructure.scheduler.base.strategy import BaseSchedulerStrategy
+from infrastructure.scheduler.default.field_mapper import DefaultFieldMapper
 
 
 class DefaultSchedulerStrategy(BaseSchedulerStrategy):
@@ -24,6 +25,9 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
         """Initialize the instance."""
         self.config_manager = config_manager
         self._logger = logger
+        
+        # Initialize field mapper
+        self.field_mapper = DefaultFieldMapper()
 
     def get_templates_file_path(self) -> str:
         """Get templates file path using strategy pattern."""
@@ -122,8 +126,8 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
         }
 
     def format_templates_for_generation(self, templates: list[dict]) -> list[dict]:
-        """No conversion needed - use snake_case as-is."""
-        return templates
+        """No conversion needed - use field mapper (identity mapping)."""
+        return self.field_mapper.format_for_generation(templates)
 
     def format_machine_status_response(self, machines: list[Machine]) -> dict[str, Any]:
         """
