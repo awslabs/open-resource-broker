@@ -675,8 +675,6 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
                 instance_type="t3.medium",
                 max_instances=5,
                 price_type="ondemand",
-                subnet_ids=["subnet-xxxxx"],
-                security_group_ids=["sg-xxxxx"],
                 tags={"Environment": "dev", "ManagedBy": "ORB"},
             ),
             Template(
@@ -689,8 +687,6 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
                 max_instances=10,
                 price_type="spot",
                 max_price=0.05,
-                subnet_ids=["subnet-xxxxx"],
-                security_group_ids=["sg-xxxxx"],
                 tags={"Environment": "dev", "ManagedBy": "ORB"},
             ),
         ]

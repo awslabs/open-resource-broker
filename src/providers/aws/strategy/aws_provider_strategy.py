@@ -1325,3 +1325,195 @@ class AWSProviderStrategy(ProviderStrategy):
             f"initialized={self._initialized}"
             f")"
         )
+
+    def discover_infrastructure(self, provider_config: dict[str, Any]) -> dict[str, Any]:
+        """Discover AWS infrastructure for provider."""
+        try:
+            from providers.aws.services.infrastructure_discovery_service import AWSInfrastructureDiscoveryService
+            from cli.console import print_info, print_separator
+
+            config = provider_config.get("config", {})
+            discovery = AWSInfrastructureDiscoveryService(
+                region=config.get("region", "us-east-1"),
+                profile=config.get("profile", "default")
+            )
+
+            vpcs = discovery.discover_vpcs()
+            print_info(f"\nProvider: {provider_config.get('name', 'unknown')}")
+            print_info(f"Region: {config.get('region', 'us-east-1')}")
+            print_separator(width=50, char="-")
+
+            if not vpcs:
+                print_info("No VPCs found")
+                return {"provider": provider_config.get("name", "unknown"), "vpcs": 0}
+
+            print_info(f"Found {len(vpcs)} VPCs:")
+            for vpc in vpcs:
+                print_info(f"  {vpc}")
+                
+                subnets = discovery.discover_subnets(vpc.id)
+                if subnets:
+                    print_info(f"    Subnets ({len(subnets)}):")
+                    for subnet in subnets[:3]:  # Show first 3
+                        print_info(f"      {subnet}")
+                    if len(subnets) > 3:
+                        print_info(f"      ... and {len(subnets) - 3} more")
+
+                sgs = discovery.discover_security_groups(vpc.id)
+                if sgs:
+                    print_info(f"    Security Groups ({len(sgs)}):")
+                    for sg in sgs[:2]:  # Show first 2
+                        print_info(f"      {sg}")
+                    if len(sgs) > 2:
+                        print_info(f"      ... and {len(sgs) - 2} more")
+
+            return {
+                "provider": provider_config.get("name", "unknown"),
+                "vpcs": len(vpcs),
+                "total_subnets": sum(len(discovery.discover_subnets(vpc.id)) for vpc in vpcs),
+                "total_sgs": sum(len(discovery.discover_security_groups(vpc.id)) for vpc in vpcs),
+            }
+
+        except Exception as e:
+            from cli.console import print_error
+            print_error(f"Failed to discover infrastructure: {e}")
+            return {"provider": provider_config.get("name", "unknown"), "error": str(e)}
+
+    def discover_infrastructure_interactive(self, provider_config: dict[str, Any]) -> dict[str, Any]:
+        """Discover AWS infrastructure interactively."""
+        try:
+            from providers.aws.services.infrastructure_discovery_service import AWSInfrastructureDiscoveryService
+            from cli.console import print_info, print_error, print_success
+
+            config = provider_config.get("config", {})
+            discovery = AWSInfrastructureDiscoveryService(
+                region=config.get("region", "us-east-1"),
+                profile=config.get("profile", "default")
+            )
+            
+            print_info("Discovering infrastructure...")
+            discovered = {}
+            
+            # Discover VPCs
+            vpcs = discovery.discover_vpcs()
+            if not vpcs:
+                print_info("No VPCs found, skipping infrastructure discovery")
+                return {}
+            
+            print_info("")
+            print_info("Found VPCs:")
+            for i, vpc in enumerate(vpcs, 1):
+                print_info(f"  [{i}] {vpc}")
+            
+            vpc_choice = input(f"\nSelect VPC [1]: ").strip() or "1"
+            try:
+                selected_vpc = vpcs[int(vpc_choice) - 1]
+            except (ValueError, IndexError):
+                print_error("Invalid VPC selection, skipping infrastructure discovery")
+                return {}
+            
+            # Discover subnets
+            subnets = discovery.discover_subnets(selected_vpc.id)
+            if subnets:
+                print_info("")
+                print_info(f"Found subnets in {selected_vpc.id}:")
+                for i, subnet in enumerate(subnets, 1):
+                    print_info(f"  [{i}] {subnet}")
+                print_info("  [s] Skip subnet selection")
+                
+                subnet_choice = input(f"\nSelect subnets (comma-separated) [1,2]: ").strip()
+                if subnet_choice.lower() != 's':
+                    if not subnet_choice:
+                        subnet_choice = "1,2" if len(subnets) >= 2 else "1"
+                    
+                    try:
+                        subnet_indices = [int(x.strip()) - 1 for x in subnet_choice.split(',')]
+                        selected_subnets = [subnets[i] for i in subnet_indices if 0 <= i < len(subnets)]
+                        if selected_subnets:
+                            discovered["subnet_ids"] = [s.id for s in selected_subnets]
+                    except (ValueError, IndexError):
+                        print_error("Invalid subnet selection, skipping subnets")
+            
+            # Discover security groups
+            sgs = discovery.discover_security_groups(selected_vpc.id)
+            if sgs:
+                print_info("")
+                print_info(f"Found security groups in {selected_vpc.id}:")
+                for i, sg in enumerate(sgs, 1):
+                    print_info(f"  [{i}] {sg}")
+                print_info("  [s] Skip security group selection")
+                
+                sg_choice = input(f"\nSelect security groups [1]: ").strip() or "1"
+                if sg_choice.lower() != 's':
+                    try:
+                        sg_indices = [int(x.strip()) - 1 for x in sg_choice.split(',')]
+                        selected_sgs = [sgs[i] for i in sg_indices if 0 <= i < len(sgs)]
+                        if selected_sgs:
+                            discovered["security_group_ids"] = [sg.id for sg in selected_sgs]
+                    except (ValueError, IndexError):
+                        print_error("Invalid security group selection, skipping security groups")
+            
+            if discovered:
+                print_info("")
+                print_success("Infrastructure discovered and configured!")
+            else:
+                print_info("No infrastructure selected")
+            
+            return discovered
+            
+        except Exception as e:
+            from cli.console import print_error
+            print_error(f"Failed to discover infrastructure: {e}")
+            print_info("Continuing without infrastructure discovery...")
+            return {}
+
+    def validate_infrastructure(self, provider_config: dict[str, Any]) -> dict[str, Any]:
+        """Validate AWS infrastructure configuration."""
+        try:
+            from providers.aws.services.infrastructure_discovery_service import AWSInfrastructureDiscoveryService
+            from cli.console import print_info, print_success, print_error
+
+            config = provider_config.get("config", {})
+            template_defaults = provider_config.get("template_defaults", {})
+            
+            if not template_defaults:
+                print_info(f"Provider {provider_config.get('name', 'unknown')}: No infrastructure to validate")
+                return {"provider": provider_config.get("name", "unknown"), "status": "no_infrastructure"}
+
+            discovery = AWSInfrastructureDiscoveryService(
+                region=config.get("region", "us-east-1"),
+                profile=config.get("profile", "default")
+            )
+
+            validation_results = {"provider": provider_config.get("name", "unknown"), "valid": True, "issues": []}
+
+            # Validate subnets
+            if "subnet_ids" in template_defaults:
+                try:
+                    response = discovery.ec2_client.describe_subnets(
+                        SubnetIds=template_defaults["subnet_ids"]
+                    )
+                    print_success(f"Provider {provider_config.get('name', 'unknown')}: All {len(response['Subnets'])} subnets are valid")
+                except Exception as e:
+                    validation_results["valid"] = False
+                    validation_results["issues"].append(f"Invalid subnets: {e}")
+                    print_error(f"Provider {provider_config.get('name', 'unknown')}: Subnet validation failed: {e}")
+
+            # Validate security groups
+            if "security_group_ids" in template_defaults:
+                try:
+                    response = discovery.ec2_client.describe_security_groups(
+                        GroupIds=template_defaults["security_group_ids"]
+                    )
+                    print_success(f"Provider {provider_config.get('name', 'unknown')}: All {len(response['SecurityGroups'])} security groups are valid")
+                except Exception as e:
+                    validation_results["valid"] = False
+                    validation_results["issues"].append(f"Invalid security groups: {e}")
+                    print_error(f"Provider {provider_config.get('name', 'unknown')}: Security group validation failed: {e}")
+
+            return validation_results
+
+        except Exception as e:
+            from cli.console import print_error
+            print_error(f"Failed to validate infrastructure: {e}")
+            return {"provider": provider_config.get("name", "unknown"), "error": str(e)}

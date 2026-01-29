@@ -137,7 +137,7 @@ def _get_active_providers() -> list[dict]:
 
     # Fallback if no providers configured
     if not active_providers:
-        active_providers = [{"name": "aws-default", "type": "aws"}]
+        active_providers = [{"name": "default", "type": "aws"}]
 
     return active_providers
 

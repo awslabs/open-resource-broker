@@ -428,6 +428,27 @@ For more information, visit: {DOCS_URL}
     system_serve.add_argument("--reload", action="store_true", help="Enable auto-reload")
     system_serve.add_argument("--server-log-level", default="info", help="Server log level")
 
+    # Infrastructure resource
+    infrastructure_parser = subparsers.add_parser("infrastructure", help="Infrastructure management")
+    resource_parsers["infrastructure"] = infrastructure_parser
+    infrastructure_subparsers = infrastructure_parser.add_subparsers(
+        dest="action", help="Infrastructure actions", required=True
+    )
+
+    # Infrastructure discover
+    infra_discover = infrastructure_subparsers.add_parser("discover", help="Discover infrastructure")
+    infra_discover.add_argument("--provider", help="Specific provider to discover")
+    infra_discover.add_argument("--all-providers", action="store_true", help="Discover for all providers")
+
+    # Infrastructure show
+    infra_show = infrastructure_subparsers.add_parser("show", help="Show infrastructure configuration")
+    infra_show.add_argument("--provider", help="Specific provider to show")
+    infra_show.add_argument("--all-providers", action="store_true", help="Show all providers")
+
+    # Infrastructure validate
+    infra_validate = infrastructure_subparsers.add_parser("validate", help="Validate infrastructure")
+    infra_validate.add_argument("--provider", help="Specific provider to validate")
+
     # Config resource
     config_parser = subparsers.add_parser("config", help="Configuration management")
     resource_parsers["config"] = config_parser
@@ -750,6 +771,11 @@ async def execute_command(args, app) -> dict[str, Any]:
             handle_validate_template,
         )
         from interface.templates_generate_handler import handle_templates_generate
+        from interface.infrastructure_command_handler import (
+            handle_infrastructure_discover,
+            handle_infrastructure_show,
+            handle_infrastructure_validate,
+        )
 
         # Command handler mapping - all handlers are now async functions
         command_handlers = {
@@ -818,6 +844,10 @@ async def execute_command(args, app) -> dict[str, Any]:
             ("system", "serve"): handle_serve_api,
             ("system", "health"): handle_system_health,
             ("system", "metrics"): handle_system_metrics,
+            # Infrastructure commands
+            ("infrastructure", "discover"): handle_infrastructure_discover,
+            ("infrastructure", "show"): handle_infrastructure_show,
+            ("infrastructure", "validate"): handle_infrastructure_validate,
             # Configuration commands
             ("config", "show"): handle_provider_config,
             ("config", "validate"): handle_validate_provider_config,

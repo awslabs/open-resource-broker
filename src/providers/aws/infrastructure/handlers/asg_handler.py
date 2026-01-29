@@ -961,8 +961,6 @@ class ASGHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                 instance_type="t3.medium",
                 max_instances=15,
                 price_type="ondemand",
-                subnet_ids=["subnet-xxxxx"],
-                security_group_ids=["sg-xxxxx"],
                 tags={"Environment": "prod", "ManagedBy": "ORB"},
             ),
             Template(
@@ -975,8 +973,6 @@ class ASGHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                 max_instances=20,
                 price_type="spot",
                 max_price=0.05,
-                subnet_ids=["subnet-xxxxx"],
-                security_group_ids=["sg-xxxxx"],
                 tags={"Environment": "dev", "ManagedBy": "ORB"},
             ),
             Template(
@@ -990,8 +986,6 @@ class ASGHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                 price_type="heterogeneous",
                 percent_on_demand=30,
                 allocation_strategy="lowest_price",
-                subnet_ids=["subnet-xxxxx", "subnet-yyyyy"],
-                security_group_ids=["sg-xxxxx"],
                 tags={"Environment": "prod", "ManagedBy": "ORB"},
             ),
         ]
