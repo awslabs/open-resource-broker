@@ -124,6 +124,10 @@ def _show_provider_infrastructure(provider: Dict[str, Any]) -> None:
                 print_info(f"    - {sg}")
     else:
         print_info("\nNo infrastructure defaults configured")
+        print_info("To configure infrastructure defaults:")
+        print_info("  1. Run: orb init --interactive")
+        print_info("  2. Or run: orb infra discover (to see available infrastructure)")
+        print_info("  3. Then manually add template_defaults to your provider config")
 
     print_separator(width=50, char="-")
 
