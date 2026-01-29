@@ -16,10 +16,17 @@ from infrastructure.logging.logger import get_logger, setup_logging
 class Application:
     """DI-based application context manager with registration pattern."""
 
-    def __init__(self, config_path: Optional[str] = None) -> None:
+    def __init__(self, config_path: Optional[str] = None, skip_validation: bool = False) -> None:
         """Initialize the instance."""
         self.config_path = config_path
         self._initialized = False
+
+        # Skip validation for commands that don't need it (templates, init, help)
+        if not skip_validation:
+            from infrastructure.validation.startup_validator import StartupValidator
+
+            validator = StartupValidator(config_path)
+            validator.validate_startup()
 
         # Defer heavy initialization until first use
         self._container = None
@@ -67,7 +74,7 @@ class Application:
     async def initialize(self, dry_run: bool = False) -> bool:
         """Initialize the application with DI container."""
         try:
-            # Ensure config manager is available (lazy)
+            # Ensure config manager is available
             self._ensure_config_manager()
 
             self.logger.info("Initializing application with provider: %s", self.provider_type)
@@ -87,11 +94,10 @@ class Application:
                 self._dry_run_context = dry_run_context(True)
                 self._dry_run_context.__enter__()
 
-            # Ensure container is available (lazy)
+            # Ensure container is available
             self._ensure_container()
 
-            # Register all services AFTER container creation but BEFORE service
-            # resolution
+            # Register all services after container creation but before service resolution
             from infrastructure.di.services import register_all_services
 
             register_all_services(self._container)
@@ -339,7 +345,7 @@ async def main() -> None:
     config_path = os.getenv("CONFIG_PATH")
 
     # Only print before app creation - no logger available yet
-    print("Starting Open Host Factory...")  # noqa: bootstrap output
+    print("Starting Open Host Factory...")
 
     try:
         async with await create_application(config_path) as app:
@@ -367,7 +373,7 @@ async def main() -> None:
 
     except Exception as e:
         # Keep print here - app creation failed, no logger available
-        print(f"Application failed: {e}")  # noqa: bootstrap error
+        print(f"Application failed: {e}")
         sys.exit(1)
 
 

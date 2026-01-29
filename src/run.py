@@ -12,27 +12,33 @@ project_root = os.path.dirname(current_dir)  # Go up one level from src/ to proj
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-# Auto-detect config directory based on installation type
-parent_dir = os.path.dirname(current_dir)
-if os.path.exists(os.path.join(parent_dir, "pyproject.toml")):
-    # Development/local install - use project config
-    config_dir = os.path.join(parent_dir, "config")
-    work_dir = parent_dir
-    os.environ.setdefault("HF_PROVIDER_CONFDIR", config_dir)
-    os.environ.setdefault("HF_PROVIDER_WORKDIR", work_dir)
-    os.environ.setdefault("DEFAULT_PROVIDER_CONFDIR", config_dir)
-else:
-    # System install - find install root by navigating up from site-packages
-    install_root = current_dir
-    while install_root != os.path.dirname(install_root):  # Stop at filesystem root
-        install_root = os.path.dirname(install_root)
-        if os.path.exists(os.path.join(install_root, "config")):
-            config_dir = os.path.join(install_root, "config")
-            work_dir = install_root
-            os.environ.setdefault("HF_PROVIDER_CONFDIR", config_dir)
-            os.environ.setdefault("HF_PROVIDER_WORKDIR", work_dir)
-            os.environ.setdefault("DEFAULT_PROVIDER_CONFDIR", config_dir)
-            break
+
+# Setup environment variables for config discovery
+def setup_environment():
+    """Setup environment variables using platform-specific directories."""
+    # Only set if not already set by user
+    if os.environ.get("ORB_CONFIG_DIR"):
+        return  # User has explicitly set ORB_* vars
+
+    try:
+        from config.platform_dirs import get_config_location, get_logs_location, get_work_location
+
+        config_dir = str(get_config_location())
+        work_dir = str(get_work_location())
+        logs_dir = str(get_logs_location())
+
+        # Set ORB_* vars (standard) - bootstrap only
+        os.environ.setdefault("ORB_CONFIG_DIR", config_dir)
+        os.environ.setdefault("ORB_WORK_DIR", work_dir)
+        os.environ.setdefault("ORB_LOG_DIR", logs_dir)
+
+    except Exception as e:
+        # Config discovery failed - will be caught later with helpful error
+        print(f"WARNING: Config directory detection failed: {e}", file=sys.stderr)
+
+
+# Setup environment
+setup_environment()
 
 # Import CLI modules
 try:
@@ -56,4 +62,7 @@ def cli_main() -> None:
 
 
 if __name__ == "__main__":
+    asyncio.run(main())
+    sys.exit(0)
+
     asyncio.run(main())

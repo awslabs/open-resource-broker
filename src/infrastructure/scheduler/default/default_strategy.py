@@ -7,6 +7,7 @@ from domain.base.ports.logging_port import LoggingPort
 from domain.machine.aggregate import Machine
 from domain.template.template_aggregate import Template
 from infrastructure.scheduler.base.strategy import BaseSchedulerStrategy
+from infrastructure.scheduler.default.field_mapper import DefaultFieldMapper
 
 
 class DefaultSchedulerStrategy(BaseSchedulerStrategy):
@@ -25,10 +26,39 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
         self.config_manager = config_manager
         self._logger = logger
 
+        # Initialize provider selection service for provider selection
+        from application.services.provider_selection_service import (
+            ProviderSelectionService,
+        )
+        from infrastructure.di.container import get_container
+
+        container = get_container()
+        self._provider_selection_service = container.get(ProviderSelectionService)
+
+        # Initialize field mapper
+        self.field_mapper = DefaultFieldMapper()
+
     def get_templates_file_path(self) -> str:
-        """Get templates file path - using native domain format."""
-        # Use templates.json with native domain format
-        return self.config_manager.resolve_file("template", "templates.json")
+        """Get templates file path using strategy pattern."""
+        try:
+            # Use provider selection service that respects CLI override
+            selection_result = (
+                self._provider_selection_service.select_provider_for_template_loading()
+            )
+            provider_name = selection_result.provider_instance
+            provider_type = selection_result.provider_type
+
+            # Use scheduler strategy for filename (consistent with generation)
+            filename = self.get_templates_filename(provider_name, provider_type)
+
+            # Use ConfigurationManager to resolve the file path
+            return self.config_manager.resolve_file("template", filename)
+
+        except Exception as e:
+            self._logger.error("Failed to determine templates file path: %s", e)
+            # Fallback to default behavior
+            filename = self.get_templates_filename("default", "default")
+            return self.config_manager.resolve_file("template", filename)
 
     def get_template_paths(self) -> list[str]:
         """Get template file paths."""
@@ -110,13 +140,17 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
         """
         Format domain Templates to native domain response format.
 
-        Uses the Template's model_dump() method to serialize to native format.
+        Uses the new architecture-compliant method for consistency.
         """
         return {
-            "templates": [template.model_dump() for template in templates],
+            "templates": [self.format_template_for_display(template) for template in templates],
             "message": "Templates retrieved successfully",
             "count": len(templates),
         }
+
+    def format_templates_for_generation(self, templates: list[dict]) -> list[dict]:
+        """No conversion needed - use field mapper (identity mapping)."""
+        return self.field_mapper.format_for_generation(templates)
 
     def format_machine_status_response(self, machines: list[Machine]) -> dict[str, Any]:
         """
@@ -130,36 +164,71 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
             "count": len(machines),
         }
 
-    def get_working_directory(self) -> str:
-        """Get working directory from DEFAULT_PROVIDER_WORKDIR or current directory."""
-        import os
-
-        return os.environ.get("DEFAULT_PROVIDER_WORKDIR", os.getcwd())
-
-    def get_config_directory(self) -> str:
-        """Get config directory from DEFAULT_PROVIDER_CONFDIR or working_dir/config."""
-        import os
-
-        confdir = os.environ.get("DEFAULT_PROVIDER_CONFDIR")
-        if confdir:
-            return confdir
-        return os.path.join(self.get_working_directory(), "config")
-
-    def get_logs_directory(self) -> str:
-        """Get logs directory from DEFAULT_PROVIDER_LOGDIR or working_dir/logs."""
-        import os
-
-        logdir = os.environ.get("DEFAULT_PROVIDER_LOGDIR")
-        if logdir:
-            return logdir
-        return os.path.join(self.get_working_directory(), "logs")
-
     def get_storage_base_path(self) -> str:
         """Get storage base path within working directory."""
         import os
 
         workdir = self.get_working_directory()
         return os.path.join(workdir, "data")
+
+    @classmethod
+    def get_templates_filename(
+        cls, provider_name: str, provider_type: str, config: dict = None
+    ) -> str:
+        """Get templates filename with config override support.
+
+        Can be called as classmethod (before app init) or instance method.
+        """
+        # Check config override first
+        if config:
+            scheduler_config = config.get("scheduler", {})
+            config_filename = scheduler_config.get("templates_filename")
+            if config_filename:
+                return config_filename
+
+        # Use Default scheduler default: 'templates.json'
+        return "templates.json"
+
+    def should_log_to_console(self) -> bool:
+        """Check if logs should be written to console for Default scheduler.
+
+        Default scheduler is interactive, always log to console.
+        """
+        return True
+
+    def format_error_response(self, error: Exception, context: dict[str, Any]) -> dict[str, Any]:
+        """Format error response for Default scheduler (console + JSON)."""
+        import sys
+        import traceback
+
+        # Print to console
+        print(f"ERROR: {error}", file=sys.stderr)
+        if context.get("verbose"):
+            traceback.print_exc()
+
+        # Return JSON
+        response = {"success": False, "error": str(error)}
+
+        if context.get("verbose"):
+            response["traceback"] = traceback.format_exc()
+
+        return response
+
+    def get_exit_code_for_status(self, status: str) -> int:
+        """Default scheduler exit codes: 1 for any problem, 0 for success."""
+        problem_statuses = ["failed", "cancelled", "timeout", "partial"]
+        return 1 if status in problem_statuses else 0
+
+    def format_health_response(self, checks: list[dict[str, Any]]) -> dict[str, Any]:
+        """Format health check response for Default scheduler."""
+        passed = sum(1 for c in checks if c.get("status") == "pass")
+        failed = len(checks) - passed
+
+        return {
+            "success": failed == 0,
+            "checks": checks,
+            "summary": {"total": len(checks), "passed": passed, "failed": failed},
+        }
 
     def get_directory(self, file_type: str) -> str | None:
         """Get directory path for the given file type."""
@@ -187,9 +256,34 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
                 "errors": request_data.get("errors"),
             }
 
-        return {
-            "request_id": request_data.get("request_id", request_data.get("requestId")),
-            "message": request_data.get("message", "Request submitted successfully"),
-            "template_id": request_data.get("template_id"),
-            "count": request_data.get("count"),
-        }
+        # Get status and error info
+        status = request_data.get("status", "pending")
+        error_message = request_data.get("error_message")
+        request_id = request_data.get("request_id", request_data.get("requestId"))
+
+        # Status-based message and response logic
+        if status == "failed":
+            return {
+                "error": f"Request failed: {error_message or 'Unknown error'}",
+                "request_id": request_id,
+            }
+        elif status == "cancelled":
+            return {"error": "Request cancelled", "request_id": request_id}
+        elif status == "timeout":
+            return {"error": "Request timed out", "request_id": request_id}
+        elif status == "partial":
+            return {
+                "warning": f"Request partially completed: {error_message or 'Some resources failed'}",
+                "request_id": request_id,
+            }
+        elif status == "complete":
+            return {"request_id": request_id, "message": "Request completed successfully"}
+        elif status == "in_progress":
+            return {"request_id": request_id, "message": "Request in progress"}
+        elif status == "pending":
+            return {"request_id": request_id, "message": "Request submitted successfully"}
+        else:
+            return {
+                "request_id": request_id,
+                "message": request_data.get("message", "Request status unknown"),
+            }

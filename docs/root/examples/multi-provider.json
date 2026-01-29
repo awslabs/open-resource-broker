@@ -10,7 +10,7 @@
     },
     "providers": [
       {
-        "name": "aws-primary",
+        "name": "aws_primary_us-east-1",
         "type": "aws",
         "enabled": true,
         "priority": 1,
@@ -24,7 +24,7 @@
         }
       },
       {
-        "name": "aws-backup",
+        "name": "aws_backup_us-west-2",
         "type": "aws",
         "enabled": true,
         "priority": 2,

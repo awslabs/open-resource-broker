@@ -210,7 +210,7 @@ class AWSClient:
             # Ensure we have an AWS provider
             if selection_result.provider_type != "aws":
                 raise AWSConfigurationError(
-                    "Selected provider is not AWS: %s" % selection_result.provider_type
+                    f"Selected provider is not AWS: {selection_result.provider_type}"
                 )
 
             # Get the provider instance configuration

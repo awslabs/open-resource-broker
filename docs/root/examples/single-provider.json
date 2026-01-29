@@ -1,9 +1,9 @@
 {
   "provider": {
-    "active_provider": "aws-primary",
+    "active_provider": "aws_default_us-east-1",
     "providers": [
       {
-        "name": "aws-primary",
+        "name": "aws_default_us-east-1",
         "type": "aws",
         "enabled": true,
         "priority": 1,

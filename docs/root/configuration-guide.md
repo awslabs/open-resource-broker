@@ -5,12 +5,13 @@ This guide covers the configuration-driven provider strategy system implemented 
 ## Table of Contents
 
 1. [Overview](#overview)
-2. [Configuration Formats](#configuration-formats)
-3. [Provider Modes](#provider-modes)
-4. [Configuration Management](#configuration-management)
-5. [CLI Operations](#cli-operations)
-6. [Migration Guide](#migration-guide)
-7. [Troubleshooting](#troubleshooting)
+2. [Provider Naming Conventions](#provider-naming-conventions)
+3. [Configuration Formats](#configuration-formats)
+4. [Provider Modes](#provider-modes)
+5. [Configuration Management](#configuration-management)
+6. [CLI Operations](#cli-operations)
+7. [Migration Guide](#migration-guide)
+8. [Troubleshooting](#troubleshooting)
 
 ## Overview
 
@@ -19,6 +20,59 @@ The configuration-driven provider strategy system enables declarative management
 - **Single Provider Mode**: One active provider with simple configuration
 - **Multi-Provider Mode**: Multiple providers with load balancing and failover
 - **Legacy Mode**: Backward compatibility with existing AWS-only configuration
+
+## Provider Naming Conventions
+
+### AWS Provider Naming Pattern
+
+AWS providers follow the pattern: `aws_{profile}_{region}`
+
+**Examples:**
+- `aws_default_us-east-1` - Default profile in US East 1
+- `aws_prod_us-west-2` - Production profile in US West 2
+- `aws_dev_eu-west-1` - Development profile in EU West 1
+
+**Components:**
+- **Type**: Always `aws` for AWS providers
+- **Profile**: AWS credential profile name (e.g., `default`, `prod`, `dev`)
+- **Region**: AWS region identifier (e.g., `us-east-1`, `us-west-2`, `eu-west-1`)
+
+### Provider Name Generation
+
+The system automatically generates provider names based on configuration:
+
+```json
+{
+  "name": "aws_prod_us-east-1",
+  "type": "aws",
+  "config": {
+    "profile": "prod",
+    "region": "us-east-1"
+  }
+}
+```
+
+### Template File Naming
+
+Template files are named based on provider names:
+- `aws_default_us-east-1_templates.json`
+- `aws_prod_us-west-2_templates.json`
+- `aws_dev_eu-west-1_templates.json`
+
+### Multi-Provider Template Generation
+
+Generate templates for multiple providers:
+
+```bash
+# Generate for all active providers
+orb templates generate
+
+# Generate for specific provider
+orb templates generate --provider aws_prod_us-east-1
+
+# Generate for specific provider type
+orb templates generate --provider-api EC2Fleet
+```
 
 ## Configuration Formats
 
@@ -40,7 +94,7 @@ The consolidated configuration format provides comprehensive provider management
     },
     "providers": [
       {
-        "name": "aws-primary",
+        "name": "aws_default_us-east-1",
         "type": "aws",
         "enabled": true,
         "priority": 1,
@@ -54,7 +108,7 @@ The consolidated configuration format provides comprehensive provider management
         }
       },
       {
-        "name": "aws-backup",
+        "name": "aws_backup_us-west-2",
         "type": "aws",
         "enabled": true,
         "priority": 2,
@@ -162,10 +216,10 @@ Activated when:
 ```json
 {
   "provider": {
-    "active_provider": "aws-primary",
+    "active_provider": "aws_default_us-east-1",
     "providers": [
       {
-        "name": "aws-primary",
+        "name": "aws_default_us-east-1",
         "type": "aws",
         "enabled": true,
         "config": {
@@ -210,23 +264,25 @@ Activated when:
     "health_check_interval": 30,
     "providers": [
       {
-        "name": "aws-primary",
+        "name": "aws_default_us-east-1",
         "type": "aws",
         "enabled": true,
         "priority": 1,
         "weight": 70,
         "config": {
-          "region": "us-east-1"
+          "region": "us-east-1",
+          "profile": "default"
         }
       },
       {
-        "name": "aws-backup",
+        "name": "aws_default_us-west-2",
         "type": "aws",
         "enabled": true,
         "priority": 2,
         "weight": 30,
         "config": {
-          "region": "us-west-2"
+          "region": "us-west-2",
+          "profile": "default"
         }
       }
     ]
@@ -438,7 +494,7 @@ export HF_PROVIDER_HEALTH_CHECK_INTERVAL=30
     "selection_policy": "ROUND_ROBIN",
     "providers": [
       {
-        "name": "aws-east",
+        "name": "aws_default_us-east-1",
         "type": "aws",
         "enabled": true,
         "priority": 1,
@@ -449,7 +505,7 @@ export HF_PROVIDER_HEALTH_CHECK_INTERVAL=30
         }
       },
       {
-        "name": "aws-west",
+        "name": "aws_default_us-west-2",
         "type": "aws",
         "enabled": true,
         "priority": 2,
@@ -470,14 +526,15 @@ export HF_PROVIDER_HEALTH_CHECK_INTERVAL=30
 ```json
 {
   "provider": {
-    "active_provider": "aws-primary",
+    "active_provider": "aws_default_us-east-1",
     "providers": [
       {
-        "name": "aws-primary",
+        "name": "aws_default_us-east-1",
         "type": "aws",
         "enabled": true,
         "config": {
-          "region": "us-east-1"
+          "region": "us-east-1",
+          "profile": "default"
         }
       }
     ]
@@ -498,23 +555,25 @@ export HF_PROVIDER_HEALTH_CHECK_INTERVAL=30
     },
     "providers": [
       {
-        "name": "aws-primary",
+        "name": "aws_default_us-east-1",
         "type": "aws",
         "enabled": true,
         "priority": 1,
         "weight": 80,
         "config": {
-          "region": "us-east-1"
+          "region": "us-east-1",
+          "profile": "default"
         }
       },
       {
-        "name": "aws-backup",
+        "name": "aws_default_us-west-2",
         "type": "aws",
         "enabled": true,
         "priority": 2,
         "weight": 20,
         "config": {
-          "region": "us-west-2"
+          "region": "us-west-2",
+          "profile": "default"
         }
       }
     ]

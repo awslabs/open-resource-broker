@@ -9,8 +9,8 @@ from pathlib import Path
 from typing import Any, Callable, Optional
 
 from botocore.exceptions import ClientError
-from config.config_manager import ConfigurationManager
 
+from config.managers.configuration_manager import ConfigurationManager
 from infrastructure.logging.logger import get_logger
 from providers.aws.infrastructure.aws_client import AWSClient
 
@@ -185,7 +185,12 @@ class HealthCheck:
 
     def _check_system_health(self) -> HealthStatus:
         """Check system health."""
-        import psutil
+        try:
+            import psutil
+        except ImportError:
+            raise ImportError(
+                "System monitoring requires: pip install orb-py[monitoring]"
+            ) from None
 
         try:
             cpu_percent = psutil.cpu_percent()

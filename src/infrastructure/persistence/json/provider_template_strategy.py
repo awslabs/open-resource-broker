@@ -129,6 +129,10 @@ class ProviderTemplateStrategy(JSONStorageStrategy):
                         file_data = json.load(f)
 
                     # Handle different file formats
+                    # Check for wrapper format: {"templates": ...}
+                    if isinstance(file_data, dict) and "templates" in file_data:
+                        file_data = file_data["templates"]
+
                     if isinstance(file_data, list):
                         # Array format: [{"template_id": "...", ...}, ...]
                         for template_data in file_data:

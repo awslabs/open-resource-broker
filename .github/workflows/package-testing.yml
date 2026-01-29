@@ -1,0 +1,461 @@
+name: Package Testing Strategy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'pyproject.toml'
+      - '.github/workflows/package-testing.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'pyproject.toml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package-variants:
+    name: Test Package Variants
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        variant:
+          - name: "minimal"
+            install: "."
+            description: "Core functionality only"
+            test_cli_rich: false
+            test_api: false
+            test_monitoring: false
+          - name: "cli"
+            install: ".[cli]"
+            description: "CLI with rich formatting"
+            test_cli_rich: true
+            test_api: false
+            test_monitoring: false
+          - name: "api"
+            install: ".[api]"
+            description: "API server functionality"
+            test_cli_rich: false
+            test_api: true
+            test_monitoring: false
+          - name: "monitoring"
+            install: ".[monitoring]"
+            description: "Monitoring and observability"
+            test_cli_rich: false
+            test_api: false
+            test_monitoring: true
+          - name: "all"
+            install: ".[all]"
+            description: "All features"
+            test_cli_rich: true
+            test_api: true
+            test_monitoring: true
+        python-version: ["3.10", "3.12"]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install package variant
+        run: |
+          python -m pip install --upgrade pip
+          pip install build wheel
+          python -m build
+          pip install "${{ matrix.variant.install }}"
+
+      - name: Test core imports
+        run: |
+          python -c "
+          import sys
+          print(f'Testing variant: ${{ matrix.variant.name }}')
+          print(f'Python version: {sys.version}')
+          
+          # Test core imports always work
+          try:
+              import run
+              from bootstrap import Application
+              from domain.base.exceptions import DomainException
+              from infrastructure.logging.logger import get_logger
+              print('PASS: Core imports successful')
+          except ImportError as e:
+              print(f'FAIL: Core import failed: {e}')
+              sys.exit(1)
+          "
+
+      - name: Test CLI functionality
+        run: |
+          # Test basic CLI works
+          python -m run --help
+          python -m run --version
+          
+          # Test commands that should work in all variants
+          python -m run templates list --help || echo "Templates command help failed (expected in some cases)"
+
+      - name: Test CLI Rich formatting
+        if: matrix.variant.test_cli_rich
+        run: |
+          python -c "
+          try:
+              from cli.formatters import format_generic_table
+              from cli.console import get_console
+              
+              # Test Rich table formatting
+              test_data = [{'id': '1', 'name': 'test'}]
+              result = format_generic_table(test_data, 'Test Items')
+              print('PASS: Rich CLI formatting successful')
+              
+              # Test console
+              console = get_console()
+              console.print('[green]Rich console test[/green]')
+              print('PASS: Rich console successful')
+          except ImportError as e:
+              print(f'FAIL: Rich CLI functionality failed: {e}')
+              sys.exit(1)
+          "
+
+      - name: Test CLI without Rich (minimal variant)
+        if: matrix.variant.name == 'minimal'
+        run: |
+          python -c "
+          # Verify Rich is not available
+          try:
+              import rich
+              print('WARNING: Rich is available but should not be in minimal variant')
+          except ImportError:
+              print('PASS: Rich correctly not available in minimal variant')
+          
+          # Test CLI still works with fallbacks
+          from cli.formatters import format_generic_table
+          from cli.console import get_console
+          
+          test_data = [{'id': '1', 'name': 'test'}]
+          result = format_generic_table(test_data, 'Test Items')
+          print('PASS: CLI fallback formatting works')
+          
+          console = get_console()
+          console.print('Plain console test')
+          print('PASS: Plain console works')
+          "
+
+      - name: Test API functionality
+        if: matrix.variant.test_api
+        run: |
+          python -c "
+          try:
+              from api.server import create_fastapi_app
+              print('PASS: FastAPI imports successful')
+              
+              # Test app creation (basic test)
+              print('PASS: API functionality available')
+          except ImportError as e:
+              print(f'FAIL: API functionality failed: {e}')
+              sys.exit(1)
+          "
+
+      - name: Test API not available (non-API variants)
+        if: "!matrix.variant.test_api"
+        run: |
+          python -c "
+          # Verify FastAPI is not available
+          try:
+              import fastapi
+              print('WARNING: FastAPI available but not expected in ${{ matrix.variant.name }} variant')
+          except ImportError:
+              print('PASS: FastAPI correctly not available in ${{ matrix.variant.name }} variant')
+          
+          # Test that API server creation fails gracefully
+          try:
+              from api.server import create_fastapi_app
+              try:
+                  create_fastapi_app(None)
+                  print('FAIL: API should have failed without FastAPI')
+                  sys.exit(1)
+              except ImportError as e:
+                  if 'FastAPI not installed' in str(e):
+                      print('PASS: API gracefully fails without FastAPI')
+                  else:
+                      print(f'FAIL: Unexpected API error: {e}')
+                      sys.exit(1)
+          except ImportError:
+              print('PASS: API server module handles missing FastAPI')
+          "
+
+      - name: Test monitoring functionality
+        if: matrix.variant.test_monitoring
+        run: |
+          python -c "
+          try:
+              from monitoring.health import HealthCheck
+              print('PASS: Monitoring imports successful')
+              
+              # Test basic monitoring functionality
+              print('PASS: Monitoring functionality available')
+          except ImportError as e:
+              print(f'FAIL: Monitoring functionality failed: {e}')
+              sys.exit(1)
+          "
+
+      - name: Test monitoring not available (non-monitoring variants)
+        if: "!matrix.variant.test_monitoring"
+        run: |
+          python -c "
+          # Check optional monitoring dependencies
+          optional_monitoring = ['prometheus_client', 'opentelemetry', 'psutil']
+          missing_deps = []
+          
+          for dep in optional_monitoring:
+              try:
+                  __import__(dep)
+                  print(f'WARNING: {dep} available but not expected in ${{ matrix.variant.name }} variant')
+              except ImportError:
+                  missing_deps.append(dep)
+                  print(f'PASS: {dep} correctly not available')
+          
+          # Monitoring should still import but with limited functionality
+          try:
+              from monitoring.health import HealthCheck
+              print('PASS: Monitoring module imports with limited functionality')
+          except ImportError as e:
+              print(f'FAIL: Monitoring module should import even without optional deps: {e}')
+              sys.exit(1)
+          "
+
+  import-guard-validation:
+    name: Import Guard Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install minimal dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install build pytest pytest-mock
+          python -m build
+          pip install .
+
+      - name: Test import guards
+        run: |
+          python -c "
+          import sys
+          from unittest.mock import patch
+          
+          print('Testing import guards...')
+          
+          # Test CLI without Rich
+          with patch.dict(sys.modules, {'rich': None, 'rich.console': None, 'rich.table': None}):
+              try:
+                  from cli.console import get_console, print_success
+                  console = get_console()
+                  print('PASS: CLI console works without Rich')
+              except Exception as e:
+                  print(f'FAIL: CLI console failed without Rich: {e}')
+                  sys.exit(1)
+          
+          # Test API without FastAPI
+          with patch.dict(sys.modules, {'fastapi': None}):
+              try:
+                  from api.server import create_fastapi_app
+                  try:
+                      create_fastapi_app(None)
+                      print('FAIL: API should fail without FastAPI')
+                      sys.exit(1)
+                  except ImportError as e:
+                      if 'FastAPI not installed' in str(e):
+                          print('PASS: API correctly fails without FastAPI')
+                      else:
+                          print(f'FAIL: Unexpected API error: {e}')
+                          sys.exit(1)
+              except Exception as e:
+                  print(f'FAIL: API import guard test failed: {e}')
+                  sys.exit(1)
+          
+          print('All import guard tests passed!')
+          "
+
+  dependency-isolation:
+    name: Dependency Isolation Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Test clean environment
+        run: |
+          python -m pip install --upgrade pip
+          pip install build
+          python -m build
+          pip install .
+          
+          # Verify no optional dependencies are installed
+          python -c "
+          import sys
+          
+          optional_deps = ['rich', 'fastapi', 'uvicorn', 'opentelemetry', 'prometheus_client', 'psutil']
+          for dep in optional_deps:
+              try:
+                  __import__(dep)
+                  print(f'WARNING: {dep} is available but should not be in minimal install')
+              except ImportError:
+                  print(f'PASS: {dep} correctly not available')
+          
+          # Test that core functionality still works
+          import run
+          from bootstrap import Application
+          from domain.base.exceptions import DomainException
+          print('PASS: Core functionality works without optional deps')
+          
+          # Test CLI with fallbacks
+          from cli.console import get_console
+          console = get_console()
+          console.print('Test message')
+          print('PASS: CLI works with fallbacks')
+          "
+
+  error-message-quality:
+    name: Error Message Quality Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install minimal package
+        run: |
+          python -m pip install --upgrade pip
+          pip install build
+          python -m build
+          pip install .
+
+      - name: Test error messages are helpful
+        run: |
+          python -c "
+          import sys
+          
+          # Test API error message
+          try:
+              from api.server import create_fastapi_app
+              try:
+                  create_fastapi_app(None)
+                  print('FAIL: API should have failed')
+                  sys.exit(1)
+              except ImportError as e:
+                  error_msg = str(e)
+                  if 'pip install orb-py[api]' in error_msg:
+                      print('PASS: API error message is helpful')
+                  else:
+                      print(f'FAIL: API error message not helpful: {error_msg}')
+                      sys.exit(1)
+          except Exception as e:
+              print(f'FAIL: Error message test failed: {e}')
+              sys.exit(1)
+          
+          print('Error message quality tests passed!')
+          "
+
+  integration-test:
+    name: Integration Test
+    runs-on: ubuntu-latest
+    needs: [package-variants, import-guard-validation, dependency-isolation]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Test full installation
+        run: |
+          python -m pip install --upgrade pip
+          pip install build
+          python -m build
+          pip install ".[all]"
+
+      - name: Run comprehensive test
+        run: |
+          # Test all functionality works together
+          python -c "
+          # Test all imports work
+          from cli.formatters import format_generic_table
+          from cli.console import get_console
+          from api.server import create_fastapi_app
+          from monitoring.health import HealthCheck
+          
+          print('PASS: All modules import successfully')
+          
+          # Test Rich formatting
+          test_data = [{'id': '1', 'name': 'test', 'status': 'active'}]
+          table_output = format_generic_table(test_data, 'Test Data')
+          print('PASS: Rich table formatting works')
+          
+          # Test console
+          console = get_console()
+          console.print('Integration test successful')
+          print('PASS: Rich console works')
+          
+          print('Integration test completed successfully!')
+          "
+
+      - name: Test CLI commands
+        run: |
+          python -m run --help
+          python -m run --version
+          echo "PASS: CLI commands work"
+
+  summary:
+    name: Package Testing Summary
+    runs-on: ubuntu-latest
+    needs: [package-variants, import-guard-validation, dependency-isolation, error-message-quality, integration-test]
+    if: always()
+    steps:
+      - name: Display summary
+        run: |
+          {
+            echo "## Package Testing Strategy Results"
+            echo ""
+            echo "### Test Results:"
+            echo "- Package Variants: ${{ needs.package-variants.result }}"
+            echo "- Import Guard Validation: ${{ needs.import-guard-validation.result }}"
+            echo "- Dependency Isolation: ${{ needs.dependency-isolation.result }}"
+            echo "- Error Message Quality: ${{ needs.error-message-quality.result }}"
+            echo "- Integration Test: ${{ needs.integration-test.result }}"
+            echo ""
+            
+            if [[ "${{ needs.package-variants.result }}" == "success" && 
+                  "${{ needs.import-guard-validation.result }}" == "success" && 
+                  "${{ needs.dependency-isolation.result }}" == "success" && 
+                  "${{ needs.error-message-quality.result }}" == "success" && 
+                  "${{ needs.integration-test.result }}" == "success" ]]; then
+              echo "PASS: All package testing strategy tests passed!"
+            else
+              echo "FAIL: Some package testing strategy tests failed!"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

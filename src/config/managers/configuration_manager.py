@@ -53,6 +53,7 @@ class ConfigurationManager:
 
         # Scheduler override support
         self._scheduler_override: Optional[str] = None
+        self._provider_override: Optional[str] = None
 
     @property
     def loader(self) -> ConfigurationLoader:
@@ -220,6 +221,14 @@ class ConfigurationManager:
         """Restore original scheduler strategy."""
         self._scheduler_override = None
 
+    def override_provider_instance(self, provider_name: str) -> None:
+        """Temporarily override provider instance."""
+        self._provider_override = provider_name
+
+    def get_active_provider_override(self) -> Optional[str]:
+        """Get current provider override."""
+        return self._provider_override
+
     def get_provider_type(self) -> str:
         """Get provider type."""
         return self._ensure_provider_manager().get_provider_type()
@@ -242,14 +251,6 @@ class ConfigurationManager:
     def get_raw_config(self) -> dict[str, Any]:
         """Get raw configuration dictionary."""
         return self._ensure_raw_config().copy()
-
-    def get_app_config(self) -> dict[str, Any]:
-        """Get structured application configuration.
-
-        Returns the raw configuration dictionary for backward compatibility.
-        This method is used by repository factories and other components.
-        """
-        return self.get_raw_config()
 
     def resolve_file(
         self,
@@ -315,39 +316,73 @@ class ConfigurationManager:
         return fallback_path
 
     def _get_scheduler_directory(self, file_type: str) -> Optional[str]:
-        """Get directory path from scheduler strategy for the given file type.
+        """Get directory path for the given file type using platform detection.
 
-        Reads directly from environment variables to avoid circular import issues
-        during configuration bootstrap.
+        Uses platform_dirs for consistent directory resolution during bootstrap.
+        """
+        from config.platform_dirs import get_config_location, get_logs_location, get_work_location
+
+        logger.debug("[CONFIG_MGR] Getting directory for file_type=%s", file_type)
+
+        if file_type in ["conf", "template", "legacy"]:
+            result = str(get_config_location())
+        elif file_type == "log":
+            result = str(get_logs_location())
+        elif file_type in ["work", "data"]:
+            result = str(get_work_location())
+        else:
+            result = str(get_work_location())
+
+        logger.debug("[CONFIG_MGR] Resolved directory for file_type=%s: %s", file_type, result)
+        return result
+
+    def find_templates_file(self, provider_type: str) -> str:
+        """Find templates file with fallback logic.
+
+        Tries in order:
+        1. {provider_type}prov_templates.json (e.g., awsprov_templates.json) - for real providers
+        2. templates.json (generic) - for default scheduler or fallback
+
+        Args:
+            provider_type: Provider type (e.g., "aws") or "default" for default scheduler
+
+        Returns:
+            Path to templates file
+
+        Raises:
+            FileNotFoundError: If no templates file found
         """
         import os
 
-        logger.debug("[CONFIG_MGR] Getting scheduler directory for file_type=%s", file_type)
-
-        # Read directly from environment variables (HostFactory convention)
-        if file_type in ["conf", "template", "legacy"]:
-            confdir = os.environ.get("HF_PROVIDER_CONFDIR")
-            workdir = os.environ.get("HF_PROVIDER_WORKDIR", os.getcwd())
-            result = confdir if confdir else os.path.join(workdir, "config")
-        elif file_type == "log":
-            logdir = os.environ.get("HF_PROVIDER_LOGDIR")
-            workdir = os.environ.get("HF_PROVIDER_WORKDIR", os.getcwd())
-            result = logdir if logdir else os.path.join(workdir, "logs")
-        elif file_type in ["work", "data"]:
-            result = os.environ.get("HF_PROVIDER_WORKDIR", os.getcwd())
+        # For default scheduler, try templates.json first
+        if provider_type == "default":
+            candidates = [
+                "templates.json",  # Generic (preferred for default)
+                "defaultprov_templates.json",  # Provider-specific (unlikely)
+            ]
         else:
-            result = os.environ.get("HF_PROVIDER_WORKDIR", os.getcwd())
+            candidates = [
+                f"{provider_type}prov_templates.json",  # Provider-specific
+                "templates.json",  # Generic fallback
+            ]
 
-        logger.debug(
-            "[CONFIG_MGR] Resolved directory for file_type=%s: %s (HF_PROVIDER_LOGDIR=%s, HF_PROVIDER_WORKDIR=%s, HF_PROVIDER_CONFDIR=%s)",
-            file_type,
-            result,
-            os.environ.get("HF_PROVIDER_LOGDIR", "NOT_SET"),
-            os.environ.get("HF_PROVIDER_WORKDIR", "NOT_SET"),
-            os.environ.get("HF_PROVIDER_CONFDIR", "NOT_SET"),
+        for filename in candidates:
+            try:
+                path = self.resolve_file("template", filename)
+                if os.path.exists(path):
+                    logger.info("Using templates file: %s", filename)
+                    return path
+            except Exception as e:  # nosec B112
+                logger.debug("Template file %s not found: %s", filename, e)
+                continue
+
+        # No file found - fail with clear error
+        template_dir = self._get_scheduler_directory("template") or "config"
+        raise FileNotFoundError(
+            f"Templates file not found. Tried: {', '.join(candidates)}\n"
+            f"In directory: {template_dir}\n"
+            f"Run 'orb init' to create configuration and templates"
         )
-
-        return result
 
     def get_cache_stats(self) -> dict[str, Any]:
         """Get cache statistics."""

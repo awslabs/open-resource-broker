@@ -21,7 +21,7 @@ The Open Resource Broker provides integration between IBM Spectrum Symphony Host
 
 ### Core Functionality
 - **HostFactory Compatible Output**: Native compatibility with IBM Symphony Host Factory requirements
-- **Multi-Provider Architecture**: Extensible provider system supporting multiple cloud platforms
+- **Extensible Architecture**: Extensible provider system with AWS support
 - **REST API Interface**: REST API with OpenAPI/Swagger documentation
 - **Configuration-Driven**: Dynamic provider selection and configuration through centralized config system
 
@@ -41,7 +41,38 @@ The Open Resource Broker provides integration between IBM Spectrum Symphony Host
 
 ## Quick Start
 
-### Docker Deployment (Recommended)
+### PyPI Installation (Recommended)
+
+```bash
+# Minimal install (CLI only, 10 dependencies)
+pip install orb-py
+
+# With colored CLI output
+pip install orb-py[cli]
+
+# With API server (for REST API mode)
+pip install orb-py[api]
+
+# With monitoring (OpenTelemetry, Prometheus)
+pip install orb-py[monitoring]
+
+# Everything (all features)
+pip install orb-py[all]
+
+# Initialize configuration
+orb init
+
+# Generate example templates
+orb templates generate
+
+# List available templates
+orb templates list
+
+# Request machines
+orb requests create --template-id EC2FleetInstant --count 3
+```
+
+### Docker Deployment
 
 ```bash
 # Clone repository
@@ -64,8 +95,23 @@ curl http://localhost:8000/health
 ### Package Installation (Recommended)
 
 ```bash
-# Install from PyPI
+# Minimal install (CLI only, 10 dependencies)
 pip install orb-py
+
+# With colored CLI output
+pip install orb-py[cli]
+
+# With API server (for REST API mode)
+pip install orb-py[api]
+
+# With monitoring (OpenTelemetry, Prometheus)
+pip install orb-py[monitoring]
+
+# Everything (all features)
+pip install orb-py[all]
+
+# Initialize configuration (required after installation)
+orb init
 
 # Verify installation
 orb --version
@@ -212,28 +258,108 @@ async def use_hostfactory():
         )
 ```
 
+#### CLI Flag Patterns
+
+The CLI supports both positional arguments and flags for consistent usage:
+
+**Template Operations:**
+```bash
+# Both patterns supported
+orb templates show template-id               # Positional
+orb templates show --template-id template-id # Flag
+
+orb templates delete template-id             # Positional  
+orb templates delete --template-id template-id # Flag
+
+orb templates update template-id --file new.json    # Positional + flag
+orb templates update --template-id template-id --file new.json # All flags
+```
+
+**Request Operations:**
+```bash
+# Single request ID
+orb requests status req-123                  # Positional
+orb requests status --request-id req-123     # Flag
+orb requests status -r req-123               # Short flag
+
+# Multiple request IDs
+orb requests status req-123 req-456          # Multiple positional
+orb requests status -r req-123 -r req-456    # Multiple flags
+orb requests status req-123 --request-id req-456 # Mixed patterns
+```
+
+**Machine Operations:**
+```bash
+# Request machines
+orb machines request template-id 5           # Positional
+orb machines request --template-id template-id --count 5 # Flags
+
+# Show machine details
+orb machines show machine-id                 # Positional
+orb machines show --machine-id machine-id    # Flag
+```
+
+**Global Provider Override:**
+```bash
+# Works with any command
+orb --provider aws_prod_us-west-2 [any-command]
+orb --provider aws_dev_eu-west-1 templates list
+orb --provider aws_prod_us-east-1 machines request template-id 3
+```
+
 ### Command Line Interface
+
+#### Initial Setup
+
+```bash
+# Initialize ORB configuration (required after pip install)
+orb init
+
+# Interactive setup with prompts
+orb init --interactive
+
+# Non-interactive with defaults
+orb init --non-interactive --scheduler default --provider aws --region us-east-1
+
+# Custom configuration location
+orb init --config-dir /path/to/config
+```
 
 #### Template Management (Full CRUD Operations)
 
 ```bash
+# Generate example templates (after orb init)
+orb templates generate
+
+# Multi-provider template generation
+orb templates generate --all-providers      # Generate for all active providers
+orb templates generate --provider aws-prod  # Generate for specific provider instance
+orb templates generate --provider-api EC2Fleet  # Generate for specific handler
+
 # List available templates
 orb templates list
 orb templates list --long                    # Detailed information
 orb templates list --format table           # Table format
 
-# Show specific template
-orb templates show TEMPLATE_ID
+# Provider override for template operations
+orb --provider aws-prod templates list      # Use specific provider instance
+orb --provider aws-dev templates show template-id  # Override provider for command
+
+# Show specific template (supports both positional and flag arguments)
+orb templates show TEMPLATE_ID              # Positional argument
+orb templates show --template-id TEMPLATE_ID  # Flag argument
 
 # Create new template
 orb templates create --file template.json
 orb templates create --file template.yaml --validate-only
 
-# Update existing template
-orb templates update TEMPLATE_ID --file updated-template.json
+# Update existing template (supports both argument patterns)
+orb templates update TEMPLATE_ID --file updated-template.json  # Positional
+orb templates update --template-id TEMPLATE_ID --file updated-template.json  # Flag
 
-# Delete template
-orb templates delete TEMPLATE_ID
+# Delete template (supports both argument patterns)
+orb templates delete TEMPLATE_ID            # Positional
+orb templates delete --template-id TEMPLATE_ID  # Flag
 orb templates delete TEMPLATE_ID --force    # Force without confirmation
 
 # Validate template configuration
@@ -247,14 +373,31 @@ orb templates refresh --force               # Force complete refresh
 #### Machine and Request Management
 
 ```bash
-# Request machines
+# Request machines (supports both positional and flag arguments)
 orb requests create --template-id my-template --count 5
+orb machines request TEMPLATE_ID COUNT       # Positional arguments
+orb machines request --template-id TEMPLATE_ID --count COUNT  # Flag arguments
 
-# Check request status
-orb requests status --request-id req-12345
+# Check request status (supports both patterns)
+orb requests status REQUEST_ID               # Positional argument
+orb requests status --request-id REQUEST_ID  # Flag argument
+orb requests status -r REQUEST_ID            # Short flag
+
+# Multiple request IDs (both patterns supported)
+orb requests status req-123 req-456 req-789  # Multiple positional
+orb requests status --request-id req-123 --request-id req-456  # Multiple flags
+orb requests status -r req-123 -r req-456    # Multiple short flags
+
+# Provider override for requests
+orb --provider aws-prod machines request template-id 5
+orb --provider aws-dev requests status req-123
 
 # List active machines
 orb machines list
+
+# Show specific machine (supports both patterns)
+orb machines show MACHINE_ID                 # Positional argument
+orb machines show --machine-id MACHINE_ID    # Flag argument
 
 # Return machines
 orb requests return --request-id req-12345
@@ -354,6 +497,42 @@ providers:
     template_defaults:
 ```
 
+#### Provider Naming Convention
+
+Provider instances follow the pattern: `{type}_{profile}_{region}`
+
+**Examples:**
+- `aws_default_us-east-1` - AWS default profile in us-east-1
+- `aws_prod_us-west-2` - AWS production profile in us-west-2  
+- `aws_dev_eu-west-1` - AWS development profile in eu-west-1
+
+**Usage with Provider Override:**
+```bash
+# Use specific provider instance for any command
+orb --provider aws_prod_us-west-2 templates list
+orb --provider aws_dev_eu-west-1 machines request template-id 3
+
+# List available provider instances
+orb providers list
+```
+
+#### Multi-Provider Operations
+
+```bash
+# Generate templates for all active providers
+orb templates generate --all-providers
+
+# Generate templates for specific provider instance
+orb templates generate --provider aws_prod_us-west-2
+
+# Generate templates for specific provider API
+orb templates generate --provider-api EC2Fleet
+
+# Override provider for any command
+orb --provider aws_dev_eu-west-1 system health
+orb --provider aws_prod_us-west-2 requests status req-123
+```
+
 ## Development
 
 ### Prerequisites
@@ -413,10 +592,10 @@ make test-performance
 [![Python Versions](https://img.shields.io/pypi/pyversions/orb-py)](https://pypi.org/project/orb-py/)
 [![Success Rate](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/fgogolli/ec3393a523fa3a6b6ff89a0636de3085/raw/success-rate.json)](https://github.com/awslabs/open-resource-broker/actions/workflows/health-monitoring.yml)
 [![Avg Duration](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/fgogolli/ec3393a523fa3a6b6ff89a0636de3085/raw/avg-duration.json)](https://github.com/awslabs/open-resource-broker/actions/workflows/health-monitoring.yml)
-[![Coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/fgogolli/50bc37df3c178a0846dbd3682a71d50a/raw/coverage.json)](https://github.com/awslabs/open-resource-broker/actions/workflows/advanced-metrics.yml)
-[![Lines of Code](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/fgogolli/50bc37df3c178a0846dbd3682a71d50a/raw/lines-of-code.json)](https://github.com/awslabs/open-resource-broker/actions/workflows/advanced-metrics.yml)
-[![Comments](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/fgogolli/50bc37df3c178a0846dbd3682a71d50a/raw/comments.json)](https://github.com/awslabs/open-resource-broker/actions/workflows/advanced-metrics.yml)
-[![Test Duration](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/fgogolli/50bc37df3c178a0846dbd3682a71d50a/raw/test-duration.json)](https://github.com/awslabs/open-resource-broker/actions/workflows/advanced-metrics.yml)
+[![Coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/fgogolli/22c627f01aad3fc08ca69a676ebf9696/raw/coverage.json)](https://github.com/awslabs/open-resource-broker/actions/workflows/advanced-metrics.yml)
+[![Lines of Code](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/fgogolli/22c627f01aad3fc08ca69a676ebf9696/raw/lines-of-code.json)](https://github.com/awslabs/open-resource-broker/actions/workflows/advanced-metrics.yml)
+[![Comments](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/fgogolli/22c627f01aad3fc08ca69a676ebf9696/raw/comments.json)](https://github.com/awslabs/open-resource-broker/actions/workflows/advanced-metrics.yml)
+[![Test Duration](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/fgogolli/22c627f01aad3fc08ca69a676ebf9696/raw/test-duration.json)](https://github.com/awslabs/open-resource-broker/actions/workflows/advanced-metrics.yml)
 
 These badges show real-time project health metrics including workflow success rates, test coverage, code quality indicators, and performance metrics. Dynamic badges are populated by automated workflows and may show "resource not found" until the first workflow runs complete.
 

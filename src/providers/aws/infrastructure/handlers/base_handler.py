@@ -16,6 +16,7 @@ from botocore.exceptions import ClientError
 from domain.base.dependency_injection import injectable
 from domain.base.ports import ErrorHandlingPort, LoggingPort
 from domain.request.aggregate import Request
+from domain.template.template_aggregate import Template
 from infrastructure.resilience import retry
 from providers.aws.domain.template.aws_template_aggregate import AWSTemplate
 from providers.aws.exceptions.aws_exceptions import (
@@ -158,6 +159,16 @@ class AWSHandler(ABC):
         Raises:
             AWSEntityNotFoundError: If the AWS resource is not found
             InfrastructureError: For other AWS API errors
+        """
+
+    @classmethod
+    @abstractmethod
+    def get_example_templates(cls) -> list[Template]:
+        """
+        Get example templates for this handler.
+
+        Returns:
+            List of example Template objects for this handler type
         """
 
     def _retry_with_backoff(

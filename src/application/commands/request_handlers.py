@@ -25,6 +25,7 @@ from domain.base.ports import (
     LoggingPort,
     ProviderPort,
 )
+from domain.base.ports.scheduler_port import SchedulerPort
 from domain.request.repository import RequestRepository
 from infrastructure.di.buses import QueryBus
 
@@ -86,7 +87,6 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
             self._provider_context.available_strategies,
         )
 
-        # Initialize request variable
         request = None
 
         try:
@@ -103,7 +103,7 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
             if not template:
                 raise EntityNotFoundError("Template", command.template_id)
 
-            self.logger.debug("Template found: %s %s", type(template), template.to_dict())
+            self.logger.debug("Template found: %s (id=%s)", type(template), template.template_id)
 
             # Select provider based on template requirements
             selection_result = self._provider_selection_service.select_provider_for_template(
@@ -165,13 +165,14 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
                 # <4.> Provision resources and reconcile machines/status from provider results.
                 # Execute actual provisioning using selected provider
                 try:
+                    # Execute provisioning using selected provider
                     provisioning_result = await self._execute_provisioning(
                         template, request, selection_result
                     )
 
                     # Update request with provisioning results
                     if provisioning_result.get("success"):
-                        # Store resource IDs in request - ensure we get the actual list
+                        # Store resource IDs and provider metadata
                         resource_ids = provisioning_result.get("resource_ids", [])
                         self.logger.info("Provisioning result: %s", provisioning_result)
                         self.logger.info(
@@ -180,7 +181,7 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
                             type(resource_ids),
                         )
 
-                        # Store provider API information for later handler selection
+                        # Store provider API information for handler selection
                         if not hasattr(request, "metadata"):
                             request.metadata = {}
                         request.metadata["provider_api"] = template.provider_api or "RunInstances"
@@ -191,7 +192,7 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
                             "Stored provider API: %s", request.metadata["provider_api"]
                         )
 
-                        # Ensure resource_ids is actually a list
+                        # Add resource IDs to request
                         if isinstance(resource_ids, list):
                             for resource_id in resource_ids:
                                 self.logger.info(
@@ -238,13 +239,11 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
                                 request.metadata["error_message"] = error_summary
                                 request.metadata["error_type"] = "ProvisioningPartialFailure"
 
-                        # Store ASG-specific metadata for capacity tracking (after instance_data_list is defined)
+                        # Store ASG capacity metadata for tracking
                         if template.provider_api == "ASG":
                             request.metadata.update(
                                 {
-                                    "asg_current_capacity": len(
-                                        instance_data_list
-                                    ),  # Changes over time
+                                    "asg_current_capacity": len(instance_data_list),
                                 }
                             )
 
@@ -311,7 +310,7 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
                             RequestStatus.FAILED,
                             f"Provisioning failed: {error_message}",
                         )
-                        # Store detailed error in metadata for interface access
+                        # Store error details in metadata
                         if not hasattr(request, "metadata"):
                             request.metadata = {}
                         request.metadata["error_message"] = error_message
@@ -325,7 +324,7 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
                     request = request.update_status(
                         RequestStatus.FAILED, f"Provisioning failed: {error_message}"
                     )
-                    # Store detailed error in metadata for interface access
+                    # Store error details in metadata
                     if not hasattr(request, "metadata"):
                         request.metadata = {}
                     request.metadata["error_message"] = error_message
@@ -342,7 +341,6 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
             if request:
                 from domain.request.value_objects import RequestStatus
 
-                # CRITICAL FIX: Assign the returned updated request back to the variable
                 request = request.update_status(
                     RequestStatus.FAILED,
                     f"Provisioning failed: {provisioning_error!s}",
@@ -356,13 +354,11 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
                 # Save failed request for audit trail
                 with self.uow_factory.create_unit_of_work() as uow:
                     events = uow.requests.save(request)
-                    # Commit happens automatically when context manager exits
 
                 # Publish events for failed request
                 for event in events:
                     self.event_publisher.publish(event)
 
-                # CRITICAL FIX: Raise exception instead of returning success
                 raise ValueError(f"Machine provisioning failed: {provisioning_error!s}")
             else:
                 self.logger.error("Failed to create request: %s", provisioning_error)
@@ -373,7 +369,6 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
         # Save request using UnitOfWork pattern (same as query handlers)
         with self.uow_factory.create_unit_of_work() as uow:
             events = uow.requests.save(request)
-            # Commit happens automatically when context manager exits
 
         # Publish events
         for event in events:
@@ -413,16 +408,20 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
         )
 
     async def _execute_provisioning(self, template, request, selection_result) -> dict[str, Any]:
-        """Execute actual provisioning via selected provider using existing ProviderContext."""
+        """Execute provisioning via selected provider using existing ProviderContext."""
         try:
-            # Import required types (using existing imports)
+            # Import required types
+            from domain.base.ports.scheduler_port import SchedulerPort
             from providers.base.strategy import ProviderOperation, ProviderOperationType
 
-            # Create provider operation using existing pattern
+            # Get scheduler for template formatting
+            scheduler = self._container.get(SchedulerPort)
+
+            # Create provider operation
             operation = ProviderOperation(
                 operation_type=ProviderOperationType.CREATE_INSTANCES,
                 parameters={
-                    "template_config": template.to_dict(),
+                    "template_config": scheduler.format_template_for_provider(template),
                     "count": request.requested_count,
                     "request_id": str(request.request_id),
                 },
@@ -433,10 +432,7 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
                 },
             )
 
-            # Execute operation using existing ProviderContext pattern
-            # FIXED: Use correct strategy identifier format (aws-{instance_name})
-            # The provider_instance from selection should match the registered
-            # instance name
+            # Execute operation using provider context
             strategy_identifier = (
                 f"{selection_result.provider_type}-{selection_result.provider_instance}"
             )
@@ -450,14 +446,12 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
                 strategy_identifier, operation
             )
 
-            # Process result using existing pattern
+            # Process result
             if result.success:
-                # Debug: Log the actual result structure
+                # Extract resource information from result
                 self.logger.info("AWS provider result.data: %s", result.data)
                 self.logger.info("AWS provider result.metadata: %s", result.metadata)
 
-                # Extract resource_ids directly from result.data
-                # The AWS provider should return resource_ids as a list
                 resource_ids = result.data.get("resource_ids", [])
                 instances = result.data.get("instances", [])
 
@@ -599,10 +593,10 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
             raise
 
     async def _execute_deprovisioning(self, machine_ids: list[str], request) -> dict[str, Any]:
-        """Execute De-Provisioning - handles instances from multiple templates in parallel"""
+        """Execute deprovisioning - handles instances from multiple templates in parallel."""
 
         try:
-            # Step 1: Group instances by their original template
+            # Group instances by their original template
             from collections import defaultdict
 
             template_groups = defaultdict(list)
@@ -625,10 +619,10 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
                 {tid: len(instances) for tid, instances in template_groups.items()},
             )
 
-            # Step 2: Create instance ID to resource ID mapping
+            # Create instance ID to resource ID mapping
             resource_mapping = self._get_instance_ids_to_resource_id_mapping(machine_ids)
 
-            # Step 3: Create tasks for parallel execution
+            # Create tasks for parallel execution
             import asyncio
 
             tasks = []
@@ -648,13 +642,13 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
                 )
                 tasks.append(task)
 
-            # Step 3: Execute all tasks in parallel
+            # Execute all tasks in parallel
             self.logger.info("Executing %d termination operations in parallel", len(tasks))
 
             # Wait for all tasks to complete
             results = await asyncio.gather(*tasks, return_exceptions=True)
 
-            # Step 4: Process results and handle exceptions
+            # Process results and handle exceptions
             processed_results = []
             total_success = 0
 
@@ -677,11 +671,11 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
                     if result.get("success", False):
                         total_success += len(result.get("instance_ids", []))
 
-            # Step 5: Return comprehensive results
+            # Return comprehensive results
             overall_success = total_success == len(machine_ids)
 
             self.logger.info(
-                "Parallel de-provisioning completed: %d successful, %d failed out of %d total instances",
+                "Parallel deprovisioning completed: %d successful, %d failed out of %d total instances",
                 total_success,
                 len(machine_ids) - total_success,
                 len(machine_ids),
@@ -701,7 +695,7 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
             }
 
         except Exception as e:
-            self.logger.error("Parallel de-provisioning execution failed: %s", e, exc_info=True)
+            self.logger.error("Parallel deprovisioning execution failed: %s", e, exc_info=True)
             return {"success": False, "error_message": str(e)}
 
     def _get_instance_ids_to_resource_id_mapping(
@@ -815,7 +809,9 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
             if not template:
                 raise ValueError(f"Template not found: {template_id}")
 
-            template_config = template.to_dict()
+            # Get scheduler for template formatting
+            scheduler = self._container.get(SchedulerPort)
+            template_config = scheduler.format_template_for_provider(template)
             provider_api = template.provider_api
             self.logger.info("Using %s handler for template %s", provider_api, template_id)
 

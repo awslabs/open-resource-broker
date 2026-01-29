@@ -22,6 +22,7 @@ from application.template.commands import (
     DeleteTemplateCommand,
     UpdateTemplateCommand,
 )
+from cli.console import print_command, print_info
 from domain.base.ports.scheduler_port import SchedulerPort
 from infrastructure.di.buses import CommandBus, QueryBus
 from infrastructure.di.container import get_container
@@ -90,12 +91,27 @@ async def handle_list_templates(args: argparse.Namespace) -> dict[str, Any]:
                 for template in templates
             ]
 
-        return {
+        result = {
             "success": True,
             "templates": templates_data,
             "total_count": len(templates),
             "message": f"Retrieved {len(templates)} templates successfully",
         }
+
+        # Print helpful message to stderr when no templates found
+        if len(templates) == 0:
+            print_info("")  # Empty line
+            print_info("No templates found.")
+            print_info("")  # Empty line
+            print_info("To get started:")
+            print_command("  orb templates generate    # Generate example templates")
+            print_command("  orb templates create      # Create custom template")
+            print_info("")  # Empty line
+            print_info("Example:")
+            print_command("  $ orb templates generate")
+            print_command("  $ orb templates list")
+
+        return result
 
     except Exception as e:
         return {
@@ -129,8 +145,8 @@ async def handle_get_template(args: argparse.Namespace) -> dict[str, Any]:
                 "template": None,
             }
 
-        # Extract parameters from args
-        template_id = getattr(args, "template_id", None)
+        # Extract parameters from args - merge positional and flag arguments
+        template_id = getattr(args, "template_id", None) or getattr(args, "flag_template_id", None)
         if not template_id:
             return {
                 "success": False,
@@ -259,8 +275,8 @@ async def handle_update_template(args: argparse.Namespace) -> dict[str, Any]:
         if not command_bus:
             return {"success": False, "error": "CommandBus not available"}
 
-        # Extract template ID
-        template_id = getattr(args, "template_id", None)
+        # Extract template ID - merge positional and flag arguments
+        template_id = getattr(args, "template_id", None) or getattr(args, "flag_template_id", None)
         if not template_id:
             return {"success": False, "error": "Template ID is required"}
 
@@ -328,8 +344,8 @@ async def handle_delete_template(args: argparse.Namespace) -> dict[str, Any]:
         if not command_bus:
             return {"success": False, "error": "CommandBus not available"}
 
-        # Extract template ID
-        template_id = getattr(args, "template_id", None)
+        # Extract template ID - merge positional and flag arguments
+        template_id = getattr(args, "template_id", None) or getattr(args, "flag_template_id", None)
         if not template_id:
             return {"success": False, "error": "Template ID is required"}
 

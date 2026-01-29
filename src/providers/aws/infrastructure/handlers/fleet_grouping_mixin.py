@@ -7,9 +7,10 @@ from typing import Any, Optional
 
 class FleetGroupingMixin:
     """Provides reusable grouping logic for Fleet/ASG handlers.
-    Why this class exists:
 
-
+    Groups instances by their controlling AWS resource (Fleet, ASG) using
+    cached mapping data when available, falling back to AWS API calls only
+    when necessary for optimal performance.
     """
 
     grouping_chunk_size = 50
@@ -20,52 +21,16 @@ class FleetGroupingMixin:
         resource_mapping: dict[str, tuple[Optional[str], int]],
     ) -> dict[Optional[str], dict[str, Any]]:
         """
-        Handler receives a list of instances, these instances can belong to different resources of the same type,
-        e.g., multiple ASGs, EC2 Fleets, or Spot Fleets.
-
-        Step 1: for each instance in resource_mapping we need to map it to a resource which created it.
-        Unless this resouce is specified in the mapping we need to use AWS API to retrieve this information.
-
-        This method attempts to group instances by their controlling fleet resource
-        (e.g., Auto Scaling Group, EC2 Fleet) using a provided mapping. If an
-        instance is not found in the mapping or the mapping is ambiguous, it falls
-        back to querying the AWS API for that instance.
+        Group instances by their controlling fleet resource using cached mapping
+        with fallback to AWS API calls for missing data.
 
         Args:
-            instance_ids: A list of instance IDs to be grouped.
-            resource_mapping: Dictionary mapping instance_id -> (resource_id, desired_capacity).
-                This mapping is typically pre-fetched from a database or cache.
+            instance_ids: List of instance IDs to be grouped
+            resource_mapping: Dictionary mapping instance_id -> (resource_id, desired_capacity)
 
         Returns:
-            A dictionary where keys are the resource identifiers (e.g., fleet IDs)
-            and values are dictionaries containing a list of instance IDs and
-            details about the resource. A special key `None` is used for
-            instances that do not belong to a recognized group.
-
-        Example:
-            >>> instance_ids = ["i-123", "i-456", "i-789", "i-abc"]
-            >>> resource_mapping = {
-            ...     \"i-123\": (\"asg-A\", 2),
-            ...     \"i-456\": (\"asg-A\", 2),
-            ...     \"i-789\": (None, 0),
-            ... }
-            # "i-abc" is not in the mapping and will require an API lookup.
-            # "i-789" is in the mapping but has no associated ASG name, so it will also need to be looked up.
-            # Assume the lookup finds it belongs to "asg-B".
-            >>> self._group_instances_from_mapping(instance_ids, resource_mapping)
-            {
-                "asg-A": {
-                    "instance_ids": ["i-123", "i-456"],
-                    "fleet_details": { ... }  # Fetched details for asg-A
-                },
-                "asg-B": {
-                    "instance_ids": ["i-abc"],
-                    "fleet_details": { ... }  # Fetched details for asg-B
-                },
-                None: {
-                    "instance_ids": ["i-789"]
-                }
-            }
+            Dictionary where keys are resource identifiers and values contain
+            instance lists and resource details. None key used for ungrouped instances.
         """
 
         # Initialize result containers and early return for empty input
@@ -73,10 +38,10 @@ class FleetGroupingMixin:
         if not instance_ids:
             return groups
 
-        # Get handler-specific label for logging (e.g., "ASG", "EC2 Fleet", "Spot Fleet")
+        # Get handler-specific label for logging
         label = self._grouping_label()
 
-        # Use provided resource mapping (already a dict) for O(1) lookup performance
+        # Use provided resource mapping for O(1) lookup performance
         resource_map = resource_mapping or {}
 
         # Track instances that need AWS API lookup due to missing/incomplete mapping data
@@ -91,7 +56,7 @@ class FleetGroupingMixin:
             label,
         )
 
-        # PHASE 1: Process each instance using cached resource mapping data
+        # Process each instance using cached resource mapping data
         for instance_id in instance_ids:
             # Check if we have cached mapping data for this instance
             mapping_entry = resource_map.get(instance_id)
@@ -112,7 +77,7 @@ class FleetGroupingMixin:
             classification, group_id = self._classify_mapping_entry(resource_id, desired_capacity)
 
             if classification == "group" and group_id:
-                # Mapping clearly associates the instance with a managed resource (ASG/Fleet)
+                # Mapping clearly associates the instance with a managed resource
                 self._add_instance_to_group(groups, group_id, instance_id)
                 group_ids_to_fetch.add(group_id)
                 self._logger.debug(
@@ -122,7 +87,7 @@ class FleetGroupingMixin:
                     group_id,
                 )
             elif classification == "non_group":
-                # Mapping indicates the instance is unmanaged/standalone (RunInstances, etc.)
+                # Mapping indicates the instance is unmanaged/standalone
                 self._add_non_group_instance(groups, instance_id)
                 self._logger.debug(
                     "%s grouping: %s identified as non-%s via resource mapping",
@@ -139,7 +104,7 @@ class FleetGroupingMixin:
                     instance_id,
                 )
 
-        # PHASE 2: Query AWS APIs for instances with missing/incomplete mapping data
+        # Query AWS APIs for instances with missing/incomplete mapping data
         if instances_needing_lookup:
             # Only invoke AWS APIs for instances that couldn't be resolved from mapping
             self._logger.info(
@@ -152,12 +117,12 @@ class FleetGroupingMixin:
                 instances_needing_lookup, groups, group_ids_to_fetch
             )
 
-        # PHASE 3: Fetch detailed resource information for all identified groups
+        # Fetch detailed resource information for all identified groups
         if group_ids_to_fetch:
             # Delegate to handler-specific resource details fetching
             self._fetch_and_attach_group_details(group_ids_to_fetch, groups)
 
-        # PHASE 4: Log performance metrics and optimization results
+        # Log performance metrics and optimization results
         self._log_grouping_summary(
             total_instances=len(instance_ids),
             group_count=len(groups),

@@ -1,20 +1,22 @@
 """FastAPI server factory and application setup."""
 
-from fastapi import FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.middleware.trustedhost import TrustedHostMiddleware
-from fastapi.responses import JSONResponse
+try:
+    from fastapi import FastAPI, Request
+    from fastapi.middleware.cors import CORSMiddleware
+    from fastapi.middleware.trustedhost import TrustedHostMiddleware
+    from fastapi.responses import JSONResponse
+
+    FASTAPI_AVAILABLE = True
+except ImportError:
+    FASTAPI_AVAILABLE = False
+    FastAPI = None  # type: ignore
 
 from _package import __version__
-from api.documentation import configure_openapi
-from api.middleware import AuthMiddleware, LoggingMiddleware
-from config.schemas.server_schema import ServerConfig
 from infrastructure.auth.registry import get_auth_registry
-from infrastructure.error.exception_handler import get_exception_handler
 from infrastructure.logging.logger import get_logger
 
 
-def create_fastapi_app(server_config: ServerConfig) -> FastAPI:
+def create_fastapi_app(server_config):
     """
     Create and configure FastAPI application.
 
@@ -23,7 +25,20 @@ def create_fastapi_app(server_config: ServerConfig) -> FastAPI:
 
     Returns:
         Configured FastAPI application
+
+    Raises:
+        ImportError: If FastAPI is not installed
     """
+    if not FASTAPI_AVAILABLE:
+        raise ImportError(
+            "FastAPI not installed. API mode requires FastAPI.\n"
+            "Install with: pip install orb-py[api]"
+        )
+
+    from api.documentation import configure_openapi
+    from api.middleware import AuthMiddleware, LoggingMiddleware
+    from infrastructure.error.exception_handler import get_exception_handler
+
     # Create FastAPI app with configuration
     app = FastAPI(
         title="Open Resource Broker API",

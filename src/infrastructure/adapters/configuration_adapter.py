@@ -4,6 +4,7 @@ from typing import Any, Optional
 
 from config import NamingConfig, RequestConfig, TemplateConfig
 from config.manager import ConfigurationManager
+from config.schemas.app_schema import AppConfig
 from domain.base.ports import ConfigurationPort
 
 
@@ -16,7 +17,16 @@ class ConfigurationAdapter(ConfigurationPort):
 
     def get_app_config(self) -> dict[str, Any]:
         """Get structured application configuration."""
-        return self._config_manager.get_app_config()
+        return self._config_manager.app_config.model_dump()
+
+    @property
+    def app_config(self) -> "AppConfig":
+        """Get application configuration object."""
+        return self._config_manager.app_config
+
+    def find_templates_file(self, provider_type: str) -> str:
+        """Find templates file for given provider type."""
+        return self._config_manager.find_templates_file(provider_type)
 
     def get_naming_config(self) -> dict[str, Any]:
         """Get naming configuration for domain layer."""
@@ -105,19 +115,13 @@ class ConfigurationAdapter(ConfigurationPort):
         """Get template configuration."""
         try:
             template_config = self._config_manager.get_typed(TemplateConfig)
-            return {
-                "default_instance_tags": getattr(template_config, "default_instance_tags", {}),
-                "default_image_id": getattr(template_config, "default_image_id", ""),
-                "default_instance_type": getattr(
-                    template_config, "default_instance_type", "t2.micro"
-                ),
-            }
-        except Exception:
-            return {
-                "default_instance_tags": {},
-                "default_image_id": "",
-                "default_instance_type": "t2.micro",
-            }
+            return template_config.model_dump(exclude_none=True)
+        except Exception as e:
+            # Fallback to empty config if loading fails
+            from infrastructure.logging.logger import get_logger
+
+            get_logger(__name__).warning("Failed to get template config: %s", e)
+            return {}
 
     def get_metrics_config(self) -> dict[str, Any]:
         """Get metrics configuration."""
@@ -268,3 +272,7 @@ class ConfigurationAdapter(ConfigurationPort):
         except ImportError:
             # If _package.py itself fails, we have bigger problems - let it fail
             raise
+
+    def get_active_provider_override(self) -> str | None:
+        """Get current provider override from CLI."""
+        return self._config_manager.get_active_provider_override()

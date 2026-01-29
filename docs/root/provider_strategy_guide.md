@@ -1,20 +1,20 @@
 #  Provider Strategy Guide
-## Open Resource Broker - Multi-Cloud Provider Management
+## Open Resource Broker - AWS Provider Management
 ## Updated: 2025-07-02
 
 ---
 
 ##  **OVERVIEW**
 
-The Provider Strategy system enables runtime provider selection, automatic failover, and multi-cloud operations through a clean CQRS interface. This system activates the existing comprehensive provider strategy ecosystem (130KB of code) that was previously unused.
+The Provider Strategy system enables runtime provider selection, automatic failover, and multi-AWS-configuration operations through a clean CQRS interface. This system activates the existing comprehensive provider strategy ecosystem (130KB of code) that was previously unused.
 
 ### **Key Benefits:**
-- **Runtime Provider Selection**: Choose optimal provider for each operation
-- **Automatic Failover**: Switch to backup providers on failure
-- **Multi-Cloud Support**: Foundation for AWS, Azure, GCP, etc.
-- **Load Balancing**: Distribute operations across multiple providers
-- **Health Monitoring**: Continuous provider health assessment
-- **Performance Optimization**: Select providers based on performance metrics
+- **Runtime Provider Selection**: Choose optimal AWS configuration for each operation
+- **Automatic Failover**: Switch to backup AWS configurations on failure
+- **Multi-Configuration Support**: Support for multiple AWS profiles, regions, and accounts
+- **Load Balancing**: Distribute operations across multiple AWS configurations
+- **Health Monitoring**: Continuous AWS provider health assessment
+- **Performance Optimization**: Select AWS configurations based on performance metrics
 
 ---
 
@@ -22,7 +22,7 @@ The Provider Strategy system enables runtime provider selection, automatic failo
 
 ### **CQRS Integration:**
 ```
-Interface Layer -> CQRS Commands/Queries -> Provider Strategy Handlers -> Provider Context -> Cloud Providers
+Interface Layer -> CQRS Commands/Queries -> Provider Strategy Handlers -> Provider Context -> AWS Services
 ```
 
 ### **Components:**

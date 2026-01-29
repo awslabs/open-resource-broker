@@ -9,12 +9,12 @@ if TYPE_CHECKING:
 from domain.base.ports.configuration_port import ConfigurationPort
 from domain.base.ports.logging_port import LoggingPort
 from domain.machine.aggregate import Machine
+from domain.request.aggregate import Request
 from domain.template.template_aggregate import Template
 from infrastructure.scheduler.base.strategy import BaseSchedulerStrategy
+from infrastructure.scheduler.hostfactory.field_mapper import HostFactoryFieldMapper
+from infrastructure.scheduler.hostfactory.transformations import HostFactoryTransformations
 from infrastructure.utilities.common.serialization import serialize_enum
-
-from .field_mappings import HostFactoryFieldMappings
-from .transformations import HostFactoryTransformations
 
 
 class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
@@ -40,38 +40,29 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         container = get_container()
         self._provider_selection_service = container.get(ProviderSelectionService)
 
+        # Initialize field mapper
+        provider_type = self._get_active_provider_type()
+        self.field_mapper = HostFactoryFieldMapper(provider_type)
+
     def get_templates_file_path(self) -> str:
-        """Get the templates file path for HostFactory."""
+        """Get the templates file path for HostFactory using strategy pattern."""
         try:
-            # Use provider selection service for provider selection
-            selection_result = self._provider_selection_service.select_active_provider()
+            # Use provider selection service that respects CLI override
+            selection_result = (
+                self._provider_selection_service.select_provider_for_template_loading()
+            )
+            provider_name = selection_result.provider_instance
             provider_type = selection_result.provider_type
-            templates_file = f"{provider_type}prov_templates.json"
 
-            self._logger.debug(
-                "get_templates_file_path - provider_type: %s, templates_file: %s",
-                provider_type,
-                templates_file,
-            )
+            # Use scheduler strategy for filename (consistent with generation)
+            filename = self.get_templates_filename(provider_name, provider_type)
 
-            resolved_path = self.config_manager.resolve_file("template", templates_file)
-            self._logger.debug(
-                "get_templates_file_path - resolved_path: %s, exists: %s",
-                resolved_path,
-                os.path.exists(resolved_path),
-            )
+            # Use ConfigurationManager to resolve the file path
+            return self.config_manager.resolve_file("template", filename)
 
-            return resolved_path
         except Exception as e:
             self._logger.error("Failed to determine templates file path: %s", e)
-            # Fallback to aws for backward compatibility
-            fallback_path = self.config_manager.resolve_file("template", "awsprov_templates.json")
-            self._logger.debug(
-                "get_templates_file_path - fallback_path: %s, exists: %s",
-                fallback_path,
-                os.path.exists(fallback_path),
-            )
-            return fallback_path
+            raise
 
     def get_template_paths(self) -> list[str]:
         """Get template file paths."""
@@ -118,67 +109,44 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
             return []
 
     def _map_template_fields(self, template: dict[str, Any]) -> dict[str, Any]:
-        """
-        Map HostFactory standard fields to internal domain model fields.
-
-        This method handles the conversion from HostFactory format to internal domain model
-        using HostFactory-specific field mappings.
-        """
+        """Map HostFactory fields to internal format with business logic."""
         if template is None:
             raise ValueError("Template cannot be None in field mapping")
-
         if not isinstance(template, dict):
             raise ValueError(f"Template must be a dictionary, got {type(template)}")
 
-        # Get active provider type for provider-aware mapping
-        provider_type = self._get_active_provider_type()
-
-        # Get HostFactory-specific field mappings
-        field_mappings = HostFactoryFieldMappings.get_mappings(provider_type)
-
-        mapped = {}
-
-        # Apply HostFactory field mappings
-        for hf_field, internal_field in field_mappings.items():
-            if hf_field in template:
-                mapped[internal_field] = template[hf_field]
+        # Field mapping (bidirectional)
+        mapped = self.field_mapper.map_input_fields(template)
 
         # Apply HostFactory transformations
         mapped = HostFactoryTransformations.apply_transformations(mapped)
 
-        # === SPECIAL HANDLING FOR COMPLEX FIELDS ===
-
-        # Handle vmTypes -> instance_types mapping
+        # Complex field handling
         if "vmTypes" in template and isinstance(template["vmTypes"], dict):
             mapped["instance_types"] = template["vmTypes"]
-            # Ensure primary instance_type is set if not already present
             if "instance_type" not in mapped or not mapped["instance_type"]:
                 mapped["instance_type"] = next(iter(template["vmTypes"].keys()))
 
-        # === ATTRIBUTES (HostFactory standard) ===
-
-        # Copy attributes as-is (required by HostFactory)
         if "attributes" in template:
             mapped["attributes"] = template["attributes"]
 
-        # === METADATA AND DEFAULTS ===
-
-        # Set provider API using defaults service if available, otherwise fallback
+        # Business logic - Apply template defaults
         if self.template_defaults_service:
             mapped["provider_api"] = self.template_defaults_service.resolve_provider_api_default(
                 template
             )
+            # Apply all template defaults using the service
+            mapped = self.template_defaults_service.resolve_template_defaults(
+                mapped, self._get_provider_instance_name()
+            )
         else:
-            # Fallback to template value or default
             mapped["provider_api"] = template.get(
                 "providerApi", template.get("provider_api", "EC2Fleet")
             )
 
-        # Set name (use template_id if not provided)
         if "template_id" in mapped:
             mapped["name"] = template.get("name", mapped["template_id"])
 
-        # Set defaults for required fields
         mapped.setdefault("max_instances", 1)
         mapped.setdefault("price_type", "ondemand")
         mapped.setdefault("allocation_strategy", "lowest_price")
@@ -186,18 +154,24 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         mapped.setdefault("security_group_ids", [])
         mapped.setdefault("tags", {})
 
-        # Copy timestamps if present
         mapped["created_at"] = template.get("created_at")
         mapped["updated_at"] = template.get("updated_at")
         mapped["version"] = template.get("version")
 
-        self._logger.debug(
-            "Mapped template fields: %s HostFactory mappings applied for %s provider",
-            len(field_mappings),
-            provider_type,
-        )
-
         return mapped
+
+    def _get_provider_instance_name(self) -> str:
+        """Get the active provider instance name."""
+        try:
+            selection_result = self._provider_selection_service.select_active_provider()
+            return selection_result.provider_instance
+        except Exception as e:
+            self._logger.warning("Failed to get provider instance name: %s", e)
+            return "aws-default"
+
+    def _map_hostfactory_to_internal_field(self, hf_field: str) -> str:
+        """Map HostFactory field names to internal field names."""
+        return self.field_mapper.field_mappings.get(hf_field, hf_field)
 
     def _get_active_provider_type(self) -> str:
         """Get the active provider type from configuration."""
@@ -268,11 +242,34 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
 
         # Prefer snake_case in API responses
         request_id = request_dict.get("request_id", request_dict.get("requestId"))
-        return {
-            # HostFactory schema expects camelCase requestId
-            "requestId": request_id,
-            "message": request_dict.get("message", "Request VM success from AWS."),
-        }
+
+        # Check request status to provide appropriate message
+        status = request_dict.get("status", "pending")
+        error_message = request_dict.get("error_message")
+        request_id = request_dict.get("request_id", request_dict.get("requestId"))
+
+        # Status-based message and response logic
+        if status == "failed":
+            return {"message": f"Request failed: {error_message or 'Unknown error'}"}
+        elif status == "cancelled":
+            return {"message": "Request cancelled"}
+        elif status == "timeout":
+            return {"message": "Request timed out"}
+        elif status == "partial":
+            return {
+                "message": f"Request partially completed: {error_message or 'Some resources failed'}"
+            }
+        elif status == "complete":
+            return {"requestId": request_id, "message": "Request completed successfully"}
+        elif status == "in_progress":
+            return {"requestId": request_id, "message": "Request in progress"}
+        elif status == "pending":
+            return {"requestId": request_id, "message": "Request submitted for processing"}
+        else:
+            return {
+                "requestId": request_id,
+                "message": request_dict.get("message", "Request status unknown"),
+            }
 
     def convert_domain_to_hostfactory_output(
         self, operation: str, data: dict[str, Any]
@@ -378,19 +375,15 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
     def _convert_template_to_hostfactory(self, template: Template) -> dict[str, Any]:
         """Convert internal template to HostFactory format."""
         # Handle both domain Template objects and TemplateDTO objects
-        if hasattr(template, "to_dict"):
-            template_dict = template.to_dict()
+        if hasattr(template, "model_dump"):
+            template_dict = self.format_template_for_display(template)
         elif hasattr(template, "__dict__"):
             template_dict = template.__dict__
         else:
             template_dict = template
 
-        # Convert to HostFactory format with HF attributes
-        hf_template = {
-            "templateId": template_dict.get("template_id", template_dict.get("templateId", "")),
-            "maxNumber": template_dict.get("max_instances", template_dict.get("maxNumber", 1)),
-            "attributes": self._create_hf_attributes_from_template(template_dict),
-        }
+        # Start with the formatted template
+        hf_template = template_dict.copy()
 
         # Add optional HostFactory fields if present
         optional_fields = [
@@ -438,46 +431,10 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         }
         return mapping.get(hf_field, hf_field)
 
-    def _create_hf_attributes_from_template(self, template) -> dict[str, Any]:
-        """Create HF-compatible attributes object from Template domain object or dict.
-
-        This method handles the creation of HostFactory attributes with
-        CPU and RAM specifications based on the template's instance type.
-
-        Args:
-            template: Template domain object or dict with template data
-        """
-        # Handle both Template objects and dictionaries
-        if hasattr(template, "instance_type"):
-            # Template domain object - direct property access
-            instance_type = template.instance_type or "t2.micro"
-        elif isinstance(template, dict):
-            # Dictionary - handle both snake_case and camelCase field names
-            instance_type = template.get("instance_type") or template.get(
-                "instanceType", "t2.micro"
-            )
-        else:
-            # Fallback for other types
-            instance_type = "t2.micro"
-
-        # Use centralized function to derive CPU/RAM from instance type
-        from cli.field_mapping import derive_cpu_ram_from_instance_type
-
-        ncpus, nram = derive_cpu_ram_from_instance_type(instance_type)
-
-        # Return HF-compatible attributes format matching the expected output
-        # Note: This method includes ncores for backward compatibility
-        return {
-            "nram": ["Numeric", nram],
-            "ncpus": ["Numeric", ncpus],
-            "ncores": ["Numeric", ncpus],  # Use same value as ncpus for cores
-            "type": ["String", "X86_64"],
-        }
-
     def get_config_file_path(self) -> str:
         """Get config file path using configuration."""
         # Get raw config and build path manually
-        config = self.config_manager.get_app_config()
+        config = self.config_manager.app_config.model_dump()
 
         # Get scheduler config root
         scheduler_config = config.get("scheduler", {})
@@ -602,18 +559,28 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         This method handles the conversion from domain Template objects to HostFactory response format.
         The format matches the expected HostFactory getAvailableTemplates output with minimal fields.
         """
-        return {
-            "templates": [
-                {
-                    "templateId": template.template_id,
-                    "maxNumber": template.max_instances,
-                    "attributes": self._create_hf_attributes_from_template(template),
-                    "pgrpName": None,
-                    "onDemandCapacity": 0,
-                }
-                for template in templates
-            ]
-        }
+        formatted_templates = []
+        for template in templates:
+            # Use the new architecture-compliant method
+            formatted_template = self.format_template_for_display(template)
+            formatted_templates.append(formatted_template)
+
+        return {"templates": formatted_templates}
+
+    def format_templates_for_generation(self, templates: list[dict]) -> list[dict]:
+        """Convert internal templates to HostFactory input format with full business logic."""
+        processed_templates = []
+
+        for template in templates:
+            # Apply the same business logic as loading
+            processed_template = self._map_template_fields(template)
+
+            # Convert back to HostFactory format for file storage
+            hf_template = self.field_mapper.format_for_generation([processed_template])[0]
+
+            processed_templates.append(hf_template)
+
+        return processed_templates
 
     def format_request_status_response(self, requests: list["Request"]) -> dict[str, Any]:
         """
@@ -622,7 +589,7 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         """
         formatted_requests = []
         for request in requests:
-            req_dict = request.to_dict()
+            req_dict = self.format_request_for_display(request)
             # Convert machines to camelCase
             if "machines" in req_dict:
                 req_dict["machines"] = [
@@ -689,29 +656,80 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
             ]
         }
 
-    def get_working_directory(self) -> str:
-        """Get working directory from HF_PROVIDER_WORKDIR."""
-        return os.environ.get("HF_PROVIDER_WORKDIR", os.getcwd())
+    def _get_scheduler_env_var(self, suffix: str) -> str | None:
+        """HostFactory checks HF_PROVIDER_* and HF_* vars."""
+        import os
 
-    def get_config_directory(self) -> str:
-        """Get config directory from HF_PROVIDER_CONFDIR."""
-        return os.environ.get(
-            "HF_PROVIDER_CONFDIR", os.path.join(self.get_working_directory(), "config")
-        )
-
-    def get_logs_directory(self) -> str:
-        """Get logs directory from HF_PROVIDER_LOGDIR."""
-        return os.environ.get(
-            "HF_PROVIDER_LOGDIR", os.path.join(self.get_working_directory(), "logs")
-        )
+        mapping = {
+            "CONFIG_DIR": "HF_PROVIDER_CONFDIR",
+            "WORK_DIR": "HF_PROVIDER_WORKDIR",
+            "LOG_DIR": "HF_PROVIDER_LOGDIR",
+            "LOG_LEVEL": "HF_LOGLEVEL",
+        }
+        if env_var := mapping.get(suffix):
+            return os.environ.get(env_var)
+        return None
 
     def get_storage_base_path(self) -> str:
         """Get storage base path within working directory."""
         workdir = self.get_working_directory()
         return os.path.join(workdir, "data")
 
+    @classmethod
+    def get_templates_filename(
+        cls, provider_name: str, provider_type: str, config: dict = None
+    ) -> str:
+        """Get templates filename with config override support.
+
+        Can be called as classmethod (before app init) or instance method.
+        """
+        # Check config override first
+        if config:
+            scheduler_config = config.get("scheduler", {})
+            config_filename = scheduler_config.get("templates_filename")
+            if config_filename:
+                return config_filename
+
+        # Use HostFactory default: provider_name + '_templates.json'
+        return f"{provider_name}_templates.json"
+
+    def should_log_to_console(self) -> bool:
+        """Check if logs should be written to console for HostFactory.
+
+        HostFactory scripts log to file by default, console only if enabled.
+        """
+        import os
+
+        return os.environ.get("HF_LOGGING_CONSOLE_ENABLED", "false").lower() == "true"
+
+    def format_error_response(self, error: Exception, context: dict[str, Any]) -> dict[str, Any]:
+        """Format error response for HostFactory (JSON only)."""
+        import traceback
+
+        response = {"success": False, "error": str(error), "error_type": type(error).__name__}
+
+        if context.get("verbose"):
+            response["traceback"] = traceback.format_exc()
+
+        return response
+
+    def get_exit_code_for_status(self, status: str) -> int:
+        """HostFactory exit codes: 1 for failures, 0 for accepted requests."""
+        failure_statuses = ["failed", "cancelled", "timeout", "partial"]
+        return 1 if status in failure_statuses else 0
+
+    def format_health_response(self, checks: list[dict[str, Any]]) -> dict[str, Any]:
+        """Format health check response for HostFactory."""
+        passed = sum(1 for c in checks if c.get("status") == "pass")
+        failed = len(checks) - passed
+
+        return {
+            "success": failed == 0,
+            "checks": checks,
+            "summary": {"total": len(checks), "passed": passed, "failed": failed},
+        }
+
     def get_directory(self, file_type: str) -> str | None:
-        """Get directory path for the given file type."""
         self._logger.debug("[HF_STRATEGY] get_directory called with file_type=%s", file_type)
 
         if file_type in ["conf", "template", "legacy"]:
@@ -817,3 +835,16 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
             return ""  # HostFactory examples show empty message for running
         else:
             return ""
+
+    def format_template_for_display(self, template: Template) -> dict[str, Any]:
+        """Format template for display using HostFactory field mapper."""
+        internal_dict = template.model_dump(exclude_none=True)
+        return self.field_mapper.map_output_fields(internal_dict)
+
+    def format_template_for_provider(self, template: Template) -> dict[str, Any]:
+        """Format template for provider operations using internal format (no field mapping)."""
+        return template.model_dump(exclude_none=True)
+
+    def format_request_for_display(self, request: Request) -> dict[str, Any]:
+        """Format request for display using HostFactory field mapper."""
+        return request.model_dump(exclude_none=True)  # Requests don't need field mapping
