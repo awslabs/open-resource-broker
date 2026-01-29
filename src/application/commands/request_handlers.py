@@ -658,159 +658,57 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
             # Wait for all tasks to complete
             results = await asyncio.gather(*tasks, return_exceptions=True)
 
-            # Process results and handle exceptions
-            processed_results = []
-            total_success = 0
+            # Process results
+            success_count = 0
+            error_count = 0
+            errors = []
 
             for i, result in enumerate(results):
                 if isinstance(result, Exception):
-                    template_id = list(template_groups.keys())[i]
-                    instance_group = list(template_groups.values())[i]
-                    self.logger.error("Task for template %s failed: %s", template_id, result)
-                    processed_results.append(
-                        {
-                            "template_id": template_id,
-                            "instance_count": len(instance_group),
-                            "instance_ids": instance_group,
-                            "success": False,
-                            "error_message": str(result),
-                        }
-                    )
+                    error_count += 1
+                    errors.append(str(result))
+                    self.logger.error("Task %s failed: %s", tasks[i].get_name(), result)
+                elif result.get("success", False):
+                    success_count += 1
                 else:
-                    processed_results.append(result)
-                    if result.get("success", False):
-                        total_success += len(result.get("instance_ids", []))
-
-            # Return comprehensive results
-            overall_success = total_success == len(machine_ids)
+                    error_count += 1
+                    errors.append(result.get("error_message", "Unknown error"))
 
             self.logger.info(
-                "Parallel deprovisioning completed: %d successful, %d failed out of %d total instances",
-                total_success,
-                len(machine_ids) - total_success,
-                len(machine_ids),
+                "Deprovisioning completed: %d successful, %d failed", success_count, error_count
             )
 
             return {
-                "success": overall_success,
-                "total_instances": len(machine_ids),
-                "successful_instances": total_success,
-                "failed_instances": len(machine_ids) - total_success,
-                "results_by_template": processed_results,
-                "handlers_used": list(
-                    set(r.get("provider_api") for r in processed_results if r.get("provider_api"))
-                ),
-                "parallel_execution": True,
-                "concurrent_operations": len(tasks),
+                "success": error_count == 0,
+                "successful_operations": success_count,
+                "failed_operations": error_count,
+                "errors": errors,
             }
 
         except Exception as e:
             self.logger.error("Parallel deprovisioning execution failed: %s", e, exc_info=True)
             return {"success": False, "error_message": str(e)}
 
-    def _get_instance_ids_to_resource_id_mapping(
-        self, machine_ids: list[str]
-    ) -> dict[str, tuple[Optional[str], int]]:
-        """
-        Determine resource ID and desired capacity for each instance ID by looking up the machine's request_id
-        in the database and getting the first resource_id and desired_capacity from that request.
-
-        Args:
-            machine_ids: List of instance IDs to get resource IDs for
-
-        Returns:
-            Dictionary mapping instance_id -> (resource_id or None, desired_capacity or 0)
-        """
-        mapping: dict[str, tuple[Optional[str], int]] = {}
-
-        for machine_id in machine_ids:
-            resource_id = None
-            desired_capacity = 0
-            try:
-                with self.uow_factory.create_unit_of_work() as uow:
-                    # Get the machine from database
-                    machine = uow.machines.find_by_id(machine_id)
-                    if machine and machine.request_id:
-                        # Get the request from database
-                        from domain.request.value_objects import RequestId
-
-                        request_id = RequestId(value=machine.request_id)
-                        request = uow.requests.get_by_id(request_id)
-
-                        if request:
-                            # Get first resource_id from the request
-                            if request.resource_ids:
-                                resource_id = request.resource_ids[0]
-                                self.logger.debug(
-                                    "Found resource_id %s for instance %s via request %s",
-                                    resource_id,
-                                    machine_id,
-                                    machine.request_id,
-                                )
-                            else:
-                                self.logger.warning(
-                                    "No resource_ids found for request %s (machine %s)",
-                                    machine.request_id,
-                                    machine_id,
-                                )
-
-                            # Get desired_capacity from the request
-                            desired_capacity = getattr(request, "desired_capacity", 0)
-                            self.logger.debug(
-                                "Found desired_capacity %s for instance %s via request %s",
-                                desired_capacity,
-                                machine_id,
-                                machine.request_id,
-                            )
-                        else:
-                            self.logger.warning(
-                                "Request %s not found for machine %s",
-                                machine.request_id,
-                                machine_id,
-                            )
-                    else:
-                        self.logger.warning("Machine %s not found or has no request_id", machine_id)
-
-            except Exception as e:
-                self.logger.error(
-                    "Failed to get resource_id and desired_capacity for instance %s: %s",
-                    machine_id,
-                    e,
-                )
-
-            mapping[machine_id] = (resource_id, desired_capacity)
-
-        self.logger.info(
-            "Created instance to resource ID mapping for %d instances: %s",
-            len(mapping),
-            [(iid, rid) for iid, (rid, _) in mapping.items() if rid is not None],
-        )
-
-        return mapping
-
-    async def _process_template_group(
+    async def _process_resource_group(
         self,
-        template_id: str,
-        instance_group: list[str],
+        provider_name: str,
+        provider_api: str,
+        resource_id: str,
+        machines: list,
         request,
-        resource_mapping: dict[str, tuple[Optional[str], int]],
     ) -> dict[str, Any]:
-        """Process a single template group - designed for parallel execution
-
-        Args:
-            template_id: The template ID for this group
-            instance_group: List of instance IDs to process
-            request: The request object
-            resource_mapping: Dict mapping instance_id to (resource_id or None, desired_capacity)
-        """
+        """Process machines from same resource for termination."""
 
         try:
+            instance_ids = [machine.instance_id.value for machine in machines]
+            template_id = machines[0].template_id
+            
             self.logger.info(
-                "Processing template group %s with %d instances", template_id, len(instance_group)
+                "Processing resource group %s-%s-%s with %d machines", 
+                provider_name, provider_api, resource_id, len(machines)
             )
-            self.logger.debug("Instance to resource ID mapping: %s", resource_mapping)
 
-            # Get the actual template configuration
+            # Get template for configuration
             from application.dto.queries import GetTemplateQuery
 
             template_query = GetTemplateQuery(template_id=template_id)
@@ -820,74 +718,66 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
                 raise ValueError(f"Template not found: {template_id}")
 
             # Get scheduler for template formatting
+            from domain.base.ports.scheduler_port import SchedulerPort
             scheduler = self._container.get(SchedulerPort)
             template_config = scheduler.format_template_for_provider(template)
-            provider_api = template.provider_api
-            self.logger.info("Using %s handler for template %s", provider_api, template_id)
+            
+            self.logger.info("Using %s handler for resource %s", provider_api, resource_id)
 
-            # Create operation for this specific template group
+            # Create operation using machine's actual provider context
             from providers.base.strategy import ProviderOperation, ProviderOperationType
 
             operation = ProviderOperation(
                 operation_type=ProviderOperationType.TERMINATE_INSTANCES,
                 parameters={
-                    "instance_ids": instance_group,
+                    "instance_ids": instance_ids,
                     "template_config": template_config,
                     "template_id": template_id,
                     "provider_api": provider_api,
-                    "resource_mapping": resource_mapping,
+                    "resource_id": resource_id,
                 },
                 context={
                     "correlation_id": str(request.request_id),
-                    "template_id": template_id,
-                    "parallel_execution": True,
+                    "request_id": str(request.request_id),
                 },
             )
 
-            # Execute termination for this group
-            group_result = await self._provider_context.terminate_resources(
-                instance_group, operation
-            )
+            # Execute via provider context
+            provider_context = self._get_provider_context()
+            if not provider_context:
+                raise ValueError("Provider context not available")
 
-            # Handle case where terminate_resources returns None
-            if group_result is None:
-                self.logger.error("terminate_resources returned None for template %s", template_id)
-                return {
-                    "template_id": template_id,
-                    "provider_api": provider_api,
-                    "instance_count": len(instance_group),
-                    "instance_ids": instance_group,
-                    "success": False,
-                    "error_message": "terminate_resources returned None - provider context error",
-                }
+            # Resolve strategy for this provider
+            from infrastructure.services.provider_strategy_resolver import ProviderStrategyResolver
+            
+            resolver = ProviderStrategyResolver(provider_context)
+            strategy_identifier = resolver.resolve_strategy_identifier("aws", provider_name)
+            
+            if not strategy_identifier:
+                raise ValueError(f"Strategy not found for provider: {provider_name}")
 
-            success = group_result.get("success", False)
-            self.logger.info(
-                "Template %s (%s): %s - %d instances",
-                template_id,
-                provider_api,
-                "SUCCESS" if success else "FAILED",
-                len(instance_group),
-            )
+            result = await provider_context.execute_with_strategy(strategy_identifier, operation)
 
-            return {
-                "template_id": template_id,
-                "provider_api": provider_api,
-                "instance_count": len(instance_group),
-                "instance_ids": instance_group,
-                "success": success,
-                "error_message": group_result.get("error_message"),
-            }
+            if result.success:
+                self.logger.info("Successfully terminated %d instances in resource %s", 
+                               len(instance_ids), resource_id)
+                return {"success": True, "terminated_instances": len(instance_ids)}
+            else:
+                self.logger.error("Termination failed for resource %s: %s", 
+                                resource_id, result.error_message)
+                return {"success": False, "error_message": result.error_message}
 
         except Exception as e:
-            self.logger.error("Failed to process template group %s: %s", template_id, e)
-            return {
-                "template_id": template_id,
-                "instance_count": len(instance_group),
-                "instance_ids": instance_group,
-                "success": False,
-                "error_message": str(e),
-            }
+            self.logger.error("Failed to process resource group %s: %s", resource_id, e)
+            return {"success": False, "error_message": str(e)}
+
+    def _get_provider_context(self):
+        """Get provider context for operations."""
+        try:
+            from providers.base.strategy.provider_context import ProviderContext
+            return self._container.get(ProviderContext)
+        except Exception:
+            return None
 
 
 @command_handler(UpdateRequestStatusCommand)
