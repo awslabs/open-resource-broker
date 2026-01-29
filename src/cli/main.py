@@ -135,6 +135,36 @@ def add_request_actions(subparsers):
     )
 
 
+async def _show_resource_help(resource):
+    """Show help for a resource when no action is provided."""
+    import subprocess
+    import sys
+    
+    # Call the CLI with --help for the specific resource
+    subprocess.run([sys.executable, "-m", "run", resource, "--help"])
+    return {"success": True, "message": f"Showed help for {resource}"}
+
+
+async def _show_templates_help(args):
+    """Show templates help."""
+    return await _show_resource_help("templates")
+
+
+async def _show_machines_help(args):
+    """Show machines help."""
+    return await _show_resource_help("machines")
+
+
+async def _show_requests_help(args):
+    """Show requests help."""
+    return await _show_resource_help("requests")
+
+
+async def _show_providers_help(args):
+    """Show providers help."""
+    return await _show_resource_help("providers")
+
+
 def add_provider_actions(subparsers):
     """Add provider actions to a subparser."""
     # Providers list
@@ -345,14 +375,14 @@ For more information, visit: {DOCS_URL}
     templates_parser = subparsers.add_parser("templates", help="Manage compute templates")
     resource_parsers["templates"] = templates_parser
     templates_subparsers = templates_parser.add_subparsers(
-        dest="action", help="Template actions", required=True
+        dest="action", help="Template actions"
     )
 
-    # Template resource (singular alias) - shares same subparsers
-    template_parser = subparsers.add_parser("template", help="Manage compute template")
+    # Template resource (singular alias - hidden from main help)
+    template_parser = subparsers.add_parser("template")
     resource_parsers["template"] = template_parser
     template_subparsers = template_parser.add_subparsers(
-        dest="action", help="Template actions", required=True
+        dest="action", help="Template actions"
     )
 
     # Add actions to both plural and singular forms
@@ -363,14 +393,14 @@ For more information, visit: {DOCS_URL}
     machines_parser = subparsers.add_parser("machines", help="Manage compute instances")
     resource_parsers["machines"] = machines_parser
     machines_subparsers = machines_parser.add_subparsers(
-        dest="action", help="Machine actions", required=True
+        dest="action", help="Machine actions"
     )
 
-    # Machine resource (singular alias)
-    machine_parser = subparsers.add_parser("machine", help="Manage compute instance")
+    # Machine resource (singular alias - hidden from main help)
+    machine_parser = subparsers.add_parser("machine")
     resource_parsers["machine"] = machine_parser
     machine_subparsers = machine_parser.add_subparsers(
-        dest="action", help="Machine actions", required=True
+        dest="action", help="Machine actions"
     )
 
     # Add actions to both plural and singular forms
@@ -381,14 +411,14 @@ For more information, visit: {DOCS_URL}
     requests_parser = subparsers.add_parser("requests", help="Manage provisioning requests")
     resource_parsers["requests"] = requests_parser
     requests_subparsers = requests_parser.add_subparsers(
-        dest="action", help="Request actions", required=True
+        dest="action", help="Request actions"
     )
 
-    # Request resource (singular alias)
-    request_parser = subparsers.add_parser("request", help="Manage provisioning request")
+    # Request resource (singular alias - hidden from main help)
+    request_parser = subparsers.add_parser("request")
     resource_parsers["request"] = request_parser
     request_subparsers = request_parser.add_subparsers(
-        dest="action", help="Request actions", required=True
+        dest="action", help="Request actions"
     )
 
     # Add actions to both plural and singular forms
@@ -479,14 +509,14 @@ For more information, visit: {DOCS_URL}
     providers_parser = subparsers.add_parser("providers", help="Provider management")
     resource_parsers["providers"] = providers_parser
     providers_subparsers = providers_parser.add_subparsers(
-        dest="action", help="Provider actions", required=True
+        dest="action", help="Provider actions"
     )
 
-    # Provider resource (singular alias)
-    provider_parser = subparsers.add_parser("provider", help="Provider management")
+    # Provider resource (singular alias - hidden from main help)
+    provider_parser = subparsers.add_parser("provider")
     resource_parsers["provider"] = provider_parser
     provider_subparsers = provider_parser.add_subparsers(
-        dest="action", help="Provider actions", required=True
+        dest="action", help="Provider actions"
     )
 
     # Add actions to both plural and singular forms
@@ -658,7 +688,7 @@ For more information, visit: {DOCS_URL}
     return parser.parse_args(), resource_parsers
 
 
-async def execute_command(args, app) -> dict[str, Any]:
+async def execute_command(args, app, resource_parsers) -> dict[str, Any]:
     """Execute the appropriate command handler."""
     # Process input data from -f/--file or -d/--data flags (HostFactory compatibility)
     input_data = None
@@ -954,6 +984,15 @@ async def main() -> None:
 
         logger = get_logger(__name__)
 
+        # Handle help display early - no need for app initialization
+        if args.action is None and args.resource in ["templates", "template", "machines", "machine", "requests", "request", "providers", "provider"]:
+            resource_map = {"template": "templates", "machine": "machines", "request": "requests", "provider": "providers"}
+            help_resource = resource_map.get(args.resource, args.resource)
+            
+            if help_resource in resource_parsers:
+                resource_parsers[help_resource].print_help()
+                sys.exit(0)
+
         # Skip application initialization for init and templates generate commands only
         if args.resource == "init":
             # Execute init command directly without Application
@@ -1001,9 +1040,9 @@ async def main() -> None:
             if args.dry_run:
                 logger.info("DRY-RUN mode activated - using mocked operations")
                 with dry_run_context(True):
-                    result = await execute_command(args, app)
+                    result = await execute_command(args, app, resource_parsers)
             else:
-                result = await execute_command(args, app)
+                result = await execute_command(args, app, resource_parsers)
 
             # Handle exit codes from command handlers
             output_format = getattr(args, "format", None) or args.format
