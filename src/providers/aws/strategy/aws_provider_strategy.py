@@ -1477,8 +1477,15 @@ class AWSProviderStrategy(ProviderStrategy):
             template_defaults = provider_config.get("template_defaults", {})
             
             if not template_defaults:
-                print_info(f"Provider {provider_config.get('name', 'unknown')}: No infrastructure to validate")
-                return {"provider": provider_config.get("name", "unknown"), "status": "no_infrastructure"}
+                print_info(f"Provider {provider_config.get('name', 'unknown')}: No infrastructure defaults configured")
+                print_info("To configure infrastructure:")
+                print_info("  1. Run: orb init --interactive")
+                print_info("  2. Or manually add template_defaults to your provider config")
+                return {
+                    "provider": provider_config.get("name", "unknown"), 
+                    "status": "no_infrastructure_configured",
+                    "message": "No infrastructure defaults to validate. Run 'orb init --interactive' to configure."
+                }
 
             discovery = AWSInfrastructureDiscoveryService(
                 region=config.get("region", "us-east-1"),
