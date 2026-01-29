@@ -38,3 +38,15 @@ class ProviderPort(ABC):
     @abstractmethod
     def get_strategy(self, strategy_name: str) -> Any:
         """Get specific provider strategy."""
+
+    def discover_infrastructure(self, provider_config: dict[str, Any]) -> dict[str, Any]:
+        """Discover infrastructure for provider (optional)."""
+        return {"error": "Infrastructure discovery not supported"}
+
+    def discover_infrastructure_interactive(self, provider_config: dict[str, Any]) -> dict[str, Any]:
+        """Discover infrastructure interactively (optional)."""
+        return {"error": "Interactive infrastructure discovery not supported"}
+
+    def validate_infrastructure(self, provider_config: dict[str, Any]) -> dict[str, Any]:
+        """Validate infrastructure configuration (optional)."""
+        return {"error": "Infrastructure validation not supported"}

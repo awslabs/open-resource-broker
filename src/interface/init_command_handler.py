@@ -107,19 +107,39 @@ def _interactive_setup() -> Dict[str, Any]:
         scheduler_choice = input("  Select scheduler [1]: ").strip() or "1"
         scheduler_type = "default" if scheduler_choice == "1" else "hostfactory"
 
-        # Provider type (only AWS for now)
+        # Provider type
         print_info("")
-        print_info("[2/3] Cloud Provider")
+        print_info("[2/4] Cloud Provider")
         print_separator(width=60, char="-", color="cyan")
-        print_info("  Provider: aws (only option currently)")
-        provider_type = "aws"
+        print_info("  1. aws - Amazon Web Services")
+        print_info("")
+        provider_choice = input("  Select provider [1]: ").strip() or "1"
+        provider_type = "aws"  # Only AWS supported currently
 
-        # AWS configuration
+        # Provider configuration
         print_info("")
-        print_info("[3/3] AWS Configuration")
+        print_info("[3/4] Provider Configuration")
         print_separator(width=60, char="-", color="cyan")
-        region = input("  Region [us-east-1]: ").strip() or "us-east-1"
-        profile = input("  Profile [default]: ").strip() or "default"
+        if provider_type == "aws":
+            region = input("  Region [us-east-1]: ").strip() or "us-east-1"
+            profile = input("  Profile [default]: ").strip() or "default"
+        else:
+            region = "us-east-1"
+            profile = "default"
+        
+        # Infrastructure discovery
+        print_info("")
+        print_info("[4/4] Infrastructure Discovery")
+        print_separator(width=60, char="-", color="cyan")
+        print_info("  Discover AWS infrastructure for template defaults?")
+        print_info("  This will help create generic templates that work across regions/accounts.")
+        print_info("")
+        discover_choice = input("  Discover infrastructure? [y/N]: ").strip().lower()
+        
+        infrastructure_defaults = {}
+        if discover_choice in ['y', 'yes']:
+            infrastructure_defaults = _discover_infrastructure(provider_type, region, profile)
+        
         print_info("")
 
         return {
@@ -127,6 +147,7 @@ def _interactive_setup() -> Dict[str, Any]:
             "provider_type": provider_type,
             "region": region,
             "profile": profile,
+            "infrastructure_defaults": infrastructure_defaults,
         }
     except KeyboardInterrupt:
         print_error("\n\nSetup cancelled by user")
@@ -137,6 +158,34 @@ def _interactive_setup() -> Dict[str, Any]:
         raise
 
 
+def _discover_infrastructure(provider_type: str, region: str, profile: str) -> Dict[str, Any]:
+    """Discover infrastructure interactively using provider strategy."""
+    try:
+        from infrastructure.di.container import get_container
+        from domain.base.ports.provider_port import ProviderPort
+        
+        container = get_container()
+        provider_strategy = container.get(ProviderPort)
+        
+        # Create provider config for discovery
+        provider_config = {
+            "type": provider_type,
+            "config": {"region": region, "profile": profile}
+        }
+        
+        # Check if provider strategy supports infrastructure discovery
+        if hasattr(provider_strategy, 'discover_infrastructure_interactive'):
+            return provider_strategy.discover_infrastructure_interactive(provider_config)
+        else:
+            print_info(f"Infrastructure discovery not supported for provider type: {provider_type}")
+            return {}
+            
+    except Exception as e:
+        print_error(f"Failed to discover infrastructure: {e}")
+        print_info("Continuing without infrastructure discovery...")
+        return {}
+
+
 def _get_default_config(args) -> Dict[str, Any]:
     """Get default configuration from args."""
     return {
@@ -144,6 +193,7 @@ def _get_default_config(args) -> Dict[str, Any]:
         "provider_type": args.provider or "aws",
         "region": args.region or "us-east-1",
         "profile": args.profile or "default",
+        "infrastructure_defaults": {},
     }
 
 
@@ -190,17 +240,22 @@ def _write_config_file(config_file: Path, user_config: Dict[str, Any]):
     provider_name = f"{provider_type}_{user_config['profile']}_{user_config['region']}"
 
     # Create config.json with user overrides only
+    provider_instance = {
+        "name": provider_name,  # NEW NAMING
+        "type": user_config["provider_type"],
+        "enabled": True,
+        "config": provider_config,
+    }
+    
+    # Add template_defaults if infrastructure was discovered
+    infrastructure_defaults = user_config.get("infrastructure_defaults", {})
+    if infrastructure_defaults:
+        provider_instance["template_defaults"] = infrastructure_defaults
+    
     config = {
         "scheduler": {"type": user_config["scheduler_type"]},
         "provider": {
-            "providers": [
-                {
-                    "name": provider_name,  # NEW NAMING
-                    "type": user_config["provider_type"],
-                    "enabled": True,
-                    "config": provider_config,
-                }
-            ]
+            "providers": [provider_instance]
         },
     }
 
