@@ -406,6 +406,9 @@ class AWSProviderStrategy(ProviderStrategy):
 
             # Use the domain aggregate's factory method - it handles RequestId generation
             request_metadata = dict(operation.parameters.get("request_metadata", {}) or {})
+            request_id = operation.parameters.get("request_id") or (
+                operation.context.get("request_id") if operation.context else None
+            )
 
             request = Request.create_new_request(
                 request_type=RequestType.ACQUIRE,
@@ -414,6 +417,7 @@ class AWSProviderStrategy(ProviderStrategy):
                 provider_type="aws",
                 provider_instance="aws-default",
                 metadata=request_metadata,
+                request_id=request_id,
             )
             request.provider_api = provider_api
 
@@ -440,12 +444,14 @@ class AWSProviderStrategy(ProviderStrategy):
                     adapter_success = True
                     resource_ids: list[str] = []
                     instances: list[dict[str, Any]] = []
+                    provider_data: dict[str, Any] = {}
 
                     if isinstance(adapter_result, dict):
                         resource_ids = adapter_result.get("resource_ids") or []
                         if not resource_ids and adapter_result.get("resource_id"):
                             resource_ids = [adapter_result["resource_id"]]
                         instances = adapter_result.get("instances") or []
+                        provider_data = adapter_result.get("provider_data") or {}
                         adapter_success = adapter_result.get("success", True)
 
                         if not adapter_success:
@@ -471,6 +477,10 @@ class AWSProviderStrategy(ProviderStrategy):
                             "template_config": template_config,
                             "handler_used": provider_api,
                             "method": "provisioning_port",
+                            "provider_data": provider_data,
+                            "fleet_errors": provider_data.get("fleet_errors")
+                            if isinstance(provider_data, dict)
+                            else None,
                         },
                     )
                 except Exception as e:
@@ -479,15 +489,54 @@ class AWSProviderStrategy(ProviderStrategy):
                         provider_api,
                         e,
                     )
+
+            # Use the handler to acquire hosts as a fallback path
+            handler_result = handler.acquire_hosts(request, aws_template)
+
+            # Extract resource IDs and instances from handler result
+            if isinstance(handler_result, dict):
+                # Handler returned structured result
+                resource_ids = handler_result.get("resource_ids", [])
+                instances = handler_result.get("instances", [])
+                success = handler_result.get("success", True)
+                error_message = handler_result.get("error_message")
+                provider_data = handler_result.get("provider_data") or {}
+
+                if not success:
                     return ProviderResult.error_result(
-                        f"Provisioning failed: {e}", "PROVISIONING_ADAPTER_ERROR"
+                        f"Provisioning failed: {error_message}", "PROVISIONING_ADAPTER_ERROR"
                     )
             else:
-                # No provisioning adapter available - this is a configuration error
-                return ProviderResult.error_result(
-                    "AWS provisioning adapter not available - check DI configuration",
-                    "CONFIGURATION_ERROR",
-                )
+                # Handler returned single resource ID (legacy format)
+                resource_ids = [handler_result] if handler_result else []
+                instances = []
+                provider_data = {}
+
+            self._logger.info(
+                "Handler returned resource_ids: %s, instances: %s",
+                resource_ids,
+                len(instances),
+            )
+
+            return ProviderResult.success_result(
+                {
+                    "resource_ids": resource_ids,
+                    "instances": instances,
+                    "provider_api": provider_api,
+                    "count": count,
+                    "template_id": aws_template.template_id,
+                },
+                {
+                    "operation": "create_instances",
+                    "template_config": template_config,
+                    "handler_used": provider_api,
+                    "method": "handler",
+                    "provider_data": provider_data,
+                    "fleet_errors": provider_data.get("fleet_errors")
+                    if isinstance(provider_data, dict)
+                    else None,
+                },
+            )
 
         except Exception as e:
             return ProviderResult.error_result(
@@ -664,8 +713,17 @@ class AWSProviderStrategy(ProviderStrategy):
     async def _handle_describe_resource_instances(
         self, operation: ProviderOperation
     ) -> ProviderResult:
-        """Handle resource-to-instance discovery operation using appropriate handlers."""
+        """Handle resource-to-instance discovery operation using appropriate handlers.
+
+        Stages:
+            1. Extract inputs and normalize provider API identifiers.
+            2. Validate inputs and resolve the appropriate handler (with fallback).
+            3. Build a minimal request and discover instances via the handler.
+            4. Normalize/format instance details for consistent output.
+            5. Build metadata, augment capacity info, and return the result.
+        """
         try:
+            # <1.> Extract inputs and normalize provider API identifiers.
             resource_ids = operation.parameters.get("resource_ids", [])
             provider_api = operation.parameters.get("provider_api", "RunInstances")
             provider_api_value = (
@@ -680,6 +738,7 @@ class AWSProviderStrategy(ProviderStrategy):
             except Exception:
                 provider_api_enum = None
 
+            # <2.> Validate inputs and resolve the appropriate handler (with fallback).
             if not resource_ids:
                 return ProviderResult.error_result(
                     "Resource IDs are required for instance discovery",
@@ -701,9 +760,14 @@ class AWSProviderStrategy(ProviderStrategy):
                     provider_api,
                 )
 
+            # <3.> Build a minimal request and discover instances via the handler.
             # Create a minimal request object for the handler
             from domain.request.aggregate import Request
             from domain.request.value_objects import RequestType
+
+            request_id = operation.parameters.get("request_id") or (
+                operation.context.get("request_id") if operation.context else None
+            )
 
             # Create request with the resource IDs
             request = Request.create_new_request(
@@ -712,6 +776,7 @@ class AWSProviderStrategy(ProviderStrategy):
                 machine_count=1,
                 provider_type="aws",
                 provider_instance="aws-default",
+                request_id=request_id,
             )
 
             # Set the resource IDs in the request
@@ -731,6 +796,7 @@ class AWSProviderStrategy(ProviderStrategy):
                     },
                 )
 
+            # <4.> Normalize/format instance details for consistent output.
             # Format instance details for consistent output
             # KBG TODO: review code below.
             formatted_instances = []
@@ -757,6 +823,7 @@ class AWSProviderStrategy(ProviderStrategy):
 
             self._logger.debug("formatted_instances: %s", formatted_instances)
 
+            # <5.> Build metadata, augment capacity info, and return the result.
             metadata = {
                 "operation": "describe_resource_instances",
                 "resource_ids": resource_ids,

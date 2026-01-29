@@ -30,6 +30,65 @@ from domain.template.template_aggregate import Template
 T = TypeVar("T")
 
 
+def _normalize_provider_entry(entry: Any) -> dict[str, Any]:
+    """Normalize provider entry (dict or DomainMachine) to a common shape.
+
+    Example (AWS-like dict -> normalized):
+        input:  {"InstanceId": "i-123", "State": "running", "PrivateIpAddress": "10.0.0.5"}
+        output: {"instance_id": "i-123", "status": MachineStatus.RUNNING, "private_ip": "10.0.0.5"}
+    """
+    from domain.machine.aggregate import Machine as DomainMachine
+    from domain.machine.machine_status import MachineStatus
+
+    if isinstance(entry, DomainMachine):
+        status_val = entry.status
+        try:
+            status_obj = (
+                status_val
+                if isinstance(status_val, MachineStatus)
+                else MachineStatus.from_str(str(status_val))
+            )
+        except Exception:
+            status_obj = MachineStatus.UNKNOWN
+        return {
+            "instance_id": str(entry.instance_id.value),
+            "status": status_obj,
+            "private_ip": entry.private_ip,
+            "public_ip": entry.public_ip,
+            "launch_time": entry.launch_time,
+            "instance_type": getattr(entry.instance_type, "value", entry.instance_type),
+            "image_id": entry.image_id,
+            "subnet_id": entry.subnet_id,
+            "metadata": entry.metadata or {},
+            "raw": entry,
+        }
+    if isinstance(entry, dict):
+        status_val = entry.get("status") or entry.get("State") or entry.get("state")
+        try:
+            status_obj = (
+                status_val
+                if isinstance(status_val, MachineStatus)
+                else MachineStatus.from_str(str(status_val))
+                if status_val
+                else MachineStatus.UNKNOWN
+            )
+        except Exception:
+            status_obj = MachineStatus.UNKNOWN
+        return {
+            "instance_id": entry.get("instance_id") or entry.get("InstanceId"),
+            "status": status_obj,
+            "private_ip": entry.get("private_ip") or entry.get("PrivateIpAddress"),
+            "public_ip": entry.get("public_ip") or entry.get("PublicIpAddress"),
+            "launch_time": entry.get("launch_time") or entry.get("LaunchTime"),
+            "instance_type": entry.get("instance_type") or entry.get("InstanceType"),
+            "image_id": entry.get("image_id") or entry.get("ImageId"),
+            "subnet_id": entry.get("subnet_id") or entry.get("SubnetId"),
+            "metadata": entry.get("metadata") or entry,
+            "raw": entry,
+        }
+    return {}
+
+
 # Query handlers
 @query_handler(GetRequestQuery)
 class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
@@ -50,10 +109,18 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
         self.event_publisher = self._get_event_publisher()
 
     async def execute_query(self, query: GetRequestQuery) -> RequestDTO:
-        """Execute get request query with machine status checking and caching."""
+        """Execute get request query with machine status checking and caching.
+
+        Stages:
+            1. Check cache and return early on cache hit.
+            2. Load request and associated machines from storage.
+            3. Fetch provider view and reconcile machine state.
+            4. Update request status, build DTO, cache, and return.
+        """
         self.logger.info("Getting request details for: %s", query.request_id)
 
         try:
+            # <1.> Check cache and return early on cache hit.
             # Check cache first if enabled
             if self._cache_service and self._cache_service.is_caching_enabled():
                 cached_result = self._cache_service.get_cached_request(query.request_id)
@@ -61,8 +128,8 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
                     self.logger.info("Cache hit for request: %s", query.request_id)
                     return cached_result
 
+            # <2.> Load request and associated machines from storage.
             # Cache miss - get request from storage
-
             with self.uow_factory.create_unit_of_work() as uow:
                 from domain.request.value_objects import RequestId
 
@@ -81,7 +148,7 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
 
             self.logger.debug(f"Machines associated with this request in DB: {machine_obj_from_db}")
 
-            # Update machine status if needed
+            # <3.> Fetch provider view and reconcile machine state.
             # Always fetch provider view first
             machine_objects_from_provider, provider_metadata = await self._fetch_provider_machines(
                 request, machine_obj_from_db
@@ -97,6 +164,7 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
             self.logger.debug(f"Machines from DB:  {machine_obj_from_db}")
             self.logger.debug(f"Machines from cloud provider:  {machine_objects_from_provider}")
 
+            # <4.> Update request status, build DTO, cache, and return.
             # Determine if request status needs updating based on machine states
             new_status, status_message = self._determine_request_status_from_machines(
                 machine_obj_from_db, machine_objects_from_provider, request, provider_metadata
@@ -170,100 +238,6 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
                 "Failed to get machines from storage for request %s: %s", request_id, e
             )
             return []
-
-    async def _check_provider_and_create_machines(self, request) -> tuple[list, dict]:
-        """Check provider status and create machine aggregates using provider strategy pattern."""
-        try:
-            # Get provider context from container
-            provider_context = self._get_provider_context()
-            if not provider_context:
-                self.logger.error("Provider context not available")
-                return [], {}
-
-            # Create operation for resource-to-instance discovery using stored
-            # provider API
-            from providers.base.strategy import ProviderOperation, ProviderOperationType
-
-            operation = ProviderOperation(
-                operation_type=ProviderOperationType.DESCRIBE_RESOURCE_INSTANCES,
-                parameters={
-                    "resource_ids": request.resource_ids,
-                    "provider_api": request.metadata.get("provider_api", "RunInstances"),
-                    "template_id": request.template_id,
-                },
-                context={
-                    "correlation_id": str(request.request_id),
-                    "request_id": str(request.request_id),
-                },
-            )
-
-            # Execute operation using provider context with correct strategy identifier
-            strategy_identifier = f"{request.provider_type}-{request.provider_type}-{request.provider_instance or 'default'}"
-            self.logger.info(
-                "Using provider strategy: %s for request %s",
-                strategy_identifier,
-                request.request_id,
-            )
-            self.logger.info("Operation parameters: %s", operation.parameters)
-
-            result = await provider_context.execute_with_strategy(strategy_identifier, operation)
-
-            self.logger.info(
-                "Provider strategy result: success=%s, data_keys=%s",
-                result.success,
-                list(result.data.keys()) if result.data else "None",
-            )
-
-            if not result.success:
-                self.logger.warning(
-                    "Failed to discover instances from resources: %s",
-                    result.error_message,
-                )
-                return [], result.metadata or {}
-
-            # Get instance details from result
-            instance_details = result.data.get("instances", [])
-            if hasattr(instance_details, "__await__"):
-                self.logger.debug("Provider returned awaitable instances result, awaiting it")
-                instance_details = await instance_details
-            if not instance_details:
-                self.logger.info("No instances found for request %s", request.request_id)
-                return [], result.metadata or {}
-
-            # Create machine aggregates from instance details
-            machines = []
-            for instance_data in instance_details:
-                self.logger.debug("instance_data: %s", instance_data)
-                machine = self._create_machine_from_aws_data(instance_data, request)
-                machines.append(machine)
-
-            # Batch save machines for efficiency
-            if machines:
-                with self.uow_factory.create_unit_of_work() as uow:
-                    # Save each machine individually
-                    for machine in machines:
-                        uow.machines.save(machine)
-
-                    # Publish events for all machines
-                    for machine in machines:
-                        events = machine.get_domain_events()
-                        for event in events:
-                            self.event_publisher.publish(event)
-                        machine.clear_domain_events()
-
-                self.logger.info(
-                    "Created and saved %s machines for request %s",
-                    len(machines),
-                    request.request_id,
-                )
-
-            return machines, result.metadata or {}
-
-        except Exception as e:
-            self.logger.exception(
-                "Failed to check provider and create machines: %s", e, exc_info=True
-            )
-            return [], {}
 
     async def _fetch_provider_machines(self, request, existing_machines) -> tuple[list, dict]:
         """
@@ -367,8 +341,19 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
         If the provider reports instances we don't have locally, create them so the
         status decision logic can see the full picture. Provider calls should be made
         by the caller; this function only merges/updates/persists.
+
+        Stages:
+            1. Resolve request context and normalize inputs.
+            2. Prepare lookup maps and domain helpers.
+            3. Reconcile provider view with local machines (compute updates/creates).
+            4. Persist changes, finalize merged machine list, update metadata, and return.
+
+        Returns:
+            tuple[list, dict]: (updated_machines, provider_metadata) where the first
+            item is the merged machine list and the second is passthrough provider metadata.
         """
         try:
+            # <1.> Resolve request context and normalize inputs.
             # Group machines by request to use existing check_hosts_status methods
             if not machines:
                 machines = []
@@ -387,64 +372,17 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
             domain_machines = provider_machine_entities or []
             provider_metadata = provider_metadata or {}
 
+            # <2.> Prepare lookup maps and domain helpers.
             # Ensure we have a map of existing machines for quick lookup
             existing_by_id = {str(m.instance_id.value): m for m in machines}
             updated_machines = []
             new_machines = []
+            to_upsert = []
 
             from domain.machine.aggregate import Machine as DomainMachine
             from domain.machine.machine_status import MachineStatus
 
-            def _normalize_provider_entry(entry: Any) -> dict[str, Any]:
-                """Normalize provider entry (dict or DomainMachine) to a common shape."""
-                if isinstance(entry, DomainMachine):
-                    status_val = entry.status
-                    try:
-                        status_obj = (
-                            status_val
-                            if isinstance(status_val, MachineStatus)
-                            else MachineStatus.from_str(str(status_val))
-                        )
-                    except Exception:
-                        status_obj = MachineStatus.UNKNOWN
-                    return {
-                        "instance_id": str(entry.instance_id.value),
-                        "status": status_obj,
-                        "private_ip": entry.private_ip,
-                        "public_ip": entry.public_ip,
-                        "launch_time": entry.launch_time,
-                        "instance_type": getattr(entry.instance_type, "value", entry.instance_type),
-                        "image_id": entry.image_id,
-                        "subnet_id": entry.subnet_id,
-                        "metadata": entry.metadata or {},
-                        "raw": entry,
-                    }
-                if isinstance(entry, dict):
-                    status_val = entry.get("status") or entry.get("State") or entry.get("state")
-                    try:
-                        status_obj = (
-                            status_val
-                            if isinstance(status_val, MachineStatus)
-                            else MachineStatus.from_str(str(status_val))
-                            if status_val
-                            else MachineStatus.UNKNOWN
-                        )
-                    except Exception:
-                        status_obj = MachineStatus.UNKNOWN
-                    return {
-                        "instance_id": entry.get("instance_id") or entry.get("InstanceId"),
-                        "status": status_obj,
-                        "private_ip": entry.get("private_ip") or entry.get("PrivateIpAddress"),
-                        "public_ip": entry.get("public_ip") or entry.get("PublicIpAddress"),
-                        "launch_time": entry.get("launch_time") or entry.get("LaunchTime"),
-                        "instance_type": entry.get("instance_type") or entry.get("InstanceType"),
-                        "image_id": entry.get("image_id") or entry.get("ImageId"),
-                        "subnet_id": entry.get("subnet_id") or entry.get("SubnetId"),
-                        "metadata": entry.get("metadata") or entry,
-                        "raw": entry,
-                    }
-                return {}
-
+            # <3.> Reconcile provider view with local machines (compute updates/creates).
             # Update existing machines and add new ones discovered from provider
             for dm in domain_machines:
                 normalized = _normalize_provider_entry(dm)
@@ -456,6 +394,8 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
 
                 if existing:
                     new_status = normalized.get("status") or MachineStatus.UNKNOWN
+
+                    # Do we need to update this machine in DB?
                     needs_update = (
                         existing.status != new_status
                         or existing.private_ip != normalized.get("private_ip")
@@ -473,8 +413,7 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
                         machine_data["version"] = existing.version + 1
 
                         updated_machine = DomainMachine.model_validate(machine_data)
-                        with self.uow_factory.create_unit_of_work() as uow:
-                            uow.machines.save(updated_machine)
+                        to_upsert.append(updated_machine)
                         updated_machines.append(updated_machine)
                     else:
                         updated_machines.append(existing)
@@ -520,14 +459,19 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
                                     metadata=normalized.get("metadata", {}),
                                 )
 
-                        with self.uow_factory.create_unit_of_work() as uow:
-                            uow.machines.save(created_machine)
-
+                        to_upsert.append(created_machine)
                         new_machines.append(created_machine)
                     except Exception as exc:
                         self.logger.warning(
                             "Failed to create machine %s from provider data: %s", dm_id, exc
                         )
+
+            # <4.> Persist changes, finalize merged machine list, update metadata, and return.
+            if to_upsert:
+                with self.uow_factory.create_unit_of_work() as uow:
+                    batch_events = uow.machines.save_batch(to_upsert)
+                    for event in batch_events:
+                        self.event_publisher.publish(event)
 
             # Merge existing updates and newly discovered machines
             if new_machines:
@@ -931,6 +875,10 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
             request_type = request.request_type
             provider_metadata = provider_metadata or {}
 
+            # Count machines early so error handling can consider partial success.
+            provider_machine_count = len(machine_objects_from_provider)
+            database_machine_count = len(machine_objects_from_database)
+
             # If provisioning already recorded a failure, keep the request terminal.
             metadata = getattr(request, "metadata", {}) or {}
             error_details = getattr(request, "error_details", {}) or {}
@@ -940,7 +888,26 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
             fleet_errors = metadata.get("fleet_errors")
             ec2_fleet_errors = (error_details.get("ec2_fleet") or {}).get("errors")
 
-            if provisioning_error_type or fleet_errors or ec2_fleet_errors:
+            has_provisioning_errors = bool(
+                provisioning_error_type or fleet_errors or ec2_fleet_errors
+            )
+            has_any_instances = provider_machine_count > 0 or database_machine_count > 0
+
+            # If instances exist alongside errors, keep/force PARTIAL (do not flip to FAILED).
+            if (
+                request_type == RequestType.ACQUIRE
+                and has_provisioning_errors
+                and has_any_instances
+            ):
+                if current_status == RequestStatus.PARTIAL:
+                    return (None, None)
+                status_message = (
+                    request.status_message
+                    or "Partial success: instances provisioned with API errors"
+                )
+                return (RequestStatus.PARTIAL.value, status_message)
+
+            if has_provisioning_errors:
                 status_message = provisioning_error_message or "Provisioning failed"
                 if not status_message.lower().startswith("provisioning failed"):
                     status_message = f"Provisioning failed: {status_message}"
@@ -957,9 +924,6 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
                 return (None, None)
 
             # Count machines by status from provider data (most up-to-date)
-            provider_machine_count = len(machine_objects_from_provider)
-            database_machine_count = len(machine_objects_from_database)
-
             # Analyze provider machine statuses
             running_count = 0
             pending_count = 0

@@ -64,10 +64,19 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
             raise ValueError("requested_count must be positive")
 
     async def execute_command(self, command: CreateRequestCommand) -> str:
-        """Handle machine request creation command."""
+        """Handle machine request creation command.
+
+        Stages:
+            1. Validate provider availability and initialize request state.
+            2. Load template, select provider, and validate compatibility.
+            3. Create request aggregate and handle dry-run fast path.
+            4. Provision resources and reconcile machines/status from provider results.
+            5. Persist the final request, publish events, and return the request id.
+        """
         self.logger.info("Creating machine request for template: %s", command.template_id)
 
-        # Validate provider availability
+        # <1.> Validate provider availability and initialize request state.
+        # CRITICAL VALIDATION: Ensure providers are available
         if not self._provider_context.available_strategies:
             error_msg = "No provider strategies available - cannot create machine requests"
             self.logger.error(error_msg)
@@ -81,7 +90,8 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
         request = None
 
         try:
-            # Retrieve template via CQRS query
+            # <2.> Load template, select provider, and validate compatibility.
+            # Get template using CQRS QueryBus
             if not self._query_bus:
                 raise ValueError("QueryBus is required for template lookup")
 
@@ -117,6 +127,7 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
 
             self.logger.info("Template validation passed: %s", validation_result.supported_features)
 
+            # <3.> Create request aggregate and handle dry-run fast path.
             # Create request aggregate with selected provider
             from domain.request.aggregate import Request
             from domain.request.value_objects import RequestType
@@ -151,6 +162,8 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
                     RequestStatus.COMPLETED, "Request created successfully (dry-run)"
                 )
             else:
+                # <4.> Provision resources and reconcile machines/status from provider results.
+                # Execute actual provisioning using selected provider
                 try:
                     # Execute provisioning using selected provider
                     provisioning_result = await self._execute_provisioning(
@@ -204,6 +217,27 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
 
                         # Create machine aggregates for each instance
                         instance_data_list = provisioning_result.get("instances", [])
+                        provider_data = provisioning_result.get("provider_data", {})
+
+                        # Preserve provider errors (if any) for partial success handling
+                        if isinstance(provider_data, dict):
+                            provider_errors = provider_data.get("fleet_errors") or []
+                            if provider_errors and not request.metadata.get("fleet_errors"):
+                                request.metadata["fleet_errors"] = provider_errors
+
+                        has_api_errors = bool(request.metadata.get("fleet_errors"))
+                        error_summary = None
+                        if has_api_errors:
+                            error_summary = (
+                                "; ".join(
+                                    f"{err.get('error_code', 'Unknown')}: {err.get('error_message', 'No message')}"
+                                    for err in request.metadata.get("fleet_errors", [])
+                                )
+                                or "Unknown API errors"
+                            )
+                            if error_summary and "error_message" not in request.metadata:
+                                request.metadata["error_message"] = error_summary
+                                request.metadata["error_type"] = "ProvisioningPartialFailure"
 
                         # Store ASG capacity metadata for tracking
                         if template.provider_api == "ASG":
@@ -220,30 +254,46 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
                                 len(instance_data_list),
                             )
 
+                        machines_to_save = []
                         for instance_data in instance_data_list:
                             machine = self._create_machine_aggregate(
                                 instance_data, request, template.template_id
                             )
+                            machines_to_save.append(machine)
 
-                            # Save machine using UnitOfWork
+                        if machines_to_save:
                             with self.uow_factory.create_unit_of_work() as uow:
-                                uow.machines.save(machine)
+                                batch_events = uow.machines.save_batch(machines_to_save)
+                            for event in batch_events:
+                                self.event_publisher.publish(event)
 
-                        # Update request status based on fulfillment
+                        # Update request status based on fulfillment and API errors
                         if len(instance_data_list) == command.requested_count:
                             from domain.request.value_objects import RequestStatus
 
-                            request = request.update_status(
-                                RequestStatus.COMPLETED,
-                                "All instances provisioned successfully",
-                            )
+                            if has_api_errors:
+                                request = request.update_status(
+                                    RequestStatus.PARTIAL,
+                                    f"Partial success: {len(instance_data_list)}/{command.requested_count} instances created with API errors: {error_summary}",
+                                )
+                            else:
+                                request = request.update_status(
+                                    RequestStatus.COMPLETED,
+                                    "All instances provisioned successfully",
+                                )
                         elif len(instance_data_list) > 0:
                             from domain.request.value_objects import RequestStatus
 
-                            request = request.update_status(
-                                RequestStatus.PARTIAL,
-                                f"Partially fulfilled: {len(instance_data_list)}/{command.requested_count} instances",
-                            )
+                            if has_api_errors:
+                                request = request.update_status(
+                                    RequestStatus.PARTIAL,
+                                    f"Partial success: {len(instance_data_list)}/{command.requested_count} instances created with API errors: {error_summary}",
+                                )
+                            else:
+                                request = request.update_status(
+                                    RequestStatus.PARTIAL,
+                                    f"Partially fulfilled: {len(instance_data_list)}/{command.requested_count} instances",
+                                )
                         else:
                             from domain.request.value_objects import RequestStatus
 
@@ -314,7 +364,9 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
                 self.logger.error("Failed to create request: %s", provisioning_error)
                 raise
 
-        # Save successful request and publish events
+        # Only save and return success if we reach here (no exceptions)
+        # <5.> Persist the final request, publish events, and return the request id.
+        # Save request using UnitOfWork pattern (same as query handlers)
         with self.uow_factory.create_unit_of_work() as uow:
             events = uow.requests.save(request)
 
@@ -340,7 +392,7 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
                 launch_time = datetime.fromisoformat(launch_time.replace("Z", "+00:00"))
             except ValueError:
                 launch_time = None
-        self.logger.debug("_create_machine_aggregate instance_data: [%s]", instance_data)
+        self.logger.debug("Creating machine aggregate instance_data: [%s]", instance_data)
         return Machine(
             instance_id=InstanceId(value=instance_data["instance_id"]),
             request_id=str(request.request_id),
@@ -371,9 +423,11 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
                 parameters={
                     "template_config": scheduler.format_template_for_provider(template),
                     "count": request.requested_count,
+                    "request_id": str(request.request_id),
                 },
                 context={
                     "correlation_id": str(request.request_id),
+                    "request_id": str(request.request_id),
                     "dry_run": request.metadata.get("dry_run", False),
                 },
             )

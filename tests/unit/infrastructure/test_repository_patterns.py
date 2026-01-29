@@ -506,6 +506,44 @@ class TestRepositoryPerformanceOptimization:
 
             assert mock_storage.save.call_count == 10
 
+    def test_machine_repository_save_batch_uses_storage_batch(self):
+        """MachineRepository.save_batch should call storage save_batch with serialized data."""
+        from domain.base.value_objects import InstanceId, InstanceType
+        from domain.machine.aggregate import Machine
+        from domain.machine.machine_status import MachineStatus
+
+        mock_storage = Mock()
+        machine_repo = MachineRepository(storage_port=mock_storage)
+
+        base_machine = Machine(
+            instance_id=InstanceId(value="i-123"),
+            template_id="tmpl-1",
+            request_id="req-1",
+            provider_type="aws",
+            instance_type=InstanceType(value="t3.micro"),
+            image_id="ami-123",
+        )
+        updated_machine = base_machine.update_status(MachineStatus.RUNNING)
+
+        second_machine = Machine(
+            instance_id=InstanceId(value="i-456"),
+            template_id="tmpl-1",
+            request_id="req-1",
+            provider_type="aws",
+            instance_type=InstanceType(value="t3.small"),
+            image_id="ami-456",
+        )
+
+        machine_repo.save_batch([updated_machine, second_machine])
+
+        mock_storage.save_batch.assert_called_once()
+        batch_arg = mock_storage.save_batch.call_args[0][0]
+
+        assert set(batch_arg.keys()) == {"i-123", "i-456"}
+        assert batch_arg["i-123"]["status"] == MachineStatus.RUNNING.value
+        # Events should be cleared after persistence.
+        assert updated_machine.get_domain_events() == []
+
     def test_repository_supports_lazy_loading(self):
         """Test that repository supports lazy loading of related data."""
         mock_storage = Mock()

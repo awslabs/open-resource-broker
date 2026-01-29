@@ -1,7 +1,7 @@
 """Machine repository interface - contract for machine data access."""
 
 from abc import abstractmethod
-from typing import Optional
+from typing import Any, Optional
 
 from domain.base.domain_interfaces import AggregateRepository
 from domain.base.value_objects import InstanceId
@@ -12,6 +12,10 @@ from .machine_status import MachineStatus
 
 class MachineRepository(AggregateRepository[Machine]):
     """Repository interface for machine aggregates."""
+
+    @abstractmethod
+    def save_batch(self, machines: list[Machine]) -> list[Any]:
+        """Save multiple machines in a single operation."""
 
     @abstractmethod
     def find_by_instance_id(self, instance_id: InstanceId) -> Optional[Machine]:
