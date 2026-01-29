@@ -541,11 +541,6 @@ def _register_aws_services(container: DIContainer) -> None:
             logger.debug("Failed to import AWSClient: %s", e)
             raise
 
-        try:
-            from providers.aws.infrastructure.aws_handler_factory import AWSHandlerFactory
-        except Exception as e:
-            logger.debug("Failed to import AWSHandlerFactory: %s", e)
-            raise
 
         try:
             from providers.aws.utilities.aws_operations import AWSOperations
@@ -553,11 +548,7 @@ def _register_aws_services(container: DIContainer) -> None:
             logger.debug("Failed to import AWSOperations: %s", e)
             raise
 
-        try:
-            from providers.aws.infrastructure.handlers.spot_fleet_handler import SpotFleetHandler
-        except Exception as e:
-            logger.debug("Failed to import SpotFleetHandler: %s", e)
-            raise
+
 
         try:
             from providers.aws.infrastructure.adapters.template_adapter import AWSTemplateAdapter
@@ -632,14 +623,7 @@ def _register_aws_services(container: DIContainer) -> None:
         # Register AWS client factory (not singleton - each provider gets its own)
         container.register_factory(AWSClient, lambda c: _create_aws_client(c))
 
-        # Register AWS operations utility
         container.register_singleton(AWSOperations)
-
-        # Register AWS handler factory
-        container.register_singleton(AWSHandlerFactory)
-
-        # Register AWS handler implementations
-        container.register_singleton(SpotFleetHandler)
 
         # Register AWS adapter implementations using @injectable decorator
         container.register_singleton(AWSTemplateAdapter)

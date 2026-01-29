@@ -5,7 +5,8 @@ This module provides a factory for creating AWS handlers based on template types
 It follows the Factory Method pattern to create the appropriate handler for each template.
 """
 
-from domain.base.dependency_injection import injectable
+from typing import Optional
+
 from domain.base.ports import ConfigurationPort, LoggingPort
 from domain.template.template_aggregate import Template
 from providers.aws.domain.template.value_objects import ProviderApi
@@ -14,7 +15,6 @@ from providers.aws.infrastructure.aws_client import AWSClient
 from providers.aws.infrastructure.handlers.base_handler import AWSHandler
 
 
-@injectable
 class AWSHandlerFactory:
     """
     Factory for creating AWS handlers based on template type.
@@ -24,7 +24,10 @@ class AWSHandlerFactory:
     """
 
     def __init__(
-        self, aws_client: AWSClient, logger: LoggingPort, config: ConfigurationPort
+        self, 
+        aws_client: AWSClient, 
+        logger: LoggingPort,
+        config: Optional[ConfigurationPort] = None
     ) -> None:
         """
         Initialize the factory.
@@ -32,7 +35,7 @@ class AWSHandlerFactory:
         Args:
             aws_client: AWS client instance
             logger: Logger for logging messages
-            config: Configuration port for accessing configuration
+            config: Configuration port for accessing configuration (optional)
         """
         self._aws_client = aws_client
         self._logger = logger
@@ -80,14 +83,24 @@ class AWSHandlerFactory:
             self._logger.error("No handler class registered for type: %s", handler_type)
             raise AWSValidationError(f"No handler class registered for type: {handler_type}")
 
-        # Create the handler
+        # Create the handler directly with factory's AWS client
         handler_class = self._handler_classes[handler_type]
-
-        # Use the DI container to create the handler
+        
+        # Get other dependencies from DI (not AWS client)
         from infrastructure.di.container import get_container
-
+        from providers.aws.utilities.aws_operations import AWSOperations
+        from providers.aws.infrastructure.launch_template.manager import AWSLaunchTemplateManager
+        from providers.aws.infrastructure.adapters.machine_adapter import AWSMachineAdapter
+        
         container = get_container()
-        handler = container.get(handler_class)
+        
+        handler = handler_class(
+            aws_client=self._aws_client,
+            logger=self._logger,
+            aws_ops=container.get(AWSOperations),
+            launch_template_manager=container.get(AWSLaunchTemplateManager),
+            machine_adapter=container.get(AWSMachineAdapter)
+        )
 
         # Cache the handler for future use
         self._handlers[handler_type] = handler
