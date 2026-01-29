@@ -29,6 +29,8 @@ if TYPE_CHECKING:
     from providers.aws.infrastructure.adapters.aws_provisioning_adapter import (
         AWSProvisioningAdapter,
     )
+    from providers.aws.infrastructure.aws_handler_factory import AWSHandlerFactory
+    from providers.aws.infrastructure.handlers.base_handler import AWSHandler
 
 # Import strategy pattern interfaces
 from providers.base.strategy import (
@@ -91,6 +93,7 @@ class AWSProviderStrategy(ProviderStrategy):
         self._handlers: dict[str, Any] = {}
         self._aws_provisioning_port = aws_provisioning_port
         self._aws_provisioning_port_resolver = aws_provisioning_port_resolver
+        self._handler_factory: Optional["AWSHandlerFactory"] = None
 
     def _resolve_provisioning_port(self) -> Optional[AWSProvisioningAdapter]:
         """Lazily resolve the AWS provisioning adapter when first needed."""
@@ -185,6 +188,28 @@ class AWSProviderStrategy(ProviderStrategy):
                 aws_client=self.aws_client, logger=self._logger
             )
         return self._launch_template_manager
+
+    @property
+    def handler_factory(self) -> Optional["AWSHandlerFactory"]:
+        """Get handler factory with provider-specific AWS client."""
+        if self._handler_factory is None and self.aws_client:
+            from providers.aws.infrastructure.aws_handler_factory import AWSHandlerFactory
+            
+            self._logger.debug("Creating AWS handler factory for provider: %s", self.provider_name or 'unknown')
+            self._handler_factory = AWSHandlerFactory(
+                aws_client=self.aws_client,
+                logger=self._logger,
+                config=self._config_manager
+            )
+        return self._handler_factory
+        
+    def get_handler(self, handler_type: str) -> Optional["AWSHandler"]:
+        """Get handler with provider-specific AWS client."""
+        if not self.handler_factory:
+            self._logger.warning("No handler factory available for provider: %s", self.provider_name or 'unknown')
+            return None
+            
+        return self.handler_factory.create_handler(handler_type)
 
     @property
     def handlers(self) -> dict[str, Any]:

@@ -180,27 +180,42 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
             )
             return []
 
-<<<<<<< HEAD
-    async def _check_provider_and_create_machines(self, request) -> tuple[list, dict]:
-        """Check provider status and create machine aggregates using provider strategy pattern."""
+    async def _fetch_provider_machines(self, request, existing_machines) -> tuple[list, dict]:
+        """
+        Fetch the latest machine list from the provider.
+
+        Prefers resource-based discovery (DESCRIBE_RESOURCE_INSTANCES) to capture the
+        full membership of the resource (ASG/Fleet). Falls back to GET_INSTANCE_STATUS
+        when only instance IDs are known.
+        """
         try:
-            # Get provider context from container
             provider_context = self._get_provider_context()
             if not provider_context:
-                self.logger.error("Provider context not available")
+                self.logger.warning("Provider context not available; cannot refresh from provider")
                 return [], {}
 
-            # Create operation for resource-to-instance discovery using stored
-            # provider API
             from providers.base.strategy import ProviderOperation, ProviderOperationType
 
-            operation = ProviderOperation(
-                operation_type=ProviderOperationType.DESCRIBE_RESOURCE_INSTANCES,
-                parameters={
+            # Prefer resource-level discovery so we don't miss new instances
+            if request.resource_ids:
+                operation_type = ProviderOperationType.DESCRIBE_RESOURCE_INSTANCES
+                parameters = {
                     "resource_ids": request.resource_ids,
                     "provider_api": request.metadata.get("provider_api", "RunInstances"),
                     "template_id": request.template_id,
-                },
+                }
+            else:
+                # Fallback to instance-level discovery
+                operation_type = ProviderOperationType.GET_INSTANCE_STATUS
+                instance_ids = [m.instance_id.value for m in existing_machines]
+                parameters = {
+                    "instance_ids": instance_ids,
+                    "template_id": request.template_id,
+                }
+
+            operation = ProviderOperation(
+                operation_type=operation_type,
+                parameters=parameters,
                 context={
                     "correlation_id": str(request.request_id),
                     "request_id": str(request.request_id),
@@ -209,24 +224,19 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
 
             # Resolve strategy identifier using registry
             from infrastructure.services.provider_strategy_resolver import ProviderStrategyResolver
+            
             resolver = ProviderStrategyResolver(provider_context)
             strategy_identifier = resolver.resolve_strategy_identifier(
                 request.provider_type, 
                 request.provider_name
             )
-            
             if not strategy_identifier:
                 available = resolver.get_available_strategies()
                 self.logger.error(
                     "Strategy not found for %s-%s. Available: %s",
                     request.provider_type, request.provider_name, available
                 )
-                return MachineStatusQueryResult(
-                    request_id=request.request_id,
-                    status=RequestStatus.FAILED,
-                    instances=[],
-                    error_message=f"Provider strategy not found: {request.provider_type}-{request.provider_name}",
-                )
+                return [], {}
             
             self.logger.info(
                 "Using provider strategy: %s for request %s",
@@ -267,6 +277,7 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
                 machines.append(machine)
 
             # Batch save machines for efficiency
+            # Batch save machines for efficiency
             if machines:
                 with self.uow_factory.create_unit_of_work() as uow:
                     # Save each machine individually
@@ -290,23 +301,8 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
 
         except Exception as e:
             self.logger.exception(
-                "Failed to check provider and create machines: %s", e, exc_info=True
+                "Failed to fetch provider machines: %s", e, exc_info=True
             )
-            return [], {}
-
-=======
->>>>>>> origin/main
-    async def _fetch_provider_machines(self, request, existing_machines) -> tuple[list, dict]:
-        """
-        Fetch the latest machine list from the provider.
-
-        Prefers resource-based discovery (DESCRIBE_RESOURCE_INSTANCES) to capture the
-        full membership of the resource (ASG/Fleet). Falls back to GET_INSTANCE_STATUS
-        when only instance IDs are known.
-        """
-        provider_context = self._get_provider_context()
-        if not provider_context:
-            self.logger.warning("Provider context not available; cannot refresh from provider")
             return [], {}
 
         from providers.base.strategy import ProviderOperation, ProviderOperationType
@@ -757,20 +753,25 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
                         if not resource_ids:
                             return ProviderResult.error_result("No resource IDs provided")
 
-                        # Use the first resource ID to determine handler type
-                        resource_id = resource_ids[0]
-                        aws_handler = self._get_aws_handler_for_resource_id(resource_id)
-
                         # Create a mock request object for the handler
                         class MockRequest:
-                            def __init__(self, resource_ids, template_id):
+                            def __init__(self, resource_ids, template_id, provider_name=None, provider_type="aws"):
                                 self.resource_ids = resource_ids
                                 self.template_id = template_id
                                 self.metadata = operation.parameters
+                                self.provider_name = provider_name
+                                self.provider_type = provider_type
 
                         mock_request = MockRequest(
-                            resource_ids, operation.parameters.get("template_id")
+                            resource_ids, 
+                            operation.parameters.get("template_id"),
+                            operation.parameters.get("provider_name"),
+                            operation.parameters.get("provider_type", "aws")
                         )
+
+                        # Use the first resource ID to determine handler type
+                        resource_id = resource_ids[0]
+                        aws_handler = self._get_aws_handler_for_resource_id(resource_id, mock_request)
 
                         # Call the handler's check_hosts_status method
                         instances = aws_handler.check_hosts_status(mock_request)
@@ -799,44 +800,48 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
                 aws_handler = self._get_aws_handler_for_request(request)
                 return aws_handler.check_hosts_status(request)
 
-            def _get_aws_handler_for_resource_id(self, resource_id: str):
-                """Get appropriate AWS handler based on resource ID."""
-                if resource_id.startswith("fleet-"):
-                    from providers.aws.infrastructure.handlers.ec2_fleet_handler import (
-                        EC2FleetHandler,
-                    )
-
-                    return self.container.get(EC2FleetHandler)
-                elif resource_id.startswith("sfr-"):
-                    from providers.aws.infrastructure.handlers.spot_fleet_handler import (
-                        SpotFleetHandler,
-                    )
-
-                    return self.container.get(SpotFleetHandler)
-                elif resource_id.startswith("run-instances-"):
-                    from providers.aws.infrastructure.handlers.run_instances_handler import (
-                        RunInstancesHandler,
-                    )
-
-                    return self.container.get(RunInstancesHandler)
-                else:
-                    from providers.aws.infrastructure.handlers.asg_handler import ASGHandler
-
-                    return self.container.get(ASGHandler)
+            def _get_aws_handler_for_resource_id(self, resource_id: str, request):
+                """Get appropriate AWS handler based on request metadata."""
+                strategy = self._get_provider_strategy(request)
+                if not strategy:
+                    self.logger.warning("No strategy available for provider: %s", request.provider_name)
+                    return None
+                
+                handler_type = request.metadata.get("provider_api") or request.provider_api
+                if not handler_type:
+                    self.logger.warning("No provider_api found in request metadata for resource: %s", resource_id)
+                    handler_type = "RunInstances"
+                
+                return strategy.get_handler(handler_type)
 
             def _get_aws_handler_for_request(self, request):
-                """Get appropriate AWS handler based on request/template."""
-                if request.resource_ids:
-                    # Use first resource_id for handler selection logic
-                    resource_id = request.resource_ids[0]
-                    return self._get_aws_handler_for_resource_id(resource_id)
-
-                # Fallback to RunInstances
-                from providers.aws.infrastructure.handlers.run_instances_handler import (
-                    RunInstancesHandler,
-                )
-
-                return self.container.get(RunInstancesHandler)
+                """Get appropriate AWS handler based on request metadata."""
+                strategy = self._get_provider_strategy(request)
+                if not strategy:
+                    self.logger.warning("No strategy available for provider: %s", request.provider_name)
+                    return None
+                    
+                handler_type = request.metadata.get("provider_api") or request.provider_api
+                if not handler_type:
+                    handler_type = "RunInstances"
+                
+                return strategy.get_handler(handler_type)
+                
+            def _get_provider_strategy(self, request):
+                """Get provider strategy for request."""
+                try:
+                    from application.services.provider_selection_service import ProviderSelectionService
+                    
+                    selection_service = self._container.get(ProviderSelectionService)
+                    if request.provider_name:
+                        selection_result = selection_service.select_provider_by_name(request.provider_name)
+                    else:
+                        selection_result = selection_service.select_active_provider()
+                    
+                    return selection_result.strategy if selection_result else None
+                except Exception as e:
+                    self.logger.warning("Failed to get provider strategy: %s", e)
+                    return None
 
         return SimpleProviderContext(self._container)
 

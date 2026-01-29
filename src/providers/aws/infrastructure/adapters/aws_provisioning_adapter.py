@@ -23,7 +23,6 @@ from providers.aws.exceptions.aws_exceptions import (
     QuotaExceededError,
 )
 from providers.aws.infrastructure.aws_client import AWSClient
-from providers.aws.infrastructure.aws_handler_factory import AWSHandlerFactory
 from providers.aws.infrastructure.handlers.base_handler import AWSHandler
 
 # Removed TYPE_CHECKING import to avoid circular dependency issues during DI resolution
@@ -43,9 +42,8 @@ class AWSProvisioningAdapter(ResourceProvisioningPort):
         self,
         aws_client: AWSClient,
         logger: LoggingPort,
-        aws_handler_factory: AWSHandlerFactory,
+        provider_strategy: Any,  # AWSProviderStrategy
         template_config_manager: Optional[TemplateConfigurationManager] = None,
-        provider_strategy: Optional[Any] = None,
     ) -> None:
         """
         Initialize the adapter.
@@ -53,15 +51,13 @@ class AWSProvisioningAdapter(ResourceProvisioningPort):
         Args:
             aws_client: AWS client instance
             logger: Logger for logging messages
-            aws_handler_factory: AWS handler factory instance
+            provider_strategy: AWS provider strategy for handler creation
             template_config_manager: Optional template configuration manager instance
-            provider_strategy: Optional AWS provider strategy for dry-run support
         """
         self._aws_client = aws_client
         self._logger = logger
-        self._aws_handler_factory = aws_handler_factory
-        self._template_config_manager = template_config_manager
         self._provider_strategy = provider_strategy
+        self._template_config_manager = template_config_manager
         self._handlers = {}  # Cache for handlers
 
     @property
@@ -430,10 +426,10 @@ class AWSProvisioningAdapter(ResourceProvisioningPort):
         if handler_type in self._handlers:
             return self._handlers[handler_type]
 
-        # Use the handler factory to create the handler
-        handler = self._aws_handler_factory.create_handler(handler_type)
+        handler = self._provider_strategy.get_handler(handler_type)
+        if not handler:
+            raise AWSValidationError(f"No handler available for type: {handler_type}")
 
-        # Cache the handler for future use
         self._handlers[handler_type] = handler
         return handler
 
@@ -454,9 +450,11 @@ class AWSProvisioningAdapter(ResourceProvisioningPort):
         if provider_api in self._handlers:
             return self._handlers[provider_api]
 
-        # Use the handler factory to create the handler
-        handler = self._aws_handler_factory.create_handler(provider_api)
+        handler = self._provider_strategy.get_handler(provider_api)
+        if not handler:
+            raise AWSValidationError(f"No handler available for type: {provider_api}")
 
-        # Cache the handler for future use
+        self._handlers[provider_api] = handler
+        return handler
         self._handlers[provider_api] = handler
         return handler
