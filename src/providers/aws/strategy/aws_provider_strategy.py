@@ -504,7 +504,7 @@ class AWSProviderStrategy(ProviderStrategy):
 
                 if not success:
                     return ProviderResult.error_result(
-                        f"Provisioning failed: {e}", "PROVISIONING_ADAPTER_ERROR"
+                        f"Provisioning failed: {error_message}", "PROVISIONING_ADAPTER_ERROR"
                     )
             else:
                 # Handler returned single resource ID (legacy format)
