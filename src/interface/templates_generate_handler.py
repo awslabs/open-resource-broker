@@ -179,36 +179,40 @@ def _get_provider_config(provider_name: str) -> dict:
 async def _generate_examples_from_factory(
     provider_type: str, provider_name: str, provider_api: str = None
 ) -> list[Dict[str, Any]]:
-    """Generate example templates using strategy's handler factory."""
+    """Generate example templates using provider strategy's handler factory."""
+    from infrastructure.di.container import get_container
+    
+    container = get_container()
+    
+    # For now, directly use AWS handler factory since that's what we have
+    # TODO: Extend this when we have other provider types
     if provider_type == "aws":
-        from infrastructure.di.container import get_container
-        from application.services.provider_selection_service import ProviderSelectionService
-
-        container = get_container()
+        from providers.aws.infrastructure.aws_handler_factory import AWSHandlerFactory
         
-        # Use CQRS QueryBus to get templates (same as list command)
-        container = get_container()
-        query_bus = container.get(QueryBus)
+        handler_factory = container.get(AWSHandlerFactory)
+        if not handler_factory:
+            raise ValueError(f"AWSHandlerFactory not available for provider: {provider_name}")
         
-        if not query_bus:
-            return []
+        # Generate example templates from the handler factory
+        example_templates = handler_factory.generate_example_templates()
+        if not example_templates:
+            raise ValueError(f"No example templates generated for provider: {provider_name}")
         
-        # Create query to get templates
-        query = ListTemplatesQuery(
-            provider_api=provider_api,
-            active_only=True,
-            include_configuration=True
-        )
-        
-        # Execute query to get templates
-        templates = await query_bus.execute(query)
+        # Filter by provider_api if specified
+        if provider_api:
+            example_templates = [
+                template for template in example_templates 
+                if template.provider_api == provider_api
+            ]
+            if not example_templates:
+                raise ValueError(f"No templates found for provider API: {provider_api}")
         
         # Convert Template objects to dict format for generation
         examples = []
-        for template in templates:
+        for template in example_templates:
             template_dict = template.model_dump(exclude_none=True)
             examples.append(template_dict)
         
         return examples
     else:
-        return []
+        raise ValueError(f"Unsupported provider type: {provider_type}. Currently only 'aws' is supported.")
