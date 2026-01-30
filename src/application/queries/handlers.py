@@ -1386,40 +1386,29 @@ class GetTemplateHandler(BaseQueryHandler[GetTemplateQuery, Template]):
             if not template_dto:
                 raise EntityNotFoundError("Template", query.template_id)
 
-            # Convert TemplateDTO to Template domain object (same logic as
-            # ListTemplatesHandler)
+            # Convert TemplateDTO to Template domain object
             config = dict(template_dto.configuration or {})
-
             template_data = dict(config)
             template_data.setdefault("template_id", template_dto.template_id)
             template_data.setdefault("name", template_dto.name or template_dto.template_id)
             template_data.setdefault("provider_api", template_dto.provider_api or "aws")
-            template_data.setdefault(
-                "image_id", config.get("image_id") or config.get("imageId") or "default-image"
-            )
-            template_data.setdefault(
-                "subnet_ids",
-                config.get("subnet_ids") or config.get("subnetIds") or ["default-subnet"],
-            )
-            template_data.setdefault(
-                "instance_type", config.get("instance_type") or config.get("instanceType")
-            )
-            template_data.setdefault(
-                "max_instances", config.get("max_instances") or config.get("maxNumber") or 1
-            )
-            template_data.setdefault(
-                "security_group_ids",
-                config.get("security_group_ids") or config.get("securityGroupIds") or [],
-            )
-            template_data.setdefault("tags", config.get("tags") or {})
-            template_data.setdefault("metadata", config)
+
+            # Apply template defaults resolution
+            from application.services.template_defaults_service import TemplateDefaultsService
+            if self._container.has(TemplateDefaultsService):
+                template_defaults_service = self._container.get(TemplateDefaultsService)
+                resolved_data = template_defaults_service.resolve_template_defaults(
+                    template_data, provider_name=None
+                )
+            else:
+                resolved_data = template_data
 
             if self._container.has(TemplateFactory):
                 template_factory = self._container.get(TemplateFactory)
             else:
                 template_factory = get_default_template_factory()
 
-            domain_template = template_factory.create_template(template_data)
+            domain_template = template_factory.create_template(resolved_data)
 
             self.logger.info("Retrieved template: %s", query.template_id)
             return domain_template
@@ -1472,28 +1461,18 @@ class ListTemplatesHandler(BaseQueryHandler[ListTemplatesQuery, list[Template]])
                     template_data.setdefault("template_id", dto.template_id)
                     template_data.setdefault("name", dto.name or dto.template_id)
                     template_data.setdefault("provider_api", dto.provider_api or "aws")
-                    template_data.setdefault(
-                        "image_id",
-                        config.get("image_id") or config.get("imageId") or "default-image",
-                    )
-                    template_data.setdefault(
-                        "subnet_ids",
-                        config.get("subnet_ids") or config.get("subnetIds") or ["default-subnet"],
-                    )
-                    template_data.setdefault(
-                        "instance_type", config.get("instance_type") or config.get("instanceType")
-                    )
-                    template_data.setdefault(
-                        "max_instances", config.get("max_instances") or config.get("maxNumber") or 1
-                    )
-                    template_data.setdefault(
-                        "security_group_ids",
-                        config.get("security_group_ids") or config.get("securityGroupIds") or [],
-                    )
-                    template_data.setdefault("tags", config.get("tags") or {})
-                    template_data.setdefault("metadata", config)
 
-                    domain_template = template_factory.create_template(template_data)
+                    # Apply template defaults resolution
+                    from application.services.template_defaults_service import TemplateDefaultsService
+                    if self._container.has(TemplateDefaultsService):
+                        template_defaults_service = self._container.get(TemplateDefaultsService)
+                        resolved_data = template_defaults_service.resolve_template_defaults(
+                            template_data, provider_name=None
+                        )
+                    else:
+                        resolved_data = template_data
+
+                    domain_template = template_factory.create_template(resolved_data)
                     domain_templates.append(domain_template)
 
                 except Exception as e:
