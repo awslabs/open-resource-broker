@@ -4,7 +4,7 @@ import json
 import platform
 import shutil
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Optional, Optional
 
 from cli.console import print_command, print_error, print_info, print_separator, print_success, print_newline
 from config.platform_dirs import (
@@ -191,12 +191,54 @@ def _interactive_setup() -> Dict[str, Any]:
         print_info("")
         print_info("[3/4] Provider Configuration")
         print_separator(width=60, char="-", color="cyan")
-        if provider_type == "aws":
+        
+        # Get credential requirements
+        requirements = _get_credential_requirements(provider_type)
+        
+        # Collect required parameters first (e.g., region for AWS)
+        provider_config = {"type": provider_type}
+        for param, info in requirements.items():
+            if info.get("required"):
+                default_value = "us-east-1" if param == "region" else ""
+                prompt = f"  {info['description']} ({default_value}): " if default_value else f"  {info['description']}: "
+                value = input(prompt).strip() or default_value
+                provider_config[param] = value
+        
+        # Fallback for AWS if no requirements defined
+        if provider_type == "aws" and not requirements:
             region = input("  Region (us-east-1): ").strip() or "us-east-1"
-            profile = input("  Profile (default): ").strip() or "default"
+            provider_config["region"] = region
+        
+        # Get available credential sources
+        credential_sources = _get_available_credential_sources(provider_type)
+        
+        print_info("")
+        print_info("Available credentials:")
+        for i, source in enumerate(credential_sources, 1):
+            print_info(f"  ({i}) {source['description']}")
+        
+        choice = input("  Select credentials (1): ").strip() or "1"
+        try:
+            selected_source = credential_sources[int(choice) - 1]["name"]
+        except (ValueError, IndexError):
+            selected_source = None
+        
+        # Test credentials
+        print_info("")
+        print_info("Testing credentials...")
+        if _test_provider_credentials(provider_type, selected_source, **provider_config):
+            print_success("Credentials verified")
+            if selected_source:
+                provider_config["profile"] = selected_source
         else:
-            region = "us-east-1"
-            profile = "default"
+            print_error("Credential verification failed")
+            print_info("Continuing with unverified credentials...")
+            if selected_source:
+                provider_config["profile"] = selected_source
+        
+        # Extract final values for backward compatibility
+        region = provider_config.get("region", "us-east-1")
+        profile = provider_config.get("profile", "default")
         
         print_newline()
         print_separator(width=60, char="-", color="cyan")
@@ -230,6 +272,40 @@ def _interactive_setup() -> Dict[str, Any]:
         print_error("\n\nUnexpected end of input")
         print_info("  Run with --non-interactive for automated setup")
         raise
+
+
+def _get_available_credential_sources(provider_type: str) -> list[dict]:
+    """Get available credential sources for provider."""
+    if provider_type == "aws":
+        try:
+            from providers.aws.profile_discovery import get_available_profiles
+            return get_available_profiles()
+        except Exception:
+            return [{"name": None, "description": "Default credentials"}]
+    else:
+        return [{"name": None, "description": "Default credentials"}]
+
+
+def _test_provider_credentials(provider_type: str, credential_source: Optional[str], **kwargs) -> bool:
+    """Test provider credentials."""
+    if provider_type == "aws":
+        try:
+            from providers.aws.session_factory import AWSSessionFactory
+            region = kwargs.get("region")
+            result = AWSSessionFactory.discover_credentials(credential_source, region)
+            return result.get("success", False)
+        except Exception:
+            return False
+    else:
+        return False
+
+
+def _get_credential_requirements(provider_type: str) -> dict:
+    """Get credential requirements for provider."""
+    if provider_type == "aws":
+        return {"region": {"required": True, "description": "AWS region"}}
+    else:
+        return {}
 
 
 def _discover_infrastructure(provider_type: str, region: str, profile: str) -> Dict[str, Any]:
@@ -309,9 +385,25 @@ def _write_config_file(config_file: Path, user_config: Dict[str, Any]):
     # Generate provider name using provider-aware naming convention
     provider_config = {"profile": user_config["profile"], "region": user_config["region"]}
 
-    # Use provider type from user config instead of hardcoded "aws"
+    # Use provider strategy to generate name with proper sanitization
     provider_type = user_config["provider_type"]
-    provider_name = f"{provider_type}_{user_config['profile']}_{user_config['region']}"
+    
+    # Get provider strategy to generate proper name
+    try:
+        from infrastructure.di.container import get_container
+        from providers.factory import ProviderStrategyFactory
+        
+        container = get_container()
+        factory = container.get(ProviderStrategyFactory)
+        
+        temp_config = {"type": provider_type, **provider_config}
+        strategy = factory.create_strategy(provider_type, temp_config)
+        provider_name = strategy.generate_provider_name(provider_config)
+    except Exception:
+        # Fallback to simple name generation
+        import re
+        sanitized_profile = re.sub(r'[^a-zA-Z0-9\-_]', '-', user_config['profile'])
+        provider_name = f"{provider_type}_{sanitized_profile}_{user_config['region']}"
 
     # Create config.json with user overrides only
     provider_instance = {

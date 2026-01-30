@@ -1268,12 +1268,32 @@ class AWSProviderStrategy(ProviderStrategy):
             },
         }
 
+    def get_available_credential_sources(self) -> list[dict]:
+        """Get available AWS credential sources."""
+        from providers.aws.profile_discovery import get_available_profiles
+        return get_available_profiles()
+
+    def test_credentials(self, credential_source: Optional[str] = None, **kwargs) -> dict:
+        """Test AWS credentials."""
+        from providers.aws.session_factory import AWSSessionFactory
+        region = kwargs.get("region")
+        return AWSSessionFactory.discover_credentials(credential_source, region)
+
+    def get_credential_requirements(self) -> dict:
+        """AWS requires region."""
+        return {"region": {"required": True, "description": "AWS region"}}
+
     def generate_provider_name(self, config: dict[str, Any]) -> str:
         """Generate AWS provider name: {provider_type}_{profile}_{region}"""
         provider_type = self.provider_type  # Use dynamic provider type
         profile = config.get("profile", "default")
         region = config.get("region", "us-east-1")
-        return f"{provider_type}_{profile}_{region}"
+        
+        # Sanitize profile name to only include valid characters
+        import re
+        sanitized_profile = re.sub(r'[^a-zA-Z0-9\-_]', '-', profile)
+        
+        return f"{provider_type}_{sanitized_profile}_{region}"
 
     def parse_provider_name(self, provider_name: str) -> dict[str, str]:
         """Parse AWS provider name back to components."""
@@ -1295,6 +1315,21 @@ class AWSProviderStrategy(ProviderStrategy):
     def get_provider_name_pattern(self) -> str:
         """AWS naming pattern."""
         return "{type}_{profile}_{region}"
+
+    def get_available_credential_sources(self) -> list[dict]:
+        """Get available AWS credential sources."""
+        from providers.aws.profile_discovery import get_available_profiles
+        return get_available_profiles()
+
+    def test_credentials(self, credential_source: Optional[str] = None, **kwargs) -> dict:
+        """Test AWS credentials."""
+        from providers.aws.session_factory import AWSSessionFactory
+        region = kwargs.get("region")
+        return AWSSessionFactory.discover_credentials(credential_source, region)
+
+    def get_credential_requirements(self) -> dict:
+        """AWS requires region."""
+        return {"region": {"required": True, "description": "AWS region"}}
 
     def cleanup(self) -> None:
         """Clean up AWS provider resources."""

@@ -13,6 +13,7 @@ from infrastructure.adapters.ports.auth import (
     AuthResult,
     AuthStatus,
 )
+from providers.aws.session_factory import AWSSessionFactory
 
 
 @injectable
@@ -49,11 +50,7 @@ class IAMAuthStrategy(AuthPort):
 
         # Initialize AWS session
         try:
-            if profile:
-                self.session = boto3.Session(profile_name=profile, region_name=region)
-            else:
-                self.session = boto3.Session(region_name=region)
-
+            self.session = AWSSessionFactory.create_session(profile, region)
             self.sts_client = self.session.client("sts")
             self.iam_client = self.session.client("iam")
 

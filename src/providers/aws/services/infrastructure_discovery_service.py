@@ -1,9 +1,9 @@
 """AWS infrastructure discovery service."""
 
-import boto3
 from typing import List, Optional
 
 from providers.aws.models.infrastructure_models import VPCInfo, SubnetInfo, SecurityGroupInfo
+from providers.aws.session_factory import AWSSessionFactory
 
 
 class AWSInfrastructureDiscoveryService:
@@ -14,7 +14,7 @@ class AWSInfrastructureDiscoveryService:
         self.region = region
         self.profile = profile
         
-        session = boto3.Session(profile_name=profile) if profile else boto3.Session()
+        session = AWSSessionFactory.create_session(profile, region)
         self.ec2_client = session.client('ec2', region_name=region)
 
     def discover_vpcs(self) -> List[VPCInfo]:
