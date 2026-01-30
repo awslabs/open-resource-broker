@@ -75,7 +75,7 @@ def register_core_services(container: DIContainer) -> None:
 
 def _create_scheduler_strategy(container: DIContainer) -> SchedulerPort:
     """Create scheduler strategy using factory."""
-    from infrastructure.factories.scheduler_strategy_factory import SchedulerStrategyFactory
+    from infrastructure.scheduler.factory import SchedulerStrategyFactory
 
     factory = container.get(SchedulerStrategyFactory)
     config = container.get(ConfigurationPort)
@@ -85,7 +85,7 @@ def _create_scheduler_strategy(container: DIContainer) -> SchedulerPort:
 
 def _create_storage_strategy(container: DIContainer) -> StoragePort:
     """Create storage strategy using factory."""
-    from infrastructure.factories.storage_strategy_factory import StorageStrategyFactory
+    from infrastructure.storage.factory import StorageStrategyFactory
 
     factory = container.get(StorageStrategyFactory)
     config = container.get(ConfigurationPort)

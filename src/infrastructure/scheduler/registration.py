@@ -14,7 +14,7 @@ from domain.base.ports.configuration_port import ConfigurationPort
 if TYPE_CHECKING:
     from domain.base.ports.scheduler_port import SchedulerPort
     from infrastructure.di.container import DIContainer
-    from infrastructure.registry.scheduler_registry import SchedulerRegistry
+    from infrastructure.scheduler.registry import SchedulerRegistry
 
 
 def create_symphony_hostfactory_strategy(container: "DIContainer") -> "SchedulerPort":
@@ -50,7 +50,7 @@ def register_symphony_hostfactory_scheduler(
 ) -> None:
     """Register Symphony HostFactory scheduler."""
     if registry is None:
-        from infrastructure.registry.scheduler_registry import get_scheduler_registry
+        from infrastructure.scheduler.registry import get_scheduler_registry
 
         registry = get_scheduler_registry()
 
@@ -111,7 +111,7 @@ def create_default_config(data: dict[str, Any]) -> Any:
 def register_default_scheduler(registry: "SchedulerRegistry" = None) -> None:
     """Register default scheduler."""
     if registry is None:
-        from infrastructure.registry.scheduler_registry import get_scheduler_registry
+        from infrastructure.scheduler.registry import get_scheduler_registry
 
         registry = get_scheduler_registry()
 

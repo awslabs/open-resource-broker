@@ -48,7 +48,7 @@ class EventPublishingPort(Protocol):
 
 
 class PersistencePort(Protocol):
-    """Port for persistence operations from domain layer."""
+    """Port for storage operations from domain layer."""
 
     def save_aggregate(self, aggregate: Any) -> None:
         """Save an aggregate root."""

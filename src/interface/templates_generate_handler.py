@@ -85,7 +85,7 @@ async def _generate_templates_for_provider(provider: dict, args) -> dict:
 
     # Get scheduler strategy for filename
     from config.platform_dirs import get_config_location
-    from infrastructure.registry.scheduler_registry import get_scheduler_registry
+    from infrastructure.scheduler.registry import get_scheduler_registry
 
     config_dir = get_config_location()
     config_file = config_dir / "config.json"

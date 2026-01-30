@@ -45,10 +45,9 @@ from .infrastructure_events import (
     ResourceUpdatedEvent,
 )
 
-# Persistence events (Repository and storage)
-from .persistence_events import (  # Repository operations; Storage strategy
+# Storage events (Repository and storage)
+from .storage_events import (  # Repository operations; Storage strategy
     ConnectionPoolEvent,
-    PersistenceEvent,
     RepositoryOperationCompletedEvent,
     RepositoryOperationFailedEvent,
     RepositoryOperationStartedEvent,
@@ -56,6 +55,7 @@ from .persistence_events import (  # Repository operations; Storage strategy
     StorageEvent,
     StorageHealthCheckEvent,
     StoragePerformanceEvent,
+    StorageStrategyEvent,
     StorageStrategyFailoverEvent,
     StorageStrategySelectedEvent,
     TransactionCommittedEvent,
@@ -119,7 +119,8 @@ __all__: list[str] = [
     "PerformanceEvent",
     "PerformanceMetricEvent",
     # Repository Operation Events
-    "PersistenceEvent",
+    "StorageEvent",
+    "StorageStrategyEvent",
     "ProviderConfigurationEvent",
     "ProviderCredentialsEvent",
     "ProviderHealthCheckEvent",

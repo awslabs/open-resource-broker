@@ -2,7 +2,7 @@
 
 from domain.base.ports import ConfigurationPort
 from infrastructure.di.container import DIContainer
-from infrastructure.factories.scheduler_strategy_factory import SchedulerStrategyFactory
+from infrastructure.scheduler.factory import SchedulerStrategyFactory
 from infrastructure.logging.logger import get_logger
 
 
@@ -33,7 +33,7 @@ def _register_configured_scheduler_strategy(container: DIContainer) -> None:
         logger = get_logger(__name__)
 
         # Registry handles dynamic registration - no hardcoded types here
-        from infrastructure.registry.scheduler_registry import get_scheduler_registry
+        from infrastructure.scheduler.registry import get_scheduler_registry
 
         registry = get_scheduler_registry()
         registry.ensure_type_registered(scheduler_type)
@@ -44,7 +44,7 @@ def _register_configured_scheduler_strategy(container: DIContainer) -> None:
         logger = get_logger(__name__)
         logger.error("Failed to register configured scheduler strategy: %s", e)
         # Fallback to default
-        from infrastructure.registry.scheduler_registry import get_scheduler_registry
+        from infrastructure.scheduler.registry import get_scheduler_registry
 
         registry = get_scheduler_registry()
         registry.ensure_type_registered("default")

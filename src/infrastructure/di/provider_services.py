@@ -6,9 +6,9 @@ from application.services.provider_capability_service import ProviderCapabilityS
 from application.services.provider_selection_service import ProviderSelectionService
 from domain.base.ports import ConfigurationPort, LoggingPort
 from infrastructure.di.container import DIContainer
-from infrastructure.factories.provider_strategy_factory import ProviderStrategyFactory
+from providers.factory import ProviderStrategyFactory
 from infrastructure.logging.logger import get_logger
-from infrastructure.registry.provider_registry import ProviderRegistry
+from providers.registry import ProviderRegistry
 from monitoring.metrics import MetricsCollector
 from providers.base.strategy import ProviderContext
 
@@ -278,7 +278,7 @@ def _register_provider_instance(provider_instance) -> bool:
         )
 
         if provider_instance.type == "aws":
-            from infrastructure.registry.provider_registry import get_provider_registry
+            from providers.registry import get_provider_registry
             from providers.aws.registration import register_aws_provider
 
             # Get provider registry

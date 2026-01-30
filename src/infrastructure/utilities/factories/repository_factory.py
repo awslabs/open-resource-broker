@@ -19,7 +19,7 @@ from domain.base.ports import LoggingPort
 from domain.machine.repository import MachineRepository as MachineRepositoryInterface
 from domain.request.repository import RequestRepository as RequestRepositoryInterface
 from domain.template.repository import TemplateRepository as TemplateRepositoryInterface
-from infrastructure.registry.storage_registry import get_storage_registry
+from infrastructure.storage.registry import get_storage_registry
 
 
 @injectable
@@ -41,7 +41,7 @@ class RepositoryFactory:
 
     def create_machine_repository(self) -> MachineRepositoryInterface:
         """Create machine repository with injected storage port."""
-        from infrastructure.persistence.repositories.machine_repository import (
+        from infrastructure.storage.repositories.machine_repository import (
             MachineRepositoryImpl as MachineRepository,
         )
 
@@ -62,7 +62,7 @@ class RepositoryFactory:
 
     def create_request_repository(self) -> RequestRepositoryInterface:
         """Create request repository with injected storage port."""
-        from infrastructure.persistence.repositories.request_repository import (
+        from infrastructure.storage.repositories.request_repository import (
             RequestRepositoryImpl as RequestRepository,
         )
 
@@ -83,7 +83,7 @@ class RepositoryFactory:
 
     def create_template_repository(self) -> TemplateRepositoryInterface:
         """Create template repository with injected storage strategy."""
-        from infrastructure.persistence.repositories.template_repository import (
+        from infrastructure.storage.repositories.template_repository import (
             TemplateRepositoryImpl as TemplateRepository,
         )
 

@@ -2,7 +2,7 @@
 
 from domain.base.ports import ConfigurationPort
 from infrastructure.di.container import DIContainer
-from infrastructure.factories.storage_strategy_factory import StorageStrategyFactory
+from infrastructure.storage.factory import StorageStrategyFactory
 from infrastructure.logging.logger import get_logger
 
 
@@ -34,7 +34,7 @@ def _register_critical_storage_types(container: DIContainer, critical_types: lis
     """Register critical storage types specified in preload_critical."""
     logger = get_logger(__name__)
     
-    from infrastructure.registry.storage_registry import get_storage_registry
+    from infrastructure.storage.registry import get_storage_registry
     registry = get_storage_registry()
     
     for storage_type in critical_types:
@@ -54,7 +54,7 @@ def _register_configured_storage_strategy(container: DIContainer) -> None:
         logger = get_logger(__name__)
 
         # Registry handles dynamic registration - no hardcoded types here
-        from infrastructure.registry.storage_registry import get_storage_registry
+        from infrastructure.storage.registry import get_storage_registry
 
         registry = get_storage_registry()
         registry.ensure_type_registered(storage_type)
@@ -65,7 +65,7 @@ def _register_configured_storage_strategy(container: DIContainer) -> None:
         logger = get_logger(__name__)
         logger.error("Failed to register configured storage strategy: %s", e)
         # Fallback to json
-        from infrastructure.registry.storage_registry import get_storage_registry
+        from infrastructure.storage.registry import get_storage_registry
 
         registry = get_storage_registry()
         registry.ensure_type_registered("json")

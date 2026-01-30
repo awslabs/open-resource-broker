@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, Optional
 # Use TYPE_CHECKING to avoid direct infrastructure import
 if TYPE_CHECKING:
     from domain.base.ports import LoggingPort
-    from infrastructure.registry.provider_registry import ProviderRegistry
+    from providers.registry import ProviderRegistry
 
 # Template extension imports for our new functionality
 from domain.template.extensions import TemplateExtensionRegistry
@@ -129,7 +129,7 @@ def register_aws_provider(
     """
     if registry is None:
         # Import here to avoid circular dependencies
-        from infrastructure.registry.provider_registry import get_provider_registry
+        from providers.registry import get_provider_registry
 
         registry = get_provider_registry()
 
@@ -233,7 +233,7 @@ def register_aws_provider_with_di(provider_instance, container) -> bool:
         _register_aws_components_with_di(container, aws_config, provider_instance.name)
 
         # Register provider strategy with registry
-        from infrastructure.registry.provider_registry import get_provider_registry
+        from providers.registry import get_provider_registry
 
         registry = get_provider_registry()
 

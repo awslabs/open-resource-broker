@@ -1172,7 +1172,7 @@ class AWSProviderStrategy(ProviderStrategy):
         """Get available AWS templates using scheduler strategy."""
         try:
             # Use scheduler strategy to load templates from configuration
-            from infrastructure.registry.scheduler_registry import get_scheduler_registry
+            from infrastructure.scheduler.registry import get_scheduler_registry
 
             scheduler_registry = get_scheduler_registry()
             scheduler_strategy = scheduler_registry.get_active_strategy()
