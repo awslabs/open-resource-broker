@@ -24,20 +24,38 @@ async def handle_templates_generate(args) -> Dict[str, Any]:
             providers = _get_active_providers()
 
         results = []
+        skipped_files = []
+        
         for provider in providers:
             result = await _generate_templates_for_provider(provider, args)
             results.append(result)
+            
+            if result.get("status") == "skipped":
+                skipped_files.append(result["filename"])
 
         # Print summary
-        total_templates = sum(r["templates_count"] for r in results)
-        print_success(f"Generated templates for {len(results)} providers")
-        print_info(f"Total templates: {total_templates}")
-        print_info("")
+        if skipped_files:
+            print_info(f"Skipped {len(skipped_files)} existing files (use --force to overwrite):")
+            for filename in skipped_files:
+                print_info(f"  - {filename}")
+            print_info("")
+        
+        created_results = [r for r in results if r.get("status") == "created"]
+        if created_results:
+            total_templates = sum(r["templates_count"] for r in created_results)
+            print_success(f"Generated templates for {len(created_results)} providers")
+            print_info(f"Total templates: {total_templates}")
+            print_info("")
 
-        for result in results:
-            print_info(f"Provider: {result['provider']}")
-            print_info(f"  File: {result['filename']}")
-            print_info(f"  Templates: {result['templates_count']}")
+            for result in created_results:
+                print_info(f"Provider: {result['provider']}")
+                print_info(f"  File: {result['filename']}")
+                print_info(f"  Templates: {result['templates_count']}")
+        elif skipped_files:
+            print_info("No new templates generated (all files already exist)")
+        
+        # Update return data
+        total_templates = sum(r["templates_count"] for r in created_results)
 
         return {
             "status": "success",
@@ -99,6 +117,19 @@ async def _generate_templates_for_provider(provider: dict, args) -> dict:
     config_dir.mkdir(parents=True, exist_ok=True)
     templates_file = config_dir / filename
 
+    # Check for existing file and handle overwrite protection
+    if templates_file.exists() and not getattr(args, "force", False):
+        print(f"Template file already exists: {templates_file}")
+        print("Use --force to overwrite existing files")
+        return {
+            "provider": provider_name,
+            "filename": filename,
+            "templates_count": 0,
+            "path": str(templates_file),
+            "status": "skipped",
+            "reason": "file_exists"
+        }
+
     container = get_container()
     scheduler_strategy = container.get(SchedulerPort)
     
@@ -129,6 +160,7 @@ async def _generate_templates_for_provider(provider: dict, args) -> dict:
         "filename": filename,
         "templates_count": len(examples),
         "path": str(templates_file),
+        "status": "created"
     }
 
 

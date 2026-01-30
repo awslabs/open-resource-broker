@@ -324,6 +324,9 @@ def add_template_actions(subparsers):
     templates_generate.add_argument(
         "--provider-type", help="Generate templates for specific provider type (e.g., aws)"
     )
+    templates_generate.add_argument(
+        "--force", action="store_true", help="Overwrite existing template files without prompting"
+    )
 
 
 def parse_args() -> tuple[argparse.Namespace, dict]:
