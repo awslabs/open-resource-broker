@@ -232,9 +232,8 @@ def _interactive_setup() -> Dict[str, Any]:
                 provider_config["profile"] = selected_source
         else:
             print_error("Credential verification failed")
-            print_info("Continuing with unverified credentials...")
-            if selected_source:
-                provider_config["profile"] = selected_source
+            print_error("Cannot proceed without valid credentials")
+            return {}
         
         # Extract final values for backward compatibility
         region = provider_config.get("region", "us-east-1")
