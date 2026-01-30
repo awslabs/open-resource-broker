@@ -72,15 +72,6 @@ class AppConfig(BaseModel):
         config_file = f"{provider_type}prov_config.json"
         return os.path.join(config_root, config_file)
 
-    def get_templates_file_path(self) -> str:
-        """Build full templates file path using scheduler + provider type."""
-        config_root = self.scheduler.get_config_root()
-        # Get provider type using selection logic
-        provider_type = self._get_selected_provider_type()
-        # Generate provider-specific templates file name
-        templates_file = f"{provider_type}prov_templates.json"
-        return os.path.join(config_root, templates_file)
-
     def _get_selected_provider_type(self) -> str:
         """Get provider type using selection logic."""
         try:

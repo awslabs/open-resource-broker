@@ -182,8 +182,6 @@
   },
   "template": {
     "max_number": 10,
-    "templates_file_path": "config/templates.json",
-    "legacy_templates_file_path": "config/awsprov_templates.json",
     "default_price_type": "ondemand",
     "default_provider_api": "EC2Fleet"
   },

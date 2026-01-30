@@ -25,7 +25,6 @@ class ProviderTemplateStrategy(JSONStorageStrategy):
 
     def __init__(
         self,
-        base_file_path: str,
         config_manager: ConfigurationManager,
         create_dirs: bool = True,
     ) -> None:
@@ -33,11 +32,11 @@ class ProviderTemplateStrategy(JSONStorageStrategy):
         Initialize provider template strategy.
 
         Args:
-            base_file_path: Base path for template files (e.g., config/templates.json)
             config_manager: Configuration manager for provider information
             create_dirs: Whether to create directories
         """
-        super().__init__(base_file_path, create_dirs)
+        # Use a dummy base path since we use our own discovery logic
+        super().__init__("", create_dirs)
         self.config_manager = config_manager
         self.logger = get_logger(__name__)
 

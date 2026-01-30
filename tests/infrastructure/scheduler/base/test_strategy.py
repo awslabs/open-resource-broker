@@ -14,9 +14,6 @@ from infrastructure.scheduler.base.strategy import BaseSchedulerStrategy
 class ConcreteSchedulerStrategy(BaseSchedulerStrategy):
     """Concrete implementation for testing."""
 
-    def get_templates_file_path(self) -> str:
-        return "/test/templates.json"
-
     def get_config_file_path(self) -> str:
         return "/test/config.json"
 
@@ -99,7 +96,6 @@ class TestBaseSchedulerStrategy:
         strategy = ConcreteSchedulerStrategy(config_manager, logger)
 
         # Test all SchedulerPort methods are implemented
-        assert strategy.get_templates_file_path() == "/test/templates.json"
         assert strategy.get_config_file_path() == "/test/config.json"
         assert strategy.parse_request_data({"test": "data"}) == {"parsed": True}
         assert strategy.format_templates_response([]) == {"templates": []}

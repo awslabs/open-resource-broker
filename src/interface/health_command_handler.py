@@ -33,14 +33,23 @@ def handle_health_check(args) -> int:
         # 2. Templates file check
         try:
             scheduler = container.get(SchedulerPort)
-            templates_path = scheduler.get_templates_file_path()
-            checks.append(
-                {
+            template_paths = scheduler.get_template_paths()
+            
+            # Check if any template file exists
+            existing_paths = [path for path in template_paths if Path(path).exists()]
+            
+            if existing_paths:
+                checks.append({
                     "name": "templates_file",
-                    "status": "pass" if Path(templates_path).exists() else "fail",
-                    "details": templates_path,
-                }
-            )
+                    "status": "pass",
+                    "details": f"{len(existing_paths)} template files found: {', '.join(existing_paths)}"
+                })
+            else:
+                checks.append({
+                    "name": "templates_file", 
+                    "status": "fail",
+                    "details": f"No template files found. Checked: {', '.join(template_paths)}"
+                })
         except Exception as e:
             checks.append({"name": "templates_file", "status": "fail", "error": str(e)})
 

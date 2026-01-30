@@ -44,26 +44,6 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         provider_type = self._get_active_provider_type()
         self.field_mapper = HostFactoryFieldMapper(provider_type)
 
-    def get_templates_file_path(self) -> str:
-        """Get the templates file path for HostFactory using strategy pattern."""
-        try:
-            # Use provider selection service that respects CLI override
-            selection_result = (
-                self._provider_selection_service.select_provider_for_template_loading()
-            )
-            provider_name = selection_result.provider_name
-            provider_type = selection_result.provider_type
-
-            # Use scheduler strategy for filename (consistent with generation)
-            filename = self.get_templates_filename(provider_name, provider_type)
-
-            # Use ConfigurationManager to resolve the file path
-            return self.config_manager.resolve_file("template", filename)
-
-        except Exception as e:
-            self._logger.error("Failed to determine templates file path: %s", e)
-            raise
-
     def get_template_paths(self) -> list[str]:
         """Get template file paths with fallback hierarchy."""
         paths = []

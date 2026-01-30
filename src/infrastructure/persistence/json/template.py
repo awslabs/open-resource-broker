@@ -14,152 +14,20 @@ from infrastructure.persistence.base import StrategyBasedRepository
 from infrastructure.persistence.json.provider_template_strategy import (
     ProviderTemplateStrategy,
 )
-from infrastructure.persistence.json.strategy import JSONStorageStrategy
-
-
-class TemplateJSONStorageStrategy(JSONStorageStrategy):
-    """JSON storage strategy for templates with legacy format support."""
-
-    def __init__(
-        self,
-        file_path: str,
-        legacy_file_path: Optional[str] = None,
-        create_dirs: bool = True,
-        metrics: Optional[object] = None,
-    ) -> None:
-        """
-        Initialize with both main and legacy file paths.
-
-        Args:
-            file_path: Path to the main templates.json file
-            legacy_file_path: Optional path to the legacy templates file
-            create_dirs: Whether to create directories
-            metrics: Optional metrics collector for instrumentation
-        """
-        super().__init__(file_path, create_dirs, metrics=metrics)
-        self.legacy_file_path = legacy_file_path
-        self.logger = get_logger(__name__)
-
-        # Log which files we found
-        if (
-            os.path.exists(self.file_path)
-            and self.legacy_file_path
-            and os.path.exists(self.legacy_file_path)
-        ):
-            self.logger.info("Found both template files, will merge contents")
-            self.logger.debug("Templates file: %s", self.file_path)
-            self.logger.debug("Legacy templates file: %s", self.legacy_file_path)
-        elif self.legacy_file_path and os.path.exists(self.legacy_file_path):
-            self.logger.info("Found only legacy templates file: %s", self.legacy_file_path)
-        elif os.path.exists(self.file_path):
-            self.logger.info("Found only templates.json: %s", self.file_path)
-        else:
-            self.logger.warning(
-                "No template files found at %s or %s",
-                self.file_path,
-                self.legacy_file_path,
-            )
-
-    def find_by_id(self, entity_id: str) -> Optional[dict[str, Any]]:
-        """
-        Find entity by ID, checking both main and legacy files.
-
-        Args:
-            entity_id: Entity ID
-
-        Returns:
-            Entity data if found, None otherwise
-        """
-        # First check main file
-        result = super().find_by_id(entity_id)
-        if result:
-            return result
-
-        # Then check legacy file if it exists
-        if self.legacy_file_path and os.path.exists(self.legacy_file_path):
-            try:
-                with open(self.legacy_file_path, encoding="utf-8") as f:
-                    legacy_data = json.load(f)
-
-                if isinstance(legacy_data, list):
-                    for item in legacy_data:
-                        if isinstance(item, dict) and item.get("template_id") == entity_id:
-                            return item
-                elif isinstance(legacy_data, dict) and entity_id in legacy_data:
-                    return legacy_data[entity_id]
-
-            except Exception as e:
-                self.logger.error(
-                    "Error reading legacy templates file %s: %s",
-                    self.legacy_file_path,
-                    e,
-                )
-
-        return None
-
-    def find_all(self) -> list[dict[str, Any]]:
-        """
-        Find all entities from both main and legacy files.
-
-        Returns:
-            List of all entity data
-        """
-        all_entities = {}
-
-        # Load from legacy file first (lower priority)
-        if self.legacy_file_path and os.path.exists(self.legacy_file_path):
-            try:
-                with open(self.legacy_file_path, encoding="utf-8") as f:
-                    legacy_data = json.load(f)
-
-                if isinstance(legacy_data, list):
-                    for item in legacy_data:
-                        if isinstance(item, dict) and "template_id" in item:
-                            all_entities[item["template_id"]] = item
-                elif isinstance(legacy_data, dict):
-                    for key, value in legacy_data.items():
-                        if isinstance(value, dict):
-                            value["template_id"] = key
-                            all_entities[key] = value
-
-            except Exception as e:
-                self.logger.error(
-                    "Error reading legacy templates file %s: %s",
-                    self.legacy_file_path,
-                    e,
-                )
-
-        # Load from main file (higher priority, will override legacy)
-        main_entities = super().find_all()
-        for entity in main_entities:
-            if isinstance(entity, dict) and "template_id" in entity:
-                all_entities[entity["template_id"]] = entity
-
-        return list(all_entities.values())
 
 
 class TemplateJSONRepository(StrategyBasedRepository, TemplateRepository):
     """JSON-based template repository with provider-specific file support."""
 
-    def __init__(
-        self, config_manager: ConfigurationManager, use_provider_strategy: bool = True
-    ) -> None:
+    def __init__(self, config_manager: ConfigurationManager) -> None:
         """
         Initialize template repository.
 
         Args:
             config_manager: Configuration manager
-            use_provider_strategy: Whether to use provider-specific template loading
         """
         self.config_manager = config_manager
         self.logger = get_logger(__name__)
-
-        # Get template file paths from configuration
-        app_config = config_manager.app_config
-        templates_file_path = app_config.get_templates_file_path()
-        legacy_templates_file_path = getattr(
-            app_config.template, "legacy_templates_file_path", None
-        )
 
         # Try to inject metrics collector from DI container
         metrics = None
@@ -174,22 +42,12 @@ class TemplateJSONRepository(StrategyBasedRepository, TemplateRepository):
             # This is expected when metrics are disabled or during testing
             metrics = None
 
-        # Choose strategy based on configuration
-        if use_provider_strategy:
-            strategy = ProviderTemplateStrategy(
-                base_file_path=templates_file_path,
-                config_manager=config_manager,
-                create_dirs=True,
-            )
-            self.logger.info("Using provider-specific template loading strategy")
-        else:
-            strategy = TemplateJSONStorageStrategy(
-                file_path=templates_file_path,
-                legacy_file_path=legacy_templates_file_path,
-                create_dirs=True,
-                metrics=metrics,
-            )
-            self.logger.info("Using legacy template loading strategy")
+        # Use provider template strategy
+        strategy = ProviderTemplateStrategy(
+            config_manager=config_manager,
+            create_dirs=True,
+        )
+        self.logger.info("Using provider-specific template loading strategy")
 
         super().__init__(strategy)
 

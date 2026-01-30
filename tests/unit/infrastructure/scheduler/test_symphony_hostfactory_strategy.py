@@ -44,11 +44,6 @@ class TestSymphonyHostFactorySchedulerStrategy:
             self.mock_logger = Mock()
             self.strategy = HostFactorySchedulerStrategy(self.mock_config_manager, self.mock_logger)
 
-    def test_get_templates_file_path(self):
-        """Test templates file path generation."""
-        path = self.strategy.get_templates_file_path()
-        assert path == "/test/config/awsprov_templates.json"
-
     def test_get_config_file_path(self):
         """Test config file path generation."""
         path = self.strategy.get_config_file_path()
@@ -66,10 +61,8 @@ class TestSymphonyHostFactorySchedulerStrategy:
         mock_provider_config.active_provider = "provider1-production"
         self.mock_config_manager.get_provider_config.return_value = mock_provider_config
 
-        templates_path = self.strategy.get_templates_file_path()
         config_path = self.strategy.get_config_file_path()
 
-        assert templates_path == "/test/config/provider1prov_templates.json"
         assert config_path == "/test/config/provider1prov_config.json"
 
     def test_parse_template_config_single_mapping_point(self):

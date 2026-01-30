@@ -12,10 +12,6 @@ class SchedulerPort(ABC):
     """Domain port for scheduler-specific operations - SINGLE FIELD MAPPING POINT."""
 
     @abstractmethod
-    def get_templates_file_path(self) -> str:
-        """Get templates file path for this scheduler."""
-
-    @abstractmethod
     def get_config_file_path(self) -> str:
         """Get config file path for this scheduler."""
 

@@ -42,7 +42,6 @@
     "default_image_id": "ami-12345678",
     "default_instance_type": "t2.micro",
     "subnet_ids": ["subnet-12345678"],
-    "security_group_ids": ["sg-12345678"],
-    "templates_file_path": "config/awsprov_templates.json"
+    "security_group_ids": ["sg-12345678"]
   }
 }

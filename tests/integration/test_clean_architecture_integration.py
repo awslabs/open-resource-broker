@@ -29,7 +29,6 @@ class TestCleanArchitectureIntegration:
         template_config = Mock()
         template_config.model_dump.return_value = {
             "max_number": 10,
-            "templates_file_path": "config/templates.json",
             "default_price_type": "ondemand",
             "default_provider_api": "EC2Fleet",
         }
@@ -111,7 +110,6 @@ class TestCleanArchitectureIntegration:
         # Test clean configuration (no AWS-specific fields)
         clean_config = {
             "max_number": 10,
-            "templates_file_path": "config/templates.json",
             "default_price_type": "ondemand",
             "default_provider_api": "EC2Fleet",
         }
