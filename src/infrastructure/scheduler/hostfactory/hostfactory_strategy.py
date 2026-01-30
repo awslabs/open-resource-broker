@@ -67,47 +67,36 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         return paths
 
     def load_templates_from_path(self, template_path: str) -> list[dict[str, Any]]:
-        """Load templates from multiple paths with merge logic."""
-        all_templates = {}  # template_id -> template_dict
-        
-        for path in self.get_template_paths():
-            if not os.path.exists(path):
-                self._logger.debug("Template file not found: %s", path)
-                continue
-                
-            try:
-                templates = self._load_single_file(path)
-                self._logger.debug("Loaded %d templates from %s", len(templates), path)
-                
-                for template in templates:
-                    template_id = template.get("template_id")
-                    if template_id:
-                        # First occurrence wins (provider-specific overrides generic)
-                        if template_id not in all_templates:
-                            all_templates[template_id] = template
-                            
-            except Exception as e:
-                self._logger.error("Failed to load templates from %s: %s", path, e)
-                continue
-        
-        # Process each template with field mapping
-        processed_templates = []
-        for template in all_templates.values():
-            if template is None:
-                continue
+        """Load templates from a specific path."""
+        if not os.path.exists(template_path):
+            self._logger.debug("Template file not found: %s", template_path)
+            return []
+            
+        try:
+            templates = self._load_single_file(template_path)
+            self._logger.debug("Loaded %d templates from %s", len(templates), template_path)
+            
+            # Process each template with field mapping
+            processed_templates = []
+            for template in templates:
+                if template is None:
+                    continue
 
-            try:
-                processed_template = self._map_template_fields(template)
-                processed_templates.append(processed_template)
-            except Exception as e:
-                self._logger.warning(
-                    "Skipping invalid template %s: %s",
-                    template.get("id", "unknown"),
-                    e,
-                )
-                continue
+                try:
+                    processed_template = self._map_template_fields(template)
+                    processed_templates.append(processed_template)
+                except Exception as e:
+                    self._logger.warning(
+                        "Skipping invalid template %s: %s",
+                        template.get("id", "unknown"),
+                        e,
+                    )
+                    continue
 
-        return processed_templates
+            return processed_templates
+        except Exception as e:
+            self._logger.error("Error loading templates from %s: %s", template_path, e)
+            return []
 
     def _load_single_file(self, template_path: str) -> list[dict[str, Any]]:
         """Load templates from a single file."""
