@@ -6,6 +6,7 @@ import boto3
 from botocore.exceptions import ClientError
 
 from .resource_manager import StorageResourceManager as ResourceManager
+from providers.aws.session_factory import AWSSessionFactory
 
 
 class DynamoDBClientManager(ResourceManager):
@@ -89,10 +90,11 @@ class DynamoDBClientManager(ResourceManager):
         """Initialize AWS clients and resources."""
         try:
             # Create session
-            if self.profile:
-                session = boto3.Session(profile_name=self.profile, region_name=self.region)
-            else:
-                session = boto3.Session(region_name=self.region)
+            from providers.aws.session_factory import AWSSessionFactory
+            session = AWSSessionFactory.create_session(
+                profile=self.profile if self.profile else None,
+                region=self.region
+            )
 
             # Create clients
             self.dynamodb = session.client("dynamodb")

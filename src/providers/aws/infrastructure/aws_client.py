@@ -16,6 +16,7 @@ from providers.aws.exceptions.aws_exceptions import (
     NetworkError,
 )
 from providers.aws.infrastructure.instrumentation.botocore_metrics import BotocoreMetricsHandler
+from providers.aws.session_factory import AWSSessionFactory
 
 if TYPE_CHECKING:
     from providers.aws.configuration.config import AWSProviderConfig
@@ -92,8 +93,9 @@ class AWSClient:
 
         try:
             # Initialize session
-            self.session = boto3.Session(
-                region_name=self.region_name, profile_name=self.profile_name
+            from providers.aws.session_factory import AWSSessionFactory
+            self.session = AWSSessionFactory.create_session(
+                profile=self.profile_name, region=self.region_name
             )
 
             # Initialize service client attributes but don't create clients yet

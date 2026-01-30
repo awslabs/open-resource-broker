@@ -24,7 +24,7 @@ def create_dynamodb_strategy(config: Any) -> Any:
     Returns:
         DynamoDBStorageStrategy instance
     """
-    from providers.aws.storage.dynamodb.strategy import DynamoDBStorageStrategy
+    from infrastructure.storage.dynamodb.strategy import DynamoDBStorageStrategy
 
     # Extract configuration parameters
     if hasattr(config, "dynamodb_strategy"):
@@ -82,7 +82,7 @@ def create_dynamodb_unit_of_work(config: Any) -> Any:
 
     from config.manager import ConfigurationManager
     from config.schemas.storage_schema import StorageConfig
-    from providers.aws.storage.dynamodb.unit_of_work import DynamoDBUnitOfWork
+    from infrastructure.storage.dynamodb.unit_of_work import DynamoDBUnitOfWork
 
     # Handle different config types
     if isinstance(config, ConfigurationManager):
@@ -91,10 +91,12 @@ def create_dynamodb_unit_of_work(config: Any) -> Any:
         dynamodb_config = storage_config.dynamodb_strategy
 
         # Create AWS client with extracted configuration
-        session = boto3.Session(
-            profile_name=dynamodb_config.profile if dynamodb_config.profile else None
+        from providers.aws.session_factory import AWSSessionFactory
+        session = AWSSessionFactory.create_session(
+            profile=dynamodb_config.profile if dynamodb_config.profile else None,
+            region=dynamodb_config.region
         )
-        aws_client = session.client("dynamodb", region_name=dynamodb_config.region)
+        aws_client = session.client("dynamodb")
 
         return DynamoDBUnitOfWork(
             aws_client=aws_client,
@@ -110,8 +112,11 @@ def create_dynamodb_unit_of_work(config: Any) -> Any:
         profile = config.get("profile")
         table_prefix = config.get("table_prefix", "hostfactory")
 
-        session = boto3.Session(profile_name=profile if profile else None)
-        aws_client = session.client("dynamodb", region_name=region)
+        session = AWSSessionFactory.create_session(
+            profile=profile if profile else None,
+            region=region
+        )
+        aws_client = session.client("dynamodb")
 
         return DynamoDBUnitOfWork(
             aws_client=aws_client,

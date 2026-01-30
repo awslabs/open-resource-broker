@@ -26,7 +26,7 @@ def detect_installation_mode(package_name: str = "orb-py") -> Tuple[str, Optiona
         if not dist_path:
             return "development", None
 
-        # Check for editable install (PEP 610)
+        # Check for PEP 610 editable install (newer pip versions)
         direct_url_file = dist_path / "direct_url.json"
         if direct_url_file.exists():
             try:
@@ -42,6 +42,20 @@ def detect_installation_mode(package_name: str = "orb-py") -> Tuple[str, Optiona
                         return "editable", Path(source_path)
             except (json.JSONDecodeError, OSError):
                 pass
+
+        # Check for older editable install (egg-info in source tree)
+        # If dist_path is within current working directory or has .egg-info suffix
+        cwd = Path.cwd()
+        if (str(dist_path).startswith(str(cwd)) or 
+            dist_path.name.endswith('.egg-info')):
+            # This is likely an editable install
+            if dist_path.name.endswith('.egg-info'):
+                # Source directory is parent of egg-info directory
+                # For src/package.egg-info -> project_root
+                source_path = dist_path.parent.parent
+                return "editable", source_path
+            else:
+                return "editable", cwd
 
         # Check for user install
         if hasattr(site, "USER_SITE") and site.USER_SITE in str(dist_path):

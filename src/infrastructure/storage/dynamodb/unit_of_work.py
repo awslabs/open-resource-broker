@@ -17,7 +17,7 @@ from infrastructure.storage.repositories.template_repository import (
 )
 
 # Import DynamoDB storage strategy
-from providers.aws.storage.dynamodb.strategy import DynamoDBStorageStrategy
+from infrastructure.storage.dynamodb.strategy import DynamoDBStorageStrategy
 
 
 @injectable
