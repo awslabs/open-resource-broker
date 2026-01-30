@@ -104,8 +104,8 @@ class RepositoryFactory:
         storage_type = self.config_manager.get_storage_strategy()
 
         try:
-            # Use storage registry to create unit of work
-            return self.storage_registry.create_unit_of_work(storage_type)
+            # Use storage registry to create unit of work with config
+            return self.storage_registry.create_unit_of_work(storage_type, self.config_manager)
 
         except Exception as e:
             self.logger.error("Failed to create unit of work: %s", e)
@@ -153,9 +153,11 @@ class RepositoryFactoryWithStrategies:
     def _get_config_manager(self):
         """Get configuration manager."""
         if self._config_manager is None:
-            from config.manager import get_config_manager
-
-            self._config_manager = get_config_manager()
+            from infrastructure.di.container import get_container
+            from config.managers.configuration_manager import ConfigurationManager
+            
+            container = get_container()
+            self._config_manager = container.get(ConfigurationManager)
         return self._config_manager
 
     def get_machine_repository(self) -> MachineRepositoryInterface:

@@ -47,17 +47,16 @@ class LazyLoadingConfig:
         self.preload_critical = config_dict.get("preload_critical", [])
 
     @classmethod
-    def from_config_manager(cls, config_manager=None) -> "LazyLoadingConfig":
+    def from_config_manager(cls, container=None) -> "LazyLoadingConfig":
         """Create lazy loading config from configuration manager."""
-        if config_manager is None:
-            try:
-                from config.manager import get_config_manager
-
-                config_manager = get_config_manager()
-            except ImportError:
-                return cls()
+        if container is None:
+            # Fallback during bootstrap - use safe defaults
+            return cls()
 
         try:
+            from config.managers.configuration_manager import ConfigurationManager
+            config_manager = container.get(ConfigurationManager)
+            
             performance_config = config_manager.get("performance", {})
             lazy_config = performance_config.get("lazy_loading", {})
             return cls(lazy_config)
@@ -94,8 +93,8 @@ class DIContainer(DIContainerPort, CQRSHandlerRegistrationPort, ContainerPort):
         )
         self._lock = threading.RLock()
 
-        # Lazy loading support
-        self._lazy_config = LazyLoadingConfig.from_config_manager()
+        # Lazy loading support - use fallback during initialization
+        self._lazy_config = LazyLoadingConfig.from_config_manager(None)
         self._lazy_factories: dict[type, Any] = {}
         self._on_demand_registrations: dict[type, Any] = {}
 

@@ -54,10 +54,12 @@ class ReloadProviderConfigHandler(BaseCommandHandler[ReloadProviderConfigCommand
             if hasattr(config_manager, "reload"):
                 config_manager.reload(command.config_path)
             else:
-                # Fallback: create new configuration manager instance using factory
-                from config.manager import get_config_manager
-
-                get_config_manager(command.config_path)
+                # Fallback: get configuration manager from DI container
+                from config.managers.configuration_manager import ConfigurationManager
+                
+                actual_config_manager = self.container.get(ConfigurationManager)
+                # Note: ConfigurationManager doesn't support reload with different path
+                # This is a limitation of the current implementation
 
             # Get updated provider information
             if hasattr(config_manager, "get_provider_config"):

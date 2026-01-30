@@ -233,11 +233,17 @@ class RepositoryMigrator:
         Returns:
             Path to backup directory
         """
-        from config.manager import get_config_manager
+        from config.managers.configuration_manager import ConfigurationManager
+        from domain.base.ports.scheduler_port import SchedulerPort
 
-        # Get work directory from config manager
-        config_manager = get_config_manager()
-        work_dir = config_manager.get_work_dir()
+        # Get work directory from scheduler strategy (via DI container)
+        try:
+            scheduler = self.container.get(SchedulerPort)
+            work_dir = scheduler.get_working_directory()
+        except Exception:
+            # Fallback to config manager if scheduler not available
+            config_manager = self.container.get(ConfigurationManager)
+            work_dir = config_manager.get_work_dir()
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         backup_dir = os.path.join(work_dir, "backups", f"repository_backup_{timestamp}")

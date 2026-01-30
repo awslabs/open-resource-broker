@@ -66,32 +66,19 @@ class AppConfig(BaseModel):
     def get_config_file_path(self) -> str:
         """Build full config file path using scheduler + provider type."""
         config_root = self.scheduler.get_config_root()
-        # Get provider type using selection logic
+        # Get provider type directly from config without DI container
         provider_type = self._get_selected_provider_type()
         # Generate provider-specific config file name
         config_file = f"{provider_type}prov_config.json"
         return os.path.join(config_root, config_file)
 
     def _get_selected_provider_type(self) -> str:
-        """Get provider type using selection logic."""
-        try:
-            # Use provider selection service for provider selection
-            from application.services.provider_selection_service import (
-                ProviderSelectionService,
-            )
-            from infrastructure.di.container import get_container
-
-            container = get_container()
-            selection_service = container.get(ProviderSelectionService)
-
-            selection_result = selection_service.select_active_provider()
-            return selection_result.provider_type
-        except Exception:
-            # Fallback to first active provider for backward compatibility
-            active_providers = self.provider.get_active_providers()
-            if active_providers:
-                return active_providers[0].type
-            return "aws"  # Ultimate fallback
+        """Get provider type directly from config without circular dependency."""
+        # Get first active provider directly from config
+        active_providers = self.provider.get_active_providers()
+        if active_providers:
+            return active_providers[0].type
+        return "aws"  # Ultimate fallback
 
     @field_validator("environment")
     @classmethod

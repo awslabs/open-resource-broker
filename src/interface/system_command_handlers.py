@@ -166,6 +166,26 @@ async def handle_provider_metrics(args) -> dict[str, Any]:
     return {"metrics": metrics, "message": "Provider metrics retrieved successfully"}
 
 
+@handle_interface_exceptions(context="system_status", interface_type="cli")
+async def handle_system_status(args) -> dict[str, Any]:
+    """Handle system status query."""
+    container = get_container()
+    query_bus = container.get(QueryBus)
+
+    from application.queries.system import GetSystemStatusQuery
+
+    query = GetSystemStatusQuery(
+        include_provider_health=True,
+        detailed=getattr(args, 'detailed', False)
+    )
+    status = await query_bus.execute(query)
+
+    return {
+        "system_status": status,
+        "message": "System status retrieved successfully"
+    }
+
+
 @handle_interface_exceptions(context="system_metrics", interface_type="cli")
 async def handle_system_metrics(args) -> dict[str, Any]:
     """Handle get system metrics operations."""

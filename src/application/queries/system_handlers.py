@@ -41,10 +41,12 @@ class GetConfigurationHandler(BaseQueryHandler[GetConfigurationQuery, Configurat
         Returns:
             Configuration value response
         """
-        # Access configuration through application layer
-        from config.manager import get_config_manager
+        # Access configuration through DI container
+        from infrastructure.di.container import get_container
+        from config.managers.configuration_manager import ConfigurationManager
 
-        config_manager = get_config_manager()
+        container = get_container()
+        config_manager = container.get(ConfigurationManager)
 
         if query.section:
             # Get value from specific section
@@ -83,10 +85,12 @@ class GetConfigurationSectionHandler(
         Returns:
             Configuration section response
         """
-        # Access configuration through application layer
-        from config.manager import get_config_manager
+        # Access configuration through DI container
+        from infrastructure.di.container import get_container
+        from config.managers.configuration_manager import ConfigurationManager
 
-        config_manager = get_config_manager()
+        container = get_container()
+        config_manager = container.get(ConfigurationManager)
         section_config = config_manager.get(query.section, {})
 
         return ConfigurationSectionResponse(

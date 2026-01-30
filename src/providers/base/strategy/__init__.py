@@ -168,9 +168,11 @@ def create_provider_context(logger=None, metrics=None) -> ProviderContext:
                 registration = registry.get_provider_instance_registration(instance_name)
                 if registration:
                     # Get the actual provider config from configuration manager
-                    from config.manager import get_config_manager
+                    from infrastructure.di.container import get_container
+                    from config.managers.configuration_manager import ConfigurationManager
 
-                    config_manager = get_config_manager()
+                    container = get_container()
+                    config_manager = container.get(ConfigurationManager)
                     provider_config = config_manager.get_provider_config()
 
                     # Find the matching provider instance config

@@ -132,7 +132,7 @@ class TestIntegratedBaseRegistry:
         assert config == "config_instance"
 
         # Test unit of work creation (should return None for no factory)
-        uow = registry.create_unit_of_work("json")
+        uow = registry.create_unit_of_work("json", {"test": "config"})
         assert uow is None
 
     def test_provider_registry_backward_compatibility(self):

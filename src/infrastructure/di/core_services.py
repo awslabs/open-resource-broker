@@ -1,5 +1,6 @@
 """Core service registrations for dependency injection."""
 
+from config.managers.configuration_manager import ConfigurationManager
 from domain.base.ports import (
     ConfigurationPort,
     EventPublisherPort,
@@ -15,6 +16,12 @@ from monitoring.metrics import MetricsCollector
 
 def register_core_services(container: DIContainer) -> None:
     """Register core application services."""
+
+    # Register ConfigurationManager as singleton (FIRST - others depend on it)
+    def create_configuration_manager(c):
+        return ConfigurationManager()  # Uses default config discovery
+    
+    container.register_singleton(ConfigurationManager, create_configuration_manager)
 
     # Register metrics collector with configuration from ConfigurationPort
     def create_metrics_collector(c):

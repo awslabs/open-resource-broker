@@ -159,9 +159,9 @@ def _register_lazy_service_factories(container: DIContainer) -> None:
 
         # Get scheduler type from config if available
         try:
-            from config.manager import get_config_manager
+            from config.managers.configuration_manager import ConfigurationManager
 
-            config_manager = get_config_manager()
+            config_manager = c.get(ConfigurationManager)
             scheduler_config = config_manager.get("scheduler", {"type": "default"})
             scheduler_type = (
                 scheduler_config.get("type", "default")

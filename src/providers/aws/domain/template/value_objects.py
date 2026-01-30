@@ -204,9 +204,11 @@ class ProviderApi(str, Enum):
         """Handle missing enum values by checking configuration."""
         # Get valid APIs from configuration
         try:
-            from config.manager import get_config_manager
+            from infrastructure.di.container import get_container
+            from config.managers.configuration_manager import ConfigurationManager
 
-            config_manager = get_config_manager()
+            container = get_container()
+            config_manager = container.get(ConfigurationManager)
             raw_config = config_manager.get_raw_config()
 
             # Navigate to AWS handlers in configuration
@@ -258,9 +260,11 @@ class AWSFleetType(str, Enum):
         """Handle missing enum values by checking configuration."""
         # Get valid fleet types from configuration
         try:
-            from config.manager import get_config_manager
+            from infrastructure.di.container import get_container
+            from config.managers.configuration_manager import ConfigurationManager
 
-            config_manager = get_config_manager()
+            container = get_container()
+            config_manager = container.get(ConfigurationManager)
             raw_config = config_manager.get_raw_config()
 
             # Check all handlers for supported fleet types

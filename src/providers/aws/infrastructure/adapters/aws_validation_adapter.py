@@ -57,9 +57,11 @@ class AWSValidationAdapter(BaseProviderValidationAdapter):
         """
         try:
             # Get supported APIs from configuration
-            from config.manager import get_config_manager
+            from infrastructure.di.container import get_container
+            from config.managers.configuration_manager import ConfigurationManager
 
-            config_manager = get_config_manager()
+            container = get_container()
+            config_manager = container.get(ConfigurationManager)
             raw_config = config_manager.get_raw_config()
 
             # Navigate to AWS handlers in configuration
@@ -92,9 +94,11 @@ class AWSValidationAdapter(BaseProviderValidationAdapter):
         """
         try:
             # Get supported APIs from configuration
-            from config.manager import get_config_manager
+            from infrastructure.di.container import get_container
+            from config.managers.configuration_manager import ConfigurationManager
 
-            config_manager = get_config_manager()
+            container = get_container()
+            config_manager = container.get(ConfigurationManager)
             raw_config = config_manager.get_raw_config()
 
             # Navigate to AWS handlers in configuration
@@ -164,9 +168,11 @@ class AWSValidationAdapter(BaseProviderValidationAdapter):
 
         try:
             # Get fleet types from configuration
-            from config.manager import get_config_manager
+            from infrastructure.di.container import get_container
+            from config.managers.configuration_manager import ConfigurationManager
 
-            config_manager = get_config_manager()
+            container = get_container()
+            config_manager = container.get(ConfigurationManager)
             raw_config = config_manager.get_raw_config()
 
             # Navigate to specific handler configuration

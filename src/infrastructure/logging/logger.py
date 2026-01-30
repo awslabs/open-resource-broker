@@ -205,17 +205,20 @@ def setup_logging(config: LoggingConfig) -> None:
         root_logger.addHandler(file_handler)
 
     # Configure console logging after file logging
-    # Use ConfigurationManager to get console_enabled value
-    from config.manager import get_config_manager
-
     try:
-        config_manager = get_config_manager()
+        from infrastructure.di.container import get_container
+        from config.managers.configuration_manager import ConfigurationManager
+        
+        container = get_container()
+        config_manager = container.get(ConfigurationManager)
         console_enabled = config_manager.get("logging.console_enabled", config.console_enabled)
         if isinstance(console_enabled, str):
             console_enabled = console_enabled.lower() in ("true", "1", "yes")
     except Exception as e:
-        # Fallback to config if ConfigurationManager fails
-        logger.debug(f"Could not get console_enabled from ConfigurationManager: {e!s}")
+        # Fallback to config if DI container or ConfigurationManager fails
+        # This can happen during early bootstrap before DI is fully initialized
+        # Use print instead of logger to avoid circular dependency during setup
+        print(f"DEBUG: Could not get console_enabled from DI container: {e!s}")
         console_enabled = config.console_enabled
 
     if console_enabled:

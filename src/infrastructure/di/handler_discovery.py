@@ -52,10 +52,10 @@ class HandlerDiscoveryService:
 
         # Get caching configuration from performance settings
         try:
-            from config.manager import get_config_manager
+            from config.managers.configuration_manager import ConfigurationManager
             from config.schemas.performance_schema import PerformanceConfig
 
-            config_manager = get_config_manager()
+            config_manager = container.get(ConfigurationManager)
             perf_config = config_manager.get_typed(PerformanceConfig)
 
             self.cache_enabled = perf_config.caching.handler_discovery.enabled
@@ -82,10 +82,7 @@ class HandlerDiscoveryService:
     def _resolve_cache_path_fallback(self) -> str:
         """Fallback cache path resolution."""
         try:
-            from infrastructure.di.container import get_container
-
-            container = get_container()
-            scheduler = container.get("scheduler_strategy")
+            scheduler = self.container.get("scheduler_strategy")
             workdir = scheduler.get_working_directory()
         except Exception:
             workdir = os.getcwd()

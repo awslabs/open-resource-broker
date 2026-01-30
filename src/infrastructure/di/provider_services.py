@@ -54,7 +54,7 @@ def register_provider_services(container: DIContainer) -> None:
 _providers_registered = False
 
 
-def _register_providers() -> None:
+def _register_providers(container: DIContainer) -> None:
     """Register providers based on configuration."""
     global _providers_registered
 
@@ -64,10 +64,10 @@ def _register_providers() -> None:
     logger = get_logger(__name__)
 
     try:
-        # Get configuration manager
-        from config.manager import get_config_manager
-
-        config_manager = get_config_manager()
+        # Get configuration manager from DI container
+        from config.managers.configuration_manager import ConfigurationManager
+        
+        config_manager = container.get(ConfigurationManager)
 
         # Get provider configuration
         provider_config = config_manager.get_provider_config()
@@ -419,7 +419,7 @@ def _create_eager_provider_context(
     logger.info("Creating provider context with eager loading (fallback mode)")
 
     # Register providers first (now that DI container is ready)
-    _register_providers()
+    _register_providers(container)
 
     # Try to get provider config
     try:
