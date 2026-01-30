@@ -85,15 +85,15 @@ async def _generate_templates_for_provider(provider: dict, args) -> dict:
     strategy_class = registry.get_strategy_class(scheduler_type)
 
     # Determine filename based on generation mode
-    if getattr(args, "generic", False):
-        # Generic mode: use provider_type pattern
-        filename = f"{provider_type}_templates.json"
+    if getattr(args, "provider_specific", False):
+        # Provider-specific mode: use provider name pattern
+        filename = strategy_class.get_templates_filename(provider_name, provider_type, config_dict)
     elif getattr(args, "provider_type", None):
         # Provider-type mode: use specified provider type
         filename = f"{args.provider_type}_templates.json"
     else:
-        # Provider-specific mode: use provider name pattern
-        filename = strategy_class.get_templates_filename(provider_name, provider_type, config_dict)
+        # Generic mode (DEFAULT): use provider_type pattern
+        filename = f"{provider_type}_templates.json"
 
     # Write templates file
     config_dir.mkdir(parents=True, exist_ok=True)
@@ -103,12 +103,12 @@ async def _generate_templates_for_provider(provider: dict, args) -> dict:
     scheduler_strategy = container.get(SchedulerPort)
     
     # Format templates based on generation mode
-    if getattr(args, "generic", False) or getattr(args, "provider_type", None):
-        # Generic mode: don't apply provider-specific defaults
-        formatted_examples = examples
-    else:
+    if getattr(args, "provider_specific", False):
         # Provider-specific mode: apply provider-specific defaults
         formatted_examples = scheduler_strategy.format_templates_for_generation(examples)
+    else:
+        # Generic mode (DEFAULT): don't apply provider-specific defaults
+        formatted_examples = examples
 
     templates_data = {"templates": formatted_examples}
     
