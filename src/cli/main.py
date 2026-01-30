@@ -316,7 +316,10 @@ def add_template_actions(subparsers):
         "--provider-api", help="Specific provider API (EC2Fleet, SpotFleet, ASG, RunInstances)"
     )
     templates_generate.add_argument(
-        "--generic", action="store_true", help="Generate generic templates (shared across providers)"
+        "--provider-specific", action="store_true", help="Generate provider-specific templates with hardcoded infrastructure"
+    )
+    templates_generate.add_argument(
+        "--generic", action="store_true", help="Generate generic templates (same as default behavior)"
     )
     templates_generate.add_argument(
         "--provider-type", help="Generate templates for specific provider type (e.g., aws)"
