@@ -5,7 +5,7 @@ Provides focused orchestration logic for template operations.
 
 Architecture Principles:
 - Delegates file operations to scheduler strategies
-- Uses dedicated services for caching and persistence
+- Uses dedicated services for caching and storage
 - Maintains clean separation of concerns
 - Preserves existing public interface
 """
@@ -23,7 +23,7 @@ from domain.base.ports.logging_port import LoggingPort
 from domain.base.ports.scheduler_port import SchedulerPort
 
 from .dtos import TemplateDTO
-from .services.template_persistence_service import TemplatePersistenceService
+from .services.template_storage_service import TemplateStorageService
 from .template_cache_service import TemplateCacheService, create_template_cache_service
 
 if TYPE_CHECKING:
@@ -69,7 +69,7 @@ class TemplateConfigurationManager:
 
     Responsibilities:
     - Orchestrate template loading via scheduler strategy
-    - Coordinate caching and persistence services
+    - Coordinate caching and storage services
     - Provide integrated template access interface
     - Handle template validation and events
     """
@@ -80,7 +80,7 @@ class TemplateConfigurationManager:
         scheduler_strategy: SchedulerPort,
         logger: LoggingPort,
         cache_service: Optional[TemplateCacheService] = None,
-        persistence_service: Optional[TemplatePersistenceService] = None,
+        storage_service: Optional[TemplateStorageService] = None,
         event_publisher: Optional[EventPublisherPort] = None,
         provider_capability_service: Optional["ProviderCapabilityService"] = None,
         template_defaults_service: Optional["TemplateDefaultsService"] = None,
@@ -93,7 +93,7 @@ class TemplateConfigurationManager:
             scheduler_strategy: Strategy for file operations and field mapping
             logger: Logger for operations and debugging
             cache_service: Optional cache service (creates default if None)
-            persistence_service: Optional persistence service (creates default if None)
+            storage_service: Optional storage service (creates default if None)
             event_publisher: Optional event publisher for domain events
             provider_capability_service: Optional service for provider validation
             template_defaults_service: Optional service for template defaults
@@ -107,7 +107,7 @@ class TemplateConfigurationManager:
 
         # Initialize services
         self.cache_service = cache_service or create_template_cache_service("ttl", logger)
-        self.persistence_service = persistence_service or TemplatePersistenceService(
+        self.storage_service = storage_service or TemplateStorageService(
             scheduler_strategy, logger, event_publisher
         )
 
@@ -464,13 +464,13 @@ class TemplateConfigurationManager:
 
     async def save_template(self, template: TemplateDTO) -> None:
         """
-        Save template using persistence service.
+        Save template using storage service.
 
         Args:
             template: Template to save
         """
         try:
-            await self.persistence_service.save_template(template)
+            await self.storage_service.save_template(template)
 
             # Invalidate cache to ensure fresh data on next load
             self.cache_service.invalidate()
@@ -483,13 +483,13 @@ class TemplateConfigurationManager:
 
     async def delete_template(self, template_id: str) -> None:
         """
-        Delete template using persistence service.
+        Delete template using storage service.
 
         Args:
             template_id: Template identifier to delete
         """
         try:
-            await self.persistence_service.delete_template(template_id)
+            await self.storage_service.delete_template(template_id)
 
             # Invalidate cache to ensure fresh data on next load
             self.cache_service.invalidate()

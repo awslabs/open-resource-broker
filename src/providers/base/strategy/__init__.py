@@ -156,7 +156,7 @@ def create_provider_context(logger=None, metrics=None) -> ProviderContext:
 
     # Load strategies from the provider registry
     try:
-        from infrastructure.registry.provider_registry import get_provider_registry
+        from providers.registry import get_provider_registry
 
         registry = get_provider_registry()
 

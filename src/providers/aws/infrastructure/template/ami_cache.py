@@ -1,4 +1,4 @@
-"""Runtime AMI cache for script execution with optional persistence."""
+"""Runtime AMI cache for script execution with optional storage."""
 
 import json
 import logging
@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 class RuntimeAMICache:
     """
-    AMI resolution cache with optional persistence across process boundaries.
+    AMI resolution cache with optional storage across process boundaries.
 
     Features:
     - In-memory caching for fast access within process
@@ -29,7 +29,7 @@ class RuntimeAMICache:
 
     def __init__(self, persistent_file: Optional[str] = None, ttl_minutes: int = 60) -> None:
         """
-        Initialize AMI cache with optional persistence.
+        Initialize AMI cache with optional storage.
 
         Args:
             persistent_file: Path to persistent cache file (None = memory only)
@@ -188,7 +188,7 @@ class RuntimeAMICache:
                 pass
 
         except Exception as e:
-            # Silent failure - cache will work without persistence
+            # Silent failure - cache will work without storage
             logger.debug("Failed to load persistent cache: %s", e)
 
     def _save_to_persistent_cache(self) -> None:
@@ -222,7 +222,7 @@ class RuntimeAMICache:
             os.rename(temp_file, self._persistent_file)
 
         except Exception as e:
-            # Silent failure - cache will work without persistence
+            # Silent failure - cache will work without storage
             logger.debug("Failed to save persistent cache: %s", e)
 
     def _remove_expired_entry(self, ssm_parameter: str) -> None:

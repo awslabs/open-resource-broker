@@ -12,7 +12,7 @@ from domain.base.ports.configuration_port import ConfigurationPort
 
 from domain.base.ports import LoggingPort
 from domain.template.template_aggregate import Template
-from infrastructure.registry.provider_registry import ProviderRegistry
+from providers.registry import ProviderRegistry
 from providers.base.strategy.provider_strategy import ProviderCapabilities, ProviderOperationType
 
 

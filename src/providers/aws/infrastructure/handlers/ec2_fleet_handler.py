@@ -375,7 +375,7 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
         return instance_ids
 
     def _extract_fleet_errors(self, response: dict[str, Any]) -> list[dict[str, Any]]:
-        """Normalize EC2 Fleet error payloads for logging and persistence."""
+        """Normalize EC2 Fleet error payloads for logging and storage."""
         errors = response.get("Errors") or []
         if isinstance(errors, dict):
             errors = [errors]

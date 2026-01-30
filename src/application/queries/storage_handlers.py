@@ -33,7 +33,7 @@ class ListStorageStrategiesHandler(
         # Access infrastructure through DI container
         from infrastructure.di.container import get_container
         from config.managers.configuration_manager import ConfigurationManager
-        from infrastructure.registry.storage_registry import get_storage_registry
+        from infrastructure.storage.registry import get_storage_registry
 
         container = get_container()
         config_manager = container.get(ConfigurationManager)

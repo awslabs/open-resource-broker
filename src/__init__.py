@@ -16,7 +16,7 @@ Key Components:
     - api: API layer for external integrations
     - application: Application services and use cases
     - domain: Core business logic and domain models
-    - infrastructure: Technical infrastructure and persistence
+    - infrastructure: Technical infrastructure and storage
     - providers: Cloud provider implementations
 
 Usage:
