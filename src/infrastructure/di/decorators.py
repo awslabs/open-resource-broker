@@ -63,6 +63,11 @@ def injectable(cls: type[T]) -> type[T]:
         if args:
             return original_init(self, *args, **kwargs)
 
+        # Check if we're being called from within the DI container
+        # If so, skip our own resolution to avoid circular dependency
+        if _is_called_from_di_container():
+            return original_init(self, **kwargs)
+
         resolved_kwargs = {}
 
         # Process each parameter
@@ -78,7 +83,7 @@ def injectable(cls: type[T]) -> type[T]:
             # Try to resolve from DI container
             if param_name in hints:
                 annotation = hints[param_name]
-                resolved_value = _resolve_dependency(annotation, param, cls.__name__, param_name)
+                resolved_value = _resolve_dependency(annotation, param, cls.__name__, param_name, None)
                 if resolved_value is not None:
                     resolved_kwargs[param_name] = resolved_value
                 elif param.default != inspect.Parameter.empty:
@@ -111,6 +116,34 @@ def injectable(cls: type[T]) -> type[T]:
     return cls
 
 
+def _is_called_from_di_container() -> bool:
+    """Check if we're being called from within the DI container to avoid circular dependency."""
+    import traceback
+    
+    # Get the current call stack
+    stack = traceback.extract_stack()
+    
+    # Look for DI container methods in the call stack
+    di_indicators = [
+        'dependency_resolver.py',
+        '_create_direct_instance',
+        '_resolve_constructor_parameters',
+        'resolve',
+        'get_container'
+    ]
+    
+    for frame in stack:
+        filename = frame.filename
+        function_name = frame.name
+        
+        # Check if any DI container indicators are in the call stack
+        for indicator in di_indicators:
+            if indicator in filename or indicator in function_name:
+                return True
+    
+    return False
+
+
 def _is_primitive_type(annotation: type) -> bool:
     """Check if a type annotation represents a primitive type that shouldn't be resolved from DI."""
     primitive_types = {str, int, float, bool, bytes, type(None)}
@@ -132,7 +165,7 @@ def _is_primitive_type(annotation: type) -> bool:
 
 
 def _resolve_dependency(
-    annotation: type, param: inspect.Parameter, class_name: str, param_name: str
+    annotation: type, param: inspect.Parameter, class_name: str, param_name: str, container=None
 ) -> Any:
     """
     Resolve a single dependency from the DI container.
@@ -142,15 +175,16 @@ def _resolve_dependency(
         param: The parameter object
         class_name: Name of the class being constructed
         param_name: Name of the parameter
+        container: Optional container instance to avoid circular dependency
 
     Returns:
         Resolved dependency or None if resolution failed
     """
     try:
-        # Import here to avoid circular imports
-        from infrastructure.di.container import get_container
-
-        container = get_container()
+        if container is None:
+            # Import here to avoid circular imports
+            from infrastructure.di.container import get_container
+            container = get_container()
 
         # Handle Optional[T] types
         if _is_optional_type(annotation):

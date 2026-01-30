@@ -830,6 +830,7 @@ async def execute_command(args, app, resource_parsers) -> dict[str, Any]:
             handle_select_provider_strategy,
             handle_system_health,
             handle_system_metrics,
+            handle_system_status,
             handle_validate_provider_config,
         )
         from interface.template_command_handlers import (
@@ -912,6 +913,7 @@ async def execute_command(args, app, resource_parsers) -> dict[str, Any]:
             ("scheduler", "show"): handle_show_scheduler_config,
             ("scheduler", "validate"): handle_validate_scheduler_config,
             # System commands
+            ("system", "status"): handle_system_status,
             ("system", "serve"): handle_serve_api,
             ("system", "health"): handle_system_health,
             ("system", "metrics"): handle_system_metrics,

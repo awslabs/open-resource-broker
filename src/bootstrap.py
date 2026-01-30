@@ -55,9 +55,11 @@ class Application:
     def _ensure_config_manager(self) -> None:
         """Ensure config manager is created (lazy initialization)."""
         if self._config_manager is None:
-            from config.manager import get_config_manager
-
-            self._config_manager = get_config_manager(self.config_path)
+            if not self._container:
+                raise RuntimeError("Application not initialized - call initialize() first")
+            
+            from config.managers.configuration_manager import ConfigurationManager
+            self._config_manager = self._container.get(ConfigurationManager)
 
             # Extract provider type from config
             provider_config = self._config_manager.get("provider", {"type": "mock"})
@@ -74,7 +76,15 @@ class Application:
     async def initialize(self, dry_run: bool = False) -> bool:
         """Initialize the application with DI container."""
         try:
-            # Ensure config manager is available
+            # Ensure container is available first
+            self._ensure_container()
+
+            # Register all services after container creation but before service resolution
+            from infrastructure.di.services import register_all_services
+
+            register_all_services(self._container)
+
+            # Now we can ensure config manager is available
             self._ensure_config_manager()
 
             self.logger.info("Initializing application with provider: %s", self.provider_type)
@@ -93,14 +103,6 @@ class Application:
                 self.logger.info("DRY-RUN mode activated during application initialization")
                 self._dry_run_context = dry_run_context(True)
                 self._dry_run_context.__enter__()
-
-            # Ensure container is available
-            self._ensure_container()
-
-            # Register all services after container creation but before service resolution
-            from infrastructure.di.services import register_all_services
-
-            register_all_services(self._container)
 
             # Initialize provider context directly
             from providers.base.strategy import ProviderContext

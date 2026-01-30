@@ -145,17 +145,21 @@ class StorageRegistry(BaseRegistry):
             self.logger.error(error_msg)
             raise ConfigurationError(error_msg)
 
-    def create_unit_of_work(self, storage_type: str) -> Optional[Any]:
+    def create_unit_of_work(self, storage_type: str, config: Any) -> Optional[Any]:
         """
         Create a unit of work for the given storage type.
 
         Args:
             storage_type: Type of storage
+            config: Configuration for the unit of work
 
         Returns:
             Unit of work instance or None if not available
         """
-        return self.create_additional_component(storage_type, "unit_of_work_factory")
+        registration = self._get_type_registration(storage_type)
+        if registration.unit_of_work_factory:
+            return registration.unit_of_work_factory(config)
+        return None
 
     def get_registered_storage_types(self) -> list[str]:
         """Get list of registered storage types - backward compatibility method."""

@@ -3,7 +3,6 @@
 from typing import Optional
 
 from config import ResourceConfig
-from config.manager import get_config_manager
 
 
 def get_resource_prefix(resource_type: str, config: Optional[ResourceConfig] = None) -> str:
@@ -19,7 +18,11 @@ def get_resource_prefix(resource_type: str, config: Optional[ResourceConfig] = N
     """
     # Get config if not provided
     if config is None:
-        config_manager = get_config_manager()
+        from infrastructure.di.container import get_container
+        from config.managers.configuration_manager import ConfigurationManager
+        
+        container = get_container()
+        config_manager = container.get(ConfigurationManager)
         config = config_manager.app_config.resource
 
     # Get the specific prefix if it exists

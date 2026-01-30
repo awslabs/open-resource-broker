@@ -205,7 +205,7 @@ class BaseRegistry(ABC):
                 return True
             return False
 
-    def create_additional_component(self, type_name: str, factory_name: str) -> Optional[Any]:
+    def create_additional_component(self, type_name: str, factory_name: str, config: Any = None) -> Optional[Any]:
         """Create additional component (resolver, validator, etc.) by type."""
         registration = self._get_type_registration(type_name)
         factory = registration.get_factory(factory_name)
@@ -213,7 +213,10 @@ class BaseRegistry(ABC):
             return None
 
         try:
-            component = factory()
+            if config is not None:
+                component = factory(config)
+            else:
+                component = factory()
             self.logger.debug("Created %s for type: %s", factory_name, type_name)
             return component
         except Exception as e:

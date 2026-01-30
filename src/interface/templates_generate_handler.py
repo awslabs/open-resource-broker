@@ -138,8 +138,8 @@ async def _generate_templates_for_provider(provider: dict, args) -> dict:
         # Provider-specific mode: apply provider-specific defaults
         formatted_examples = scheduler_strategy.format_templates_for_generation(examples)
     else:
-        # Generic mode (DEFAULT): don't apply provider-specific defaults
-        formatted_examples = examples
+        # Generic mode: apply scheduler formatting for consistency
+        formatted_examples = scheduler_strategy.format_templates_for_generation(examples)
 
     templates_data = {"templates": formatted_examples}
     

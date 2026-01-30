@@ -30,10 +30,13 @@ class ListStorageStrategiesHandler(
         Returns:
             Storage strategies list response
         """
-        # Access infrastructure through application layer
-        from config.manager import get_config_manager
+        # Access infrastructure through DI container
+        from infrastructure.di.container import get_container
+        from config.managers.configuration_manager import ConfigurationManager
         from infrastructure.registry.storage_registry import get_storage_registry
 
+        container = get_container()
+        config_manager = container.get(ConfigurationManager)
         registry = get_storage_registry()
         storage_types = registry.get_registered_types()
 
@@ -41,7 +44,6 @@ class ListStorageStrategiesHandler(
         current_strategy = "unknown"
 
         if query.include_current:
-            config_manager = get_config_manager()
             current_strategy = config_manager.get("storage.strategy", "unknown")
 
         for storage_type in storage_types:

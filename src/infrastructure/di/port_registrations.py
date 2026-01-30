@@ -1,7 +1,6 @@
 """Port adapter registrations for dependency injection."""
 
-# Import configuration manager
-from config.manager import get_config_manager
+from config.managers.configuration_manager import ConfigurationManager
 from domain.base.ports import (
     ConfigurationPort,
     ContainerPort,
@@ -23,12 +22,12 @@ def register_port_adapters(container):
     """Register all port adapters in the DI container."""
 
     # Register configuration port with adapter
-    def create_configuration_adapter(c):
-        """Create configuration adapter bridging domain port to infrastructure manager."""
-        from config.manager import get_config_manager
+    def create_configuration_adapter(container):
+        """Create configuration adapter using DI-managed ConfigurationManager."""
         from infrastructure.adapters.configuration_adapter import ConfigurationAdapter
-
-        return ConfigurationAdapter(get_config_manager())
+        
+        config_manager = container.get(ConfigurationManager)  # Use DI instance
+        return ConfigurationAdapter(config_manager)
 
     container.register_singleton(ConfigurationPort, create_configuration_adapter)
 
@@ -39,7 +38,7 @@ def register_port_adapters(container):
     from infrastructure.adapters.logging_adapter import LoggingAdapter
     from infrastructure.utilities.factories.repository_factory import UnitOfWorkFactory
 
-    config_manager = get_config_manager()
+    config_manager = container.get(ConfigurationManager)
     container.register_instance(
         BaseUnitOfWorkFactory,
         UnitOfWorkFactory(config_manager, LoggingAdapter("unit_of_work")),

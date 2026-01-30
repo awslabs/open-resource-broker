@@ -149,7 +149,7 @@ def register_json_storage() -> None:
     registry pattern.
 
     CLEAN ARCHITECTURE: Only registers storage strategy, no repository knowledge.
-    REGISTRY PATTERN: Creates closure factories that capture configuration at registration time.
+    REGISTRY PATTERN: Creates factories that accept configuration at creation time.
     """
     registry = get_storage_registry()
     logger = get_logger(__name__)
@@ -160,24 +160,19 @@ def register_json_storage() -> None:
         return
 
     try:
-        # Get configuration manager at registration time to capture in closure
-        from config.manager import get_config_manager
-
-        config_manager = get_config_manager()
-
-        # Create closure factory that captures configuration
-        def unit_of_work_factory() -> Any:
-            """Parameter-less factory that creates JSONUnitOfWork with captured config."""
-            return create_json_unit_of_work(config_manager)
+        # Factory that accepts config parameter (no closure capture)
+        def unit_of_work_factory(config: Any) -> Any:
+            """Factory that creates JSONUnitOfWork with provided config."""
+            return create_json_unit_of_work(config)
 
         registry.register_storage(
             storage_type="json",
             strategy_factory=create_json_strategy,
             config_factory=create_json_config,
-            unit_of_work_factory=unit_of_work_factory,  # Closure with captured config
+            unit_of_work_factory=unit_of_work_factory,  # Accepts config parameter
         )
 
-        logger.info("Successfully registered JSON storage type with closure factory")
+        logger.info("Successfully registered JSON storage type")
 
     except ValueError as e:
         # Handle "already registered" errors gracefully

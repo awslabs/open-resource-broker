@@ -25,20 +25,13 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         config_manager: ConfigurationPort,
         logger: LoggingPort,
         template_defaults_service=None,
+        provider_selection_service=None,
     ) -> None:
         """Initialize the instance."""
         self.config_manager = config_manager
         self._logger = logger
         self.template_defaults_service = template_defaults_service
-
-        # Initialize provider selection service for provider selection
-        from application.services.provider_selection_service import (
-            ProviderSelectionService,
-        )
-        from infrastructure.di.container import get_container
-
-        container = get_container()
-        self._provider_selection_service = container.get(ProviderSelectionService)
+        self._provider_selection_service = provider_selection_service
 
         # Initialize field mapper
         provider_type = self._get_active_provider_type()
@@ -455,9 +448,7 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         if not active_provider:
             # Get from provider selection service instead of hardcoded default
             try:
-                from infrastructure.di.container import get_container
-                provider_selection = get_container().get("ProviderSelectionService")
-                selection_result = provider_selection.select_active_provider()
+                selection_result = self._provider_selection_service.select_active_provider()
                 active_provider = selection_result.provider_name
             except Exception:
                 active_provider = "aws_default"

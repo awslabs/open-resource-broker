@@ -8,7 +8,8 @@ from application.base.infrastructure_handlers import BaseAPIHandler, RequestCont
 from application.dto.responses import ReturnRequestResponse
 from application.request.queries import ListRequestsQuery
 from config import RequestConfig
-from config.manager import get_config_manager
+from config.managers.configuration_manager import ConfigurationManager
+from infrastructure.di.container import get_container
 from domain.base.dependency_injection import injectable
 from domain.base.ports import ErrorHandlingPort, LoggingPort
 from domain.base.ports.scheduler_port import SchedulerPort
@@ -351,7 +352,9 @@ class GetReturnRequestsRESTHandler(BaseAPIHandler[dict[str, Any], ReturnRequestR
             return 0
 
         # Get default grace period from configuration
-        config = get_config_manager().get_typed(RequestConfig)
+        container = get_container()
+        config_manager = container.get(ConfigurationManager)
+        config = config_manager.get_typed(RequestConfig)
         default_grace_period = config.default_grace_period
 
         # Check if machine is spot instance
