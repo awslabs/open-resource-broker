@@ -33,9 +33,13 @@ def create_aws_strategy(provider_config: Any) -> Any:
         if hasattr(provider_config, "config"):
             # ProviderInstanceConfig object
             config_data = provider_config.config
+            provider_instance_config = provider_config
+            provider_name = provider_config.name
         else:
             # Raw config dict
             config_data = provider_config
+            provider_instance_config = None
+            provider_name = None
 
         # Create AWS configuration
         aws_config = AWSProviderConfig(**config_data)
@@ -45,11 +49,16 @@ def create_aws_strategy(provider_config: Any) -> Any:
         logger = LoggingAdapter()
 
         # Create AWS provider strategy
-        strategy = AWSProviderStrategy(aws_config, logger)
+        strategy = AWSProviderStrategy(
+            config=aws_config, 
+            logger=logger,
+            provider_name=provider_name,
+            provider_instance_config=provider_instance_config
+        )
 
         # Set provider name for identification
-        if hasattr(strategy, "name"):
-            strategy.name = provider_config.name
+        if hasattr(strategy, "name") and provider_name:
+            strategy.name = provider_name
 
         return strategy
 
@@ -235,29 +244,13 @@ def _register_aws_template_adapter(logger: "LoggingPort" = None) -> None:
 
 
 def register_aws_provider_with_di(provider_instance, container) -> bool:
-    """Register AWS provider instance using DI container context."""
+    """Register AWS provider instance with Provider Registry only."""
     from domain.base.ports import LoggingPort
 
     logger = container.get(LoggingPort)
 
     try:
         logger.debug("Registering AWS provider instance: %s", provider_instance.name)
-
-        # Create AWS provider configuration
-        try:
-            aws_config = create_aws_config(provider_instance.config)
-            logger.debug("AWS config created successfully")
-        except Exception as e:
-            logger.error("Failed to create AWS config: %s", e)
-            raise
-
-        # Register AWS components with DI container
-        try:
-            _register_aws_components_with_di(container, aws_config, provider_instance.name)
-            logger.debug("AWS components registered with DI")
-        except Exception as e:
-            logger.error("Failed to register AWS components with DI: %s", e)
-            raise
 
         # Register provider strategy with registry
         from providers.registry import get_provider_registry
@@ -267,40 +260,25 @@ def register_aws_provider_with_di(provider_instance, container) -> bool:
         # FIRST: Register AWS as a provider type if not already registered
         if not registry.is_provider_registered("aws"):
             logger.debug("Registering AWS provider type")
-            try:
-                registry.register_provider(
-                    provider_type="aws",
-                    strategy_factory=create_aws_strategy,
-                    config_factory=create_aws_config,
-                    resolver_factory=create_aws_resolver,
-                    validator_factory=create_aws_validator,
-                )
-                logger.debug("AWS provider type registered successfully")
-            except Exception as e:
-                logger.error("Failed to register AWS provider type: %s", e)
-                raise
-
-        # Create provider strategy factory using DI container
-        def aws_strategy_factory(config=None):
-            """Factory function to create AWS strategy with DI container."""
-            try:
-                return _create_aws_strategy_with_di(container, aws_config, provider_instance.name)
-            except Exception as e:
-                logger.error("Failed to create AWS strategy with DI: %s", e)
-                raise
+            registry.register_provider(
+                provider_type="aws",
+                strategy_factory=create_aws_strategy,
+                config_factory=create_aws_config,
+                resolver_factory=create_aws_resolver,
+                validator_factory=create_aws_validator,
+            )
+            logger.debug("AWS provider type registered successfully")
 
         # Register the specific provider instance
-        try:
-            registry.register_provider_instance(
-                provider_type="aws",
-                instance_name=provider_instance.name,
-                strategy_factory=aws_strategy_factory,
-                config_factory=lambda: aws_config,
-            )
-            logger.debug("AWS provider instance registered successfully")
-        except Exception as e:
-            logger.error("Failed to register AWS provider instance: %s", e)
-            raise
+        registry.register_provider_instance(
+            provider_type="aws",
+            instance_name=provider_instance.name,
+            strategy_factory=create_aws_strategy,
+            config_factory=create_aws_config,
+            resolver_factory=create_aws_resolver,
+            validator_factory=create_aws_validator,
+        )
+        logger.debug("AWS provider instance registered successfully")
 
         logger.debug("Successfully registered AWS provider instance: %s", provider_instance.name)
         return True
@@ -311,48 +289,10 @@ def register_aws_provider_with_di(provider_instance, container) -> bool:
             provider_instance.name,
             str(e),
         )
-        import traceback
-        logger.error("Full traceback: %s", traceback.format_exc())
         return False
 
 
-def _register_aws_components_with_di(container, aws_config, instance_name: str) -> None:
-    """Register AWS components with DI container for specific instance."""
-    # For now, we'll skip instance-specific DI registration
-    # The AWS strategy will create its own client when needed
-    pass
 
-
-def _create_aws_strategy_with_di(container, aws_config, instance_name: str):
-    """Create AWS strategy using DI container."""
-    from domain.base.ports import LoggingPort
-
-    logger = container.get(LoggingPort)
-
-    # Create AWS client directly with the config
-    from providers.aws.infrastructure.aws_client import AWSClient
-    
-    # Create a simple config port for the AWS client
-    class SimpleConfigPort:
-        def __init__(self, aws_config):
-            self._aws_config = aws_config
-        
-        def get_typed(self, config_type):
-            from providers.aws.configuration.config import AWSProviderConfig
-            if config_type == AWSProviderConfig:
-                return self._aws_config
-            return None
-        
-        def get(self, key, default=None):
-            return getattr(self._aws_config, key, default)
-    
-    config_port = SimpleConfigPort(aws_config)
-    aws_client = AWSClient(config=config_port, logger=logger)
-
-    # Create and return AWS strategy
-    from providers.aws.strategy.aws_provider_strategy import AWSProviderStrategy
-
-    return AWSProviderStrategy(aws_client=aws_client, config=aws_config, logger=logger)
 
 
 def register_aws_extensions(logger: Optional["LoggingPort"] = None) -> None:

@@ -18,10 +18,6 @@ from providers.aws.configuration.config import AWSProviderConfig
 from providers.aws.domain.template.value_objects import ProviderApi
 from providers.aws.infrastructure.adapters.machine_adapter import AWSMachineAdapter
 from providers.aws.infrastructure.aws_client import AWSClient
-from providers.aws.infrastructure.handlers.asg_handler import ASGHandler
-from providers.aws.infrastructure.handlers.ec2_fleet_handler import EC2FleetHandler
-from providers.aws.infrastructure.handlers.run_instances_handler import RunInstancesHandler
-from providers.aws.infrastructure.handlers.spot_fleet_handler import SpotFleetHandler
 from providers.aws.infrastructure.launch_template.manager import AWSLaunchTemplateManager
 from providers.aws.managers.aws_resource_manager import AWSResourceManager
 
@@ -67,6 +63,8 @@ class AWSProviderStrategy(ProviderStrategy):
         aws_provisioning_port: Optional[Any] = None,
         aws_provisioning_port_resolver: Optional[Callable[[], Any]] = None,
         aws_client_resolver: Optional[Callable[[], AWSClient]] = None,
+        provider_name: Optional[str] = None,
+        provider_instance_config: Optional[Any] = None,
     ) -> None:
         """
         Initialize AWS provider strategy.
@@ -76,6 +74,9 @@ class AWSProviderStrategy(ProviderStrategy):
             logger: Logger for logging messages
             aws_provisioning_port: Optional AWS provisioning adapter for resource management
             aws_provisioning_port_resolver: Optional resolver function for lazy loading
+            aws_client_resolver: Optional resolver function for AWS client
+            provider_name: Optional provider instance name
+            provider_instance_config: Optional provider instance config for handler overrides
 
         Raises:
             ValueError: If configuration is invalid
@@ -86,6 +87,7 @@ class AWSProviderStrategy(ProviderStrategy):
         super().__init__(config)
         self._logger = logger
         self._aws_config = config
+        self._provider_instance_config = provider_instance_config
         self._aws_client: Optional[AWSClient] = None
         self._aws_client_resolver = aws_client_resolver
         self._resource_manager: Optional[AWSResourceManager] = None
@@ -94,6 +96,7 @@ class AWSProviderStrategy(ProviderStrategy):
         self._aws_provisioning_port = aws_provisioning_port
         self._aws_provisioning_port_resolver = aws_provisioning_port_resolver
         self._handler_factory: Optional["AWSHandlerFactory"] = None
+        self._provider_name = provider_name
 
     def _resolve_provisioning_port(self) -> Optional[AWSProvisioningAdapter]:
         """Lazily resolve the AWS provisioning adapter when first needed."""
@@ -124,7 +127,7 @@ class AWSProviderStrategy(ProviderStrategy):
     @property
     def provider_name(self) -> Optional[str]:
         """Get the provider name for this strategy."""
-        return getattr(self, 'name', None)
+        return getattr(self, '_provider_name', None)
 
     @property
     def aws_client(self) -> Optional[AWSClient]:
@@ -132,36 +135,13 @@ class AWSProviderStrategy(ProviderStrategy):
         if self._aws_client is None:
             self._logger.debug("Creating AWS client for provider: %s", self.provider_name or 'unknown')
 
-            # Create provider-specific client if we have a provider name
-            if self.provider_name and self._aws_client_resolver:
-                try:
-                    # Use existing resolver but pass provider name to created client
-                    base_client = self._aws_client_resolver()
-                    if base_client and hasattr(base_client, '_provider_name'):
-                        # If resolver created client without provider name, create new one with provider name
-                        if not base_client._provider_name:
-                            self._aws_client = AWSClient(
-                                config=base_client._config_manager,
-                                logger=base_client._logger,
-                                provider_name=self.provider_name,
-                                metrics=getattr(base_client, '_metrics', None)
-                            )
-                            self._logger.info("Created provider-specific AWS client for: %s", self.provider_name)
-                        else:
-                            self._aws_client = base_client
-                    else:
-                        self._aws_client = base_client
-                except Exception as exc:
-                    self._logger.warning("Failed to create provider-specific client for %s: %s", self.provider_name, exc)
-                    self._aws_client = None
-            
-            # Fallback to resolver (existing behavior)
-            if self._aws_client is None and self._aws_client_resolver:
+            # Use resolver if available
+            if self._aws_client_resolver:
                 try:
                     self._aws_client = self._aws_client_resolver()
-                    self._logger.debug("Using fallback AWS client resolver")
-                except Exception as exc:  # nosec B110 - diagnostic only
-                    self._logger.warning("Failed to resolve AWSClient lazily: %s", exc)
+                    self._logger.debug("AWS client created via resolver")
+                except Exception as exc:
+                    self._logger.warning("Failed to resolve AWSClient: %s", exc)
                     self._aws_client = None
             
             if self._aws_client is None:
@@ -217,49 +197,26 @@ class AWSProviderStrategy(ProviderStrategy):
 
     @property
     def handlers(self) -> dict[str, Any]:
-        """Get the AWS handlers with lazy initialization."""
-        if not self._handlers and self.aws_client:
-            self._logger.debug("Creating AWS handlers on first access")
+        """Get available handlers from effective config."""
+        effective_configs = self._get_effective_handler_configs()
+        self._logger.debug("Effective handler configs: %s", list(effective_configs.keys()))
+        return effective_configs
 
-            # Initialize AWS operations utility
-            from providers.aws.utilities.aws_operations import AWSOperations
-
-            aws_ops = AWSOperations(self.aws_client, self._logger)
-
-            machine_adapter = AWSMachineAdapter(self.aws_client, self._logger)
-
-            # Initialize handlers with launch template manager
-            self._handlers = {
-                "SpotFleet": SpotFleetHandler(
-                    aws_client=self.aws_client,
-                    logger=self._logger,
-                    aws_ops=aws_ops,
-                    launch_template_manager=self.launch_template_manager,
-                    machine_adapter=machine_adapter,
-                ),
-                "EC2Fleet": EC2FleetHandler(
-                    aws_client=self.aws_client,
-                    logger=self._logger,
-                    aws_ops=aws_ops,
-                    launch_template_manager=self.launch_template_manager,
-                    machine_adapter=machine_adapter,
-                ),
-                "RunInstances": RunInstancesHandler(
-                    aws_client=self.aws_client,
-                    logger=self._logger,
-                    aws_ops=aws_ops,
-                    launch_template_manager=self.launch_template_manager,
-                    machine_adapter=machine_adapter,
-                ),
-                "ASG": ASGHandler(
-                    aws_client=self.aws_client,
-                    logger=self._logger,
-                    aws_ops=aws_ops,
-                    launch_template_manager=self.launch_template_manager,
-                    machine_adapter=machine_adapter,
-                ),
-            }
-        return self._handlers
+    def _get_effective_handler_configs(self) -> dict[str, Any]:
+        """Get effective handlers from config system."""
+        # Use provider instance config if available
+        if self._provider_instance_config and hasattr(self._provider_instance_config, 'get_effective_handlers'):
+            try:
+                # Get provider defaults from configuration
+                provider_defaults = None
+                # TODO: Get provider defaults from configuration manager
+                return self._provider_instance_config.get_effective_handlers(provider_defaults)
+            except Exception as e:
+                self._logger.warning("Failed to get effective handlers from config: %s", e)
+        
+        # Fallback: all available handlers from factory
+        from providers.aws.domain.template.value_objects import ProviderApi
+        return {api.value: {} for api in ProviderApi}
 
     def initialize(self) -> bool:
         """
@@ -1012,6 +969,22 @@ class AWSProviderStrategy(ProviderStrategy):
         Returns:
             Comprehensive capabilities information for AWS provider
         """
+        # Derive supported APIs from actual handlers
+        try:
+            handlers_dict = self.handlers
+            self._logger.debug("Handlers dict type: %s", type(handlers_dict))
+            self._logger.debug("Handlers dict: %s", handlers_dict)
+            
+            if handlers_dict and isinstance(handlers_dict, dict):
+                supported_apis = list(handlers_dict.keys())
+            else:
+                self._logger.warning("Handlers is not a dict: %s", type(handlers_dict))
+                supported_apis = []
+                
+        except Exception as e:
+            self._logger.error("Error getting handlers for capabilities: %s", e)
+            supported_apis = []
+        
         return ProviderCapabilities(
             provider_type="aws",
             supported_operations=[
@@ -1045,6 +1018,7 @@ class AWSProviderStrategy(ProviderStrategy):
                 "max_instances_per_request": 1000,
                 "supports_windows": True,
                 "supports_linux": True,
+                "supported_apis": supported_apis,
             },
             limitations={
                 "max_concurrent_requests": 100,
