@@ -19,12 +19,6 @@ from providers.registry import (
     UnsupportedProviderError,
     get_provider_registry,
 )
-from providers.base.strategy import (
-    ProviderContext,
-    ProviderStrategy,
-    SelectionPolicy,
-    create_provider_context,
-)
 
 
 class ProviderCreationError(Exception):
@@ -48,17 +42,14 @@ class ProviderStrategyFactory:
         self._logger = logger
         self._provider_cache: dict[str, ProviderStrategy] = {}
 
-    @handle_infrastructure_exceptions(context="provider_context_creation")
-    def create_provider_context(self) -> ProviderContext:
+    @handle_infrastructure_exceptions(context="provider_registry_setup")
+    def setup_provider_registry(self) -> None:
         """
-        Create configured provider context based on integrated configuration.
-
-        Returns:
-            Configured ProviderContext instance
+        Setup provider registry based on integrated configuration.
 
         Raises:
             ConfigurationError: If configuration is invalid
-            ProviderCreationError: If provider creation fails
+            ProviderCreationError: If provider setup fails
         """
         try:
             # Get integrated provider configuration
@@ -67,113 +58,38 @@ class ProviderStrategyFactory:
                 raise ConfigurationError("Provider configuration not found")
 
             mode = provider_config.get_mode()
+            self._logger.info("Setting up provider registry in %s mode", mode.value)
 
-            self._logger.info("Creating provider context in %s mode", mode.value)
+            # Register all active providers with registry
+            active_providers = provider_config.get_active_providers()
+            registry = get_provider_registry()
+            
+            for provider_instance in active_providers:
+                if not registry.is_provider_instance_registered(provider_instance.name):
+                    self._register_provider_from_config(provider_instance, registry)
 
-            if mode == ProviderMode.SINGLE:
-                return self._create_single_provider_context(provider_config)
-            elif mode == ProviderMode.MULTI:
-                return self._create_multi_provider_context(provider_config)
-            else:
-                raise ConfigurationError("Provider", "No valid provider configuration found")
+            self._logger.info(
+                "Provider registry setup complete with %s providers",
+                len(active_providers)
+            )
 
         except Exception as e:
-            self._logger.error("Failed to create provider context: %s", str(e))
-            raise ProviderCreationError(f"Provider context creation failed: {e!s}")
+            self._logger.error("Failed to setup provider registry: %s", str(e))
+            raise ProviderCreationError(f"Provider registry setup failed: {e!s}")
 
-    def _create_single_provider_context(self, config: ProviderConfig) -> ProviderContext:
-        """
-        Create single provider context.
+    def _register_provider_from_config(self, provider_instance, registry):
+        """Register provider instance from configuration with registry."""
+        try:
+            if provider_instance.type == "aws":
+                from providers.aws.registration import register_aws_provider
+                register_aws_provider(registry, self._logger, provider_instance.name)
+                self._logger.debug("Registered AWS provider instance: %s", provider_instance.name)
+            else:
+                self._logger.warning("Unknown provider type: %s", provider_instance.type)
+        except Exception as e:
+            self._logger.error("Failed to register provider %s: %s", provider_instance.name, e)
 
-        Args:
-            config: Integrated provider configuration
 
-        Returns:
-            Configured ProviderContext for single provider
-        """
-        active_providers = config.get_active_providers()
-
-        if not active_providers:
-            raise ConfigurationError(
-                "Provider", "No active providers found for single provider mode"
-            )
-
-        provider_config = active_providers[0]
-        self._logger.info(
-            "Creating single provider context with provider: %s", provider_config.name
-        )
-
-        # Create provider context
-        context = create_provider_context(self._logger)
-
-        # Create and register the single provider strategy
-        strategy = self._create_provider_strategy(provider_config)
-        context.register_strategy(strategy, provider_config.name)
-
-        # Configure context for single provider mode
-        context.set_default_selection_policy(SelectionPolicy.FIRST_AVAILABLE)
-        self._configure_context_settings(context, config)
-
-        self._logger.info(
-            "Single provider context created successfully with provider: %s",
-            provider_config.name,
-        )
-        return context
-
-    def _create_multi_provider_context(self, config: ProviderConfig) -> ProviderContext:
-        """
-        Create multi-provider context.
-
-        Args:
-            config: Integrated provider configuration
-
-        Returns:
-            Configured ProviderContext for multiple providers
-        """
-        active_providers = config.get_active_providers()
-
-        if len(active_providers) < 2:
-            raise ConfigurationError(
-                "Provider",
-                "At least 2 active providers required for multi-provider mode",
-            )
-
-        self._logger.info(
-            "Creating multi-provider context with %s providers", len(active_providers)
-        )
-
-        # Create provider context
-        context = create_provider_context(self._logger)
-
-        # Create and register all provider strategies
-        for provider_config in active_providers:
-            try:
-                strategy = self._create_provider_strategy(provider_config)
-                context.register_strategy(strategy, provider_config.name)
-                self._logger.debug("Registered provider strategy: %s", provider_config.name)
-            except Exception as e:
-                self._logger.error(
-                    "Failed to create provider strategy %s: %s",
-                    provider_config.name,
-                    str(e),
-                )
-                # Continue with other providers, but log the error
-                continue
-
-        # Configure selection policy
-        selection_policy = self._parse_selection_policy(config.selection_policy)
-        context.set_default_selection_policy(selection_policy)
-
-        # Configure context settings
-        self._configure_context_settings(context, config)
-
-        registered_strategies = context.get_available_strategies()
-        self._logger.info(
-            "Multi-provider context created with %s strategies",
-            len(registered_strategies),
-        )
-
-        return context
 
     def _create_provider_config(self, instance_config: ProviderInstanceConfig):
         """Create provider configuration with automatic env var loading.
@@ -260,7 +176,7 @@ class ProviderStrategyFactory:
 
     def _create_provider_strategy(
         self, provider_config: ProviderInstanceConfig
-    ) -> ProviderStrategy:
+    ) -> Any:
         """
         Create individual provider strategy using registry pattern.
 
@@ -283,17 +199,20 @@ class ProviderStrategyFactory:
             # Use registry pattern with named instances
             registry = get_provider_registry()
 
+            # Create provider configuration
+            config = self._create_provider_config(provider_config)
+
             # Try to create from named instance first (preferred for multi-instance)
             if registry.is_provider_instance_registered(provider_config.name):
                 strategy = registry.create_strategy_from_instance(
-                    provider_config.name, provider_config
+                    provider_config.name, config
                 )
                 self._logger.debug(
                     "Created provider strategy from instance: %s", provider_config.name
                 )
             else:
                 # Fallback to provider type (backward compatibility)
-                strategy = registry.create_strategy(provider_config.type, provider_config)
+                strategy = registry.create_strategy(provider_config.type, config)
                 self._logger.debug("Created provider strategy from type: %s", provider_config.type)
 
             # Set provider name for identification
@@ -321,64 +240,7 @@ class ProviderStrategyFactory:
                 f"Failed to create {provider_config.type} provider '{provider_config.name}': {e!s}"
             )
 
-    def _parse_selection_policy(self, policy_name: str) -> SelectionPolicy:
-        """
-        Parse selection policy name to SelectionPolicy enum.
 
-        Args:
-            policy_name: Selection policy name
-
-        Returns:
-            SelectionPolicy enum value
-        """
-        policy_mapping = {
-            "FIRST_AVAILABLE": SelectionPolicy.FIRST_AVAILABLE,
-            "ROUND_ROBIN": SelectionPolicy.ROUND_ROBIN,
-            "WEIGHTED_ROUND_ROBIN": SelectionPolicy.WEIGHTED_ROUND_ROBIN,
-            "LEAST_CONNECTIONS": SelectionPolicy.LEAST_CONNECTIONS,
-            "FASTEST_RESPONSE": SelectionPolicy.FASTEST_RESPONSE,
-            "HIGHEST_SUCCESS_RATE": SelectionPolicy.HIGHEST_SUCCESS_RATE,
-            "CAPABILITY_BASED": SelectionPolicy.CAPABILITY_BASED,
-            "HEALTH_BASED": SelectionPolicy.HEALTH_BASED,
-            "RANDOM": SelectionPolicy.RANDOM,
-            "PERFORMANCE_BASED": SelectionPolicy.FASTEST_RESPONSE,  # Map to closest equivalent
-            "CUSTOM": SelectionPolicy.CUSTOM,
-        }
-
-        if policy_name not in policy_mapping:
-            self._logger.warning(
-                "Unknown selection policy '%s', using FIRST_AVAILABLE", policy_name
-            )
-            return SelectionPolicy.FIRST_AVAILABLE
-
-        return policy_mapping[policy_name]
-
-    def _configure_context_settings(self, context: ProviderContext, config: ProviderConfig) -> None:
-        """
-        Configure provider context with global settings.
-
-        Args:
-            context: Provider context to configure
-            config: Integrated provider configuration
-        """
-        try:
-            # Configure health check interval
-            if hasattr(context, "set_health_check_interval"):
-                context.set_health_check_interval(config.health_check_interval)
-
-            # Configure circuit breaker
-            if hasattr(context, "configure_circuit_breaker") and config.circuit_breaker.enabled:
-                context.configure_circuit_breaker(
-                    failure_threshold=config.circuit_breaker.failure_threshold,
-                    recovery_timeout=config.circuit_breaker.recovery_timeout,
-                    half_open_max_calls=config.circuit_breaker.half_open_max_calls,
-                )
-
-            self._logger.debug("Provider context settings configured successfully")
-
-        except Exception as e:
-            self._logger.warning("Failed to configure some context settings: %s", str(e))
-            # Don't fail the entire creation for optional settings
 
     def get_provider_info(self) -> dict[str, Any]:
         """
@@ -457,13 +319,18 @@ class ProviderStrategyFactory:
                     )
 
             # Validate provider configurations
-            for provider_config in active_providers:
+            registry = get_provider_registry()
+            for provider_instance in active_providers:
                 try:
                     # Test provider strategy creation
-                    self._create_provider_strategy(provider_config)
+                    config = self._create_provider_config(provider_instance)
+                    if registry.is_provider_instance_registered(provider_instance.name):
+                        registry.create_strategy_from_instance(provider_instance.name, config)
+                    else:
+                        registry.create_strategy(provider_instance.type, config)
                 except Exception as e:
                     validation_result["errors"].append(
-                        f"Provider '{provider_config.name}' validation failed: {e!s}"
+                        f"Provider '{provider_instance.name}' validation failed: {e!s}"
                     )
 
             # Set overall validation status

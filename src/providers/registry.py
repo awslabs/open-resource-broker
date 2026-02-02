@@ -2,8 +2,11 @@
 
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Optional
+import time
 
 from domain.base.exceptions import ConfigurationError
+from domain.base.ports import LoggingPort
+from monitoring.metrics import MetricsCollector
 
 from infrastructure.registry.base_registry import BaseRegistration, BaseRegistry, RegistryMode
 
@@ -53,11 +56,261 @@ class ProviderRegistry(BaseRegistry):
 
     Uses MULTI_CHOICE mode - multiple provider strategies simultaneously.
     Thread-safe singleton implementation using BaseRegistry.
+    Handles strategy execution directly with on-demand creation.
     """
 
     def __init__(self) -> None:
         # Provider is MULTI_CHOICE - multiple provider strategies simultaneously
         super().__init__(mode=RegistryMode.MULTI_CHOICE)
+        self._strategy_cache: dict[str, Any] = {}
+        self._metrics: Optional[MetricsCollector] = None
+        self._logger: Optional[LoggingPort] = None
+
+    def set_dependencies(self, logger: LoggingPort, metrics: Optional[MetricsCollector] = None) -> None:
+        """Set dependencies for strategy execution."""
+        self._logger = logger
+        self._metrics = metrics or MetricsCollector(config={"METRICS_ENABLED": True})
+
+    async def execute_operation(self, provider_identifier: str, operation: Any, config: Any = None) -> Any:
+        """
+        Execute operation with provider strategy, creating strategy on-demand.
+        
+        Args:
+            provider_identifier: Provider type or instance name
+            operation: ProviderOperation to execute
+            config: Optional provider configuration
+            
+        Returns:
+            ProviderResult from strategy execution
+        """
+        if not self._logger:
+            from infrastructure.di.container import get_container
+            container = get_container()
+            self._logger = container.get(LoggingPort)
+            self._metrics = self._metrics or MetricsCollector(config={"METRICS_ENABLED": True})
+
+        start_time = time.time()
+        
+        try:
+            # Get or create strategy
+            strategy = self._get_or_create_strategy(provider_identifier, config)
+            if not strategy:
+                return self._create_error_result(
+                    f"Failed to create strategy for provider: {provider_identifier}",
+                    "STRATEGY_CREATION_FAILED"
+                )
+
+            # Check capabilities
+            capabilities = strategy.get_capabilities()
+            if not capabilities.supports_operation(operation.operation_type):
+                response_time_ms = (time.time() - start_time) * 1000
+                self._record_metrics(provider_identifier, operation.operation_type.name, False, response_time_ms)
+                
+                return self._create_error_result(
+                    f"Provider {provider_identifier} does not support operation {operation.operation_type}",
+                    "OPERATION_NOT_SUPPORTED"
+                )
+
+            # Execute operation
+            result = await strategy.execute_operation(operation)
+            
+            # Record metrics
+            response_time_ms = (time.time() - start_time) * 1000
+            self._record_metrics(provider_identifier, operation.operation_type.name, result.success, response_time_ms)
+            
+            if self._logger:
+                self._logger.debug(
+                    "Operation %s executed by %s: success=%s, time=%.2fms",
+                    operation.operation_type,
+                    provider_identifier,
+                    result.success,
+                    response_time_ms,
+                )
+            
+            return result
+
+        except Exception as e:
+            response_time_ms = (time.time() - start_time) * 1000
+            self._record_metrics(provider_identifier, operation.operation_type.name, False, response_time_ms)
+            
+            if self._logger:
+                self._logger.error(
+                    "Error executing operation %s with %s: %s",
+                    operation.operation_type,
+                    provider_identifier,
+                    e,
+                )
+            
+            return self._create_error_result(
+                f"Operation execution failed: {str(e)}",
+                "EXECUTION_ERROR"
+            )
+
+    def get_strategy_capabilities(self, provider_identifier: str, config: Any = None) -> Optional[Any]:
+        """Get capabilities for a provider strategy."""
+        try:
+            strategy = self._get_or_create_strategy(provider_identifier, config)
+            return strategy.get_capabilities() if strategy else None
+        except Exception as e:
+            if self._logger:
+                self._logger.error("Error getting capabilities for %s: %s", provider_identifier, e)
+            return None
+
+    def check_strategy_health(self, provider_identifier: str, config: Any = None) -> Optional[Any]:
+        """Check health of a provider strategy."""
+        try:
+            strategy = self._get_or_create_strategy(provider_identifier, config)
+            if not strategy:
+                return None
+                
+            health_status = strategy.check_health()
+            if self._metrics:
+                self._metrics.increment_counter("provider_strategy_health_checks_total", 1.0)
+            return health_status
+            
+        except Exception as e:
+            if self._logger:
+                self._logger.error("Error checking health of %s: %s", provider_identifier, e)
+            return self._create_unhealthy_status(f"Health check failed: {str(e)}")
+
+    def _get_or_create_strategy(self, provider_identifier: str, config: Any = None) -> Optional[Any]:
+        """Get cached strategy or create new one."""
+        # Check cache first
+        if provider_identifier in self._strategy_cache:
+            return self._strategy_cache[provider_identifier]
+
+        # Create new strategy
+        strategy = None
+        
+        # Try instance creation first
+        if self.is_provider_instance_registered(provider_identifier):
+            strategy = self.create_strategy_from_instance(provider_identifier, config)
+        # Fall back to type creation
+        elif self.is_provider_registered(provider_identifier):
+            strategy = self.create_strategy(provider_identifier, config)
+        
+        if strategy:
+            # Initialize strategy
+            if hasattr(strategy, 'initialize') and not strategy.is_initialized:
+                if not strategy.initialize():
+                    if self._logger:
+                        self._logger.error("Failed to initialize strategy: %s", provider_identifier)
+                    return None
+            
+            # Cache strategy
+            self._strategy_cache[provider_identifier] = strategy
+            
+        return strategy
+
+    def _create_error_result(self, message: str, code: str) -> Any:
+        """Create error result using ProviderResult."""
+        try:
+            from providers.base.strategy.provider_strategy import ProviderResult
+            return ProviderResult.error_result(message, code)
+        except ImportError:
+            # Fallback if ProviderResult not available
+            return {"success": False, "error_message": message, "error_code": code}
+
+    def _create_unhealthy_status(self, message: str) -> Any:
+        """Create unhealthy status."""
+        try:
+            from providers.base.strategy.provider_strategy import ProviderHealthStatus
+            return ProviderHealthStatus.unhealthy(message, {})
+        except ImportError:
+            return {"healthy": False, "message": message}
+
+    def _record_metrics(self, provider_identifier: str, operation: str, success: bool, response_time_ms: float) -> None:
+        """Record operation metrics."""
+        if not self._metrics:
+            return
+            
+        op_base = f"provider.{provider_identifier}.{operation.lower()}"
+        if success:
+            self._metrics.increment_counter(f"{op_base}.success_total")
+        else:
+            self._metrics.increment_counter(f"{op_base}.error_total")
+        
+        # record_time expects seconds
+        self._metrics.record_time(f"{op_base}.duration", response_time_ms / 1000.0)
+
+    # Convenience methods for common operations
+    async def create_machines(
+        self, 
+        provider_identifier: str, 
+        template_id: str, 
+        count: int, 
+        config: Any = None,
+        **kwargs
+    ) -> Any:
+        """Create machines using provider strategy."""
+        from providers.base.strategy.provider_strategy import ProviderOperation, ProviderOperationType
+        
+        operation = ProviderOperation(
+            operation_type=ProviderOperationType.CREATE_INSTANCES,
+            parameters={
+                "template_id": template_id,
+                "count": count,
+                **kwargs
+            }
+        )
+        return await self.execute_operation(provider_identifier, operation, config)
+
+    async def terminate_machines(
+        self, 
+        provider_identifier: str, 
+        machine_ids: list[str], 
+        config: Any = None,
+        **kwargs
+    ) -> Any:
+        """Terminate machines using provider strategy."""
+        from providers.base.strategy.provider_strategy import ProviderOperation, ProviderOperationType
+        
+        operation = ProviderOperation(
+            operation_type=ProviderOperationType.TERMINATE_INSTANCES,
+            parameters={
+                "machine_ids": machine_ids,
+                **kwargs
+            }
+        )
+        return await self.execute_operation(provider_identifier, operation, config)
+
+    async def get_machine_status(
+        self, 
+        provider_identifier: str, 
+        machine_ids: list[str], 
+        config: Any = None,
+        **kwargs
+    ) -> Any:
+        """Get machine status using provider strategy."""
+        from providers.base.strategy.provider_strategy import ProviderOperation, ProviderOperationType
+        
+        operation = ProviderOperation(
+            operation_type=ProviderOperationType.GET_INSTANCE_STATUS,
+            parameters={
+                "machine_ids": machine_ids,
+                **kwargs
+            }
+        )
+        return await self.execute_operation(provider_identifier, operation, config)
+
+    async def validate_template(
+        self, 
+        provider_identifier: str, 
+        template: dict, 
+        config: Any = None,
+        **kwargs
+    ) -> Any:
+        """Validate template using provider strategy."""
+        from providers.base.strategy.provider_strategy import ProviderOperation, ProviderOperationType
+        
+        operation = ProviderOperation(
+            operation_type=ProviderOperationType.VALIDATE_TEMPLATE,
+            parameters={
+                "template": template,
+                **kwargs
+            }
+        )
+        return await self.execute_operation(provider_identifier, operation, config)
 
     def register(
         self,

@@ -233,9 +233,8 @@ class ProviderCapabilityService:
                 ProviderOperationType.TERMINATE_INSTANCES,
                 ProviderOperationType.GET_INSTANCE_STATUS,
             ],
-            features={
-                "supported_apis": supported_apis,
-            },
+            supported_apis=supported_apis,  # ✅ FIXED - direct field, not in features
+            features={},
         )
 
     def _validate_api_support(

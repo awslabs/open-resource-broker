@@ -77,6 +77,18 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
         from providers.registry import get_provider_registry
         
         registry = get_provider_registry()
+        
+        # Ensure providers from configuration are registered in registry
+        from domain.base.ports.configuration_port import ConfigurationPort
+        config_manager = self._container.get(ConfigurationPort)
+        provider_config = config_manager.get_provider_config()
+        
+        if provider_config:
+            # Register all configured providers with registry
+            for provider_instance in provider_config.get_active_providers():
+                if not registry.is_provider_instance_registered(provider_instance.name):
+                    self._register_provider_from_config(provider_instance, registry)
+        
         available_providers = registry.get_registered_providers()
         available_instances = registry.get_registered_provider_instances()
         
@@ -380,6 +392,25 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
         self.logger.info("Machine request created successfully: %s", request.request_id)
         return str(request.request_id)
 
+    def _register_provider_from_config(self, provider_instance, registry) -> None:
+        """Register provider instance from configuration with the registry."""
+        try:
+            provider_type = provider_instance.type
+            
+            # Register provider type if not already registered
+            if not registry.is_provider_registered(provider_type):
+                if provider_type == "aws":
+                    from providers.aws.registration import register_aws_provider
+                    register_aws_provider(registry, self.logger)
+            
+            # Register provider instance
+            if provider_type == "aws":
+                from providers.aws.registration import register_aws_provider
+                register_aws_provider(registry, self.logger, instance_name=provider_instance.name)
+                
+        except Exception as e:
+            self.logger.warning("Failed to register provider %s from config: %s", provider_instance.name, str(e))
+
     def _create_machine_aggregate(self, instance_data: dict[str, Any], request, template_id: str):
         """Create machine aggregate from instance data."""
         from datetime import datetime
@@ -414,14 +445,16 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
         )
 
     async def _execute_provisioning(self, template, request, selection_result) -> dict[str, Any]:
-        """Execute provisioning via selected provider using existing ProviderContext."""
+        """Execute provisioning via selected provider using registry execution."""
         try:
             # Import required types
             from domain.base.ports.scheduler_port import SchedulerPort
+            from domain.base.ports.configuration_port import ConfigurationPort
             from providers.base.strategy import ProviderOperation, ProviderOperationType
 
             # Get scheduler for template formatting
             scheduler = self._container.get(SchedulerPort)
+            config_manager = self._container.get(ConfigurationPort)
 
             # Create provider operation
             operation = ProviderOperation(
@@ -438,62 +471,20 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
                 },
             )
 
-            # Resolve strategy identifier using registry
-            from infrastructure.services.provider_strategy_resolver import ProviderStrategyResolver
+            # Get provider configuration
+            provider_instance_config = config_manager.get_provider_instance_config(selection_result.provider_name)
+            provider_config = provider_instance_config.config if provider_instance_config else {}
+
+            # Execute operation via registry
             from providers.registry import get_provider_registry
-            
-            resolver = ProviderStrategyResolver()
-            strategy_identifier = resolver.resolve_strategy_identifier(
-                selection_result.provider_type,
-                selection_result.provider_name
-            )
-            
-            if not strategy_identifier:
-                registry = get_provider_registry()
-                available = registry.get_registered_providers() + registry.get_registered_provider_instances()
-                error_msg = f"Provider strategy not found: {selection_result.provider_type}-{selection_result.provider_name}. Available: {available}"
-                self.logger.error(error_msg)
-                return {
-                    "success": False,
-                    "resource_ids": [],
-                    "instances": [],
-                    "provider_data": {},
-                    "error_message": error_msg,
-                }
-
-            # Log available strategies for debugging
-            self.logger.debug("Using registry-based strategy resolution")
-            self.logger.debug("Attempting to use strategy: %s", strategy_identifier)
-
-            # Get provider strategy from registry
             registry = get_provider_registry()
-            if registry.is_provider_instance_registered(strategy_identifier):
-                # Create strategy from instance
-                provider_config = selection_result.provider_config or {}
-                strategy = registry.create_strategy_from_instance(strategy_identifier, provider_config)
-            elif registry.is_provider_registered(selection_result.provider_type):
-                # Create strategy from type
-                provider_config = selection_result.provider_config or {}
-                strategy = registry.create_strategy(selection_result.provider_type, provider_config)
-            else:
-                available = registry.get_registered_providers() + registry.get_registered_provider_instances()
-                error_msg = f"Provider strategy not found: {strategy_identifier}. Available: {available}"
-                self.logger.error(error_msg)
-                return {
-                    "success": False,
-                    "resource_ids": [],
-                    "instances": [],
-                    "provider_data": {},
-                    "error_message": error_msg,
-                }
-
-            result = await strategy.execute_operation(operation)
+            result = await registry.execute_operation(selection_result.provider_name, operation, provider_config)
 
             # Process result
             if result.success:
                 # Extract resource information from result
-                self.logger.info("AWS provider result.data: %s", result.data)
-                self.logger.info("AWS provider result.metadata: %s", result.metadata)
+                self.logger.info("Provider result.data: %s", result.data)
+                self.logger.info("Provider result.metadata: %s", result.metadata)
 
                 resource_ids = result.data.get("resource_ids", [])
                 instances = result.data.get("instances", [])
@@ -765,31 +756,16 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
                 },
             )
 
-            # Execute via provider registry
-            from infrastructure.services.provider_strategy_resolver import ProviderStrategyResolver
-            from providers.registry import get_provider_registry
-            
-            resolver = ProviderStrategyResolver()
-            strategy_identifier = resolver.resolve_strategy_identifier("aws", provider_name)
-            
-            if not strategy_identifier:
-                raise ValueError(f"Strategy not found for provider: {provider_name}")
-            
-            registry = get_provider_registry()
-            
-            # Get provider strategy from registry
-            if registry.is_provider_instance_registered(strategy_identifier):
-                # Create strategy from instance
-                provider_config = {}  # Would need actual config from machine context
-                strategy = registry.create_strategy_from_instance(strategy_identifier, provider_config)
-            elif registry.is_provider_registered("aws"):
-                # Create strategy from type
-                provider_config = {}  # Would need actual config from machine context
-                strategy = registry.create_strategy("aws", provider_config)
-            else:
-                raise ValueError(f"Strategy not found for provider: {provider_name}")
+            # Get provider configuration
+            from domain.base.ports.configuration_port import ConfigurationPort
+            config_manager = self._container.get(ConfigurationPort)
+            provider_instance_config = config_manager.get_provider_instance_config(provider_name)
+            provider_config = provider_instance_config.config if provider_instance_config else {}
 
-            result = await strategy.execute_operation(operation)
+            # Execute via provider registry
+            from providers.registry import get_provider_registry
+            registry = get_provider_registry()
+            result = await registry.execute_operation(provider_name, operation, provider_config)
 
             if result.success:
                 self.logger.info("Successfully terminated %d instances in resource %s", 
@@ -804,14 +780,18 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
             self.logger.error("Failed to process resource group %s: %s", resource_id, e)
             return {"success": False, "error_message": str(e)}
 
-    def _get_provider_context(self):
-        """Get provider context for operations - deprecated, use registry instead."""
-        # This method is kept for backward compatibility but should be phased out
+    def _register_provider_from_config(self, provider_instance, registry):
+        """Register provider instance from configuration with registry."""
         try:
-            from providers.base.strategy.provider_context import ProviderContext
-            return self._container.get(ProviderContext)
-        except Exception:
-            return None
+            from providers.aws.registration import register_aws_provider
+            
+            if provider_instance.type == "aws":
+                register_aws_provider(registry, self.logger, provider_instance.name)
+                self.logger.debug("Registered AWS provider instance: %s", provider_instance.name)
+            else:
+                self.logger.warning("Unknown provider type: %s", provider_instance.type)
+        except Exception as e:
+            self.logger.error("Failed to register provider %s: %s", provider_instance.name, e)
 
 
 @command_handler(UpdateRequestStatusCommand)

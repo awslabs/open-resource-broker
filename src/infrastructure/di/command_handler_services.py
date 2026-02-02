@@ -15,7 +15,7 @@ from application.commands.machine_handlers import (
 )
 from domain.base.ports.logging_port import LoggingPort
 from infrastructure.di.buses import CommandBus
-from providers.base.strategy.provider_context import ProviderContext
+# Provider Context removed - using Provider Registry instead
 
 if TYPE_CHECKING:
     from infrastructure.di.container import DIContainer
@@ -95,8 +95,7 @@ def register_command_handlers_with_bus(container: "DIContainer") -> None:
         command_bus = container.get(CommandBus)
         logger = container.get(LoggingPort)
 
-        # Get provider context for strategy handlers
-        container.get(ProviderContext)
+        # Provider Context removed - using Provider Registry instead
 
         # Register machine command handlers
         from application.machine.commands import (

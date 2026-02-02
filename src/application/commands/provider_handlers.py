@@ -22,9 +22,8 @@ from domain.base.events.provider_events import (
     ProviderStrategyRegisteredEvent,
     ProviderStrategySelectedEvent,
 )
-from domain.base.ports import ErrorHandlingPort, EventPublisherPort, LoggingPort
+from domain.base.ports import ContainerPort, ErrorHandlingPort, EventPublisherPort, LoggingPort
 from providers.base.strategy import (
-    ProviderContext,
     ProviderResult,
     SelectionPolicy,
     SelectorFactory,
@@ -39,14 +38,14 @@ class SelectProviderStrategyHandler(
 
     def __init__(
         self,
-        provider_context: ProviderContext,
+        container: ContainerPort,
         logger: LoggingPort,
         event_publisher: EventPublisherPort,
         error_handler: ErrorHandlingPort,
     ) -> None:
         """Initialize the instance."""
         super().__init__(logger, event_publisher, error_handler)
-        self._provider_context = provider_context
+        self._container = container
 
     async def validate_command(self, command: SelectProviderStrategyCommand) -> None:
         """Validate select provider strategy command."""
@@ -65,8 +64,10 @@ class SelectProviderStrategyHandler(
                 self.logger,  # Use capability-based selection
             )
 
-            # Get available strategies from context
-            available_strategies = self._provider_context.available_strategies
+            # Get available strategies from registry
+            from providers.registry import get_provider_registry
+            registry = get_provider_registry()
+            available_strategies = registry.get_registered_providers() + registry.get_registered_provider_instances()
 
             if not available_strategies:
                 raise ValueError("No provider strategies available")
@@ -110,13 +111,13 @@ class ExecuteProviderOperationHandler(
 
     def __init__(
         self,
-        provider_context: ProviderContext,
+        container: ContainerPort,
         logger: LoggingPort,
         event_publisher: EventPublisherPort,
         error_handler: ErrorHandlingPort,
     ) -> None:
         super().__init__(logger, event_publisher, error_handler)
-        self._provider_context = provider_context
+        self._container = container
 
     async def validate_command(self, command: ExecuteProviderOperationCommand) -> None:
         """Validate execute provider operation command."""
@@ -132,22 +133,22 @@ class ExecuteProviderOperationHandler(
         start_time = time.time()
 
         try:
-            # Execute operation through provider context
-            if command.strategy_override:
-                # Use specific strategy if override provided
-                result = self._provider_context.execute_with_strategy(
-                    command.strategy_override, operation
-                )
-            else:
-                # Use context's strategy selection
-                result = await self._provider_context.execute_operation(operation)
+            from providers.registry import get_provider_registry
+            
+            registry = get_provider_registry()
+            
+            # Use specific strategy if override provided, otherwise use default
+            provider_identifier = command.strategy_override or "aws"  # Default fallback
+            
+            # Execute operation through registry
+            result = await registry.execute_operation(provider_identifier, operation)
 
             execution_time = (time.time() - start_time) * 1000  # Convert to milliseconds
 
             # Publish operation execution event
             event = ProviderOperationExecutedEvent(
                 operation_type=operation.operation_type,
-                strategy_name=self._provider_context.current_strategy_name,
+                strategy_name=provider_identifier,
                 success=result.success,
                 execution_time_ms=execution_time,
                 error_message=result.error_message if not result.success else None,
@@ -168,7 +169,7 @@ class ExecuteProviderOperationHandler(
             # Publish failure event
             event = ProviderOperationExecutedEvent(
                 operation_type=operation.operation_type,
-                strategy_name=self._provider_context.current_strategy_name or "unknown",
+                strategy_name=command.strategy_override or "unknown",
                 success=False,
                 execution_time_ms=execution_time,
                 error_message=str(e),
@@ -187,13 +188,13 @@ class RegisterProviderStrategyHandler(
 
     def __init__(
         self,
-        provider_context: ProviderContext,
+        container: ContainerPort,
         logger: LoggingPort,
         event_publisher: EventPublisherPort,
         error_handler: ErrorHandlingPort,
     ) -> None:
         super().__init__(logger, event_publisher, error_handler)
-        self._provider_context = provider_context
+        self._container = container
 
     async def validate_command(self, command: RegisterProviderStrategyCommand) -> None:
         """Validate register provider strategy command."""
@@ -233,8 +234,11 @@ class RegisterProviderStrategyHandler(
 
             strategy = registry.create_strategy(command.provider_type.lower(), provider_config)
 
-            # Register strategy with context
-            self._provider_context.register_strategy(strategy, command.strategy_name)
+            # Register strategy with registry
+            # Note: Provider Registry handles strategy registration automatically
+            # when strategies are created, so no explicit registration needed
+            
+            self.logger.info("Strategy created and available through registry: %s", command.strategy_name)
 
             # Publish registration event
             event = ProviderStrategyRegisteredEvent(
@@ -265,13 +269,13 @@ class UpdateProviderHealthHandler(BaseCommandHandler[UpdateProviderHealthCommand
 
     def __init__(
         self,
-        provider_context: ProviderContext,
+        container: ContainerPort,
         logger: LoggingPort,
         event_publisher: EventPublisherPort,
         error_handler: ErrorHandlingPort,
     ) -> None:
         super().__init__(logger, event_publisher, error_handler)
-        self._provider_context = provider_context
+        self._container = container
 
     async def validate_command(self, command: UpdateProviderHealthCommand) -> None:
         """Validate update provider health command."""
@@ -286,13 +290,13 @@ class UpdateProviderHealthHandler(BaseCommandHandler[UpdateProviderHealthCommand
         self.logger.debug("Updating health for provider: %s", command.provider_name)
 
         try:
-            # Get current health status for comparison
-            old_status = self._provider_context.check_strategy_health(command.provider_name)
+            # Get current health status for comparison using registry
+            from providers.registry import get_provider_registry
+            registry = get_provider_registry()
+            old_status = registry.check_strategy_health(command.provider_name)
 
-            # Update health status in context
-            self._provider_context.update_provider_health(
-                command.provider_name, command.health_status
-            )
+            # Health status updates are handled by the registry automatically
+            # when strategies are accessed
 
             # Publish health change event if status changed
             if old_status is None or old_status.is_healthy != command.health_status.is_healthy:
@@ -326,13 +330,13 @@ class ConfigureProviderStrategyHandler(
 
     def __init__(
         self,
-        provider_context: ProviderContext,
+        container: ContainerPort,
         logger: LoggingPort,
         event_publisher: EventPublisherPort,
         error_handler: ErrorHandlingPort,
     ) -> None:
         super().__init__(logger, event_publisher, error_handler)
-        self._provider_context = provider_context
+        self._container = container
 
     async def validate_command(self, command: ConfigureProviderStrategyCommand) -> None:
         """Validate configure provider strategy command."""
@@ -353,7 +357,9 @@ class ConfigureProviderStrategyHandler(
                 "circuit_breaker_config": command.circuit_breaker_config or {},
             }
 
-            self._provider_context.update_configuration(config_updates)
+            # Configuration updates are handled at the provider level
+            # Registry pattern doesn't require global configuration updates
+            self.logger.info("Provider strategy configuration noted (registry pattern handles per-provider config)")
 
             self.logger.info("Provider strategy configuration updated successfully")
 

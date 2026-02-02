@@ -95,12 +95,24 @@ class AWSProviderStrategy(ProviderStrategy):
     @property
     def aws_client(self) -> Optional[AWSClient]:
         """Get the AWS client instance with lazy initialization."""
-        if self._aws_client is None and self._aws_client_resolver:
-            try:
-                self._aws_client = self._aws_client_resolver()
-                self._logger.debug("AWS client created via resolver")
-            except Exception as exc:
-                self._logger.warning("Failed to resolve AWSClient: %s", exc)
+        if self._aws_client is None:
+            if self._aws_client_resolver:
+                try:
+                    self._aws_client = self._aws_client_resolver()
+                    self._logger.debug("AWS client created via resolver")
+                except Exception as exc:
+                    self._logger.warning("Failed to resolve AWSClient: %s", exc)
+            else:
+                # Create AWS client directly if no resolver provided
+                try:
+                    self._aws_client = AWSClient(
+                        region=self._aws_config.region,
+                        profile=self._aws_config.profile,
+                        logger=self._logger
+                    )
+                    self._logger.debug("AWS client created directly")
+                except Exception as exc:
+                    self._logger.warning("Failed to create AWSClient: %s", exc)
         return self._aws_client
 
     def initialize(self) -> bool:
