@@ -200,7 +200,30 @@ class AWSProviderStrategy(ProviderStrategy):
         """Get available handlers from effective config."""
         effective_configs = self._get_effective_handler_configs()
         self._logger.debug("Effective handler configs: %s", list(effective_configs.keys()))
-        return effective_configs
+        
+        # For actual handler usage, create handler instances
+        handler_instances = {}
+        for handler_type, handler_config in effective_configs.items():
+            try:
+                # Create handler instance using the factory
+                if self.handler_factory:
+                    self._logger.debug("Creating handler instance for %s", handler_type)
+                    handler_instance = self.handler_factory.create_handler(handler_type)
+                    handler_instances[handler_type] = handler_instance
+                    self._logger.debug("Successfully created handler for %s", handler_type)
+                else:
+                    self._logger.warning("No handler factory available, cannot create handler for %s", handler_type)
+                    self._logger.debug("AWS client available: %s", self.aws_client is not None)
+            except Exception as e:
+                self._logger.warning("Failed to create handler for %s: %s", handler_type, e)
+        
+        self._logger.debug("Final handler instances: %s", list(handler_instances.keys()))
+        return handler_instances
+    
+    def get_supported_apis(self) -> list[str]:
+        """Get supported APIs from configuration without requiring AWS client."""
+        effective_configs = self._get_effective_handler_configs()
+        return list(effective_configs.keys())
 
     def _get_effective_handler_configs(self) -> dict[str, Any]:
         """Get effective handlers from config system."""
@@ -210,7 +233,12 @@ class AWSProviderStrategy(ProviderStrategy):
                 # Get provider defaults from configuration
                 provider_defaults = None
                 # TODO: Get provider defaults from configuration manager
-                return self._provider_instance_config.get_effective_handlers(provider_defaults)
+                result = self._provider_instance_config.get_effective_handlers(provider_defaults)
+                # Safety check: ensure we got a dict, not a method
+                if isinstance(result, dict):
+                    return result
+                else:
+                    self._logger.warning("get_effective_handlers returned %s instead of dict, using fallback", type(result))
             except Exception as e:
                 self._logger.warning("Failed to get effective handlers from config: %s", e)
         
@@ -969,20 +997,12 @@ class AWSProviderStrategy(ProviderStrategy):
         Returns:
             Comprehensive capabilities information for AWS provider
         """
-        # Derive supported APIs from actual handlers
+        # Derive supported APIs from configuration (doesn't require AWS client)
         try:
-            handlers_dict = self.handlers
-            self._logger.debug("Handlers dict type: %s", type(handlers_dict))
-            self._logger.debug("Handlers dict: %s", handlers_dict)
-            
-            if handlers_dict and isinstance(handlers_dict, dict):
-                supported_apis = list(handlers_dict.keys())
-            else:
-                self._logger.warning("Handlers is not a dict: %s", type(handlers_dict))
-                supported_apis = []
-                
+            supported_apis = self.get_supported_apis()
+            self._logger.debug("Supported APIs from config: %s", supported_apis)
         except Exception as e:
-            self._logger.error("Error getting handlers for capabilities: %s", e)
+            self._logger.error("Error getting supported APIs: %s", e)
             supported_apis = []
         
         return ProviderCapabilities(
@@ -996,6 +1016,7 @@ class AWSProviderStrategy(ProviderStrategy):
                 ProviderOperationType.GET_AVAILABLE_TEMPLATES,
                 ProviderOperationType.HEALTH_CHECK,
             ],
+            supported_apis=supported_apis,
             features={
                 "instance_management": True,
                 "spot_instances": True,
@@ -1018,7 +1039,6 @@ class AWSProviderStrategy(ProviderStrategy):
                 "max_instances_per_request": 1000,
                 "supports_windows": True,
                 "supports_linux": True,
-                "supported_apis": supported_apis,
             },
             limitations={
                 "max_concurrent_requests": 100,

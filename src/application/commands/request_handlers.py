@@ -447,13 +447,13 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
                 available = resolver.get_available_strategies()
                 error_msg = f"Provider strategy not found: {selection_result.provider_type}-{selection_result.provider_name}. Available: {available}"
                 self.logger.error(error_msg)
-                return MachineRequestResult(
-                    request_id=request_id,
-                    success=False,
-                    error_message=error_msg,
-                    instances=[],
-                    resource_ids=[],
-                )
+                return {
+                    "success": False,
+                    "resource_ids": [],
+                    "instances": [],
+                    "provider_data": {},
+                    "error_message": error_msg,
+                }
 
             # Log available strategies for debugging
             available_strategies = self._provider_context.available_strategies

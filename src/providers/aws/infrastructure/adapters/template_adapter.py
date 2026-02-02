@@ -267,7 +267,25 @@ class AWSTemplateAdapter(TemplateAdapterPort):
 
     def get_supported_provider_apis(self) -> list[str]:
         """Get the list of provider APIs supported by this adapter."""
-        return ["EC2Fleet", "SpotFleet", "ASG", "RunInstances"]
+        try:
+            from infrastructure.di.container import get_container
+            from config.managers.configuration_manager import ConfigurationManager
+
+            container = get_container()
+            config_manager = container.get(ConfigurationManager)
+            raw_config = config_manager.get_raw_config()
+
+            aws_handlers = (
+                raw_config.get("provider", {})
+                .get("provider_defaults", {})
+                .get("aws", {})
+                .get("handlers", {})
+            )
+
+            return list(aws_handlers.keys())
+        except Exception as e:
+            self._logger.error("Error getting supported AWS APIs: %s", e)
+            return []
 
     def get_adapter_info(self) -> dict[str, Any]:
         """Get information about this adapter."""

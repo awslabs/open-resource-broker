@@ -83,6 +83,7 @@ class ProviderCapabilities(BaseModel):
 
     provider_type: str
     supported_operations: list[ProviderOperationType]
+    supported_apis: list[str] = []
     features: dict[str, Any] = {}
     limitations: dict[str, Any] = {}
     performance_metrics: dict[str, Any] = {}

@@ -456,5 +456,3 @@ class AWSProvisioningAdapter(ResourceProvisioningPort):
 
         self._handlers[provider_api] = handler
         return handler
-        self._handlers[provider_api] = handler
-        return handler

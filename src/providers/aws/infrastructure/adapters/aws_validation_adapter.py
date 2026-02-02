@@ -72,6 +72,12 @@ class AWSValidationAdapter(BaseProviderValidationAdapter):
                 .get("handlers", {})
             )
 
+            # Ensure aws_handlers is a dictionary before calling .keys()
+            if not isinstance(aws_handlers, dict):
+                self._logger.error("AWS handlers configuration is not a dictionary: %s (type: %s)", 
+                                 aws_handlers, type(aws_handlers))
+                return False
+
             supported_apis = list(aws_handlers.keys())
             is_valid = api in supported_apis
 
@@ -82,8 +88,7 @@ class AWSValidationAdapter(BaseProviderValidationAdapter):
 
         except Exception as e:
             self._logger.error("Error validating AWS provider API %s: %s", api, e)
-            # Fallback to hardcoded list for safety
-            return api in ["EC2Fleet", "SpotFleet", "ASG", "RunInstances"]
+            return False
 
     def get_supported_provider_apis(self) -> list[str]:
         """
@@ -109,11 +114,16 @@ class AWSValidationAdapter(BaseProviderValidationAdapter):
                 .get("handlers", {})
             )
 
+            # Ensure aws_handlers is a dictionary before calling .keys()
+            if not isinstance(aws_handlers, dict):
+                self._logger.error("AWS handlers configuration is not a dictionary: %s (type: %s)", 
+                                 aws_handlers, type(aws_handlers))
+                return []
+
             return list(aws_handlers.keys())
         except Exception as e:
             self._logger.error("Error getting supported AWS APIs: %s", e)
-            # Fallback to hardcoded list for safety
-            return ["EC2Fleet", "SpotFleet", "ASG", "RunInstances"]
+            return []
 
     def get_default_fleet_type_for_api(self, api: str) -> str:
         """
@@ -175,14 +185,32 @@ class AWSValidationAdapter(BaseProviderValidationAdapter):
             config_manager = container.get(ConfigurationManager)
             raw_config = config_manager.get_raw_config()
 
-            # Navigate to specific handler configuration
-            handler_config = (
+            # Navigate to AWS handlers in configuration
+            aws_handlers = (
                 raw_config.get("provider", {})
                 .get("provider_defaults", {})
                 .get("aws", {})
                 .get("handlers", {})
-                .get(api, {})
             )
+
+            # Ensure aws_handlers is a dictionary
+            if not isinstance(aws_handlers, dict):
+                self._logger.error("AWS handlers configuration is not a dictionary: %s (type: %s)", 
+                                 aws_handlers, type(aws_handlers))
+                # Fall back to hardcoded values
+                if api == "EC2Fleet":
+                    return ["instant", "request", "maintain"]
+                elif api == "SpotFleet":
+                    return ["request", "maintain"]
+                elif api == "ASG":
+                    return []  # ASG doesn't use fleet types
+                elif api == "RunInstances":
+                    return []  # RunInstances doesn't use fleet types
+                else:
+                    return ["request"]
+
+            # Navigate to specific handler configuration
+            handler_config = aws_handlers.get(api, {})
 
             # Get supported fleet types from configuration
             supported_fleet_types = handler_config.get("supported_fleet_types", [])

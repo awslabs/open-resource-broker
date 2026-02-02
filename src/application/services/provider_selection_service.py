@@ -421,6 +421,11 @@ class ProviderSelectionService:
         provider_defaults = self._provider_config.provider_defaults.get(provider.type)
         effective_handlers = provider.get_effective_handlers(provider_defaults)
 
+        # Ensure effective_handlers is a dict, not a method
+        if not isinstance(effective_handlers, dict):
+            self._logger.warning("effective_handlers is not a dict: %s", type(effective_handlers))
+            effective_handlers = {}
+
         # Check if the API is supported by any handler
         if api in effective_handlers:
             return True

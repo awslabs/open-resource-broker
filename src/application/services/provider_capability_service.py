@@ -116,8 +116,22 @@ class ProviderCapabilityService:
         try:
             # Get provider capabilities
             capabilities = self._get_provider_capabilities(provider_instance)
+            self._logger.debug("DEBUG: _get_provider_capabilities returned: %s (type: %s)", capabilities, type(capabilities))
+            
             if not capabilities:
+                self._logger.debug("DEBUG: Falling back to _get_config_based_capabilities")
                 capabilities = self._get_config_based_capabilities(provider_instance)
+                self._logger.debug("DEBUG: _get_config_based_capabilities returned: %s (type: %s)", capabilities, type(capabilities))
+
+            self._logger.debug("DEBUG: Final capabilities object: %s", capabilities)
+            self._logger.debug("DEBUG: capabilities.__dict__: %s", getattr(capabilities, '__dict__', 'No __dict__'))
+            
+            # Check if capabilities has supported_apis attribute
+            if hasattr(capabilities, 'supported_apis'):
+                supported_apis_attr = getattr(capabilities, 'supported_apis')
+                self._logger.debug("DEBUG: capabilities.supported_apis attribute: %s (type: %s)", supported_apis_attr, type(supported_apis_attr))
+            else:
+                self._logger.debug("DEBUG: capabilities has no supported_apis attribute")
 
             # Validate core requirements
             self._validate_api_support(template, capabilities, result)
@@ -235,13 +249,48 @@ class ProviderCapabilityService:
             result.warnings.append("No provider API specified in template")
             return
 
-        supported_apis = capabilities.get_feature("supported_apis", [])
-        if template.provider_api not in supported_apis:
-            result.errors.append(
-                f"Provider does not support API '{template.provider_api}'. Supported APIs: {supported_apis}"
-            )
-        else:
-            result.supported_features.append(f"API: {template.provider_api}")
+        try:
+            supported_apis = capabilities.supported_apis
+            self._logger.debug("DEBUG: supported_apis type: %s", type(supported_apis))
+            self._logger.debug("DEBUG: supported_apis value: %s", supported_apis)
+            self._logger.debug("DEBUG: capabilities type: %s", type(capabilities))
+            
+            # This is the line that's failing
+            if template.provider_api not in supported_apis:
+                result.errors.append(
+                    f"Provider does not support API '{template.provider_api}'. Supported APIs: {supported_apis}"
+                )
+            else:
+                result.supported_features.append(f"API: {template.provider_api}")
+        except TypeError as e:
+            # Catch the specific "argument of type 'method' is not iterable" error
+            self._logger.error("CRITICAL ERROR in _validate_api_support:")
+            self._logger.error("  template.provider_api: %s (type: %s)", template.provider_api, type(template.provider_api))
+            self._logger.error("  capabilities: %s (type: %s)", capabilities, type(capabilities))
+            self._logger.error("  capabilities.__class__: %s", capabilities.__class__)
+            self._logger.error("  capabilities.__dict__: %s", getattr(capabilities, '__dict__', 'No __dict__'))
+            
+            if hasattr(capabilities, 'supported_apis'):
+                supported_apis_attr = getattr(capabilities, 'supported_apis')
+                self._logger.error("  capabilities.supported_apis: %s (type: %s)", supported_apis_attr, type(supported_apis_attr))
+                
+                # Check if it's a method
+                if callable(supported_apis_attr):
+                    self._logger.error("  supported_apis is callable! This is the problem.")
+                    try:
+                        # Try calling it
+                        called_result = supported_apis_attr()
+                        self._logger.error("  supported_apis() result: %s (type: %s)", called_result, type(called_result))
+                    except Exception as call_error:
+                        self._logger.error("  Error calling supported_apis(): %s", call_error)
+            else:
+                self._logger.error("  capabilities has no supported_apis attribute")
+            
+            # Re-raise the original error with more context
+            raise TypeError(f"Error in API validation: {e}. capabilities type: {type(capabilities)}, supported_apis type: {type(getattr(capabilities, 'supported_apis', 'MISSING'))}")
+        except Exception as e:
+            self._logger.error("Unexpected error in _validate_api_support: %s", e)
+            raise
 
     def _validate_pricing_model(
         self,
@@ -341,7 +390,7 @@ class ProviderCapabilityService:
         if not capabilities:
             return []
 
-        return capabilities.get_feature("supported_apis", [])
+        return capabilities.supported_apis
 
     def check_api_compatibility(
         self, template: Template, provider_instances: list[str]

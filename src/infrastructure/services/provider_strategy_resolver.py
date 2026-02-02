@@ -26,27 +26,26 @@ class ProviderStrategyResolver:
         Returns:
             Registered strategy identifier or None if not found
         """
-        # Try exact match first
+        # Try exact match first (provider name only)
         if provider_name:
-            candidate = f"{provider_type}-{provider_name}"
-            if candidate in self._context.available_strategies:
-                return candidate
+            if provider_name in self._context.available_strategies():
+                return provider_name
         
         # Try with 'default' fallback
         default_candidate = f"{provider_type}-default"
-        if default_candidate in self._context.available_strategies:
+        if default_candidate in self._context.available_strategies():
             return default_candidate
             
         # Try provider type only
-        if provider_type in self._context.available_strategies:
+        if provider_type in self._context.available_strategies():
             return provider_type
             
         return None
 
     def get_available_strategies(self) -> list[str]:
         """Get all available strategy identifiers from registry."""
-        return self._context.available_strategies
+        return self._context.available_strategies()
 
     def validate_strategy_exists(self, strategy_identifier: str) -> bool:
         """Check if strategy exists in registry."""
-        return strategy_identifier in self._context.available_strategies
+        return strategy_identifier in self._context.available_strategies()

@@ -329,7 +329,7 @@ class TestProviderCapabilityService:
         assert ProviderOperationType.GET_INSTANCE_STATUS in capabilities.supported_operations
 
         # Check features
-        supported_apis = capabilities.get_feature("supported_apis", [])
+        supported_apis = capabilities.supported_apis
         assert "EC2Fleet" in supported_apis
         assert "SpotFleet" in supported_apis
         assert "RunInstances" in supported_apis
