@@ -72,11 +72,28 @@ def create_aws_config(data: dict[str, Any]) -> Any:
     try:
         from providers.aws.configuration.config import AWSProviderConfig
 
+        # AWSProviderConfig inherits from BaseSettings, so env vars are automatically loaded
         return AWSProviderConfig(**data)
     except ImportError as e:
         raise ImportError(f"AWS configuration not available: {e!s}")
     except Exception as e:
         raise RuntimeError(f"Failed to create AWS config: {e!s}")
+
+
+def register_aws_provider_settings() -> None:
+    """Register AWSProviderConfig with the provider settings registry."""
+    try:
+        from config.schemas.provider_settings_registry import ProviderSettingsRegistry
+        from providers.aws.configuration.config import AWSProviderConfig
+        
+        # Register AWSProviderConfig as the settings class for AWS providers
+        ProviderSettingsRegistry._settings_classes["aws"] = AWSProviderConfig
+        
+    except ImportError:
+        # Registry not available, skip registration
+        pass
+    except Exception as e:
+        raise RuntimeError(f"Failed to register AWS provider settings: {e!s}")
 
 
 def create_aws_resolver() -> Any:
@@ -402,6 +419,9 @@ def initialize_aws_provider(
         logger: Optional logger for initialization messages
     """
     try:
+        # Register AWS provider settings
+        register_aws_provider_settings()
+        
         # Register AWS extensions
         register_aws_extensions(logger)
 
@@ -486,3 +506,4 @@ def register_aws_services_with_di(container) -> None:
 
 with suppress(Exception):
     register_aws_extensions()
+    register_aws_provider_settings()
