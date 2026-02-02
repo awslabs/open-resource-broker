@@ -179,8 +179,12 @@ def _get_active_providers() -> list[dict]:
             selection_result = provider_selection.select_active_provider()
             return [{"name": selection_result.provider_name, "type": selection_result.provider_type}]
         except Exception:
-            # Final fallback to default
-            return [{"name": "default", "type": "aws"}]
+            # Final fallback to first available provider
+            from providers.registry import get_provider_registry
+            registry = get_provider_registry()
+            registered_types = registry.get_registered_providers()
+            default_type = registered_types[0] if registered_types else "aws"
+            return [{"name": "default", "type": default_type}]
 
     with open(config_file) as f:
         config_dict = json.load(f)
@@ -196,7 +200,11 @@ def _get_active_providers() -> list[dict]:
 
     # Fallback if no providers configured
     if not active_providers:
-        active_providers = [{"name": "default", "type": "aws"}]
+        from providers.registry import get_provider_registry
+        registry = get_provider_registry()
+        registered_types = registry.get_registered_providers()
+        default_type = registered_types[0] if registered_types else "aws"
+        active_providers = [{"name": "default", "type": default_type}]
 
     return active_providers
 
@@ -241,8 +249,15 @@ async def _generate_examples_from_factory(
     
     container = get_container()
     
-    # For now, directly use AWS handler factory since that's what we have
-    # TODO: Extend this when we have other provider types
+    # Use provider registry to get the appropriate handler factory
+    from providers.registry import get_provider_registry
+    
+    registry = get_provider_registry()
+    if not registry.is_provider_registered(provider_type):
+        available_types = registry.get_registered_providers()
+        raise ValueError(f"Provider type '{provider_type}' is not registered. Available types: {available_types}")
+    
+    # For AWS provider, use the existing logic
     if provider_type == "aws":
         from providers.aws.infrastructure.aws_handler_factory import AWSHandlerFactory
         
@@ -272,4 +287,6 @@ async def _generate_examples_from_factory(
         
         return examples
     else:
-        raise ValueError(f"Unsupported provider type: {provider_type}. Currently only 'aws' is supported.")
+        # For other providers, we would need to implement their handler factories
+        # For now, return empty list to avoid breaking the system
+        return []

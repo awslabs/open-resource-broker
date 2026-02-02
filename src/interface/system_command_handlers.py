@@ -135,7 +135,18 @@ async def handle_reload_provider_config(args) -> dict[str, Any]:
 @handle_interface_exceptions(context="select_provider_strategy", interface_type="cli")
 async def handle_select_provider_strategy(args) -> dict[str, Any]:
     """Handle select provider strategy operations."""
-    provider = getattr(args, "provider", "aws")
+    # Get first available provider as default
+    default_provider = "aws"  # Keep as fallback
+    try:
+        from providers.registry import get_provider_registry
+        registry = get_provider_registry()
+        registered_types = registry.get_registered_providers()
+        if registered_types:
+            default_provider = registered_types[0]
+    except Exception:
+        pass  # Use fallback
+    
+    provider = getattr(args, "provider", default_provider)
     return {
         "result": {"selected_provider": provider},
         "message": "Provider strategy selected successfully",

@@ -114,31 +114,32 @@ def _get_available_schedulers() -> list[dict[str, str]]:
 
 
 def _get_available_providers() -> list[dict[str, str]]:
-    """Get available providers from provider selection service."""
+    """Get available providers from provider registry."""
     try:
-        from infrastructure.di.container import get_container
-        from application.services.provider_selection_service import ProviderSelectionService
+        from providers.registry import get_provider_registry
         
-        container = get_container()
-        provider_service = container.get(ProviderSelectionService)
-        
-        # Get unique provider types (not instances)
-        provider_types = set()
-        for provider in provider_service.get_available_providers():
-            provider_types.add(provider["type"])
+        registry = get_provider_registry()
+        registered_types = registry.get_registered_providers()
         
         providers = []
-        for provider_type in sorted(provider_types):
+        for provider_type in sorted(registered_types):
+            # Get display name and description based on provider type
+            display_name = provider_type
             if provider_type == "aws":
-                providers.append({
-                    "type": "aws",
-                    "display_name": "aws", 
-                    "description": "Amazon Web Services"
-                })
+                description = "Amazon Web Services"
+            else:
+                description = f"{provider_type.upper()} Provider"
+            
+            providers.append({
+                "type": provider_type,
+                "display_name": display_name,
+                "description": description
+            })
         
+        # Fallback to AWS if no providers registered (for backward compatibility)
         return providers if providers else [{"type": "aws", "display_name": "aws", "description": "Amazon Web Services"}]
     except Exception:
-        # Fallback to hardcoded if service unavailable
+        # Fallback to AWS if registry unavailable
         return [{"type": "aws", "display_name": "aws", "description": "Amazon Web Services"}]
 
 
@@ -182,7 +183,9 @@ def _interactive_setup() -> Dict[str, Any]:
         try:
             provider_type = providers[int(provider_choice) - 1]["type"]
         except (ValueError, IndexError):
-            provider_type = "aws"
+            # Use first available provider as default
+            providers = _get_available_providers()
+            provider_type = providers[0]["type"] if providers else "aws"
 
         print_newline()
         print_separator(width=60, char="-", color="cyan")
@@ -337,9 +340,13 @@ def _discover_infrastructure(provider_type: str, region: str, profile: str) -> D
 
 def _get_default_config(args) -> Dict[str, Any]:
     """Get default configuration from args."""
+    # Get first available provider as default
+    providers = _get_available_providers()
+    default_provider = providers[0]["type"] if providers else "aws"
+    
     return {
         "scheduler_type": args.scheduler or "default",
-        "provider_type": args.provider or "aws",
+        "provider_type": args.provider or default_provider,
         "region": args.region or "us-east-1",
         "profile": args.profile or "default",
         "infrastructure_defaults": {},
