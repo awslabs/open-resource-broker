@@ -199,15 +199,10 @@ class ProviderCapabilityService:
             provider_type = provider_config.type
             
             # Register provider type if not already registered
-            if not self._provider_registry.is_provider_registered(provider_type):
-                if provider_type == "aws":
-                    from providers.aws.registration import register_aws_provider
-                    register_aws_provider(self._provider_registry)
+            self._provider_registry.ensure_provider_type_registered(provider_type)
             
             # Register provider instance
-            if provider_type == "aws":
-                from providers.aws.registration import register_aws_provider
-                register_aws_provider(self._provider_registry, instance_name=provider_instance)
+            self._provider_registry.ensure_provider_type_registered(provider_type)
                 
         except Exception as e:
             self._logger.warning("Failed to register provider %s from config: %s", provider_instance, str(e))

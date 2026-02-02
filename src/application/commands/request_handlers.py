@@ -398,15 +398,10 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
             provider_type = provider_instance.type
             
             # Register provider type if not already registered
-            if not registry.is_provider_registered(provider_type):
-                if provider_type == "aws":
-                    from providers.aws.registration import register_aws_provider
-                    register_aws_provider(registry, self.logger)
+            registry.ensure_provider_type_registered(provider_type)
             
             # Register provider instance
-            if provider_type == "aws":
-                from providers.aws.registration import register_aws_provider
-                register_aws_provider(registry, self.logger, instance_name=provider_instance.name)
+            registry.ensure_provider_type_registered(provider_type)
                 
         except Exception as e:
             self.logger.warning("Failed to register provider %s from config: %s", provider_instance.name, str(e))
@@ -783,13 +778,8 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
     def _register_provider_from_config(self, provider_instance, registry):
         """Register provider instance from configuration with registry."""
         try:
-            from providers.aws.registration import register_aws_provider
-            
-            if provider_instance.type == "aws":
-                register_aws_provider(registry, self.logger, provider_instance.name)
-                self.logger.debug("Registered AWS provider instance: %s", provider_instance.name)
-            else:
-                self.logger.warning("Unknown provider type: %s", provider_instance.type)
+            registry.ensure_provider_type_registered(provider_instance.type)
+            self.logger.debug("Registered provider instance: %s", provider_instance.name)
         except Exception as e:
             self.logger.error("Failed to register provider %s: %s", provider_instance.name, e)
 

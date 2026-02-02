@@ -317,6 +317,11 @@ def _discover_infrastructure(provider_type: str, region: str, profile: str) -> D
         
         registry = get_provider_registry()
         
+        # Ensure provider type is registered
+        if not registry.ensure_provider_type_registered(provider_type):
+            print_error(f"Failed to register provider type: {provider_type}")
+            return {}
+        
         # Create provider config for discovery
         provider_config = {
             "region": region,

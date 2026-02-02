@@ -149,12 +149,12 @@ class Application:
     def _register_provider_from_config(self, provider_instance):
         """Register provider instance from configuration with registry."""
         try:
-            if provider_instance.type == "aws":
-                from providers.aws.registration import register_aws_provider
-                register_aws_provider(self._provider_registry, self.logger, provider_instance.name)
-                self.logger.debug("Registered AWS provider instance: %s", provider_instance.name)
-            else:
-                self.logger.warning("Unknown provider type: %s", provider_instance.type)
+            # Ensure provider type is registered
+            if not self._provider_registry.ensure_provider_type_registered(provider_instance.type):
+                self.logger.warning("Failed to register provider type: %s", provider_instance.type)
+                return
+                
+            self.logger.debug("Registered %s provider instance: %s", provider_instance.type, provider_instance.name)
         except Exception as e:
             self.logger.error("Failed to register provider %s: %s", provider_instance.name, e)
 
