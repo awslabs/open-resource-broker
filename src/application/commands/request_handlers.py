@@ -499,6 +499,7 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
                 return {
                     "success": True,
                     "resource_ids": resource_ids,
+                    "instance_ids": result.data.get("instance_ids", []),  # Include instance IDs
                     "instances": instances,
                     "provider_data": result.metadata or {},
                     "error_message": None,
