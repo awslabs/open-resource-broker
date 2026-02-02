@@ -4,6 +4,7 @@ This factory creates provider strategies and contexts based on integrated config
 integrating the existing provider strategy ecosystem with the CQRS architecture.
 """
 
+import os
 from typing import Any, Optional
 
 from config.schemas.provider_strategy_schema import (
@@ -184,26 +185,74 @@ class ProviderStrategyFactory:
             # Use AWSProviderConfig directly - it inherits from BaseSettings
             from providers.aws.configuration.config import AWSProviderConfig
             
-            # First create with no args to load environment variables
-            env_config = AWSProviderConfig()
-            
-            # Then create with config dict, but only use values that weren't set by env vars
             config_dict = instance_config.config.copy()
             
-            # Remove any keys from config_dict that have non-default values in env_config
-            # This ensures environment variables take precedence
-            default_config = AWSProviderConfig.__pydantic_fields__
-            for key in list(config_dict.keys()):
-                if hasattr(env_config, key):
-                    env_value = getattr(env_config, key)
-                    default_value = default_config.get(key)
-                    default_val = default_value.default if default_value else None
-                    
-                    # If env value differs from default, remove from config_dict
-                    if env_value != default_val:
-                        config_dict.pop(key, None)
+            # Ensure minimal authentication
+            if not any(key in config_dict for key in ['profile', 'role_arn', 'access_key_id', 'credential_file']):
+                config_dict['profile'] = 'default'
             
-            # Create final config with remaining config_dict values
+            # Simple and reliable approach: Check env vars directly and override config_dict
+            # This ensures env vars have precedence over config file values
+            
+            # Map of config field names to their environment variable names
+            env_var_mapping = {
+                'region': 'ORB_AWS_REGION',
+                'profile': 'ORB_AWS_PROFILE', 
+                'role_arn': 'ORB_AWS_ROLE_ARN',
+                'access_key_id': 'ORB_AWS_ACCESS_KEY_ID',
+                'secret_access_key': 'ORB_AWS_SECRET_ACCESS_KEY',
+                'session_token': 'ORB_AWS_SESSION_TOKEN',
+                'endpoint_url': 'ORB_AWS_ENDPOINT_URL',
+                'aws_max_retries': 'ORB_AWS_AWS_MAX_RETRIES',
+                'aws_read_timeout': 'ORB_AWS_AWS_READ_TIMEOUT',
+                'service_role_spot_fleet': 'ORB_AWS_SERVICE_ROLE_SPOT_FLEET',
+                'ssm_parameter_prefix': 'ORB_AWS_SSM_PARAMETER_PREFIX',
+                'credential_file': 'ORB_AWS_CREDENTIAL_FILE',
+                'key_file': 'ORB_AWS_KEY_FILE',
+                'proxy_host': 'ORB_AWS_PROXY_HOST',
+                'proxy_port': 'ORB_AWS_PROXY_PORT',
+                'aws_connect_timeout': 'ORB_AWS_AWS_CONNECT_TIMEOUT',
+                'request_retry_attempts': 'ORB_AWS_REQUEST_RETRY_ATTEMPTS',
+                'instance_pending_timeout_sec': 'ORB_AWS_INSTANCE_PENDING_TIMEOUT_SEC',
+                'describe_request_retry_attempts': 'ORB_AWS_DESCRIBE_REQUEST_RETRY_ATTEMPTS',
+                'describe_request_interval': 'ORB_AWS_DESCRIBE_REQUEST_INTERVAL',
+            }
+            
+            # Override config_dict with environment variables where they exist
+            for field_name, env_var_name in env_var_mapping.items():
+                if env_var_name in os.environ:
+                    env_value = os.environ[env_var_name]
+                    
+                    # Convert to appropriate type
+                    if field_name in ['aws_max_retries', 'aws_read_timeout', 'proxy_port', 
+                                    'aws_connect_timeout', 'request_retry_attempts',
+                                    'instance_pending_timeout_sec', 'describe_request_retry_attempts',
+                                    'describe_request_interval']:
+                        try:
+                            config_dict[field_name] = int(env_value)
+                        except ValueError:
+                            # Keep original value if conversion fails
+                            pass
+                    else:
+                        config_dict[field_name] = env_value
+            
+            # Handle complex nested fields (JSON env vars)
+            if 'ORB_AWS_HANDLERS' in os.environ:
+                try:
+                    import json
+                    config_dict['handlers'] = json.loads(os.environ['ORB_AWS_HANDLERS'])
+                except (json.JSONDecodeError, ValueError):
+                    # Keep original value if JSON parsing fails
+                    pass
+            
+            if 'ORB_AWS_LAUNCH_TEMPLATE' in os.environ:
+                try:
+                    import json
+                    config_dict['launch_template'] = json.loads(os.environ['ORB_AWS_LAUNCH_TEMPLATE'])
+                except (json.JSONDecodeError, ValueError):
+                    # Keep original value if JSON parsing fails
+                    pass
+            
             return AWSProviderConfig(**config_dict)
         
         # Fallback to dict config for other providers
