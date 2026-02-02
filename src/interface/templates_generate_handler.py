@@ -146,7 +146,6 @@ async def _generate_templates_for_provider(provider: dict, args) -> dict:
     templates_data = {"templates": formatted_examples}
     
     # Write JSON with robust datetime handling
-    import json
     from datetime import datetime
     
     class DateTimeEncoder(json.JSONEncoder):
