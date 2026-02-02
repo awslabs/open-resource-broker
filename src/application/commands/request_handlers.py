@@ -86,8 +86,7 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
         if provider_config:
             # Register all configured providers with registry
             for provider_instance in provider_config.get_active_providers():
-                if not registry.is_provider_instance_registered(provider_instance.name):
-                    self._register_provider_from_config(provider_instance, registry)
+                registry.ensure_provider_instance_registered_from_config(provider_instance)
         
         available_providers = registry.get_registered_providers()
         available_instances = registry.get_registered_provider_instances()
@@ -392,19 +391,6 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
         self.logger.info("Machine request created successfully: %s", request.request_id)
         return str(request.request_id)
 
-    def _register_provider_from_config(self, provider_instance, registry) -> None:
-        """Register provider instance from configuration with the registry."""
-        try:
-            provider_type = provider_instance.type
-            
-            # Register provider type if not already registered
-            registry.ensure_provider_type_registered(provider_type)
-            
-            # Register provider instance
-            registry.ensure_provider_type_registered(provider_type)
-                
-        except Exception as e:
-            self.logger.warning("Failed to register provider %s from config: %s", provider_instance.name, str(e))
 
     def _create_machine_aggregate(self, instance_data: dict[str, Any], request, template_id: str):
         """Create machine aggregate from instance data."""
@@ -775,13 +761,6 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
             self.logger.error("Failed to process resource group %s: %s", resource_id, e)
             return {"success": False, "error_message": str(e)}
 
-    def _register_provider_from_config(self, provider_instance, registry):
-        """Register provider instance from configuration with registry."""
-        try:
-            registry.ensure_provider_type_registered(provider_instance.type)
-            self.logger.debug("Registered provider instance: %s", provider_instance.name)
-        except Exception as e:
-            self.logger.error("Failed to register provider %s: %s", provider_instance.name, e)
 
 
 @command_handler(UpdateRequestStatusCommand)

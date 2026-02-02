@@ -349,28 +349,59 @@ class ProviderRegistry(BaseRegistry):
                 return True
             else:
                 if self._logger:
-                    self._logger.error(
-                        "Registration function '%s' not found in module '%s'",
+                    self._logger.warning(
+                        "Provider registration function '%s' not found in module '%s'",
                         register_function_name,
-                        module_name
+                        module_name,
                     )
                 return False
                 
         except ImportError as e:
             if self._logger:
-                self._logger.error(
-                    "Failed to import registration module for provider '%s': %s",
-                    provider_type,
-                    e
-                )
+                self._logger.warning("Failed to import provider registration module '%s': %s", module_name, e)
             return False
         except Exception as e:
             if self._logger:
-                self._logger.error(
-                    "Failed to register provider type '%s': %s",
-                    provider_type,
-                    e
-                )
+                self._logger.error("Error registering provider type '%s': %s", provider_type, e)
+            return False
+
+    def ensure_provider_instance_registered_from_config(self, provider_instance) -> bool:
+        """
+        Ensure provider instance is registered from config.
+        Handles both type and instance registration.
+        
+        Args:
+            provider_instance: ProviderInstanceConfig object
+            
+        Returns:
+            True if registered successfully, False otherwise
+        """
+        # Already registered?
+        if self.is_provider_instance_registered(provider_instance.name):
+            if self._logger:
+                self._logger.debug("Provider instance '%s' already registered", provider_instance.name)
+            return True
+        
+        try:
+            import importlib
+            provider_type = provider_instance.type
+            
+            if self._logger:
+                self._logger.debug("Registering provider instance: %s", provider_instance.name)
+            
+            # Dynamically import provider registration module
+            module = importlib.import_module(f'providers.{provider_type}.registration')
+            
+            # Call provider's instance registration function
+            register_func = getattr(module, f'register_{provider_type}_provider_instance')
+            register_func(provider_instance, self._logger)
+            
+            if self._logger:
+                self._logger.info("Successfully registered provider instance: %s", provider_instance.name)
+            return True
+        except (ImportError, AttributeError) as e:
+            if self._logger:
+                self._logger.warning(f"Failed to register provider instance '{provider_instance.name}': {e}")
             return False
 
     def register(

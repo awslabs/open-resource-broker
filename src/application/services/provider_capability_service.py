@@ -174,7 +174,9 @@ class ProviderCapabilityService:
             # First check if provider is registered in registry
             if not self._provider_registry.is_instance_registered(provider_instance):
                 # Provider not in registry, register it from configuration
-                self._register_provider_from_config(provider_instance)
+                provider_config = self._config_manager.get_provider_instance_config(provider_instance)
+                if provider_config:
+                    self._provider_registry.ensure_provider_instance_registered_from_config(provider_config)
             
             # Get actual provider config for strategy creation
             provider_config = self._config_manager.get_provider_instance_config(provider_instance)
@@ -188,24 +190,6 @@ class ProviderCapabilityService:
         except Exception as e:
             self._logger.warning("Failed to get capabilities for %s: %s", provider_instance, str(e))
             return None
-
-    def _register_provider_from_config(self, provider_instance: str) -> None:
-        """Register provider instance from configuration with the registry."""
-        try:
-            provider_config = self._config_manager.get_provider_instance_config(provider_instance)
-            if not provider_config:
-                return
-            
-            provider_type = provider_config.type
-            
-            # Register provider type if not already registered
-            self._provider_registry.ensure_provider_type_registered(provider_type)
-            
-            # Register provider instance
-            self._provider_registry.ensure_provider_type_registered(provider_type)
-                
-        except Exception as e:
-            self._logger.warning("Failed to register provider %s from config: %s", provider_instance, str(e))
 
     def _get_config_based_capabilities(self, provider_instance: str) -> ProviderCapabilities:
         """Get capabilities from merged provider configuration."""

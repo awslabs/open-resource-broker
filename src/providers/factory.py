@@ -66,7 +66,7 @@ class ProviderStrategyFactory:
             
             for provider_instance in active_providers:
                 if not registry.is_provider_instance_registered(provider_instance.name):
-                    self._register_provider_from_config(provider_instance, registry)
+                    registry.ensure_provider_instance_registered_from_config(provider_instance)
 
             self._logger.info(
                 "Provider registry setup complete with %s providers",
@@ -76,18 +76,6 @@ class ProviderStrategyFactory:
         except Exception as e:
             self._logger.error("Failed to setup provider registry: %s", str(e))
             raise ProviderCreationError(f"Provider registry setup failed: {e!s}")
-
-    def _register_provider_from_config(self, provider_instance, registry):
-        """Register provider instance from configuration with registry."""
-        try:
-            # Ensure provider type is registered
-            if not registry.ensure_provider_type_registered(provider_instance.type):
-                self._logger.warning("Failed to register provider type: %s", provider_instance.type)
-                return
-                
-            self._logger.debug("Registered %s provider instance: %s", provider_instance.type, provider_instance.name)
-        except Exception as e:
-            self._logger.error("Failed to register provider %s: %s", provider_instance.name, e)
 
 
 

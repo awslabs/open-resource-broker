@@ -142,21 +142,9 @@ class Application:
             if provider_config:
                 for provider_instance in provider_config.get_active_providers():
                     if not self._provider_registry.is_provider_instance_registered(provider_instance.name):
-                        self._register_provider_from_config(provider_instance)
+                        self._provider_registry.ensure_provider_instance_registered_from_config(provider_instance)
         except Exception as e:
             self.logger.error("Failed to register configured providers: %s", e)
-
-    def _register_provider_from_config(self, provider_instance):
-        """Register provider instance from configuration with registry."""
-        try:
-            # Ensure provider type is registered
-            if not self._provider_registry.ensure_provider_type_registered(provider_instance.type):
-                self.logger.warning("Failed to register provider type: %s", provider_instance.type)
-                return
-                
-            self.logger.debug("Registered %s provider instance: %s", provider_instance.type, provider_instance.name)
-        except Exception as e:
-            self.logger.error("Failed to register provider %s: %s", provider_instance.name, e)
 
     def _log_provider_configuration(self, config_manager) -> None:
         """Log provider configuration information during initialization."""
