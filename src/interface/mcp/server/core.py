@@ -440,7 +440,18 @@ Use the available MCP tools to diagnose the issue."""
 
     def _generate_best_practices_prompt(self, arguments: dict[str, Any]) -> str:
         """Generate best practices prompt."""
-        provider = arguments.get("provider", "aws")
+        # Get first available provider as default
+        default_provider = "aws"  # Keep as fallback
+        try:
+            from providers.registry import get_provider_registry
+            registry = get_provider_registry()
+            registered_types = registry.get_registered_providers()
+            if registered_types:
+                default_provider = registered_types[0]
+        except Exception:
+            pass  # Use fallback
+        
+        provider = arguments.get("provider", default_provider)
 
         return f"""Please provide infrastructure deployment best practices for {provider} using the Open Resource Broker.
 

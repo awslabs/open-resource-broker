@@ -162,7 +162,11 @@ def _get_active_providers() -> List[Dict[str, Any]]:
     config_file = config_dir / "config.json"
 
     if not config_file.exists():
-        return [{"name": "default", "type": "aws", "config": {"region": "us-east-1", "profile": "default"}}]
+        from providers.registry import get_provider_registry
+        registry = get_provider_registry()
+        registered_types = registry.get_registered_providers()
+        default_type = registered_types[0] if registered_types else "aws"
+        return [{"name": "default", "type": default_type, "config": {"region": "us-east-1", "profile": "default"}}]
 
     with open(config_file) as f:
         config_dict = json.load(f)
@@ -176,7 +180,14 @@ def _get_active_providers() -> List[Dict[str, Any]]:
         if provider.get("enabled", True):
             active_providers.append(provider)
 
-    return active_providers or [{"name": "default", "type": "aws", "config": {"region": "us-east-1", "profile": "default"}}]
+    if not active_providers:
+        from providers.registry import get_provider_registry
+        registry = get_provider_registry()
+        registered_types = registry.get_registered_providers()
+        default_type = registered_types[0] if registered_types else "aws"
+        active_providers = [{"name": "default", "type": default_type, "config": {"region": "us-east-1", "profile": "default"}}]
+    
+    return active_providers
 
 
 def _get_provider_config(provider_name: str) -> Dict[str, Any]:
