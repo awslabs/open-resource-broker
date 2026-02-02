@@ -84,7 +84,7 @@ class ProviderSelector(ABC):
     Abstract base class for provider strategy selectors.
 
     This class defines the interface for strategy selection algorithms
-    that can be used by the ProviderContext to choose the most appropriate
+    that can be used by the Provider Registry to choose the most appropriate
     strategy for a given operation.
     """
 

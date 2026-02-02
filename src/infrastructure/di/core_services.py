@@ -107,9 +107,12 @@ def _create_storage_strategy(container: "DIContainer") -> StoragePort:
 
 
 def _create_provider_strategy(container: "DIContainer") -> ProviderPort:
-    """Create provider strategy using adapter pattern."""
-    from infrastructure.adapters.provider_context_adapter import ProviderContextAdapter
-    from providers.base.strategy.provider_context import ProviderContext
+    """Create provider strategy using registry pattern."""
+    from infrastructure.adapters.provider_registry_adapter import ProviderRegistryAdapter
+    from providers.registry import get_provider_registry
 
-    provider_context = container.get(ProviderContext)
-    return ProviderContextAdapter(provider_context)
+    registry = get_provider_registry()
+    logger = container.get(LoggingPort)
+    metrics = container.get(MetricsCollector)
+    registry.set_dependencies(logger, metrics)
+    return ProviderRegistryAdapter(registry)

@@ -104,24 +104,19 @@ class Application:
                 self._dry_run_context = dry_run_context(True)
                 self._dry_run_context.__enter__()
 
-            # Initialize provider context directly
-            from providers.base.strategy import ProviderContext
+            # Initialize provider registry directly
+            from providers.registry import get_provider_registry
 
-            self._provider_context = self._container.get(ProviderContext)
+            self._provider_registry = get_provider_registry()
 
-            # Initialize provider context based on loading mode
+            # Initialize provider registry based on loading mode
             if not self._container.is_lazy_loading_enabled():
-                # Eager loading - initialize immediately
-                if (
-                    hasattr(self._provider_context, "initialize")
-                    and not self._provider_context.initialize()
-                ):
-                    self.logger.warning("Provider context initialization returned False")
+                # Eager loading - ensure providers are registered
+                self.logger.info("Eager loading - registering providers immediately")
+                self._register_configured_providers()
             else:
-                # Lazy loading - just mark as ready, don't trigger loading
-                self.logger.info("Lazy loading enabled - providers will initialize on first use")
-                if hasattr(self._provider_context, "_initialized"):
-                    self._provider_context._initialized = True
+                # Lazy loading - providers will register on first use
+                self.logger.info("Lazy loading enabled - providers will register on first use")
 
             # Pre-load templates into cache during initialization
             await self._preload_templates()
@@ -139,6 +134,29 @@ class Application:
         except Exception as e:
             self.logger.error("Failed to initialize application: %s", e)
             return False
+
+    def _register_configured_providers(self) -> None:
+        """Register providers from configuration with registry."""
+        try:
+            provider_config = self._config_manager.get_provider_config()
+            if provider_config:
+                for provider_instance in provider_config.get_active_providers():
+                    if not self._provider_registry.is_provider_instance_registered(provider_instance.name):
+                        self._register_provider_from_config(provider_instance)
+        except Exception as e:
+            self.logger.error("Failed to register configured providers: %s", e)
+
+    def _register_provider_from_config(self, provider_instance):
+        """Register provider instance from configuration with registry."""
+        try:
+            if provider_instance.type == "aws":
+                from providers.aws.registration import register_aws_provider
+                register_aws_provider(self._provider_registry, self.logger, provider_instance.name)
+                self.logger.debug("Registered AWS provider instance: %s", provider_instance.name)
+            else:
+                self.logger.warning("Unknown provider type: %s", provider_instance.type)
+        except Exception as e:
+            self.logger.error("Failed to register provider %s: %s", provider_instance.name, e)
 
     def _log_provider_configuration(self, config_manager) -> None:
         """Log provider configuration information during initialization."""
@@ -185,12 +203,12 @@ class Application:
     def _log_final_provider_info(self) -> None:
         """Log final provider information after initialization."""
         try:
-            if hasattr(self, "_provider_context") and self._provider_context:
-                available_strategies = self._provider_context.available_strategies
-                current_strategy = self._provider_context.current_strategy_type
+            if hasattr(self, "_provider_registry") and self._provider_registry:
+                available_providers = self._provider_registry.get_registered_providers()
+                available_instances = self._provider_registry.get_registered_provider_instances()
 
-                self.logger.info("Provider strategies available: %s", available_strategies)
-                self.logger.info("Current provider strategy: %s", current_strategy)
+                self.logger.info("Provider types available: %s", available_providers)
+                self.logger.info("Provider instances available: %s", available_instances)
             elif hasattr(self, "provider_type"):
                 self.logger.info("Provider type: %s", self.provider_type)
 
@@ -222,22 +240,22 @@ class Application:
         return self._command_bus
 
     def get_provider_info(self) -> dict[str, Any]:
-        """Get provider information using direct provider context."""
+        """Get provider information using provider registry."""
         if not self._initialized:
             return {"status": "not_initialized"}
 
         try:
-            if hasattr(self, "_provider_context") and self._provider_context:
-                available_strategies = self._provider_context.available_strategies
-                current_strategy = self._provider_context.current_strategy_type
+            if hasattr(self, "_provider_registry") and self._provider_registry:
+                available_providers = self._provider_registry.get_registered_providers()
+                available_instances = self._provider_registry.get_registered_provider_instances()
 
                 return {
                     "status": "configured",
-                    "mode": "multi" if len(available_strategies) > 1 else "single",
-                    "current_strategy": current_strategy,
-                    "available_strategies": available_strategies,
-                    "provider_names": available_strategies,
-                    "provider_count": len(available_strategies),
+                    "mode": "multi" if len(available_instances) > 1 else "single",
+                    "provider_types": available_providers,
+                    "provider_instances": available_instances,
+                    "provider_names": available_instances,
+                    "provider_count": len(available_instances),
                     "initialized": True,
                 }
             else:
@@ -251,31 +269,31 @@ class Application:
             return {"status": "error", "error": str(e), "initialized": False}
 
     def health_check(self) -> dict[str, Any]:
-        """Check application health using direct provider context."""
+        """Check application health using provider registry."""
         if not self._initialized:
             return {"status": "error", "message": "Application not initialized"}
 
         try:
-            if hasattr(self, "_provider_context") and self._provider_context:
+            if hasattr(self, "_provider_registry") and self._provider_registry:
                 # Check provider health
-                available_strategies = self._provider_context.available_strategies
+                available_instances = self._provider_registry.get_registered_provider_instances()
                 healthy_providers = 0
                 provider_health = {}
 
-                for strategy_name in available_strategies:
+                for instance_name in available_instances:
                     try:
-                        health_status = self._provider_context.check_strategy_health(strategy_name)
+                        health_status = self._provider_registry.check_strategy_health(instance_name)
                         is_healthy = (
                             health_status and health_status.is_healthy if health_status else False
                         )
-                        provider_health[strategy_name] = is_healthy
+                        provider_health[instance_name] = is_healthy
                         if is_healthy:
                             healthy_providers += 1
                     except Exception as e:
-                        self.logger.warning("Health check failed for %s: %s", strategy_name, e)
-                        provider_health[strategy_name] = False
+                        self.logger.warning("Health check failed for %s: %s", instance_name, e)
+                        provider_health[instance_name] = False
 
-                total_providers = len(available_strategies)
+                total_providers = len(available_instances)
 
                 # Determine overall status
                 if total_providers == 0:
@@ -302,7 +320,7 @@ class Application:
             else:
                 return {
                     "status": "warning",
-                    "message": "Provider context not available",
+                    "message": "Provider registry not available",
                     "initialized": self._initialized,
                 }
 

@@ -12,11 +12,10 @@ from application.machine.commands import (
     UpdateMachineStatusCommand,
     ValidateProviderStateCommand,
 )
-from domain.base.ports import ErrorHandlingPort, EventPublisherPort, LoggingPort
+from domain.base.ports import ContainerPort, ErrorHandlingPort, EventPublisherPort, LoggingPort
 from domain.machine.repository import MachineRepository
 from domain.machine.value_objects import MachineStatus
 from providers.base.strategy import (
-    ProviderContext,
     ProviderOperation,
     ProviderOperationType,
 )
@@ -92,98 +91,56 @@ class ConvertMachineStatusCommandHandler(
 
     def __init__(
         self,
-        provider_context: ProviderContext,
+        container: ContainerPort,
         logger: LoggingPort,
         event_publisher: EventPublisherPort,
         error_handler: ErrorHandlingPort,
     ) -> None:
-        """Initialize with provider context."""
+        """Initialize with container for registry access."""
         super().__init__(logger, event_publisher, error_handler)
-        self._provider_context = provider_context
+        self._container = container
 
     async def validate_command(self, command: ConvertMachineStatusCommand) -> None:
-        """Validate machine status conversion command."""
+        """Validate conversion command."""
         await super().validate_command(command)
         if not command.provider_state:
             raise ValueError("provider_state is required")
         if not command.provider_type:
             raise ValueError("provider_type is required")
 
-    async def execute_command(
-        self, command: ConvertMachineStatusCommand
-    ) -> ConvertMachineStatusResponse:
-        """Execute machine status conversion command."""
-        try:
-            # Use provider strategy pattern for conversion
-            domain_status = await self._convert_using_provider_strategy(
-                command.provider_state, command.provider_type
-            )
-
-            return ConvertMachineStatusResponse(
-                success=True,
-                status=domain_status,
-                original_state=command.provider_state,
-                provider_type=command.provider_type,
-                metadata=command.metadata,
-            )
-
-        except Exception as e:
-            # Fallback to basic conversion
-            fallback_status = self._fallback_conversion(command.provider_state)
-
-            return ConvertMachineStatusResponse(
-                success=True,  # Still successful with fallback
-                status=fallback_status,
-                original_state=command.provider_state,
-                provider_type=command.provider_type,
-                metadata={**command.metadata, "used_fallback": True, "error": str(e)},
-            )
-
-    async def _convert_using_provider_strategy(
-        self, provider_state: str, provider_type: str
-    ) -> MachineStatus:
-        """Convert using provider strategy pattern."""
-        # Set the appropriate provider strategy
-        if not self._provider_context.set_strategy(provider_type):
-            raise ValueError(f"Unsupported provider type: {provider_type}")
-
-        # Create provider operation for status conversion
+    async def execute_command(self, command: ConvertMachineStatusCommand) -> ConvertMachineStatusResponse:
+        """Execute status conversion using registry."""
+        from providers.registry import get_provider_registry
+        
+        # Get registry and execute status conversion
+        registry = get_provider_registry()
+        
+        # Create operation for status conversion
         operation = ProviderOperation(
-            # Using health check as proxy for status mapping
-            operation_type=ProviderOperationType.HEALTH_CHECK,
-            parameters={"provider_state": provider_state, "conversion_request": True},
+            operation_type=ProviderOperationType.GET_INSTANCE_STATUS,
+            parameters={
+                "provider_state": command.provider_state,
+                "convert_only": True,
+            }
         )
-
-        # Execute operation (this would be extended to support status conversion)
-        result = await self._provider_context.execute_operation(operation)
-
+        
+        # Execute via registry
+        result = await registry.execute_operation(command.provider_type, operation)
+        
         if result.success:
-            # Extract status from result (implementation depends on provider strategy)
-            return self._extract_status_from_result(result, provider_state)
+            status = result.data.get("status", MachineStatus.UNKNOWN)
+            return ConvertMachineStatusResponse(
+                status=status,
+                original_state=command.provider_state,
+                provider_type=command.provider_type,
+            )
         else:
-            raise Exception(f"Provider operation failed: {result.error_message}")
-
-    def _extract_status_from_result(self, result, provider_state: str) -> MachineStatus:
-        """Extract MachineStatus from provider result."""
-        # This is a simplified implementation
-        # In practice, each provider strategy would handle status mapping
-        return self._fallback_conversion(provider_state)
-
-    def _fallback_conversion(self, provider_state: str) -> MachineStatus:
-        """Fallback conversion when provider strategy is not available."""
-        state_mapping = {
-            "running": MachineStatus.RUNNING,
-            "stopped": MachineStatus.STOPPED,
-            "pending": MachineStatus.PENDING,
-            "stopping": MachineStatus.STOPPING,
-            "terminated": MachineStatus.TERMINATED,
-            "shutting-down": MachineStatus.STOPPING,
-        }
-
-        normalized_state = provider_state.lower().replace("_", "-")
-        return state_mapping.get(normalized_state, MachineStatus.UNKNOWN)
-
-
+            # Fallback to unknown status
+            return ConvertMachineStatusResponse(
+                status=MachineStatus.UNKNOWN,
+                original_state=command.provider_state,
+                provider_type=command.provider_type,
+            )
 @command_handler(ConvertBatchMachineStatusCommand)
 class ConvertBatchMachineStatusCommandHandler(
     BaseCommandHandler[ConvertBatchMachineStatusCommand, ConvertBatchMachineStatusResponse]
@@ -241,14 +198,14 @@ class ValidateProviderStateCommandHandler(
 
     def __init__(
         self,
-        provider_context: ProviderContext,
+        container: ContainerPort,
         logger: LoggingPort,
         event_publisher: EventPublisherPort,
         error_handler: ErrorHandlingPort,
     ) -> None:
-        """Initialize with provider context."""
+        """Initialize with container for registry access."""
         super().__init__(logger, event_publisher, error_handler)
-        self._provider_context = provider_context
+        self._container = container
 
     async def validate_command(self, command: ValidateProviderStateCommand) -> None:
         """Validate provider state validation command."""
@@ -272,7 +229,7 @@ class ValidateProviderStateCommandHandler(
 
             # Use the converter to validate
             converter = ConvertMachineStatusCommandHandler(
-                self._provider_context,
+                self._container,
                 self.logger,
                 self.event_publisher,
                 self.error_handler,

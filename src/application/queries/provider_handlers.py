@@ -1,7 +1,7 @@
 """Provider Strategy Query Handlers - CQRS handlers for provider strategy queries.
 
 This module implements query handlers for retrieving provider strategy information,
-leveraging the existing provider strategy ecosystem through clean CQRS interfaces.
+leveraging the Provider Registry for clean CQRS interfaces.
 """
 
 import time
@@ -21,7 +21,7 @@ from application.provider.queries import (
     GetProviderStrategyConfigQuery,
     ListAvailableProvidersQuery,
 )
-from domain.base.ports import ErrorHandlingPort, LoggingPort, ProviderPort
+from domain.base.ports import ErrorHandlingPort, LoggingPort
 
 
 @query_handler(GetProviderHealthQuery)
@@ -30,7 +30,6 @@ class GetProviderHealthHandler(BaseQueryHandler[GetProviderHealthQuery, Provider
 
     def __init__(
         self,
-        provider_port: ProviderPort,
         logger: LoggingPort,
         error_handler: ErrorHandlingPort,
     ) -> None:
@@ -38,21 +37,22 @@ class GetProviderHealthHandler(BaseQueryHandler[GetProviderHealthQuery, Provider
         Initialize provider health handler.
 
         Args:
-            provider_port: Provider context for accessing strategies
             logger: Logging port for operation logging
             error_handler: Error handling port for exception management
         """
         super().__init__(logger, error_handler)
-        self.provider_port = provider_port
 
     async def execute_query(self, query: GetProviderHealthQuery) -> dict[str, Any]:
         """Execute provider health query."""
         self.logger.info("Getting health for provider: %s", query.provider_name)
 
         try:
-            # Get provider strategy
-            strategy = self.provider_port.get_strategy(query.provider_name)
-            if not strategy:
+            from providers.registry import get_provider_registry
+            registry = get_provider_registry()
+
+            # Check if provider exists
+            if not (registry.is_provider_registered(query.provider_name) or 
+                   registry.is_provider_instance_registered(query.provider_name)):
                 return {
                     "provider_name": query.provider_name,
                     "status": "not_found",
@@ -60,19 +60,22 @@ class GetProviderHealthHandler(BaseQueryHandler[GetProviderHealthQuery, Provider
                     "message": f"Provider '{query.provider_name}' not found",
                 }
 
-            # Get health information
+            # Get health information from registry
+            health_status = registry.check_strategy_health(query.provider_name)
+            
             health_info = {
                 "provider_name": query.provider_name,
                 "status": "active",
-                "health": "healthy",
+                "health": "healthy" if health_status and health_status.is_healthy else "unhealthy",
                 "last_check": time.time(),
-                "capabilities": [],
+                "message": health_status.message if health_status else "No health data available",
             }
 
-            # Try to get detailed health if available
-            if hasattr(strategy, "get_health_status"):
-                detailed_health = strategy.get_health_status()
-                health_info.update(detailed_health)
+            if health_status:
+                health_info.update({
+                    "details": health_status.details,
+                    "timestamp": health_status.timestamp,
+                })
 
             self.logger.info("Provider %s health: %s", query.provider_name, health_info["health"])
             return health_info
@@ -95,7 +98,6 @@ class ListAvailableProvidersHandler(
 
     def __init__(
         self,
-        provider_port: ProviderPort,
         logger: LoggingPort,
         error_handler: ErrorHandlingPort,
     ) -> None:
@@ -103,39 +105,64 @@ class ListAvailableProvidersHandler(
         Initialize list providers handler.
 
         Args:
-            provider_port: Provider context for accessing strategies
             logger: Logging port for operation logging
             error_handler: Error handling port for exception management
         """
         super().__init__(logger, error_handler)
-        self.provider_port = provider_port
 
     async def execute_query(self, query: ListAvailableProvidersQuery) -> list[dict[str, Any]]:
         """Execute list available providers query."""
         self.logger.info("Listing available providers")
 
         try:
+            from providers.registry import get_provider_registry
+            registry = get_provider_registry()
+
             available_providers = []
 
-            # Get all available strategies
-            strategy_names = self.provider_port.get_available_strategies()
+            # Get provider types and instances
+            provider_types = registry.get_registered_providers()
+            provider_instances = registry.get_registered_provider_instances()
 
-            for strategy_name in strategy_names:
+            # Add provider types
+            for provider_type in provider_types:
                 try:
-                    strategy = self.provider_port.get_strategy(strategy_name)
+                    capabilities = registry.get_strategy_capabilities(provider_type)
                     provider_info = {
-                        "name": strategy_name,
-                        "type": getattr(strategy, "provider_type", "unknown"),
+                        "name": provider_type,
+                        "type": provider_type,
                         "status": "active",
-                        "capabilities": getattr(strategy, "capabilities", []),
+                        "capabilities": capabilities.supported_apis if capabilities else [],
                     }
                     available_providers.append(provider_info)
                 except Exception as e:
-                    self.logger.warning("Could not get info for provider %s: %s", strategy_name, e)
+                    self.logger.warning("Could not get info for provider type %s: %s", provider_type, e)
                     available_providers.append(
                         {
-                            "name": strategy_name,
-                            "type": "unknown",
+                            "name": provider_type,
+                            "type": provider_type,
+                            "status": "error",
+                            "error": str(e),
+                        }
+                    )
+
+            # Add provider instances
+            for instance_name in provider_instances:
+                try:
+                    capabilities = registry.get_strategy_capabilities(instance_name)
+                    provider_info = {
+                        "name": instance_name,
+                        "type": "instance",
+                        "status": "active",
+                        "capabilities": capabilities.supported_apis if capabilities else [],
+                    }
+                    available_providers.append(provider_info)
+                except Exception as e:
+                    self.logger.warning("Could not get info for provider instance %s: %s", instance_name, e)
+                    available_providers.append(
+                        {
+                            "name": instance_name,
+                            "type": "instance",
                             "status": "error",
                             "error": str(e),
                         }
@@ -157,7 +184,6 @@ class GetProviderCapabilitiesHandler(
 
     def __init__(
         self,
-        provider_port: ProviderPort,
         logger: LoggingPort,
         error_handler: ErrorHandlingPort,
     ) -> None:
@@ -165,39 +191,37 @@ class GetProviderCapabilitiesHandler(
         Initialize provider capabilities handler.
 
         Args:
-            provider_port: Provider context for accessing strategies
             logger: Logging port for operation logging
             error_handler: Error handling port for exception management
         """
         super().__init__(logger, error_handler)
-        self.provider_port = provider_port
 
     async def execute_query(self, query: GetProviderCapabilitiesQuery) -> dict[str, Any]:
         """Execute provider capabilities query."""
         self.logger.info("Getting capabilities for provider: %s", query.provider_name)
 
         try:
-            # Get provider strategy
-            strategy = self.provider_port.get_strategy(query.provider_name)
-            if not strategy:
+            from providers.registry import get_provider_registry
+            registry = get_provider_registry()
+
+            # Check if provider exists
+            if not (registry.is_provider_registered(query.provider_name) or 
+                   registry.is_provider_instance_registered(query.provider_name)):
                 return {
                     "provider_name": query.provider_name,
                     "capabilities": [],
                     "error": f"Provider '{query.provider_name}' not found",
                 }
 
-            # Get capabilities
+            # Get capabilities from registry
+            capabilities_obj = registry.get_strategy_capabilities(query.provider_name)
+            
             capabilities = {
                 "provider_name": query.provider_name,
-                "capabilities": getattr(strategy, "capabilities", []),
-                "supported_operations": getattr(strategy, "supported_operations", []),
-                "configuration_schema": getattr(strategy, "configuration_schema", {}),
+                "capabilities": capabilities_obj.supported_apis if capabilities_obj else [],
+                "supported_operations": capabilities_obj.supported_operations if capabilities_obj else [],
+                "features": capabilities_obj.features if capabilities_obj else {},
             }
-
-            # Try to get detailed capabilities if available
-            if hasattr(strategy, "get_capabilities"):
-                detailed_capabilities = strategy.get_capabilities()
-                capabilities.update(detailed_capabilities)
 
             self.logger.info("Retrieved capabilities for provider: %s", query.provider_name)
             return capabilities
@@ -213,7 +237,6 @@ class GetProviderMetricsHandler(BaseQueryHandler[GetProviderMetricsQuery, dict[s
 
     def __init__(
         self,
-        provider_port: ProviderPort,
         logger: LoggingPort,
         error_handler: ErrorHandlingPort,
     ) -> None:
@@ -221,41 +244,35 @@ class GetProviderMetricsHandler(BaseQueryHandler[GetProviderMetricsQuery, dict[s
         Initialize provider metrics handler.
 
         Args:
-            provider_port: Provider context for accessing strategies
             logger: Logging port for operation logging
             error_handler: Error handling port for exception management
         """
         super().__init__(logger, error_handler)
-        self.provider_port = provider_port
 
     async def execute_query(self, query: GetProviderMetricsQuery) -> dict[str, Any]:
         """Execute provider metrics query."""
         self.logger.info("Getting metrics for provider: %s", query.provider_name)
 
         try:
-            # Get provider strategy
-            strategy = self.provider_port.get_strategy(query.provider_name)
-            if not strategy:
+            from providers.registry import get_provider_registry
+            registry = get_provider_registry()
+
+            # Check if provider exists
+            if not (registry.is_provider_registered(query.provider_name) or 
+                   registry.is_provider_instance_registered(query.provider_name)):
                 return {
                     "provider_name": query.provider_name,
                     "metrics": {},
                     "error": f"Provider '{query.provider_name}' not found",
                 }
 
-            # Get basic metrics
+            # Get basic metrics (registry doesn't store detailed metrics)
             metrics = {
                 "provider_name": query.provider_name,
                 "timestamp": time.time(),
-                "requests_total": 0,
-                "requests_successful": 0,
-                "requests_failed": 0,
-                "average_response_time": 0.0,
+                "status": "active",
+                "registered_at": "unknown",  # Registry doesn't track registration time
             }
-
-            # Try to get detailed metrics if available
-            if hasattr(strategy, "get_metrics"):
-                detailed_metrics = strategy.get_metrics()
-                metrics.update(detailed_metrics)
 
             self.logger.info("Retrieved metrics for provider: %s", query.provider_name)
             return metrics
@@ -265,6 +282,7 @@ class GetProviderMetricsHandler(BaseQueryHandler[GetProviderMetricsQuery, dict[s
             raise
 
 
+@query_handler(GetProviderStrategyConfigQuery)
 class GetProviderStrategyConfigHandler(
     BaseQueryHandler[GetProviderStrategyConfigQuery, ProviderStrategyConfigDTO]
 ):
@@ -272,7 +290,6 @@ class GetProviderStrategyConfigHandler(
 
     def __init__(
         self,
-        provider_port: ProviderPort,
         logger: LoggingPort,
         error_handler: ErrorHandlingPort,
     ) -> None:
@@ -280,39 +297,35 @@ class GetProviderStrategyConfigHandler(
         Initialize provider strategy config handler.
 
         Args:
-            provider_port: Provider context for accessing strategies
             logger: Logging port for operation logging
             error_handler: Error handling port for exception management
         """
         super().__init__(logger, error_handler)
-        self.provider_port = provider_port
 
     async def execute_query(self, query: GetProviderStrategyConfigQuery) -> dict[str, Any]:
         """Execute provider strategy configuration query."""
         self.logger.info("Getting strategy config for provider: %s", query.provider_name)
 
         try:
-            # Get provider strategy
-            strategy = self.provider_port.get_strategy(query.provider_name)
-            if not strategy:
+            from providers.registry import get_provider_registry
+            registry = get_provider_registry()
+
+            # Check if provider exists
+            if not (registry.is_provider_registered(query.provider_name) or 
+                   registry.is_provider_instance_registered(query.provider_name)):
                 return {
                     "provider_name": query.provider_name,
                     "configuration": {},
                     "error": f"Provider '{query.provider_name}' not found",
                 }
 
-            # Get configuration
+            # Get basic configuration info
             config = {
                 "provider_name": query.provider_name,
-                "strategy_type": getattr(strategy, "strategy_type", "unknown"),
-                "configuration": getattr(strategy, "configuration", {}),
-                "default_settings": getattr(strategy, "default_settings", {}),
+                "strategy_type": "registry_managed",
+                "is_registered": True,
+                "is_instance": registry.is_provider_instance_registered(query.provider_name),
             }
-
-            # Try to get detailed configuration if available
-            if hasattr(strategy, "get_configuration"):
-                detailed_config = strategy.get_configuration()
-                config.update(detailed_config)
 
             self.logger.info("Retrieved strategy config for provider: %s", query.provider_name)
             return config

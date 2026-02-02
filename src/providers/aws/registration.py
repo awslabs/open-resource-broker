@@ -56,6 +56,10 @@ def create_aws_strategy(provider_config: Any) -> Any:
             provider_instance_config=provider_instance_config
         )
 
+        # Initialize the strategy
+        if not strategy.initialize():
+            raise RuntimeError("Failed to initialize AWS provider strategy")
+
         # Set provider name for identification
         if hasattr(strategy, "name") and provider_name:
             strategy.name = provider_name

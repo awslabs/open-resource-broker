@@ -66,11 +66,13 @@ async def handle_templates_generate(args) -> Dict[str, Any]:
 
     except Exception as e:
         import traceback
+        
+        # Print traceback to stderr but don't include in JSON response
+        traceback.print_exc()
 
         return {
             "status": "error",
             "message": f"Failed to generate templates: {e}",
-            "traceback": traceback.format_exc(),
         }
 
 
@@ -143,14 +145,19 @@ async def _generate_templates_for_provider(provider: dict, args) -> dict:
 
     templates_data = {"templates": formatted_examples}
     
-    # Custom JSON encoder to handle datetime objects
+    # Write JSON with robust datetime handling
+    import json
     from datetime import datetime
     
     class DateTimeEncoder(json.JSONEncoder):
         def default(self, obj):
             if isinstance(obj, datetime):
                 return obj.isoformat()
-            return super().default(obj)
+            # Convert any other non-serializable objects to string
+            try:
+                return super().default(obj)
+            except TypeError:
+                return str(obj)
     
     with open(templates_file, "w") as f:
         json.dump(templates_data, f, indent=2, cls=DateTimeEncoder)
@@ -282,7 +289,8 @@ async def _generate_examples_from_factory(
         # Convert Template objects to dict format for generation
         examples = []
         for template in example_templates:
-            template_dict = template.model_dump(exclude_none=True)
+            # Use the same approach that works in our test
+            template_dict = template.model_dump(exclude_none=True, mode='json')
             examples.append(template_dict)
         
         return examples
