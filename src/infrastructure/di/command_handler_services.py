@@ -4,6 +4,8 @@ All command handlers are now automatically discovered and registered via
 @command_handler decorators through the Handler Discovery System.
 """
 
+from typing import TYPE_CHECKING
+
 from application.commands.machine_handlers import (
     CleanupMachineResourcesHandler,
     ConvertBatchMachineStatusCommandHandler,
@@ -11,13 +13,15 @@ from application.commands.machine_handlers import (
     UpdateMachineStatusHandler,
     ValidateProviderStateCommandHandler,
 )
-from domain.base.ports import LoggingPort
+from src.domain.base.ports.logging_port import LoggingPort
 from infrastructure.di.buses import CommandBus
-from infrastructure.di.container import DIContainer
 from providers.base.strategy.provider_context import ProviderContext
 
+if TYPE_CHECKING:
+    from infrastructure.di.container import DIContainer
 
-def register_command_handler_services(container: DIContainer) -> None:
+
+def register_command_handler_services(container: "DIContainer") -> None:
     """Register command handler services."""
 
     # Register machine command handlers
@@ -42,49 +46,49 @@ def register_command_handler_services(container: DIContainer) -> None:
     _register_cli_command_handlers(container)
 
 
-def _register_machine_command_handlers(container: DIContainer) -> None:
+def _register_machine_command_handlers(container: "DIContainer") -> None:
     """Register machine-related command handlers."""
 
     # All machine command handlers are now automatically discovered and registered
     # via @command_handler decorators through the Handler Discovery System
 
 
-def _register_request_command_handlers(container: DIContainer) -> None:
+def _register_request_command_handlers(container: "DIContainer") -> None:
     """Register request-related command handlers."""
 
     # All request command handlers are now automatically discovered and registered
     # via @command_handler decorators through the Handler Discovery System
 
 
-def _register_template_command_handlers(container: DIContainer) -> None:
+def _register_template_command_handlers(container: "DIContainer") -> None:
     """Register template-related command handlers."""
 
     # All template command handlers are now automatically discovered and registered
     # via @command_handler decorators through the Handler Discovery System
 
 
-def _register_system_command_handlers(container: DIContainer) -> None:
+def _register_system_command_handlers(container: "DIContainer") -> None:
     """Register system-related command handlers."""
 
     # All system command handlers are now automatically discovered and registered
     # via @command_handler decorators through the Handler Discovery System
 
 
-def _register_provider_command_handlers(container: DIContainer) -> None:
+def _register_provider_command_handlers(container: "DIContainer") -> None:
     """Register provider-related command handlers."""
 
     # All provider command handlers are now automatically discovered and registered
     # via @command_handler decorators through the Handler Discovery System
 
 
-def _register_cleanup_command_handlers(container: DIContainer) -> None:
+def _register_cleanup_command_handlers(container: "DIContainer") -> None:
     """Register cleanup-related command handlers."""
 
     # All cleanup command handlers are now automatically discovered and registered
     # via @command_handler decorators through the Handler Discovery System
 
 
-def register_command_handlers_with_bus(container: DIContainer) -> None:
+def register_command_handlers_with_bus(container: "DIContainer") -> None:
     """Register command handlers with the command bus."""
 
     try:
@@ -175,7 +179,7 @@ def register_command_handlers_with_bus(container: DIContainer) -> None:
         logger.warning("Failed to register some command handlers: %s", e)
 
 
-def _register_cli_command_handlers(container: DIContainer) -> None:
+def _register_cli_command_handlers(container: "DIContainer") -> None:
     """Register CLI-related command handlers."""
 
     # All CLI command handlers are now automatically discovered and registered

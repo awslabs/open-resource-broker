@@ -1,7 +1,9 @@
 """Core service registrations for dependency injection."""
 
-from config.managers.configuration_manager import ConfigurationManager
-from domain.base.ports import (
+from typing import TYPE_CHECKING
+
+from src.config.managers.configuration_manager import ConfigurationManager
+from src.domain.base.ports import (
     ConfigurationPort,
     EventPublisherPort,
     LoggingPort,
@@ -11,7 +13,7 @@ from domain.base.ports import (
 )
 from infrastructure.di.buses import CommandBus, QueryBus
 from infrastructure.di.container import DIContainer
-from monitoring.metrics import MetricsCollector
+from src.monitoring.metrics import MetricsCollector
 
 
 def register_core_services(container: DIContainer) -> None:
@@ -44,7 +46,7 @@ def register_core_services(container: DIContainer) -> None:
     container.register_factory(ProviderPort, lambda c: _create_provider_strategy(c))
 
     # Register event publisher
-    from infrastructure.events.publisher import ConfigurableEventPublisher
+    from src.infrastructure.events.publisher import ConfigurableEventPublisher
 
     container.register_factory(
         EventPublisherPort,
@@ -63,21 +65,21 @@ def register_core_services(container: DIContainer) -> None:
     # Register native spec service
     def create_native_spec_service(c):
         """Create native spec service."""
-        from application.services.native_spec_service import NativeSpecService
-        from domain.base.ports.spec_rendering_port import SpecRenderingPort
+        from src.application.services.native_spec_service import NativeSpecService
+        from src.domain.base.ports.spec_rendering_port import SpecRenderingPort
 
         return NativeSpecService(
             config_port=c.get(ConfigurationPort), spec_renderer=c.get(SpecRenderingPort)
         )
 
-    from application.services.native_spec_service import NativeSpecService
+    from src.application.services.native_spec_service import NativeSpecService
 
     container.register_factory(NativeSpecService, create_native_spec_service)
 
 
-def _create_scheduler_strategy(container: DIContainer) -> SchedulerPort:
+def _create_scheduler_strategy(container: "DIContainer") -> SchedulerPort:
     """Create scheduler strategy using factory."""
-    from infrastructure.scheduler.factory import SchedulerStrategyFactory
+    from src.infrastructure.scheduler.factory import SchedulerStrategyFactory
 
     factory = container.get(SchedulerStrategyFactory)
     config = container.get(ConfigurationPort)
@@ -85,9 +87,9 @@ def _create_scheduler_strategy(container: DIContainer) -> SchedulerPort:
     return factory.create_strategy(scheduler_type, container)
 
 
-def _create_storage_strategy(container: DIContainer) -> StoragePort:
+def _create_storage_strategy(container: "DIContainer") -> StoragePort:
     """Create storage strategy using factory."""
-    from infrastructure.storage.factory import StorageStrategyFactory
+    from src.infrastructure.storage.factory import StorageStrategyFactory
 
     factory = container.get(StorageStrategyFactory)
     config = container.get(ConfigurationPort)
@@ -95,10 +97,10 @@ def _create_storage_strategy(container: DIContainer) -> StoragePort:
     return factory.create_strategy(storage_type, config)
 
 
-def _create_provider_strategy(container: DIContainer) -> ProviderPort:
+def _create_provider_strategy(container: "DIContainer") -> ProviderPort:
     """Create provider strategy using adapter pattern."""
-    from infrastructure.adapters.provider_context_adapter import ProviderContextAdapter
-    from providers.base.strategy.provider_context import ProviderContext
+    from src.infrastructure.adapters.provider_context_adapter import ProviderContextAdapter
+    from src.providers.base.strategy.provider_context import ProviderContext
 
     provider_context = container.get(ProviderContext)
     return ProviderContextAdapter(provider_context)

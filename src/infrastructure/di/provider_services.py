@@ -2,15 +2,16 @@
 
 from typing import Optional
 
-from application.services.provider_capability_service import ProviderCapabilityService
-from application.services.provider_selection_service import ProviderSelectionService
-from domain.base.ports import ConfigurationPort, LoggingPort
+from src.application.services.provider_capability_service import ProviderCapabilityService
+from src.application.services.provider_selection_service import ProviderSelectionService
+from src.domain.base.ports import ConfigurationPort
+from src.domain.base.ports.logging_port import LoggingPort
 from infrastructure.di.container import DIContainer
-from providers.factory import ProviderStrategyFactory
-from infrastructure.logging.logger import get_logger
-from providers.registry import ProviderRegistry
-from monitoring.metrics import MetricsCollector
-from providers.base.strategy import ProviderContext
+from src.providers.factory import ProviderStrategyFactory
+from src.infrastructure.logging.logger import get_logger
+from src.providers.registry import ProviderRegistry
+from src.monitoring.metrics import MetricsCollector
+from src.providers.base.strategy import ProviderContext
 
 
 def register_provider_services(container: DIContainer) -> None:
@@ -521,12 +522,19 @@ def _register_provider_specific_services(container: DIContainer) -> None:
 
         # Check if AWS provider is available
         if importlib.util.find_spec("src.providers.aws"):
-            from providers.aws.registration import register_aws_services_with_di
-
-            register_aws_services_with_di(container)
+            try:
+                from providers.aws.registration import register_aws_services_with_di
+                register_aws_services_with_di(container)
+            except Exception as e:
+                logger.warning("Failed to register AWS services with DI: %s", str(e))
+                logger.debug("Continuing without AWS services registration")
 
             # Register core AWS provider services (handlers, adapters, ports)
-            _register_aws_services(container)
+            try:
+                _register_aws_services(container)
+            except Exception as e:
+                logger.warning("Failed to register core AWS services: %s", str(e))
+                logger.debug("Continuing without core AWS services registration")
         else:
             logger.debug("AWS provider not available, skipping AWS service registration")
     except ImportError:
