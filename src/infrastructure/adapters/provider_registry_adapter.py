@@ -68,6 +68,10 @@ class ProviderRegistryAdapter(ProviderPort):
         """Discover infrastructure using Provider Registry."""
         provider_type = provider_config.get("type", "aws")
         
+        # Ensure provider type is registered
+        if not self.registry.ensure_provider_type_registered(provider_type):
+            return {}
+        
         if provider_type == "aws":
             return self._get_aws_infrastructure_service(provider_config).discover_infrastructure(provider_config)
         
@@ -78,6 +82,10 @@ class ProviderRegistryAdapter(ProviderPort):
         """Discover infrastructure interactively using Provider Registry."""
         provider_type = provider_config.get("type", "aws")
         
+        # Ensure provider type is registered
+        if not self.registry.ensure_provider_type_registered(provider_type):
+            return {}
+        
         if provider_type == "aws":
             return self._get_aws_infrastructure_service(provider_config).discover_infrastructure_interactive(provider_config)
         
@@ -87,6 +95,10 @@ class ProviderRegistryAdapter(ProviderPort):
     def validate_infrastructure(self, provider_config: dict[str, Any]) -> dict[str, Any]:
         """Validate infrastructure using Provider Registry."""
         provider_type = provider_config.get("type", "aws")
+        
+        # Ensure provider type is registered
+        if not self.registry.ensure_provider_type_registered(provider_type):
+            return {}
         
         if provider_type == "aws":
             return self._get_aws_infrastructure_service(provider_config).validate_infrastructure(provider_config)

@@ -80,12 +80,12 @@ class ProviderStrategyFactory:
     def _register_provider_from_config(self, provider_instance, registry):
         """Register provider instance from configuration with registry."""
         try:
-            if provider_instance.type == "aws":
-                from providers.aws.registration import register_aws_provider
-                register_aws_provider(registry, self._logger, provider_instance.name)
-                self._logger.debug("Registered AWS provider instance: %s", provider_instance.name)
-            else:
-                self._logger.warning("Unknown provider type: %s", provider_instance.type)
+            # Ensure provider type is registered
+            if not registry.ensure_provider_type_registered(provider_instance.type):
+                self._logger.warning("Failed to register provider type: %s", provider_instance.type)
+                return
+                
+            self._logger.debug("Registered %s provider instance: %s", provider_instance.type, provider_instance.name)
         except Exception as e:
             self._logger.error("Failed to register provider %s: %s", provider_instance.name, e)
 

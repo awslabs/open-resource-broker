@@ -3,6 +3,7 @@
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Optional
 import time
+import importlib
 
 from domain.base.exceptions import ConfigurationError
 from domain.base.ports import LoggingPort
@@ -311,6 +312,66 @@ class ProviderRegistry(BaseRegistry):
             }
         )
         return await self.execute_operation(provider_identifier, operation, config)
+
+    def ensure_provider_type_registered(self, provider_type: str) -> bool:
+        """
+        Ensure provider type is registered by dynamically importing and registering if needed.
+        
+        Args:
+            provider_type: Type identifier for the provider (e.g., 'aws', 'azure')
+            
+        Returns:
+            True if provider is registered (was already or just registered), False if failed
+        """
+        # Check if already registered
+        if self.is_provider_registered(provider_type):
+            if self._logger:
+                self._logger.debug("Provider type '%s' already registered", provider_type)
+            return True
+        
+        # Try to dynamically import and register
+        try:
+            if self._logger:
+                self._logger.debug("Attempting to register provider type: %s", provider_type)
+            
+            # Import the provider's registration module
+            module_name = f"providers.{provider_type}.registration"
+            registration_module = importlib.import_module(module_name)
+            
+            # Call the provider's registration function
+            register_function_name = f"register_{provider_type}_provider"
+            if hasattr(registration_module, register_function_name):
+                register_function = getattr(registration_module, register_function_name)
+                register_function(self, self._logger)
+                
+                if self._logger:
+                    self._logger.info("Successfully registered provider type: %s", provider_type)
+                return True
+            else:
+                if self._logger:
+                    self._logger.error(
+                        "Registration function '%s' not found in module '%s'",
+                        register_function_name,
+                        module_name
+                    )
+                return False
+                
+        except ImportError as e:
+            if self._logger:
+                self._logger.error(
+                    "Failed to import registration module for provider '%s': %s",
+                    provider_type,
+                    e
+                )
+            return False
+        except Exception as e:
+            if self._logger:
+                self._logger.error(
+                    "Failed to register provider type '%s': %s",
+                    provider_type,
+                    e
+                )
+            return False
 
     def register(
         self,
