@@ -1,8 +1,10 @@
 """AWS provider configuration - single source of truth."""
 
 from typing import Any, Optional
+import json
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator, field_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from infrastructure.interfaces.provider import BaseProviderConfig
 
@@ -63,16 +65,23 @@ class HandlersConfig(BaseModel):
         return self
 
 
-class AWSProviderConfig(BaseProviderConfig):
+class AWSProviderConfig(BaseSettings, BaseProviderConfig):
     """Complete AWS provider configuration - single source of truth.
 
     This class consolidates all AWS configuration needs:
     - Schema validation for JSON/YAML config files
     - Runtime configuration for AWS provider implementation
     - Authentication, service settings, and legacy Symphony compatibility
+    - Environment variable support with ORB_AWS_ prefix
     """
 
-    model_config = ConfigDict(populate_by_name=True, extra="allow")
+    model_config = SettingsConfigDict(
+        env_prefix='ORB_AWS_',
+        case_sensitive=False,
+        populate_by_name=True,
+        env_nested_delimiter='__',  # Enable nested environment variables
+        extra="allow"
+    )
 
     # Provider identification (from BaseProviderConfig)
     provider_type: str = "aws"
@@ -131,6 +140,28 @@ class AWSProviderConfig(BaseProviderConfig):
         0, description="Number of retries for status requests"
     )
     describe_request_interval: int = Field(0, description="Delay between retries in milliseconds")
+
+    @field_validator('handlers', mode='before')
+    @classmethod
+    def parse_handlers_json(cls, v):
+        """Parse handlers configuration from JSON string if needed."""
+        if isinstance(v, str):
+            try:
+                return json.loads(v)
+            except json.JSONDecodeError:
+                return v
+        return v
+
+    @field_validator('launch_template', mode='before')
+    @classmethod
+    def parse_launch_template_json(cls, v):
+        """Parse launch template configuration from JSON string if needed."""
+        if isinstance(v, str):
+            try:
+                return json.loads(v)
+            except json.JSONDecodeError:
+                return v
+        return v
 
     @model_validator(mode="before")
     @classmethod
