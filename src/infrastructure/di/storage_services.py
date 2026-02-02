@@ -1,12 +1,16 @@
 """Storage service registrations for dependency injection."""
 
+from typing import TYPE_CHECKING
+
 from domain.base.ports import ConfigurationPort
-from infrastructure.di.container import DIContainer
 from infrastructure.storage.factory import StorageStrategyFactory
 from infrastructure.logging.logger import get_logger
 
+if TYPE_CHECKING:
+    from infrastructure.di.container import DIContainer
 
-def register_storage_services(container: DIContainer) -> None:
+
+def register_storage_services(container: "DIContainer") -> None:
     """Register storage services respecting lazy loading configuration."""
 
     # Register storage strategy factory only
@@ -29,13 +33,13 @@ def register_storage_services(container: DIContainer) -> None:
     # Lazy mode (default): JSON already registered above, other types will register on-demand
 
 
-def create_storage_strategy_factory(container: DIContainer) -> StorageStrategyFactory:
+def create_storage_strategy_factory(container: "DIContainer") -> StorageStrategyFactory:
     """Create storage strategy factory with configuration."""
     config = container.get(ConfigurationPort)
     return StorageStrategyFactory(config_manager=config)
 
 
-def _register_critical_storage_types(container: DIContainer, critical_types: list[str]) -> None:
+def _register_critical_storage_types(container: "DIContainer", critical_types: list[str]) -> None:
     """Register critical storage types specified in preload_critical."""
     logger = get_logger(__name__)
     
@@ -50,7 +54,7 @@ def _register_critical_storage_types(container: DIContainer, critical_types: lis
             logger.warning("Failed to preload critical storage type %s: %s", storage_type, e)
 
 
-def _register_configured_storage_strategy(container: DIContainer) -> None:
+def _register_configured_storage_strategy(container: "DIContainer") -> None:
     """Register only the configured storage strategy."""
     try:
         config = container.get(ConfigurationPort)

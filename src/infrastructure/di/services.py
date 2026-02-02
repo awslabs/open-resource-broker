@@ -8,9 +8,10 @@ This module coordinates the registration of all services across different layers
 - Server services (FastAPI, REST API handlers)
 """
 
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
-from infrastructure.di.container import DIContainer
+if TYPE_CHECKING:
+    from infrastructure.di.container import DIContainer
 
 # Import focused service registration modules
 from infrastructure.di.core_services import register_core_services
@@ -21,7 +22,7 @@ from infrastructure.di.server_services import register_server_services
 from infrastructure.di.storage_services import register_storage_services
 
 
-def register_all_services(container: DIContainer) -> DIContainer:
+def register_all_services(container: "DIContainer") -> "DIContainer":
     """
     Register all services in the dependency injection container.
     Includes lazy loading support for improved startup performance.
@@ -39,7 +40,7 @@ def register_all_services(container: DIContainer) -> DIContainer:
         return _register_services_eager(container)
 
 
-def _register_services_lazy(container: DIContainer) -> DIContainer:
+def _register_services_lazy(container: "DIContainer") -> "DIContainer":
     """Register services using lazy loading approach."""
     from infrastructure.logging.logger import get_logger
 
@@ -74,7 +75,7 @@ def _register_services_lazy(container: DIContainer) -> DIContainer:
     return container
 
 
-def _register_services_eager(container: DIContainer) -> DIContainer:
+def _register_services_eager(container: "DIContainer") -> "DIContainer":
     """Register services using traditional eager loading approach."""
     from infrastructure.logging.logger import get_logger
 
@@ -116,7 +117,7 @@ def _register_services_eager(container: DIContainer) -> DIContainer:
     return container
 
 
-def _register_lazy_service_factories(container: DIContainer) -> None:
+def _register_lazy_service_factories(container: "DIContainer") -> None:
     """Register lazy factories for services that can be loaded on-demand."""
     from infrastructure.logging.logger import get_logger
 

@@ -1,21 +1,22 @@
 """Port adapter registrations for dependency injection."""
 
-from config.managers.configuration_manager import ConfigurationManager
-from domain.base.ports import (
+from src.config.managers.configuration_manager import ConfigurationManager
+from src.domain.base.ports import (
     ConfigurationPort,
     ContainerPort,
     ErrorHandlingPort,
     EventPublisherPort,
-    LoggingPort,
     SchedulerPort,
     TemplateConfigurationPort,
 )
-from domain.base.ports.spec_rendering_port import SpecRenderingPort
-from infrastructure.adapters.error_handling_adapter import ErrorHandlingAdapter
-from infrastructure.adapters.factories.container_adapter_factory import (
+from src.domain.base.ports.logging_port import LoggingPort
+from src.domain.base.ports.spec_rendering_port import SpecRenderingPort
+from src.infrastructure.adapters.error_handling_adapter import ErrorHandlingAdapter
+from src.infrastructure.adapters.factories.container_adapter_factory import (
     ContainerAdapterFactory,
 )
-from infrastructure.template.configuration_manager import TemplateConfigurationManager
+from src.infrastructure.adapters.logging_adapter import LoggingAdapter
+from src.infrastructure.template.configuration_manager import TemplateConfigurationManager
 
 
 def register_port_adapters(container):
@@ -24,7 +25,7 @@ def register_port_adapters(container):
     # Register configuration port with adapter
     def create_configuration_adapter(container):
         """Create configuration adapter using DI-managed ConfigurationManager."""
-        from infrastructure.adapters.configuration_adapter import ConfigurationAdapter
+        from src.infrastructure.adapters.configuration_adapter import ConfigurationAdapter
         
         config_manager = container.get(ConfigurationManager)  # Use DI instance
         return ConfigurationAdapter(config_manager)
@@ -34,9 +35,8 @@ def register_port_adapters(container):
     # Register UnitOfWorkFactory (abstract -> concrete mapping)
     # This was previously in _setup_core_dependencies but got lost during DI cleanup
     # Using consistent Base* naming pattern for abstract classes
-    from domain.base import UnitOfWorkFactory as BaseUnitOfWorkFactory
-    from infrastructure.adapters.logging_adapter import LoggingAdapter
-    from infrastructure.utilities.factories.repository_factory import UnitOfWorkFactory
+    from src.domain.base import UnitOfWorkFactory as BaseUnitOfWorkFactory
+    from src.infrastructure.utilities.factories.repository_factory import UnitOfWorkFactory
 
     config_manager = container.get(ConfigurationManager)
     container.register_instance(
@@ -59,7 +59,7 @@ def register_port_adapters(container):
     def create_template_configuration_manager(c):
         """Create template configuration manager with dependencies."""
         # Import here to avoid circular imports
-        from application.services.provider_capability_service import (
+        from src.application.services.provider_capability_service import (
             ProviderCapabilityService,
         )
 
@@ -76,7 +76,7 @@ def register_port_adapters(container):
     )
 
     # Register template configuration port adapter
-    from infrastructure.adapters.template_configuration_adapter import (
+    from src.infrastructure.adapters.template_configuration_adapter import (
         TemplateConfigurationAdapter,
     )
 
@@ -94,7 +94,7 @@ def register_port_adapters(container):
     # Register spec rendering port
     def create_spec_renderer(c):
         """Create Jinja spec renderer."""
-        from infrastructure.template.jinja_spec_renderer import JinjaSpecRenderer
+        from src.infrastructure.template.jinja_spec_renderer import JinjaSpecRenderer
 
         return JinjaSpecRenderer(logger=c.get(LoggingPort))
 
