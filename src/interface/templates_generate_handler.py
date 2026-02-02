@@ -260,6 +260,11 @@ async def _generate_examples_from_factory(
     from providers.registry import get_provider_registry
     
     registry = get_provider_registry()
+    
+    # Ensure provider type is registered
+    if not registry.is_provider_registered(provider_type):
+        registry.ensure_provider_type_registered(provider_type)
+    
     if not registry.is_provider_registered(provider_type):
         available_types = registry.get_registered_providers()
         raise ValueError(f"Provider type '{provider_type}' is not registered. Available types: {available_types}")
