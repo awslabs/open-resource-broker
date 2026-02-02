@@ -590,32 +590,39 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
     def format_request_status_response(self, requests: list[RequestDTO]) -> dict[str, Any]:
         """
         Format RequestDTOs to HostFactory response format.
-        Uses field mapper for consistent transformations.
+        Only includes fields specified in HostFactory documentation.
         """
         formatted_requests = []
         for request_dto in requests:
-            # Use DTO's to_dict() method instead of domain model_dump()
+            # Use DTO's to_dict() method
             req_dict = request_dto.to_dict()
             
             # Rename machine_references to machines for HostFactory compatibility
             if "machine_references" in req_dict:
                 req_dict["machines"] = req_dict.pop("machine_references")
             
-            # Use field mapper to convert all fields to HostFactory format
-            formatted_request = self.field_mapper.map_output_fields(req_dict)
-            
             # Convert machines to camelCase using existing method
-            if "machines" in formatted_request:
-                formatted_request["machines"] = [
-                    self._convert_machine_to_camel(m) for m in formatted_request["machines"]
+            machines = []
+            if "machines" in req_dict:
+                machines = [
+                    self._convert_machine_to_camel(m) for m in req_dict["machines"]
                 ]
             
-            formatted_requests.append(formatted_request)
+            # Create HostFactory-compliant request object (only HF spec fields)
+            hf_request = {
+                "requestId": req_dict.get("request_id"),
+                "status": req_dict.get("status"),
+                "machines": machines
+            }
+            
+            # Add optional message if present
+            if req_dict.get("message"):
+                hf_request["message"] = req_dict["message"]
+            
+            formatted_requests.append(hf_request)
 
         return {
-            "requests": formatted_requests,
-            "message": "Request status retrieved successfully",
-            "count": len(requests),
+            "requests": formatted_requests
         }
 
     def _convert_machine_to_camel(self, machine: dict[str, Any]) -> dict[str, Any]:
