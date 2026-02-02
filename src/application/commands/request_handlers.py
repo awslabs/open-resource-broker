@@ -229,6 +229,15 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
                                 resource_ids,
                             )
 
+                        # Add instance IDs to request for tracking
+                        instance_ids = provisioning_result.get("instance_ids", [])
+                        if instance_ids:
+                            from domain.machine.value_objects import InstanceId
+                            for instance_id in instance_ids:
+                                if isinstance(instance_id, str):
+                                    request = request.add_instance(InstanceId(instance_id))
+                                    self.logger.debug("Added instance ID to request: %s", instance_id)
+
                         # Create machine aggregates for each instance
                         instance_data_list = provisioning_result.get("instances", [])
                         provider_data = provisioning_result.get("provider_data", {})

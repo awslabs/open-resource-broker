@@ -132,6 +132,7 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
             return {
                 "success": True,
                 "resource_ids": [fleet_id],
+                "instance_ids": [],  # SpotFleet doesn't return instance IDs immediately
                 "instances": instances,
                 "provider_data": {"resource_type": "spot_fleet"},
             }

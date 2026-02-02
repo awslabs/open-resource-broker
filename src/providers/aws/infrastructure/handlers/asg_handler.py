@@ -124,6 +124,7 @@ class ASGHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
             return {
                 "success": True,
                 "resource_ids": [asg_name],
+                "instance_ids": [],  # ASG doesn't return instance IDs immediately
                 "instances": instances,
                 "provider_data": {"resource_type": "asg"},
             }

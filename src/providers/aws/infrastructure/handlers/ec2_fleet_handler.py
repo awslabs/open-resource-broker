@@ -144,6 +144,7 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
             return {
                 "success": True,
                 "resource_ids": [fleet_id],
+                "instance_ids": instance_ids,  # Store instance IDs for tracking
                 "instances": instances,
                 "provider_data": {"resource_type": "ec2_fleet", "fleet_type": str(aws_template.fleet_type)},
             }
