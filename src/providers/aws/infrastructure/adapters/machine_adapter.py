@@ -110,7 +110,6 @@ class AWSMachineAdapter:
                 # Validate required fields for PascalCase format
                 required_fields = [
                     "InstanceId",
-                    "State",
                     "InstanceType",
                     "PrivateIpAddress",
                     "Placement",
@@ -122,6 +121,11 @@ class AWSMachineAdapter:
                     if field not in aws_instance_data:
                         self._logger.error("Missing required field in AWS instance data: %s", field)
                         raise AWSError(f"Missing required field in AWS instance data: {field}")
+                
+                # Validate State field (nested dict with Name)
+                if "State" not in aws_instance_data or "Name" not in aws_instance_data.get("State", {}):
+                    self._logger.error("Missing required State.Name in AWS instance data")
+                    raise AWSError("Missing required State.Name in AWS instance data")
 
                 # Validate AWS handler type
                 try:
