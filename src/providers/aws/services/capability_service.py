@@ -20,8 +20,12 @@ class AWSCapabilityService:
     def get_capabilities(self) -> ProviderCapabilities:
         """Get comprehensive AWS provider capabilities."""
         try:
-            supported_apis = self._handler_registry.get_supported_apis()
-            self._logger.debug("Supported APIs from handler registry: %s", supported_apis)
+            if self._handler_registry:
+                supported_apis = self._handler_registry.get_supported_apis()
+                self._logger.debug("Supported APIs from handler registry: %s", supported_apis)
+            else:
+                self._logger.warning("Handler registry not available, returning empty supported APIs")
+                supported_apis = []
         except Exception as e:
             self._logger.error("Error getting supported APIs: %s", e)
             supported_apis = []
