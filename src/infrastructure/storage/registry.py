@@ -115,6 +115,8 @@ class StorageRegistry(BaseRegistry):
             UnsupportedStorageError: If storage type is not registered
         """
         try:
+            # Ensure type is registered before creating strategy
+            self.ensure_type_registered(storage_type)
             return self.create_strategy_by_type(storage_type, config)
         except ValueError as e:
             raise UnsupportedStorageError(str(e))

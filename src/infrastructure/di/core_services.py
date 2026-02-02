@@ -51,12 +51,14 @@ def register_core_services(container: DIContainer) -> None:
         lambda c: ConfigurableEventPublisher(mode="logging"),  # Default to logging mode
     )
 
-    # Register command and query buses with factory functions
-    container.register_factory(
-        CommandBus, lambda c: CommandBus(container=c, logger=c.get(LoggingPort))
-    )
-
-    container.register_factory(QueryBus, lambda c: QueryBus(container=c, logger=c.get(LoggingPort)))
+    # Register command and query buses conditionally based on lazy loading mode
+    # If lazy loading is enabled, buses will be registered by CQRS handler discovery
+    # If lazy loading is disabled, register them as factories immediately
+    if not container.is_lazy_loading_enabled():
+        container.register_factory(
+            CommandBus, lambda c: CommandBus(container=c, logger=c.get(LoggingPort))
+        )
+        container.register_factory(QueryBus, lambda c: QueryBus(container=c, logger=c.get(LoggingPort)))
 
     # Register native spec service
     def create_native_spec_service(c):

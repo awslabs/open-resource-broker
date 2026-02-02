@@ -12,7 +12,12 @@ def register_storage_services(container: DIContainer) -> None:
     # Register storage strategy factory only
     container.register_factory(StorageStrategyFactory, create_storage_strategy_factory)
 
-    # Respect lazy loading configuration
+    # ALWAYS register JSON storage as it's the default and most critical
+    from infrastructure.storage.registry import get_storage_registry
+    registry = get_storage_registry()
+    registry.ensure_type_registered("json")
+
+    # Respect lazy loading configuration for other types
     lazy_config = container.get_lazy_config()
     
     if lazy_config.discovery_mode == "eager":
@@ -21,7 +26,7 @@ def register_storage_services(container: DIContainer) -> None:
     elif lazy_config.preload_critical:
         # Preload critical storage types only
         _register_critical_storage_types(container, lazy_config.preload_critical)
-    # Lazy mode (default): register nothing - let registry handle on-demand
+    # Lazy mode (default): JSON already registered above, other types will register on-demand
 
 
 def create_storage_strategy_factory(container: DIContainer) -> StorageStrategyFactory:

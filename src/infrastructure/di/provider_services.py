@@ -48,6 +48,9 @@ def register_provider_services(container: DIContainer) -> None:
 
     # Register provider-specific services conditionally
     _register_provider_specific_services(container)
+    
+    # Register actual providers from configuration
+    _register_providers_with_di_context(container)
 
 
 # Global flag to prevent duplicate provider registration
@@ -314,7 +317,7 @@ def _register_provider_instance(provider_instance) -> bool:
 def create_provider_strategy_factory(container: DIContainer) -> ProviderStrategyFactory:
     """Create provider strategy factory."""
     return ProviderStrategyFactory(
-        logger=container.get(LoggingPort), config=container.get(ConfigurationPort)
+        logger=container.get(LoggingPort), config_manager=container.get(ConfigurationPort)
     )
 
 
@@ -369,6 +372,9 @@ def _create_lazy_provider_context(
 ) -> ProviderContext:
     """Create provider context with immediate provider registration."""
     logger.info("Creating provider context with lazy loading enabled")
+
+    # Register providers in global ProviderRegistry first
+    _register_providers(container)
 
     # Create provider context
     provider_context = ProviderContext(logger, metrics=metrics)
