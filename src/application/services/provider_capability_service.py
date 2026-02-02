@@ -157,11 +157,46 @@ class ProviderCapabilityService:
             return None
 
         try:
-            strategy = self._provider_registry.create_strategy_from_instance(provider_instance, {})
+            # First check if provider is registered in registry
+            if not self._provider_registry.is_instance_registered(provider_instance):
+                # Provider not in registry, register it from configuration
+                self._register_provider_from_config(provider_instance)
+            
+            # Get actual provider config for strategy creation
+            provider_config = self._config_manager.get_provider_instance_config(provider_instance)
+            if not provider_config:
+                self._logger.warning("Provider instance '%s' not found in configuration", provider_instance)
+                return None
+            
+            # Use provider config for strategy creation
+            strategy = self._provider_registry.create_strategy_from_instance(provider_instance, provider_config.config)
             return strategy.get_capabilities()
         except Exception as e:
             self._logger.warning("Failed to get capabilities for %s: %s", provider_instance, str(e))
             return None
+
+    def _register_provider_from_config(self, provider_instance: str) -> None:
+        """Register provider instance from configuration with the registry."""
+        try:
+            provider_config = self._config_manager.get_provider_instance_config(provider_instance)
+            if not provider_config:
+                return
+            
+            provider_type = provider_config.type
+            
+            # Register provider type if not already registered
+            if not self._provider_registry.is_provider_registered(provider_type):
+                if provider_type == "aws":
+                    from providers.aws.registration import register_aws_provider
+                    register_aws_provider(self._provider_registry)
+            
+            # Register provider instance
+            if provider_type == "aws":
+                from providers.aws.registration import register_aws_provider
+                register_aws_provider(self._provider_registry, instance_name=provider_instance)
+                
+        except Exception as e:
+            self._logger.warning("Failed to register provider %s from config: %s", provider_instance, str(e))
 
     def _get_config_based_capabilities(self, provider_instance: str) -> ProviderCapabilities:
         """Get capabilities from merged provider configuration."""
