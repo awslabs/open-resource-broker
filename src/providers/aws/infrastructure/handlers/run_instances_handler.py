@@ -145,6 +145,7 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
             return {
                 "success": True,
                 "resource_ids": [resource_id],
+                "instance_ids": instance_ids,  # Store instance IDs for tracking
                 "instances": instances,
                 "provider_data": {"resource_type": "run_instances"},
             }
