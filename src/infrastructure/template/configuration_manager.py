@@ -289,35 +289,18 @@ class TemplateConfigurationManager:
         return list(ssm_parameters)
 
     def _is_ami_resolution_enabled(self) -> bool:
-        """Check if AMI resolution is enabled using provider strategy."""
+        """Check if AMI resolution is enabled via configuration."""
         try:
-            # Use provider strategy to check if AMI resolution is supported
-            from providers.registry import get_provider_registry
-            from providers.base.strategy import ProviderOperationType
+            # Check the AMI resolution config setting
+            from providers.aws.configuration.template_extension import AMIResolutionConfig
             
-            registry = get_provider_registry()
+            ami_config = self.config_manager.get_typed(AMIResolutionConfig)
+            return ami_config.enabled
             
-            # Get first active provider to check capabilities
-            provider_config = self.config_manager.get_provider_config()
-            active_providers = provider_config.get_active_providers()
-            
-            if not active_providers:
-                return False
-            
-            # Check if any active provider supports AMI resolution
-            for provider in active_providers:
-                try:
-                    strategy = registry.create_strategy_by_instance(provider.name, provider.config)
-                    capabilities = strategy.get_capabilities()
-                    
-                    # Check if provider supports RESOLVE_AMI operation
-                    if ProviderOperationType.RESOLVE_AMI in capabilities.supported_operations:
-                        return True
-                except Exception as e:
-                    self.logger.debug("Could not check AMI resolution for provider %s: %s", provider.name, e)
-                    continue
-            
-            return False
+        except Exception as e:
+            self.logger.debug("Could not get AMI resolution config: %s", e)
+            # Default to enabled if config not available
+            return True
             
         except Exception as e:
             self.logger.debug("Could not determine AMI resolution status: %s", e)
@@ -331,18 +314,23 @@ class TemplateConfigurationManager:
             from providers.base.strategy import ProviderOperation, ProviderOperationType
             
             registry = get_provider_registry()
+            
+            # Ensure provider instance is registered (like command handlers do)
+            provider_config = self.config_manager.get_provider_instance_config(provider_instance)
+            if provider_config:
+                registry.ensure_provider_instance_registered_from_config(provider_config)
+            
+            # Check if provider instance is registered
+            if not registry.is_provider_instance_registered(provider_instance):
+                self.logger.debug("Provider instance %s could not be registered, skipping AMI resolution", provider_instance)
+                return {}
+            
             operation = ProviderOperation(
                 operation_type=ProviderOperationType.RESOLVE_AMI,
                 parameters={"ssm_parameters": ssm_parameters}
             )
             
-            # Get provider config for the instance
-            provider_config = self.config_manager.get_provider_instance_config(provider_instance)
-            if not provider_config:
-                self.logger.warning("No config found for provider instance %s", provider_instance)
-                return {}
-            
-            # Execute operation via provider registry
+            # Execute operation via provider registry (uses existing strategy if available)
             result = await registry.execute_operation(provider_instance, operation, provider_config.config)
             
             if result.success and result.data:
@@ -352,7 +340,7 @@ class TemplateConfigurationManager:
                 return {}
                 
         except Exception as e:
-            self.logger.error("Failed to resolve AMIs via provider %s: %s", provider_instance, e)
+            self.logger.warning("AMI resolution failed for provider %s: %s", provider_instance, e)
             return {}
 
     def _apply_resolved_amis(self, templates: list[dict[str, Any]], resolved_amis: dict[str, str]) -> list[dict[str, Any]]:
