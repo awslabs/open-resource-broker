@@ -824,7 +824,8 @@ class PopulateMachineIdsHandler(BaseCommandHandler[PopulateMachineIdsCommand, No
         """Discover and store machine IDs from provider resources."""
         
         with self.uow_factory.create_unit_of_work() as uow:
-            request = uow.requests.get_by_id(command.request_id)
+            from domain.request.value_objects import RequestId
+            request = uow.requests.get_by_id(RequestId(value=command.request_id))
             if not request or not request.needs_machine_id_population():
                 return
             
