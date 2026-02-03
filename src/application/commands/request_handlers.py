@@ -241,6 +241,10 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
                         instance_data_list = provisioning_result.get("instances", [])
                         provider_data = provisioning_result.get("provider_data", {})
 
+                        # Store provider-specific data in request
+                        if provider_data:
+                            request.provider_data.update(provider_data)
+
                         # Preserve provider errors (if any) for partial success handling
                         if isinstance(provider_data, dict):
                             provider_errors = provider_data.get("fleet_errors") or []
@@ -261,7 +265,10 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
                                 request = request.update_status(
                                     request.status, error_summary
                                 )
-                                request.error_details = {"type": "ProvisioningPartialFailure"}
+                                request.error_details = {
+                                    "type": "ProvisioningPartialFailure",
+                                    "message": error_summary
+                                }
 
                         # Store ASG capacity metadata for tracking
                         if template.provider_api == "ASG":
@@ -335,7 +342,12 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
                             f"Provisioning failed: {error_message}",
                         )
                         # Store error details in domain fields
-                        request.error_details = {"type": "ProvisioningFailure", "message": error_message}
+                        # Store error in domain field (not metadata)
+                        request.error_details = {
+                            "type": "ProvisioningFailure", 
+                            "message": error_message,
+                            "details": str(e)
+                        }
 
                 except Exception as provisioning_error:
                     # Handle unexpected provisioning errors

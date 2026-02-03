@@ -3,7 +3,7 @@
 import threading
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
-from typing import Callable, Optional
+from typing import Awaitable, Callable, Optional
 
 from domain.base.ports import LoggingPort
 

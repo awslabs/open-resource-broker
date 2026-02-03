@@ -26,8 +26,8 @@ class HostFactoryFieldMappings:
             "maxNumber": "max_instances",
             "imageId": "image_id",
             "keyName": "key_name",
-            "fleetType": "fleet_type",
-            "providerApi": "provider_api",  # Provider API type
+            "fleetType": "provider_data.fleet_type",  # AWS-specific fleet type in provider_data
+            "providerApi": "provider_api",  # Provider API type (domain field)
             # Network configuration
             "subnetId": "subnet_ids",  # Will be converted to list
             "subnetIds": "subnet_ids",  # Preserve full list when provided
