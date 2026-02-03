@@ -314,43 +314,54 @@ class AWSProviderStrategy(ProviderStrategy):
         return self._aws_provisioning_port
 
     async def _handle_resolve_ami(self, operation: ProviderOperation) -> ProviderResult:
-        """Handle AMI resolution from SSM parameters using strategy's AWS client."""
+        """Handle AMI resolution using registry-based resolver."""
         try:
             ssm_parameters = operation.parameters.get("ssm_parameters", [])
             if not ssm_parameters:
                 return ProviderResult.success_result({"resolved_amis": {}})
             
-            resolved_amis = {}
+            # Get resolver from registry (clean architecture)
+            from providers.registry import get_provider_registry
+            registry = get_provider_registry()
+            resolver_factory = registry.create_resolver("aws")
             
-            for ssm_param in ssm_parameters:
-                # Check cache first
-                if ssm_param in self._ami_cache:
-                    resolved_amis[ssm_param] = self._ami_cache[ssm_param]
-                    continue
+            if resolver_factory:
+                # Create provider-specific resolver
+                resolver = resolver_factory(
+                    aws_client=self.aws_client,
+                    config=self._config,
+                    logger=self._logger,
+                    provider_name=getattr(self, 'provider_name', 'aws')
+                )
                 
-                # Resolve using strategy's AWS client
-                try:
-                    aws_client = self.aws_client
-                    if not aws_client:
-                        self._logger.warning("No AWS client available for AMI resolution")
+                resolved_amis = {}
+                for ssm_param in ssm_parameters:
+                    resolved_amis[ssm_param] = resolver.resolve_with_fallback(ssm_param)
+                
+                return ProviderResult.success_result({"resolved_amis": resolved_amis})
+            else:
+                # Fallback to current in-memory cache
+                resolved_amis = {}
+                for ssm_param in ssm_parameters:
+                    if ssm_param in self._ami_cache:
+                        resolved_amis[ssm_param] = self._ami_cache[ssm_param]
                         continue
                     
-                    # Get SSM parameter value
-                    response = aws_client.ssm_client.get_parameter(Name=ssm_param)
-                    resolved_ami = response["Parameter"]["Value"]
-                    
-                    # Cache the result
-                    self._ami_cache[ssm_param] = resolved_ami
-                    resolved_amis[ssm_param] = resolved_ami
-                    
-                    self._logger.debug("Resolved AMI: %s -> %s", ssm_param, resolved_ami)
-                    
-                except Exception as e:
-                    self._logger.warning("Failed to resolve AMI parameter %s: %s", ssm_param, e)
-                    # Keep original parameter as fallback
-                    resolved_amis[ssm_param] = ssm_param
-            
-            return ProviderResult.success_result({"resolved_amis": resolved_amis})
+                    try:
+                        aws_client = self.aws_client
+                        if not aws_client:
+                            continue
+                        
+                        response = aws_client.ssm_client.get_parameter(Name=ssm_param)
+                        resolved_ami = response["Parameter"]["Value"]
+                        
+                        self._ami_cache[ssm_param] = resolved_ami
+                        resolved_amis[ssm_param] = resolved_ami
+                        
+                    except Exception as e:
+                        self._logger.warning("Failed to resolve AMI parameter %s: %s", ssm_param, e)
+                
+                return ProviderResult.success_result({"resolved_amis": resolved_amis})
             
         except Exception as e:
             self._logger.error("AMI resolution operation failed: %s", e)

@@ -138,10 +138,30 @@ def create_aws_resolver() -> Any:
     Create AWS template resolver.
 
     Returns:
-        None - AMI resolution now handled by provider strategy RESOLVE_AMI operation
+        Factory function that creates CachingAMIResolver with provider-specific context
     """
-    # AMI resolution is now handled by provider strategy operations
-    return None
+    import os
+    
+    def resolver_factory(aws_client, config, logger, provider_name=None):
+        # Create provider-aware config wrapper for cache isolation
+        if provider_name:
+            # Override cache path resolution in CachingAMIResolver
+            from providers.aws.infrastructure.template.caching_ami_resolver import CachingAMIResolver
+            
+            class ProviderSpecificAMIResolver(CachingAMIResolver):
+                def _resolve_cache_path(self, config):
+                    work_dir = config.get_work_dir()
+                    cache_dir = os.path.join(work_dir, ".cache")
+                    os.makedirs(cache_dir, exist_ok=True)
+                    cache_file = f"ami_cache_{provider_name}.json"
+                    return os.path.join(cache_dir, cache_file)
+            
+            return ProviderSpecificAMIResolver(aws_client, config, logger)
+        else:
+            from providers.aws.infrastructure.template.caching_ami_resolver import CachingAMIResolver
+            return CachingAMIResolver(aws_client, config, logger)
+    
+    return resolver_factory
 
 
 def create_aws_validator() -> Any:
