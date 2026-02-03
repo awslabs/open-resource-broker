@@ -127,22 +127,9 @@ class TemplateConfigurationManager:
         if force_refresh:
             self.cache_service.invalidate()
 
-        # Check if cached first
-        if self.cache_service.is_cached():
-            # Use sync loader that returns cached templates
-            templates = self.cache_service.get_or_load(lambda: [])
-            if templates:
-                self.logger.debug("Returning %s cached templates", len(templates))
-                return templates
-
-        # Load templates with async AMI resolution
-        templates = await self._load_templates_from_scheduler()
-        
-        # Cache the result using get_or_load pattern
-        self.cache_service.get_or_load(lambda: templates)
-        
-        self.logger.info("Loaded %s templates", len(templates))
-        return templates
+        return await self.cache_service.get_or_load(
+            lambda: self._load_templates_from_scheduler()
+        )
 
     async def _load_templates_from_scheduler(self) -> list[TemplateDTO]:
         """Load templates using scheduler strategy with batch AMI resolution."""

@@ -116,15 +116,9 @@ class ProviderCapabilityService:
         try:
             # Get provider capabilities
             capabilities = self._get_provider_capabilities(provider_instance)
-            self._logger.debug("DEBUG: _get_provider_capabilities returned: %s (type: %s)", capabilities, type(capabilities))
             
             if not capabilities:
-                self._logger.debug("DEBUG: Falling back to _get_config_based_capabilities")
                 capabilities = self._get_config_based_capabilities(provider_instance)
-                self._logger.debug("DEBUG: _get_config_based_capabilities returned: %s (type: %s)", capabilities, type(capabilities))
-
-            self._logger.debug("DEBUG: Final capabilities object: %s", capabilities)
-            self._logger.debug("DEBUG: capabilities.__dict__: %s", getattr(capabilities, '__dict__', 'No __dict__'))
             
             # Check if capabilities has supported_apis attribute
             if hasattr(capabilities, 'supported_apis'):
