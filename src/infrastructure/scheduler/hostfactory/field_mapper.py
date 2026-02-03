@@ -19,24 +19,79 @@ class HostFactoryFieldMapper(SchedulerFieldMapper):
 
     def map_input_fields(self, external_template: Dict[str, Any]) -> Dict[str, Any]:
         """Map HostFactory format → internal format with transformations."""
-        # First apply base mapping
-        mapped = super().map_input_fields(external_template)
+        # First apply base mapping with nested field support
+        mapped = self._map_with_nested_support(external_template, self.field_mappings)
         
         # Apply HostFactory-specific input transformations
         return self._apply_input_transformations(mapped)
 
     def map_output_fields(self, internal_template: Dict[str, Any]) -> Dict[str, Any]:
         """Map internal format → HostFactory format with transformations."""
-        # Apply internal → external mappings (only mapped fields)
+        # Apply internal → external mappings with nested field support
         reverse_mappings = {v: k for k, v in self.field_mappings.items()}
-        mapped = {}
-
-        for internal_field, external_field in reverse_mappings.items():
-            if internal_field in internal_template:
-                mapped[external_field] = internal_template[internal_field]
+        mapped = self._map_with_nested_support(internal_template, reverse_mappings, reverse=True)
 
         # Apply HostFactory-specific transformations
         return self._apply_output_transformations(mapped)
+
+    def _map_with_nested_support(self, source: Dict[str, Any], mappings: Dict[str, str], reverse: bool = False) -> Dict[str, Any]:
+        """Map fields with support for nested provider_data access."""
+        mapped = {}
+
+        for source_field, target_field in mappings.items():
+            if reverse:
+                # For output mapping: internal → external
+                if "." in source_field:
+                    # Handle nested field access (e.g., provider_data.fleet_type)
+                    value = self._get_nested_value(source, source_field)
+                    if value is not None:
+                        mapped[target_field] = value
+                elif source_field in source:
+                    mapped[target_field] = source[source_field]
+            else:
+                # For input mapping: external → internal
+                if source_field in source:
+                    if "." in target_field:
+                        # Handle nested field setting (e.g., provider_data.fleet_type)
+                        self._set_nested_value(mapped, target_field, source[source_field])
+                    else:
+                        mapped[target_field] = source[source_field]
+
+        # Copy unmapped fields
+        for key, value in source.items():
+            if not reverse and key not in mappings and key not in mapped:
+                mapped[key] = value
+            elif reverse and key not in {v for v in mappings.keys() if "." not in v}:
+                # Only copy if not a nested source field
+                if key not in mapped:
+                    mapped[key] = value
+
+        return mapped
+
+    def _get_nested_value(self, data: Dict[str, Any], nested_key: str) -> Any:
+        """Get value from nested dictionary using dot notation."""
+        keys = nested_key.split(".")
+        value = data
+        for key in keys:
+            if isinstance(value, dict) and key in value:
+                value = value[key]
+            else:
+                return None
+        return value
+
+    def _set_nested_value(self, data: Dict[str, Any], nested_key: str, value: Any) -> None:
+        """Set value in nested dictionary using dot notation."""
+        keys = nested_key.split(".")
+        current = data
+        
+        # Navigate to the parent of the target key
+        for key in keys[:-1]:
+            if key not in current:
+                current[key] = {}
+            current = current[key]
+        
+        # Set the final value
+        current[keys[-1]] = value
 
     def _apply_input_transformations(self, mapped: Dict[str, Any]) -> Dict[str, Any]:
         """Apply HostFactory-specific input transformations."""

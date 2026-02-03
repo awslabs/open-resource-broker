@@ -854,8 +854,8 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
             metadata = getattr(request, "metadata", {}) or {}
             error_details = getattr(request, "error_details", {}) or {}
 
-            provisioning_error_type = metadata.get("error_type")
-            provisioning_error_message = metadata.get("error_message")
+            provisioning_error_type = error_details.get("type")
+            provisioning_error_message = request.status_message
             fleet_errors = metadata.get("fleet_errors")
             ec2_fleet_errors = (error_details.get("ec2_fleet") or {}).get("errors")
 

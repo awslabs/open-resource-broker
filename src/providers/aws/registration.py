@@ -55,7 +55,7 @@ def create_aws_strategy(provider_config: Any) -> Any:
         logger = LoggingAdapter()
 
         # Create AWS client resolver
-        def aws_client_resolver() -> AWSClient:
+        def aws_client_resolver():
             from infrastructure.di.container import get_container
             from domain.base.ports.configuration_port import ConfigurationPort
             from domain.base.ports import LoggingPort

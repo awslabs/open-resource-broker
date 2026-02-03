@@ -247,7 +247,7 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
 
         # Check request status to provide appropriate message
         status = request_dict.get("status", "pending")
-        error_message = request_dict.get("error_message")
+        error_message = request_dict.get("status_message")  # Use domain field instead of metadata
         request_id = request_dict.get("request_id", request_dict.get("requestId"))
 
         # Status-based message and response logic
