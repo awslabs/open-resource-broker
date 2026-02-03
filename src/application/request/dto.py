@@ -77,6 +77,7 @@ class RequestDTO(BaseDTO):
     last_status_check: Optional[datetime] = None
     first_status_check: Optional[datetime] = None
     machine_references: list[MachineReferenceDTO] = Field(default_factory=list)
+    machine_ids: list[str] = Field(default_factory=list)
     message: str = ""
     resource_id: Optional[str] = None
     provider_api: Optional[str] = None
@@ -118,6 +119,7 @@ class RequestDTO(BaseDTO):
             last_status_check=None,  # Not available in current domain model
             first_status_check=None,  # Not available in current domain model
             machine_references=machine_refs,
+            machine_ids=request.machine_ids,
             message=request.status_message or "",  # Provide empty string if None
             resource_id=None,  # Not available in current domain model
             provider_api=None,  # Not available in current domain model

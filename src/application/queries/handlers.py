@@ -25,6 +25,7 @@ from domain.base import UnitOfWorkFactory
 from domain.base.exceptions import EntityNotFoundError
 from domain.base.ports import ContainerPort, ErrorHandlingPort, LoggingPort
 from domain.template.factory import TemplateFactory, get_default_template_factory
+from infrastructure.di.buses import CommandBus
 from domain.template.template_aggregate import Template
 from infrastructure.template.dtos import TemplateDTO
 
@@ -42,11 +43,13 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
         logger: LoggingPort,
         error_handler: ErrorHandlingPort,
         container: ContainerPort,
+        command_bus: CommandBus,
     ) -> None:
         """Initialize the instance."""
         super().__init__(logger, error_handler)
         self.uow_factory = uow_factory
         self._container = container
+        self.command_bus = command_bus
         self._cache_service = self._get_cache_service()
         self.event_publisher = self._get_event_publisher()
 
@@ -86,13 +89,8 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
                 if not request:
                     raise EntityNotFoundError("Request", request_id)
 
-                # For return requests, find machines by return_request_id
-                # For regular requests, find machines by request_id
-                from domain.request.request_types import RequestType
-                if request.request_type == RequestType.RETURN:
-                    machine_obj_from_db = uow.machines.find_by_return_request_id(query.request_id)
-                else:
-                    machine_obj_from_db = uow.machines.find_by_request_id(query.request_id)
+            # Get machines using performance-optimized method
+            machine_obj_from_db = await self._get_machines_for_request(request)
 
             self.logger.debug(f"Machines associated with this request in DB: {machine_obj_from_db}")
 
@@ -173,6 +171,34 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
             self.logger.error("Failed to get request: %s", e)
             raise
 
+    async def _get_machines_for_request(self, request) -> list:
+        """Get machines with inline coalesce for maximum performance."""
+        
+        seen_ids = {}
+        
+        with self.uow_factory.create_unit_of_work() as uow:
+            # Priority 1: Use machine_ids (now always populated after population)
+            if request.machine_ids:
+                for machine_id in request.machine_ids:
+                    machine = uow.machines.get_by_id(machine_id)
+                    if machine and machine_id not in seen_ids:
+                        seen_ids[machine_id] = machine
+            
+            # Priority 2: Fallback to request_id lookup (for legacy requests)
+            if not seen_ids:
+                from domain.request.request_types import RequestType
+                if request.request_type == RequestType.RETURN:
+                    fallback_machines = uow.machines.find_by_return_request_id(str(request.request_id))
+                else:
+                    fallback_machines = uow.machines.find_by_request_id(str(request.request_id))
+                
+                for machine in fallback_machines:
+                    machine_id = str(machine.machine_id.value)
+                    if machine_id not in seen_ids:
+                        seen_ids[machine_id] = machine
+        
+        return list(seen_ids.values())
+
     async def _get_machines_from_storage(self, request_id: str) -> list:
         """Get machines from storage for the request."""
         try:
@@ -189,15 +215,23 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
         """
         Fetch the latest machine list from the provider using Provider Registry.
 
-        Prefers resource-based discovery (DESCRIBE_RESOURCE_INSTANCES) to capture the
+        Uses machine_ids for return requests when available, prefers resource-based 
+        discovery (DESCRIBE_RESOURCE_INSTANCES) for acquire requests to capture the
         full membership of the resource (ASG/Fleet). Falls back to GET_INSTANCE_STATUS
         when only instance IDs are known.
         """
         try:
             from providers.base.strategy import ProviderOperation, ProviderOperationType
 
-            # Prefer resource-level discovery so we don't miss new instances
-            if request.resource_ids:
+            # Use machine_ids for return requests when available
+            if request.request_type.value == "return" and request.machine_ids:
+                operation_type = ProviderOperationType.GET_INSTANCE_STATUS
+                parameters = {
+                    "instance_ids": request.machine_ids,
+                    "template_id": request.template_id,
+                }
+            # Prefer resource-level discovery for acquire requests
+            elif request.resource_ids:
                 operation_type = ProviderOperationType.DESCRIBE_RESOURCE_INSTANCES
                 parameters = {
                     "resource_ids": request.resource_ids,
