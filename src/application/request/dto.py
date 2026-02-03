@@ -87,23 +87,26 @@ class RequestDTO(BaseDTO):
     long: bool = False  # Flag to indicate whether to include detailed information
 
     @classmethod
-    def from_domain(cls, request: Request, long: bool = False) -> "RequestDTO":
+    def from_domain(cls, request: Request, long: bool = False, machine_references: Optional[list["MachineReferenceDTO"]] = None) -> "RequestDTO":
         """
         Create DTO from domain object.
 
         Args:
             request: Request domain object
             long: Whether to include detailed information
+            machine_references: Optional fresh machine references to use instead of domain object's
 
         Returns:
             RequestDTO instance
         """
-        # Convert machine references
-        machine_refs = []
-
-        # Get existing machine references
-        if hasattr(request, "machine_references") and request.machine_references:
-            machine_refs = [MachineReferenceDTO.from_domain(m) for m in request.machine_references]
+        # Use provided machine references or convert from domain
+        if machine_references is not None:
+            machine_refs = machine_references
+        else:
+            machine_refs = []
+            # Get existing machine references
+            if hasattr(request, "machine_references") and request.machine_references:
+                machine_refs = [MachineReferenceDTO.from_domain(m) for m in request.machine_references]
 
         # Create the DTO with all available fields
         return cls(

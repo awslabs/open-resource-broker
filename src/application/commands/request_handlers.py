@@ -576,6 +576,15 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
                 
                 with self.uow_factory.create_unit_of_work() as uow:
                     events = uow.requests.save(request)
+                    
+                    # CRITICAL: Update machine records with return_request_id
+                    for machine_id in machine_ids:
+                        machine = uow.machines.get_by_id(machine_id)
+                        if machine:
+                            # Update machine with return request ID
+                            updated_machine = machine.model_copy(update={"return_request_id": str(request.request_id)})
+                            uow.machines.save(updated_machine)
+                    
                     for event in events:
                         self.event_publisher.publish(event)
                 
