@@ -212,7 +212,7 @@ class ProviderCapabilityService:
                 ProviderOperationType.TERMINATE_INSTANCES,
                 ProviderOperationType.GET_INSTANCE_STATUS,
             ],
-            supported_apis=supported_apis,  # ✅ FIXED - direct field, not in features
+            supported_apis=supported_apis,  # Direct field, not in features
             features={},
         )
 

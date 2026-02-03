@@ -1190,7 +1190,7 @@ class GetTemplateHandler(BaseQueryHandler[GetTemplateQuery, TemplateDTO]):
         super().__init__(logger, error_handler)
         self._container = container
 
-    async def execute_query(self, query: GetTemplateQuery) -> Template:
+    async def execute_query(self, query: GetTemplateQuery) -> TemplateDTO:
         """Execute get template query."""
         from infrastructure.template.configuration_manager import TemplateConfigurationManager
 
@@ -1199,40 +1199,14 @@ class GetTemplateHandler(BaseQueryHandler[GetTemplateQuery, TemplateDTO]):
         try:
             template_manager = self._container.get(TemplateConfigurationManager)
 
-            # Get template by ID using the same approach as ListTemplatesHandler
+            # Get template by ID
             template_dto = await template_manager.get_template_by_id(query.template_id)
 
             if not template_dto:
                 raise EntityNotFoundError("Template", query.template_id)
 
-            # Convert TemplateDTO to Template domain object
-            config = dict(template_dto.configuration or {})
-            template_data = dict(config)
-            template_data.setdefault("template_id", template_dto.template_id)
-            template_data.setdefault("name", template_dto.name or template_dto.template_id)
-            template_data.setdefault("provider_api", template_dto.provider_api or "aws")
-
-            # Apply template defaults resolution
-            from application.services.template_defaults_service import TemplateDefaultsService
-            if self._container.has(TemplateDefaultsService):
-                template_defaults_service = self._container.get(TemplateDefaultsService)
-                resolved_data = template_defaults_service.resolve_template_defaults(
-                    template_data, provider_name=None
-                )
-            else:
-                resolved_data = template_data
-
-            if self._container.has(TemplateFactory):
-                template_factory = self._container.get(TemplateFactory)
-            else:
-                template_factory = get_default_template_factory()
-
-            domain_template = template_factory.create_template(resolved_data)
-
             self.logger.info("Retrieved template: %s", query.template_id)
-            
-            # Convert domain template to DTO for CQRS compliance
-            return TemplateDTO.from_domain(domain_template)
+            return template_dto
 
         except EntityNotFoundError:
             self.logger.error("Template not found: %s", query.template_id)
@@ -1255,7 +1229,7 @@ class ListTemplatesHandler(BaseQueryHandler[ListTemplatesQuery, list[TemplateDTO
         super().__init__(logger, error_handler)
         self._container = container
 
-    async def execute_query(self, query: ListTemplatesQuery) -> list[Template]:
+    async def execute_query(self, query: ListTemplatesQuery) -> list[TemplateDTO]:
         """Execute list templates query."""
         from infrastructure.template.configuration_manager import TemplateConfigurationManager
 
@@ -1264,46 +1238,12 @@ class ListTemplatesHandler(BaseQueryHandler[ListTemplatesQuery, list[TemplateDTO
         try:
             template_manager = self._container.get(TemplateConfigurationManager)
 
-            if self._container.has(TemplateFactory):
-                template_factory = self._container.get(TemplateFactory)
-            else:
-                template_factory = get_default_template_factory()
-
             if query.provider_api:
                 template_dtos = await template_manager.get_templates_by_provider(query.provider_api)
             else:
                 template_dtos = await template_manager.load_templates()
 
-            domain_templates = []
-            for dto in template_dtos:
-                try:
-                    config = dict(dto.configuration or {})
-                    template_data = dict(config)
-                    template_data.setdefault("template_id", dto.template_id)
-                    template_data.setdefault("name", dto.name or dto.template_id)
-                    template_data.setdefault("provider_api", dto.provider_api or "aws")
-
-                    # Apply template defaults resolution
-                    from application.services.template_defaults_service import TemplateDefaultsService
-                    if self._container.has(TemplateDefaultsService):
-                        template_defaults_service = self._container.get(TemplateDefaultsService)
-                        resolved_data = template_defaults_service.resolve_template_defaults(
-                            template_data, provider_name=None
-                        )
-                    else:
-                        resolved_data = template_data
-
-                    domain_template = template_factory.create_template(resolved_data)
-                    domain_templates.append(domain_template)
-
-                except Exception as e:
-                    self.logger.warning("Skipping invalid template %s: %s", dto.template_id, e)
-                    continue
-
-            self.logger.info("Found %s templates", len(domain_templates))
-            
-            # Convert domain templates to DTOs for CQRS compliance
-            template_dtos = [TemplateDTO.from_domain(template) for template in domain_templates]
+            self.logger.info("Found %s templates", len(template_dtos))
             return template_dtos
 
         except Exception as e:
@@ -1324,13 +1264,14 @@ class ValidateTemplateHandler(BaseQueryHandler[ValidateTemplateQuery, Validation
         super().__init__(logger, error_handler)
         self.container = container
 
-    async def execute_query(self, query: ValidateTemplateQuery) -> dict[str, Any]:
+    async def execute_query(self, query: ValidateTemplateQuery) -> ValidationDTO:
         """Execute validate template query."""
         self.logger.info("Validating template: %s", query.template_id)
 
         try:
             # Get template configuration port for validation
             from domain.base.ports.template_configuration_port import TemplateConfigurationPort
+            from application.dto.responses import ValidationDTO
 
             template_port = self.container.get(TemplateConfigurationPort)
 
@@ -1347,21 +1288,21 @@ class ValidateTemplateHandler(BaseQueryHandler[ValidateTemplateQuery, Validation
             else:
                 self.logger.info("Template validation passed for %s", query.template_id)
 
-            return {
-                "template_id": query.template_id,
-                "is_valid": len(validation_errors) == 0,
-                "validation_errors": validation_errors,
-                "configuration": query.configuration,
-            }
+            return ValidationDTO(
+                template_id=query.template_id,
+                is_valid=len(validation_errors) == 0,
+                validation_errors=validation_errors,
+                configuration=query.configuration,
+            )
 
         except Exception as e:
             self.logger.error("Template validation failed for %s: %s", query.template_id, e)
-            return {
-                "template_id": query.template_id,
-                "is_valid": False,
-                "validation_errors": [f"Validation error: {e!s}"],
-                "configuration": query.configuration,
-            }
+            return ValidationDTO(
+                template_id=query.template_id,
+                is_valid=False,
+                validation_errors=[f"Validation error: {e!s}"],
+                configuration=query.configuration,
+            )
 
 
 @query_handler(GetMachineQuery)
