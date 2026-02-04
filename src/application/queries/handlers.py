@@ -1114,7 +1114,7 @@ class ListActiveRequestsHandler(BaseQueryHandler[ListActiveRequestsQuery, list[R
                 request_dtos = []
                 for request in active_requests:
                     request_dto = RequestDTO(
-                        request_id=str(request.request_id),
+                        request_id=request.request_id.value,  # Extract string value from RequestId
                         template_id=request.template_id,
                         requested_count=request.requested_count,
                         status=request.status.value,
@@ -1173,12 +1173,11 @@ class ListRequestsHandler(BaseQueryHandler[ListRequestsQuery, list[RequestDTO]])
                 request_dtos = []
                 for request in requests:
                     request_dto = RequestDTO(
-                        request_id=str(request.request_id),
+                        request_id=request.request_id.value,  # Extract string value from RequestId
                         template_id=request.template_id,
                         requested_count=request.requested_count,
                         status=request.status.value,
                         created_at=request.created_at,
-                        updated_at=request.updated_at,
                         metadata=request.metadata or {},
                     )
                     request_dtos.append(request_dto)
