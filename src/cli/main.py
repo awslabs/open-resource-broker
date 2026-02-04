@@ -729,47 +729,73 @@ For more information, visit: {DOCS_URL}
     return parser.parse_args(), resource_parsers
 
 
+class CLICommandFactory:
+    """Factory for creating Commands and Queries from CLI arguments."""
+    
+    def __init__(self, command_bus, query_bus, scheduler_port):
+        self.command_bus = command_bus
+        self.query_bus = query_bus
+        self.scheduler_port = scheduler_port
+    
+    def create_command_or_query(self, args):
+        """Create appropriate Command or Query from CLI arguments."""
+        # Process input data from -f/--file or -d/--data flags (HostFactory compatibility)
+        input_data = self._process_input_data(args)
+        args.input_data = input_data
+        
+        # Handle nested MCP commands
+        if args.resource == "mcp" and args.action == "tools":
+            handler_key = ("mcp", "tools", getattr(args, "tools_action", None))
+        elif args.resource == "init":
+            handler_key = ("init", None)
+        else:
+            handler_key = (args.resource, args.action)
+        
+        return handler_key, args
+    
+    def _process_input_data(self, args):
+        """Process input data from -f/--file or -d/--data flags."""
+        input_data = None
+        if hasattr(args, "file") and args.file:
+            try:
+                import json
+                with open(args.file) as f:
+                    input_data = json.load(f)
+            except Exception as e:
+                from infrastructure.logging.logger import get_logger
+                logger = get_logger(__name__)
+                logger.error("Failed to load input file %s: %s", args.file, e)
+                raise DomainException(f"Failed to load input file: {e}")
+        elif hasattr(args, "data") and args.data:
+            try:
+                import json
+                input_data = json.loads(args.data)
+            except Exception as e:
+                from infrastructure.logging.logger import get_logger
+                logger = get_logger(__name__)
+                logger.error("Failed to parse input data: %s", e)
+                raise DomainException(f"Failed to parse input data: {e}")
+        return input_data
+
+
 async def execute_command(args, app, resource_parsers) -> dict[str, Any]:
-    """Execute the appropriate command handler."""
-    # Process input data from -f/--file or -d/--data flags (HostFactory compatibility)
-    input_data = None
-    if hasattr(args, "file") and args.file:
-        try:
-            import json
-
-            with open(args.file) as f:
-                input_data = json.load(f)
-        except Exception as e:
-            from infrastructure.logging.logger import get_logger
-
-            logger = get_logger(__name__)
-            logger.error("Failed to load input file %s: %s", args.file, e)
-            raise DomainException(f"Failed to load input file: {e}")
-    elif hasattr(args, "data") and args.data:
-        try:
-            import json
-
-            input_data = json.loads(args.data)
-        except Exception as e:
-            from infrastructure.logging.logger import get_logger
-
-            logger = get_logger(__name__)
-            logger.error("Failed to parse input data: %s", e)
-            raise DomainException(f"Failed to parse input data: {e}")
-
-    # Add input_data to args for handlers to use
-    args.input_data = input_data
-
-    # Handle nested MCP commands
-    if args.resource == "mcp" and args.action == "tools":
-        handler_key = ("mcp", "tools", getattr(args, "tools_action", None))
-    elif args.resource == "init":
-        handler_key = ("init", None)
-    else:
-        handler_key = (args.resource, args.action)
-
+    """Execute the appropriate command handler using CQRS pattern."""
     try:
-        # Import function handlers - all are now async functions with decorators
+        # Get CQRS infrastructure from DI container
+        from infrastructure.di.container import get_container
+        from infrastructure.di.buses import CommandBus, QueryBus
+        from domain.base.ports.scheduler_port import SchedulerPort
+        
+        container = get_container()
+        command_bus = container.get(CommandBus)
+        query_bus = container.get(QueryBus)
+        scheduler_port = container.get(SchedulerPort)
+        
+        # Create CLI command factory
+        cli_factory = CLICommandFactory(command_bus, query_bus, scheduler_port)
+        handler_key, processed_args = cli_factory.create_command_or_query(args)
+        
+        # Keep reference mapping for handlers that haven't been converted to CQRS yet
         from interface.init_command_handler import handle_init
         from interface.mcp.server.handler import handle_mcp_serve
         from interface.mcp_command_handlers import (
@@ -827,7 +853,7 @@ async def execute_command(args, app, resource_parsers) -> dict[str, Any]:
             handle_infrastructure_validate,
         )
 
-        # Command handler mapping - all handlers are now async functions
+        # Command handler mapping for reference - handlers use CommandBus/QueryBus internally
         command_handlers = {
             # Templates - Complete CRUD operations (both plural and singular)
             ("templates", "list"): handle_list_templates,
@@ -917,18 +943,28 @@ async def execute_command(args, app, resource_parsers) -> dict[str, Any]:
             ("init", None): handle_init,
         }
 
-        # All handlers are now async functions - no special handling needed
+        # Execute through handler (handlers use CommandBus/QueryBus internally)
         if handler_key not in command_handlers:
             raise ValueError(f"Unknown command: {args.resource} {args.action}")
 
         handler_func = command_handlers[handler_key]
-
         if handler_func is None:
             raise NotImplementedError(f"Command not yet implemented: {args.resource} {args.action}")
 
-        # All handlers are async functions with decorators
-        result = await handler_func(args)
+        # Execute handler - handlers internally use CommandBus/QueryBus for CQRS compliance
+        result = await handler_func(processed_args)
+        
+        # Format response using scheduler strategy if available
+        if scheduler_port and hasattr(result, 'get') and result.get('success'):
+            try:
+                formatted_result = scheduler_port.format_response(result)
+                return formatted_result
+            except Exception:
+                # Fallback to original result if formatting fails
+                pass
+        
         return result
+        
     except Exception as e:
         # Re-raise the exception to be handled by the caller
         raise
