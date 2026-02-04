@@ -121,8 +121,8 @@ class RequestDTO(BaseDTO):
             machine_references=machine_refs,
             machine_ids=request.machine_ids,
             message=request.status_message or "",  # Provide empty string if None
-            resource_id=None,  # Not available in current domain model
-            provider_api=None,  # Not available in current domain model
+            resource_id=request.resource_ids[0] if request.resource_ids else None,  # First resource ID
+            provider_api=request.provider_api,  # Available in domain model
             launch_template_id=None,  # Not available in current domain model
             launch_template_version=None,  # Not available in current domain model
             metadata=request.metadata,
