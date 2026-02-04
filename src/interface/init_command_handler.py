@@ -48,7 +48,7 @@ async def handle_init(args) -> int:
         if args.non_interactive:
             config = _get_default_config(args)
         else:
-            config = _interactive_setup()
+            config = _interactive_setup(args)
 
         # Create directories
         _create_directories(config_dir, work_dir, logs_dir)
@@ -142,7 +142,7 @@ def _get_available_providers() -> list[dict[str, str]]:
         return [{"type": "aws", "display_name": "aws", "description": "Amazon Web Services"}]
 
 
-def _interactive_setup() -> Dict[str, Any]:
+def _interactive_setup(args) -> Dict[str, Any]:
     """Interactive configuration setup."""
     try:
         print_separator(width=60, char="=", color="cyan")
@@ -154,16 +154,20 @@ def _interactive_setup() -> Dict[str, Any]:
         print_info("[1/4] Scheduler Type")
         print_separator(width=60, char="-", color="cyan")
         
-        schedulers = _get_available_schedulers()
-        for i, scheduler in enumerate(schedulers, 1):
-            print_info(f"  ({i}) {scheduler['display_name']} - {scheduler['description']}")
-        
-        print_info("")
-        scheduler_choice = input("  Select scheduler (1): ").strip() or "1"
-        try:
-            scheduler_type = schedulers[int(scheduler_choice) - 1]["type"]
-        except (ValueError, IndexError):
-            scheduler_type = "default"
+        if args.scheduler:
+            scheduler_type = args.scheduler
+            print_info(f"  Using provided scheduler: {scheduler_type}")
+        else:
+            schedulers = _get_available_schedulers()
+            for i, scheduler in enumerate(schedulers, 1):
+                print_info(f"  ({i}) {scheduler['display_name']} - {scheduler['description']}")
+            
+            print_info("")
+            scheduler_choice = input("  Select scheduler (1): ").strip() or "1"
+            try:
+                scheduler_type = schedulers[int(scheduler_choice) - 1]["type"]
+            except (ValueError, IndexError):
+                scheduler_type = "default"
 
         print_newline()
         print_separator(width=60, char="-", color="cyan")
@@ -173,18 +177,22 @@ def _interactive_setup() -> Dict[str, Any]:
         print_info("[2/4] Cloud Provider")
         print_separator(width=60, char="-", color="cyan")
         
-        providers = _get_available_providers()
-        for i, provider in enumerate(providers, 1):
-            print_info(f"  ({i}) {provider['display_name']} - {provider['description']}")
-        
-        print_info("")
-        provider_choice = input("  Select provider (1): ").strip() or "1"
-        try:
-            provider_type = providers[int(provider_choice) - 1]["type"]
-        except (ValueError, IndexError):
-            # Use first available provider as default
+        if args.provider:
+            provider_type = args.provider
+            print_info(f"  Using provided provider: {provider_type}")
+        else:
             providers = _get_available_providers()
-            provider_type = providers[0]["type"] if providers else "aws"
+            for i, provider in enumerate(providers, 1):
+                print_info(f"  ({i}) {provider['display_name']} - {provider['description']}")
+            
+            print_info("")
+            provider_choice = input("  Select provider (1): ").strip() or "1"
+            try:
+                provider_type = providers[int(provider_choice) - 1]["type"]
+            except (ValueError, IndexError):
+                # Use first available provider as default
+                providers = _get_available_providers()
+                provider_type = providers[0]["type"] if providers else "aws"
 
         print_newline()
         print_separator(width=60, char="-", color="cyan")
@@ -201,29 +209,43 @@ def _interactive_setup() -> Dict[str, Any]:
         provider_config = {"type": provider_type}
         for param, info in requirements.items():
             if info.get("required"):
-                default_value = "us-east-1" if param == "region" else ""
-                prompt = f"  {info['description']} ({default_value}): " if default_value else f"  {info['description']}: "
-                value = input(prompt).strip() or default_value
-                provider_config[param] = value
+                # Use provided args if available
+                if param == "region" and args.region:
+                    provider_config[param] = args.region
+                    print_info(f"  Using provided {info['description']}: {args.region}")
+                else:
+                    default_value = "us-east-1" if param == "region" else ""
+                    prompt = f"  {info['description']} ({default_value}): " if default_value else f"  {info['description']}: "
+                    value = input(prompt).strip() or default_value
+                    provider_config[param] = value
         
         # Fallback for AWS if no requirements defined
         if provider_type == "aws" and not requirements:
-            region = input("  Region (us-east-1): ").strip() or "us-east-1"
+            if args.region:
+                region = args.region
+                print_info(f"  Using provided region: {region}")
+            else:
+                region = input("  Region (us-east-1): ").strip() or "us-east-1"
             provider_config["region"] = region
         
         # Get available credential sources
         credential_sources = _get_available_credential_sources(provider_type)
         
-        print_info("")
-        print_info("Available credentials:")
-        for i, source in enumerate(credential_sources, 1):
-            print_info(f"  ({i}) {source['description']}")
-        
-        choice = input("  Select credentials (1): ").strip() or "1"
-        try:
-            selected_source = credential_sources[int(choice) - 1]["name"]
-        except (ValueError, IndexError):
-            selected_source = None
+        if args.profile:
+            selected_source = args.profile
+            print_info("")
+            print_info(f"Using provided profile: {selected_source}")
+        else:
+            print_info("")
+            print_info("Available credentials:")
+            for i, source in enumerate(credential_sources, 1):
+                print_info(f"  ({i}) {source['description']}")
+            
+            choice = input("  Select credentials (1): ").strip() or "1"
+            try:
+                selected_source = credential_sources[int(choice) - 1]["name"]
+            except (ValueError, IndexError):
+                selected_source = None
         
         # Test credentials
         print_info("")
