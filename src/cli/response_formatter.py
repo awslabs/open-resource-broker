@@ -185,13 +185,13 @@ class CLIResponseFormatter:
 
     def _extract_response_data(self, response: Any) -> Any:
         """Extract data from various response types."""
+        # Handle BaseResponse and subclasses first (before generic to_dict check)
+        if isinstance(response, BaseResponse):
+            return self._extract_base_response_data(response.to_dict())
+        
         # Handle BaseDTO and subclasses
         if isinstance(response, BaseDTO):
             return response.to_dict()
-        
-        # Handle BaseResponse and subclasses
-        if isinstance(response, BaseResponse):
-            return self._extract_base_response_data(response.to_dict())
         
         # Handle objects with to_dict method
         if hasattr(response, 'to_dict') and callable(response.to_dict):
@@ -212,10 +212,10 @@ class CLIResponseFormatter:
                 if k not in ['success', 'error_code', 'metadata']}
         
         # If only message remains, return it directly for simple output
-        if list(data.keys()) == ['message']:
+        if list(data.keys()) == ['message'] and data['message']:
             return data['message']
         
-        # Return cleaned data
+        # Return cleaned data (remove None values)
         return {k: v for k, v in data.items() if v is not None}
 
     def _convert_domain_object_to_dict(self, obj: Any) -> dict[str, Any]:

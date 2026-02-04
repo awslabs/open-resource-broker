@@ -708,7 +708,7 @@ class CLICommandFactory:
                 return self.create_get_template_query(template_id=template_id)
             elif command_action == "create":
                 # Extract template data from input_data or args
-                input_data = args.get("input_data", {})
+                input_data = args.get("input_data") or {}
                 return self.create_create_template_command(
                     template_id=input_data.get("template_id") or args.get("template_id"),
                     provider_api=input_data.get("provider_api") or args.get("provider_api", "RunInstances"),
@@ -725,7 +725,7 @@ class CLICommandFactory:
                 template_id = args.get("template_id")
                 if not template_id:
                     raise ValueError("template_id is required for update command")
-                input_data = args.get("input_data", {})
+                input_data = args.get("input_data") or {}
                 return self.create_update_template_command(
                     template_id=template_id,
                     name=input_data.get("name") or args.get("name"),
@@ -738,18 +738,22 @@ class CLICommandFactory:
                     raise ValueError("template_id is required for delete command")
                 return self.create_delete_template_command(template_id=template_id)
             elif command_action == "validate":
-                input_data = args.get("input_data", {})
+                input_data = args.get("input_data") or {}
                 if not input_data:
                     raise ValueError("Template configuration is required for validate command")
                 return self.create_validate_template_command(
                     template_id=input_data.get("template_id", "validation"),
                     configuration=input_data
                 )
+            elif command_action == "refresh":
+                return self.create_template_utility_command_data("refresh", **args)
+            elif command_action == "generate":
+                return self.create_template_utility_command_data("generate", **args)
 
         # Request operations
         elif command_group == "requests":
             if command_action == "create":
-                input_data = args.get("input_data", {})
+                input_data = args.get("input_data") or {}
                 template_id = input_data.get("template_id") or args.get("template_id")
                 count = input_data.get("count") or args.get("count", 1)
                 if not template_id:
@@ -798,7 +802,7 @@ class CLICommandFactory:
                 )
             elif command_action == "request":
                 # Alias for requests create
-                input_data = args.get("input_data", {})
+                input_data = args.get("input_data") or {}
                 template_id = input_data.get("template_id") or args.get("template_id")
                 count = input_data.get("count") or args.get("count", 1)
                 if not template_id:
@@ -955,10 +959,6 @@ class CLICommandFactory:
         # Init command
         elif command_group == "init":
             return self.create_init_command_data(**args)
-
-        # Template utility operations
-        elif command_group == "templates" and command_action in ["refresh", "generate"]:
-            return self.create_template_utility_command_data(command_action, **args)
 
         # Config operations (map to provider config)
         elif command_group == "config":
