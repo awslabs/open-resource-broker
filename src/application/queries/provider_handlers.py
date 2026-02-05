@@ -21,7 +21,7 @@ from application.provider.queries import (
     GetProviderStrategyConfigQuery,
     ListAvailableProvidersQuery,
 )
-from domain.base.ports import ErrorHandlingPort, LoggingPort
+from domain.base.ports import ConfigurationPort, ErrorHandlingPort, LoggingPort
 
 
 @query_handler(GetProviderHealthQuery)
@@ -92,12 +92,13 @@ class GetProviderHealthHandler(BaseQueryHandler[GetProviderHealthQuery, Provider
 
 @query_handler(ListAvailableProvidersQuery)
 class ListAvailableProvidersHandler(
-    BaseQueryHandler[ListAvailableProvidersQuery, list[dict[str, Any]]]
+    BaseQueryHandler[ListAvailableProvidersQuery, dict[str, Any]]
 ):
     """Handler for listing available providers."""
 
     def __init__(
         self,
+        config_manager: ConfigurationPort,
         logger: LoggingPort,
         error_handler: ErrorHandlingPort,
     ) -> None:
@@ -105,75 +106,62 @@ class ListAvailableProvidersHandler(
         Initialize list providers handler.
 
         Args:
+            config_manager: Configuration port for getting provider config
             logger: Logging port for operation logging
             error_handler: Error handling port for exception management
         """
         super().__init__(logger, error_handler)
+        self._config_manager = config_manager
 
-    async def execute_query(self, query: ListAvailableProvidersQuery) -> list[dict[str, Any]]:
+    async def execute_query(self, query: ListAvailableProvidersQuery) -> dict[str, Any]:
         """Execute list available providers query."""
         self.logger.info("Listing available providers")
 
         try:
-            from providers.registry import get_provider_registry
-            registry = get_provider_registry()
+            # Get configured providers from configuration (not registry)
+            provider_config = self._config_manager.get_provider_config()
+            
+            if not provider_config:
+                return {
+                    "providers": [],
+                    "count": 0,
+                    "message": "No provider configuration found",
+                }
 
-            available_providers = []
+            # Get active providers from configuration
+            active_providers = provider_config.get_active_providers()
+            
+            providers_info = []
+            for provider_instance in active_providers:
+                # Get effective handlers using inheritance
+                provider_defaults = provider_config.provider_defaults.get(provider_instance.type)
+                effective_handlers = provider_instance.get_effective_handlers(provider_defaults)
+                handler_names = list(effective_handlers.keys())
 
-            # Get provider types and instances
-            provider_types = registry.get_registered_providers()
-            provider_instances = registry.get_registered_provider_instances()
+                providers_info.append({
+                    "name": provider_instance.name,
+                    "type": provider_instance.type,
+                    "region": provider_instance.config.get("region", "unknown"),
+                    "status": "active" if provider_instance.enabled else "disabled",
+                    "capabilities": handler_names,  # Real handler names from inheritance
+                    "weight": provider_instance.weight,
+                    "priority": provider_instance.priority,
+                })
 
-            # Add provider types
-            for provider_type in provider_types:
-                try:
-                    capabilities = registry.get_strategy_capabilities(provider_type)
-                    provider_info = {
-                        "name": provider_type,
-                        "type": provider_type,
-                        "status": "active",
-                        "capabilities": capabilities.supported_apis if capabilities else [],
-                    }
-                    available_providers.append(provider_info)
-                except Exception as e:
-                    self.logger.warning("Could not get info for provider type %s: %s", provider_type, e)
-                    available_providers.append(
-                        {
-                            "name": provider_type,
-                            "type": provider_type,
-                            "status": "error",
-                            "error": str(e),
-                        }
-                    )
-
-            # Add provider instances
-            for instance_name in provider_instances:
-                try:
-                    capabilities = registry.get_strategy_capabilities(instance_name)
-                    provider_info = {
-                        "name": instance_name,
-                        "type": "instance",
-                        "status": "active",
-                        "capabilities": capabilities.supported_apis if capabilities else [],
-                    }
-                    available_providers.append(provider_info)
-                except Exception as e:
-                    self.logger.warning("Could not get info for provider instance %s: %s", instance_name, e)
-                    available_providers.append(
-                        {
-                            "name": instance_name,
-                            "type": "instance",
-                            "status": "error",
-                            "error": str(e),
-                        }
-                    )
-
-            self.logger.info("Found %s available providers", len(available_providers))
-            return available_providers
+            return {
+                "providers": providers_info,
+                "count": len(providers_info),
+                "selection_policy": provider_config.selection_policy,
+                "message": "Available providers retrieved successfully",
+            }
 
         except Exception as e:
             self.logger.error("Failed to list available providers: %s", e)
-            raise
+            return {
+                "providers": [],
+                "count": 0,
+                "message": f"Failed to retrieve providers: {e}",
+            }
 
 
 @query_handler(GetProviderCapabilitiesQuery)
