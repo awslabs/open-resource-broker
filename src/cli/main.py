@@ -32,36 +32,34 @@ except ImportError:
 
 def add_global_arguments(parser):
     """Add arguments that should be available on all commands."""
-    parser.add_argument("--provider", help="Override provider instance (e.g., aws-prod, aws-dev)")
+    parser.add_argument("--provider", help="Override provider instance")
     parser.add_argument("--scheduler", choices=["default", "hostfactory", "hf"], help="Override scheduler strategy")
-    parser.add_argument("--dry-run", action="store_true", help="Show what would be done without executing")
+    parser.add_argument("--dry-run", action="store_true", help="Preview without executing")
     parser.add_argument("--format", choices=["json", "yaml", "table", "list"], default="json", help="Output format")
-    parser.add_argument("--verbose", action="store_true", help="Enable verbose output")
-    parser.add_argument("--quiet", action="store_true", help="Suppress non-essential output")
+    parser.add_argument("--verbose", action="store_true", help="Verbose output")
+    parser.add_argument("--quiet", action="store_true", help="Suppress output")
 
 
 def add_force_argument(parser):
     """Add --force argument for destructive operations."""
-    parser.add_argument("--force", action="store_true", help="Force operation without confirmation")
+    parser.add_argument("--force", action="store_true", help="Force without confirmation")
 
 
 def add_multi_provider_arguments(parser):
     """Add multi-provider arguments."""
-    parser.add_argument("--all-providers", action="store_true", help="Apply to all active providers")
+    parser.add_argument("--all-providers", action="store_true", help="Apply to all providers")
 
 
 def add_machine_actions(subparsers):
     """Add machine actions to a subparser."""
     # Machines list
-    machines_list = subparsers.add_parser("list", help="List all machines")
+    machines_list = subparsers.add_parser("list", help="List machines")
     add_global_arguments(machines_list)
     machines_list.add_argument("--status", help="Filter by machine status")
     machines_list.add_argument("--template-id", help="Filter by template ID")
 
     # Machines show
-    machines_show = subparsers.add_parser(
-        "show", help="Show machine details (supports both positional and --machine-id flag)"
-    )
+    machines_show = subparsers.add_parser("show", help="Show machine details")
     add_global_arguments(machines_show)
     machines_show.add_argument("machine_id", nargs="?", help="Machine ID to show")
     machines_show.add_argument(
@@ -69,21 +67,18 @@ def add_machine_actions(subparsers):
     )
 
     # Machines request (create machines)
-    machines_request = subparsers.add_parser(
-        "request",
-        help="Request new machines (supports both positional args and --template-id/--count flags)",
-    )
+    machines_request = subparsers.add_parser("request", help="Request machines")
     add_global_arguments(machines_request)
     machines_request.add_argument(
         "template_id",
         nargs="?",
-        help="Template ID to use (optional if using -f/--file or -d/--data)",
+        help="Template ID to use",
     )
     machines_request.add_argument(
         "machine_count",
         nargs="?",
         type=int,
-        help="Number of machines to request (optional if using -f/--file or -d/--data)",
+        help="Number of machines to request",
     )
     machines_request.add_argument(
         "--template-id", "-t", dest="flag_template_id", help="Template ID to use"
@@ -103,7 +98,7 @@ def add_machine_actions(subparsers):
     add_global_arguments(machines_return)
     add_force_argument(machines_return)
     machines_return.add_argument(
-        "machine_ids", nargs="*", help="Machine IDs to return (optional if using -f/--file)"
+        "machine_ids", nargs="*", help="Machine IDs to return"
     )
 
     # Machines status
@@ -115,7 +110,7 @@ def add_machine_actions(subparsers):
 def add_request_actions(subparsers):
     """Add request actions to a subparser."""
     # Requests list
-    requests_list = subparsers.add_parser("list", help="List all requests")
+    requests_list = subparsers.add_parser("list", help="List requests")
     add_global_arguments(requests_list)
     requests_list.add_argument(
         "--status",
@@ -136,9 +131,7 @@ def add_request_actions(subparsers):
     requests_cancel.add_argument("request_id", help="Request ID to cancel")
 
     # Requests status
-    requests_status = subparsers.add_parser(
-        "status", help="Check request status (supports both positional args and --request-id flags)"
-    )
+    requests_status = subparsers.add_parser("status", help="Check request status")
     add_global_arguments(requests_status)
     requests_status.add_argument("request_ids", nargs="*", help="Request IDs to check")
     requests_status.add_argument(
@@ -146,7 +139,7 @@ def add_request_actions(subparsers):
         "-r",
         action="append",
         dest="flag_request_ids",
-        help="Request ID to check (can be used multiple times)",
+        help="Request ID to check",
     )
 
 
@@ -215,7 +208,7 @@ def add_infrastructure_actions(subparsers):
 def add_provider_actions(subparsers):
     """Add provider actions to a subparser."""
     # Providers list
-    providers_list = subparsers.add_parser("list", help="List available providers")
+    providers_list = subparsers.add_parser("list", help="List providers")
     add_global_arguments(providers_list)
     providers_list.add_argument(
         "--detailed", action="store_true", help="Show detailed provider information"
@@ -249,7 +242,7 @@ def add_provider_actions(subparsers):
 def add_template_actions(subparsers):
     """Add template actions to a subparser."""
     # Templates list
-    templates_list = subparsers.add_parser("list", help="List all templates")
+    templates_list = subparsers.add_parser("list", help="List templates")
     add_global_arguments(templates_list)
     templates_list.add_argument("--provider-api", help="Filter by provider API type")
     templates_list.add_argument(
@@ -257,9 +250,7 @@ def add_template_actions(subparsers):
     )
 
     # Templates show
-    templates_show = subparsers.add_parser(
-        "show", help="Show template details (supports both positional and --template-id flag)"
-    )
+    templates_show = subparsers.add_parser("show", help="Show template details")
     add_global_arguments(templates_show)
     templates_show.add_argument("template_id", nargs="?", help="Template ID to show")
     templates_show.add_argument(
@@ -267,7 +258,7 @@ def add_template_actions(subparsers):
     )
 
     # Templates create
-    templates_create = subparsers.add_parser("create", help="Create new template")
+    templates_create = subparsers.add_parser("create", help="Create template")
     add_global_arguments(templates_create)
     templates_create.add_argument("--file", required=True, help="Template configuration file")
     templates_create.add_argument(
@@ -275,9 +266,7 @@ def add_template_actions(subparsers):
     )
 
     # Templates update
-    templates_update = subparsers.add_parser(
-        "update", help="Update existing template (supports both positional and --template-id flag)"
-    )
+    templates_update = subparsers.add_parser("update", help="Update template")
     add_global_arguments(templates_update)
     templates_update.add_argument("template_id", nargs="?", help="Template ID to update")
     templates_update.add_argument(
@@ -288,9 +277,7 @@ def add_template_actions(subparsers):
     )
 
     # Templates delete
-    templates_delete = subparsers.add_parser(
-        "delete", help="Delete template (supports both positional and --template-id flag)"
-    )
+    templates_delete = subparsers.add_parser("delete", help="Delete template")
     add_global_arguments(templates_delete)
     add_force_argument(templates_delete)
     templates_delete.add_argument("template_id", nargs="?", help="Template ID to delete")
@@ -316,16 +303,16 @@ def add_template_actions(subparsers):
     add_force_argument(templates_generate)
     add_multi_provider_arguments(templates_generate)
     templates_generate.add_argument(
-        "--provider-api", help="Specific provider API (EC2Fleet, SpotFleet, ASG, RunInstances)"
+        "--provider-api", help="Provider API type (EC2Fleet, SpotFleet, ASG, RunInstances)"
     )
     templates_generate.add_argument(
-        "--provider-specific", action="store_true", help="Generate provider-specific templates with hardcoded infrastructure"
+        "--provider-specific", action="store_true", help="Generate templates with hardcoded infrastructure"
     )
     templates_generate.add_argument(
         "--generic", action="store_true", help="Generate generic templates (same as default behavior)"
     )
     templates_generate.add_argument(
-        "--provider-type", help="Generate templates for specific provider type (e.g., aws)"
+        "--provider-type", help="Provider type (e.g., aws)"
     )
 
 
@@ -344,14 +331,11 @@ def parse_args() -> tuple[argparse.Namespace, dict]:
         epilog=f"""
 Examples:
   %(prog)s templates list                              # List all templates
-  %(prog)s templates generate --all-providers          # Generate templates for all providers
-  %(prog)s --provider aws-prod templates list          # Use specific provider
-  %(prog)s requests status --request-id req-123        # Check request status (flag)
-  %(prog)s requests status req-123                     # Check request status (positional)
-  %(prog)s templates show --template-id template-id    # Show template details (flag)
-  %(prog)s templates show template-id                  # Show template details (positional)
-  %(prog)s machines request template-id 5              # Request 5 machines
-  %(prog)s machines request --template-id template-id --count 5  # Same using flags
+  %(prog)s templates list --provider aws-prod         # Use specific provider
+  %(prog)s templates generate --all-providers         # Generate for all providers
+  %(prog)s machines request template-id 5             # Request 5 machines
+  %(prog)s requests status req-123                    # Check request status
+  %(prog)s providers health --provider aws-prod       # Check provider health
 
 For more information, visit: {DOCS_URL}
         """,
@@ -395,7 +379,7 @@ For more information, visit: {DOCS_URL}
     # This allows both 'templates list' and 'getAvailableTemplates' to work
 
     # Templates resource
-    templates_parser = subparsers.add_parser("templates", help="Manage compute templates")
+    templates_parser = subparsers.add_parser("templates", help="Compute templates")
     resource_parsers["templates"] = templates_parser
     templates_subparsers = templates_parser.add_subparsers(
         dest="action", help="Template actions"
@@ -413,7 +397,7 @@ For more information, visit: {DOCS_URL}
     add_template_actions(template_subparsers)
 
     # Machines resource
-    machines_parser = subparsers.add_parser("machines", help="Manage compute instances")
+    machines_parser = subparsers.add_parser("machines", help="Compute instances")
     resource_parsers["machines"] = machines_parser
     machines_subparsers = machines_parser.add_subparsers(
         dest="action", help="Machine actions"
@@ -431,7 +415,7 @@ For more information, visit: {DOCS_URL}
     add_machine_actions(machine_subparsers)
 
     # Requests resource
-    requests_parser = subparsers.add_parser("requests", help="Manage provisioning requests")
+    requests_parser = subparsers.add_parser("requests", help="Provisioning requests")
     resource_parsers["requests"] = requests_parser
     requests_subparsers = requests_parser.add_subparsers(
         dest="action", help="Request actions"
@@ -462,7 +446,7 @@ For more information, visit: {DOCS_URL}
     )
 
     # System health
-    system_health = system_subparsers.add_parser("health", help="Run health check")
+    system_health = system_subparsers.add_parser("health", help="Check system health")
     system_health.add_argument(
         "--detailed", action="store_true", help="Show detailed health information"
     )
@@ -482,7 +466,7 @@ For more information, visit: {DOCS_URL}
     system_serve.add_argument("--server-log-level", default="info", help="Server log level")
 
     # Infrastructure resource
-    infrastructure_parser = subparsers.add_parser("infrastructure", help="Infrastructure management")
+    infrastructure_parser = subparsers.add_parser("infrastructure", help="Infrastructure discovery")
     resource_parsers["infrastructure"] = infrastructure_parser
     infrastructure_subparsers = infrastructure_parser.add_subparsers(
         dest="action", help="Infrastructure actions"
@@ -500,7 +484,7 @@ For more information, visit: {DOCS_URL}
     add_infrastructure_actions(infra_subparsers)
 
     # Config resource
-    config_parser = subparsers.add_parser("config", help="Configuration management")
+    config_parser = subparsers.add_parser("config", help="Configuration")
     resource_parsers["config"] = config_parser
     config_subparsers = config_parser.add_subparsers(
         dest="action", help="Config actions", required=True
@@ -513,12 +497,12 @@ For more information, visit: {DOCS_URL}
     )
 
     # Config set
-    config_set = config_subparsers.add_parser("set", help="Set configuration value")
+    config_set = config_subparsers.add_parser("set", help="Set configuration")
     config_set.add_argument("key", help="Configuration key")
     config_set.add_argument("value", help="Configuration value")
 
     # Config get
-    config_get = config_subparsers.add_parser("get", help="Get configuration value")
+    config_get = config_subparsers.add_parser("get", help="Get configuration")
     config_get.add_argument("key", help="Configuration key")
 
     # Config validate
@@ -526,7 +510,7 @@ For more information, visit: {DOCS_URL}
     config_validate.add_argument("--file", help="Configuration file to validate")
 
     # Providers resource
-    providers_parser = subparsers.add_parser("providers", help="Provider management")
+    providers_parser = subparsers.add_parser("providers", help="Cloud providers")
     resource_parsers["providers"] = providers_parser
     providers_subparsers = providers_parser.add_subparsers(
         dest="action", help="Provider actions"
@@ -544,29 +528,27 @@ For more information, visit: {DOCS_URL}
     add_provider_actions(provider_subparsers)
 
     # Storage resource
-    storage_parser = subparsers.add_parser("storage", help="Storage management")
+    storage_parser = subparsers.add_parser("storage", help="Storage")
     resource_parsers["storage"] = storage_parser
     storage_subparsers = storage_parser.add_subparsers(
         dest="action", help="Storage actions", required=True
     )
 
     # Storage list
-    storage_list = storage_subparsers.add_parser("list", help="List available storage strategies")
+    storage_list = storage_subparsers.add_parser("list", help="List storage strategies")
     storage_list.add_argument(
         "--format", choices=["json", "yaml", "table", "list"], help="Output format"
     )
 
     # Storage show
-    storage_show = storage_subparsers.add_parser("show", help="Show current storage configuration")
+    storage_show = storage_subparsers.add_parser("show", help="Show storage configuration")
     storage_show.add_argument(
         "--format", choices=["json", "yaml", "table", "list"], help="Output format"
     )
     storage_show.add_argument("--strategy", help="Show specific storage strategy details")
 
     # Storage validate
-    storage_validate = storage_subparsers.add_parser(
-        "validate", help="Validate storage configuration"
-    )
+    storage_validate = storage_subparsers.add_parser("validate", help="Validate storage")
     storage_validate.add_argument("--strategy", help="Validate specific storage strategy")
 
     # Storage test
@@ -584,41 +566,35 @@ For more information, visit: {DOCS_URL}
     )
 
     # Storage metrics
-    storage_metrics = storage_subparsers.add_parser(
-        "metrics", help="Show storage performance metrics"
-    )
+    storage_metrics = storage_subparsers.add_parser("metrics", help="Show storage metrics")
     storage_metrics.add_argument(
         "--format", choices=["json", "yaml", "table", "list"], help="Output format"
     )
     storage_metrics.add_argument("--strategy", help="Show metrics for specific storage strategy")
 
     # Scheduler resource
-    scheduler_parser = subparsers.add_parser("scheduler", help="Scheduler management")
+    scheduler_parser = subparsers.add_parser("scheduler", help="Scheduler")
     resource_parsers["scheduler"] = scheduler_parser
     scheduler_subparsers = scheduler_parser.add_subparsers(
         dest="action", help="Scheduler actions", required=True
     )
 
     # Scheduler list
-    scheduler_list = scheduler_subparsers.add_parser(
-        "list", help="List available scheduler strategies"
-    )
+    scheduler_list = scheduler_subparsers.add_parser("list", help="List scheduler strategies")
     scheduler_list.add_argument(
         "--format", choices=["json", "yaml", "table", "list"], help="Output format"
     )
     scheduler_list.add_argument("--long", action="store_true", help="Show detailed information")
 
     # Scheduler show
-    scheduler_show = scheduler_subparsers.add_parser("show", help="Show scheduler configuration")
+    scheduler_show = scheduler_subparsers.add_parser("show", help="Show scheduler details")
     scheduler_show.add_argument(
         "--format", choices=["json", "yaml", "table", "list"], help="Output format"
     )
     scheduler_show.add_argument("--scheduler", help="Show specific scheduler strategy details")
 
     # Scheduler validate
-    scheduler_validate = scheduler_subparsers.add_parser(
-        "validate", help="Validate scheduler configuration"
-    )
+    scheduler_validate = scheduler_subparsers.add_parser("validate", help="Validate scheduler")
     scheduler_validate.add_argument(
         "--format", choices=["json", "yaml", "table", "list"], help="Output format"
     )
@@ -634,7 +610,7 @@ For more information, visit: {DOCS_URL}
     mcp_tools_sub = mcp_tools.add_subparsers(dest="tools_action", required=True)
 
     # MCP tools list
-    mcp_tools_list = mcp_tools_sub.add_parser("list", help="List available MCP tools")
+    mcp_tools_list = mcp_tools_sub.add_parser("list", help="List MCP tools")
     mcp_tools_list.add_argument(
         "--format",
         choices=["json", "yaml", "table"],
@@ -646,7 +622,7 @@ For more information, visit: {DOCS_URL}
     )
 
     # MCP tools call
-    mcp_tools_call = mcp_tools_sub.add_parser("call", help="Call MCP tool directly")
+    mcp_tools_call = mcp_tools_sub.add_parser("call", help="Call MCP tool")
     mcp_tools_call.add_argument("tool_name", help="Name of tool to call")
     mcp_tools_call.add_argument("--args", help="Tool arguments as JSON string")
     mcp_tools_call.add_argument("--file", help="Tool arguments from JSON file")
@@ -658,7 +634,7 @@ For more information, visit: {DOCS_URL}
     )
 
     # MCP tools info
-    mcp_tools_info = mcp_tools_sub.add_parser("info", help="Get information about MCP tool")
+    mcp_tools_info = mcp_tools_sub.add_parser("info", help="Show MCP tool details")
     mcp_tools_info.add_argument("tool_name", help="Name of tool to get info for")
     mcp_tools_info.add_argument(
         "--format",
@@ -668,7 +644,7 @@ For more information, visit: {DOCS_URL}
     )
 
     # MCP validate
-    mcp_validate = mcp_subparsers.add_parser("validate", help="Validate MCP configuration")
+    mcp_validate = mcp_subparsers.add_parser("validate", help="Validate MCP")
     mcp_validate.add_argument("--config", help="MCP configuration file to validate")
     mcp_validate.add_argument(
         "--format",
