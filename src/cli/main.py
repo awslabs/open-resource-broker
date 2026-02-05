@@ -30,26 +30,42 @@ except ImportError:
     HELP_FORMATTER = argparse.RawDescriptionHelpFormatter
 
 
+def add_global_arguments(parser):
+    """Add arguments that should be available on all commands."""
+    parser.add_argument("--provider", help="Override provider instance (e.g., aws-prod, aws-dev)")
+    parser.add_argument("--scheduler", choices=["default", "hostfactory", "hf"], help="Override scheduler strategy")
+    parser.add_argument("--dry-run", action="store_true", help="Show what would be done without executing")
+    parser.add_argument("--format", choices=["json", "yaml", "table", "list"], default="json", help="Output format")
+    parser.add_argument("--verbose", action="store_true", help="Enable verbose output")
+    parser.add_argument("--quiet", action="store_true", help="Suppress non-essential output")
+
+
+def add_force_argument(parser):
+    """Add --force argument for destructive operations."""
+    parser.add_argument("--force", action="store_true", help="Force operation without confirmation")
+
+
+def add_multi_provider_arguments(parser):
+    """Add multi-provider arguments."""
+    parser.add_argument("--all-providers", action="store_true", help="Apply to all active providers")
+
+
 def add_machine_actions(subparsers):
     """Add machine actions to a subparser."""
     # Machines list
     machines_list = subparsers.add_parser("list", help="List all machines")
+    add_global_arguments(machines_list)
     machines_list.add_argument("--status", help="Filter by machine status")
     machines_list.add_argument("--template-id", help="Filter by template ID")
-    machines_list.add_argument(
-        "--format", choices=["json", "yaml", "table", "list"], help="Output format"
-    )
 
     # Machines show
     machines_show = subparsers.add_parser(
         "show", help="Show machine details (supports both positional and --machine-id flag)"
     )
+    add_global_arguments(machines_show)
     machines_show.add_argument("machine_id", nargs="?", help="Machine ID to show")
     machines_show.add_argument(
         "--machine-id", "-m", dest="flag_machine_id", help="Machine ID to show"
-    )
-    machines_show.add_argument(
-        "--format", choices=["json", "yaml", "table", "list"], help="Output format"
     )
 
     # Machines request (create machines)
@@ -57,6 +73,7 @@ def add_machine_actions(subparsers):
         "request",
         help="Request new machines (supports both positional args and --template-id/--count flags)",
     )
+    add_global_arguments(machines_request)
     machines_request.add_argument(
         "template_id",
         nargs="?",
@@ -83,15 +100,15 @@ def add_machine_actions(subparsers):
 
     # Machines return (terminate machines)
     machines_return = subparsers.add_parser("return", help="Return machines")
+    add_global_arguments(machines_return)
+    add_force_argument(machines_return)
     machines_return.add_argument(
         "machine_ids", nargs="*", help="Machine IDs to return (optional if using -f/--file)"
-    )
-    machines_return.add_argument(
-        "--force", action="store_true", help="Force return without confirmation"
     )
 
     # Machines status
     machines_status = subparsers.add_parser("status", help="Check machine status")
+    add_global_arguments(machines_status)
     machines_status.add_argument("machine_ids", nargs="+", help="Machine IDs to check")
 
 
@@ -99,32 +116,30 @@ def add_request_actions(subparsers):
     """Add request actions to a subparser."""
     # Requests list
     requests_list = subparsers.add_parser("list", help="List all requests")
+    add_global_arguments(requests_list)
     requests_list.add_argument(
         "--status",
         choices=[s.value for s in RequestStatus],
         help="Filter by request status",
     )
     requests_list.add_argument("--template-id", help="Filter by template ID")
-    requests_list.add_argument(
-        "--format", choices=["json", "yaml", "table", "list"], help="Output format"
-    )
 
     # Requests show
     requests_show = subparsers.add_parser("show", help="Show request details")
+    add_global_arguments(requests_show)
     requests_show.add_argument("request_id", help="Request ID to show")
-    requests_show.add_argument(
-        "--format", choices=["json", "yaml", "table", "list"], help="Output format"
-    )
 
     # Requests cancel
     requests_cancel = subparsers.add_parser("cancel", help="Cancel request")
+    add_global_arguments(requests_cancel)
+    add_force_argument(requests_cancel)
     requests_cancel.add_argument("request_id", help="Request ID to cancel")
-    requests_cancel.add_argument("--force", action="store_true", help="Force cancellation")
 
     # Requests status
     requests_status = subparsers.add_parser(
         "status", help="Check request status (supports both positional args and --request-id flags)"
     )
+    add_global_arguments(requests_status)
     requests_status.add_argument("request_ids", nargs="*", help="Request IDs to check")
     requests_status.add_argument(
         "--request-id",
@@ -173,8 +188,8 @@ def add_infrastructure_actions(subparsers):
         help="Scan AWS to find available infrastructure (VPCs, subnets, security groups)",
         description="Discover available infrastructure in your AWS account. Makes AWS API calls to find VPCs, subnets, and security groups you can use."
     )
-    infra_discover.add_argument("--provider", help="Specific provider to discover")
-    infra_discover.add_argument("--all-providers", action="store_true", help="Discover for all providers")
+    add_global_arguments(infra_discover)
+    add_multi_provider_arguments(infra_discover)
     infra_discover.add_argument("--show", nargs='?', const='', help="Show only specific resources: vpcs,subnets,security-groups (or sg), or 'all' for everything")
     infra_discover.add_argument("--all", action="store_true", help="Show all resources without truncation")
     infra_discover.add_argument("--summary", action="store_true", help="Show only summary counts, no details")
@@ -185,8 +200,8 @@ def add_infrastructure_actions(subparsers):
         help="Show current ORB infrastructure configuration",
         description="Display what infrastructure ORB is currently configured to use (from template_defaults in config)."
     )
-    infra_show.add_argument("--provider", help="Specific provider to show")
-    infra_show.add_argument("--all-providers", action="store_true", help="Show all providers")
+    add_global_arguments(infra_show)
+    add_multi_provider_arguments(infra_show)
 
     # Infrastructure validate
     infra_validate = subparsers.add_parser(
@@ -194,79 +209,66 @@ def add_infrastructure_actions(subparsers):
         help="Verify configured infrastructure still exists in AWS",
         description="Check if the infrastructure configured in ORB (template_defaults) still exists in your AWS account."
     )
-    infra_validate.add_argument("--provider", help="Specific provider to validate")
+    add_global_arguments(infra_validate)
 
 
 def add_provider_actions(subparsers):
     """Add provider actions to a subparser."""
     # Providers list
     providers_list = subparsers.add_parser("list", help="List available providers")
-    providers_list.add_argument(
-        "--format", choices=["json", "yaml", "table", "list"], help="Output format"
-    )
+    add_global_arguments(providers_list)
     providers_list.add_argument(
         "--detailed", action="store_true", help="Show detailed provider information"
     )
 
     # Providers show
     providers_show = subparsers.add_parser("show", help="Show provider details")
-    providers_show.add_argument(
-        "--format", choices=["json", "yaml", "table", "list"], help="Output format"
-    )
-    providers_show.add_argument("--provider", help="Show specific provider details")
+    add_global_arguments(providers_show)
 
     # Providers health
     providers_health = subparsers.add_parser("health", help="Check provider health")
-    providers_health.add_argument(
-        "--format", choices=["json", "yaml", "table", "list"], help="Output format"
-    )
-    providers_health.add_argument("--provider", help="Check specific provider health")
+    add_global_arguments(providers_health)
 
     # Providers select
     providers_select = subparsers.add_parser("select", help="Select provider strategy")
+    add_global_arguments(providers_select)
     providers_select.add_argument("provider", help="Provider name to select")
     providers_select.add_argument("--strategy", help="Specific strategy to select")
 
     # Providers exec
     providers_exec = subparsers.add_parser("exec", help="Execute provider operation")
+    add_global_arguments(providers_exec)
     providers_exec.add_argument("operation", help="Operation to execute")
-    providers_exec.add_argument("--provider", help="Provider to execute operation on")
     providers_exec.add_argument("--params", help="Operation parameters (JSON format)")
 
     # Providers metrics
     providers_metrics = subparsers.add_parser("metrics", help="Show provider metrics")
-    providers_metrics.add_argument(
-        "--format", choices=["json", "yaml", "table", "list"], help="Output format"
-    )
-    providers_metrics.add_argument("--provider", help="Show metrics for specific provider")
+    add_global_arguments(providers_metrics)
 
 
 def add_template_actions(subparsers):
     """Add template actions to a subparser."""
     # Templates list
     templates_list = subparsers.add_parser("list", help="List all templates")
+    add_global_arguments(templates_list)
     templates_list.add_argument("--provider-api", help="Filter by provider API type")
     templates_list.add_argument(
         "--long", action="store_true", help="Include detailed configuration fields"
-    )
-    templates_list.add_argument(
-        "--format", choices=["json", "yaml", "table", "list"], help="Output format"
     )
 
     # Templates show
     templates_show = subparsers.add_parser(
         "show", help="Show template details (supports both positional and --template-id flag)"
     )
+    add_global_arguments(templates_show)
     templates_show.add_argument("template_id", nargs="?", help="Template ID to show")
     templates_show.add_argument(
         "--template-id", "-t", dest="flag_template_id", help="Template ID to show"
     )
-    templates_show.add_argument(
-        "--format", choices=["json", "yaml", "table", "list"], help="Output format"
-    )
 
     # Templates create
     templates_create = subparsers.add_parser("create", help="Create new template")
+    add_global_arguments(templates_create)
     templates_create.add_argument("--file", required=True, help="Template configuration file")
     templates_create.add_argument(
         "--validate-only", action="store_true", help="Only validate, do not create"
@@ -276,6 +278,7 @@ def add_template_actions(subparsers):
     templates_update = subparsers.add_parser(
         "update", help="Update existing template (supports both positional and --template-id flag)"
     )
+    add_global_arguments(templates_update)
     templates_update.add_argument("template_id", nargs="?", help="Template ID to update")
     templates_update.add_argument(
         "--template-id", "-t", dest="flag_template_id", help="Template ID to update"
@@ -288,30 +291,30 @@ def add_template_actions(subparsers):
     templates_delete = subparsers.add_parser(
         "delete", help="Delete template (supports both positional and --template-id flag)"
     )
+    add_global_arguments(templates_delete)
+    add_force_argument(templates_delete)
     templates_delete.add_argument("template_id", nargs="?", help="Template ID to delete")
     templates_delete.add_argument(
         "--template-id", "-t", dest="flag_template_id", help="Template ID to delete"
     )
-    templates_delete.add_argument(
-        "--force", action="store_true", help="Force deletion without confirmation"
-    )
 
     # Templates validate
     templates_validate = subparsers.add_parser("validate", help="Validate template")
+    add_global_arguments(templates_validate)
     templates_validate.add_argument("--file", required=True, help="Template file to validate")
 
     # Templates refresh
     templates_refresh = subparsers.add_parser("refresh", help="Refresh template cache")
-    templates_refresh.add_argument("--force", action="store_true", help="Force complete refresh")
+    add_global_arguments(templates_refresh)
+    add_force_argument(templates_refresh)
 
     # Templates generate
     templates_generate = subparsers.add_parser(
         "generate", help="Generate example templates"
     )
-    templates_generate.add_argument("--provider", help="Generate for specific provider instance")
-    templates_generate.add_argument(
-        "--all-providers", action="store_true", help="Explicitly generate for all active providers"
-    )
+    add_global_arguments(templates_generate)
+    add_force_argument(templates_generate)
+    add_multi_provider_arguments(templates_generate)
     templates_generate.add_argument(
         "--provider-api", help="Specific provider API (EC2Fleet, SpotFleet, ASG, RunInstances)"
     )
@@ -323,9 +326,6 @@ def add_template_actions(subparsers):
     )
     templates_generate.add_argument(
         "--provider-type", help="Generate templates for specific provider type (e.g., aws)"
-    )
-    templates_generate.add_argument(
-        "--force", action="store_true", help="Overwrite existing template files without prompting"
     )
 
 
