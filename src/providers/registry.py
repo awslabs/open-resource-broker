@@ -203,6 +203,25 @@ class ProviderRegistry(BaseRegistry):
         
         # Try instance creation first
         if self.is_provider_instance_registered(provider_identifier):
+            # If no config provided, get the stored provider instance config
+            if config is None:
+                # Get the provider instance config from configuration manager
+                try:
+                    from infrastructure.di.container import get_container
+                    from domain.base.ports.configuration_port import ConfigurationPort
+                    container = get_container()
+                    config_port = container.get(ConfigurationPort)
+                    provider_config = config_port.get_provider_config()
+                    
+                    if provider_config:
+                        for instance in provider_config.get_active_providers():
+                            if instance.name == provider_identifier:
+                                config = instance
+                                break
+                except Exception as e:
+                    if self._logger:
+                        self._logger.warning("Failed to retrieve provider instance config for %s: %s", provider_identifier, e)
+            
             strategy = self.create_strategy_by_instance(provider_identifier, config)
         # Fall back to type creation
         elif self.is_provider_registered(provider_identifier):

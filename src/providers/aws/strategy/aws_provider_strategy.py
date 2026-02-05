@@ -190,6 +190,8 @@ class AWSProviderStrategy(ProviderStrategy):
             )
         elif operation.operation_type == ProviderOperationType.DESCRIBE_RESOURCE_INSTANCES:
             return await self._handle_describe_resource_instances(operation)
+        elif operation.operation_type == ProviderOperationType.RESOLVE_IMAGE:
+            return await self._handle_resolve_image(operation)
         else:
             return ProviderResult.error_result(
                 f"Unsupported operation: {operation.operation_type}", "UNSUPPORTED_OPERATION"
@@ -335,6 +337,36 @@ class AWSProviderStrategy(ProviderStrategy):
             self._initialized = False
         except Exception as e:
             self._logger.warning("Failed during AWS provider cleanup: %s", e)
+
+    async def _handle_resolve_image(self, operation: ProviderOperation) -> ProviderResult:
+        """Handle image resolution operation - resolve SSM parameters to AMI IDs."""
+        try:
+            image_specifications = operation.parameters.get("image_specifications", [])
+            if not image_specifications:
+                return ProviderResult.success_result({"resolved_images": {}})
+
+            resolved_images = {}
+            for image_spec in image_specifications:
+                if image_spec.startswith("/aws/service/"):
+                    # Resolve SSM parameter to AMI ID
+                    try:
+                        ssm_client = self.aws_client.ssm_client
+                        response = ssm_client.get_parameter(Name=image_spec)
+                        resolved_images[image_spec] = response["Parameter"]["Value"]
+                        self._logger.debug("Resolved %s to %s", image_spec, resolved_images[image_spec])
+                    except Exception as e:
+                        self._logger.warning("Failed to resolve SSM parameter %s: %s", image_spec, e)
+                        # Fallback to original parameter
+                        resolved_images[image_spec] = image_spec
+                else:
+                    # Not an SSM parameter, return as-is
+                    resolved_images[image_spec] = image_spec
+
+            return ProviderResult.success_result({"resolved_images": resolved_images})
+
+        except Exception as e:
+            self._logger.error("Image resolution failed: %s", e)
+            return ProviderResult.error_result(f"Image resolution failed: {e}", "IMAGE_RESOLUTION_FAILED")
 
     def __str__(self) -> str:
         """Return string representation for debugging."""
