@@ -260,17 +260,19 @@ class CLIResponseFormatter:
         
         try:
             # Apply context-specific formatting
-            if context == "templates" and hasattr(self.scheduler_strategy, 'format_template_for_display'):
-                if isinstance(data, list):
-                    return [self.scheduler_strategy.format_template_for_display(item) for item in data]
-                elif isinstance(data, dict):
-                    if 'templates' in data:
-                        data['templates'] = [
-                            self.scheduler_strategy.format_template_for_display(template) 
-                            for template in data['templates']
-                        ]
-                    elif self._looks_like_template(data):
-                        return self.scheduler_strategy.format_template_for_display(data)
+            if context == "templates":
+                # For templates list, use format_templates_response for the whole list
+                if isinstance(data, list) and hasattr(self.scheduler_strategy, 'format_templates_response'):
+                    return self.scheduler_strategy.format_templates_response(data)
+                elif hasattr(self.scheduler_strategy, 'format_template_for_display'):
+                    if isinstance(data, dict):
+                        if 'templates' in data:
+                            data['templates'] = [
+                                self.scheduler_strategy.format_template_for_display(template) 
+                                for template in data['templates']
+                            ]
+                        elif self._looks_like_template(data):
+                            return self.scheduler_strategy.format_template_for_display(data)
             
             elif context == "requests" and hasattr(self.scheduler_strategy, 'format_request_for_display'):
                 if isinstance(data, list):

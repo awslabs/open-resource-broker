@@ -1340,8 +1340,8 @@ class ListTemplatesHandler(BaseQueryHandler[ListTemplatesQuery, list[TemplateDTO
         super().__init__(logger, error_handler)
         self._container = container
 
-    async def execute_query(self, query: ListTemplatesQuery) -> list[Template]:
-        """Execute list templates query."""
+    async def execute_query(self, query: ListTemplatesQuery) -> list[TemplateDTO]:
+        """Execute list templates query - returns raw templates for scheduler formatting."""
         from infrastructure.template.configuration_manager import TemplateConfigurationManager
 
         self.logger.info("Listing templates")
@@ -1349,46 +1349,13 @@ class ListTemplatesHandler(BaseQueryHandler[ListTemplatesQuery, list[TemplateDTO
         try:
             template_manager = self._container.get(TemplateConfigurationManager)
 
-            if self._container.has(TemplateFactory):
-                template_factory = self._container.get(TemplateFactory)
-            else:
-                template_factory = get_default_template_factory()
-
+            # Get templates with AMI resolution (this should work now that providers are registered)
             if query.provider_api:
                 template_dtos = await template_manager.get_templates_by_provider(query.provider_api)
             else:
                 template_dtos = await template_manager.load_templates()
 
-            domain_templates = []
-            for dto in template_dtos:
-                try:
-                    config = dict(dto.configuration or {})
-                    template_data = dict(config)
-                    template_data.setdefault("template_id", dto.template_id)
-                    template_data.setdefault("name", dto.name or dto.template_id)
-                    template_data.setdefault("provider_api", dto.provider_api or "aws")
-
-                    # Apply template defaults resolution
-                    from application.services.template_defaults_service import TemplateDefaultsService
-                    if self._container.has(TemplateDefaultsService):
-                        template_defaults_service = self._container.get(TemplateDefaultsService)
-                        resolved_data = template_defaults_service.resolve_template_defaults(
-                            template_data, provider_name=None
-                        )
-                    else:
-                        resolved_data = template_data
-
-                    domain_template = template_factory.create_template(resolved_data)
-                    domain_templates.append(domain_template)
-
-                except Exception as e:
-                    self.logger.warning("Skipping invalid template %s: %s", dto.template_id, e)
-                    continue
-
-            self.logger.info("Found %s templates", len(domain_templates))
-            
-            # Convert domain templates to DTOs for CQRS compliance
-            template_dtos = [TemplateDTO.from_domain(template) for template in domain_templates]
+            self.logger.info("Found %s templates", len(template_dtos))
             return template_dtos
 
         except Exception as e:
