@@ -235,12 +235,12 @@ def _interactive_setup() -> Dict[str, Any]:
         print_info("Testing credentials...")
         success, error_msg = _test_provider_credentials(provider_type, selected_source, **provider_config)
         if success:
-            print_success("Credentials verified")
+            print_success("Credentials verified successfully")
             if selected_source:
                 provider_config["profile"] = selected_source
         else:
-            print_error(f"Credential verification failed: {error_msg}")
-            print_error("Cannot proceed without valid credentials")
+            print_error("[bold red]ERROR[/bold red] Authentication failed:")
+            print_error(f"        {error_msg}")
             return {}
         
         # Extract final values for backward compatibility
