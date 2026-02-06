@@ -441,21 +441,18 @@ For more information, visit: {DOCS_URL}
 
     # System status
     system_status = system_subparsers.add_parser("status", help="Show system status")
-    system_status.add_argument(
-        "--format", choices=["json", "yaml", "table", "list"], help="Output format"
-    )
+    add_global_arguments(system_status)
 
     # System health
     system_health = system_subparsers.add_parser("health", help="Check system health")
+    add_global_arguments(system_health)
     system_health.add_argument(
         "--detailed", action="store_true", help="Show detailed health information"
     )
 
     # System metrics
     system_metrics = system_subparsers.add_parser("metrics", help="Show system metrics")
-    system_metrics.add_argument(
-        "--format", choices=["json", "yaml", "table", "list"], help="Output format"
-    )
+    add_global_arguments(system_metrics)
 
     # System serve
     system_serve = system_subparsers.add_parser("serve", help="Start REST API server")
@@ -492,21 +489,22 @@ For more information, visit: {DOCS_URL}
 
     # Config show
     config_show = config_subparsers.add_parser("show", help="Show configuration")
-    config_show.add_argument(
-        "--format", choices=["json", "yaml", "table", "list"], help="Output format"
-    )
+    add_global_arguments(config_show)
 
     # Config set
     config_set = config_subparsers.add_parser("set", help="Set configuration")
+    add_global_arguments(config_set)
     config_set.add_argument("key", help="Configuration key")
     config_set.add_argument("value", help="Configuration value")
 
     # Config get
     config_get = config_subparsers.add_parser("get", help="Get configuration")
+    add_global_arguments(config_get)
     config_get.add_argument("key", help="Configuration key")
 
     # Config validate
     config_validate = config_subparsers.add_parser("validate", help="Validate configuration")
+    add_global_arguments(config_validate)
     config_validate.add_argument("--file", help="Configuration file to validate")
 
     # Providers resource
@@ -536,40 +534,34 @@ For more information, visit: {DOCS_URL}
 
     # Storage list
     storage_list = storage_subparsers.add_parser("list", help="List storage strategies")
-    storage_list.add_argument(
-        "--format", choices=["json", "yaml", "table", "list"], help="Output format"
-    )
+    add_global_arguments(storage_list)
 
     # Storage show
     storage_show = storage_subparsers.add_parser("show", help="Show storage configuration")
-    storage_show.add_argument(
-        "--format", choices=["json", "yaml", "table", "list"], help="Output format"
-    )
+    add_global_arguments(storage_show)
     storage_show.add_argument("--strategy", help="Show specific storage strategy details")
 
     # Storage validate
     storage_validate = storage_subparsers.add_parser("validate", help="Validate storage")
+    add_global_arguments(storage_validate)
     storage_validate.add_argument("--strategy", help="Validate specific storage strategy")
 
     # Storage test
     storage_test = storage_subparsers.add_parser("test", help="Test storage connectivity")
+    add_global_arguments(storage_test)
     storage_test.add_argument("--strategy", help="Test specific storage strategy")
     storage_test.add_argument("--timeout", type=int, default=30, help="Test timeout in seconds")
 
     # Storage health
     storage_health = storage_subparsers.add_parser("health", help="Check storage health")
-    storage_health.add_argument(
-        "--format", choices=["json", "yaml", "table", "list"], help="Output format"
-    )
+    add_global_arguments(storage_health)
     storage_health.add_argument(
         "--detailed", action="store_true", help="Show detailed health information"
     )
 
     # Storage metrics
     storage_metrics = storage_subparsers.add_parser("metrics", help="Show storage metrics")
-    storage_metrics.add_argument(
-        "--format", choices=["json", "yaml", "table", "list"], help="Output format"
-    )
+    add_global_arguments(storage_metrics)
     storage_metrics.add_argument("--strategy", help="Show metrics for specific storage strategy")
 
     # Scheduler resource
