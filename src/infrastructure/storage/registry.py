@@ -172,37 +172,9 @@ class StorageRegistry(BaseRegistry):
         return self.is_registered(storage_type)
 
     def ensure_type_registered(self, storage_type: str) -> None:
-        """Ensure storage type is registered, register if not."""
+        """Ensure storage type is registered."""
         if not self.is_registered(storage_type):
-            self._register_type_dynamically(storage_type)
-
-    def _register_type_dynamically(self, storage_type: str) -> None:
-        """Dynamically register storage type based on configuration."""
-        try:
-            if storage_type == "json":
-                from infrastructure.storage.json.registration import (
-                    register_json_storage,
-                )
-
-                register_json_storage()
-            elif storage_type == "sql":
-                from infrastructure.storage.sql.registration import (
-                    register_sql_storage,
-                )
-
-                register_sql_storage()
-            elif storage_type == "dynamodb":
-                from providers.aws.storage.dynamodb.registration import (
-                    register_dynamodb_storage,
-                )
-
-                register_dynamodb_storage()
-            else:
-                raise ValueError(f"Unknown storage type: {storage_type}")
-        except ImportError as e:
-            from domain.base.exceptions import ConfigurationError
-
-            raise ConfigurationError(f"Storage type '{storage_type}' not available: {e}")
+            raise UnsupportedStorageError(f"Storage type '{storage_type}' not registered")
 
     def _create_registration(
         self,

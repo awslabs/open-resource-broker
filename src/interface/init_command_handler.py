@@ -100,11 +100,8 @@ def _get_available_schedulers() -> list[dict[str, str]]:
     from infrastructure.scheduler.registry import get_scheduler_registry
     from infrastructure.scheduler.registration import register_all_scheduler_types
     
-    # Ensure schedulers are registered before checking
-    register_all_scheduler_types()
-    
     registry = get_scheduler_registry()
-    scheduler_types = registry.get_registered_types()
+    scheduler_types = registry.get_available_types_with_registration(register_all_scheduler_types)
     
     schedulers = []
     for scheduler_type in scheduler_types:
@@ -122,6 +119,7 @@ def _get_available_schedulers() -> list[dict[str, str]]:
             })
     
     return schedulers
+
 
 
 def _get_available_providers() -> list[dict[str, str]]:

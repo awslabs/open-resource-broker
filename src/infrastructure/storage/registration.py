@@ -9,73 +9,27 @@ CLEAN ARCHITECTURE: Only registers storage strategies, no repository knowledge.
 from infrastructure.logging.logger import get_logger
 
 
-def register_storage_type_on_demand(storage_type: str) -> bool:
-    """
-    Register a specific storage type on demand .
 
-    Args:
-        storage_type: Name of the storage type to register
-
-    Returns:
-        True if registration was successful, False otherwise
-    """
-    logger = get_logger(__name__)
-
-    # Check if already registered
+def register_all_storage_types() -> None:
+    """Register all available storage types."""
     from infrastructure.storage.registry import get_storage_registry
-
     registry = get_storage_registry()
-
-    if hasattr(registry, "is_registered") and registry.is_registered(storage_type):
-        logger.debug("Storage type '%s' already registered", storage_type)
-        return True
-
+    
+    # Register all available storage types
+    from infrastructure.storage.json.registration import register_json_storage
+    register_json_storage(registry)
+    
     try:
-        if storage_type == "json":
-            from infrastructure.storage.json.registration import (
-                register_json_storage,
-            )
-
-            register_json_storage()
-        elif storage_type == "sql":
-            from infrastructure.storage.sql.registration import register_sql_storage
-
-            register_sql_storage()
-        elif storage_type == "dynamodb":
-            from providers.aws.storage.dynamodb.registration import (
-                register_dynamodb_storage,
-            )
-
-            register_dynamodb_storage()
-        else:
-            logger.error("Unknown storage type: %s", storage_type)
-            return False
-
-        logger.info("Successfully registered storage type on demand: %s", storage_type)
-        return True
-
-    except Exception as e:
-        logger.error("Failed to register storage type '%s' on demand: %s", storage_type, e)
-        return False
-
-
-def register_minimal_storage_types() -> None:
-    """
-    Register only essential storage types for faster startup .
-
-    This registers only JSON storage by default, with other types loaded on demand.
-    """
-    logger = get_logger(__name__)
-
-    # Register only JSON storage (lightweight, always available)
+        from infrastructure.storage.sql.registration import register_sql_storage  
+        register_sql_storage(registry)
+    except ImportError:
+        pass
+    
     try:
-        from infrastructure.storage.json.registration import register_json_storage
-
-        register_json_storage()
-        logger.info("Minimal storage registration complete: json")
-    except Exception as e:
-        logger.error("Failed to register minimal storage types: %s", e)
-        raise RuntimeError("Failed to register minimal storage types")
+        from providers.aws.storage.dynamodb.registration import register_dynamodb_storage
+        register_dynamodb_storage(registry)
+    except ImportError:
+        pass
 
 
 def get_available_storage_types() -> list:
@@ -127,42 +81,15 @@ def is_storage_type_available(storage_type: str) -> bool:
     return storage_type in get_available_storage_types()
 
 
-def register_storage_type(storage_type: str) -> bool:
-    """
-    Register a specific storage type.
 
-    Args:
-        storage_type: Name of the storage type to register
 
-    Returns:
-        True if registration was successful, False otherwise
-    """
-    logger = get_logger(__name__)
 
-    try:
-        if storage_type == "json":
-            from infrastructure.storage.json.registration import (
-                register_json_storage,
-            )
-
-            register_json_storage()
-        elif storage_type == "sql":
-            from infrastructure.storage.sql.registration import register_sql_storage
-
-            register_sql_storage()
-        elif storage_type == "dynamodb":
-            from providers.aws.storage.dynamodb.registration import (
-                register_dynamodb_storage,
-            )
-
-            register_dynamodb_storage()
-        else:
-            logger.error("Unknown storage type: %s", storage_type)
-            return False
-
-        logger.info("Successfully registered storage type: %s", storage_type)
-        return True
-
-    except Exception as e:
-        logger.error("Failed to register storage type '%s': %s", storage_type, e)
-        return False
+def register_all_storage_types() -> None:
+    """Register all available storage types."""
+    from infrastructure.storage.json.registration import register_json_storage
+    from infrastructure.storage.sql.registration import register_sql_storage
+    from providers.aws.storage.dynamodb.registration import register_dynamodb_storage
+    
+    register_json_storage()
+    register_sql_storage()
+    register_dynamodb_storage()
