@@ -65,7 +65,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v6.0.2
+      uses: actions/checkout@v6
 
     - name: Setup UV with cache
       uses: ./.github/actions/setup-uv-cached
@@ -98,7 +98,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v6.0.2
+      uses: actions/checkout@v6
 
     - name: Setup UV with cache
       uses: ./.github/actions/setup-uv-cached
