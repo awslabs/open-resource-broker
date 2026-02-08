@@ -1,7 +1,7 @@
 {
   "templates": [
     {
-      "createdAt": "2026-02-08T22:59:21.298361",
+      "createdAt": "2026-02-08T23:00:52.574626",
       "templateId": "EC2Fleet-Instant-OnDemand",
       "maxNumber": 10,
       "imageId": "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-6.1-x86_64",
@@ -38,7 +38,7 @@
       "subnetId": "subnet-0b4779042604b3c3c,subnet-0cfcdcb5ecffd8e34,subnet-087ffbe112328f00c"
     },
     {
-      "createdAt": "2026-02-08T22:59:21.298429",
+      "createdAt": "2026-02-08T23:00:52.574709",
       "templateId": "EC2Fleet-Instant-Spot",
       "maxNumber": 10,
       "imageId": "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-6.1-x86_64",
@@ -76,7 +76,7 @@
       "subnetId": "subnet-0b4779042604b3c3c,subnet-0cfcdcb5ecffd8e34,subnet-087ffbe112328f00c"
     },
     {
-      "createdAt": "2026-02-08T22:59:21.298441",
+      "createdAt": "2026-02-08T23:00:52.574722",
       "templateId": "EC2Fleet-Instant-Mixed",
       "maxNumber": 10,
       "imageId": "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-6.1-x86_64",
@@ -114,7 +114,7 @@
       "subnetId": "subnet-0b4779042604b3c3c,subnet-0cfcdcb5ecffd8e34,subnet-087ffbe112328f00c"
     },
     {
-      "createdAt": "2026-02-08T22:59:21.298446",
+      "createdAt": "2026-02-08T23:00:52.574728",
       "templateId": "EC2Fleet-Request-OnDemand",
       "maxNumber": 15,
       "imageId": "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-6.1-x86_64",
@@ -151,7 +151,7 @@
       "subnetId": "subnet-0b4779042604b3c3c,subnet-0cfcdcb5ecffd8e34,subnet-087ffbe112328f00c"
     },
     {
-      "createdAt": "2026-02-08T22:59:21.298453",
+      "createdAt": "2026-02-08T23:00:52.574735",
       "templateId": "EC2Fleet-Request-Spot",
       "maxNumber": 20,
       "imageId": "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-6.1-x86_64",
@@ -189,7 +189,7 @@
       "subnetId": "subnet-0b4779042604b3c3c,subnet-0cfcdcb5ecffd8e34,subnet-087ffbe112328f00c"
     },
     {
-      "createdAt": "2026-02-08T22:59:21.298458",
+      "createdAt": "2026-02-08T23:00:52.574740",
       "templateId": "EC2Fleet-Request-Mixed",
       "maxNumber": 25,
       "imageId": "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-6.1-x86_64",
@@ -231,7 +231,7 @@
       "subnetId": "subnet-0b4779042604b3c3c,subnet-0cfcdcb5ecffd8e34,subnet-087ffbe112328f00c"
     },
     {
-      "createdAt": "2026-02-08T22:59:21.298462",
+      "createdAt": "2026-02-08T23:00:52.574745",
       "templateId": "EC2Fleet-Maintain-OnDemand",
       "maxNumber": 12,
       "imageId": "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-6.1-x86_64",
@@ -268,7 +268,7 @@
       "subnetId": "subnet-0b4779042604b3c3c,subnet-0cfcdcb5ecffd8e34,subnet-087ffbe112328f00c"
     },
     {
-      "createdAt": "2026-02-08T22:59:21.298467",
+      "createdAt": "2026-02-08T23:00:52.574753",
       "templateId": "EC2Fleet-Maintain-Spot",
       "maxNumber": 30,
       "imageId": "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-6.1-x86_64",
@@ -306,7 +306,7 @@
       "subnetId": "subnet-0b4779042604b3c3c,subnet-0cfcdcb5ecffd8e34,subnet-087ffbe112328f00c"
     },
     {
-      "createdAt": "2026-02-08T22:59:21.298471",
+      "createdAt": "2026-02-08T23:00:52.574758",
       "templateId": "EC2Fleet-Maintain-Mixed",
       "maxNumber": 50,
       "imageId": "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-6.1-x86_64",
@@ -349,7 +349,7 @@
       "subnetId": "subnet-0b4779042604b3c3c,subnet-0cfcdcb5ecffd8e34,subnet-087ffbe112328f00c"
     },
     {
-      "createdAt": "2026-02-08T22:59:21.298479",
+      "createdAt": "2026-02-08T23:00:52.574769",
       "templateId": "SpotFleet-Request-LowestPrice",
       "maxNumber": 20,
       "imageId": "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-6.1-x86_64",
@@ -391,7 +391,7 @@
       "subnetId": "subnet-0b4779042604b3c3c,subnet-0cfcdcb5ecffd8e34,subnet-087ffbe112328f00c"
     },
     {
-      "createdAt": "2026-02-08T22:59:21.298483",
+      "createdAt": "2026-02-08T23:00:52.574774",
       "templateId": "SpotFleet-Request-Diversified",
       "maxNumber": 25,
       "imageId": "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-6.1-x86_64",
@@ -433,7 +433,7 @@
       "subnetId": "subnet-0b4779042604b3c3c,subnet-0cfcdcb5ecffd8e34,subnet-087ffbe112328f00c"
     },
     {
-      "createdAt": "2026-02-08T22:59:21.298487",
+      "createdAt": "2026-02-08T23:00:52.574778",
       "templateId": "SpotFleet-Request-CapacityOptimized",
       "maxNumber": 30,
       "imageId": "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-6.1-x86_64",
@@ -475,7 +475,7 @@
       "subnetId": "subnet-0b4779042604b3c3c,subnet-0cfcdcb5ecffd8e34,subnet-087ffbe112328f00c"
     },
     {
-      "createdAt": "2026-02-08T22:59:21.298490",
+      "createdAt": "2026-02-08T23:00:52.574782",
       "templateId": "SpotFleet-Maintain-LowestPrice",
       "maxNumber": 15,
       "imageId": "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-6.1-x86_64",
@@ -517,7 +517,7 @@
       "subnetId": "subnet-0b4779042604b3c3c,subnet-0cfcdcb5ecffd8e34,subnet-087ffbe112328f00c"
     },
     {
-      "createdAt": "2026-02-08T22:59:21.298494",
+      "createdAt": "2026-02-08T23:00:52.574786",
       "templateId": "SpotFleet-Maintain-Diversified",
       "maxNumber": 20,
       "imageId": "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-6.1-x86_64",
@@ -559,7 +559,7 @@
       "subnetId": "subnet-0b4779042604b3c3c,subnet-0cfcdcb5ecffd8e34,subnet-087ffbe112328f00c"
     },
     {
-      "createdAt": "2026-02-08T22:59:21.298497",
+      "createdAt": "2026-02-08T23:00:52.574790",
       "templateId": "SpotFleet-Maintain-CapacityOptimized",
       "maxNumber": 25,
       "imageId": "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-6.1-x86_64",
@@ -601,7 +601,7 @@
       "subnetId": "subnet-0b4779042604b3c3c,subnet-0cfcdcb5ecffd8e34,subnet-087ffbe112328f00c"
     },
     {
-      "createdAt": "2026-02-08T22:59:21.298502",
+      "createdAt": "2026-02-08T23:00:52.574796",
       "templateId": "ASG-OnDemand",
       "maxNumber": 15,
       "imageId": "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-6.1-x86_64",
@@ -638,7 +638,7 @@
       "subnetId": "subnet-0b4779042604b3c3c,subnet-0cfcdcb5ecffd8e34,subnet-087ffbe112328f00c"
     },
     {
-      "createdAt": "2026-02-08T22:59:21.298508",
+      "createdAt": "2026-02-08T23:00:52.574804",
       "templateId": "ASG-Spot",
       "maxNumber": 20,
       "imageId": "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-6.1-x86_64",
@@ -676,7 +676,7 @@
       "subnetId": "subnet-0b4779042604b3c3c,subnet-0cfcdcb5ecffd8e34,subnet-087ffbe112328f00c"
     },
     {
-      "createdAt": "2026-02-08T22:59:21.298513",
+      "createdAt": "2026-02-08T23:00:52.574810",
       "templateId": "ASG-Mixed",
       "maxNumber": 25,
       "imageId": "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-6.1-x86_64",
@@ -717,7 +717,7 @@
       "subnetId": "subnet-0b4779042604b3c3c,subnet-0cfcdcb5ecffd8e34,subnet-087ffbe112328f00c"
     },
     {
-      "createdAt": "2026-02-08T22:59:21.298518",
+      "createdAt": "2026-02-08T23:00:52.574817",
       "templateId": "RunInstances-OnDemand",
       "maxNumber": 5,
       "imageId": "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-6.1-x86_64",
@@ -754,7 +754,7 @@
       "subnetId": "subnet-0b4779042604b3c3c,subnet-0cfcdcb5ecffd8e34,subnet-087ffbe112328f00c"
     },
     {
-      "createdAt": "2026-02-08T22:59:21.298526",
+      "createdAt": "2026-02-08T23:00:52.574825",
       "templateId": "RunInstances-Spot",
       "maxNumber": 10,
       "imageId": "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-6.1-x86_64",
