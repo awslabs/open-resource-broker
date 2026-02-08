@@ -31,9 +31,16 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         self._logger = logger
         self.template_defaults_service = template_defaults_service
 
-        # Initialize field mapper
-        provider_type = self._get_active_provider_type()
-        self.field_mapper = HostFactoryFieldMapper(provider_type)
+        # Initialize field mapper lazily - will be created when first needed
+        self._field_mapper = None
+
+    @property
+    def field_mapper(self) -> HostFactoryFieldMapper:
+        """Lazy initialization of field mapper to avoid circular dependencies."""
+        if self._field_mapper is None:
+            provider_type = self._get_active_provider_type()
+            self._field_mapper = HostFactoryFieldMapper(provider_type)
+        return self._field_mapper
 
     def get_template_paths(self) -> list[str]:
         """Get template file paths with fallback hierarchy."""

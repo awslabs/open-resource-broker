@@ -171,75 +171,47 @@ async def _generate_templates_for_provider(provider: dict, args) -> dict:
 
 
 def _get_active_providers() -> list[dict]:
-    """Get all active providers from configuration."""
-    from config.platform_dirs import get_config_location
-
-    config_dir = get_config_location()
-    config_file = config_dir / "config.json"
-
-    if not config_file.exists():
-        # Get active provider from provider registry
-        try:
-            from providers.registry import get_provider_registry
-            registry = get_provider_registry()
-            selection_result = registry.select_active_provider()
-            return [{"name": selection_result.provider_instance, "type": selection_result.provider_type}]
-        except Exception:
-            # Final fallback to first available provider
-            from providers.registry import get_provider_registry
-            registry = get_provider_registry()
-            registered_types = registry.get_registered_providers()
-            default_type = registered_types[0] if registered_types else "aws"
-            return [{"name": "default", "type": default_type}]
-
-    with open(config_file) as f:
-        config_dict = json.load(f)
-
-    provider_config = config_dict.get("provider", {})
+    """Get all active providers from configuration via proper DI."""
+    from infrastructure.di.container import get_container
+    from domain.base.ports.configuration_port import ConfigurationPort
+    
+    container = get_container()
+    config_manager = container.get(ConfigurationPort)
+    
+    # Use configuration manager to get provider config
+    provider_config = config_manager.get_provider_config()
     providers = provider_config.get("providers", [])
-
+    
     # Return enabled providers
     active_providers = []
     for provider in providers:
         if provider.get("enabled", True):
             active_providers.append({"name": provider["name"], "type": provider["type"]})
-
+    
     # Fallback if no providers configured
     if not active_providers:
-        from providers.registry import get_provider_registry
-        registry = get_provider_registry()
-        registered_types = registry.get_registered_providers()
-        default_type = registered_types[0] if registered_types else "aws"
-        active_providers = [{"name": "default", "type": default_type}]
-
+        active_providers = [{"name": "default", "type": "aws"}]
+    
     return active_providers
 
 
 def _get_provider_config(provider_name: str) -> dict:
-    """Get configuration for specific provider."""
-    from config.platform_dirs import get_config_location
-
-    config_dir = get_config_location()
-    config_file = config_dir / "config.json"
-
-    if not config_file.exists():
-        # Fallback for specific provider
-        return {
-            "name": provider_name,
-            "type": provider_name.split("-")[0] if "-" in provider_name else provider_name,
-        }
-
-    with open(config_file) as f:
-        config_dict = json.load(f)
-
-    provider_config = config_dict.get("provider", {})
+    """Get configuration for specific provider via proper DI."""
+    from infrastructure.di.container import get_container
+    from domain.base.ports.configuration_port import ConfigurationPort
+    
+    container = get_container()
+    config_manager = container.get(ConfigurationPort)
+    
+    # Use configuration manager to get provider config
+    provider_config = config_manager.get_provider_config()
     providers = provider_config.get("providers", [])
-
+    
     # Find specific provider
     for provider in providers:
         if provider["name"] == provider_name:
             return {"name": provider["name"], "type": provider["type"]}
-
+    
     # Provider not found, create from name
     return {
         "name": provider_name,

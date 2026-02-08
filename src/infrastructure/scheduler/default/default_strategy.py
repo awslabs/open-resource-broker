@@ -86,7 +86,7 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
             return []
 
     def _get_provider_name(self) -> str:
-        """Get the active provider instance name."""
+        """Get the active provider instance name via proper DI."""
         try:
             from providers.registry import get_provider_registry
             provider_registry = get_provider_registry()
@@ -97,7 +97,7 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
             return "default"
 
     def _get_active_provider_type(self) -> str:
-        """Get the active provider type from configuration."""
+        """Get the active provider type via proper DI."""
         try:
             from providers.registry import get_provider_registry
             provider_registry = get_provider_registry()
