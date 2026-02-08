@@ -102,7 +102,7 @@ class BaseRegistry(ABC):
         **additional_factories,
     ) -> None:
         """
-        Register a type with its factories.
+        Register a type with its factories (idempotent operation).
 
         Args:
             type_name: Type identifier
@@ -112,7 +112,9 @@ class BaseRegistry(ABC):
         """
         with self._registry_lock:
             if type_name in self._type_registrations:
-                raise ValueError(f"Type '{type_name}' is already registered")
+                # Idempotent operation - log debug and return
+                self.logger.debug("Type '%s' already registered, skipping", type_name)
+                return
 
             registration = self._create_registration(
                 type_name, strategy_factory, config_factory, **additional_factories
@@ -146,7 +148,9 @@ class BaseRegistry(ABC):
 
         with self._registry_lock:
             if instance_name in self._instance_registrations:
-                raise ValueError(f"Instance '{instance_name}' is already registered")
+                # Idempotent operation - log debug and return
+                self.logger.debug("Instance '%s' already registered, skipping", instance_name)
+                return
 
             registration = self._create_registration(
                 type_name, strategy_factory, config_factory, **additional_factories
@@ -250,6 +254,26 @@ class BaseRegistry(ABC):
                 "Failed to create %s for type '%s': %s", factory_name, type_name, str(e)
             )
             return None
+
+    def ensure_types_registered(self, register_function: Callable) -> None:
+        """Ensure types are registered (idempotent operation)."""
+        if not self.get_registered_types():
+            register_function()
+
+    def get_available_types_with_registration(self, register_function: Callable) -> list[str]:
+        """Get available types, ensuring registration first."""
+        self.ensure_types_registered(register_function)
+        return self.get_registered_types()
+
+    def ensure_types_registered(self, register_function: Callable) -> None:
+        """Ensure types are registered (idempotent operation)."""
+        if not self.get_registered_types():
+            register_function()
+
+    def get_available_types_with_registration(self, register_function: Callable) -> list[str]:
+        """Get available types, ensuring registration first."""
+        self.ensure_types_registered(register_function)
+        return self.get_registered_types()
 
     def clear_registrations(self) -> None:
         """Clear all registrations (primarily for testing)."""

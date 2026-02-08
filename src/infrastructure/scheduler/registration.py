@@ -46,40 +46,25 @@ def create_hostfactory_config(data: dict[str, Any]) -> Any:
 def register_symphony_hostfactory_scheduler(
     registry: "SchedulerRegistry" = None,
 ) -> None:
-    """Register Symphony HostFactory scheduler."""
+    """Register Symphony HostFactory scheduler (idempotent)."""
     if registry is None:
         from infrastructure.scheduler.registry import get_scheduler_registry
 
         registry = get_scheduler_registry()
 
-    try:
-        registry.register(
-            scheduler_type="hostfactory",
-            strategy_factory=create_symphony_hostfactory_strategy,
-            config_factory=create_hostfactory_config,
-        )
+    # Registry handles idempotent registration
+    registry.register(
+        scheduler_type="hostfactory",
+        strategy_factory=create_symphony_hostfactory_strategy,
+        config_factory=create_hostfactory_config,
+    )
 
-        # Also register with 'hf' alias
-        registry.register(
-            scheduler_type="hf",
-            strategy_factory=create_symphony_hostfactory_strategy,
-            config_factory=create_hostfactory_config,
-        )
-    except ValueError as e:
-        # Ignore if already registered (idempotent registration)
-        if "already registered" in str(e):
-            from infrastructure.logging.logger import get_logger
-
-            logger = get_logger(__name__)
-            logger.debug("Scheduler types already registered: %s", str(e))
-        else:
-            raise
-    except Exception as e:
-        from infrastructure.logging.logger import get_logger
-
-        logger = get_logger(__name__)
-        logger.error("Failed to register Symphony HostFactory scheduler: %s", str(e))
-        raise
+    # Also register with 'hf' alias
+    registry.register(
+        scheduler_type="hf",
+        strategy_factory=create_symphony_hostfactory_strategy,
+        config_factory=create_hostfactory_config,
+    )
 
 
 def create_default_strategy(container: "DIContainer") -> "SchedulerPort":
@@ -105,33 +90,18 @@ def create_default_config(data: dict[str, Any]) -> Any:
 
 
 def register_default_scheduler(registry: "SchedulerRegistry" = None) -> None:
-    """Register default scheduler."""
+    """Register default scheduler (idempotent)."""
     if registry is None:
         from infrastructure.scheduler.registry import get_scheduler_registry
 
         registry = get_scheduler_registry()
 
-    try:
-        registry.register(
-            scheduler_type="default",
-            strategy_factory=create_default_strategy,
-            config_factory=create_default_config,
-        )
-    except ValueError as e:
-        # Ignore if already registered (idempotent registration)
-        if "already registered" in str(e):
-            from infrastructure.logging.logger import get_logger
-
-            logger = get_logger(__name__)
-            logger.debug("Default scheduler already registered: %s", str(e))
-        else:
-            raise
-    except Exception as e:
-        from infrastructure.logging.logger import get_logger
-
-        logger = get_logger(__name__)
-        logger.error("Failed to register default scheduler: %s", str(e))
-        raise
+    # Registry handles idempotent registration
+    registry.register(
+        scheduler_type="default",
+        strategy_factory=create_default_strategy,
+        config_factory=create_default_config,
+    )
 
 
 def register_all_scheduler_types() -> None:
