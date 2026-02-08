@@ -248,6 +248,7 @@ class TemplateGenerationService:
         # Write templates file
         with open(templates_file, "w") as f:
             json.dump(templates_data, f, indent=2, cls=DateTimeEncoder)
+            f.write("\n")  # Add final newline
 
     def _get_active_providers(self) -> List[Dict[str, str]]:
         """Get all active providers from configuration."""
