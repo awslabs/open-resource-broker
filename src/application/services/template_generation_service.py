@@ -1,12 +1,10 @@
 """Template Generation Service - Application Layer."""
 
 from typing import Any, Dict, List, Optional
-from pathlib import Path
-import json
-from datetime import datetime
 
 from domain.base.ports import ConfigurationPort, LoggingPort, SchedulerPort
-from domain.template.template_aggregate import Template
+from domain.base.ports.template_adapter_port import TemplateAdapterPort
+from domain.base.contracts.template_contract import TemplateContract
 from application.dto.template_generation_dto import (
     TemplateGenerationRequest,
     TemplateGenerationResult,
@@ -26,10 +24,12 @@ class TemplateGenerationService:
         self,
         config_manager: ConfigurationPort,
         scheduler_strategy: SchedulerPort,
+        template_adapter: TemplateAdapterPort,
         logger: LoggingPort,
     ):
         self._config_manager = config_manager
         self._scheduler_strategy = scheduler_strategy
+        self._template_adapter = template_adapter
         self._logger = logger
 
     async def generate_templates(self, request: TemplateGenerationRequest) -> TemplateGenerationResult:
@@ -107,29 +107,40 @@ class TemplateGenerationService:
             # Determine output filename
             filename = self._determine_filename(provider, request)
             
-            # Check for existing file
-            templates_file = self._get_templates_file_path(filename)
-            if templates_file.exists() and not request.force_overwrite:
-                return ProviderTemplateResult(
-                    provider=provider_name,
-                    filename=filename,
-                    templates_count=0,
-                    path=str(templates_file),
-                    status="skipped",
-                    reason="file_exists"
-                )
+            # Check if templates should be overwritten
+            if not request.force_overwrite:
+                # Use template adapter to check existing templates (Clean Architecture)
+                try:
+                    existing_templates = await self._template_adapter.get_templates()
+                    if existing_templates:
+                        return ProviderTemplateResult(
+                            provider=provider_name,
+                            filename=filename,
+                            templates_count=0,
+                            path="",
+                            status="skipped",
+                            reason="file_exists"
+                        )
+                except Exception:
+                    # If we can't check, proceed with generation
+                    pass
             
             # Format templates using scheduler strategy
             formatted_examples = self._format_templates(examples, request)
             
-            # Write templates file
-            self._write_templates_file(templates_file, formatted_examples)
+            # Save templates using template adapter (Clean Architecture)
+            for template_data in formatted_examples:
+                template_contract = TemplateContract(
+                    template_id=template_data.get("template_id", ""),
+                    configuration=template_data
+                )
+                await self._template_adapter.save_template(template_contract)
             
             return ProviderTemplateResult(
                 provider=provider_name,
                 filename=filename,
                 templates_count=len(examples),
-                path=str(templates_file),
+                path="",
                 status="created"
             )
             
@@ -149,7 +160,7 @@ class TemplateGenerationService:
         provider_type: str, 
         provider_name: str, 
         provider_api: Optional[str] = None
-    ) -> List[Template]:
+    ) -> List[Dict[str, Any]]:
         """Generate example templates using provider registry."""
         from providers.registry import get_provider_registry
         from infrastructure.di.container import get_container
@@ -208,7 +219,7 @@ class TemplateGenerationService:
             # Generic mode: use provider_type pattern
             return f"{provider_type}_templates.json"
 
-    def _format_templates(self, examples: List[Template], request: TemplateGenerationRequest) -> List[Dict[str, Any]]:
+    def _format_templates(self, examples: List[Dict[str, Any]], request: TemplateGenerationRequest) -> List[Dict[str, Any]]:
         """Format templates using scheduler strategy."""
         # Convert Template objects to dict format
         template_dicts = []
@@ -219,119 +230,37 @@ class TemplateGenerationService:
         # Apply scheduler formatting
         return self._scheduler_strategy.format_templates_for_generation(template_dicts)
 
-    def _get_templates_file_path(self, filename: str) -> Path:
-        """Get the full path for templates file."""
-        from config.platform_dirs import get_config_location
-        
-        config_dir = get_config_location()
-        config_dir.mkdir(parents=True, exist_ok=True)
-        return config_dir / filename
-
-    def _write_templates_file(self, templates_file: Path, formatted_examples: List[Dict[str, Any]]) -> None:
-        """Write templates to file with proper JSON encoding."""
-        templates_data = {"templates": formatted_examples}
-        
-        class DateTimeEncoder(json.JSONEncoder):
-            def default(self, obj):
-                if isinstance(obj, datetime):
-                    return obj.isoformat()
-                try:
-                    return super().default(obj)
-                except TypeError:
-                    return str(obj)
-        
-        with open(templates_file, "w") as f:
-            json.dump(templates_data, f, indent=2, cls=DateTimeEncoder)
-
     def _get_active_providers(self) -> List[Dict[str, str]]:
         """Get all active providers from configuration."""
-        config_dict = self._get_config_dict()
-        
-        if not config_dict:
-            # Fallback to provider registry
-            return self._get_providers_from_registry()
-        
-        provider_config = config_dict.get("provider", {})
-        providers = provider_config.get("providers", [])
-        
-        # Return enabled providers
-        active_providers = []
-        for provider in providers:
-            if provider.get("enabled", True):
-                active_providers.append({"name": provider["name"], "type": provider["type"]})
-        
-        # Fallback if no providers configured
-        if not active_providers:
-            return self._get_providers_from_registry()
-        
-        return active_providers
+        try:
+            provider_config = self._config_manager.get_provider_config()
+            providers = provider_config.get_active_providers()
+            
+            return [{"name": p.name, "type": p.type} for p in providers]
+        except Exception as e:
+            self._logger.warning("Failed to get providers from config: %s", str(e))
+            # Fallback to single default provider
+            return [{"name": "aws_default_us-east-1", "type": "aws"}]
 
     def _get_provider_config(self, provider_name: str) -> Dict[str, str]:
         """Get configuration for specific provider."""
-        config_dict = self._get_config_dict()
-        
-        if not config_dict:
-            # Fallback for specific provider
+        try:
+            provider_config = self._config_manager.get_provider_config()
+            providers = provider_config.get_active_providers()
+            
+            # Find specific provider
+            for provider in providers:
+                if provider.name == provider_name:
+                    return {"name": provider.name, "type": provider.type}
+            
+            # Provider not found, create from name
             return {
                 "name": provider_name,
-                "type": provider_name.split("-")[0] if "-" in provider_name else provider_name,
+                "type": provider_name.split("_")[0] if "_" in provider_name else provider_name,
             }
-        
-        provider_config = config_dict.get("provider", {})
-        providers = provider_config.get("providers", [])
-        
-        # Find specific provider
-        for provider in providers:
-            if provider["name"] == provider_name:
-                return {"name": provider["name"], "type": provider["type"]}
-        
-        # Provider not found, create from name
-        return {
-            "name": provider_name,
-            "type": provider_name.split("-")[0] if "-" in provider_name else provider_name,
-        }
-
-    def _get_config_dict(self) -> Optional[Dict[str, Any]]:
-        """Get configuration dictionary from file."""
-        from config.platform_dirs import get_config_location
-        
-        config_dir = get_config_location()
-        config_file = config_dir / "config.json"
-        
-        if not config_file.exists():
-            return None
-        
-        try:
-            with open(config_file) as f:
-                return json.load(f)
-        except Exception as e:
-            self._logger.warning("Failed to load config file: %s", str(e))
-            return None
-
-    def _get_providers_from_registry(self) -> List[Dict[str, str]]:
-        """Fallback to get providers from registry."""
-        try:
-            from providers.registry import get_provider_registry
-            from domain.base.ports import ConfigurationPort, LoggingPort
-            from infrastructure.metrics.collector import MetricsCollector
-            from infrastructure.di.container import get_container
-            
-            registry = get_provider_registry()
-            
-            # Ensure dependencies are set
-            if not registry._provider_config:
-                container = get_container()
-                logger = container.get(LoggingPort)
-                config_manager = container.get(ConfigurationPort)
-                metrics = container.get(MetricsCollector)
-                registry.set_dependencies(logger, config_manager, metrics)
-            
-            selection_result = registry.select_active_provider()
-            return [{"name": selection_result.provider_instance, "type": selection_result.provider_type}]
         except Exception:
-            # Final fallback
-            from providers.registry import get_provider_registry
-            registry = get_provider_registry()
-            registered_types = registry.get_registered_providers()
-            default_type = registered_types[0] if registered_types else "aws"
-            return [{"name": "default", "type": default_type}]
+            # Fallback
+            return {
+                "name": provider_name,
+                "type": provider_name.split("_")[0] if "_" in provider_name else provider_name,
+            }
