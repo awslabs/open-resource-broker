@@ -192,15 +192,10 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
                             type(resource_ids),
                         )
 
-                        # Store provider API information for handler selection
-                        if not hasattr(request, "metadata"):
-                            request.metadata = {}
-                        request.metadata["provider_api"] = template.provider_api or "RunInstances"
-                        request.metadata["handler_used"] = provisioning_result.get(
-                            "provider_data", {}
-                        ).get("handler_used", "RunInstancesHandler")
+                        # Store provider API in domain field
+                        request.provider_api = template.provider_api or "RunInstances"
                         self.logger.info(
-                            "Stored provider API: %s", request.metadata["provider_api"]
+                            "Stored provider API: %s", request.provider_api
                         )
 
                         # Add resource IDs to request
@@ -237,6 +232,10 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
                         # Create machine aggregates for each instance
                         instance_data_list = provisioning_result.get("instances", [])
                         provider_data = provisioning_result.get("provider_data", {})
+
+                        # Store provider-specific data in request
+                        if provider_data:
+                            request.provider_data.update(provider_data)
 
                         # Preserve provider errors (if any) for partial success handling
                         if isinstance(provider_data, dict):
@@ -394,7 +393,7 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
             self.event_publisher.publish(event)
 
         self.logger.info("Machine request created successfully: %s", request.request_id)
-        return str(request.request_id)
+        return request
 
     def _extract_instance_ids(self, result: dict) -> list[str]:
         """Extract instance IDs if available in provider result."""
@@ -438,7 +437,7 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
             template_id=template_id,
             provider_type=request.provider_type,
             provider_name=request.provider_name,
-            provider_api=request.metadata.get("provider_api") or request.provider_api,
+            provider_api=request.provider_api,
             resource_id=instance_data.get("resource_id"),
             instance_type=InstanceType(value=instance_data.get("instance_type", "t2.micro")),
             image_id=instance_data.get("image_id", "unknown"),

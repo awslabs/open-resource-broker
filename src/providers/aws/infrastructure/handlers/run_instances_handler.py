@@ -133,9 +133,8 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
             
             # Create instances using existing machine adapter
             instances = []
-            if instance_ids and self._machine_adapter:
-                for instance_id in instance_ids:
-                    instance_data = {"InstanceId": instance_id}
+            if self._machine_adapter and response.get("Instances"):
+                for instance_data in response.get("Instances", []):
                     try:
                         instances.append(
                             self._machine_adapter.create_machine_from_aws_instance(
@@ -152,7 +151,11 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
                 "resource_ids": [resource_id],
                 "instance_ids": instance_ids,  # Store instance IDs for tracking
                 "instances": instances,
-                "provider_data": {"resource_type": "run_instances"},
+                "provider_data": {
+                    "resource_type": "run_instances",
+                    "reservation_id": resource_id,
+                    "instance_ids": instance_ids,
+                },
             }
         except Exception as e:
             self._logger.error("RunInstances failed: %s", e)
@@ -266,12 +269,14 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
         # Use the actual AWS reservation ID as the resource ID
         resource_id = reservation_id
 
-        # Store instance IDs and reservation ID in request metadata for later retrieval
-        if not hasattr(request, "metadata"):
-            request.metadata = {}
-        request.metadata["instance_ids"] = instance_ids
-        request.metadata["reservation_id"] = reservation_id
-        request.metadata["run_instances_resource_id"] = resource_id
+        # Store AWS-specific data in provider_data instead of metadata
+        if not hasattr(request, "provider_data"):
+            request.provider_data = {}
+        request.provider_data.update({
+            "reservation_id": reservation_id,
+            "instance_ids": instance_ids,
+            "run_instances_resource_id": resource_id,
+        })
 
         self._logger.info(
             "Successfully created %s instances via RunInstances with reservation ID %s: %s",
@@ -290,7 +295,7 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
         aws_template: Optional[AWSTemplate] = None,
     ) -> list[dict[str, Any]]:
         """Format AWS instance details to standard structure."""
-        metadata = getattr(request, "metadata", {}) or {}
+        # Use domain field instead of metadata, with template fallback
         if aws_template and aws_template.provider_api is not None:
             provider_api_value = (
                 aws_template.provider_api.value
@@ -298,7 +303,7 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
                 else str(aws_template.provider_api)
             )
         else:
-            provider_api_value = metadata.get("provider_api", "RunInstances")
+            provider_api_value = request.provider_api or "RunInstances"
 
         if self._machine_adapter:
             try:
@@ -511,15 +516,18 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
     def check_hosts_status(self, request: Request) -> list[dict[str, Any]]:
         """Check the status of instances created by RunInstances."""
         try:
-            # Get instance IDs from request metadata
-            instance_ids = request.metadata.get("instance_ids", [])
+            # Get instance IDs from provider_data (preferred) or fallback to metadata for backward compatibility
+            instance_ids = (
+                request.provider_data.get("instance_ids", [])
+                if hasattr(request, "provider_data") and request.provider_data
+                else request.metadata.get("instance_ids", [])
+            )
 
             if not instance_ids:
-                # If no instance IDs in metadata, try to find instances using resource
-                # IDs (reservation IDs)
+                # If no instance IDs in provider_data/metadata, try to find instances using resource IDs
                 if hasattr(request, "resource_ids") and request.resource_ids:
                     self._logger.info(
-                        "No instance IDs in metadata, searching by resource IDs: %s",
+                        "No instance IDs in provider_data, searching by resource IDs: %s",
                         request.resource_ids,
                     )
                     return self._find_instances_by_resource_ids(request, request.resource_ids)
@@ -530,14 +538,24 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
                     )
                     return []
 
+            # Get resource ID from provider_data (preferred) or domain field or fallback to metadata
+            resource_id = (
+                request.provider_data.get("reservation_id")
+                if hasattr(request, "provider_data") and request.provider_data
+                else (request.resource_ids[0] if getattr(request, "resource_ids", None) else "")
+            )
+            
+            # Fallback to metadata for backward compatibility
+            if not resource_id:
+                metadata = getattr(request, "metadata", {}) or {}
+                resource_id = (
+                    metadata.get("run_instances_resource_id")
+                    or metadata.get("reservation_id")
+                    or ""
+                )
+
             # Get detailed instance information using instance IDs
             instance_details = self._get_instance_details(instance_ids)
-            metadata = getattr(request, "metadata", {}) or {}
-            resource_id = (
-                metadata.get("run_instances_resource_id")
-                or metadata.get("reservation_id")
-                or (request.resource_ids[0] if getattr(request, "resource_ids", None) else "")
-            )
 
             return self._format_instance_data(instance_details, resource_id, request, None)
 

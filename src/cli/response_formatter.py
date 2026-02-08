@@ -274,29 +274,38 @@ class CLIResponseFormatter:
                         elif self._looks_like_template(data):
                             return self.scheduler_strategy.format_template_for_display(data)
             
-            elif context == "requests" and hasattr(self.scheduler_strategy, 'format_request_for_display'):
-                if isinstance(data, list):
-                    return [self.scheduler_strategy.format_request_for_display(item) for item in data]
-                elif isinstance(data, dict):
-                    if 'requests' in data:
-                        data['requests'] = [
-                            self.scheduler_strategy.format_request_for_display(request) 
-                            for request in data['requests']
-                        ]
-                    elif self._looks_like_request(data):
-                        return self.scheduler_strategy.format_request_for_display(data)
+            elif context == "requests" and hasattr(self.scheduler_strategy, 'format_request_response'):
+                # For request operations (including machine requests), use format_request_response
+                if self._looks_like_single_request(data):
+                    return self.scheduler_strategy.format_request_response(data)
+                elif hasattr(self.scheduler_strategy, 'format_request_for_display'):
+                    if isinstance(data, list):
+                        return [self.scheduler_strategy.format_request_for_display(item) for item in data]
+                    elif isinstance(data, dict):
+                        if 'requests' in data:
+                            data['requests'] = [
+                                self.scheduler_strategy.format_request_for_display(request) 
+                                for request in data['requests']
+                            ]
+                        elif self._looks_like_request(data):
+                            return self.scheduler_strategy.format_request_for_display(data)
             
-            elif context == "machines" and hasattr(self.scheduler_strategy, 'format_machine_for_display'):
-                if isinstance(data, list):
-                    return [self.scheduler_strategy.format_machine_for_display(item) for item in data]
-                elif isinstance(data, dict):
-                    if 'machines' in data:
-                        data['machines'] = [
-                            self.scheduler_strategy.format_machine_for_display(machine) 
-                            for machine in data['machines']
-                        ]
-                    elif self._looks_like_machine(data):
-                        return self.scheduler_strategy.format_machine_for_display(data)
+            elif context == "machines":
+                # Check if this is a machine request creation (single request object)
+                if (hasattr(self.scheduler_strategy, 'format_request_response') and 
+                    self._looks_like_single_request(data)):
+                    return self.scheduler_strategy.format_request_response(data)
+                elif hasattr(self.scheduler_strategy, 'format_machine_for_display'):
+                    if isinstance(data, list):
+                        return [self.scheduler_strategy.format_machine_for_display(item) for item in data]
+                    elif isinstance(data, dict):
+                        if 'machines' in data:
+                            data['machines'] = [
+                                self.scheduler_strategy.format_machine_for_display(machine) 
+                                for machine in data['machines']
+                            ]
+                        elif self._looks_like_machine(data):
+                            return self.scheduler_strategy.format_machine_for_display(data)
             
         except Exception:
             # Fallback to original data if formatting fails
@@ -308,6 +317,13 @@ class CLIResponseFormatter:
         """Check if data looks like a template object."""
         template_fields = {'template_id', 'provider_api', 'instance_type', 'image_id'}
         return bool(template_fields.intersection(data.keys()))
+
+    def _looks_like_single_request(self, data: dict) -> bool:
+        """Check if data looks like a single request object (not a list of requests)."""
+        if not isinstance(data, dict):
+            return False
+        request_fields = {'request_id', 'status', 'requested_count', 'template_id'}
+        return bool(request_fields.intersection(data.keys())) and 'requests' not in data
 
     def _looks_like_request(self, data: dict) -> bool:
         """Check if data looks like a request object."""

@@ -268,11 +268,18 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
 
         # Prefer snake_case in API responses
         request_id = request_dict.get("request_id", request_dict.get("requestId"))
+        
+        # Handle UUID objects and nested value objects
+        if isinstance(request_id, dict) and 'value' in request_id:
+            request_id = str(request_id['value'])
+        elif hasattr(request_id, 'value'):
+            request_id = str(request_id.value)
+        elif request_id:
+            request_id = str(request_id)
 
         # Check request status to provide appropriate message
         status = request_dict.get("status", "pending")
         error_message = request_dict.get("status_message")  # Use domain field instead of metadata
-        request_id = request_dict.get("request_id", request_dict.get("requestId"))
 
         # Status-based message and response logic
         if status == "failed":

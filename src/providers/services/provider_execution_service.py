@@ -72,9 +72,10 @@ class ProviderExecutionService:
             capabilities = strategy.get_capabilities()
             if not capabilities.supports_operation(operation.operation_type):
                 response_time_ms = (time.time() - start_time) * 1000
-                self._record_metrics(
-                    provider_identifier, operation.operation_type.name, False, response_time_ms
-                )
+                if self._metrics:
+                    op_base = f"provider.{provider_identifier}.{operation.operation_type.name.lower()}"
+                    self._metrics.increment_counter(f"{op_base}.error_total")
+                    self._metrics.record_time(f"{op_base}.duration", response_time_ms / 1000.0)
                 return ProviderResult.error_result(
                     f"Strategy {provider_identifier} does not support operation {operation.operation_type}",
                     "OPERATION_NOT_SUPPORTED"
@@ -85,9 +86,13 @@ class ProviderExecutionService:
 
             # Record metrics
             response_time_ms = (time.time() - start_time) * 1000
-            self._record_metrics(
-                provider_identifier, operation.operation_type.name, result.success, response_time_ms
-            )
+            if self._metrics:
+                op_base = f"provider.{provider_identifier}.{operation.operation_type.name.lower()}"
+                if result.success:
+                    self._metrics.increment_counter(f"{op_base}.success_total")
+                else:
+                    self._metrics.increment_counter(f"{op_base}.error_total")
+                self._metrics.record_time(f"{op_base}.duration", response_time_ms / 1000.0)
 
             self._logger.debug(
                 "Operation %s executed by %s: success=%s, time=%.2fms",
@@ -101,9 +106,10 @@ class ProviderExecutionService:
 
         except Exception as e:
             response_time_ms = (time.time() - start_time) * 1000
-            self._record_metrics(
-                provider_identifier, operation.operation_type.name, False, response_time_ms
-            )
+            if self._metrics:
+                op_base = f"provider.{provider_identifier}.{operation.operation_type.name.lower()}"
+                self._metrics.increment_counter(f"{op_base}.error_total")
+                self._metrics.record_time(f"{op_base}.duration", response_time_ms / 1000.0)
 
             self._logger.error(
                 "Error executing operation %s with %s: %s",
@@ -165,13 +171,3 @@ class ProviderExecutionService:
             self._logger.warning("Could not get config for %s: %s", provider_identifier, e)
             return {}
 
-    def _record_metrics(
-        self, provider_identifier: str, operation: str, success: bool, response_time_ms: float
-    ) -> None:
-        """Record operation metrics."""
-        op_base = f"provider.{provider_identifier}.{operation.lower()}"
-        if success:
-            self._metrics.increment_counter(f"{op_base}.success_total")
-        else:
-            self._metrics.increment_counter(f"{op_base}.error_total")
-        self._metrics.record_time(f"{op_base}.duration", response_time_ms / 1000.0)

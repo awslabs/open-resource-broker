@@ -111,7 +111,11 @@ class ProviderRegistry(BaseRegistry):
             capabilities = strategy.get_capabilities()
             if not capabilities.supports_operation(operation.operation_type):
                 response_time_ms = (time.time() - start_time) * 1000
-                self._record_metrics(provider_identifier, operation.operation_type.name, False, response_time_ms)
+                if not self._metrics:
+                    return
+                op_base = f"provider.{provider_identifier}.{operation.operation_type.name.lower()}"
+                self._metrics.increment_counter(f"{op_base}.error_total")
+                self._metrics.record_time(f"{op_base}.duration", response_time_ms / 1000.0)
                 
                 return self._create_error_result(
                     f"Provider {provider_identifier} does not support operation {operation.operation_type}",
@@ -123,7 +127,14 @@ class ProviderRegistry(BaseRegistry):
             
             # Record metrics
             response_time_ms = (time.time() - start_time) * 1000
-            self._record_metrics(provider_identifier, operation.operation_type.name, result.success, response_time_ms)
+            if not self._metrics:
+                return result
+            op_base = f"provider.{provider_identifier}.{operation.operation_type.name.lower()}"
+            if result.success:
+                self._metrics.increment_counter(f"{op_base}.success_total")
+            else:
+                self._metrics.increment_counter(f"{op_base}.error_total")
+            self._metrics.record_time(f"{op_base}.duration", response_time_ms / 1000.0)
             
             if self._logger:
                 self._logger.debug(
@@ -138,7 +149,11 @@ class ProviderRegistry(BaseRegistry):
 
         except Exception as e:
             response_time_ms = (time.time() - start_time) * 1000
-            self._record_metrics(provider_identifier, operation.operation_type.name, False, response_time_ms)
+            if not self._metrics:
+                return result
+            op_base = f"provider.{provider_identifier}.{operation.operation_type.name.lower()}"
+            self._metrics.increment_counter(f"{op_base}.error_total")
+            self._metrics.record_time(f"{op_base}.duration", response_time_ms / 1000.0)
             
             if self._logger:
                 self._logger.error(
@@ -360,6 +375,8 @@ class ProviderRegistry(BaseRegistry):
         Performs comprehensive validation of template requirements
         against the specified provider's capabilities.
         """
+        self._ensure_provider_dependencies()
+        
         if self._logger:
             self._logger.info(
                 "Validating template %s against provider %s",
@@ -394,7 +411,7 @@ class ProviderRegistry(BaseRegistry):
                 result.errors.extend(result.warnings)
                 result.warnings = []
                 result.is_valid = False
-            elif validation_level == ValidationLevel.BASIC:
+            elif validation_level == ValidationLevel.PERMISSIVE:
                 result.warnings = []
 
             result.is_valid = len(result.errors) == 0
@@ -765,18 +782,10 @@ class ProviderRegistry(BaseRegistry):
             result.supported_features.append(
                 f"Instance count: {template.max_instances} (within limit)"
             )
-        """Record operation metrics."""
-        if not self._metrics:
-            return
-            
-        op_base = f"provider.{provider_identifier}.{operation.lower()}"
-        if success:
-            self._metrics.increment_counter(f"{op_base}.success_total")
-        else:
-            self._metrics.increment_counter(f"{op_base}.error_total")
-        
-        # record_time expects seconds
-        self._metrics.record_time(f"{op_base}.duration", response_time_ms / 1000.0)
+
+
+
+
 
     # Convenience methods for common operations
     async def create_machines(

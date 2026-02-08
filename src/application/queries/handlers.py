@@ -1042,7 +1042,7 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
 
 
 @query_handler(GetRequestStatusQuery)
-class GetRequestStatusQueryHandler(BaseQueryHandler[GetRequestStatusQuery, str]):
+class GetRequestStatusQueryHandler(BaseQueryHandler[GetRequestStatusQuery, Any]):
     """Handler for getting request status."""
 
     def __init__(
@@ -1054,7 +1054,7 @@ class GetRequestStatusQueryHandler(BaseQueryHandler[GetRequestStatusQuery, str])
         super().__init__(logger, error_handler)
         self.uow_factory = uow_factory
 
-    async def execute_query(self, query: GetRequestStatusQuery) -> str:
+    async def execute_query(self, query: GetRequestStatusQuery) -> Any:
         """Execute get request status query."""
         self.logger.info("Getting status for request: %s", query.request_id)
 
@@ -1068,9 +1068,8 @@ class GetRequestStatusQueryHandler(BaseQueryHandler[GetRequestStatusQuery, str])
                 if not request:
                     raise EntityNotFoundError("Request", query.request_id)
 
-                status = request.status.value
-                self.logger.info("Request %s status: %s", query.request_id, status)
-                return status
+                self.logger.info("Request %s status: %s", query.request_id, request.status.value)
+                return request
 
         except EntityNotFoundError:
             self.logger.error("Request not found: %s", query.request_id)
