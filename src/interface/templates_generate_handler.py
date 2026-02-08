@@ -1,67 +1,54 @@
 """Templates generate command handler."""
 
-import json
 from typing import Any, Dict
 
 from cli.console import print_info, print_success
-from domain.base.ports.scheduler_port import SchedulerPort
 from infrastructure.di.container import get_container
-from infrastructure.di.buses import QueryBus
-from application.dto.queries import ListTemplatesQuery
+from application.services.template_generation_service import TemplateGenerationService
+from application.dto.template_generation_dto import TemplateGenerationRequest
 
 
 async def handle_templates_generate(args) -> Dict[str, Any]:
     """Handle orb templates generate command with multi-provider support."""
     try:
-        if args.provider:
-            # Generate for specific provider
-            providers = [_get_provider_config(args.provider)]
-        elif getattr(args, "all_providers", False):
-            # Generate for all active providers
-            providers = _get_active_providers()
-        else:
-            # Default: generate for all active providers (NEW BEHAVIOR)
-            providers = _get_active_providers()
+        # Get template generation service from DI container
+        container = get_container()
+        template_service = container.get(TemplateGenerationService)
 
-        results = []
-        skipped_files = []
-        
-        for provider in providers:
-            result = await _generate_templates_for_provider(provider, args)
-            results.append(result)
-            
-            if result.get("status") == "skipped":
-                skipped_files.append(result["filename"])
+        # Create request DTO from arguments
+        request = TemplateGenerationRequest(
+            specific_provider=getattr(args, "provider", None),
+            all_providers=getattr(args, "all_providers", False),
+            provider_api=getattr(args, "provider_api", None),
+            provider_specific=getattr(args, "provider_specific", False),
+            provider_type_filter=getattr(args, "provider_type", None),
+            force_overwrite=getattr(args, "force", False),
+        )
 
-        # Print summary
-        if skipped_files:
-            print_info(f"Skipped {len(skipped_files)} existing files (use --force to overwrite):")
-            for filename in skipped_files:
-                print_info(f"  - {filename}")
-            print_info("")
-        
-        created_results = [r for r in results if r.get("status") == "created"]
-        if created_results:
-            total_templates = sum(r["templates_count"] for r in created_results)
-            print_success(f"Generated templates for {len(created_results)} providers")
-            print_info(f"Total templates: {total_templates}")
-            print_info("")
+        # Use application service to generate templates
+        result = await template_service.generate_templates(request)
 
-            for result in created_results:
-                print_info(f"Provider: {result['provider']}")
-                print_info(f"  File: {result['filename']}")
-                print_info(f"  Templates: {result['templates_count']}")
-        elif skipped_files:
-            print_info("No new templates generated (all files already exist)")
-        
-        # Update return data
-        total_templates = sum(r["templates_count"] for r in created_results)
+        # Handle UI output
+        _print_generation_results(result)
 
+        # Convert result to dict for CLI compatibility
         return {
-            "status": "success",
-            "message": f"Generated templates for {len(results)} providers",
-            "providers": results,
-            "total_templates": total_templates,
+            "status": result.status,
+            "message": result.message,
+            "providers": [
+                {
+                    "provider": p.provider,
+                    "filename": p.filename,
+                    "templates_count": p.templates_count,
+                    "path": p.path,
+                    "status": p.status,
+                    "reason": p.reason,
+                }
+                for p in result.providers
+            ],
+            "total_templates": result.total_templates,
+            "created_count": result.created_count,
+            "skipped_files": [p.filename for p in result.providers if p.status == "skipped"],
         }
 
     except Exception as e:
@@ -76,201 +63,32 @@ async def handle_templates_generate(args) -> Dict[str, Any]:
         }
 
 
-async def _generate_templates_for_provider(provider: dict, args) -> dict:
-    """Generate templates for a single provider."""
-    provider_name = provider["name"]
-    provider_type = provider["type"]
-    provider_api = getattr(args, "provider_api", None)
+def _print_generation_results(result) -> None:
+    """Print generation results to console."""
+    if result.status == "error":
+        return
 
-    # Generate examples using provider-specific logic
-    examples = await _generate_examples_from_factory(provider_type, provider_name, provider_api)
+    skipped_providers = [p for p in result.providers if p.status == "skipped"]
+    created_providers = [p for p in result.providers if p.status == "created"]
 
-    # Get scheduler strategy for filename
-    from config.platform_dirs import get_config_location
-    from infrastructure.scheduler.registry import get_scheduler_registry
+    # Print skipped files
+    if skipped_providers:
+        print_info(f"Skipped {len(skipped_providers)} existing files (use --force to overwrite):")
+        for provider_result in skipped_providers:
+            print_info(f"  - {provider_result.filename}")
+        print_info("")
 
-    config_dir = get_config_location()
-    config_file = config_dir / "config.json"
+    # Print created results
+    if created_providers:
+        print_success(f"Generated templates for {len(created_providers)} providers")
+        print_info(f"Total templates: {result.total_templates}")
+        print_info("")
 
-    # Load config to get scheduler type
-    scheduler_type = "default"
-    config_dict = None
-    if config_file.exists():
-        with open(config_file) as f:
-            config_dict = json.load(f)
-            scheduler_type = config_dict.get("scheduler", {}).get("type", "default")
-
-    # Get strategy class from registry
-    registry = get_scheduler_registry()
-    strategy_class = registry.get_strategy_class(scheduler_type)
-
-    # Determine filename based on generation mode
-    if getattr(args, "provider_specific", False):
-        # Provider-specific mode: use provider name pattern
-        filename = strategy_class.get_templates_filename(provider_name, provider_type, config_dict)
-    elif getattr(args, "provider_type", None):
-        # Provider-type mode: use specified provider type
-        filename = f"{args.provider_type}_templates.json"
+        for provider_result in created_providers:
+            print_info(f"Provider: {provider_result.provider}")
+            print_info(f"  File: {provider_result.filename}")
+            print_info(f"  Templates: {provider_result.templates_count}")
+    elif skipped_providers:
+        print_info("No new templates generated (all files already exist)")
     else:
-        # Generic mode (DEFAULT): use provider_type pattern
-        filename = f"{provider_type}_templates.json"
-
-    # Write templates file
-    config_dir.mkdir(parents=True, exist_ok=True)
-    templates_file = config_dir / filename
-
-    # Check for existing file and handle overwrite protection
-    if templates_file.exists() and not getattr(args, "force", False):
-        print(f"Template file already exists: {templates_file}")
-        print("Use --force to overwrite existing files")
-        return {
-            "provider": provider_name,
-            "filename": filename,
-            "templates_count": 0,
-            "path": str(templates_file),
-            "status": "skipped",
-            "reason": "file_exists"
-        }
-
-    container = get_container()
-    scheduler_strategy = container.get(SchedulerPort)
-    
-    # Format templates based on generation mode
-    if getattr(args, "provider_specific", False):
-        # Provider-specific mode: apply provider-specific defaults
-        formatted_examples = scheduler_strategy.format_templates_for_generation(examples)
-    else:
-        # Generic mode: apply scheduler formatting for consistency
-        formatted_examples = scheduler_strategy.format_templates_for_generation(examples)
-
-    templates_data = {"templates": formatted_examples}
-    
-    # Write JSON with robust datetime handling
-    from datetime import datetime
-    
-    class DateTimeEncoder(json.JSONEncoder):
-        def default(self, obj):
-            if isinstance(obj, datetime):
-                return obj.isoformat()
-            # Convert any other non-serializable objects to string
-            try:
-                return super().default(obj)
-            except TypeError:
-                return str(obj)
-    
-    with open(templates_file, "w") as f:
-        json.dump(templates_data, f, indent=2, cls=DateTimeEncoder)
-
-    return {
-        "provider": provider_name,
-        "filename": filename,
-        "templates_count": len(examples),
-        "path": str(templates_file),
-        "status": "created"
-    }
-
-
-def _get_active_providers() -> list[dict]:
-    """Get all active providers from configuration via proper DI."""
-    from infrastructure.di.container import get_container
-    from domain.base.ports.configuration_port import ConfigurationPort
-    
-    container = get_container()
-    config_manager = container.get(ConfigurationPort)
-    
-    # Use configuration manager to get provider config
-    provider_config = config_manager.get_provider_config()
-    providers = provider_config.get("providers", [])
-    
-    # Return enabled providers
-    active_providers = []
-    for provider in providers:
-        if provider.get("enabled", True):
-            active_providers.append({"name": provider["name"], "type": provider["type"]})
-    
-    # Fallback if no providers configured
-    if not active_providers:
-        active_providers = [{"name": "default", "type": "aws"}]
-    
-    return active_providers
-
-
-def _get_provider_config(provider_name: str) -> dict:
-    """Get configuration for specific provider via proper DI."""
-    from infrastructure.di.container import get_container
-    from domain.base.ports.configuration_port import ConfigurationPort
-    
-    container = get_container()
-    config_manager = container.get(ConfigurationPort)
-    
-    # Use configuration manager to get provider config
-    provider_config = config_manager.get_provider_config()
-    providers = provider_config.get("providers", [])
-    
-    # Find specific provider
-    for provider in providers:
-        if provider["name"] == provider_name:
-            return {"name": provider["name"], "type": provider["type"]}
-    
-    # Provider not found, create from name
-    return {
-        "name": provider_name,
-        "type": provider_name.split("-")[0] if "-" in provider_name else provider_name,
-    }
-
-
-async def _generate_examples_from_factory(
-    provider_type: str, provider_name: str, provider_api: str = None
-) -> list[Dict[str, Any]]:
-    """Generate example templates using provider strategy's handler factory."""
-    from infrastructure.di.container import get_container
-    
-    container = get_container()
-    
-    # Use provider registry to get the appropriate handler factory
-    from providers.registry import get_provider_registry
-    
-    registry = get_provider_registry()
-    
-    # Ensure provider type is registered
-    if not registry.is_provider_registered(provider_type):
-        registry.ensure_provider_type_registered(provider_type)
-    
-    if not registry.is_provider_registered(provider_type):
-        error_msg = registry.format_registry_error(provider_type, "provider")
-        raise ValueError(error_msg)
-    
-    # For AWS provider, use the existing logic
-    if provider_type == "aws":
-        from providers.aws.infrastructure.aws_handler_factory import AWSHandlerFactory
-        
-        handler_factory = container.get(AWSHandlerFactory)
-        if not handler_factory:
-            raise ValueError(f"AWSHandlerFactory not available for provider: {provider_name}")
-        
-        # Generate example templates from the handler factory
-        example_templates = handler_factory.generate_example_templates()
-        if not example_templates:
-            raise ValueError(f"No example templates generated for provider: {provider_name}")
-        
-        # Filter by provider_api if specified
-        if provider_api:
-            example_templates = [
-                template for template in example_templates 
-                if template.provider_api == provider_api
-            ]
-            if not example_templates:
-                raise ValueError(f"No templates found for provider API: {provider_api}")
-        
-        # Convert Template objects to dict format for generation
-        examples = []
-        for template in example_templates:
-            # Use the same approach that works in our test
-            template_dict = template.model_dump(exclude_none=True, mode='json')
-            examples.append(template_dict)
-        
-        return examples
-    else:
-        # For other providers, we would need to implement their handler factories
-        # For now, return empty list to avoid breaking the system
-        return []
+        print_info("No templates generated")

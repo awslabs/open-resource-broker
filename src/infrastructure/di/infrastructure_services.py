@@ -42,6 +42,24 @@ def _register_template_services(container: DIContainer):
 
     container.register_singleton(TemplateDefaultsPort, create_template_defaults_service)
 
+    # Register template generation service
+    def create_template_generation_service(c):
+        """Create template generation service with injected dependencies."""
+        from application.services.template_generation_service import (
+            TemplateGenerationService,
+        )
+        from domain.base.ports.scheduler_port import SchedulerPort
+
+        return TemplateGenerationService(
+            config_manager=c.get(ConfigurationPort),
+            scheduler_strategy=c.get(SchedulerPort),
+            logger=c.get(LoggingPort),
+        )
+
+    from application.services.template_generation_service import TemplateGenerationService
+
+    container.register_singleton(TemplateGenerationService, create_template_generation_service)
+
     # Register template configuration manager with factory function
     def create_template_configuration_manager(
         container: DIContainer,
