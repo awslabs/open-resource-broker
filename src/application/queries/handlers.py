@@ -96,9 +96,14 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
 
             self.logger.debug(f"Machines associated with this request in DB: {machine_obj_from_db}")
 
-            # Sync machines with provider
+            # Fetch machines from provider first
+            machine_objects_from_provider, provider_metadata = await self._machine_sync_service.fetch_provider_machines(
+                request, machine_obj_from_db
+            )
+
+            # Then sync/merge with DB machines
             machine_objects_from_provider, provider_metadata = await self._machine_sync_service.sync_machines_with_provider(
-                request, machine_obj_from_db, []
+                request, machine_obj_from_db, machine_objects_from_provider
             )
             self.logger.debug(f"Machines from DB:  {machine_obj_from_db}")
             self.logger.debug(f"Machines from cloud provider:  {machine_objects_from_provider}")
