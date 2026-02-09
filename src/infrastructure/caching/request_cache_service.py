@@ -29,7 +29,7 @@ class RequestCacheService:
         """Check if request status caching is enabled."""
         try:
             performance = self.config_manager.app_config.performance
-            return performance.caching.request_status_caching.enabled
+            return performance.caching.request_status.enabled
         except Exception as e:
             self.logger.warning("Failed to get caching config, defaulting to disabled: %s", e)
             return False
@@ -38,7 +38,7 @@ class RequestCacheService:
         """Get cache TTL in seconds."""
         try:
             performance = self.config_manager.app_config.performance
-            return performance.caching.request_status_caching.ttl_seconds
+            return performance.caching.request_status.ttl_seconds
         except Exception as e:
             self.logger.warning("Failed to get cache TTL, defaulting to 300 seconds: %s", e)
             return 300
