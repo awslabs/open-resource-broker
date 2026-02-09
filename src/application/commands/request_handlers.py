@@ -98,7 +98,7 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
         await self._persist_and_publish(request)
 
         self.logger.info("Machine request created successfully: %s", request.request_id)
-        return str(request.request_id)
+        return request
 
     async def _validate_provider_availability(self) -> None:
         """Validate that providers are available."""
