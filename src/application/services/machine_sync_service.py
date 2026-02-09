@@ -43,29 +43,31 @@ class MachineSyncService:
             from providers.base.strategy import ProviderOperation, ProviderOperationType
             from domain.base.ports.configuration_port import ConfigurationPort
 
-            # Use machine_ids for return requests when available
-            if request.request_type.value == "return" and request.machine_ids:
-                operation_type = ProviderOperationType.GET_INSTANCE_STATUS
-                parameters = {
-                    "instance_ids": request.machine_ids,
-                    "template_id": request.template_id,
-                }
-            # Prefer resource-level discovery for acquire requests
-            elif request.resource_ids:
+            # Use resource-level discovery when available (handles scaling/replacement)
+            if request.resource_ids:
                 operation_type = ProviderOperationType.DESCRIBE_RESOURCE_INSTANCES
                 parameters = {
                     "resource_ids": request.resource_ids,
-                    "provider_api": request.metadata.get("provider_api", "RunInstances"),
+                    "provider_api": request.provider_api or "RunInstances",
                     "template_id": request.template_id,
                 }
-            else:
-                # Fallback to instance-level discovery
+            # Fallback to instance-level discovery for requests without resource tracking
+            elif db_machines:
                 operation_type = ProviderOperationType.GET_INSTANCE_STATUS
                 instance_ids = [m.machine_id.value for m in db_machines]
                 parameters = {
                     "instance_ids": instance_ids,
                     "template_id": request.template_id,
                 }
+            # Use machine_ids for return requests when available
+            elif request.request_type.value == "return" and request.machine_ids:
+                operation_type = ProviderOperationType.GET_INSTANCE_STATUS
+                parameters = {
+                    "instance_ids": request.machine_ids,
+                    "template_id": request.template_id,
+                }
+            else:
+                return [], {}
 
             operation = ProviderOperation(
                 operation_type=operation_type,
@@ -91,14 +93,25 @@ class MachineSyncService:
                 instances = result.data.get("instances", [])
                 self.logger.debug(f"Provider returned {len(instances)} instances")
                 
-                # Convert provider instances to domain machines
+                # Get machine adapter from container (proper DI)
+                from providers.aws.infrastructure.adapters.machine_adapter import AWSMachineAdapter
+                machine_adapter = self.container.get(AWSMachineAdapter)
+                
+                # Convert raw AWS instances to domain machines using machine adapter
                 domain_machines = []
-                for instance_data in instances:
+                for aws_instance_data in instances:
                     try:
-                        machine = self._create_machine_from_provider_data(instance_data, request)
+                        processed_data = machine_adapter.create_machine_from_aws_instance(
+                            aws_instance_data, 
+                            str(request.request_id), 
+                            request.provider_api or "RunInstances",
+                            request.resource_ids[0] if request.resource_ids else ""
+                        )
+                        
+                        machine = self._create_machine_from_processed_data(processed_data, request)
                         domain_machines.append(machine)
                     except Exception as e:
-                        self.logger.warning(f"Failed to create machine from provider data: {e}")
+                        self.logger.warning(f"Failed to create machine from AWS data: {e}")
                 
                 return domain_machines, result.metadata or {}
             else:
@@ -109,15 +122,13 @@ class MachineSyncService:
             self.logger.error(f"Failed to fetch provider machines: {e}")
             return db_machines, {}
 
-    def _create_machine_from_provider_data(self, instance_data: dict, request: Request) -> Machine:
-        """Create machine domain object from provider instance data."""
+    def _create_machine_from_processed_data(self, processed_data: dict, request: Request) -> Machine:
         from datetime import datetime
         from domain.base.value_objects import InstanceType
         from domain.machine.machine_identifiers import MachineId
         from domain.machine.machine_status import MachineStatus
 
-        # Parse launch_time if it's a string
-        launch_time = instance_data.get("launch_time")
+        launch_time = processed_data.get("launch_time")
         if isinstance(launch_time, str):
             try:
                 launch_time = datetime.fromisoformat(launch_time.replace("Z", "+00:00"))
@@ -125,20 +136,23 @@ class MachineSyncService:
                 launch_time = None
 
         return Machine(
-            machine_id=MachineId(value=instance_data["instance_id"]),
-            request_id=str(request.request_id),
+            machine_id=MachineId(value=processed_data["instance_id"]),
+            name=processed_data.get("name"),
             template_id=request.template_id,
+            request_id=str(request.request_id),
             provider_type=request.provider_type,
             provider_name=request.provider_name,
             provider_api=request.provider_api,
-            resource_id=instance_data.get("resource_id"),
-            instance_type=InstanceType(value=instance_data.get("instance_type", "t2.micro")),
-            image_id=instance_data.get("image_id", "unknown"),
-            status=MachineStatus(instance_data.get("status", "pending")),
-            private_ip=instance_data.get("private_ip"),
-            public_ip=instance_data.get("public_ip"),
+            resource_id=processed_data.get("resource_id"),
+            instance_type=InstanceType(value=processed_data.get("instance_type", "t2.micro")),
+            image_id=processed_data.get("image_id", "unknown"),
+            status=MachineStatus(processed_data.get("status", "pending")),
+            private_ip=processed_data.get("private_ip"),
+            public_ip=processed_data.get("public_ip"),
+            private_dns_name=processed_data.get("private_dns_name"),
+            public_dns_name=processed_data.get("public_dns_name"),
             launch_time=launch_time,
-            metadata=instance_data.get("metadata", {}),
+            metadata=processed_data.get("metadata", {}),
         )
 
     async def sync_machines_with_provider(
@@ -147,12 +161,10 @@ class MachineSyncService:
         db_machines: list[Machine], 
         provider_machines: list[Machine]
     ) -> Tuple[list[Machine], dict]:
-        """Sync machine status with cloud provider."""
         try:
             from domain.base import UnitOfWorkFactory
             from domain.machine.machine_status import MachineStatus
             
-            # Prepare lookup maps
             existing_by_id = {str(m.machine_id.value): m for m in db_machines}
             updated_machines = []
             to_upsert = []
@@ -163,18 +175,28 @@ class MachineSyncService:
                 existing = existing_by_id.get(machine_id)
 
                 if existing:
-                    # Check if machine needs update
+                    # Check if machine needs update (including DNS and name fields)
                     needs_update = (
                         existing.status != provider_machine.status
                         or existing.private_ip != provider_machine.private_ip
                         or existing.public_ip != provider_machine.public_ip
+                        or existing.name != provider_machine.name
+                        or existing.private_dns_name != provider_machine.private_dns_name
+                        or existing.public_dns_name != provider_machine.public_dns_name
                     )
+                    
+                    # Debug logging
+                    self.logger.info(f"Machine {machine_id} sync check: existing.name='{existing.name}' vs provider.name='{provider_machine.name}', needs_update={needs_update}")
 
                     if needs_update:
-                        # Create updated machine
+                        # Create updated machine with all provider data
                         machine_data = existing.model_dump()
                         machine_data["status"] = provider_machine.status
                         machine_data["private_ip"] = provider_machine.private_ip
+                        machine_data["public_ip"] = provider_machine.public_ip
+                        machine_data["name"] = provider_machine.name
+                        machine_data["private_dns_name"] = provider_machine.private_dns_name
+                        machine_data["public_dns_name"] = provider_machine.public_dns_name
                         machine_data["public_ip"] = provider_machine.public_ip
                         machine_data["launch_time"] = provider_machine.launch_time or existing.launch_time
                         machine_data["version"] = existing.version + 1

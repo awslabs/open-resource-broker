@@ -38,6 +38,36 @@ class AWSMachineAdapter:
         self._aws_client = aws_client
         self._logger = logger
 
+    def _resolve_machine_name(self, aws_instance_data: dict) -> str:
+        """
+        Resolve machine name using priority order:
+        1. AWS Name tag
+        2. Private DNS name  
+        3. Private IP
+        4. Instance ID (fallback)
+        """
+        # 1. Check AWS Name tag
+        tags = aws_instance_data.get("Tags", [])
+        for tag in tags:
+            if tag.get("Key") == "Name" and tag.get("Value"):
+                self._logger.info("Using AWS Name tag for machine: %s", tag["Value"])
+                return tag["Value"]
+        
+        # 2. Use private DNS name (more readable than IP)
+        if private_dns := aws_instance_data.get("PrivateDnsName"):
+            self._logger.info("Using private DNS name for machine: %s", private_dns)
+            return private_dns
+        
+        # 3. Use private IP
+        if private_ip := aws_instance_data.get("PrivateIpAddress"):
+            self._logger.info("Using private IP for machine: %s", private_ip)
+            return private_ip
+        
+        # 4. Fallback to instance ID
+        instance_id = aws_instance_data.get("InstanceId", "")
+        self._logger.info("Using instance ID fallback for machine: %s", instance_id)
+        return instance_id
+
     def create_machine_from_aws_instance(
         self,
         aws_instance_data: dict[str, Any],
@@ -85,11 +115,16 @@ class AWSMachineAdapter:
                     }
                 )
 
-                # Add name if not present
-                if "name" not in machine_data or not machine_data["name"]:
-                    machine_data["name"] = machine_data.get(
-                        "private_ip", machine_data.get("instance_id", "")
-                    )
+                # Add smart machine naming and DNS fields
+                machine_data["name"] = self._resolve_machine_name(aws_instance_data)
+                machine_data["private_dns_name"] = aws_instance_data.get("PrivateDnsName")
+                machine_data["public_dns_name"] = aws_instance_data.get("PublicDnsName")
+                
+                # Log DNS data for debugging
+                self._logger.info("Machine %s DNS data: private=%s, public=%s", 
+                                aws_instance_data.get("InstanceId"), 
+                                machine_data["private_dns_name"], 
+                                machine_data["public_dns_name"])
 
                 # Ensure launch_time is present (might be missing in some cases)
                 if "launch_time" not in machine_data:
@@ -163,7 +198,6 @@ class AWSMachineAdapter:
                         if aws_instance_data.get("InstanceLifecycle") == "spot"
                         else PriceType.ON_DEMAND.value
                     ),
-                    "cloud_host_id": aws_instance_data.get("Placement", {}).get("HostId"),
                     "metadata": {
                         "availability_zone": aws_instance_data["Placement"]["AvailabilityZone"],
                         "subnet_id": aws_instance_data["SubnetId"],

@@ -22,6 +22,20 @@ class HostFactoryFieldMappings:
             "keyName": "key_name",
             "fleetType": "fleet_type",
             "providerApi": "provider_api",  # Provider API type
+            # Machine fields
+            "machineId": "machine_id",
+            "name": "name", 
+            "status": "status",
+            "result": "result",
+            "message": "message",
+            "launchTime": "launch_time",
+            "privateIp": "private_ip",
+            "publicIp": "public_ip",
+            "privateDnsName": "private_dns_name",
+            "publicDnsName": "public_dns_name",
+            "resourceId": "resource_id",
+            "providerName": "provider_name",
+            "providerType": "provider_type",
             # Network configuration
             "subnetId": "subnet_ids",  # Will be converted to list
             "subnetIds": "subnet_ids",  # Preserve full list when provided

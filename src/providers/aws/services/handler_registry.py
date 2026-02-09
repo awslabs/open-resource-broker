@@ -63,19 +63,8 @@ class AWSHandlerRegistry:
         """Get effective handler configurations from provider instance config."""
         if self._provider_instance_config and hasattr(self._provider_instance_config, 'get_effective_handlers'):
             try:
-                # Get provider defaults from configuration
+                # Get provider defaults - but don't fail if not available
                 provider_defaults = None
-                if hasattr(self._provider_instance_config, 'type'):
-                    try:
-                        from domain.base.ports.configuration_port import ConfigurationPort
-                        from infrastructure.di.container import get_container
-                        container = get_container()
-                        config_port = container.get(ConfigurationPort)
-                        provider_config = config_port.get_provider_config()
-                        if provider_config and hasattr(provider_config, 'provider_defaults'):
-                            provider_defaults = provider_config.provider_defaults.get(self._provider_instance_config.type)
-                    except Exception as e:
-                        self._logger.debug("Could not get provider defaults: %s", e)
                 
                 result = self._provider_instance_config.get_effective_handlers(provider_defaults)
                 if isinstance(result, dict):
@@ -85,9 +74,9 @@ class AWSHandlerRegistry:
             except Exception as e:
                 self._logger.warning("Failed to get effective handlers from config: %s", e)
         
-        # Fallback: all available handlers
+        # Fallback: all available handlers with proper config
         from providers.aws.domain.template.value_objects import ProviderApi
-        return {api.value: {} for api in ProviderApi}
+        return {api.value: {"enabled": True} for api in ProviderApi}
 
     def get_supported_apis(self) -> list[str]:
         """Get list of supported API types."""

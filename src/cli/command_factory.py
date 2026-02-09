@@ -9,6 +9,7 @@ from application.dto.commands import (
     UpdateRequestStatusCommand,
 )
 from application.dto.queries import (
+    GetMachineQuery,
     GetRequestQuery,
     GetTemplateQuery,
     ListActiveRequestsQuery,
@@ -360,6 +361,14 @@ class CLICommandFactory:
             pagination={"limit": limit, "offset": offset},
         )
 
+    def create_get_machine_query(
+        self,
+        machine_id: str,
+        **kwargs: Any,
+    ) -> GetMachineQuery:
+        """Create query to get machine details."""
+        return GetMachineQuery(machine_id=machine_id)
+
     def create_update_machine_status_command(
         self,
         machine_id: str,
@@ -410,14 +419,14 @@ class CLICommandFactory:
     def create_get_provider_metrics_query(
         self,
         provider_name: Optional[str] = None,
-        time_range: str = "1h",
+        timeframe: str = "1h",
         detailed: bool = False,
         **kwargs: Any,
     ) -> GetProviderMetricsQuery:
         """Create query to get provider metrics."""
         return GetProviderMetricsQuery(
             provider_name=provider_name,
-            time_range=time_range,
+            timeframe=timeframe,
             detailed=detailed,
         )
 
@@ -823,13 +832,24 @@ class CLICommandFactory:
                     force_return=args.get("force", False)
                 )
             elif command_action == "show" or command_action == "status":
-                # For machine show/status, we need to query by machine_id
-                machine_id = args.get("machine_id")
-                if machine_id:
-                    return self.create_list_machines_query(
-                        filters={"machine_id": machine_id},
-                        limit=1
-                    )
+                if command_action == "status":
+                    # Status command expects machine_ids (plural)
+                    machine_ids = args.get("machine_ids", [])
+                    if machine_ids:
+                        # For now, handle single machine ID (first one)
+                        # TODO: Support multiple machine IDs in query
+                        return self.create_get_machine_query(machine_id=machine_ids[0])
+                    else:
+                        # No machine_ids provided, return list query
+                        return self.create_list_machines_query(limit=50)
+                else:  # show command
+                    # Show command expects machine_id (singular)
+                    machine_id = args.get("machine_id")
+                    if machine_id:
+                        return self.create_get_machine_query(machine_id=machine_id)
+                    else:
+                        # No machine_id provided, return list query
+                        return self.create_list_machines_query(limit=50)
 
         # System operations
         elif command_group == "system":

@@ -178,7 +178,7 @@ class GetMachineHealthHandler(BaseQueryHandler[GetMachineHealthQuery, MachineHea
                 try:
                     # Try to get health from provisioning service
                     if hasattr(self.provisioning_port, "get_machine_health"):
-                        health_info = self.provisioning_port.get_machine_health(machine.provider_id)
+                        health_info = self.provisioning_port.get_machine_health(machine.provider_name)
                         health_status = health_info.get("status", "unknown")
                         health_details = health_info.get("details", {})
                         last_health_check = health_info.get("timestamp")
@@ -196,7 +196,7 @@ class GetMachineHealthHandler(BaseQueryHandler[GetMachineHealthQuery, MachineHea
 
                         health_details = {
                             "machine_status": machine.status.value,
-                            "provider_id": machine.provider_id,
+                            "provider_id": machine.provider_name,
                         }
 
                 except Exception as health_error:
@@ -211,7 +211,7 @@ class GetMachineHealthHandler(BaseQueryHandler[GetMachineHealthQuery, MachineHea
                 # Create health DTO
                 health_dto = MachineHealthDTO(
                     machine_id=str(machine.machine_id),
-                    provider_id=machine.provider_id,
+                    provider_id=machine.provider_name,
                     status=machine.status.value,
                     health_status=health_status,
                     health_details=health_details,

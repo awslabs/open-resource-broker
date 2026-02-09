@@ -761,11 +761,12 @@ class ListRequestsHandler(BaseQueryHandler[ListRequestsQuery, list[RequestDTO]])
                     # Query machines for this request if machine_ids exist
                     machines = []
                     if request.machine_ids:
-                        machines = uow.machines.find_by_ids([request.machine_ids])
+                        machines = uow.machines.find_by_ids(request.machine_ids)
                     
                     # Create RequestDTO using factory
                     from application.factories.request_dto_factory import RequestDTOFactory
-                    request_dto = RequestDTOFactory.create_from_domain(request, machines)
+                    dto_factory = RequestDTOFactory()
+                    request_dto = dto_factory.create_from_domain(request, machines)
                     request_dtos.append(request_dto)
 
                 self.logger.info("Found %s requests (total: %s)", len(request_dtos), total_count)
@@ -999,21 +1000,28 @@ class GetMachineHandler(BaseQueryHandler[GetMachineQuery, MachineDTO]):
                 if not machine:
                     raise EntityNotFoundError("Machine", query.machine_id)
 
-                # Convert to DTO
+                # Convert to DTO with available fields
                 machine_dto = MachineDTO(
                     machine_id=str(machine.machine_id),
-                    provider_id=machine.provider_id,
-                    template_id=machine.template_id,
-                    request_id=str(machine.request_id) if machine.request_id else None,
+                    name=machine.name or str(machine.machine_id),  # Fallback to machine_id
                     status=machine.status.value,
-                    instance_type=machine.instance_type,
-                    created_at=machine.created_at,
-                    updated_at=machine.updated_at,
+                    instance_type=str(machine.instance_type),
+                    private_ip=machine.private_ip or "unknown",
+                    public_ip=machine.public_ip,
+                    private_dns_name=machine.private_dns_name,
+                    public_dns_name=machine.public_dns_name,
+                    result=MachineDTO._get_result_status(machine.status.value),
+                    launch_time=int(machine.launch_time.timestamp()) if machine.launch_time else 0,
+                    message=machine.status_reason or "",
+                    provider_api=machine.provider_api,
+                    provider_name=machine.provider_name,
+                    provider_type=machine.provider_type,
+                    resource_id=machine.resource_id,
                     metadata=machine.metadata or {},
                 )
 
                 self.logger.info("Retrieved machine: %s", query.machine_id)
-                return machine_dto
+                return machine_dto.to_dict()
 
         except EntityNotFoundError:
             self.logger.error("Machine not found: %s", query.machine_id)
@@ -1032,9 +1040,17 @@ class ListMachinesHandler(BaseQueryHandler[ListMachinesQuery, list[MachineDTO]])
         uow_factory: UnitOfWorkFactory,
         logger: LoggingPort,
         error_handler: ErrorHandlingPort,
+        container: ContainerPort,
+        command_bus: CommandBus,
     ) -> None:
         super().__init__(logger, error_handler)
         self.uow_factory = uow_factory
+        self.container = container
+        self.command_bus = command_bus
+        
+        # Initialize machine sync service like GetRequestHandler does
+        from application.services.machine_sync_service import MachineSyncService
+        self._machine_sync_service = MachineSyncService(command_bus, container, logger)
 
     async def execute_query(self, query: ListMachinesQuery) -> list[MachineDTO]:
         """Execute list machines query."""
@@ -1043,31 +1059,52 @@ class ListMachinesHandler(BaseQueryHandler[ListMachinesQuery, list[MachineDTO]])
         try:
             with self.uow_factory.create_unit_of_work() as uow:
                 # Get machines based on query filters
-                if query.status_filter:
+                if query.status:
                     from domain.machine.value_objects import MachineStatus
 
-                    status_enum = MachineStatus(query.status_filter)
+                    status_enum = MachineStatus(query.status)
                     machines = uow.machines.find_by_status(status_enum)
                 elif query.request_id:
                     machines = uow.machines.find_by_request_id(query.request_id)
                 else:
                     machines = uow.machines.get_all()
 
-                # Convert to DTOs
+                # Convert to DTOs (with sync for running machines)
                 machine_dtos = []
                 for machine in machines:
+                    # For running machines, trigger a quick sync to get fresh name/DNS data
+                    if machine.status.value == "running" and machine.request_id:
+                        try:
+                            # Get request and trigger sync
+                            request = uow.requests.get_by_id(machine.request_id)
+                            if request:
+                                provider_machines, _ = await self._machine_sync_service.fetch_provider_machines(request, [machine])
+                                if provider_machines:
+                                    synced_machines, _ = await self._machine_sync_service.sync_machines_with_provider(request, [machine], provider_machines)
+                                    if synced_machines:
+                                        machine = synced_machines[0]  # Use synced data
+                        except Exception as e:
+                            self.logger.debug(f"Sync failed for machine {machine.machine_id}: {e}")
+                    
                     machine_dto = MachineDTO(
                         machine_id=str(machine.machine_id),
-                        provider_id=machine.provider_id,
-                        template_id=machine.template_id,
-                        request_id=(str(machine.request_id) if machine.request_id else None),
+                        name=machine.name or str(machine.machine_id),  # Fallback to machine_id
                         status=machine.status.value,
-                        instance_type=machine.instance_type,
-                        created_at=machine.created_at,
-                        updated_at=machine.updated_at,
+                        instance_type=str(machine.instance_type),
+                        private_ip=machine.private_ip or "unknown",
+                        public_ip=machine.public_ip,
+                        private_dns_name=machine.private_dns_name,
+                        public_dns_name=machine.public_dns_name,
+                        result=MachineDTO._get_result_status(machine.status.value),
+                        launch_time=int(machine.launch_time.timestamp()) if machine.launch_time else 0,
+                        message=machine.status_reason or "",
+                        provider_api=machine.provider_api,
+                        provider_name=machine.provider_name,
+                        provider_type=machine.provider_type,
+                        resource_id=machine.resource_id,
                         metadata=machine.metadata or {},
                     )
-                    machine_dtos.append(machine_dto)
+                    machine_dtos.append(machine_dto.to_dict())
 
                 self.logger.info("Found %s machines", len(machine_dtos))
                 return machine_dtos

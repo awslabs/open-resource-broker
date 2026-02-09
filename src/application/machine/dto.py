@@ -23,9 +23,12 @@ class MachineDTO(BaseDTO):
     launch_time: int
     message: str = ""
     provider_api: Optional[str] = None
+    provider_name: Optional[str] = None
+    provider_type: Optional[str] = None
     resource_id: Optional[str] = None
     price_type: Optional[str] = None
-    cloud_host_id: Optional[str] = None
+    private_dns_name: Optional[str] = None
+    public_dns_name: Optional[str] = None
     metadata: Optional[dict[str, Any]] = Field(default=None)
     health_checks: Optional[dict[str, Any]] = Field(default=None)
 

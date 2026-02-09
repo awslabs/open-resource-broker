@@ -23,6 +23,7 @@ class Machine(AggregateRoot):
 
     # Core machine identification
     machine_id: MachineId
+    name: Optional[str] = None
     template_id: str
     request_id: Optional[str] = None
     return_request_id: Optional[str] = None
@@ -38,6 +39,8 @@ class Machine(AggregateRoot):
     # Network configuration
     private_ip: Optional[str] = None
     public_ip: Optional[str] = None
+    private_dns_name: Optional[str] = None
+    public_dns_name: Optional[str] = None
     subnet_id: Optional[str] = None
     security_group_ids: list[str] = Field(default_factory=list)
 

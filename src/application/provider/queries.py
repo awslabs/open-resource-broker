@@ -39,7 +39,7 @@ class GetProviderMetricsQuery(BaseQuery):
     """Query to get provider performance metrics."""
 
     provider_name: Optional[str] = None  # None = all providers
-    time_range_hours: int = 24
+    timeframe: str = "24h"
     include_operation_breakdown: bool = True
     include_error_details: bool = False
 

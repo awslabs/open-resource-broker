@@ -186,22 +186,21 @@ class AWSInstanceOperationService:
 
             response = self._aws_client.ec2_client.describe_instances(InstanceIds=instance_ids)
             
-            # Convert AWS instances to domain objects
-            machines = []
+            # Return raw AWS instances for domain layer processing
+            instances = []
             for reservation in response["Reservations"]:
                 for aws_instance in reservation["Instances"]:
-                    machine = self._convert_aws_instance_to_machine(aws_instance)
-                    machines.append(machine)
+                    instances.append(aws_instance)  # Raw AWS data
 
             return ProviderResult.success_result(
-                {"machines": machines, "queried_count": len(instance_ids)},
+                {"instances": instances, "queried_count": len(instance_ids)},
                 {"operation": "get_instance_status"},
             )
 
         except Exception as e:
             return ProviderResult.error_result(f"Failed to get instance status: {e}", "GET_INSTANCE_STATUS_ERROR")
 
-    async def describe_resource_instances(self, operation: ProviderOperation, handlers: dict) -> ProviderResult:
+    async def describe_resource_instances(self, operation: ProviderOperation) -> ProviderResult:
         """Discover instances from resource IDs (ASG, Fleet, etc.)."""
         try:
             resource_ids = operation.parameters.get("resource_ids", [])
@@ -213,32 +212,38 @@ class AWSInstanceOperationService:
                     "MISSING_RESOURCE_IDS",
                 )
 
-            # Get handler for the provider API
-            handler = handlers.get(provider_api) or handlers.get("RunInstances")
-            if not handler:
-                return ProviderResult.error_result(
-                    f"No handler available for provider_api: {provider_api}",
-                    "HANDLER_NOT_FOUND",
-                )
-
-            # Create minimal request for handler
-            from domain.request.aggregate import Request
-            from domain.request.value_objects import RequestType
-
-            request = Request.create_new_request(
-                request_type=RequestType.ACQUIRE,
-                template_id=operation.parameters.get("template_id", "unknown"),
-                machine_count=0,
-                provider_type=self._provider_type,
-                provider_name=self._provider_name,
-            )
-            request.resource_ids = resource_ids
-
-            # Query handler for instances using check_hosts_status
-            instances = handler.check_hosts_status(request)
+            all_instances = []
             
+            if provider_api == "RunInstances":
+                # Use reservation-id filter for RunInstances
+                for resource_id in resource_ids:
+                    response = self._aws_client.ec2_client.describe_instances(
+                        Filters=[{"Name": "reservation-id", "Values": [resource_id]}]
+                    )
+                    for reservation in response.get("Reservations", []):
+                        all_instances.extend(reservation.get("Instances", []))
+            
+            elif provider_api == "EC2Fleet":
+                # Get instance IDs from fleet
+                for resource_id in resource_ids:
+                    response = self._aws_client.ec2_client.describe_fleet_instances(FleetId=resource_id)
+                    instance_ids = [inst["InstanceId"] for inst in response.get("ActiveInstances", [])]
+                    if instance_ids:
+                        inst_response = self._aws_client.ec2_client.describe_instances(InstanceIds=instance_ids)
+                        for reservation in inst_response.get("Reservations", []):
+                            all_instances.extend(reservation.get("Instances", []))
+            
+            else:
+                # Fallback: try reservation-id filter
+                for resource_id in resource_ids:
+                    response = self._aws_client.ec2_client.describe_instances(
+                        Filters=[{"Name": "reservation-id", "Values": [resource_id]}]
+                    )
+                    for reservation in response.get("Reservations", []):
+                        all_instances.extend(reservation.get("Instances", []))
+
             return ProviderResult.success_result(
-                {"instances": instances, "resource_ids": resource_ids},
+                {"instances": all_instances, "resource_ids": resource_ids},
                 {"operation": "describe_resource_instances"},
             )
 
@@ -266,14 +271,16 @@ class AWSInstanceOperationService:
         machine_status = status_mapping.get(state_name, MachineStatus.UNKNOWN)
 
         return {
-            "instance_id": aws_instance.get("InstanceId"),
+            "InstanceId": aws_instance.get("InstanceId"),
             "status": machine_status.value,
-            "private_ip": aws_instance.get("PrivateIpAddress"),
-            "public_ip": aws_instance.get("PublicIpAddress"),
-            "launch_time": aws_instance.get("LaunchTime"),
-            "instance_type": aws_instance.get("InstanceType"),
-            "subnet_id": aws_instance.get("SubnetId"),
-            "vpc_id": aws_instance.get("VpcId"),
-            "availability_zone": aws_instance.get("Placement", {}).get("AvailabilityZone"),
-            "provider_type": "aws",
+            "PrivateIpAddress": aws_instance.get("PrivateIpAddress"),
+            "PublicIpAddress": aws_instance.get("PublicIpAddress"),
+            "LaunchTime": aws_instance.get("LaunchTime"),
+            "InstanceType": aws_instance.get("InstanceType"),
+            "SubnetId": aws_instance.get("SubnetId"),
+            "VpcId": aws_instance.get("VpcId"),
+            "Placement": {"AvailabilityZone": aws_instance.get("Placement", {}).get("AvailabilityZone")},
+            "Tags": aws_instance.get("Tags", []),
+            "PrivateDnsName": aws_instance.get("PrivateDnsName"),
+            "PublicDnsName": aws_instance.get("PublicDnsName"),
         }

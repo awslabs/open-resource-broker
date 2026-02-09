@@ -31,7 +31,7 @@ class GetProviderMetricsQuery(Query, BaseModel):
     model_config = ConfigDict(frozen=True)
 
     provider_name: Optional[str] = None
-    time_range: Optional[str] = "1h"
+    timeframe: Optional[str] = "1h"
     detailed: bool = False
 
 

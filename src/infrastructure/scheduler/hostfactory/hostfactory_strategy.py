@@ -905,6 +905,10 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         """Format template for provider operations using internal format (no field mapping)."""
         return template.to_dict()
 
+    def format_machine_for_display(self, machine_dict: dict[str, Any]) -> dict[str, Any]:
+        """Format machine dict for display using HostFactory field mapper."""
+        return self.field_mapper.map_output_fields(machine_dict, copy_unmapped=False)
+
     def format_request_for_display(self, request: RequestDTO) -> dict[str, Any]:
         """Format RequestDTO for display using HostFactory field mapper."""
         return request.to_dict()  # Use DTO's to_dict() method

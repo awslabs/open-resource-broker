@@ -25,6 +25,7 @@ class MachineSerializer:
             return {
                 # Core machine identification
                 "machine_id": str(machine.machine_id.value),
+                "name": machine.name,
                 "template_id": machine.template_id,
                 "request_id": machine.request_id,
                 "return_request_id": machine.return_request_id,
@@ -38,6 +39,8 @@ class MachineSerializer:
                 # Network configuration
                 "private_ip": machine.private_ip,
                 "public_ip": machine.public_ip,
+                "private_dns_name": machine.private_dns_name,
+                "public_dns_name": machine.public_dns_name,
                 "subnet_id": machine.subnet_id,
                 "security_group_ids": machine.security_group_ids,
                 # Machine state
@@ -90,6 +93,7 @@ class MachineSerializer:
             # Build machine data with additional fields
             machine_data = {
                 "machine_id": MachineId(value=data["machine_id"]),
+                "name": data.get("name", data["machine_id"]),  # Fallback to machine_id
                 "template_id": data["template_id"],
                 "request_id": data.get("request_id"),
                 "return_request_id": data.get("return_request_id"),
@@ -103,6 +107,8 @@ class MachineSerializer:
                 # Network configuration
                 "private_ip": data.get("private_ip"),
                 "public_ip": data.get("public_ip"),
+                "private_dns_name": data.get("private_dns_name"),
+                "public_dns_name": data.get("public_dns_name"),
                 "subnet_id": data.get("subnet_id"),
                 "security_group_ids": data.get("security_group_ids", []),
                 # Machine state
@@ -334,6 +340,10 @@ class MachineRepositoryImpl(MachineRepositoryInterface):
         except Exception as e:
             self.logger.error("Failed to find all machines: %s", e)
             raise
+
+    def get_all(self) -> list[Machine]:
+        """Return all machines from the repository."""
+        return self.find_all()
 
     @handle_infrastructure_exceptions(context="machine_repository_delete")
     def delete(self, machine_id: MachineId) -> None:
