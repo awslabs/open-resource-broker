@@ -16,14 +16,8 @@ class GetRequestQuery(Query, BaseModel):
 
     request_id: str
     long: bool = False
+    lightweight: bool = False
 
-
-class GetRequestStatusQuery(Query, BaseModel):
-    """Query to get request status."""
-
-    model_config = ConfigDict(frozen=True)
-
-    request_id: str
 
 
 class ListActiveRequestsQuery(Query, BaseModel):

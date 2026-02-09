@@ -116,7 +116,7 @@ class SDKMethodDiscovery:
 
         Examples:
         - ListTemplatesQuery -> list_templates
-        - GetRequestStatusQuery -> get_request_status
+        - GetRequestQuery -> get_request
         """
         name = query_type.__name__
         if name.endswith("Query"):

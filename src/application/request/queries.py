@@ -5,13 +5,6 @@ from typing import Optional
 from application.dto.base import BaseQuery
 
 
-class GetRequestStatusQuery(BaseQuery):
-    """Query to get request status."""
-
-    request_id: str
-    include_machines: bool = True
-
-
 class ListRequestsQuery(BaseQuery):
     """Query to list requests with optional filtering."""
 

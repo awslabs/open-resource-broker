@@ -10,7 +10,6 @@ from application.dto.commands import (
 )
 from application.dto.queries import (
     GetRequestQuery,
-    GetRequestStatusQuery,
     GetTemplateQuery,
     ListActiveRequestsQuery,
     ListMachinesQuery,
@@ -271,11 +270,11 @@ class CLICommandFactory:
         request_id: str,
         include_machines: bool = True,
         **kwargs: Any,
-    ) -> GetRequestStatusQuery:
+    ) -> GetRequestQuery:
         """Create query to get request status."""
-        return GetRequestStatusQuery(
+        return GetRequestQuery(
             request_id=request_id,
-            include_machines=include_machines,
+            lightweight=False,  # CLI status should show full details including machines
         )
 
     def create_list_requests_query(

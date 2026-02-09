@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, Optional
 from api.models import RequestStatusModel
 from api.validation import RequestValidator, ValidationException
 from application.base.infrastructure_handlers import BaseAPIHandler, RequestContext
-from application.dto.queries import GetRequestQuery, GetRequestStatusQuery, ListActiveRequestsQuery
+from application.dto.queries import GetRequestQuery, ListActiveRequestsQuery
 from application.request.dto import RequestStatusResponse
 from domain.base.dependency_injection import injectable
 from domain.base.ports import ErrorHandlingPort, LoggingPort
@@ -326,8 +326,8 @@ class GetRequestStatusRESTHandler(BaseAPIHandler[dict[str, Any], RequestStatusRe
                     # Get full request details (including machines) via request query
                     query = GetRequestQuery(request_id=request_id, long=long)
                 else:
-                    # Get basic request status via lightweight status query
-                    query = GetRequestStatusQuery(request_id=request_id)
+                    # Get basic request status via lightweight query
+                    query = GetRequestQuery(request_id=request_id, lightweight=True)
 
                 return await self._query_bus.execute(query)
             except RequestNotFoundError:

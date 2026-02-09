@@ -94,19 +94,16 @@ def register_query_handlers_with_bus(container: DIContainer) -> None:
         try:
             from application.dto.queries import (
                 GetRequestQuery,
-                GetRequestStatusQuery,
                 ListActiveRequestsQuery,
                 ListReturnRequestsQuery,
             )
             from application.queries.handlers import (
                 GetRequestHandler,
-                GetRequestStatusQueryHandler,
                 ListActiveRequestsHandler,
                 ListReturnRequestsHandler,
             )
 
             query_bus.register(GetRequestQuery, container.get(GetRequestHandler))
-            query_bus.register(GetRequestStatusQuery, container.get(GetRequestStatusQueryHandler))
             query_bus.register(ListActiveRequestsQuery, container.get(ListActiveRequestsHandler))
             query_bus.register(ListReturnRequestsQuery, container.get(ListReturnRequestsHandler))
 

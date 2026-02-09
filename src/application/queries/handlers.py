@@ -9,7 +9,6 @@ from application.decorators import query_handler
 from application.dto.queries import (
     GetMachineQuery,
     GetRequestQuery,
-    GetRequestStatusQuery,
     GetTemplateQuery,
     ListActiveRequestsQuery,
     ListMachinesQuery,
@@ -75,6 +74,12 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
 
                 if not request:
                     raise EntityNotFoundError("Request", request_id)
+
+            # Lightweight mode: return basic request data without machine fetching or provider sync
+            if query.lightweight:
+                request_dto = RequestDTO.from_domain(request, machine_references=[])
+                self.logger.info("Retrieved lightweight request: %s", query.request_id)
+                return request_dto
 
             # Trigger population command if needed (no direct writes in query)
             if request.needs_machine_id_population():
@@ -1039,49 +1044,6 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
         except Exception as e:
             self.logger.error("Failed to determine request status from machines: %s", e)
             return (None, None)
-
-
-@query_handler(GetRequestStatusQuery)
-class GetRequestStatusQueryHandler(BaseQueryHandler[GetRequestStatusQuery, RequestDTO]):
-    """Handler for getting request status."""
-
-    def __init__(
-        self,
-        uow_factory: UnitOfWorkFactory,
-        logger: LoggingPort,
-        error_handler: ErrorHandlingPort,
-    ) -> None:
-        super().__init__(logger, error_handler)
-        self.uow_factory = uow_factory
-
-    async def execute_query(self, query: GetRequestStatusQuery) -> RequestDTO:
-        """Execute get request status query."""
-        self.logger.info("Getting status for request: %s", query.request_id)
-
-        try:
-            # Use GetRequestQuery to get full request with machines
-            from application.dto.queries import GetRequestQuery
-            get_request_query = GetRequestQuery(request_id=query.request_id)
-            
-            # Get the full request handler to reuse its logic
-            from infrastructure.di.container import get_container
-            from infrastructure.di.buses import QueryBus
-            
-            container = get_container()
-            query_bus = container.get(QueryBus)
-            
-            # Execute the full request query which includes machine fetching
-            request_dto = await query_bus.execute(get_request_query)
-            
-            self.logger.info("Request %s status: %s", query.request_id, request_dto.status)
-            return request_dto
-
-        except EntityNotFoundError:
-            self.logger.error("Request not found: %s", query.request_id)
-            raise
-        except Exception as e:
-            self.logger.error("Failed to get request status: %s", e)
-            raise
 
 
 @query_handler(ListActiveRequestsQuery)
