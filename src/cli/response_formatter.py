@@ -67,12 +67,22 @@ class CLIResponseFormatter:
             if self._is_success_with_exit_code(response):
                 return self._format_success_with_exit_code(response, output_format)
             
-            # Extract data from response
-            data = self._extract_response_data(response)
-            
             # Apply scheduler-specific formatting if available
             if self.scheduler_strategy and command_context:
-                data = self._apply_scheduler_formatting(data, command_context)
+                # For request_status, pass original response before data extraction
+                if command_context == "request_status":
+                    formatted_data = self._apply_scheduler_formatting(response, command_context)
+                    if formatted_data is not response:
+                        return format_output(formatted_data, output_format)
+                else:
+                    data = self._extract_response_data(response)
+                    formatted_data = self._apply_scheduler_formatting(data, command_context)
+                    if formatted_data is not data:
+                        return format_output(formatted_data, output_format)
+            
+            # Extract data from response for default formatting
+            if 'data' not in locals():
+                data = self._extract_response_data(response)
             
             # Format using existing CLI formatters
             formatted_output = format_output(data, output_format)
@@ -103,6 +113,13 @@ class CLIResponseFormatter:
         if not args:
             return None
         
+        # Special case: request status should use detailed status formatting
+        resource = getattr(args, 'resource', None)
+        action = getattr(args, 'action', None)
+        
+        if resource == "requests" and action == "status":
+            return "request_status"
+        
         # Map resource names to contexts
         resource_context_map = {
             "templates": "templates",
@@ -115,7 +132,6 @@ class CLIResponseFormatter:
             "provider": "providers"
         }
         
-        resource = getattr(args, 'resource', None)
         return resource_context_map.get(resource)
 
     def _is_error_response(self, response: Any) -> bool:
@@ -260,7 +276,11 @@ class CLIResponseFormatter:
         
         try:
             # Apply context-specific formatting
-            if context == "templates":
+            if context == "request_status" and hasattr(self.scheduler_strategy, 'format_request_status_response'):
+                # For request status queries, pass RequestDTO directly to scheduler strategy
+                return self.scheduler_strategy.format_request_status_response([data])
+            
+            elif context == "templates":
                 # For templates list, use format_templates_response for the whole list
                 if isinstance(data, list) and hasattr(self.scheduler_strategy, 'format_templates_response'):
                     return self.scheduler_strategy.format_templates_response(data)
