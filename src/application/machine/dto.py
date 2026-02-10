@@ -20,7 +20,7 @@ class MachineDTO(BaseDTO):
     private_ip: str
     public_ip: Optional[str] = None
     result: str  # 'executing', 'fail', or 'succeed'
-    launch_time: Optional[str] = None  # ISO timestamp string
+    launch_time: Optional[int] = None  # Unix timestamp (backward compatible)
     message: str = ""
     provider_api: Optional[str] = None
     provider_name: Optional[str] = None

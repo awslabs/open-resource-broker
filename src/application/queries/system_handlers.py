@@ -2,8 +2,7 @@
 
 from typing import TYPE_CHECKING, Any
 
-if TYPE_CHECKING:
-    from domain.services.timestamp_service import TimestampService
+from domain.services.timestamp_service import TimestampService
 
 from application.base.handlers import BaseQueryHandler
 from application.decorators import query_handler
@@ -112,7 +111,7 @@ class GetProviderConfigHandler(BaseQueryHandler[GetProviderConfigQuery, Provider
         logger: LoggingPort,
         container: ContainerPort,
         error_handler: ErrorHandlingPort,
-        timestamp_service: "TimestampService",
+        timestamp_service: TimestampService,
     ) -> None:
         """
         Initialize get provider config handler.
@@ -287,7 +286,7 @@ class GetSystemStatusHandler(BaseQueryHandler[GetSystemStatusQuery, SystemStatus
         logger: LoggingPort,
         container: ContainerPort,
         error_handler: ErrorHandlingPort,
-        timestamp_service: "TimestampService",
+        timestamp_service: TimestampService,
     ) -> None:
         """
         Initialize get system status handler.
@@ -383,7 +382,6 @@ class GetProviderMetricsHandler(BaseQueryHandler[GetProviderMetricsQuery, Provid
 
         try:
             from datetime import datetime, timedelta, timezone
-            from infrastructure.utilities.timestamp_utils import to_iso_timestamp
 
             # Calculate time range based on query timeframe
             end_time = datetime.now(timezone.utc)

@@ -26,6 +26,18 @@ class ISOTimestampService(TimestampService):
             
         return dt.isoformat()
     
+    def format_for_dto(self, timestamp: Union[datetime, float, int, None]) -> int | None:
+        """Format timestamp to unix timestamp for DTO backward compatibility."""
+        if timestamp is None:
+            return None
+            
+        if isinstance(timestamp, (int, float)):
+            return int(timestamp)
+        elif isinstance(timestamp, datetime):
+            return int(timestamp.timestamp())
+        else:
+            return None
+    
     def current_timestamp(self) -> str:
         """Get current timestamp in ISO format with UTC timezone."""
         return datetime.now(timezone.utc).isoformat()

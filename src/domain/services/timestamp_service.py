@@ -10,7 +10,12 @@ class TimestampService(ABC):
     
     @abstractmethod
     def format_for_display(self, timestamp: Union[datetime, float, int, None]) -> str | None:
-        """Format timestamp for user display."""
+        """Format timestamp for user display (ISO format)."""
+        pass
+    
+    @abstractmethod
+    def format_for_dto(self, timestamp: Union[datetime, float, int, None]) -> int | None:
+        """Format timestamp for DTO (unix timestamp for backward compatibility)."""
         pass
     
     @abstractmethod

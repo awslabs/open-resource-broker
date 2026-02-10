@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Any, TypeVar, TYPE_CHECKING
+from typing import Any, TypeVar
 
-if TYPE_CHECKING:
-    from domain.services.timestamp_service import TimestampService
-    from domain.services.filter_service import FilterService
+from domain.services.timestamp_service import TimestampService
+from domain.services.filter_service import FilterService
 
 from application.base.handlers import BaseQueryHandler
 from application.decorators import query_handler
@@ -20,6 +19,7 @@ from application.dto.queries import (
     ListTemplatesQuery,
     ValidateTemplateQuery,
 )
+from application.machine.queries import ListMachinesQuery as MachineListQuery
 from application.request.queries import ListRequestsQuery
 from application.dto.responses import MachineDTO, RequestDTO
 from application.dto.system import ValidationDTO
@@ -990,7 +990,7 @@ class GetMachineHandler(BaseQueryHandler[GetMachineQuery, MachineDTO]):
         uow_factory: UnitOfWorkFactory,
         logger: LoggingPort,
         error_handler: ErrorHandlingPort,
-        timestamp_service: "TimestampService",
+        timestamp_service: TimestampService,
     ) -> None:
         super().__init__(logger, error_handler)
         self.uow_factory = uow_factory
@@ -1006,8 +1006,6 @@ class GetMachineHandler(BaseQueryHandler[GetMachineQuery, MachineDTO]):
                 if not machine:
                     raise EntityNotFoundError("Machine", query.machine_id)
 
-                from infrastructure.utilities.timestamp_utils import to_iso_timestamp
-                
                 # Convert to DTO with available fields
                 machine_dto = MachineDTO(
                     machine_id=str(machine.machine_id),
@@ -1019,7 +1017,7 @@ class GetMachineHandler(BaseQueryHandler[GetMachineQuery, MachineDTO]):
                     private_dns_name=machine.private_dns_name,
                     public_dns_name=machine.public_dns_name,
                     result=MachineDTO._get_result_status(machine.status.value),
-                    launch_time=self.timestamp_service.format_for_display(machine.launch_time),
+                    launch_time=self.timestamp_service.format_for_dto(machine.launch_time),
                     message=machine.status_reason or "",
                     provider_api=machine.provider_api,
                     provider_name=machine.provider_name,
@@ -1039,8 +1037,8 @@ class GetMachineHandler(BaseQueryHandler[GetMachineQuery, MachineDTO]):
             raise
 
 
-@query_handler(ListMachinesQuery)
-class ListMachinesHandler(BaseQueryHandler[ListMachinesQuery, list[MachineDTO]]):
+@query_handler(MachineListQuery)
+class ListMachinesHandler(BaseQueryHandler[MachineListQuery, list[MachineDTO]]):
     """Handler for listing machines."""
 
     def __init__(
@@ -1050,8 +1048,8 @@ class ListMachinesHandler(BaseQueryHandler[ListMachinesQuery, list[MachineDTO]])
         error_handler: ErrorHandlingPort,
         container: ContainerPort,
         command_bus: CommandBus,
-        timestamp_service: "TimestampService",
-        filter_service: "FilterService",
+        timestamp_service: TimestampService,
+        filter_service: FilterService,
     ) -> None:
         super().__init__(logger, error_handler)
         self.uow_factory = uow_factory
@@ -1064,7 +1062,7 @@ class ListMachinesHandler(BaseQueryHandler[ListMachinesQuery, list[MachineDTO]])
         from application.services.machine_sync_service import MachineSyncService
         self._machine_sync_service = MachineSyncService(command_bus, container, logger)
 
-    async def execute_query(self, query: ListMachinesQuery) -> list[MachineDTO]:
+    async def execute_query(self, query: MachineListQuery) -> list[MachineDTO]:
         """Execute list machines query."""
         self.logger.info("Listing machines")
 
@@ -1114,7 +1112,7 @@ class ListMachinesHandler(BaseQueryHandler[ListMachinesQuery, list[MachineDTO]])
                         private_dns_name=machine.private_dns_name,
                         public_dns_name=machine.public_dns_name,
                         result=MachineDTO._get_result_status(machine.status.value),
-                        launch_time=self.timestamp_service.format_for_display(machine.launch_time),
+                        launch_time=self.timestamp_service.format_for_dto(machine.launch_time),
                         message=machine.status_reason or "",
                         provider_api=machine.provider_api,
                         provider_name=machine.provider_name,

@@ -13,11 +13,11 @@ from application.dto.queries import (
     GetRequestQuery,
     GetTemplateQuery,
     ListActiveRequestsQuery,
-    ListMachinesQuery,
     ListReturnRequestsQuery,
     ListTemplatesQuery,
     ValidateTemplateQuery,
 )
+from application.machine.queries import ListMachinesQuery
 from application.machine.commands import (
     RegisterMachineCommand,
     UpdateMachineStatusCommand,
@@ -357,9 +357,12 @@ class CLICommandFactory:
             filters["request_id"] = request_id
         
         return ListMachinesQuery(
-            filters=filters,
-            pagination={"limit": limit, "offset": offset},
+            template_id=template_id,
+            status=status,
+            request_id=request_id,
             filter_expressions=kwargs.get("filter_expressions", []),
+            limit=limit,
+            offset=offset,
         )
 
     def create_get_machine_query(
@@ -808,7 +811,7 @@ class CLICommandFactory:
                     request_id=args.get("request_id"),
                     limit=args.get("limit", 50),
                     offset=args.get("offset", 0),
-                    filter_expressions=args.get("filter", []),
+                    filter_expressions=args.get("filter") or [],
                 )
             elif command_action == "request":
                 # Alias for requests create
