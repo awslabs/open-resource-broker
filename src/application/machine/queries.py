@@ -2,6 +2,7 @@
 
 from typing import Optional
 
+from pydantic import Field
 from application.dto.base import BaseQuery
 
 
@@ -18,7 +19,7 @@ class ListMachinesQuery(BaseQuery):
     template_id: Optional[str] = None
     status: Optional[str] = None
     request_id: Optional[str] = None
-    filter_expressions: list[str] = []  # Raw filter expressions from CLI
+    filter_expressions: list[str] = Field(default_factory=list)  # Raw filter expressions from CLI
     limit: int = 50
     offset: int = 0
 

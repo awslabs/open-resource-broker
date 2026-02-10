@@ -7,8 +7,7 @@ leveraging the Provider Registry for clean CQRS interfaces.
 import time
 from typing import Any, TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from domain.services.timestamp_service import TimestampService
+from domain.services.timestamp_service import TimestampService
 
 from application.base.handlers import BaseQueryHandler
 from application.decorators import query_handler
@@ -35,7 +34,7 @@ class GetProviderHealthHandler(BaseQueryHandler[GetProviderHealthQuery, Provider
         self,
         logger: LoggingPort,
         error_handler: ErrorHandlingPort,
-        timestamp_service: "TimestampService",
+        timestamp_service: TimestampService,
     ) -> None:
         """
         Initialize provider health handler.
@@ -251,6 +250,7 @@ class GetProviderMetricsHandler(BaseQueryHandler[GetProviderMetricsQuery, dict[s
         self,
         logger: LoggingPort,
         error_handler: ErrorHandlingPort,
+        timestamp_service: TimestampService,
     ) -> None:
         """
         Initialize provider metrics handler.
@@ -258,8 +258,10 @@ class GetProviderMetricsHandler(BaseQueryHandler[GetProviderMetricsQuery, dict[s
         Args:
             logger: Logging port for operation logging
             error_handler: Error handling port for exception management
+            timestamp_service: Service for timestamp formatting
         """
         super().__init__(logger, error_handler)
+        self.timestamp_service = timestamp_service
 
     async def execute_query(self, query: GetProviderMetricsQuery) -> dict[str, Any]:
         """Execute provider metrics query."""
@@ -279,11 +281,10 @@ class GetProviderMetricsHandler(BaseQueryHandler[GetProviderMetricsQuery, dict[s
                 }
 
             # Get basic metrics (registry doesn't store detailed metrics)
-            from infrastructure.utilities.timestamp_utils import now_iso
             
             metrics = {
                 "provider_name": query.provider_name,
-                "timestamp": now_iso(),
+                "timestamp": self.timestamp_service.current_timestamp(),
                 "status": "active",
                 "registered_at": "unknown",  # Registry doesn't track registration time
             }
