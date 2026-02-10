@@ -146,6 +146,17 @@ class GetProviderConfigHandler(BaseQueryHandler[GetProviderConfigQuery, Provider
                 )
                 default_provider = active_providers[0].name if active_providers else None
                 
+                # Get last updated time from config file
+                last_updated = None
+                if config_sources.get("config_file"):
+                    import os
+                    from datetime import datetime
+                    try:
+                        mtime = os.path.getmtime(config_sources["config_file"])
+                        last_updated = datetime.fromtimestamp(mtime)
+                    except (OSError, ValueError):
+                        pass
+                
                 return ProviderConfigDTO(
                     provider_mode=(
                         provider_config.get_mode().value
@@ -160,6 +171,7 @@ class GetProviderConfigHandler(BaseQueryHandler[GetProviderConfigQuery, Provider
                     configuration_source=config_sources["primary_source"],
                     config_file=config_sources.get("config_file"),
                     template_file=config_sources.get("template_file"),
+                    last_updated=last_updated,
                 )
             else:
                 # Fallback for legacy configuration
