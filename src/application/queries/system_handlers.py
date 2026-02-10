@@ -150,10 +150,10 @@ class GetProviderConfigHandler(BaseQueryHandler[GetProviderConfigQuery, Provider
                 last_updated = None
                 if config_sources.get("config_file"):
                     import os
-                    from datetime import datetime
+                    from infrastructure.utilities.timestamp_utils import to_iso_timestamp
                     try:
                         mtime = os.path.getmtime(config_sources["config_file"])
-                        last_updated = datetime.fromtimestamp(mtime)
+                        last_updated = to_iso_timestamp(mtime)
                     except (OSError, ValueError):
                         pass
                 
@@ -298,13 +298,13 @@ class GetSystemStatusHandler(BaseQueryHandler[GetSystemStatusQuery, SystemStatus
 
         try:
             import time
-            from datetime import datetime
+            from infrastructure.utilities.timestamp_utils import now_iso, to_iso_timestamp
 
             # Get basic system information
             system_status = {
                 "status": "operational",
-                "timestamp": datetime.utcnow().isoformat(),
-                "uptime": time.time(),  # Simplified uptime
+                "timestamp": now_iso(),
+                "uptime": to_iso_timestamp(time.time()),
                 "components": {},
             }
 
@@ -371,10 +371,11 @@ class GetProviderMetricsHandler(BaseQueryHandler[GetProviderMetricsQuery, Provid
         self.logger.info("Getting provider metrics for timeframe: %s", query.timeframe)
 
         try:
-            from datetime import datetime, timedelta
+            from datetime import datetime, timedelta, timezone
+            from infrastructure.utilities.timestamp_utils import to_iso_timestamp
 
             # Calculate time range based on query timeframe
-            end_time = datetime.utcnow()
+            end_time = datetime.now(timezone.utc)
             if query.timeframe == "1h":
                 start_time = end_time - timedelta(hours=1)
             elif query.timeframe == "24h":
