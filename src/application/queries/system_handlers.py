@@ -135,6 +135,9 @@ class GetProviderConfigHandler(BaseQueryHandler[GetProviderConfigQuery, Provider
             if hasattr(config_manager, "get_provider_config"):
                 provider_config = config_manager.get_provider_config()
 
+                # Get full configuration sources
+                config_sources = config_manager.get_configuration_sources()
+                
                 return ProviderConfigDTO(
                     provider_mode=(
                         provider_config.get_mode().value
@@ -151,7 +154,9 @@ class GetProviderConfigHandler(BaseQueryHandler[GetProviderConfigQuery, Provider
                         if hasattr(provider_config, "get_active_providers")
                         else 0
                     ),
-                    configuration_source=self._get_configuration_source(config_manager),
+                    configuration_source=config_sources["primary_source"],
+                    config_file=config_sources.get("config_file"),
+                    template_file=config_sources.get("template_file"),
                 )
             else:
                 # Fallback for legacy configuration

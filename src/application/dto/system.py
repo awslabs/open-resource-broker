@@ -23,6 +23,8 @@ class ProviderConfigDTO(BaseDTO):
     configuration_source: str = Field(
         description="Source of configuration (e.g., 'file', 'environment')"
     )
+    config_file: Optional[str] = Field(None, description="Path to configuration file being used")
+    template_file: Optional[str] = Field(None, description="Path to template file being used")
     last_updated: Optional[datetime] = Field(None, description="Last configuration update time")
 
 
