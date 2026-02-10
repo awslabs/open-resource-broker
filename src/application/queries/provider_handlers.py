@@ -79,19 +79,23 @@ class GetProviderHealthHandler(BaseQueryHandler[GetProviderHealthQuery, Provider
             # Get health information from registry
             health_status = registry.check_strategy_health(provider_name)
             
+            from infrastructure.utilities.timestamp_utils import now_iso, to_iso_timestamp
+            
             health_info = {
                 "provider_name": provider_name,
                 "status": "active",
                 "health": "healthy" if health_status and health_status.is_healthy else "unhealthy",
-                "last_check": time.time(),
+                "last_check": now_iso(),
                 "message": getattr(health_status, 'message', None) or getattr(health_status, 'error_message', None) or "No health data available",
             }
 
             if health_status:
                 health_info.update({
                     "details": getattr(health_status, 'details', {}),
-                    "timestamp": getattr(health_status, 'timestamp', time.time()),
+                    "timestamp": to_iso_timestamp(getattr(health_status, 'timestamp', time.time())),
                 })
+            else:
+                health_info["timestamp"] = now_iso()
 
             self.logger.info("Provider %s health: %s", provider_name, health_info["health"])
             return health_info
@@ -271,9 +275,11 @@ class GetProviderMetricsHandler(BaseQueryHandler[GetProviderMetricsQuery, dict[s
                 }
 
             # Get basic metrics (registry doesn't store detailed metrics)
+            from infrastructure.utilities.timestamp_utils import now_iso
+            
             metrics = {
                 "provider_name": query.provider_name,
-                "timestamp": time.time(),
+                "timestamp": now_iso(),
                 "status": "active",
                 "registered_at": "unknown",  # Registry doesn't track registration time
             }

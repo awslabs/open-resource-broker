@@ -1000,6 +1000,8 @@ class GetMachineHandler(BaseQueryHandler[GetMachineQuery, MachineDTO]):
                 if not machine:
                     raise EntityNotFoundError("Machine", query.machine_id)
 
+                from infrastructure.utilities.timestamp_utils import to_iso_timestamp
+                
                 # Convert to DTO with available fields
                 machine_dto = MachineDTO(
                     machine_id=str(machine.machine_id),
@@ -1011,7 +1013,7 @@ class GetMachineHandler(BaseQueryHandler[GetMachineQuery, MachineDTO]):
                     private_dns_name=machine.private_dns_name,
                     public_dns_name=machine.public_dns_name,
                     result=MachineDTO._get_result_status(machine.status.value),
-                    launch_time=int(machine.launch_time.timestamp()) if machine.launch_time else 0,
+                    launch_time=to_iso_timestamp(machine.launch_time) if machine.launch_time else None,
                     message=machine.status_reason or "",
                     provider_api=machine.provider_api,
                     provider_name=machine.provider_name,
@@ -1057,6 +1059,8 @@ class ListMachinesHandler(BaseQueryHandler[ListMachinesQuery, list[MachineDTO]])
         self.logger.info("Listing machines")
 
         try:
+            from infrastructure.utilities.timestamp_utils import to_iso_timestamp
+            
             with self.uow_factory.create_unit_of_work() as uow:
                 # Get machines based on query filters
                 if query.status:
@@ -1096,7 +1100,7 @@ class ListMachinesHandler(BaseQueryHandler[ListMachinesQuery, list[MachineDTO]])
                         private_dns_name=machine.private_dns_name,
                         public_dns_name=machine.public_dns_name,
                         result=MachineDTO._get_result_status(machine.status.value),
-                        launch_time=int(machine.launch_time.timestamp()) if machine.launch_time else 0,
+                        launch_time=to_iso_timestamp(machine.launch_time) if machine.launch_time else None,
                         message=machine.status_reason or "",
                         provider_api=machine.provider_api,
                         provider_name=machine.provider_name,
