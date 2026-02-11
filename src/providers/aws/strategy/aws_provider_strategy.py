@@ -330,7 +330,15 @@ class AWSProviderStrategy(ProviderStrategy):
 
     def discover_infrastructure_interactive(self, provider_config: dict[str, Any]) -> dict[str, Any]:
         """Discover AWS infrastructure interactively."""
-        return self._get_infrastructure_service().discover_infrastructure_interactive(provider_config)
+        # Create fresh infrastructure service with runtime config
+        config = provider_config.get("config", {})
+        region = config.get("region", self._aws_config.region)
+        profile = config.get("profile", self._aws_config.profile)
+        
+        infrastructure_service = AWSInfrastructureDiscoveryService(
+            region=region, profile=profile, logger=self._logger
+        )
+        return infrastructure_service.discover_infrastructure_interactive(provider_config)
 
     def validate_infrastructure(self, provider_config: dict[str, Any]) -> dict[str, Any]:
         """Validate AWS infrastructure configuration."""
