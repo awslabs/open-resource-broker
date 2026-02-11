@@ -103,6 +103,19 @@ class HostFactoryFieldMapper(SchedulerFieldMapper):
 
     def _apply_output_transformations(self, mapped: Dict[str, Any]) -> Dict[str, Any]:
         """Apply HostFactory-specific transformations."""
+        # Transform machine_types to vmType/vmTypes for HF output
+        if "machine_types" in mapped:
+            machine_types = mapped["machine_types"]
+            if machine_types:
+                if len(machine_types) == 1 and list(machine_types.values())[0] == 1:
+                    # Single type with weight 1 → vmType
+                    mapped["vmType"] = list(machine_types.keys())[0]
+                else:
+                    # Multiple types or custom weights → vmTypes
+                    mapped["vmTypes"] = machine_types
+            # Remove internal field from output
+            del mapped["machine_types"]
+        
         # Transform vmType → HF attributes (vmType is the external field name)
         if "vmType" in mapped:
             mapped["attributes"] = self._create_hf_attributes(mapped["vmType"])
