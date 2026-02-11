@@ -258,6 +258,7 @@ def add_provider_actions(subparsers):
     # Providers show
     providers_show = subparsers.add_parser("show", help="Show provider details")
     add_global_arguments(providers_show)
+    providers_show.add_argument("provider_name", nargs="?", help="Provider name to show (optional - shows default if not specified)")
 
     # Providers health
     providers_health = subparsers.add_parser("health", help="Check provider health")
@@ -282,6 +283,15 @@ def add_provider_actions(subparsers):
     providers_update.add_argument("provider_name", help="Provider instance name")
     providers_update.add_argument("--aws-region", help="Update region")
     providers_update.add_argument("--aws-profile", help="Update profile")
+
+    # Providers set-default
+    providers_set_default = subparsers.add_parser("set-default", help="Set default provider")
+    add_global_arguments(providers_set_default)
+    providers_set_default.add_argument("provider_name", help="Provider name to set as default")
+
+    # Providers get-default
+    providers_get_default = subparsers.add_parser("get-default", help="Show default provider")
+    add_global_arguments(providers_get_default)
 
     # Providers select
     providers_select = subparsers.add_parser("select", help="Select provider strategy")
@@ -814,11 +824,14 @@ async def execute_command(args, app, resource_parsers) -> Union[str, tuple[str, 
             raise ValueError(f"Unknown infrastructure action: {args.action}")
     
     # Handle provider configuration commands directly
-    elif hasattr(args, 'resource') and args.resource in ['providers', 'provider'] and args.action in ['add', 'remove', 'update']:
+    elif hasattr(args, 'resource') and args.resource in ['providers', 'provider'] and args.action in ['add', 'remove', 'update', 'set-default', 'get-default', 'show']:
         from interface.provider_config_handler import (
             handle_provider_add,
             handle_provider_remove,
-            handle_provider_update
+            handle_provider_update,
+            handle_provider_set_default,
+            handle_provider_get_default,
+            handle_provider_show
         )
         
         if args.action == 'add':
@@ -827,6 +840,12 @@ async def execute_command(args, app, resource_parsers) -> Union[str, tuple[str, 
             result = await handle_provider_remove(args)
         elif args.action == 'update':
             result = await handle_provider_update(args)
+        elif args.action == 'set-default':
+            result = await handle_provider_set_default(args)
+        elif args.action == 'get-default':
+            result = await handle_provider_get_default(args)
+        elif args.action == 'show':
+            result = await handle_provider_show(args)
         else:
             raise ValueError(f"Unknown provider config action: {args.action}")
     else:

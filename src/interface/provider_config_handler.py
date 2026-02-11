@@ -191,6 +191,145 @@ async def handle_provider_update(args) -> int:
         return 1
 
 
+async def handle_provider_set_default(args) -> int:
+    """Handle orb providers set-default command."""
+    try:
+        # Load existing config
+        config_file = get_config_location() / "config.json"
+        if not config_file.exists():
+            print_error("No configuration found")
+            return 1
+            
+        with open(config_file) as f:
+            config = json.load(f)
+        
+        # Check if provider exists
+        providers = config.get("provider", {}).get("providers", [])
+        if not any(p["name"] == args.provider_name for p in providers):
+            print_error(f"Provider '{args.provider_name}' not found")
+            return 1
+        
+        # Set default provider
+        config.setdefault("provider", {})["default_provider"] = args.provider_name
+        
+        # Write updated config
+        with open(config_file, "w") as f:
+            json.dump(config, f, indent=2)
+        
+        print_success(f"Default provider set to '{args.provider_name}'")
+        return 0
+        
+    except Exception as e:
+        print_error(f"Failed to set default provider: {e}")
+        logger.error("Failed to set default provider: %s", e)
+        return 1
+
+
+async def handle_provider_get_default(args) -> int:
+    """Handle orb providers get-default command."""
+    try:
+        # Load existing config
+        config_file = get_config_location() / "config.json"
+        if not config_file.exists():
+            print_error("No configuration found")
+            return 1
+            
+        with open(config_file) as f:
+            config = json.load(f)
+        
+        # Get default provider
+        default_provider = config.get("provider", {}).get("default_provider")
+        
+        if default_provider:
+            print_success(f"Default provider: {default_provider}")
+        else:
+            providers = config.get("provider", {}).get("providers", [])
+            if providers:
+                first_provider = providers[0]["name"]
+                print_info(f"No explicit default set. Using first provider: {first_provider}")
+            else:
+                print_error("No providers configured")
+                return 1
+        
+        return 0
+        
+    except Exception as e:
+        print_error(f"Failed to get default provider: {e}")
+        logger.error("Failed to get default provider: %s", e)
+        return 1
+
+
+async def handle_provider_show(args) -> int:
+    """Handle orb providers show command."""
+    try:
+        # Load existing config
+        config_file = get_config_location() / "config.json"
+        if not config_file.exists():
+            print_error("No configuration found")
+            return 1
+            
+        with open(config_file) as f:
+            config = json.load(f)
+        
+        providers = config.get("provider", {}).get("providers", [])
+        
+        if args.provider_name:
+            # Show specific provider
+            provider = None
+            for p in providers:
+                if p["name"] == args.provider_name:
+                    provider = p
+                    break
+            
+            if not provider:
+                print_error(f"Provider '{args.provider_name}' not found")
+                return 1
+            
+            print_info(f"Provider: {provider['name']}")
+            print_info(f"Type: {provider['type']}")
+            print_info(f"Region: {provider['config']['region']}")
+            print_info(f"Profile: {provider['config']['profile']}")
+            print_info(f"Enabled: {provider.get('enabled', True)}")
+            
+            if provider.get("template_defaults"):
+                print_info("Template Defaults:")
+                defaults = provider["template_defaults"]
+                if defaults.get("subnet_ids"):
+                    print_info(f"  Subnets: {', '.join(defaults['subnet_ids'])}")
+                if defaults.get("security_group_ids"):
+                    print_info(f"  Security Groups: {', '.join(defaults['security_group_ids'])}")
+        else:
+            # Show default provider
+            default_provider = config.get("provider", {}).get("default_provider")
+            
+            if default_provider:
+                # Find and show default provider
+                for p in providers:
+                    if p["name"] == default_provider:
+                        print_info(f"Default Provider: {p['name']}")
+                        print_info(f"Type: {p['type']}")
+                        print_info(f"Region: {p['config']['region']}")
+                        print_info(f"Profile: {p['config']['profile']}")
+                        break
+            else:
+                if providers:
+                    first_provider = providers[0]
+                    print_info(f"No explicit default set. First provider: {first_provider['name']}")
+                    print_info(f"Type: {first_provider['type']}")
+                    print_info(f"Region: {first_provider['config']['region']}")
+                    print_info(f"Profile: {first_provider['config']['profile']}")
+                else:
+                    print_error("No providers configured")
+                    return 1
+        
+        return 0
+        
+    except Exception as e:
+        print_error(f"Failed to show provider: {e}")
+        logger.error("Failed to show provider: %s", e)
+        return 1
+
+
 def _test_provider_credentials(provider_type: str, profile: Optional[str], **kwargs) -> tuple[bool, str]:
     """Test provider credentials."""
     if provider_type == "aws":
