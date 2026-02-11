@@ -8,13 +8,13 @@
       "template_id": "EC2Fleet-Instant-OnDemand",
       "name": "EC2 Fleet Instant On-Demand",
       "description": "EC2 Fleet with instant fulfillment using on-demand instances",
-      "instance_type": "t3.medium",
+      "machine_types": {"t3.medium": 1},
       "max_instances": 10,
       "subnet_ids": [],
       "security_group_ids": [],
       "price_type": "ondemand",
       "allocation_strategy": "lowest_price",
-      "instance_types": {},
+
       "network_zones": [],
       "tags": {
         "Environment": "dev",
@@ -28,20 +28,20 @@
       "created_at": "2026-02-08T22:48:58.745443",
       "updated_at": "2026-02-08T22:48:58.745448",
       "is_active": true,
-      "vm_types": {}
+
     },
     {
       "template_id": "EC2Fleet-Instant-Spot",
       "name": "EC2 Fleet Instant Spot",
       "description": "EC2 Fleet with instant fulfillment using spot instances",
-      "instance_type": "t3.medium",
+      "machine_types": {"t3.medium": 1},
       "max_instances": 10,
       "subnet_ids": [],
       "security_group_ids": [],
       "price_type": "spot",
       "allocation_strategy": "price_capacity_optimized",
       "max_price": 0.05,
-      "instance_types": {},
+
       "network_zones": [],
       "tags": {
         "Environment": "dev",
@@ -55,20 +55,20 @@
       "created_at": "2026-02-08T22:48:58.745573",
       "updated_at": "2026-02-08T22:48:58.745575",
       "is_active": true,
-      "vm_types": {}
+
     },
     {
       "template_id": "EC2Fleet-Instant-Mixed",
       "name": "EC2 Fleet Instant Mixed",
       "description": "EC2 Fleet with instant fulfillment using mixed pricing",
-      "instance_type": "t3.medium",
+      "machine_types": {"t3.medium": 1},
       "max_instances": 10,
       "subnet_ids": [],
       "security_group_ids": [],
       "price_type": "heterogeneous",
       "allocation_strategy": "diversified",
       "max_price": 0.05,
-      "instance_types": {},
+
       "network_zones": [],
       "tags": {
         "Environment": "dev",
@@ -83,19 +83,19 @@
       "created_at": "2026-02-08T22:48:58.745595",
       "updated_at": "2026-02-08T22:48:58.745596",
       "is_active": true,
-      "vm_types": {}
+
     },
     {
       "template_id": "EC2Fleet-Request-OnDemand",
       "name": "EC2 Fleet Request On-Demand",
       "description": "EC2 Fleet with request fulfillment using on-demand instances",
-      "instance_type": "t3.medium",
+      "machine_types": {"t3.medium": 1},
       "max_instances": 15,
       "subnet_ids": [],
       "security_group_ids": [],
       "price_type": "ondemand",
       "allocation_strategy": "lowest_price",
-      "instance_types": {},
+
       "network_zones": [],
       "tags": {
         "Environment": "test",
@@ -109,20 +109,20 @@
       "created_at": "2026-02-08T22:48:58.745609",
       "updated_at": "2026-02-08T22:48:58.745610",
       "is_active": true,
-      "vm_types": {}
+
     },
     {
       "template_id": "EC2Fleet-Request-Spot",
       "name": "EC2 Fleet Request Spot",
       "description": "EC2 Fleet with request fulfillment using spot instances",
-      "instance_type": "t3.medium",
+      "machine_types": {"t3.medium": 1},
       "max_instances": 20,
       "subnet_ids": [],
       "security_group_ids": [],
       "price_type": "spot",
       "allocation_strategy": "capacity_optimized",
       "max_price": 0.08,
-      "instance_types": {},
+
       "network_zones": [],
       "tags": {
         "Environment": "test",
@@ -136,7 +136,7 @@
       "created_at": "2026-02-08T22:48:58.745621",
       "updated_at": "2026-02-08T22:48:58.745622",
       "is_active": true,
-      "vm_types": {}
+
     },
     {
       "template_id": "EC2Fleet-Request-Mixed",
@@ -166,19 +166,19 @@
       "created_at": "2026-02-08T22:48:58.745630",
       "updated_at": "2026-02-08T22:48:58.745631",
       "is_active": true,
-      "vm_types": {}
+
     },
     {
       "template_id": "EC2Fleet-Maintain-OnDemand",
       "name": "EC2 Fleet Maintain On-Demand",
       "description": "EC2 Fleet with maintain capacity using on-demand instances",
-      "instance_type": "t3.medium",
+      "machine_types": {"t3.medium": 1},
       "max_instances": 12,
       "subnet_ids": [],
       "security_group_ids": [],
       "price_type": "ondemand",
       "allocation_strategy": "lowest_price",
-      "instance_types": {},
+
       "network_zones": [],
       "tags": {
         "Environment": "prod",
@@ -192,20 +192,20 @@
       "created_at": "2026-02-08T22:48:58.745639",
       "updated_at": "2026-02-08T22:48:58.745639",
       "is_active": true,
-      "vm_types": {}
+
     },
     {
       "template_id": "EC2Fleet-Maintain-Spot",
       "name": "EC2 Fleet Maintain Spot",
       "description": "EC2 Fleet with maintain capacity using spot instances",
-      "instance_type": "t3.medium",
+      "machine_types": {"t3.medium": 1},
       "max_instances": 30,
       "subnet_ids": [],
       "security_group_ids": [],
       "price_type": "spot",
       "allocation_strategy": "price_capacity_optimized",
       "max_price": 0.1,
-      "instance_types": {},
+
       "network_zones": [],
       "tags": {
         "Environment": "prod",
@@ -219,7 +219,7 @@
       "created_at": "2026-02-08T22:48:58.745651",
       "updated_at": "2026-02-08T22:48:58.745651",
       "is_active": true,
-      "vm_types": {}
+
     },
     {
       "template_id": "EC2Fleet-Maintain-Mixed",
@@ -250,7 +250,7 @@
       "created_at": "2026-02-08T22:48:58.745658",
       "updated_at": "2026-02-08T22:48:58.745659",
       "is_active": true,
-      "vm_types": {}
+
     },
     {
       "template_id": "SpotFleet-Request-LowestPrice",
@@ -277,7 +277,7 @@
       "created_at": "2026-02-08T22:48:58.745670",
       "updated_at": "2026-02-08T22:48:58.745671",
       "is_active": true,
-      "vm_types": {}
+
     },
     {
       "template_id": "SpotFleet-Request-Diversified",
@@ -304,7 +304,7 @@
       "created_at": "2026-02-08T22:48:58.745678",
       "updated_at": "2026-02-08T22:48:58.745679",
       "is_active": true,
-      "vm_types": {}
+
     },
     {
       "template_id": "SpotFleet-Request-CapacityOptimized",
@@ -331,7 +331,7 @@
       "created_at": "2026-02-08T22:48:58.745684",
       "updated_at": "2026-02-08T22:48:58.745685",
       "is_active": true,
-      "vm_types": {}
+
     },
     {
       "template_id": "SpotFleet-Maintain-LowestPrice",
@@ -358,7 +358,7 @@
       "created_at": "2026-02-08T22:48:58.745691",
       "updated_at": "2026-02-08T22:48:58.745691",
       "is_active": true,
-      "vm_types": {}
+
     },
     {
       "template_id": "SpotFleet-Maintain-Diversified",
@@ -385,7 +385,7 @@
       "created_at": "2026-02-08T22:48:58.745696",
       "updated_at": "2026-02-08T22:48:58.745697",
       "is_active": true,
-      "vm_types": {}
+
     },
     {
       "template_id": "SpotFleet-Maintain-CapacityOptimized",
@@ -412,19 +412,19 @@
       "created_at": "2026-02-08T22:48:58.745702",
       "updated_at": "2026-02-08T22:48:58.745703",
       "is_active": true,
-      "vm_types": {}
+
     },
     {
       "template_id": "ASG-OnDemand",
       "name": "Auto Scaling Group On-Demand",
       "description": "Auto Scaling Group with on-demand instances only",
-      "instance_type": "t3.medium",
+      "machine_types": {"t3.medium": 1},
       "max_instances": 15,
       "subnet_ids": [],
       "security_group_ids": [],
       "price_type": "ondemand",
       "allocation_strategy": "lowest_price",
-      "instance_types": {},
+
       "network_zones": [],
       "tags": {
         "Environment": "prod",
@@ -436,20 +436,20 @@
       "created_at": "2026-02-08T22:48:58.745711",
       "updated_at": "2026-02-08T22:48:58.745712",
       "is_active": true,
-      "vm_types": {}
+
     },
     {
       "template_id": "ASG-Spot",
       "name": "Auto Scaling Group Spot",
       "description": "Auto Scaling Group with spot instances only",
-      "instance_type": "t3.medium",
+      "machine_types": {"t3.medium": 1},
       "max_instances": 20,
       "subnet_ids": [],
       "security_group_ids": [],
       "price_type": "spot",
       "allocation_strategy": "price_capacity_optimized",
       "max_price": 0.05,
-      "instance_types": {},
+
       "network_zones": [],
       "tags": {
         "Environment": "dev",
@@ -461,7 +461,7 @@
       "created_at": "2026-02-08T22:48:58.745721",
       "updated_at": "2026-02-08T22:48:58.745722",
       "is_active": true,
-      "vm_types": {}
+
     },
     {
       "template_id": "ASG-Mixed",
@@ -487,19 +487,19 @@
       "created_at": "2026-02-08T22:48:58.745731",
       "updated_at": "2026-02-08T22:48:58.745731",
       "is_active": true,
-      "vm_types": {}
+
     },
     {
       "template_id": "RunInstances-OnDemand",
       "name": "Run Instances On-Demand",
       "description": "On-demand instances using RunInstances API",
-      "instance_type": "t3.medium",
+      "machine_types": {"t3.medium": 1},
       "max_instances": 5,
       "subnet_ids": [],
       "security_group_ids": [],
       "price_type": "ondemand",
       "allocation_strategy": "lowest_price",
-      "instance_types": {},
+
       "network_zones": [],
       "tags": {
         "Environment": "dev",
@@ -511,20 +511,20 @@
       "created_at": "2026-02-08T22:48:58.745739",
       "updated_at": "2026-02-08T22:48:58.745740",
       "is_active": true,
-      "vm_types": {}
+
     },
     {
       "template_id": "RunInstances-Spot",
       "name": "Run Instances Spot",
       "description": "Spot instances using RunInstances API",
-      "instance_type": "t3.medium",
+      "machine_types": {"t3.medium": 1},
       "max_instances": 10,
       "subnet_ids": [],
       "security_group_ids": [],
       "price_type": "spot",
       "allocation_strategy": "price_capacity_optimized",
       "max_price": 0.05,
-      "instance_types": {},
+
       "network_zones": [],
       "tags": {
         "Environment": "dev",
@@ -536,7 +536,7 @@
       "created_at": "2026-02-08T22:48:58.745751",
       "updated_at": "2026-02-08T22:48:58.745752",
       "is_active": true,
-      "vm_types": {}
+
     }
   ]
 }
