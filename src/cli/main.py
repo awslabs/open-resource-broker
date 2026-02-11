@@ -923,6 +923,9 @@ async def main() -> None:
         # Handle global AWS overrides
         if hasattr(args, "region") and args.region:
             try:
+                from infrastructure.di.container import get_container
+                from domain.base.ports.configuration_port import ConfigurationPort
+                
                 container = get_container()
                 config = container.get(ConfigurationPort)
                 config.override_aws_region(args.region)
@@ -932,6 +935,9 @@ async def main() -> None:
 
         if hasattr(args, "profile") and args.profile:
             try:
+                from infrastructure.di.container import get_container
+                from domain.base.ports.configuration_port import ConfigurationPort
+                
                 container = get_container()
                 config = container.get(ConfigurationPort)
                 config.override_aws_profile(args.profile)
