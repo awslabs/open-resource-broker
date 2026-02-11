@@ -144,11 +144,9 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         # Apply HostFactory transformations
         mapped = HostFactoryTransformations.apply_transformations(mapped)
 
-        # Complex field handling
-        if "vmTypes" in template and isinstance(template["vmTypes"], dict):
-            mapped["instance_types"] = template["vmTypes"]
-            if "instance_type" not in mapped or not mapped["instance_type"]:
-                mapped["instance_type"] = next(iter(template["vmTypes"].keys()))
+        # Transform machine types from HF format to internal format
+        machine_types_data = self._transform_machine_types_input(template)
+        mapped.update(machine_types_data)
 
         if "attributes" in template:
             mapped["attributes"] = template["attributes"]
