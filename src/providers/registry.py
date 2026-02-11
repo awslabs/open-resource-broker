@@ -299,25 +299,21 @@ class ProviderRegistry(BaseRegistry):
         # Strategy 5: Fallback to default
         return self._select_default_provider(template)
 
-    def _ensure_provider_dependencies(self) -> None:
-        """Ensure provider-specific dependencies are initialized."""
-        self._ensure_dependencies_initialized()
-        
-        if not hasattr(self, '_provider_config') or not self._provider_config:
-            self._provider_config = self._config_port.get_provider_config() if self._config_port else None
-            
-        if not self._metrics:
-            self._metrics = MetricsCollector(config={"METRICS_ENABLED": True})
-
     def select_active_provider(self) -> Any:
         """Select active provider instance from configuration."""
-        self._ensure_provider_dependencies()
+        self._ensure_dependencies_initialized()
         
         if self._active_provider_cache is not None:
             return self._active_provider_cache
 
         if self._logger_port:
             self._logger_port.debug("Selecting active provider using selection policy")
+
+        if not hasattr(self, '_provider_config') or not self._provider_config:
+            self._provider_config = self._config_port.get_provider_config() if self._config_port else None
+            
+        if not self._metrics:
+            self._metrics = MetricsCollector(config={"METRICS_ENABLED": True})
 
         if not self._provider_config:
             raise ValueError("No provider configuration available")
@@ -363,7 +359,12 @@ class ProviderRegistry(BaseRegistry):
         Performs comprehensive validation of template requirements
         against the specified provider's capabilities.
         """
-        self._ensure_provider_dependencies()
+        
+        if not hasattr(self, '_provider_config') or not self._provider_config:
+            self._provider_config = self._config_port.get_provider_config() if self._config_port else None
+            
+        if not self._metrics:
+            self._metrics = MetricsCollector(config={"METRICS_ENABLED": True})
         
         # Get provider config for lazy registration
         provider_config = None

@@ -87,14 +87,19 @@ class BaseRegistry(ABC):
             try:
                 from infrastructure.di.container import get_container
                 from domain.base.ports import LoggingPort, ConfigurationPort
+                from monitoring.metrics import MetricsCollector
                 
                 container = get_container()
                 self._logger_port = container.get(LoggingPort)
                 self._config_port = container.get(ConfigurationPort)
+                self._metrics = container.get(MetricsCollector)
                 self._dependencies_initialized = True
             except Exception:
-                # Fallback to basic logger if DI container not available
-                pass
+                # Fallback if DI container not available
+                self._logger_port = None
+                self._config_port = None
+                self._metrics = None
+                self._dependencies_initialized = True
 
     @abstractmethod
     def register(
