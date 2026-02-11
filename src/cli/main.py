@@ -763,15 +763,32 @@ async def execute_command(args, app, resource_parsers) -> Union[str, tuple[str, 
     query_bus = container.get(QueryBus)
     scheduler_port = container.get(SchedulerPort)
     
-    # Create command or query from CLI args
-    command_or_query = cli_command_factory.create_command_or_query(args)
-    
-    # Execute through appropriate bus
-    from application.dto.base import BaseCommand
-    if isinstance(command_or_query, (Command, BaseCommand)):
-        result = await command_bus.execute(command_or_query)
+    # Handle infrastructure commands directly (not through CQRS)
+    if hasattr(args, 'resource') and args.resource in ['infrastructure', 'infra']:
+        from interface.infrastructure_command_handler import (
+            handle_infrastructure_discover,
+            handle_infrastructure_show, 
+            handle_infrastructure_validate
+        )
+        
+        if args.action == 'discover':
+            result = await handle_infrastructure_discover(args)
+        elif args.action == 'show':
+            result = await handle_infrastructure_show(args)
+        elif args.action == 'validate':
+            result = await handle_infrastructure_validate(args)
+        else:
+            raise ValueError(f"Unknown infrastructure action: {args.action}")
     else:
-        result = await query_bus.execute(command_or_query)
+        # Create command or query from CLI args
+        command_or_query = cli_command_factory.create_command_or_query(args)
+        
+        # Execute through appropriate bus
+        from application.dto.base import BaseCommand
+        if isinstance(command_or_query, (Command, BaseCommand)):
+            result = await command_bus.execute(command_or_query)
+        else:
+            result = await query_bus.execute(command_or_query)
     
     # Format response for CLI output using improved formatter
     formatter = create_cli_formatter(scheduler_port)
