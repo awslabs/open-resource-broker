@@ -814,7 +814,7 @@ async def execute_command(args, app, resource_parsers) -> Union[str, tuple[str, 
             raise ValueError(f"Unknown infrastructure action: {args.action}")
     
     # Handle provider configuration commands directly
-    elif hasattr(args, 'resource') and args.resource == 'providers' and args.action in ['add', 'remove', 'update']:
+    elif hasattr(args, 'resource') and args.resource in ['providers', 'provider'] and args.action in ['add', 'remove', 'update']:
         from interface.provider_config_handler import (
             handle_provider_add,
             handle_provider_remove,
