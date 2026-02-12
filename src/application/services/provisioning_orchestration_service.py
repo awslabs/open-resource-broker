@@ -64,7 +64,7 @@ class ProvisioningOrchestrationService:
             provider_instance_config = config_manager.get_provider_instance_config(selection_result.provider_name)
             provider_config = provider_instance_config.config if provider_instance_config else {}
 
-            result = await self._provider_registry_service.execute_operation(selection_result.provider_name, operation, provider_config)
+            result = await self._provider_registry_service.execute_operation(selection_result.provider_name, operation)
 
             if result.success:
                 self._logger.info("Provider result.data: %s", result.data)

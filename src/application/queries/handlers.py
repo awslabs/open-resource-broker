@@ -207,7 +207,7 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
             
             # Execute operation using Provider Registry Service
             # Pass the full ProviderInstanceConfig object, not just the nested config dict
-            result = await self._provider_registry_service.execute_operation(request.provider_name, operation, provider_instance_config)
+            result = await self._provider_registry_service.execute_operation(request.provider_name, operation)
 
             self.logger.info(
                 "Provider strategy result: success=%s, data_keys=%s",
