@@ -150,6 +150,9 @@ class TemplateConfigurationManager:
             # Apply batch image resolution before converting to DTOs
             resolved_template_dicts = await self._batch_resolve_images(all_template_dicts)
 
+            # Apply deduplication to remove duplicate templates
+            resolved_template_dicts = self._deduplicate_template_dicts(resolved_template_dicts)
+
             # Convert to DTOs with defaults applied
             all_templates = []
             for template_dict in resolved_template_dicts:
@@ -707,6 +710,23 @@ class TemplateConfigurationManager:
         """Clear template cache."""
         self.cache_service.invalidate()
         self.logger.info("Cleared template cache")
+
+    def _deduplicate_template_dicts(self, template_dicts: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        """Deduplicate template dictionaries by template_id."""
+        if not template_dicts:
+            return []
+        
+        seen_ids = set()
+        unique_templates = []
+        
+        for template_dict in template_dicts:
+            template_id = template_dict.get("template_id", template_dict.get("templateId", ""))
+            if template_id and template_id not in seen_ids:
+                seen_ids.add(template_id)
+                unique_templates.append(template_dict)
+        
+        self.logger.debug("Deduplicated %d templates to %d unique", len(template_dicts), len(unique_templates))
+        return unique_templates
 
 
 # Factory function for dependency injection
