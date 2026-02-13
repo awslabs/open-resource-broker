@@ -48,11 +48,15 @@ class TemplateGenerationService:
             # Determine target providers
             providers = self._determine_target_providers(request)
             
-            # Generate templates for each provider
-            results = []
-            for provider in providers:
-                result = await self._generate_templates_for_provider(provider, request)
-                results.append(result)
+            if request.provider_specific:
+                # Provider-specific mode: separate files per provider
+                results = []
+                for provider in providers:
+                    result = await self._generate_templates_for_provider(provider, request)
+                    results.append(result)
+            else:
+                # Generic mode: merge templates by provider type
+                results = await self._generate_merged_templates_by_type(providers, request)
             
             # Calculate summary
             created_results = [r for r in results if r.status == "created"]
@@ -204,17 +208,8 @@ class TemplateGenerationService:
             # Provider-type mode: use specified provider type
             return f"{request.provider_type_filter}_templates.json"
         else:
-            # Generic mode: check for multi-provider scenario
-            active_providers = self._get_active_providers()
-            same_type_providers = [p for p in active_providers if p["type"] == provider_type]
-            
-            if len(same_type_providers) > 1:
-                # Multiple providers of same type: use scheduler strategy for uniqueness
-                config_dict = self._get_config_dict()
-                return self._scheduler_strategy.get_templates_filename(provider_name, provider_type, config_dict)
-            else:
-                # Single provider of this type: use generic type name
-                return f"{provider_type}_templates.json"
+            # Generic mode: use provider_type pattern
+            return f"{provider_type}_templates.json"
 
     def _format_templates(self, examples: List[Dict[str, Any]], request: TemplateGenerationRequest) -> List[Dict[str, Any]]:
         """Format templates using scheduler strategy."""
@@ -296,3 +291,86 @@ class TemplateGenerationService:
                 "name": provider_name,
                 "type": provider_name.split("_")[0] if "_" in provider_name else provider_name,
             }
+
+    async def _generate_merged_templates_by_type(
+        self, 
+        providers: List[Dict[str, str]], 
+        request: TemplateGenerationRequest
+    ) -> List[ProviderTemplateResult]:
+        """Generate merged templates grouped by provider type."""
+        
+        # Group providers by type
+        providers_by_type = {}
+        for provider in providers:
+            provider_type = provider["type"]
+            if provider_type not in providers_by_type:
+                providers_by_type[provider_type] = []
+            providers_by_type[provider_type].append(provider)
+        
+        results = []
+        for provider_type, type_providers in providers_by_type.items():
+            # Collect templates from all providers of this type
+            all_templates = []
+            for provider in type_providers:
+                templates = await self._generate_examples_from_provider(
+                    provider["type"], provider["name"], request.provider_api
+                )
+                all_templates.extend(templates)
+            
+            # Deduplicate templates
+            unique_templates = self._deduplicate_templates(all_templates)
+            
+            # Create single merged file for this provider type
+            filename = f"{provider_type}_templates.json"
+            templates_file = self._get_templates_file_path(filename)
+            
+            # Check for existing file
+            if templates_file.exists() and not request.force_overwrite:
+                results.append(ProviderTemplateResult(
+                    provider=f"{provider_type} (merged)",
+                    filename=filename,
+                    templates_count=0,
+                    path=str(templates_file),
+                    status="skipped",
+                    reason="file_exists"
+                ))
+            else:
+                # Format and write merged templates
+                formatted_templates = self._format_merged_templates(unique_templates, request)
+                self._write_templates_file(templates_file, formatted_templates)
+                
+                results.append(ProviderTemplateResult(
+                    provider=f"{provider_type} (merged)",
+                    filename=filename,
+                    templates_count=len(unique_templates),
+                    path=str(templates_file),
+                    status="created"
+                ))
+        
+        return results
+
+    def _deduplicate_templates(self, templates: List[Any]) -> List[Dict[str, Any]]:
+        """Deduplicate templates by template_id, keeping first occurrence."""
+        seen_ids = set()
+        unique_templates = []
+        
+        for template in templates:
+            # Templates from _generate_examples_from_provider are Template objects
+            if hasattr(template, 'template_id'):
+                template_id = template.template_id
+                template_dict = template.model_dump(exclude_none=True, mode='json')
+            else:
+                # Already a dict
+                template_id = template.get("template_id") or template.get("templateId")
+                template_dict = template
+            
+            if template_id and template_id not in seen_ids:
+                seen_ids.add(template_id)
+                unique_templates.append(template_dict)
+        
+        return unique_templates
+
+    def _format_merged_templates(self, template_dicts: List[Dict[str, Any]], request: TemplateGenerationRequest) -> List[Dict[str, Any]]:
+        """Format merged template dictionaries using scheduler strategy."""
+        # Templates are already dicts, just apply scheduler formatting
+        return self._scheduler_strategy.format_templates_for_generation(template_dicts)
