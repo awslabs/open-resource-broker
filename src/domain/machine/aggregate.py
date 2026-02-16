@@ -35,6 +35,7 @@ class Machine(AggregateRoot):
     # Machine configuration
     instance_type: InstanceType
     image_id: str
+    price_type: Optional[str] = None
 
     # Network configuration
     private_ip: Optional[str] = None
