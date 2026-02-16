@@ -14,6 +14,7 @@ class GetRequestQuery(Query, BaseModel):
 
     model_config = ConfigDict(frozen=True)
 
+    provider_name: Optional[str] = None
     request_id: str
     long: bool = False
     lightweight: bool = False
@@ -25,6 +26,7 @@ class ListActiveRequestsQuery(Query, BaseModel):
 
     model_config = ConfigDict(frozen=True)
     
+    provider_name: Optional[str] = None
     filter_expressions: list[str] = []
 
 
@@ -33,6 +35,7 @@ class ListReturnRequestsQuery(Query, BaseModel):
 
     model_config = ConfigDict(frozen=True)
 
+    provider_name: Optional[str] = None
     status: Optional[str] = None
     requester_id: Optional[str] = None
     filter_expressions: list[str] = []
@@ -43,6 +46,7 @@ class GetTemplateQuery(Query, BaseModel):
 
     model_config = ConfigDict(frozen=True)
 
+    provider_name: Optional[str] = None
     template_id: str
 
 
@@ -51,6 +55,7 @@ class ListTemplatesQuery(Query, BaseModel):
 
     model_config = ConfigDict(frozen=True)
 
+    provider_name: Optional[str] = None
     provider_api: Optional[str] = None
     active_only: bool = True
     filter_expressions: list[str] = []
@@ -69,6 +74,7 @@ class GetMachineQuery(Query, BaseModel):
 
     model_config = ConfigDict(frozen=True)
 
+    provider_name: Optional[str] = None
     machine_id: str
 
 
@@ -77,6 +83,7 @@ class ListMachinesQuery(Query, BaseModel):
 
     model_config = ConfigDict(frozen=True)
 
+    provider_name: Optional[str] = None
     request_id: Optional[str] = None
     status: Optional[str] = None
     active_only: bool = False

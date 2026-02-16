@@ -149,6 +149,16 @@ class ListAvailableProvidersHandler(
             # Get active providers from configuration
             active_providers = provider_config.get_active_providers()
             
+            # Filter by provider name if specified (restore lost functionality)
+            if query.provider_name:
+                active_providers = [p for p in active_providers if p.name == query.provider_name]
+                if not active_providers:
+                    return {
+                        "providers": [],
+                        "count": 0,
+                        "message": f"Provider '{query.provider_name}' not found in configuration",
+                    }
+            
             providers_info = []
             for provider_instance in active_providers:
                 # Get effective handlers using inheritance

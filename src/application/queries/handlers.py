@@ -968,7 +968,7 @@ class GetTemplateHandler(BaseQueryHandler[GetTemplateQuery, TemplateDTO]):
             if self._container.has(TemplateDefaultsService):
                 template_defaults_service = self._container.get(TemplateDefaultsService)
                 resolved_data = template_defaults_service.resolve_template_defaults(
-                    template_data, provider_name=None
+                    template_data, provider_name=query.provider_name
                 )
             else:
                 resolved_data = template_data
@@ -1017,11 +1017,15 @@ class ListTemplatesHandler(BaseQueryHandler[ListTemplatesQuery, list[TemplateDTO
         try:
             template_manager = self._container.get(TemplateConfigurationManager)
 
-            # Get templates with AMI resolution (this should work now that providers are registered)
-            if query.provider_api:
+            # Load templates with provider override if specified
+            if query.provider_name:
+                template_dtos = await template_manager.load_templates(provider_override=query.provider_name)
+            elif query.provider_api:
                 template_dtos = await template_manager.get_templates_by_provider(query.provider_api)
             else:
                 template_dtos = await template_manager.load_templates()
+
+
 
             # Apply generic filters if provided
             if query.filter_expressions:

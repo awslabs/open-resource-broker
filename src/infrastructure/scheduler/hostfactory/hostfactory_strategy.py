@@ -80,7 +80,7 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         
         return paths
 
-    def load_templates_from_path(self, template_path: str) -> list[dict[str, Any]]:
+    def load_templates_from_path(self, template_path: str, provider_override=None) -> list[dict[str, Any]]:
         """Load templates from a specific path."""
         if not os.path.exists(template_path):
             self._logger.debug("Template file not found: %s", template_path)
@@ -97,7 +97,7 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
                     continue
 
                 try:
-                    processed_template = self._map_template_fields(template)
+                    processed_template = self._map_template_fields(template, provider_override)
                     processed_templates.append(processed_template)
                 except Exception as e:
                     self._logger.warning(
@@ -131,7 +131,7 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         except Exception:
             return []
 
-    def _map_template_fields(self, template: dict[str, Any]) -> dict[str, Any]:
+    def _map_template_fields(self, template: dict[str, Any], provider_override=None) -> dict[str, Any]:
         """Map HostFactory fields to internal format with business logic."""
         if template is None:
             raise ValueError("Template cannot be None in field mapping")
@@ -152,13 +152,14 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
             mapped["attributes"] = template["attributes"]
 
         # Business logic - Apply template defaults
+        target_provider = provider_override or self._get_provider_name()
         if self.template_defaults_service:
             mapped["provider_api"] = self.template_defaults_service.resolve_provider_api_default(
                 template
             )
             # Apply all template defaults using the service
             mapped = self.template_defaults_service.resolve_template_defaults(
-                mapped, self._get_provider_name()
+                mapped, target_provider
             )
         else:
             mapped["provider_api"] = template.get(

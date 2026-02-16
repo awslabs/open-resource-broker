@@ -29,6 +29,7 @@ from .template_cache_service import TemplateCacheService, create_template_cache_
 
 if TYPE_CHECKING:
     from application.services.template_defaults_service import TemplateDefaultsService
+    from application.services.provider_registry_service import ProviderRegistryService
 
 
 class TemplateConfigurationError(DomainException):
@@ -81,6 +82,7 @@ class TemplateConfigurationManager:
         storage_service: Optional[TemplateStorageService] = None,
         event_publisher: Optional[EventPublisherPort] = None,
         template_defaults_service: Optional["TemplateDefaultsService"] = None,
+        provider_registry_service: Optional["ProviderRegistryService"] = None,
     ) -> None:
         """
         Initialize the template configuration manager.
@@ -93,12 +95,14 @@ class TemplateConfigurationManager:
             storage_service: Optional storage service (creates default if None)
             event_publisher: Optional event publisher for domain events
             template_defaults_service: Optional service for template defaults
+            provider_registry_service: Optional provider registry service for provider operations
         """
         self.config_manager = config_manager
         self.scheduler_strategy = scheduler_strategy
         self.logger = logger
         self.event_publisher = event_publisher
         self.template_defaults_service = template_defaults_service
+        self.provider_registry_service = provider_registry_service
 
         # Initialize services
         self.cache_service = cache_service or create_template_cache_service("ttl", logger)
@@ -108,7 +112,7 @@ class TemplateConfigurationManager:
 
         self.logger.info("Template configuration manager initialized")
 
-    async def load_templates(self, force_refresh: bool = False) -> list[TemplateDTO]:
+    async def load_templates(self, force_refresh: bool = False, provider_override: Optional[str] = None) -> list[TemplateDTO]:
         """
         Load all templates using cache service and scheduler strategy.
 
@@ -122,10 +126,10 @@ class TemplateConfigurationManager:
             self.cache_service.invalidate()
 
         return await self.cache_service.get_or_load(
-            lambda: self._load_templates_from_scheduler()
+            lambda: self._load_templates_from_scheduler(provider_override)
         )
 
-    async def _load_templates_from_scheduler(self) -> list[TemplateDTO]:
+    async def _load_templates_from_scheduler(self, provider_override: Optional[str] = None) -> list[TemplateDTO]:
         """Load templates using scheduler strategy with batch AMI resolution."""
         try:
             # Get template file paths from scheduler strategy
@@ -140,7 +144,7 @@ class TemplateConfigurationManager:
             for template_path in template_paths:
                 try:
                     # Use scheduler strategy to load and parse templates
-                    template_dicts = self.scheduler_strategy.load_templates_from_path(template_path)
+                    template_dicts = self.scheduler_strategy.load_templates_from_path(template_path, provider_override)
                     all_template_dicts.extend(template_dicts)
 
                 except Exception as e:
@@ -292,25 +296,29 @@ class TemplateConfigurationManager:
         return list(specifications)
 
     async def _resolve_images_via_provider(self, provider_instance: str, image_specifications: list[str]) -> dict[str, str]:
-        """Resolve image specifications via provider registry."""
+        """Resolve image specifications via provider registry service."""
+        if not self.provider_registry_service:
+            self.logger.debug("Provider registry service not available, skipping image resolution")
+            return {}
+        
         try:
-            from providers.registry import get_provider_registry
             from providers.base.strategy import ProviderOperation, ProviderOperationType
             
-            registry = get_provider_registry()
             operation = ProviderOperation(
                 operation_type=ProviderOperationType.RESOLVE_IMAGE,
                 parameters={'image_specifications': image_specifications}
             )
             
-            result = await registry.execute_operation(provider_instance, operation)
-            if result.success:
+            result = await self.provider_registry_service.execute_operation(provider_instance, operation)
+            
+            if result.success and result.data:
                 return result.data.get('resolved_images', {})
             else:
-                self.logger.warning("Image resolution failed for %s: %s", provider_instance, result.error_message)
+                self.logger.warning("Image resolution failed for provider %s: %s", provider_instance, result.error_message)
                 return {}
+                
         except Exception as e:
-            self.logger.error("Failed to resolve images via provider %s: %s", provider_instance, e)
+            self.logger.warning("Image resolution failed for provider %s: %s", provider_instance, e)
             return {}
 
     def _apply_resolved_images(self, templates: list[dict[str, Any]], resolved_images: dict[str, str]) -> list[dict[str, Any]]:
@@ -402,30 +410,20 @@ class TemplateConfigurationManager:
             return True
 
     async def _resolve_amis_via_provider(self, provider_instance: str, ssm_parameters: list[str]) -> dict[str, str]:
-        """Resolve AMI parameters using provider registry."""
+        """Resolve AMI parameters using provider registry service."""
+        if not self.provider_registry_service:
+            self.logger.debug("Provider registry service not available, skipping AMI resolution")
+            return {}
+        
         try:
-            from providers.registry import get_provider_registry
             from providers.base.strategy import ProviderOperation, ProviderOperationType
-            
-            registry = get_provider_registry()
-            
-            # Ensure provider instance is registered (like command handlers do)
-            provider_config = self.config_manager.get_provider_instance_config(provider_instance)
-            if provider_config:
-                registry.ensure_provider_instance_registered_from_config(provider_config)
-            
-            # Check if provider instance is registered
-            if not registry.is_provider_instance_registered(provider_instance):
-                self.logger.debug("Provider instance %s could not be registered, skipping AMI resolution", provider_instance)
-                return {}
             
             operation = ProviderOperation(
                 operation_type=ProviderOperationType.RESOLVE_IMAGE,
                 parameters={"image_specifications": ssm_parameters}
             )
             
-            # Execute operation via provider registry (uses existing strategy if available)
-            result = await registry.execute_operation(provider_instance, operation, provider_config.config)
+            result = await self.provider_registry_service.execute_operation(provider_instance, operation)
             
             if result.success and result.data:
                 return result.data.get("resolved_amis", {})

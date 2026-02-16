@@ -68,6 +68,7 @@ def _register_template_services(container: DIContainer):
     ) -> TemplateConfigurationManager:
         """Create TemplateConfigurationManager."""
         from domain.base.ports.scheduler_port import SchedulerPort
+        from application.services.provider_registry_service import ProviderRegistryService
 
         return TemplateConfigurationManager(
             config_manager=container.get(ConfigurationPort),
@@ -75,6 +76,7 @@ def _register_template_services(container: DIContainer):
             logger=container.get(LoggingPort),
             event_publisher=None,
             template_defaults_service=container.get(TemplateDefaultsPort),
+            provider_registry_service=container.get(ProviderRegistryService),
         )
 
     container.register_singleton(

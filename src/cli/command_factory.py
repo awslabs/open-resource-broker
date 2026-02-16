@@ -170,18 +170,20 @@ class CLICommandFactory:
             filters["template_type"] = template_type
         
         return ListTemplatesQuery(
-            filters=filters,
-            pagination={"limit": limit, "offset": kwargs.get("offset", 0)},
+            provider_name=provider,
+            provider_api=provider_api,
+            active_only=active_only,
             filter_expressions=filter_expressions or [],
         )
 
     def create_get_template_query(
         self,
         template_id: str,
+        provider_name: Optional[str] = None,
         **kwargs: Any,
     ) -> GetTemplateQuery:
         """Create query to get template details."""
-        return GetTemplateQuery(template_id=template_id)
+        return GetTemplateQuery(template_id=template_id, provider_name=provider_name)
 
     def create_create_template_command(
         self,
@@ -272,11 +274,13 @@ class CLICommandFactory:
         self,
         request_id: str,
         include_machines: bool = True,
+        provider_name: Optional[str] = None,
         **kwargs: Any,
     ) -> GetRequestQuery:
         """Create query to get request status."""
         return GetRequestQuery(
             request_id=request_id,
+            provider_name=provider_name,
             lightweight=False,  # CLI status should show full details including machines
         )
 
@@ -287,6 +291,7 @@ class CLICommandFactory:
         limit: int = 50,
         offset: int = 0,
         filter_expressions: Optional[List[str]] = None,
+        provider_name: Optional[str] = None,
         **kwargs: Any,
     ) -> ListRequestsQuery:
         """Create query to list requests."""
@@ -296,6 +301,7 @@ class CLICommandFactory:
             limit=limit,
             offset=offset,
             filter_expressions=filter_expressions or [],
+            provider_name=provider_name,
         )
 
     def create_cancel_request_command(
@@ -351,6 +357,7 @@ class CLICommandFactory:
         request_id: Optional[str] = None,
         limit: int = 50,
         offset: int = 0,
+        provider_name: Optional[str] = None,
         **kwargs: Any,
     ) -> ListMachinesQuery:
         """Create query to list machines."""
@@ -363,6 +370,7 @@ class CLICommandFactory:
             filters["request_id"] = request_id
         
         return ListMachinesQuery(
+            provider_name=provider_name,
             template_id=template_id,
             status=status,
             request_id=request_id,
@@ -544,10 +552,12 @@ class CLICommandFactory:
         filter_healthy_only: bool = False,
         provider_type: Optional[str] = None,
         filter_expressions: Optional[List[str]] = None,
+        provider_name: Optional[str] = None,
         **kwargs: Any,
     ) -> ListAvailableProvidersQuery:
         """Create query to list available providers."""
         return ListAvailableProvidersQuery(
+            provider_name=provider_name,
             include_health=include_health,
             include_capabilities=include_capabilities,
             include_metrics=include_metrics,
@@ -722,6 +732,7 @@ class CLICommandFactory:
         if command_group == "templates":
             if command_action == "list":
                 return ListTemplatesQuery(
+                    provider_name=args.get("provider"),
                     provider_api=args.get("provider_api"),
                     active_only=args.get("active_only", True),
                     filter_expressions=args.get("filter") or []
@@ -730,7 +741,9 @@ class CLICommandFactory:
                 template_id = args.get("template_id")
                 if not template_id:
                     raise ValueError("template_id is required for show command")
-                return self.create_get_template_query(template_id=template_id)
+                return self.create_get_template_query(
+                    template_id=template_id, provider_name=args.get("provider")
+                )
             elif command_action == "create":
                 # Extract template data from input_data or args
                 input_data = args.get("input_data") or {}
@@ -799,10 +812,12 @@ class CLICommandFactory:
                     raise ValueError("request_id is required for status/show command")
                 return self.create_get_request_status_query(
                     request_id=request_id,
+                    provider_name=args.get("provider"),
                     include_machines=True
                 )
             elif command_action == "list":
                 return self.create_list_requests_query(
+                    provider_name=args.get("provider"),
                     status=args.get("status"),
                     template_id=args.get("template_id"),
                     limit=args.get("limit") or 50,
@@ -822,6 +837,7 @@ class CLICommandFactory:
         elif command_group == "machines":
             if command_action == "list":
                 return self.create_list_machines_query(
+                    provider_name=args.get("provider"),
                     status=args.get("status"),
                     template_id=args.get("template_id"),
                     request_id=args.get("request_id"),
@@ -952,7 +968,8 @@ class CLICommandFactory:
                     include_health=True,
                     include_capabilities=args.get("detailed", False),
                     include_metrics=args.get("detailed", False),
-                    filter_expressions=args.get("filter") or []
+                    filter_expressions=args.get("filter") or [],
+                    provider_name=args.get("provider")
                 )
             elif command_action == "show":
                 provider_name = args.get("provider")

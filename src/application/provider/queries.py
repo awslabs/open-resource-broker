@@ -20,6 +20,7 @@ class GetProviderHealthQuery(BaseQuery):
 class ListAvailableProvidersQuery(BaseQuery):
     """Query to list all available provider strategies."""
 
+    provider_name: Optional[str] = None
     include_health: bool = True
     include_capabilities: bool = True
     include_metrics: bool = False
