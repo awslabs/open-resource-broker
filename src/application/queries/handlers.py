@@ -1225,6 +1225,7 @@ class ListMachinesHandler(BaseQueryHandler[MachineListQuery, list[MachineDTO]]):
                         public_ip=machine.public_ip,
                         private_dns_name=machine.private_dns_name,
                         public_dns_name=machine.public_dns_name,
+                        price_type=machine.price_type,
                         result=MachineDTO._get_result_status(machine.status.value),
                         launch_time=self.timestamp_service.format_with_type(machine.launch_time, query.timestamp_format or "auto"),
                         message=machine.status_reason or "",

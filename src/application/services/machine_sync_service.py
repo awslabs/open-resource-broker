@@ -149,6 +149,7 @@ class MachineSyncService:
             resource_id=processed_data.get("resource_id"),
             instance_type=InstanceType(value=processed_data.get("instance_type", "t2.micro")),
             image_id=processed_data.get("image_id", "unknown"),
+            price_type=processed_data.get("price_type"),
             status=MachineStatus(processed_data.get("status", "pending")),
             private_ip=processed_data.get("private_ip"),
             public_ip=processed_data.get("public_ip"),
@@ -178,7 +179,7 @@ class MachineSyncService:
                 existing = existing_by_id.get(machine_id)
 
                 if existing:
-                    # Check if machine needs update (including DNS and name fields)
+                    # Check if machine needs update (including DNS, name, and price_type fields)
                     needs_update = (
                         existing.status != provider_machine.status
                         or existing.private_ip != provider_machine.private_ip
@@ -186,6 +187,7 @@ class MachineSyncService:
                         or existing.name != provider_machine.name
                         or existing.private_dns_name != provider_machine.private_dns_name
                         or existing.public_dns_name != provider_machine.public_dns_name
+                        or existing.price_type != provider_machine.price_type
                     )
                     
                     # Debug logging
@@ -200,6 +202,7 @@ class MachineSyncService:
                         machine_data["name"] = provider_machine.name
                         machine_data["private_dns_name"] = provider_machine.private_dns_name
                         machine_data["public_dns_name"] = provider_machine.public_dns_name
+                        machine_data["price_type"] = provider_machine.price_type
                         machine_data["public_ip"] = provider_machine.public_ip
                         machine_data["launch_time"] = provider_machine.launch_time or existing.launch_time
                         machine_data["version"] = existing.version + 1
