@@ -188,6 +188,7 @@ class AWSMachineAdapter:
                     "name": self._resolve_machine_name(aws_instance_data),
                     "status": MachineStatus.from_str(aws_instance_data["State"]["Name"]).value,
                     "instance_type": aws_instance_data["InstanceType"],
+                    "image_id": aws_instance_data.get("ImageId", "unknown"),
                     "private_ip": aws_instance_data["PrivateIpAddress"],
                     "public_ip": aws_instance_data.get("PublicIpAddress"),
                     "private_dns_name": aws_instance_data.get("PrivateDnsName"),

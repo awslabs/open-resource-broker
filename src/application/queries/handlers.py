@@ -623,6 +623,9 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
         if "instance_id" in aws_instance:
             # Already in snake_case format (from machine adapter)
             machine_data = dict(aws_instance)
+            # Fix image_id from metadata if not present
+            if machine_data.get("image_id") == "unknown" and "metadata" in machine_data:
+                machine_data["image_id"] = machine_data["metadata"].get("ami_id", "unknown")
         else:
             # PascalCase format (from provider strategy) - convert to snake_case
             machine_data = {
