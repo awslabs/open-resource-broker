@@ -1143,11 +1143,20 @@ class GetMachineHandler(BaseQueryHandler[GetMachineQuery, MachineDTO]):
                     provider_name=machine.provider_name,
                     provider_type=machine.provider_type,
                     resource_id=machine.resource_id,
+                    request_id=machine.request_id,
                     metadata=machine.metadata or {},
+                    # Additional fields needed by formatter
+                    template_id=machine.template_id,
+                    image_id=machine.image_id,
+                    subnet_id=machine.subnet_id,
+                    security_group_ids=machine.security_group_ids,
+                    status_reason=machine.status_reason,
+                    termination_time=machine.termination_time,
+                    tags=machine.tags,
                 )
 
                 self.logger.info("Retrieved machine: %s", query.machine_id)
-                return machine_dto.to_dict()
+                return machine_dto
 
         except EntityNotFoundError:
             self.logger.error("Machine not found: %s", query.machine_id)
@@ -1233,6 +1242,8 @@ class ListMachinesHandler(BaseQueryHandler[MachineListQuery, list[MachineDTO]]):
                         provider_name=machine.provider_name,
                         provider_type=machine.provider_type,
                         resource_id=machine.resource_id,
+                        request_id=machine.request_id,
+                        return_request_id=machine.return_request_id,
                         metadata=machine.metadata or {},
                     )
                     machine_dtos.append(machine_dto.to_dict())

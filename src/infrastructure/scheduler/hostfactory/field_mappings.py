@@ -13,6 +13,7 @@ class HostFactoryFieldMappings:
             # Request fields
             "requestId": "request_id",
             "requestType": "request_type",
+            "returnRequestId": "return_request_id",
             "requestedCount": "requested_count",
             "createdAt": "created_at",
             # Core template fields

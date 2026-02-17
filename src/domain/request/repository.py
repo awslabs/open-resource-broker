@@ -29,6 +29,10 @@ class RequestRepository(AggregateRepository[Request]):
         """Find all pending requests."""
 
     @abstractmethod
+    def find_by_ids(self, request_ids: list[str]) -> list[Request]:
+        """Find requests by multiple request IDs."""
+
+    @abstractmethod
     def find_active_requests(self) -> list[Request]:
         """Find all active (non-completed/failed) requests."""
 

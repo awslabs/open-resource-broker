@@ -810,6 +810,11 @@ class CLICommandFactory:
                 request_id = args.get("request_id")
                 if not request_id:
                     raise ValueError("request_id is required for status/show command")
+                
+                # If request_id is a list (multiple IDs), return None to handle in interface layer
+                if isinstance(request_id, list):
+                    return None
+                
                 return self.create_get_request_status_query(
                     request_id=request_id,
                     provider_name=args.get("provider"),
@@ -871,12 +876,15 @@ class CLICommandFactory:
                 )
             elif command_action == "show" or command_action == "status":
                 if command_action == "status":
-                    # Status command expects machine_ids (plural)
+                    # Status command expects machine_ids (plural) - handle multiple IDs
                     machine_ids = args.get("machine_ids", [])
-                    if machine_ids:
-                        # For now, handle single machine ID (first one)
-                        # TODO: Support multiple machine IDs in query
-                        return self.create_get_machine_query(machine_id=machine_ids[0])
+                    flag_machine_ids = args.get("flag_machine_ids", [])
+                    
+                    # If we have any machine IDs (positional or flag), route to interface handler
+                    if machine_ids or flag_machine_ids:
+                        # Return None to indicate this should be handled by interface layer
+                        # The CLI will route this to handle_get_machine_status
+                        return None
                     else:
                         # No machine_ids provided, return list query
                         return self.create_list_machines_query(limit=50)

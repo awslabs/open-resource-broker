@@ -32,13 +32,19 @@ async def handle_get_request_status(args: "argparse.Namespace") -> dict[str, Any
         raw_request_data = args.input_data
     else:
         request_ids_from_args = []
+        
+        # Handle request_id that might be a list (from CLI command factory)
+        if hasattr(args, "request_id") and args.request_id:
+            if isinstance(args.request_id, list):
+                request_ids_from_args.extend(args.request_id)
+            else:
+                request_ids_from_args.append(args.request_id)
+        
         # Merge positional and flag arguments
         if hasattr(args, "request_ids") and args.request_ids:
             request_ids_from_args.extend(args.request_ids)
         if hasattr(args, "flag_request_ids") and args.flag_request_ids:
             request_ids_from_args.extend(args.flag_request_ids)
-        elif hasattr(args, "request_id") and args.request_id:
-            request_ids_from_args.append(args.request_id)
 
         raw_request_data = {
             "requests": [{"request_id": request_id} for request_id in request_ids_from_args]
@@ -53,16 +59,31 @@ async def handle_get_request_status(args: "argparse.Namespace") -> dict[str, Any
 
     request_dtos = []
 
-    from application.dto.queries import GetRequestQuery
+    # Extract request IDs from parsed data
+    request_ids = [parsed_data.get("request_id") for parsed_data in parsed_data_list if parsed_data.get("request_id")]
+    
+    if not request_ids:
+        return {"error": "No valid request IDs provided", "message": "Request IDs are required"}
 
-    for parsed_data in parsed_data_list:
-        request_id = parsed_data.get("request_id")
-        if not request_id:
-            continue
-
-        query = GetRequestQuery(request_id=request_id)
+    # Use batch query if multiple IDs, individual queries otherwise
+    if len(request_ids) == 1:
+        from application.dto.queries import GetRequestQuery
+        query = GetRequestQuery(request_id=request_ids[0])
         request_dto = await query_bus.execute(query)
-        request_dtos.append(request_dto)
+        if request_dto:
+            request_dtos.append(request_dto)
+    else:
+        # For multiple IDs, we need to query each individually since there's no batch query yet
+        from application.dto.queries import GetRequestQuery
+        for request_id in request_ids:
+            try:
+                query = GetRequestQuery(request_id=request_id)
+                request_dto = await query_bus.execute(query)
+                if request_dto:
+                    request_dtos.append(request_dto)
+            except Exception:
+                # Continue with other requests if one fails
+                continue
 
     # Pass domain DTO to scheduler strategy - NO formatting logic here
     return scheduler_strategy.format_request_status_response(request_dtos)

@@ -26,11 +26,22 @@ class MachineDTO(BaseDTO):
     provider_name: Optional[str] = None
     provider_type: Optional[str] = None
     resource_id: Optional[str] = None
+    request_id: Optional[str] = None
+    return_request_id: Optional[str] = None
     price_type: Optional[str] = None
     private_dns_name: Optional[str] = None
     public_dns_name: Optional[str] = None
     metadata: Optional[dict[str, Any]] = Field(default=None)
     health_checks: Optional[dict[str, Any]] = Field(default=None)
+    
+    # Additional fields needed by formatter
+    template_id: Optional[str] = None
+    image_id: Optional[str] = None
+    subnet_id: Optional[str] = None
+    security_group_ids: Optional[list[str]] = Field(default_factory=list)
+    status_reason: Optional[str] = None
+    termination_time: Optional[Union[int, str]] = None
+    tags: Optional[Any] = None
 
     @staticmethod
     def _get_result_status(status: str) -> str:
@@ -66,6 +77,8 @@ class MachineDTO(BaseDTO):
             "result": cls._get_result_status(status),
             "launch_time": int(machine.launch_time.timestamp()),
             "message": machine.message,
+            "request_id": str(machine.request_id) if machine.request_id else None,
+            "return_request_id": str(machine.return_request_id) if machine.return_request_id else None,
         }
 
         # Add additional fields for long format

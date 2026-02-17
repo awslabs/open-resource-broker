@@ -315,6 +315,11 @@ class CLIResponseFormatter:
                 if (hasattr(self.scheduler_strategy, 'format_request_response') and 
                     self._looks_like_single_request(data)):
                     return self.scheduler_strategy.format_request_response(data)
+                # Handle machine status response (from handle_get_machine_status)
+                elif (hasattr(self.scheduler_strategy, 'format_machine_status_response') and 
+                      isinstance(data, dict) and 'machines' in data):
+                    # Data is already formatted by handle_get_machine_status, return as-is
+                    return data
                 elif hasattr(self.scheduler_strategy, 'format_machine_for_display'):
                     if isinstance(data, list):
                         return [self.scheduler_strategy.format_machine_for_display(item) for item in data]

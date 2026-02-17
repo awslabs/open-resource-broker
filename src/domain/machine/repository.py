@@ -34,9 +34,17 @@ class MachineRepository(AggregateRepository[Machine]):
         """Find machines by status."""
 
     @abstractmethod
+    def find_by_statuses(self, statuses: list[MachineStatus]) -> list[Machine]:
+        """Find machines by list of statuses."""
+
+    @abstractmethod
     def find_by_request_id(self, request_id: str) -> list[Machine]:
         """Find machines by request ID."""
 
     @abstractmethod
     def find_active_machines(self) -> list[Machine]:
         """Find all active (non-terminated) machines."""
+
+    @abstractmethod
+    def find_by_ids(self, machine_ids: list[str]) -> list[Machine]:
+        """Find machines by list of machine IDs."""

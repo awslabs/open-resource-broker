@@ -912,7 +912,7 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
 
     def format_request_for_display(self, request: RequestDTO) -> dict[str, Any]:
         """Format RequestDTO for display using HostFactory field mapper."""
-        return request.to_dict()  # Use DTO's to_dict() method
+        return self.field_mapper.map_output_fields(request.to_dict(), copy_unmapped=False)
 
     def _transform_machine_types_input(self, hf_data: dict) -> dict:
         """Transform HF vmType/vmTypes to internal machine_types."""
