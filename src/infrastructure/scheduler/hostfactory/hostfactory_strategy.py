@@ -655,6 +655,12 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
             # Add optional message if present
             if req_dict.get("message"):
                 hf_request["message"] = req_dict["message"]
+                
+            # Add provider information if present
+            if req_dict.get("provider_name"):
+                hf_request["providerName"] = req_dict["provider_name"]
+            if req_dict.get("provider_type"):
+                hf_request["providerType"] = req_dict["provider_type"]
             
             formatted_requests.append(hf_request)
 
