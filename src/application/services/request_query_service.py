@@ -7,6 +7,7 @@ from domain.base import UnitOfWorkFactory
 from domain.request.aggregate import Request
 from domain.machine.aggregate import Machine
 from domain.request.value_objects import RequestId
+from domain.request.request_types import RequestType
 from domain.base.exceptions import EntityNotFoundError
 
 
@@ -36,7 +37,10 @@ class RequestQueryService:
         """Get machines from storage for a request."""
         try:
             with self.uow_factory.create_unit_of_work() as uow:
-                machines = uow.machines.find_by_request_id(str(request.request_id.value))
+                if request.request_type == RequestType.RETURN:
+                    machines = uow.machines.find_by_return_request_id(str(request.request_id.value))
+                else:
+                    machines = uow.machines.find_by_request_id(str(request.request_id.value))
                 self.logger.debug(f"Found {len(machines)} machines for request {request.request_id.value}")
                 return machines
         except Exception as e:
