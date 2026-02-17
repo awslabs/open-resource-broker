@@ -66,6 +66,7 @@ class RequestSerializer:
                 "provider_type": request.provider_type,
                 # Resource tracking fields
                 "resource_ids": request.resource_ids,
+                "machine_ids": request.machine_ids,
                 # HF output fields
                 "message": request.message,
                 # Results and instances
@@ -124,6 +125,7 @@ class RequestSerializer:
                 "provider_type": data.get("provider_type", "aws"),
                 # Resource tracking fields
                 "resource_ids": data.get("resource_ids", []),
+                "machine_ids": data.get("machine_ids", []),
                 # HF output fields
                 "message": data.get("message"),
                 # Results and instances
