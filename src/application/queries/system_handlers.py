@@ -2,6 +2,7 @@
 
 from typing import TYPE_CHECKING, Any
 
+from domain.request.repository import RequestRepository
 from domain.services.timestamp_service import TimestampService
 
 from application.base.handlers import BaseQueryHandler
@@ -394,16 +395,20 @@ class GetProviderMetricsHandler(BaseQueryHandler[GetProviderMetricsQuery, Provid
             else:
                 start_time = end_time - timedelta(hours=1)  # Default to 1 hour
 
-            # Get provider metrics (simplified implementation)
+            # Get actual metrics from repository
+            request_repository = self.container.get(RequestRepository)
+            request_metrics = request_repository.get_metrics_by_date_range(start_time, end_time)
+
+            # Build response with actual data
             metrics = {
                 "timeframe": query.timeframe,
                 "start_time": start_time.isoformat(),
                 "end_time": end_time.isoformat(),
                 "providers": {},
                 "summary": {
-                    "total_requests": 0,
-                    "successful_requests": 0,
-                    "failed_requests": 0,
+                    "total_requests": request_metrics["total"],
+                    "successful_requests": request_metrics["completed"],
+                    "failed_requests": request_metrics["failed"],
                     "average_response_time": 0.0,
                 },
             }
@@ -423,8 +428,8 @@ class GetProviderMetricsHandler(BaseQueryHandler[GetProviderMetricsQuery, Provid
                             metrics["providers"][provider.name] = {
                                 "status": "active",
                                 "type": (provider.type if hasattr(provider, "type") else "unknown"),
-                                "requests": 0,
-                                "errors": 0,
+                                "requests": request_metrics["total"],
+                                "errors": request_metrics["failed"],
                                 "avg_response_time": 0.0,
                             }
             except Exception as provider_error:
