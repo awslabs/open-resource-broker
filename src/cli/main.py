@@ -55,6 +55,7 @@ def add_global_arguments(parser):
     # Operation control
     parser.add_argument("--dry-run", action="store_true", help="Preview without executing")
     parser.add_argument("--yes", "-y", action="store_true", help="Assume yes to all prompts")
+    parser.add_argument("--all", action="store_true", help="Apply to all resources")
     
     # Output control
     parser.add_argument("--format", choices=["json", "yaml", "table", "list"], default="json", help="Output format")
@@ -228,7 +229,6 @@ def add_infrastructure_actions(subparsers):
     add_global_arguments(infra_discover)
     add_multi_provider_arguments(infra_discover)
     infra_discover.add_argument("--show", nargs='?', const='', help="Show only specific resources: vpcs,subnets,security-groups (or sg), or 'all' for everything")
-    infra_discover.add_argument("--all", action="store_true", help="Show all resources without truncation")
     infra_discover.add_argument("--summary", action="store_true", help="Show only summary counts, no details")
 
     # Infrastructure show
