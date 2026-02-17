@@ -379,6 +379,20 @@ class RequestRepositoryImpl(RequestRepositoryInterface):
             self.logger.error("Failed to delete request %s: %s", request_id, e)
             raise
 
+    @handle_infrastructure_exceptions(context="request_repository_find_by_ids")
+    def find_by_ids(self, request_ids: list[str]) -> list[Request]:
+        """Find requests by multiple request IDs."""
+        try:
+            requests = []
+            for request_id in request_ids:
+                request = self.find_by_request_id(request_id)
+                if request:
+                    requests.append(request)
+            return requests
+        except Exception as e:
+            self.logger.error("Failed to find requests by IDs %s: %s", request_ids, e)
+            raise
+
     @handle_infrastructure_exceptions(context="request_repository_exists")
     def exists(self, request_id: RequestId) -> bool:
         """Check if request exists."""

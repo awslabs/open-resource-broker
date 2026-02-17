@@ -137,7 +137,14 @@ def add_machine_actions(subparsers):
     # Machines status
     machines_status = subparsers.add_parser("status", help="Check machine status")
     add_global_arguments(machines_status)
-    machines_status.add_argument("machine_ids", nargs="+", help="Machine IDs to check")
+    machines_status.add_argument("machine_ids", nargs="*", help="Machine IDs to check")
+    machines_status.add_argument(
+        "--machine-id",
+        "-m",
+        action="append",
+        dest="flag_machine_ids",
+        help="Machine ID to check",
+    )
 
 
 def add_request_actions(subparsers):
@@ -830,12 +837,25 @@ async def execute_command(args, app, resource_parsers) -> Union[str, tuple[str, 
         # Create command or query from CLI args
         command_or_query = cli_command_factory.create_command_or_query(args)
         
-        # Execute through appropriate bus
-        from application.dto.base import BaseCommand
-        if isinstance(command_or_query, (Command, BaseCommand)):
-            result = await command_bus.execute(command_or_query)
+        # Handle special cases where command factory returns None (non-CQRS commands)
+        if command_or_query is None:
+            # Handle machine status with multiple IDs
+            if hasattr(args, 'resource') and args.resource == 'machines' and args.action == 'status':
+                from interface.machine_command_handlers import handle_get_machine_status
+                result = await handle_get_machine_status(args)
+            # Handle request status with multiple IDs
+            elif hasattr(args, 'resource') and args.resource == 'requests' and args.action in ['status', 'show']:
+                from interface.request_command_handlers import handle_get_request_status
+                result = await handle_get_request_status(args)
+            else:
+                raise ValueError(f"Unknown command: {args.resource} {args.action}")
         else:
-            result = await query_bus.execute(command_or_query)
+            # Execute through appropriate bus
+            from application.dto.base import BaseCommand
+            if isinstance(command_or_query, (Command, BaseCommand)):
+                result = await command_bus.execute(command_or_query)
+            else:
+                result = await query_bus.execute(command_or_query)
     
     # Format response for CLI output using improved formatter
     formatter = create_cli_formatter(scheduler_port)

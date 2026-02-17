@@ -282,6 +282,19 @@ class MachineRepositoryImpl(MachineRepositoryInterface):
             self.logger.error("Failed to find machines by status %s: %s", status, e)
             raise
 
+    @handle_infrastructure_exceptions(context="machine_repository_find_by_statuses")
+    def find_by_statuses(self, statuses: list[MachineStatus]) -> list[Machine]:
+        """Find machines by list of statuses."""
+        try:
+            all_machines = []
+            for status in statuses:
+                machines = self.find_by_status(status)
+                all_machines.extend(machines)
+            return all_machines
+        except Exception as e:
+            self.logger.error("Failed to find machines by statuses %s: %s", statuses, e)
+            raise
+
     @handle_infrastructure_exceptions(context="machine_repository_find_by_request_id")
     def find_by_request_id(self, request_id: str) -> list[Machine]:
         """Find machines by request ID."""
@@ -329,6 +342,20 @@ class MachineRepositoryImpl(MachineRepositoryInterface):
             return all_machines
         except Exception as e:
             self.logger.error("Failed to find active machines: %s", e)
+            raise
+
+    @handle_infrastructure_exceptions(context="machine_repository_find_by_ids")
+    def find_by_ids(self, machine_ids: list[str]) -> list[Machine]:
+        """Find machines by list of machine IDs."""
+        try:
+            machines = []
+            for machine_id in machine_ids:
+                machine = self.get_by_id(machine_id)
+                if machine:
+                    machines.append(machine)
+            return machines
+        except Exception as e:
+            self.logger.error("Failed to find machines by IDs %s: %s", machine_ids, e)
             raise
 
     @handle_infrastructure_exceptions(context="machine_repository_find_all")
