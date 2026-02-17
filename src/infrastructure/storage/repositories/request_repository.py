@@ -401,3 +401,46 @@ class RequestRepositoryImpl(RequestRepositoryInterface):
         except Exception as e:
             self.logger.error("Failed to check if request %s exists: %s", request_id, e)
             raise
+
+    def count_by_date_range(self, start_date: datetime, end_date: datetime) -> int:
+        """Count requests within date range."""
+        requests = self.find_by_date_range(start_date, end_date)
+        return len(requests)
+
+    def count_by_status_and_date_range(
+        self, 
+        status: RequestStatus, 
+        start_date: datetime, 
+        end_date: datetime
+    ) -> int:
+        """Count requests by status within date range."""
+        requests = self.find_by_date_range(start_date, end_date)
+        return len([r for r in requests if r.status == status])
+
+    def get_metrics_by_date_range(
+        self, 
+        start_date: datetime, 
+        end_date: datetime
+    ) -> dict[str, int]:
+        """Get aggregated metrics within date range."""
+        requests = self.find_by_date_range(start_date, end_date)
+        
+        metrics = {
+            "total": len(requests),
+            "completed": 0,
+            "failed": 0,
+            "in_progress": 0,
+            "pending": 0
+        }
+        
+        for request in requests:
+            if request.status == RequestStatus.COMPLETE:
+                metrics["completed"] += 1
+            elif request.status == RequestStatus.FAILED:
+                metrics["failed"] += 1
+            elif request.status == RequestStatus.IN_PROGRESS:
+                metrics["in_progress"] += 1
+            elif request.status == RequestStatus.PENDING:
+                metrics["pending"] += 1
+        
+        return metrics

@@ -26,6 +26,7 @@ from application.request.queries import (
     GetRequestHistoryQuery,
     ListRequestsQuery,
 )
+from application.provider.commands import ExecuteProviderOperationCommand
 from application.template.commands import (
     CreateTemplateCommand,
     DeleteTemplateCommand,
@@ -1005,8 +1006,11 @@ class CLICommandFactory:
             elif command_action == "select":
                 return self.create_provider_operation_command_data("select", **args)
             elif command_action == "exec":
-                filtered_args = {k: v for k, v in args.items() if k != 'action'}
-                return self.create_provider_operation_command_data("exec", **filtered_args)
+                return self.create_execute_provider_operation_command(
+                    operation=args.get("operation"),
+                    params=args.get("params"),
+                    provider_name=args.get("provider")
+                )
 
         # Infrastructure operations
         elif command_group == "infrastructure" or command_group == "infra":
@@ -1048,6 +1052,37 @@ class CLICommandFactory:
         # For commands not yet converted to CQRS, return None
         # This allows the execute_command function to fall back to legacy handlers
         return None
+
+    def create_execute_provider_operation_command(
+        self,
+        operation: str,
+        params: Optional[str] = None,
+        provider_name: Optional[str] = None,
+        **kwargs: Any,
+    ) -> ExecuteProviderOperationCommand:
+        """Create command to execute provider operation."""
+        from providers.base.strategy import ProviderOperation, ProviderOperationType
+        import json
+        
+        # Parse params if provided
+        parsed_params = {}
+        if params:
+            try:
+                parsed_params = json.loads(params)
+            except json.JSONDecodeError:
+                raise ValueError(f"Invalid JSON in params: {params}")
+        
+        # Create ProviderOperation
+        provider_operation = ProviderOperation(
+            operation_type=ProviderOperationType(operation),
+            parameters=parsed_params,
+            context={"provider_override": provider_name} if provider_name else {}
+        )
+        
+        return ExecuteProviderOperationCommand(
+            operation=provider_operation,
+            strategy_override=provider_name
+        )
 
 
 # Global factory instance
