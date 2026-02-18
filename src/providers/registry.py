@@ -527,20 +527,32 @@ class ProviderRegistry(BaseRegistry):
         """
         from providers.results import ProviderSelectionResult
 
-        if not self._registrations:
+        if not self._type_registrations and not self._instance_registrations:
             raise ValueError("No provider instances registered")
 
         # Check for configured default provider
         default_provider = self._get_default_provider_from_config()
-        if default_provider and default_provider in self._registrations:
-            strategy = self.get_or_create_strategy(default_provider)
-            if strategy:
-                return ProviderSelectionResult(
-                    provider_type=getattr(strategy, "provider_type", "aws"),
-                    provider_name=default_provider,
-                    selection_reason=f"Using configured default provider: {default_provider}",
-                    confidence=1.0,
-                )
+        if default_provider:
+            # Check if it's a registered instance
+            if default_provider in self._instance_registrations:
+                strategy = self.get_or_create_strategy(default_provider)
+                if strategy:
+                    return ProviderSelectionResult(
+                        provider_type=getattr(strategy, "provider_type", "aws"),
+                        provider_name=default_provider,
+                        selection_reason=f"Using configured default provider: {default_provider}",
+                        confidence=1.0,
+                    )
+            # Check if it's a registered type
+            elif default_provider in self._type_registrations:
+                strategy = self.get_or_create_strategy(default_provider)
+                if strategy:
+                    return ProviderSelectionResult(
+                        provider_type=default_provider,
+                        provider_name=default_provider,
+                        selection_reason=f"Using configured default provider type: {default_provider}",
+                        confidence=1.0,
+                    )
 
         # Select first healthy provider
         for instance_name in self.get_registered_provider_instances():
