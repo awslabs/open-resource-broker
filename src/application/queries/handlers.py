@@ -19,6 +19,7 @@ from application.dto.queries import (
     ListTemplatesQuery,
     ValidateTemplateQuery,
 )
+from application.queries.system import GetConfigurationQuery
 from application.machine.queries import ListMachinesQuery as MachineListQuery
 from application.request.queries import ListRequestsQuery
 from application.dto.responses import MachineDTO, RequestDTO
@@ -1274,4 +1275,39 @@ class ListMachinesHandler(BaseQueryHandler[MachineListQuery, list[MachineDTO]]):
 
         except Exception as e:
             self.logger.error("Failed to list machines: %s", e)
+            raise
+
+
+@query_handler(GetConfigurationQuery)
+class GetConfigurationHandler(BaseQueryHandler[GetConfigurationQuery, dict[str, Any]]):
+    """Handler for getting configuration values."""
+
+    def __init__(
+        self,
+        logger: LoggingPort,
+        container: ContainerPort,
+        error_handler: ErrorHandlingPort,
+    ) -> None:
+        """Initialize get configuration handler."""
+        super().__init__(logger, error_handler)
+        self.container = container
+
+    async def execute_query(self, query: GetConfigurationQuery) -> dict[str, Any]:
+        """Execute get configuration query."""
+        self.logger.info("Getting configuration value for key: %s", query.key)
+
+        try:
+            from domain.base.ports import ConfigurationPort
+
+            config_manager = self.container.get(ConfigurationPort)
+            value = config_manager.get_configuration_value(query.key, query.default)
+
+            return {
+                "key": query.key,
+                "value": value,
+                "default": query.default,
+            }
+
+        except Exception as e:
+            self.logger.error("Failed to get configuration: %s", e)
             raise

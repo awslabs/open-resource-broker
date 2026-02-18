@@ -33,7 +33,7 @@ from application.template.commands import (
     UpdateTemplateCommand,
     ValidateTemplateCommand,
 )
-from application.commands.system import ReloadProviderConfigCommand
+from application.commands.system import ReloadProviderConfigCommand, TestStorageCommand, MCPValidateCommand
 from application.queries.system import (
     GetSystemStatusQuery,
     GetProviderConfigQuery,
@@ -428,6 +428,15 @@ class CLICommandFactory:
         """Create command to reload provider configuration."""
         return ReloadProviderConfigCommand(config_path=config_path)
 
+    def create_refresh_templates_command(
+        self,
+        provider_name: Optional[str] = None,
+        **kwargs: Any,
+    ) -> "RefreshTemplatesCommand":
+        """Create command to refresh templates."""
+        from application.commands.system import RefreshTemplatesCommand
+        return RefreshTemplatesCommand(provider_name=provider_name)
+
     def create_get_system_status_query(
         self,
         include_provider_health: bool = True,
@@ -801,8 +810,9 @@ class CLICommandFactory:
                     configuration=input_data
                 )
             elif command_action == "refresh":
-                refresh_args = {k: v for k, v in args.items() if k != 'action'}
-                return self.create_template_utility_command_data("refresh", **refresh_args)
+                return self.create_refresh_templates_command(
+                    provider_name=args.get("provider")
+                )
             elif command_action == "generate":
                 generate_args = {k: v for k, v in args.items() if k != 'action'}
                 return self.create_template_utility_command_data("generate", **generate_args)
@@ -823,24 +833,20 @@ class CLICommandFactory:
                     tags=input_data.get("tags") or args.get("tags"),
                     dry_run=args.get("dry_run", False)
                 )
-            elif command_action == "status" or command_action == "show":
-                # Check for --all flag first
-                if args.get("all", False):
-                    return None  # Route to interface handler for --all support
-                
+            elif command_action == "show":
+                # Show command: single entity via CQRS
                 request_id = args.get("request_id")
                 if not request_id:
-                    raise ValueError("request_id is required for status/show command")
-                
-                # If request_id is a list (multiple IDs), return None to handle in interface layer
-                if isinstance(request_id, list):
-                    return None
+                    raise ValueError("request_id is required for show command")
                 
                 return self.create_get_request_status_query(
                     request_id=request_id,
                     provider_name=args.get("provider"),
                     include_machines=True
                 )
+            elif command_action == "status":
+                # Status command: multiple entities via interface handler
+                return None
             elif command_action == "list":
                 return self.create_list_requests_query(
                     provider_name=args.get("provider"),
@@ -900,32 +906,15 @@ class CLICommandFactory:
                     timeout=args.get("timeout"),
                     force_return=args.get("force", False)
                 )
-            elif command_action == "show" or command_action == "status":
-                if command_action == "status":
-                    # Check for --all flag first
-                    if args.get("all", False):
-                        return None  # Route to interface handler for --all support
-                    
-                    # Status command expects machine_ids (plural) - handle multiple IDs
-                    machine_ids = args.get("machine_ids", [])
-                    flag_machine_ids = args.get("flag_machine_ids", [])
-                    
-                    # If we have any machine IDs (positional or flag), route to interface handler
-                    if machine_ids or flag_machine_ids:
-                        # Return None to indicate this should be handled by interface layer
-                        # The CLI will route this to handle_get_machine_status
-                        return None
-                    else:
-                        # No machine_ids provided, return list query
-                        return self.create_list_machines_query(limit=50)
-                else:  # show command
-                    # Show command expects machine_id (singular)
-                    machine_id = args.get("machine_id")
-                    if machine_id:
-                        return self.create_get_machine_query(machine_id=machine_id)
-                    else:
-                        # No machine_id provided, return list query
-                        return self.create_list_machines_query(limit=50)
+            elif command_action == "show":
+                # Show command: single entity via CQRS
+                machine_id = args.get("machine_id")
+                if not machine_id:
+                    raise ValueError("machine_id is required for show command")
+                return self.create_get_machine_query(machine_id=machine_id)
+            elif command_action == "status":
+                # Status command: multiple entities via interface handler
+                return None
 
         # System operations
         elif command_group == "system":
@@ -970,7 +959,7 @@ class CLICommandFactory:
                     detailed=args.get("detailed", False)
                 )
             elif command_action == "test":
-                return self.create_storage_test_command_data(**args)
+                return self.create_test_storage_command()
             elif command_action == "metrics":
                 return self.create_get_storage_metrics_query(
                     strategy_name=args.get("strategy"),
@@ -1033,7 +1022,8 @@ class CLICommandFactory:
                     detailed=args.get("detailed", False)
                 )
             elif command_action == "select":
-                return self.create_provider_operation_command_data("select", **args)
+                filtered_args = {k: v for k, v in args.items() if k != 'action'}
+                return self.create_provider_operation_command_data("select", **filtered_args)
             elif command_action == "exec":
                 return self.create_execute_provider_operation_command(
                     operation=args.get("operation"),
@@ -1056,9 +1046,9 @@ class CLICommandFactory:
                 return self.create_mcp_serve_command_data(**args)
             elif command_action == "tools":
                 tools_action = args.get("tools_action")
-                return self.create_mcp_tools_command_data(tools_action, **args)
+                return self.create_mcp_tools_command_data(tools_action, **{k: v for k, v in args.items() if k not in ['action', 'tools_action']})
             elif command_action == "validate":
-                return self.create_mcp_validate_command_data(**args)
+                return self.create_mcp_validate_command()
 
         # Init command
         elif command_group == "init":
@@ -1070,6 +1060,16 @@ class CLICommandFactory:
                 return self.create_get_provider_config_query(
                     provider_name=args.get("provider"),
                     include_sensitive=False
+                )
+            elif command_action == "get":
+                return self.create_get_configuration_query(
+                    key=args.get("key"),
+                    default=args.get("default")
+                )
+            elif command_action == "set":
+                return self.create_set_configuration_command(
+                    key=args.get("key"),
+                    value=args.get("value")
                 )
             elif command_action == "validate":
                 return self.create_validate_provider_config_query(detailed=True)
@@ -1112,6 +1112,34 @@ class CLICommandFactory:
             operation=provider_operation,
             strategy_override=provider_name
         )
+
+    def create_test_storage_command(self) -> TestStorageCommand:
+        """Create command to test storage."""
+        return TestStorageCommand()
+
+    def create_mcp_validate_command(self) -> MCPValidateCommand:
+        """Create command to validate MCP."""
+        return MCPValidateCommand()
+
+    def create_get_configuration_query(
+        self,
+        key: str,
+        default: Optional[str] = None,
+        **kwargs: Any,
+    ) -> GetConfigurationQuery:
+        """Create query to get configuration value."""
+        from application.dto.queries import GetConfigurationQuery
+        return GetConfigurationQuery(key=key, default=default)
+
+    def create_set_configuration_command(
+        self,
+        key: str,
+        value: str,
+        **kwargs: Any,
+    ) -> SetConfigurationCommand:
+        """Create command to set configuration value."""
+        from application.commands.system import SetConfigurationCommand
+        return SetConfigurationCommand(key=key, value=value)
 
 
 # Global factory instance

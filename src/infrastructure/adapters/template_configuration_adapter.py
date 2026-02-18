@@ -45,13 +45,16 @@ class TemplateConfigurationAdapter(TemplateConfigurationPort):
         errors = []
 
         # Basic validation
-        if not config.get("template_id"):
+        template_id = config.get("templateId") or config.get("template_id")
+        if not template_id:
             errors.append("Template ID is required")
 
-        if not config.get("provider_api"):
+        provider_api = config.get("providerApi") or config.get("provider_api")
+        if not provider_api:
             errors.append("Provider API is required")
 
-        if not config.get("image_id"):
+        image_id = config.get("imageId") or config.get("image_id")
+        if not image_id:
             errors.append("Image ID is required")
 
         # Use template manager for validation
@@ -60,13 +63,13 @@ class TemplateConfigurationAdapter(TemplateConfigurationPort):
             from domain.template.template_aggregate import Template
 
             temp_template = Template(
-                template_id=config.get("template_id", "temp"),
-                image_id=config.get("image_id", ""),
-                instance_type=config.get("instance_type", ""),
-                subnet_ids=config.get("subnet_ids", []),
-                security_group_ids=config.get("security_group_ids", []),
-                price_type=config.get("price_type", "ondemand"),
-                provider_api=config.get("provider_api", ""),
+                template_id=template_id or "temp",
+                image_id=image_id or "",
+                instance_type=config.get("instanceType") or config.get("instance_type", ""),
+                subnet_ids=config.get("subnetIds") or config.get("subnet_ids", []),
+                security_group_ids=config.get("securityGroupIds") or config.get("security_group_ids", []),
+                price_type=config.get("priceType") or config.get("price_type", "ondemand"),
+                provider_api=provider_api or "",
                 metadata=config.get("metadata", {}),
             )
 

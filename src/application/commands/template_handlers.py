@@ -257,7 +257,9 @@ class DeleteTemplateHandler(BaseCommandHandler[DeleteTemplateCommand, TemplateCo
             # Delete template through repository
             with self._uow_factory.create_unit_of_work() as uow:
                 # Get existing template
-                template = uow.templates.get_by_id(command.template_id)
+                from domain.template.value_objects import TemplateId
+                template_id = TemplateId(value=command.template_id)
+                template = uow.templates.get_by_id(template_id)
                 if not template:
                     raise EntityNotFoundError("Template", command.template_id)
 

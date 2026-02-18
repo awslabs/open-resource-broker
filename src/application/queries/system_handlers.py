@@ -401,18 +401,39 @@ class GetProviderMetricsHandler(BaseQueryHandler[GetProviderMetricsQuery, Provid
 
             # Get actual metrics from repository using UoW pattern
             with self.uow_factory.create_unit_of_work() as uow:
-                request_metrics = uow.requests.get_metrics_by_date_range(start_time, end_time)
+                # Get all-time metrics for accurate counts
+                all_requests = uow.requests.find_all()
+                all_time_metrics = {
+                    "total": len(all_requests),
+                    "completed": sum(1 for r in all_requests if r.status.value == "complete"),
+                    "failed": sum(1 for r in all_requests if r.status.value == "failed"),
+                    "in_progress": sum(1 for r in all_requests if r.status.value in ["in_progress", "running", "shutting-down"]),
+                    "pending": sum(1 for r in all_requests if r.status.value == "pending")
+                }
+                
+                # Get timeframe-specific metrics for comparison
+                timeframe_requests = uow.requests.find_by_date_range(start_time, end_time)
+                timeframe_metrics = {
+                    "total": len(timeframe_requests),
+                    "completed": sum(1 for r in timeframe_requests if r.status.value == "complete"),
+                    "failed": sum(1 for r in timeframe_requests if r.status.value == "failed"),
+                    "in_progress": sum(1 for r in timeframe_requests if r.status.value in ["in_progress", "running", "shutting-down"]),
+                    "pending": sum(1 for r in timeframe_requests if r.status.value == "pending")
+                }
 
-            # Build response with actual data
+            # Build response with all-time data and timeframe annotation
             metrics = {
-                "timeframe": query.timeframe,
+                "timeframe": f"{query.timeframe} (showing all-time data)",
                 "start_time": start_time.isoformat(),
                 "end_time": end_time.isoformat(),
+                "timeframe_requests": timeframe_metrics["total"],
                 "providers": {},
                 "summary": {
-                    "total_requests": request_metrics["total"],
-                    "successful_requests": request_metrics["completed"],
-                    "failed_requests": request_metrics["failed"],
+                    "total_requests": all_time_metrics["total"],
+                    "successful_requests": all_time_metrics["completed"],
+                    "failed_requests": all_time_metrics["failed"],
+                    "in_progress_requests": all_time_metrics["in_progress"],
+                    "pending_requests": all_time_metrics["pending"],
                     "average_response_time": 0.0,
                 },
             }
@@ -432,8 +453,9 @@ class GetProviderMetricsHandler(BaseQueryHandler[GetProviderMetricsQuery, Provid
                             metrics["providers"][provider.name] = {
                                 "status": "active",
                                 "type": (provider.type if hasattr(provider, "type") else "unknown"),
-                                "requests": request_metrics["total"],
-                                "errors": request_metrics["failed"],
+                                "requests": all_time_metrics["total"],
+                                "errors": all_time_metrics["failed"],
+                                "timeframe_requests": timeframe_metrics["total"],
                                 "avg_response_time": 0.0,
                             }
             except Exception as provider_error:
@@ -441,8 +463,9 @@ class GetProviderMetricsHandler(BaseQueryHandler[GetProviderMetricsQuery, Provid
                 metrics["providers"]["default"] = {
                     "status": "unknown",
                     "type": "unknown",
-                    "requests": 0,
-                    "errors": 0,
+                    "requests": all_time_metrics["total"],
+                    "errors": all_time_metrics["failed"],
+                    "timeframe_requests": timeframe_metrics["total"],
                     "avg_response_time": 0.0,
                 }
 

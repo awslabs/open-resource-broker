@@ -98,6 +98,15 @@ class GetActiveMachineCountQuery(Query, BaseModel):
     model_config = ConfigDict(frozen=True)
 
 
+class GetConfigurationQuery(Query, BaseModel):
+    """Query to get configuration value."""
+
+    model_config = ConfigDict(frozen=True)
+
+    key: str
+    default: Optional[str] = None
+
+
 class GetRequestSummaryQuery(Query, BaseModel):
     """Query to get summary of request status."""
 

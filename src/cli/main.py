@@ -538,6 +538,7 @@ For more information, visit: {DOCS_URL}
 
     # System serve
     system_serve = system_subparsers.add_parser("serve", help="Start REST API server")
+    add_global_arguments(system_serve)
     system_serve.add_argument("--host", default="0.0.0.0", help="Server host")  # nosec B104
     system_serve.add_argument("--port", type=int, default=8000, help="Server port")
     system_serve.add_argument("--workers", type=int, default=1, help="Number of workers")
@@ -711,6 +712,7 @@ For more information, visit: {DOCS_URL}
 
     # MCP serve
     mcp_serve = mcp_subparsers.add_parser("serve", help="Start MCP server")
+    add_global_arguments(mcp_serve)
     mcp_serve.add_argument("--port", type=int, default=3000, help="Server port (default: 3000)")
     mcp_serve.add_argument("--host", default="localhost", help="Server host (default: localhost)")
     mcp_serve.add_argument(
@@ -1039,7 +1041,8 @@ async def main() -> None:
             from bootstrap import Application
 
             app = Application(args.config, skip_validation=skip_validation)
-            if not await app.initialize(dry_run=args.dry_run):
+            dry_run = getattr(args, 'dry_run', False)
+            if not await app.initialize(dry_run=dry_run):
                 raise RuntimeError("Failed to initialize application")
         except Exception as e:
             logger.error("Failed to initialize application: %s", e)

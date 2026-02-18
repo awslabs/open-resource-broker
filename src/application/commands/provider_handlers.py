@@ -151,6 +151,8 @@ class ExecuteProviderOperationHandler(
                 success=result.success,
                 execution_time_ms=execution_time,
                 error_message=result.error_message if not result.success else None,
+                aggregate_id=f"operation_{operation.operation_type}_{int(execution_time)}",
+                aggregate_type="provider_operation",
             )
             self.event_publisher.publish(event)
 
@@ -172,6 +174,8 @@ class ExecuteProviderOperationHandler(
                 success=False,
                 execution_time_ms=execution_time,
                 error_message=str(e),
+                aggregate_id=f"operation_{operation.operation_type}_{int(execution_time)}",
+                aggregate_type="provider_operation",
             )
             self.event_publisher.publish(event)
 

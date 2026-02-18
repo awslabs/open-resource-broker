@@ -78,3 +78,11 @@ class ConfigurationPort(ABC):
     @abstractmethod
     def get_configuration_sources(self) -> dict[str, Any]:
         """Get configuration source information."""
+
+    @abstractmethod
+    def set_configuration_value(self, key: str, value: Any) -> None:
+        """Set configuration value."""
+
+    @abstractmethod
+    def get_configuration_value(self, key: str, default: Any = None) -> Any:
+        """Get configuration value."""

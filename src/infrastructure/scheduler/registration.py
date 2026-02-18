@@ -17,21 +17,23 @@ if TYPE_CHECKING:
     from infrastructure.scheduler.registry import SchedulerRegistry
 
 
-def create_symphony_hostfactory_strategy(container: "DIContainer") -> "SchedulerPort":
+def create_symphony_hostfactory_strategy(config: Any) -> "SchedulerPort":
     """Create Symphony HostFactory scheduler strategy.
 
     Args:
-        container: Dependency injection container
+        config: Scheduler configuration
 
     Returns:
         SchedulerPort: Symphony HostFactory scheduler strategy instance
     """
     from domain.base.ports import LoggingPort
     from domain.template.ports.template_defaults_port import TemplateDefaultsPort
+    from infrastructure.di.container import get_container
     from infrastructure.scheduler.hostfactory.hostfactory_strategy import (
         HostFactorySchedulerStrategy,
     )
 
+    container = get_container()
     config_manager = container.get(ConfigurationPort)
     logger = container.get(LoggingPort)
     template_defaults_service = container.get(TemplateDefaultsPort)
@@ -67,18 +69,20 @@ def register_symphony_hostfactory_scheduler(
     )
 
 
-def create_default_strategy(container: "DIContainer") -> "SchedulerPort":
+def create_default_strategy(config: Any) -> "SchedulerPort":
     """Create default scheduler strategy.
 
     Args:
-        container: Dependency injection container
+        config: Scheduler configuration
 
     Returns:
         SchedulerPort: Default scheduler strategy instance
     """
     from domain.base.ports import LoggingPort
+    from infrastructure.di.container import get_container
     from infrastructure.scheduler.default.default_strategy import DefaultSchedulerStrategy
 
+    container = get_container()
     config_manager = container.get(ConfigurationPort)
     logger = container.get(LoggingPort)
     return DefaultSchedulerStrategy(config_manager, logger)

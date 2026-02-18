@@ -304,8 +304,14 @@ class ConfigurationAdapter(ConfigurationPort):
     def get_active_provider_override(self) -> str | None:
         """Get current provider override from CLI."""
         return self._config_manager.get_active_provider_override()
-        """Override the active provider instance."""
-        return self._config_manager.override_provider_instance(provider_name)
+
+    def get_configuration_value(self, key: str, default: Any = None) -> Any:
+        """Get configuration value."""
+        return self._config_manager.get(key, default)
+
+    def set_configuration_value(self, key: str, value: Any) -> None:
+        """Set configuration value."""
+        self._config_manager.set(key, value)
 
     def get_configuration_sources(self) -> dict[str, Any]:
         """Get configuration source information using existing methods."""
