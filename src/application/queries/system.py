@@ -35,14 +35,7 @@ class GetProviderMetricsQuery(Query, BaseModel):
     detailed: bool = False
 
 
-class GetConfigurationQuery(Query, BaseModel):
-    """Query to get configuration values."""
 
-    model_config = ConfigDict(frozen=True)
-
-    key: str
-    default: Optional[Any] = None
-    section: Optional[str] = None
     filter_expressions: list[str] = []
 
 
