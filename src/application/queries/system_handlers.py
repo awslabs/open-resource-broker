@@ -17,7 +17,6 @@ from application.dto.system import (
     ValidationResultDTO,
 )
 from application.queries.system import (
-    GetConfigurationQuery,
     GetConfigurationSectionQuery,
     GetProviderConfigQuery,
     GetProviderMetricsQuery,
@@ -29,46 +28,6 @@ from domain.base.ports import ContainerPort, ErrorHandlingPort, LoggingPort
 # Use TYPE_CHECKING to avoid direct infrastructure imports
 if TYPE_CHECKING:
     pass
-
-
-@query_handler(GetConfigurationQuery)
-class GetConfigurationHandler(BaseQueryHandler[GetConfigurationQuery, ConfigurationValueResponse]):
-    """Handler for getting configuration values."""
-
-    async def execute_query(self, query: GetConfigurationQuery) -> ConfigurationValueResponse:
-        """
-        Execute configuration value query.
-
-        Args:
-            query: Configuration query
-
-        Returns:
-            Configuration value response
-        """
-        # Access configuration through DI container
-        from infrastructure.di.container import get_container
-        from config.managers.configuration_manager import ConfigurationManager
-
-        container = get_container()
-        config_manager = container.get(ConfigurationManager)
-
-        if query.section:
-            # Get value from specific section
-            section_config = config_manager.get(query.section, {})
-            if isinstance(section_config, dict):
-                value = section_config.get(query.key.split(".")[-1], query.default)
-            else:
-                value = query.default
-        else:
-            # Get value directly by key
-            value = config_manager.get(query.key, query.default)
-
-        return ConfigurationValueResponse(
-            key=query.key,
-            value=value,
-            section=query.section,
-            found=value != query.default,
-        )
 
 
 @query_handler(GetConfigurationSectionQuery)

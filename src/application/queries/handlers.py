@@ -19,7 +19,7 @@ from application.dto.queries import (
     ListTemplatesQuery,
     ValidateTemplateQuery,
 )
-from application.queries.system import GetConfigurationQuery
+from application.dto.queries import GetConfigurationQuery
 from application.machine.queries import ListMachinesQuery as MachineListQuery
 from application.request.queries import ListRequestsQuery
 from application.dto.responses import MachineDTO, RequestDTO
