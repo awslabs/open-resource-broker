@@ -382,40 +382,57 @@ class AWSProviderStrategy(ProviderStrategy):
             self._logger.warning("Failed during AWS provider cleanup: %s", e)
 
     async def _handle_resolve_image(self, operation: ProviderOperation) -> ProviderResult:
-        """Handle image resolution operation - resolve SSM parameters to AMI IDs."""
+        """Handle image resolution using registry-based service."""
         try:
             image_specifications = operation.parameters.get("image_specifications", [])
             if not image_specifications:
                 return ProviderResult.success_result({"resolved_images": {}})
 
+            # Create image resolution service
+            service = self._create_image_resolution_service()
+
             resolved_images = {}
-            for image_spec in image_specifications:
-                if image_spec.startswith("/aws/service/"):
-                    # Resolve SSM parameter to AMI ID
-                    try:
-                        ssm_client = self.aws_client.ssm_client
-                        response = ssm_client.get_parameter(Name=image_spec)
-                        resolved_images[image_spec] = response["Parameter"]["Value"]
-                        self._logger.debug(
-                            "Resolved %s to %s", image_spec, resolved_images[image_spec]
-                        )
-                    except Exception as e:
-                        self._logger.warning(
-                            "Failed to resolve SSM parameter %s: %s", image_spec, e
-                        )
-                        # Fallback to original parameter
-                        resolved_images[image_spec] = image_spec
+            for spec in image_specifications:
+                if service.is_resolution_needed(spec):
+                    resolved_images[spec] = service.resolve_image_id(spec)
                 else:
-                    # Not an SSM parameter, return as-is
-                    resolved_images[image_spec] = image_spec
+                    resolved_images[spec] = spec  # Already resolved
 
             return ProviderResult.success_result({"resolved_images": resolved_images})
 
         except Exception as e:
-            self._logger.error("Image resolution failed: %s", e)
-            return ProviderResult.error_result(
-                f"Image resolution failed: {e}", "IMAGE_RESOLUTION_FAILED"
-            )
+            return ProviderResult.failure_result(f"Image resolution failed: {str(e)}")
+
+    def _create_image_resolution_service(self):
+        """Create AWS image resolution service with provider-specific context."""
+        from src.providers.aws.infrastructure.services.aws_image_resolution_service import (
+            AWSImageResolutionService,
+        )
+        from src.providers.aws.infrastructure.caching.aws_image_cache import AWSImageCache
+        import os
+
+        # Determine cache directory
+        try:
+            from infrastructure.di.container import get_container
+            container = get_container()
+            config = container.get("configuration_port")
+            cache_dir = os.path.join(config.get_work_dir(), ".cache")
+        except Exception:
+            # Fallback to current directory
+            cache_dir = os.path.join(os.getcwd(), ".cache")
+
+        cache = AWSImageCache(
+            provider_name=getattr(self, "provider_name", "aws"),
+            cache_dir=cache_dir,
+            ttl_seconds=3600,
+        )
+
+        return AWSImageResolutionService(
+            aws_client=self.aws_client,
+            cache=cache,
+            logger=self._logger,
+            region=self._aws_config.region,
+        )
 
     def __str__(self) -> str:
         """Return string representation for debugging."""
