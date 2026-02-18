@@ -258,6 +258,7 @@ class DeleteTemplateHandler(BaseCommandHandler[DeleteTemplateCommand, TemplateCo
             with self._uow_factory.create_unit_of_work() as uow:
                 # Get existing template
                 from domain.template.value_objects import TemplateId
+
                 template_id = TemplateId(value=command.template_id)
                 template = uow.templates.get_by_id(template_id)
                 if not template:

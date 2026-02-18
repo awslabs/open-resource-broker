@@ -91,9 +91,9 @@ class DynamoDBClientManager(ResourceManager):
         try:
             # Create session
             from providers.aws.session_factory import AWSSessionFactory
+
             session = AWSSessionFactory.create_session(
-                profile=self.profile if self.profile else None,
-                region=self.region
+                profile=self.profile if self.profile else None, region=self.region
             )
 
             # Create clients

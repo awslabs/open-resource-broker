@@ -7,7 +7,9 @@ from providers.base.strategy import ProviderOperation, ProviderOperationType, Pr
 
 if TYPE_CHECKING:
     from providers.aws.infrastructure.aws_client import AWSClient
-    from providers.aws.infrastructure.adapters.aws_provisioning_adapter import AWSProvisioningAdapter
+    from providers.aws.infrastructure.adapters.aws_provisioning_adapter import (
+        AWSProvisioningAdapter,
+    )
 
 
 class AWSInstanceOperationService:
@@ -27,7 +29,9 @@ class AWSInstanceOperationService:
         self._provider_name = provider_name
         self._provider_type = provider_type
 
-    async def create_instances(self, operation: ProviderOperation, handlers: dict) -> ProviderResult:
+    async def create_instances(
+        self, operation: ProviderOperation, handlers: dict
+    ) -> ProviderResult:
         """Handle instance creation operation."""
         try:
             template_config = operation.parameters.get("template_config", {})
@@ -41,7 +45,7 @@ class AWSInstanceOperationService:
 
             provider_api = template_config.get("provider_api", "RunInstances")
             handler = handlers.get(provider_api) or handlers.get("RunInstances")
-            
+
             if not handler:
                 return ProviderResult.error_result(
                     f"No handler available for provider_api: {provider_api}",
@@ -50,13 +54,21 @@ class AWSInstanceOperationService:
 
             # Convert template_config to AWSTemplate
             from providers.aws.domain.template.aws_template_aggregate import AWSTemplate
-            
+
             metadata = template_config.get("metadata", {})
             enhanced_config = template_config.copy()
 
             # Extract metadata fields
-            for field in ["root_device_volume_size", "volume_type", "iops", "fleet_role", 
-                         "fleet_type", "instance_profile", "key_name", "user_data"]:
+            for field in [
+                "root_device_volume_size",
+                "volume_type",
+                "iops",
+                "fleet_role",
+                "fleet_type",
+                "instance_profile",
+                "key_name",
+                "user_data",
+            ]:
                 if not enhanced_config.get(field) and metadata.get(field):
                     enhanced_config[field] = metadata.get(field)
 
@@ -90,7 +102,9 @@ class AWSInstanceOperationService:
             # Try provisioning adapter first
             if self._provisioning_adapter and not operation.context.get("skip_provisioning_port"):
                 try:
-                    adapter_result = await self._provisioning_adapter.provision_resources(request, aws_template)
+                    adapter_result = await self._provisioning_adapter.provision_resources(
+                        request, aws_template
+                    )
                     if isinstance(adapter_result, dict) and adapter_result.get("success", True):
                         return ProviderResult.success_result(
                             {
@@ -100,14 +114,17 @@ class AWSInstanceOperationService:
                                 "count": count,
                                 "template_id": aws_template.template_id,
                             },
-                            {"method": "provisioning_adapter", "provider_data": adapter_result.get("provider_data", {})},
+                            {
+                                "method": "provisioning_adapter",
+                                "provider_data": adapter_result.get("provider_data", {}),
+                            },
                         )
                 except Exception as e:
                     self._logger.error("Provisioning adapter failed: %s", e)
 
             # Fallback to handler
             handler_result = handler.acquire_hosts(request, aws_template)
-            
+
             if isinstance(handler_result, dict):
                 resource_ids = handler_result.get("resource_ids", [])
                 instances = handler_result.get("instances", [])
@@ -132,7 +149,9 @@ class AWSInstanceOperationService:
             )
 
         except Exception as e:
-            return ProviderResult.error_result(f"Failed to create instances: {e}", "CREATE_INSTANCES_ERROR")
+            return ProviderResult.error_result(
+                f"Failed to create instances: {e}", "CREATE_INSTANCES_ERROR"
+            )
 
     def terminate_instances(self, operation: ProviderOperation) -> ProviderResult:
         """Handle instance termination operation."""
@@ -160,19 +179,26 @@ class AWSInstanceOperationService:
                         {"method": "provisioning_adapter"},
                     )
                 except Exception as e:
-                    self._logger.warning("Provisioning adapter failed, using direct termination: %s", e)
+                    self._logger.warning(
+                        "Provisioning adapter failed, using direct termination: %s", e
+                    )
 
             # Fallback to direct termination
             response = self._aws_client.ec2_client.terminate_instances(InstanceIds=instance_ids)
             terminated_count = len(response.get("TerminatingInstances", []))
-            
+
             return ProviderResult.success_result(
-                {"success": terminated_count == len(instance_ids), "terminated_count": terminated_count},
+                {
+                    "success": terminated_count == len(instance_ids),
+                    "terminated_count": terminated_count,
+                },
                 {"method": "direct_client"},
             )
 
         except Exception as e:
-            return ProviderResult.error_result(f"Failed to terminate instances: {e}", "TERMINATE_INSTANCES_ERROR")
+            return ProviderResult.error_result(
+                f"Failed to terminate instances: {e}", "TERMINATE_INSTANCES_ERROR"
+            )
 
     def get_instance_status(self, operation: ProviderOperation) -> ProviderResult:
         """Handle instance status query operation."""
@@ -185,7 +211,7 @@ class AWSInstanceOperationService:
                 )
 
             response = self._aws_client.ec2_client.describe_instances(InstanceIds=instance_ids)
-            
+
             # Return raw AWS instances for domain layer processing
             instances = []
             for reservation in response["Reservations"]:
@@ -198,14 +224,16 @@ class AWSInstanceOperationService:
             )
 
         except Exception as e:
-            return ProviderResult.error_result(f"Failed to get instance status: {e}", "GET_INSTANCE_STATUS_ERROR")
+            return ProviderResult.error_result(
+                f"Failed to get instance status: {e}", "GET_INSTANCE_STATUS_ERROR"
+            )
 
     async def describe_resource_instances(self, operation: ProviderOperation) -> ProviderResult:
         """Discover instances from resource IDs (ASG, Fleet, etc.)."""
         try:
             resource_ids = operation.parameters.get("resource_ids", [])
             provider_api = operation.parameters.get("provider_api", "RunInstances")
-            
+
             if not resource_ids:
                 return ProviderResult.error_result(
                     "Resource IDs are required for instance discovery",
@@ -213,7 +241,7 @@ class AWSInstanceOperationService:
                 )
 
             all_instances = []
-            
+
             if provider_api == "RunInstances":
                 # Use reservation-id filter for RunInstances
                 for resource_id in resource_ids:
@@ -222,17 +250,23 @@ class AWSInstanceOperationService:
                     )
                     for reservation in response.get("Reservations", []):
                         all_instances.extend(reservation.get("Instances", []))
-            
+
             elif provider_api == "EC2Fleet":
                 # Get instance IDs from fleet
                 for resource_id in resource_ids:
-                    response = self._aws_client.ec2_client.describe_fleet_instances(FleetId=resource_id)
-                    instance_ids = [inst["InstanceId"] for inst in response.get("ActiveInstances", [])]
+                    response = self._aws_client.ec2_client.describe_fleet_instances(
+                        FleetId=resource_id
+                    )
+                    instance_ids = [
+                        inst["InstanceId"] for inst in response.get("ActiveInstances", [])
+                    ]
                     if instance_ids:
-                        inst_response = self._aws_client.ec2_client.describe_instances(InstanceIds=instance_ids)
+                        inst_response = self._aws_client.ec2_client.describe_instances(
+                            InstanceIds=instance_ids
+                        )
                         for reservation in inst_response.get("Reservations", []):
                             all_instances.extend(reservation.get("Instances", []))
-            
+
             else:
                 # Fallback: try reservation-id filter
                 for resource_id in resource_ids:
@@ -258,7 +292,9 @@ class AWSInstanceOperationService:
         from domain.machine.machine_status import MachineStatus
 
         aws_state = aws_instance.get("State", {})
-        state_name = aws_state.get("Name", "unknown") if isinstance(aws_state, dict) else str(aws_state)
+        state_name = (
+            aws_state.get("Name", "unknown") if isinstance(aws_state, dict) else str(aws_state)
+        )
 
         status_mapping = {
             "pending": MachineStatus.PENDING,
@@ -279,7 +315,9 @@ class AWSInstanceOperationService:
             "InstanceType": aws_instance.get("InstanceType"),
             "SubnetId": aws_instance.get("SubnetId"),
             "VpcId": aws_instance.get("VpcId"),
-            "Placement": {"AvailabilityZone": aws_instance.get("Placement", {}).get("AvailabilityZone")},
+            "Placement": {
+                "AvailabilityZone": aws_instance.get("Placement", {}).get("AvailabilityZone")
+            },
             "Tags": aws_instance.get("Tags", []),
             "PrivateDnsName": aws_instance.get("PrivateDnsName"),
             "PublicDnsName": aws_instance.get("PublicDnsName"),

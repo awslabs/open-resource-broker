@@ -88,7 +88,7 @@ class BaseRegistry(ABC):
                 from infrastructure.di.container import get_container
                 from domain.base.ports import LoggingPort, ConfigurationPort
                 from monitoring.metrics import MetricsCollector
-                
+
                 container = get_container()
                 self._logger_port = container.get(LoggingPort)
                 self._config_port = container.get(ConfigurationPort)
@@ -214,28 +214,28 @@ class BaseRegistry(ABC):
 
     def format_registry_error(self, requested_item: str, registry_type: str) -> str:
         """Format error message for unregistered registry item.
-        
+
         Args:
             requested_item: The item that was requested
             registry_type: Type of registry (provider, scheduler, etc.)
-            
+
         Returns:
             Formatted error message with available options
         """
         available_types = self.get_registered_types()
         available_instances = self.get_registered_instances()
-        
+
         if not available_types and not available_instances:
             return f"No {registry_type}s registered"
-        
+
         parts = [f"{registry_type.title()} '{requested_item}' not found"]
-        
+
         if available_types:
             parts.append(f"Available {registry_type} types: {', '.join(available_types)}")
-        
+
         if available_instances:
             parts.append(f"Available {registry_type} instances: {', '.join(available_instances)}")
-        
+
         return ". ".join(parts)
 
     def unregister_type(self, type_name: str) -> bool:
@@ -256,7 +256,9 @@ class BaseRegistry(ABC):
                 return True
             return False
 
-    def create_additional_component(self, type_name: str, factory_name: str, config: Any = None) -> Optional[Any]:
+    def create_additional_component(
+        self, type_name: str, factory_name: str, config: Any = None
+    ) -> Optional[Any]:
         """Create additional component (resolver, validator, etc.) by type."""
         registration = self._get_type_registration(type_name)
         factory = registration.get_factory(factory_name)

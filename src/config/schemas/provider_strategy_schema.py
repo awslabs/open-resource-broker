@@ -180,14 +180,16 @@ class ProviderInstanceConfig(BaseModel):
         """Validate provider type against registered providers."""
         # Import here to avoid circular imports
         from providers.registry import get_provider_registry
-        
+
         registry = get_provider_registry()
         registered_types = registry.get_registered_providers()
-        
+
         # If no providers registered, allow any type (graceful degradation)
         if registered_types and v not in registered_types:
-            raise ValueError(f"Provider type '{v}' is not registered. Available types: {registered_types}")
-        
+            raise ValueError(
+                f"Provider type '{v}' is not registered. Available types: {registered_types}"
+            )
+
         return v
 
     @field_validator("weight")

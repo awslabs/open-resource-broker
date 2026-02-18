@@ -34,8 +34,6 @@ class GetProviderMetricsQuery(Query, BaseModel):
     timeframe: Optional[str] = "1h"
     detailed: bool = False
 
-
-
     filter_expressions: list[str] = []
 
 

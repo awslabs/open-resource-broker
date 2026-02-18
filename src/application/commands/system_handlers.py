@@ -3,7 +3,13 @@
 from typing import Any
 
 from application.base.handlers import BaseCommandHandler
-from application.commands.system import ReloadProviderConfigCommand, RefreshTemplatesCommand, SetConfigurationCommand, TestStorageCommand, MCPValidateCommand
+from application.commands.system import (
+    ReloadProviderConfigCommand,
+    RefreshTemplatesCommand,
+    SetConfigurationCommand,
+    TestStorageCommand,
+    MCPValidateCommand,
+)
 from application.decorators import command_handler
 from domain.base.ports import (
     ContainerPort,
@@ -56,7 +62,7 @@ class ReloadProviderConfigHandler(BaseCommandHandler[ReloadProviderConfigCommand
             else:
                 # Fallback: get configuration manager from DI container
                 from config.managers.configuration_manager import ConfigurationManager
-                
+
                 actual_config_manager = self.container.get(ConfigurationManager)
                 # Note: ConfigurationManager doesn't support reload with different path
                 # This is a limitation of the current implementation
@@ -123,10 +129,10 @@ class RefreshTemplatesHandler(BaseCommandHandler[RefreshTemplatesCommand, dict[s
             from infrastructure.template.configuration_manager import TemplateConfigurationManager
 
             template_manager = self.container.get(TemplateConfigurationManager)
-            
+
             # Refresh templates
             templates = await template_manager.load_templates(command.provider_name)
-            
+
             result = {
                 "status": "success",
                 "message": "Templates refreshed successfully",
@@ -225,10 +231,10 @@ class TestStorageCommandHandler(BaseCommandHandler[TestStorageCommand, dict[str,
 
         try:
             from infrastructure.storage.registry import get_storage_registry
-            
+
             registry = get_storage_registry()
             storage_types = registry.get_registered_types()
-            
+
             result = {
                 "status": "success",
                 "message": "Storage test completed successfully",

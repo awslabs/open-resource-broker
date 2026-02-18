@@ -59,7 +59,6 @@ class AWSSecurityGroupId(ResourceId):
     pattern_key: ClassVar[str] = "security_group"
 
 
-
 class AWSImageId(ResourceId):
     """AWS AMI ID value object."""
 

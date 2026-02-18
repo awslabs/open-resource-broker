@@ -158,6 +158,7 @@ class StartupValidator:
             region = aws_provider.config.get("region", "us-east-1")
 
             from providers.aws.session_factory import AWSSessionFactory
+
             session = AWSSessionFactory.create_session(profile, region)
             session.client("sts").get_caller_identity()
             return True

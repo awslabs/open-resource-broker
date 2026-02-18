@@ -126,11 +126,11 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
             )
 
             resource_id = response["ReservationId"]
-            
+
             instance_ids = self._extract_instance_ids(
                 response, lambda r: [i["InstanceId"] for i in r.get("Instances", [])]
             )
-            
+
             # Create instances using existing machine adapter
             instances = []
             if self._machine_adapter and response.get("Instances"):
@@ -145,7 +145,7 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
                         # If adapter fails with partial data, skip machine creation
                         # Machines will be populated later via status query
                         self._logger.debug("Skipping machine creation with partial data: %s", e)
-            
+
             return {
                 "success": True,
                 "resource_ids": [resource_id],
@@ -177,7 +177,9 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
                 "error_message": str(e),
             }
 
-    def _create_instances_with_response(self, request: Request, aws_template: AWSTemplate) -> dict[str, Any]:
+    def _create_instances_with_response(
+        self, request: Request, aws_template: AWSTemplate
+    ) -> dict[str, Any]:
         """Create RunInstances and return full AWS response."""
         # Validate prerequisites
         self._validate_prerequisites(aws_template)
@@ -272,11 +274,13 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
         # Store AWS-specific data in provider_data instead of metadata
         if not hasattr(request, "provider_data"):
             request.provider_data = {}
-        request.provider_data.update({
-            "reservation_id": reservation_id,
-            "instance_ids": instance_ids,
-            "run_instances_resource_id": resource_id,
-        })
+        request.provider_data.update(
+            {
+                "reservation_id": reservation_id,
+                "instance_ids": instance_ids,
+                "run_instances_resource_id": resource_id,
+            }
+        )
 
         self._logger.info(
             "Successfully created %s instances via RunInstances with reservation ID %s: %s",
@@ -545,7 +549,7 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
                 if hasattr(request, "provider_data") and request.provider_data
                 else (request.resource_ids[0] if getattr(request, "resource_ids", None) else "")
             )
-            
+
             # Fallback to metadata for backward compatibility
             if not resource_id:
                 metadata = getattr(request, "metadata", {}) or {}

@@ -22,9 +22,10 @@ def register_core_services(container: DIContainer) -> None:
     # ConfigurationManager is now registered earlier in lazy mode
     # Only register it here if not already registered (eager mode)
     if not container.has(ConfigurationManager):
+
         def create_configuration_manager(c):
             return ConfigurationManager()  # Uses default config discovery
-        
+
         container.register_singleton(ConfigurationManager, create_configuration_manager)
 
     # Register metrics collector with configuration from ConfigurationPort
@@ -39,9 +40,13 @@ def register_core_services(container: DIContainer) -> None:
     # Register factories
     from infrastructure.scheduler.factory import SchedulerStrategyFactory
     from infrastructure.storage.factory import StorageStrategyFactory
-    
-    container.register_factory(SchedulerStrategyFactory, lambda c: SchedulerStrategyFactory(c.get(ConfigurationManager)))
-    container.register_factory(StorageStrategyFactory, lambda c: StorageStrategyFactory(c.get(ConfigurationManager)))
+
+    container.register_factory(
+        SchedulerStrategyFactory, lambda c: SchedulerStrategyFactory(c.get(ConfigurationManager))
+    )
+    container.register_factory(
+        StorageStrategyFactory, lambda c: StorageStrategyFactory(c.get(ConfigurationManager))
+    )
 
     # Register template format converter
 
@@ -69,7 +74,9 @@ def register_core_services(container: DIContainer) -> None:
         container.register_factory(
             CommandBus, lambda c: CommandBus(container=c, logger=c.get(LoggingPort))
         )
-        container.register_factory(QueryBus, lambda c: QueryBus(container=c, logger=c.get(LoggingPort)))
+        container.register_factory(
+            QueryBus, lambda c: QueryBus(container=c, logger=c.get(LoggingPort))
+        )
 
     # Register native spec service
     def create_native_spec_service(c):

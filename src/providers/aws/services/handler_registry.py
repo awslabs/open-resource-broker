@@ -53,28 +53,35 @@ class AWSHandlerRegistry:
         """Get all available handler instances."""
         effective_configs = self.get_effective_handler_configs()
         handlers = {}
-        
+
         for handler_type in effective_configs:
             handler = self.get_handler(handler_type)
             if handler:
                 handlers[handler_type] = handler
-        
+
         return handlers
 
     def get_effective_handler_configs(self) -> dict[str, Any]:
         """Get effective handler configurations from provider instance config."""
-        if self._provider_instance_config and hasattr(self._provider_instance_config, 'get_effective_handlers'):
+        if self._provider_instance_config and hasattr(
+            self._provider_instance_config, "get_effective_handlers"
+        ):
             try:
-                result = self._provider_instance_config.get_effective_handlers(self._provider_defaults)
+                result = self._provider_instance_config.get_effective_handlers(
+                    self._provider_defaults
+                )
                 if isinstance(result, dict):
                     return result
                 else:
-                    self._logger.warning("get_effective_handlers returned %s instead of dict", type(result))
+                    self._logger.warning(
+                        "get_effective_handlers returned %s instead of dict", type(result)
+                    )
             except Exception as e:
                 self._logger.warning("Failed to get effective handlers from config: %s", e)
-        
+
         # Fallback: all available handlers with proper config
         from providers.aws.domain.template.value_objects import ProviderApi
+
         return {api.value: {"enabled": True} for api in ProviderApi}
 
     def get_supported_apis(self) -> list[str]:

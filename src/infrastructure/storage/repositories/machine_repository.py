@@ -319,7 +319,9 @@ class MachineRepositoryImpl(MachineRepositoryInterface):
             machine_data_list = [data for data in data_list if "machine_id" in data]
             return [self.serializer.from_dict(data) for data in machine_data_list]
         except Exception as e:
-            self.logger.error("Failed to find machines by return_request_id %s: %s", return_request_id, e)
+            self.logger.error(
+                "Failed to find machines by return_request_id %s: %s", return_request_id, e
+            )
             raise
 
     @handle_infrastructure_exceptions(context="machine_repository_find_active_machines")

@@ -9,21 +9,19 @@ from application.request.dto import RequestDTO, MachineReferenceDTO
 class RequestDTOFactory:
     """Factory for creating RequestDTOs from domain objects."""
 
-    def create_from_domain(
-        self, 
-        request: Request, 
-        machines: list[Machine] = None
-    ) -> RequestDTO:
+    def create_from_domain(self, request: Request, machines: list[Machine] = None) -> RequestDTO:
         """Create RequestDTO from domain objects."""
         if machines is None:
             machines = []
-            
+
         # Convert machines to DTOs
         machine_references = [
             MachineReferenceDTO(
                 machine_id=str(machine.machine_id.value),
                 name=machine.private_ip or str(machine.machine_id.value),
-                result=self.map_machine_status_to_result(machine.status.value, request.request_type),
+                result=self.map_machine_status_to_result(
+                    machine.status.value, request.request_type
+                ),
                 status=machine.status.value,
                 private_ip_address=machine.private_ip or "",
                 public_ip_address=machine.public_ip,
@@ -31,7 +29,7 @@ class RequestDTOFactory:
             )
             for machine in machines
         ]
-        
+
         # Create RequestDTO using existing factory method
         return RequestDTO.from_domain(request, machine_references=machine_references)
 

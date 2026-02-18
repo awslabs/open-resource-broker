@@ -75,11 +75,13 @@ class AWSHealthCheckService:
     def get_available_credential_sources(self) -> list[dict]:
         """Get available AWS credential sources."""
         from providers.aws.profile_discovery import get_available_profiles
+
         return get_available_profiles()
 
     def test_credentials(self, credential_source: Optional[str] = None, **kwargs) -> dict:
         """Test AWS credentials."""
         from providers.aws.session_factory import AWSSessionFactory
+
         region = kwargs.get("region")
         return AWSSessionFactory.discover_credentials(credential_source, region)
 

@@ -9,15 +9,16 @@ CLEAN ARCHITECTURE: Only registers storage strategies, no repository knowledge.
 from infrastructure.logging.logger import get_logger
 
 
-
 def register_all_storage_types() -> None:
     """Register all available storage types."""
     # Register all available storage types
     from infrastructure.storage.json.registration import register_json_storage
+
     register_json_storage()
-    
+
     try:
-        from infrastructure.storage.sql.registration import register_sql_storage  
+        from infrastructure.storage.sql.registration import register_sql_storage
+
         register_sql_storage()
     except ImportError:
         pass
@@ -70,9 +71,3 @@ def is_storage_type_available(storage_type: str) -> bool:
         True if storage type is available, False otherwise
     """
     return storage_type in get_available_storage_types()
-
-
-
-
-
-

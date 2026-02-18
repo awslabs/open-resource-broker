@@ -101,7 +101,7 @@ async def handle_list_templates(args: argparse.Namespace) -> dict[str, Any]:
         # Print helpful message to stderr when no templates found
         if len(templates) == 0:
             from cli.help_utils import print_getting_started_help
-            
+
             print_info("")  # Empty line
             print_info("No templates found.")
             print_info("")  # Empty line
@@ -205,12 +205,13 @@ async def handle_create_template(args: argparse.Namespace) -> dict[str, Any]:
             }
 
         # Read template configuration from file
-        if not hasattr(args, 'file') or not args.file:
+        if not hasattr(args, "file") or not args.file:
             return {"success": False, "error": "Template file is required"}
 
         try:
             import json
-            with open(args.file, 'r') as f:
+
+            with open(args.file, "r") as f:
                 template_config = json.load(f)
         except FileNotFoundError:
             return {"success": False, "error": f"Template file not found: {args.file}"}

@@ -33,13 +33,13 @@ except ImportError:
 def add_global_arguments(parser):
     """
     Add arguments that should be available on all commands.
-    
+
     Filtering Strategy:
     - Generic filters: --filter field=value (works on any snake_case field)
     - Specific filters: Command-specific filters like --status, --template-id
     - Both can be combined: --filter "machine_types~t3" --status running
     - Multiple generic filters use AND logic: --filter "machine_types~t3" --filter "status=running"
-    
+
     Common filter examples:
     - --filter "machine_types~t3"           # Templates with t3 instance types
     - --filter "machine_types~medium"       # Templates with medium-sized instances
@@ -50,23 +50,31 @@ def add_global_arguments(parser):
     parser.add_argument("--provider", help="Override provider instance")
     parser.add_argument("--region", help="AWS region override")
     parser.add_argument("--profile", help="AWS profile override")
-    parser.add_argument("--scheduler", choices=["default", "hostfactory", "hf"], help="Override scheduler strategy")
-    
+    parser.add_argument(
+        "--scheduler", choices=["default", "hostfactory", "hf"], help="Override scheduler strategy"
+    )
+
     # Operation control
     parser.add_argument("--dry-run", action="store_true", help="Preview without executing")
     parser.add_argument("--yes", "-y", action="store_true", help="Assume yes to all prompts")
     parser.add_argument("--all", action="store_true", help="Apply to all resources")
-    
+
     # Output control
-    parser.add_argument("--format", choices=["json", "yaml", "table", "list"], default="json", help="Output format")
+    parser.add_argument(
+        "--format", choices=["json", "yaml", "table", "list"], default="json", help="Output format"
+    )
     parser.add_argument("--verbose", action="store_true", help="Verbose output")
     parser.add_argument("--quiet", action="store_true", help="Suppress output")
     parser.add_argument("--no-color", action="store_true", help="Disable colored output")
-    
+
     # Pagination and filtering
     parser.add_argument("--limit", type=int, help="Maximum number of results to return")
     parser.add_argument("--offset", type=int, default=0, help="Number of results to skip")
-    parser.add_argument("--filter", action="append", help="Generic filter using snake_case field names: field=value, field~value, field=~regex. Examples: --filter \"machine_types~t3\", --filter \"status=running\". Can be combined with specific filters. Use multiple times for AND logic.")
+    parser.add_argument(
+        "--filter",
+        action="append",
+        help='Generic filter using snake_case field names: field=value, field~value, field=~regex. Examples: --filter "machine_types~t3", --filter "status=running". Can be combined with specific filters. Use multiple times for AND logic.',
+    )
 
 
 def add_force_argument(parser):
@@ -83,14 +91,19 @@ def add_machine_actions(subparsers):
     """Add machine actions to a subparser."""
     # Machines list
     machines_list = subparsers.add_parser(
-        "list", 
+        "list",
         help="List machines",
-        description="List machines with filtering support. Use specific filters (--status, --template-id) or generic filters (--filter field=value)."
+        description="List machines with filtering support. Use specific filters (--status, --template-id) or generic filters (--filter field=value).",
     )
     add_global_arguments(machines_list)
     machines_list.add_argument("--status", help="Filter by machine status (specific filter)")
     machines_list.add_argument("--template-id", help="Filter by template ID (specific filter)")
-    machines_list.add_argument("--timestamp-format", choices=["auto", "unix", "iso"], default="auto", help="Timestamp format: auto (scheduler default), unix (seconds), iso (ISO 8601)")
+    machines_list.add_argument(
+        "--timestamp-format",
+        choices=["auto", "unix", "iso"],
+        default="auto",
+        help="Timestamp format: auto (scheduler default), unix (seconds), iso (ISO 8601)",
+    )
 
     # Machines show
     machines_show = subparsers.add_parser("show", help="Show machine details")
@@ -131,9 +144,7 @@ def add_machine_actions(subparsers):
     machines_return = subparsers.add_parser("return", help="Return machines")
     add_global_arguments(machines_return)
     add_force_argument(machines_return)
-    machines_return.add_argument(
-        "machine_ids", nargs="*", help="Machine IDs to return"
-    )
+    machines_return.add_argument("machine_ids", nargs="*", help="Machine IDs to return")
 
     # Machines status
     machines_status = subparsers.add_parser("status", help="Check machine status")
@@ -152,9 +163,9 @@ def add_request_actions(subparsers):
     """Add request actions to a subparser."""
     # Requests list
     requests_list = subparsers.add_parser(
-        "list", 
+        "list",
         help="List requests",
-        description="List requests with filtering support. Use specific filters (--status, --template-id) or generic filters (--filter field=value)."
+        description="List requests with filtering support. Use specific filters (--status, --template-id) or generic filters (--filter field=value).",
     )
     add_global_arguments(requests_list)
     requests_list.add_argument(
@@ -192,7 +203,7 @@ async def _show_resource_help(resource):
     """Show help for a resource when no action is provided."""
     import subprocess
     import sys
-    
+
     # Call the CLI with --help for the specific resource
     subprocess.run([sys.executable, "-m", "run", resource, "--help"])
     return {"success": True, "message": f"Showed help for {resource}"}
@@ -222,29 +233,36 @@ def add_infrastructure_actions(subparsers):
     """Add infrastructure actions to a subparser."""
     # Infrastructure discover
     infra_discover = subparsers.add_parser(
-        "discover", 
+        "discover",
         help="Scan AWS to find available infrastructure (VPCs, subnets, security groups)",
-        description="Discover available infrastructure in your AWS account. Makes AWS API calls to find VPCs, subnets, and security groups you can use."
+        description="Discover available infrastructure in your AWS account. Makes AWS API calls to find VPCs, subnets, and security groups you can use.",
     )
     add_global_arguments(infra_discover)
     add_multi_provider_arguments(infra_discover)
-    infra_discover.add_argument("--show", nargs='?', const='', help="Show only specific resources: vpcs,subnets,security-groups (or sg), or 'all' for everything")
-    infra_discover.add_argument("--summary", action="store_true", help="Show only summary counts, no details")
+    infra_discover.add_argument(
+        "--show",
+        nargs="?",
+        const="",
+        help="Show only specific resources: vpcs,subnets,security-groups (or sg), or 'all' for everything",
+    )
+    infra_discover.add_argument(
+        "--summary", action="store_true", help="Show only summary counts, no details"
+    )
 
     # Infrastructure show
     infra_show = subparsers.add_parser(
-        "show", 
+        "show",
         help="Show current ORB infrastructure configuration",
-        description="Display what infrastructure ORB is currently configured to use (from template_defaults in config)."
+        description="Display what infrastructure ORB is currently configured to use (from template_defaults in config).",
     )
     add_global_arguments(infra_show)
     add_multi_provider_arguments(infra_show)
 
     # Infrastructure validate
     infra_validate = subparsers.add_parser(
-        "validate", 
+        "validate",
         help="Verify configured infrastructure still exists in AWS",
-        description="Check if the infrastructure configured in ORB (template_defaults) still exists in your AWS account."
+        description="Check if the infrastructure configured in ORB (template_defaults) still exists in your AWS account.",
     )
     add_global_arguments(infra_validate)
 
@@ -253,19 +271,25 @@ def add_provider_actions(subparsers):
     """Add provider actions to a subparser."""
     # Providers list
     providers_list = subparsers.add_parser(
-        "list", 
+        "list",
         help="List providers",
-        description="List providers with filtering support. Use specific filters (--detailed) or generic filters (--filter field=value)."
+        description="List providers with filtering support. Use specific filters (--detailed) or generic filters (--filter field=value).",
     )
     add_global_arguments(providers_list)
     providers_list.add_argument(
-        "--detailed", action="store_true", help="Show detailed provider information (specific filter)"
+        "--detailed",
+        action="store_true",
+        help="Show detailed provider information (specific filter)",
     )
 
     # Providers show
     providers_show = subparsers.add_parser("show", help="Show provider details")
     add_global_arguments(providers_show)
-    providers_show.add_argument("provider_name", nargs="?", help="Provider name to show (optional - shows default if not specified)")
+    providers_show.add_argument(
+        "provider_name",
+        nargs="?",
+        help="Provider name to show (optional - shows default if not specified)",
+    )
 
     # Providers health
     providers_health = subparsers.add_parser("health", help="Check provider health")
@@ -315,20 +339,23 @@ def add_provider_actions(subparsers):
     # Providers metrics
     providers_metrics = subparsers.add_parser("metrics", help="Show provider metrics")
     add_global_arguments(providers_metrics)
-    providers_metrics.add_argument("--timeframe", default="1h", help="Metrics timeframe (e.g., 1h, 24h, 7d)")
+    providers_metrics.add_argument(
+        "--timeframe", default="1h", help="Metrics timeframe (e.g., 1h, 24h, 7d)"
+    )
 
 
 def add_template_actions(subparsers):
     """Add template actions to a subparser."""
     # Templates list
     templates_list = subparsers.add_parser(
-        "list", 
+        "list",
         help="List templates",
-        description="List templates with filtering support. Use specific filters (--provider-api) or generic filters (--filter field=value)."
+        description="List templates with filtering support. Use specific filters (--provider-api) or generic filters (--filter field=value).",
     )
     add_global_arguments(templates_list)
-    templates_list.add_argument("--provider-api", help="Filter by provider API type (specific filter)")
-
+    templates_list.add_argument(
+        "--provider-api", help="Filter by provider API type (specific filter)"
+    )
 
     # Templates show
     templates_show = subparsers.add_parser("show", help="Show template details")
@@ -377,9 +404,7 @@ def add_template_actions(subparsers):
     add_force_argument(templates_refresh)
 
     # Templates generate
-    templates_generate = subparsers.add_parser(
-        "generate", help="Generate example templates"
-    )
+    templates_generate = subparsers.add_parser("generate", help="Generate example templates")
     add_global_arguments(templates_generate)
     add_force_argument(templates_generate)
     add_multi_provider_arguments(templates_generate)
@@ -387,14 +412,16 @@ def add_template_actions(subparsers):
         "--provider-api", help="Provider API type (EC2Fleet, SpotFleet, ASG, RunInstances)"
     )
     templates_generate.add_argument(
-        "--provider-specific", action="store_true", help="Generate templates with hardcoded infrastructure"
+        "--provider-specific",
+        action="store_true",
+        help="Generate templates with hardcoded infrastructure",
     )
     templates_generate.add_argument(
-        "--generic", action="store_true", help="Generate generic templates (same as default behavior)"
+        "--generic",
+        action="store_true",
+        help="Generate generic templates (same as default behavior)",
     )
-    templates_generate.add_argument(
-        "--provider-type", help="Provider type (e.g., aws)"
-    )
+    templates_generate.add_argument("--provider-type", help="Provider type (e.g., aws)")
 
 
 def parse_args() -> tuple[argparse.Namespace, dict]:
@@ -463,16 +490,12 @@ For more information, visit: {DOCS_URL}
     # Templates resource
     templates_parser = subparsers.add_parser("templates", help="Compute templates")
     resource_parsers["templates"] = templates_parser
-    templates_subparsers = templates_parser.add_subparsers(
-        dest="action", help="Template actions"
-    )
+    templates_subparsers = templates_parser.add_subparsers(dest="action", help="Template actions")
 
     # Template resource (singular alias - hidden from main help)
     template_parser = subparsers.add_parser("template")
     resource_parsers["template"] = template_parser
-    template_subparsers = template_parser.add_subparsers(
-        dest="action", help="Template actions"
-    )
+    template_subparsers = template_parser.add_subparsers(dest="action", help="Template actions")
 
     # Add actions to both plural and singular forms
     add_template_actions(templates_subparsers)
@@ -481,16 +504,12 @@ For more information, visit: {DOCS_URL}
     # Machines resource
     machines_parser = subparsers.add_parser("machines", help="Compute instances")
     resource_parsers["machines"] = machines_parser
-    machines_subparsers = machines_parser.add_subparsers(
-        dest="action", help="Machine actions"
-    )
+    machines_subparsers = machines_parser.add_subparsers(dest="action", help="Machine actions")
 
     # Machine resource (singular alias - hidden from main help)
     machine_parser = subparsers.add_parser("machine")
     resource_parsers["machine"] = machine_parser
-    machine_subparsers = machine_parser.add_subparsers(
-        dest="action", help="Machine actions"
-    )
+    machine_subparsers = machine_parser.add_subparsers(dest="action", help="Machine actions")
 
     # Add actions to both plural and singular forms
     add_machine_actions(machines_subparsers)
@@ -499,16 +518,12 @@ For more information, visit: {DOCS_URL}
     # Requests resource
     requests_parser = subparsers.add_parser("requests", help="Provisioning requests")
     resource_parsers["requests"] = requests_parser
-    requests_subparsers = requests_parser.add_subparsers(
-        dest="action", help="Request actions"
-    )
+    requests_subparsers = requests_parser.add_subparsers(dest="action", help="Request actions")
 
     # Request resource (singular alias - hidden from main help)
     request_parser = subparsers.add_parser("request")
     resource_parsers["request"] = request_parser
-    request_subparsers = request_parser.add_subparsers(
-        dest="action", help="Request actions"
-    )
+    request_subparsers = request_parser.add_subparsers(dest="action", help="Request actions")
 
     # Add actions to both plural and singular forms
     add_request_actions(requests_subparsers)
@@ -555,9 +570,7 @@ For more information, visit: {DOCS_URL}
     # Infra resource (shortcut alias - hidden from main help)
     infra_parser = subparsers.add_parser("infra")
     resource_parsers["infra"] = infra_parser
-    infra_subparsers = infra_parser.add_subparsers(
-        dest="action", help="Infrastructure actions"
-    )
+    infra_subparsers = infra_parser.add_subparsers(dest="action", help="Infrastructure actions")
 
     # Add actions to both full and shortcut forms
     add_infrastructure_actions(infrastructure_subparsers)
@@ -593,16 +606,12 @@ For more information, visit: {DOCS_URL}
     # Providers resource
     providers_parser = subparsers.add_parser("providers", help="Cloud providers")
     resource_parsers["providers"] = providers_parser
-    providers_subparsers = providers_parser.add_subparsers(
-        dest="action", help="Provider actions"
-    )
+    providers_subparsers = providers_parser.add_subparsers(dest="action", help="Provider actions")
 
     # Provider resource (singular alias - hidden from main help)
     provider_parser = subparsers.add_parser("provider")
     resource_parsers["provider"] = provider_parser
-    provider_subparsers = provider_parser.add_subparsers(
-        dest="action", help="Provider actions"
-    )
+    provider_subparsers = provider_parser.add_subparsers(dest="action", help="Provider actions")
 
     # Add actions to both plural and singular forms
     add_provider_actions(providers_subparsers)
@@ -617,9 +626,9 @@ For more information, visit: {DOCS_URL}
 
     # Storage list
     storage_list = storage_subparsers.add_parser(
-        "list", 
+        "list",
         help="List storage strategies",
-        description="List storage strategies with filtering support using generic filters (--filter field=value)."
+        description="List storage strategies with filtering support using generic filters (--filter field=value).",
     )
     add_global_arguments(storage_list)
 
@@ -660,12 +669,11 @@ For more information, visit: {DOCS_URL}
 
     # Scheduler list
     scheduler_list = scheduler_subparsers.add_parser(
-        "list", 
+        "list",
         help="List scheduler strategies",
-        description="List scheduler strategies with filtering support using generic filters (--filter field=value)."
+        description="List scheduler strategies with filtering support using generic filters (--filter field=value).",
     )
     add_global_arguments(scheduler_list)
-
 
     # Scheduler show
     scheduler_show = scheduler_subparsers.add_parser("show", help="Show scheduler details")
@@ -749,6 +757,7 @@ async def execute_command(args, app, resource_parsers) -> Union[str, tuple[str, 
     if hasattr(args, "file") and args.file:
         try:
             import json
+
             with open(args.file) as f:
                 input_data = json.load(f)
         except Exception as e:
@@ -756,6 +765,7 @@ async def execute_command(args, app, resource_parsers) -> Union[str, tuple[str, 
     elif hasattr(args, "data") and args.data:
         try:
             import json
+
             input_data = json.loads(args.data)
         except Exception as e:
             raise DomainException(f"Failed to parse input data: {e}")
@@ -765,26 +775,34 @@ async def execute_command(args, app, resource_parsers) -> Union[str, tuple[str, 
     # Handle special cases that return direct results
     if args.resource == "init":
         from interface.init_command_handler import handle_init
+
         result = await handle_init(args)
-        
+
         # Format using response formatter
         from cli.response_formatter import create_cli_formatter
+
         formatter = create_cli_formatter()
         return formatter.format_response(result, args)
-    
+
     if args.resource == "mcp" and args.action == "serve":
         from interface.mcp.server.handler import handle_mcp_serve
+
         result = await handle_mcp_serve(args)
-        
+
         # Format using response formatter
         from cli.response_formatter import create_cli_formatter
+
         formatter = create_cli_formatter()
         return formatter.format_response(result, args)
-    
+
     if args.resource == "mcp" and args.action == "tools":
-        from interface.mcp_command_handlers import handle_mcp_tools_list, handle_mcp_tools_call, handle_mcp_tools_info
-        
-        tools_action = getattr(args, 'tools_action', None)
+        from interface.mcp_command_handlers import (
+            handle_mcp_tools_list,
+            handle_mcp_tools_call,
+            handle_mcp_tools_info,
+        )
+
+        tools_action = getattr(args, "tools_action", None)
         if tools_action == "list":
             result = await handle_mcp_tools_list(args)
         elif tools_action == "call":
@@ -793,9 +811,10 @@ async def execute_command(args, app, resource_parsers) -> Union[str, tuple[str, 
             result = await handle_mcp_tools_info(args)
         else:
             raise ValueError(f"Unknown MCP tools action: {tools_action}")
-        
+
         # Format using response formatter
         from cli.response_formatter import create_cli_formatter
+
         formatter = create_cli_formatter()
         return formatter.format_response(result, args)
 
@@ -806,88 +825,105 @@ async def execute_command(args, app, resource_parsers) -> Union[str, tuple[str, 
     from cli.command_factory import cli_command_factory
     from application.interfaces.command_query import Command
     from cli.response_formatter import create_cli_formatter
-    
+
     container = get_container()
     command_bus = container.get(CommandBus)
     query_bus = container.get(QueryBus)
     scheduler_port = container.get(SchedulerPort)
-    
+
     # Handle infrastructure commands directly (not through CQRS)
-    if hasattr(args, 'resource') and args.resource in ['infrastructure', 'infra']:
+    if hasattr(args, "resource") and args.resource in ["infrastructure", "infra"]:
         from interface.infrastructure_command_handler import (
             handle_infrastructure_discover,
-            handle_infrastructure_show, 
-            handle_infrastructure_validate
+            handle_infrastructure_show,
+            handle_infrastructure_validate,
         )
-        
-        if args.action == 'discover':
+
+        if args.action == "discover":
             result = await handle_infrastructure_discover(args)
-        elif args.action == 'show':
+        elif args.action == "show":
             result = await handle_infrastructure_show(args)
-        elif args.action == 'validate':
+        elif args.action == "validate":
             result = await handle_infrastructure_validate(args)
         else:
             raise ValueError(f"Unknown infrastructure action: {args.action}")
-    
+
     # Handle provider configuration commands directly
-    elif hasattr(args, 'resource') and args.resource in ['providers', 'provider'] and args.action in ['add', 'remove', 'update', 'set-default', 'get-default', 'show']:
+    elif (
+        hasattr(args, "resource")
+        and args.resource in ["providers", "provider"]
+        and args.action in ["add", "remove", "update", "set-default", "get-default", "show"]
+    ):
         from interface.provider_config_handler import (
             handle_provider_add,
             handle_provider_remove,
             handle_provider_update,
             handle_provider_set_default,
             handle_provider_get_default,
-            handle_provider_show
+            handle_provider_show,
         )
-        
-        if args.action == 'add':
+
+        if args.action == "add":
             result = await handle_provider_add(args)
-        elif args.action == 'remove':
+        elif args.action == "remove":
             result = await handle_provider_remove(args)
-        elif args.action == 'update':
+        elif args.action == "update":
             result = await handle_provider_update(args)
-        elif args.action == 'set-default':
+        elif args.action == "set-default":
             result = await handle_provider_set_default(args)
-        elif args.action == 'get-default':
+        elif args.action == "get-default":
             result = await handle_provider_get_default(args)
-        elif args.action == 'show':
+        elif args.action == "show":
             result = await handle_provider_show(args)
         else:
             raise ValueError(f"Unknown provider config action: {args.action}")
     else:
         # Create command or query from CLI args
         command_or_query = cli_command_factory.create_command_or_query(args)
-        
+
         # Handle special cases where command factory returns None (non-CQRS commands)
         if command_or_query is None:
             # Handle machine status with multiple IDs
-            if hasattr(args, 'resource') and args.resource == 'machines' and args.action == 'status':
+            if (
+                hasattr(args, "resource")
+                and args.resource == "machines"
+                and args.action == "status"
+            ):
                 from interface.machine_command_handlers import handle_get_machine_status
+
                 result = await handle_get_machine_status(args)
             # Handle machine return with --all or multiple IDs
-            elif hasattr(args, 'resource') and args.resource == 'machines' and args.action == 'return':
+            elif (
+                hasattr(args, "resource")
+                and args.resource == "machines"
+                and args.action == "return"
+            ):
                 from interface.request_command_handlers import handle_request_return_machines
+
                 result = await handle_request_return_machines(args)
             # Handle request status with multiple IDs
-            elif hasattr(args, 'resource') and args.resource == 'requests' and args.action in ['status', 'show']:
+            elif (
+                hasattr(args, "resource")
+                and args.resource == "requests"
+                and args.action in ["status", "show"]
+            ):
                 from interface.request_command_handlers import handle_get_request_status
+
                 result = await handle_get_request_status(args)
             else:
                 raise ValueError(f"Unknown command: {args.resource} {args.action}")
         else:
             # Execute through appropriate bus
             from application.dto.base import BaseCommand
+
             if isinstance(command_or_query, (Command, BaseCommand)):
                 result = await command_bus.execute(command_or_query)
             else:
                 result = await query_bus.execute(command_or_query)
-    
+
     # Format response for CLI output using improved formatter
     formatter = create_cli_formatter(scheduler_port)
     return formatter.format_response(result, args)
-
-
-
 
 
 async def main() -> None:
@@ -958,10 +994,32 @@ async def main() -> None:
         logger = get_logger(__name__)
 
         # Handle help display early - no need for app initialization
-        if hasattr(args, 'action') and args.action is None and args.resource in ["templates", "template", "machines", "machine", "requests", "request", "providers", "provider", "infrastructure", "infra"]:
-            resource_map = {"template": "templates", "machine": "machines", "request": "requests", "provider": "providers", "infra": "infrastructure"}
+        if (
+            hasattr(args, "action")
+            and args.action is None
+            and args.resource
+            in [
+                "templates",
+                "template",
+                "machines",
+                "machine",
+                "requests",
+                "request",
+                "providers",
+                "provider",
+                "infrastructure",
+                "infra",
+            ]
+        ):
+            resource_map = {
+                "template": "templates",
+                "machine": "machines",
+                "request": "requests",
+                "provider": "providers",
+                "infra": "infrastructure",
+            }
             help_resource = resource_map.get(args.resource, args.resource)
-            
+
             if help_resource in resource_parsers:
                 resource_parsers[help_resource].print_help()
                 sys.exit(0)
@@ -974,7 +1032,7 @@ async def main() -> None:
                 # Use DI container's ConfigurationPort for consistency
                 from infrastructure.di.container import get_container
                 from domain.base.ports.configuration_port import ConfigurationPort
-                
+
                 container = get_container()
                 config = container.get(ConfigurationPort)
                 config.override_scheduler_strategy(args.scheduler)
@@ -990,7 +1048,7 @@ async def main() -> None:
                 # Use DI container's ConfigurationPort for consistency
                 from infrastructure.di.container import get_container
                 from domain.base.ports.configuration_port import ConfigurationPort
-                
+
                 container = get_container()
                 config = container.get(ConfigurationPort)
                 config.override_provider_instance(args.provider)
@@ -1004,7 +1062,7 @@ async def main() -> None:
             try:
                 from infrastructure.di.container import get_container
                 from domain.base.ports.configuration_port import ConfigurationPort
-                
+
                 container = get_container()
                 config = container.get(ConfigurationPort)
                 config.override_aws_region(args.region)
@@ -1016,7 +1074,7 @@ async def main() -> None:
             try:
                 from infrastructure.di.container import get_container
                 from domain.base.ports.configuration_port import ConfigurationPort
-                
+
                 container = get_container()
                 config = container.get(ConfigurationPort)
                 config.override_aws_profile(args.profile)
@@ -1039,7 +1097,7 @@ async def main() -> None:
 
             try:
                 result = await handle_templates_generate(args)
-                
+
                 # Print result
                 if result.get("status") == "success":
                     sys.exit(0)
@@ -1048,6 +1106,7 @@ async def main() -> None:
                     sys.exit(1)
             except Exception as e:
                 import traceback
+
                 traceback.print_exc()
                 sys.exit(1)
 
@@ -1059,7 +1118,7 @@ async def main() -> None:
             from bootstrap import Application
 
             app = Application(args.config, skip_validation=skip_validation)
-            dry_run = getattr(args, 'dry_run', False)
+            dry_run = getattr(args, "dry_run", False)
             if not await app.initialize(dry_run=dry_run):
                 raise RuntimeError("Failed to initialize application")
         except Exception as e:
@@ -1107,27 +1166,30 @@ async def main() -> None:
 
         except DomainException as e:
             logger.exception("Domain error: %s", e)
-            
+
             # Use response formatter for consistent error formatting
             from cli.response_formatter import create_cli_formatter
+
             formatter = create_cli_formatter()
             output_format = getattr(args, "format", "json")
             error_output, exit_code = formatter.format_error(e, output_format)
-            
+
             if not args.quiet:
                 print(error_output)
             sys.exit(exit_code)
         except Exception as e:
             logger.exception("Unexpected error: %s", e)
-            
+
             # Use response formatter for consistent error formatting
             from cli.response_formatter import create_cli_formatter
+
             formatter = create_cli_formatter()
             output_format = getattr(args, "format", "json")
             error_output, exit_code = formatter.format_error(e, output_format)
-            
+
             if args.verbose:
                 import traceback
+
                 traceback.print_exc()
             if not args.quiet:
                 print(error_output)
@@ -1138,7 +1200,7 @@ async def main() -> None:
                 try:
                     from infrastructure.di.container import get_container
                     from domain.base.ports.configuration_port import ConfigurationPort
-                    
+
                     container = get_container()
                     config = container.get(ConfigurationPort)
                     config.restore_scheduler_strategy()

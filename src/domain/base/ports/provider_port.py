@@ -43,7 +43,9 @@ class ProviderPort(ABC):
         """Discover infrastructure for provider (optional)."""
         return {"error": "Infrastructure discovery not supported"}
 
-    def discover_infrastructure_interactive(self, provider_config: dict[str, Any]) -> dict[str, Any]:
+    def discover_infrastructure_interactive(
+        self, provider_config: dict[str, Any]
+    ) -> dict[str, Any]:
         """Discover infrastructure interactively (optional)."""
         return {"error": "Interactive infrastructure discovery not supported"}
 

@@ -21,7 +21,7 @@ from .managers.configuration_manager import ConfigurationManager
 # Backward compatibility - re-export main class
 __all__: list[str] = [
     "ConfigCacheManager",
-    "ConfigPathResolver", 
+    "ConfigPathResolver",
     "ConfigTypeConverter",
     "ConfigurationManager",
     "ProviderConfigManager",

@@ -33,17 +33,18 @@ class RequestSerializer:
             # Handle stringified dict format: "{'value': 'req-...'}"
             if request_id_data.startswith("{'value':") or request_id_data.startswith('{"value":'):
                 import ast
+
                 try:
                     parsed = ast.literal_eval(request_id_data)
-                    if isinstance(parsed, dict) and 'value' in parsed:
-                        return RequestId(value=parsed['value'])
+                    if isinstance(parsed, dict) and "value" in parsed:
+                        return RequestId(value=parsed["value"])
                 except:
                     pass
             # Handle direct string format
             return RequestId(value=request_id_data)
-        elif isinstance(request_id_data, dict) and 'value' in request_id_data:
+        elif isinstance(request_id_data, dict) and "value" in request_id_data:
             # Handle dict format: {'value': 'req-...'}
-            return RequestId(value=request_id_data['value'])
+            return RequestId(value=request_id_data["value"])
         else:
             # Fallback to string conversion
             return RequestId(value=str(request_id_data))
@@ -53,12 +54,18 @@ class RequestSerializer:
         try:
             return {
                 # Core request fields
-                "request_id": str(request.request_id.value) if hasattr(request.request_id, 'value') else str(request.request_id),
+                "request_id": str(request.request_id.value)
+                if hasattr(request.request_id, "value")
+                else str(request.request_id),
                 "template_id": request.template_id,
                 "machine_count": request.requested_count,
                 "desired_capacity": request.desired_capacity,
-                "request_type": request.request_type.value if hasattr(request.request_type, 'value') else str(request.request_type),
-                "status": request.status.value if hasattr(request.status, 'value') else str(request.status),
+                "request_type": request.request_type.value
+                if hasattr(request.request_type, "value")
+                else str(request.request_type),
+                "status": request.status.value
+                if hasattr(request.status, "value")
+                else str(request.status),
                 "status_message": request.status_message,
                 # Provider tracking fields
                 "provider_name": request.provider_name,
@@ -177,7 +184,11 @@ class RequestRepositoryImpl(RequestRepositoryInterface):
         """Save request using storage strategy and return extracted events."""
         operation_id = str(uuid4())
         start_time = time.time()
-        entity_id = str(request.request_id.value) if hasattr(request.request_id, 'value') else str(request.request_id)
+        entity_id = (
+            str(request.request_id.value)
+            if hasattr(request.request_id, "value")
+            else str(request.request_id)
+        )
 
         # Publish operation started event
         self._publish_storage_event(
@@ -271,7 +282,9 @@ class RequestRepositoryImpl(RequestRepositoryInterface):
     def get_by_id(self, request_id: RequestId) -> Optional[Request]:
         """Get request by ID using storage strategy."""
         try:
-            data = self.storage_port.find_by_id(str(request_id.value) if hasattr(request_id, 'value') else str(request_id))
+            data = self.storage_port.find_by_id(
+                str(request_id.value) if hasattr(request_id, "value") else str(request_id)
+            )
             if data:
                 return self.serializer.from_dict(data)
             return None
@@ -300,7 +313,7 @@ class RequestRepositoryImpl(RequestRepositoryInterface):
     def find_by_status(self, status: RequestStatus) -> list[Request]:
         """Find requests by status."""
         try:
-            criteria = {"status": status.value if hasattr(status, 'value') else str(status)}
+            criteria = {"status": status.value if hasattr(status, "value") else str(status)}
             data_list = self.storage_port.find_by_criteria(criteria)
             return [self.serializer.from_dict(data) for data in data_list]
         except Exception as e:
@@ -322,7 +335,11 @@ class RequestRepositoryImpl(RequestRepositoryInterface):
     def find_by_type(self, request_type: RequestType) -> list[Request]:
         """Find requests by type."""
         try:
-            criteria = {"request_type": request_type.value if hasattr(request_type, 'value') else str(request_type)}
+            criteria = {
+                "request_type": request_type.value
+                if hasattr(request_type, "value")
+                else str(request_type)
+            }
             data_list = self.storage_port.find_by_criteria(criteria)
             return [self.serializer.from_dict(data) for data in data_list]
         except Exception as e:
@@ -355,17 +372,19 @@ class RequestRepositoryImpl(RequestRepositoryInterface):
             for request in all_requests:
                 # Handle timezone-aware vs naive datetime comparison
                 request_date = request.created_at
-                
+
                 # If request date is naive but comparison dates are aware, make request date aware
                 if request_date.tzinfo is None and start_date.tzinfo is not None:
                     from datetime import timezone
+
                     request_date = request_date.replace(tzinfo=timezone.utc)
                 # If request date is aware but comparison dates are naive, make comparison dates aware
                 elif request_date.tzinfo is not None and start_date.tzinfo is None:
                     from datetime import timezone
+
                     start_date = start_date.replace(tzinfo=timezone.utc)
                     end_date = end_date.replace(tzinfo=timezone.utc)
-                
+
                 if start_date <= request_date <= end_date:
                     filtered_requests.append(request)
 
@@ -388,7 +407,9 @@ class RequestRepositoryImpl(RequestRepositoryInterface):
     def delete(self, request_id: RequestId) -> None:
         """Delete request by ID."""
         try:
-            self.storage_port.delete(str(request_id.value) if hasattr(request_id, 'value') else str(request_id))
+            self.storage_port.delete(
+                str(request_id.value) if hasattr(request_id, "value") else str(request_id)
+            )
             self.logger.debug("Deleted request %s", request_id)
         except Exception as e:
             self.logger.error("Failed to delete request %s: %s", request_id, e)
@@ -412,7 +433,9 @@ class RequestRepositoryImpl(RequestRepositoryInterface):
     def exists(self, request_id: RequestId) -> bool:
         """Check if request exists."""
         try:
-            return self.storage_port.exists(str(request_id.value) if hasattr(request_id, 'value') else str(request_id))
+            return self.storage_port.exists(
+                str(request_id.value) if hasattr(request_id, "value") else str(request_id)
+            )
         except Exception as e:
             self.logger.error("Failed to check if request %s exists: %s", request_id, e)
             raise
@@ -423,31 +446,24 @@ class RequestRepositoryImpl(RequestRepositoryInterface):
         return len(requests)
 
     def count_by_status_and_date_range(
-        self, 
-        status: RequestStatus, 
-        start_date: datetime, 
-        end_date: datetime
+        self, status: RequestStatus, start_date: datetime, end_date: datetime
     ) -> int:
         """Count requests by status within date range."""
         requests = self.find_by_date_range(start_date, end_date)
         return len([r for r in requests if r.status == status])
 
-    def get_metrics_by_date_range(
-        self, 
-        start_date: datetime, 
-        end_date: datetime
-    ) -> dict[str, int]:
+    def get_metrics_by_date_range(self, start_date: datetime, end_date: datetime) -> dict[str, int]:
         """Get aggregated metrics within date range."""
         requests = self.find_by_date_range(start_date, end_date)
-        
+
         metrics = {
             "total": len(requests),
             "completed": 0,
             "failed": 0,
             "in_progress": 0,
-            "pending": 0
+            "pending": 0,
         }
-        
+
         for request in requests:
             if request.status == RequestStatus.COMPLETED:
                 metrics["completed"] += 1
@@ -457,5 +473,5 @@ class RequestRepositoryImpl(RequestRepositoryInterface):
                 metrics["in_progress"] += 1
             elif request.status == RequestStatus.PENDING:
                 metrics["pending"] += 1
-        
+
         return metrics

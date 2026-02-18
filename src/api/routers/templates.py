@@ -99,9 +99,7 @@ async def list_templates(
             raise HTTPException(status_code=500, detail="QueryBus not available")
 
         # Create and execute query through CQRS bus
-        query = ListTemplatesQuery(
-            provider_api=provider_api, active_only=True
-        )
+        query = ListTemplatesQuery(provider_api=provider_api, active_only=True)
 
         templates = await query_bus.execute(query)
 

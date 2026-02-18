@@ -442,7 +442,11 @@ class TestAdditionalEndToEnd:
             assert hf_output["machineId"] == machine.machine_id
             assert hf_output["result"] == machine.result
             assert hf_output["privateIpAddress"] == machine.private_ip_address
-            assert hf_output["instanceType"] == list(machine.machine_types.keys())[0] if machine.machine_types else None
+            assert (
+                hf_output["instanceType"] == list(machine.machine_types.keys())[0]
+                if machine.machine_types
+                else None
+            )
             assert hf_output["priceType"] == machine.price_type
 
 

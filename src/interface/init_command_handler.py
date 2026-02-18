@@ -6,7 +6,14 @@ import shutil
 from pathlib import Path
 from typing import Any, Dict, Optional, Optional
 
-from cli.console import print_command, print_error, print_info, print_separator, print_success, print_newline
+from cli.console import (
+    print_command,
+    print_error,
+    print_info,
+    print_separator,
+    print_success,
+    print_newline,
+)
 from config.platform_dirs import (
     get_config_location,
     get_logs_location,
@@ -99,37 +106,36 @@ def _get_available_schedulers() -> list[dict[str, str]]:
     """Get available schedulers from registry."""
     from infrastructure.scheduler.registry import get_scheduler_registry
     from infrastructure.scheduler.registration import register_all_scheduler_types
-    
+
     registry = get_scheduler_registry()
     scheduler_types = registry.get_available_types_with_registration(register_all_scheduler_types)
-    
+
     schedulers = []
     for scheduler_type in scheduler_types:
         if scheduler_type == "default":
-            schedulers.append({
-                "type": "default",
-                "display_name": "default",
-                "description": "Standalone usage"
-            })
+            schedulers.append(
+                {"type": "default", "display_name": "default", "description": "Standalone usage"}
+            )
         elif scheduler_type == "hostfactory":
-            schedulers.append({
-                "type": "hostfactory", 
-                "display_name": "hostfactory",
-                "description": "IBM Spectrum Symphony integration"
-            })
-    
-    return schedulers
+            schedulers.append(
+                {
+                    "type": "hostfactory",
+                    "display_name": "hostfactory",
+                    "description": "IBM Spectrum Symphony integration",
+                }
+            )
 
+    return schedulers
 
 
 def _get_available_providers() -> list[dict[str, str]]:
     """Get available providers from provider registry."""
     try:
         from providers.registry import get_provider_registry
-        
+
         registry = get_provider_registry()
         registered_types = registry.get_registered_providers()
-        
+
         providers = []
         for provider_type in sorted(registered_types):
             # Get display name and description based on provider type
@@ -138,15 +144,17 @@ def _get_available_providers() -> list[dict[str, str]]:
                 description = "Amazon Web Services"
             else:
                 description = f"{provider_type.upper()} Provider"
-            
-            providers.append({
-                "type": provider_type,
-                "display_name": display_name,
-                "description": description
-            })
-        
+
+            providers.append(
+                {"type": provider_type, "display_name": display_name, "description": description}
+            )
+
         # Fallback to AWS if no providers registered (for backward compatibility)
-        return providers if providers else [{"type": "aws", "display_name": "aws", "description": "Amazon Web Services"}]
+        return (
+            providers
+            if providers
+            else [{"type": "aws", "display_name": "aws", "description": "Amazon Web Services"}]
+        )
     except Exception:
         # Fallback to AWS if registry unavailable
         return [{"type": "aws", "display_name": "aws", "description": "Amazon Web Services"}]
@@ -163,11 +171,11 @@ def _interactive_setup() -> Dict[str, Any]:
         print_info("")
         print_info("[1/4] Scheduler Type")
         print_separator(width=60, char="-", color="cyan")
-        
+
         schedulers = _get_available_schedulers()
         for i, scheduler in enumerate(schedulers, 1):
             print_info(f"  ({i}) {scheduler['display_name']} - {scheduler['description']}")
-        
+
         print_info("")
         scheduler_choice = input("  Select scheduler (1): ").strip() or "1"
         try:
@@ -177,16 +185,16 @@ def _interactive_setup() -> Dict[str, Any]:
 
         print_newline()
         print_separator(width=60, char="-", color="cyan")
-        
+
         # Provider type
         print_info("")
         print_info("[2/4] Cloud Provider")
         print_separator(width=60, char="-", color="cyan")
-        
+
         providers = _get_available_providers()
         for i, provider in enumerate(providers, 1):
             print_info(f"  ({i}) {provider['display_name']} - {provider['description']}")
-        
+
         print_info("")
         provider_choice = input("  Select provider (1): ").strip() or "1"
         try:
@@ -203,42 +211,48 @@ def _interactive_setup() -> Dict[str, Any]:
         print_info("")
         print_info("[3/4] Provider Configuration")
         print_separator(width=60, char="-", color="cyan")
-        
+
         # Get credential requirements
         requirements = _get_credential_requirements(provider_type)
-        
+
         # Collect required parameters first (e.g., region for AWS)
         provider_config = {"type": provider_type}
         for param, info in requirements.items():
             if info.get("required"):
                 default_value = "us-east-1" if param == "region" else ""
-                prompt = f"  {info['description']} ({default_value}): " if default_value else f"  {info['description']}: "
+                prompt = (
+                    f"  {info['description']} ({default_value}): "
+                    if default_value
+                    else f"  {info['description']}: "
+                )
                 value = input(prompt).strip() or default_value
                 provider_config[param] = value
-        
+
         # Fallback for AWS if no requirements defined
         if provider_type == "aws" and not requirements:
             region = input("  Region (us-east-1): ").strip() or "us-east-1"
             provider_config["region"] = region
-        
+
         # Get available credential sources
         credential_sources = _get_available_credential_sources(provider_type)
-        
+
         print_info("")
         print_info("Available credentials:")
         for i, source in enumerate(credential_sources, 1):
             print_info(f"  ({i}) {source['description']}")
-        
+
         choice = input("  Select credentials (1): ").strip() or "1"
         try:
             selected_source = credential_sources[int(choice) - 1]["name"]
         except (ValueError, IndexError):
             selected_source = None
-        
+
         # Test credentials
         print_info("")
         print_info("Testing credentials...")
-        success, error_msg = _test_provider_credentials(provider_type, selected_source, **provider_config)
+        success, error_msg = _test_provider_credentials(
+            provider_type, selected_source, **provider_config
+        )
         if success:
             print_success("Credentials verified successfully")
             if selected_source:
@@ -247,14 +261,14 @@ def _interactive_setup() -> Dict[str, Any]:
             print_error("[bold red]ERROR[/bold red] Authentication failed:")
             print_error(f"        {error_msg}")
             return {}
-        
+
         # Extract final values for backward compatibility
         region = provider_config.get("region", "us-east-1")
         profile = provider_config.get("profile", "default")
-        
+
         print_newline()
         print_separator(width=60, char="-", color="cyan")
-        
+
         # Infrastructure discovery
         print_info("")
         print_info("[4/4] Infrastructure Discovery")
@@ -263,11 +277,11 @@ def _interactive_setup() -> Dict[str, Any]:
         print_info("  This will help create generic templates that work across regions/accounts.")
         print_info("")
         discover_choice = input("  Discover infrastructure? (y/N): ").strip().lower()
-        
+
         infrastructure_defaults = {}
-        if discover_choice in ['y', 'yes']:
+        if discover_choice in ["y", "yes"]:
             infrastructure_defaults = _discover_infrastructure(provider_type, region, profile)
-        
+
         # Create first provider instance
         first_provider = {
             "type": provider_type,
@@ -275,23 +289,23 @@ def _interactive_setup() -> Dict[str, Any]:
             "region": region,
             "infrastructure_defaults": infrastructure_defaults,
         }
-        
+
         providers = [first_provider]
-        
+
         # Multi-provider loop
         print_info("")
         print_separator(width=60, char="-", color="cyan")
         while True:
             print_info("")
             add_another = input("  Add another provider? (y/N): ").strip().lower()
-            
-            if add_another not in ['y', 'yes']:
+
+            if add_another not in ["y", "yes"]:
                 break
-                
+
             additional_provider = _configure_additional_provider()
             if additional_provider:
                 providers.append(additional_provider)
-        
+
         print_info("")
 
         return {
@@ -313,12 +327,12 @@ def _configure_additional_provider() -> Optional[Dict[str, Any]]:
         print_info("")
         print_info("Additional Provider Configuration")
         print_separator(width=60, char="-", color="cyan")
-        
+
         # Provider type
         providers = _get_available_providers()
         for i, provider in enumerate(providers, 1):
             print_info(f"  ({i}) {provider['display_name']} - {provider['description']}")
-        
+
         print_info("")
         provider_choice = input("  Select provider (1): ").strip() or "1"
         try:
@@ -330,41 +344,47 @@ def _configure_additional_provider() -> Optional[Dict[str, Any]]:
         print_info("")
         print_info("Provider Configuration")
         print_separator(width=60, char="-", color="cyan")
-        
+
         # Get credential requirements
         requirements = _get_credential_requirements(provider_type)
-        
+
         provider_config = {"type": provider_type}
         for param, info in requirements.items():
             if info.get("required"):
                 default_value = "us-east-1" if param == "region" else ""
-                prompt = f"  {info['description']} ({default_value}): " if default_value else f"  {info['description']}: "
+                prompt = (
+                    f"  {info['description']} ({default_value}): "
+                    if default_value
+                    else f"  {info['description']}: "
+                )
                 value = input(prompt).strip() or default_value
                 provider_config[param] = value
-        
+
         # Fallback for AWS
         if provider_type == "aws" and not requirements:
             region = input("  Region (us-east-1): ").strip() or "us-east-1"
             provider_config["region"] = region
-        
+
         # Get available credential sources
         credential_sources = _get_available_credential_sources(provider_type)
-        
+
         print_info("")
         print_info("Available credentials:")
         for i, source in enumerate(credential_sources, 1):
             print_info(f"  ({i}) {source['description']}")
-        
+
         choice = input("  Select credentials (1): ").strip() or "1"
         try:
             selected_source = credential_sources[int(choice) - 1]["name"]
         except (ValueError, IndexError):
             selected_source = None
-        
+
         # Test credentials
         print_info("")
         print_info("Testing credentials...")
-        success, error_msg = _test_provider_credentials(provider_type, selected_source, **provider_config)
+        success, error_msg = _test_provider_credentials(
+            provider_type, selected_source, **provider_config
+        )
         if success:
             print_success("Credentials verified successfully")
             if selected_source:
@@ -372,26 +392,26 @@ def _configure_additional_provider() -> Optional[Dict[str, Any]]:
         else:
             print_error(f"Authentication failed: {error_msg}")
             return None
-        
+
         # Infrastructure discovery
         print_info("")
         print_info("Infrastructure Discovery")
         print_separator(width=60, char="-", color="cyan")
         discover_choice = input("  Discover infrastructure? (y/N): ").strip().lower()
-        
+
         infrastructure_defaults = {}
-        if discover_choice in ['y', 'yes']:
+        if discover_choice in ["y", "yes"]:
             region = provider_config.get("region", "us-east-1")
             profile = provider_config.get("profile", "default")
             infrastructure_defaults = _discover_infrastructure(provider_type, region, profile)
-        
+
         return {
             "type": provider_type,
             "profile": provider_config.get("profile", "default"),
             "region": provider_config.get("region", "us-east-1"),
             "infrastructure_defaults": infrastructure_defaults,
         }
-        
+
     except KeyboardInterrupt:
         print_error("\nProvider configuration cancelled")
         return None
@@ -405,6 +425,7 @@ def _get_available_credential_sources(provider_type: str) -> list[dict]:
     if provider_type == "aws":
         try:
             from providers.aws.profile_discovery import get_available_profiles
+
             return get_available_profiles()
         except Exception:
             return [{"name": None, "description": "Default credentials"}]
@@ -412,11 +433,14 @@ def _get_available_credential_sources(provider_type: str) -> list[dict]:
         return [{"name": None, "description": "Default credentials"}]
 
 
-def _test_provider_credentials(provider_type: str, credential_source: Optional[str], **kwargs) -> tuple[bool, str]:
+def _test_provider_credentials(
+    provider_type: str, credential_source: Optional[str], **kwargs
+) -> tuple[bool, str]:
     """Test provider credentials."""
     if provider_type == "aws":
         try:
             from providers.aws.session_factory import AWSSessionFactory
+
             region = kwargs.get("region")
             result = AWSSessionFactory.discover_credentials(credential_source, region)
             if result.get("success", False):
@@ -441,34 +465,28 @@ def _discover_infrastructure(provider_type: str, region: str, profile: str) -> D
     """Discover infrastructure interactively using provider strategy."""
     try:
         from providers.registry import get_provider_registry
-        
+
         registry = get_provider_registry()
-        
+
         # Ensure provider type is registered
         if not registry.ensure_provider_type_registered(provider_type):
             print_error(f"Failed to register provider type: {provider_type}")
             return {}
-        
+
         # Create provider config for discovery
-        provider_config = {
-            "region": region,
-            "profile": profile
-        }
-        
+        provider_config = {"region": region, "profile": profile}
+
         # Get strategy from registry
         strategy = registry.get_or_create_strategy(provider_type, provider_config)
-        
+
         # Check if provider strategy supports infrastructure discovery
-        if hasattr(strategy, 'discover_infrastructure_interactive'):
-            full_config = {
-                "type": provider_type,
-                "config": provider_config
-            }
+        if hasattr(strategy, "discover_infrastructure_interactive"):
+            full_config = {"type": provider_type, "config": provider_config}
             return strategy.discover_infrastructure_interactive(full_config)
         else:
             print_info(f"Infrastructure discovery not supported for provider type: {provider_type}")
             return {}
-            
+
     except Exception as e:
         print_error(f"Failed to discover infrastructure: {e}")
         print_info("Continuing without infrastructure discovery...")
@@ -480,14 +498,14 @@ def _get_default_config(args) -> Dict[str, Any]:
     # Get first available provider as default
     providers = _get_available_providers()
     default_provider = providers[0]["type"] if providers else "aws"
-    
+
     first_provider = {
         "type": args.provider or default_provider,
         "profile": args.profile or "default",
         "region": args.region or "us-east-1",
         "infrastructure_defaults": {},
     }
-    
+
     return {
         "scheduler_type": args.scheduler or "default",
         "providers": [first_provider],
@@ -534,22 +552,23 @@ def _write_config_file(config_file: Path, user_config: Dict[str, Any]):
     for provider_data in user_config.get("providers", []):
         provider_config = {"profile": provider_data["profile"], "region": provider_data["region"]}
         provider_type = provider_data["type"]
-        
+
         # Generate provider name
         try:
             from infrastructure.di.container import get_container
             from providers.factory import ProviderStrategyFactory
-            
+
             container = get_container()
             factory = container.get(ProviderStrategyFactory)
-            
+
             temp_config = {"type": provider_type, **provider_config}
             strategy = factory.create_strategy(provider_type, temp_config)
             provider_name = strategy.generate_provider_name(provider_config)
         except Exception:
             # Fallback to simple name generation
             import re
-            sanitized_profile = re.sub(r'[^a-zA-Z0-9\-_]', '-', provider_data['profile'])
+
+            sanitized_profile = re.sub(r"[^a-zA-Z0-9\-_]", "-", provider_data["profile"])
             provider_name = f"{provider_type}_{sanitized_profile}_{provider_data['region']}"
 
         # Create provider instance
@@ -559,19 +578,17 @@ def _write_config_file(config_file: Path, user_config: Dict[str, Any]):
             "enabled": True,
             "config": provider_config,
         }
-        
+
         # Add template_defaults if infrastructure was discovered
         infrastructure_defaults = provider_data.get("infrastructure_defaults", {})
         if infrastructure_defaults:
             provider_instance["template_defaults"] = infrastructure_defaults
-        
+
         providers_list.append(provider_instance)
-    
+
     config = {
         "scheduler": {"type": user_config["scheduler_type"]},
-        "provider": {
-            "providers": providers_list
-        },
+        "provider": {"providers": providers_list},
     }
 
     if user_config["scheduler_type"] == "hostfactory":

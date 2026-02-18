@@ -155,7 +155,7 @@ class RepositoryFactoryWithStrategies:
         if self._config_manager is None:
             from infrastructure.di.container import get_container
             from config.managers.configuration_manager import ConfigurationManager
-            
+
             container = get_container()
             self._config_manager = container.get(ConfigurationManager)
         return self._config_manager

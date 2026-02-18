@@ -277,7 +277,7 @@ class ProviderStrategy(ABC):
 
     def get_available_credential_sources(self) -> list[dict]:
         """Get available credential sources for this provider.
-        
+
         Returns:
             List of credential sources with name and description.
             Default implementation returns empty list.
@@ -286,11 +286,11 @@ class ProviderStrategy(ABC):
 
     def test_credentials(self, credential_source: Optional[str] = None, **kwargs) -> dict:
         """Test credentials and return metadata.
-        
+
         Args:
             credential_source: Optional credential source identifier
             **kwargs: Additional parameters (region, etc.)
-            
+
         Returns:
             Dict with success status and metadata.
             Default implementation returns failure.
@@ -299,7 +299,7 @@ class ProviderStrategy(ABC):
 
     def get_credential_requirements(self) -> dict:
         """Get required credential parameters for this provider.
-        
+
         Returns:
             Dict mapping parameter names to requirement info.
             Default implementation returns empty dict.

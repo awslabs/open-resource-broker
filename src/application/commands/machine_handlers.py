@@ -16,6 +16,7 @@ from domain.base.ports import ContainerPort, ErrorHandlingPort, EventPublisherPo
 
 # Import for type hints
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from application.services.provider_registry_service import ProviderRegistryService
 from domain.machine.repository import MachineRepository
@@ -115,21 +116,23 @@ class ConvertMachineStatusCommandHandler(
         if not command.provider_type:
             raise ValueError("provider_type is required")
 
-    async def execute_command(self, command: ConvertMachineStatusCommand) -> ConvertMachineStatusResponse:
+    async def execute_command(
+        self, command: ConvertMachineStatusCommand
+    ) -> ConvertMachineStatusResponse:
         """Execute status conversion using registry."""
-        
+
         # Create operation for status conversion
         operation = ProviderOperation(
             operation_type=ProviderOperationType.GET_INSTANCE_STATUS,
             parameters={
                 "provider_state": command.provider_state,
                 "convert_only": True,
-            }
+            },
         )
-        
+
         # Execute via registry
         result = await registry.execute_operation(command.provider_type, operation)
-        
+
         if result.success:
             status = result.data.get("status", MachineStatus.UNKNOWN)
             return ConvertMachineStatusResponse(
@@ -144,6 +147,8 @@ class ConvertMachineStatusCommandHandler(
                 original_state=command.provider_state,
                 provider_type=command.provider_type,
             )
+
+
 @command_handler(ConvertBatchMachineStatusCommand)
 class ConvertBatchMachineStatusCommandHandler(
     BaseCommandHandler[ConvertBatchMachineStatusCommand, ConvertBatchMachineStatusResponse]

@@ -94,6 +94,7 @@ class AWSClient:
         try:
             # Initialize session
             from providers.aws.session_factory import AWSSessionFactory
+
             self.session = AWSSessionFactory.create_session(
                 profile=self.profile_name, region=self.region_name
             )
@@ -205,9 +206,10 @@ class AWSClient:
             else:
                 # Use provider registry service for provider selection
                 from infrastructure.di.container import get_container
+
                 container = get_container()
                 from application.services.provider_registry_service import ProviderRegistryService
-                
+
                 provider_service = container.get(ProviderRegistryService)
                 selection_result = provider_service.select_active_provider()
 
@@ -222,7 +224,7 @@ class AWSClient:
                     raise AWSConfigurationError(
                         f"Selected provider is not AWS: {selection_result.provider_type}"
                     )
-                
+
                 provider_name = selection_result.provider_instance
 
             # Get the provider instance configuration

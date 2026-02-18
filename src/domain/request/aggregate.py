@@ -236,9 +236,7 @@ class Request(AggregateRoot):
     def needs_machine_id_population(self) -> bool:
         """Check if request needs machine ID population."""
         return (
-            not self.machine_ids and 
-            self.resource_ids and 
-            self.request_type != RequestType.RETURN
+            not self.machine_ids and self.resource_ids and self.request_type != RequestType.RETURN
         )
 
     @property
@@ -427,9 +425,7 @@ class Request(AggregateRoot):
             "provider_type": provider_type,
             "template_id": data.get("template_id"),
             "requested_count": data.get("requested_count", 1),
-            "desired_capacity": data.get(
-                "desired_capacity", data.get("requested_count", 1)
-            ),
+            "desired_capacity": data.get("desired_capacity", data.get("requested_count", 1)),
             "status": RequestStatus(data.get("status", RequestStatus.PENDING.value)),
             "status_message": data.get("status_message"),
             "successful_count": data.get("successful_count", 0),
@@ -465,7 +461,9 @@ class Request(AggregateRoot):
 
         # Update successful count from provisioning result
         if "instance_ids" in provisioning_result:
-            data["successful_count"] = self.successful_count + len(provisioning_result["instance_ids"])
+            data["successful_count"] = self.successful_count + len(
+                provisioning_result["instance_ids"]
+            )
 
         # Update provider data
         if "provider_data" in provisioning_result:

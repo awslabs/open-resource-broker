@@ -20,12 +20,11 @@ class GetRequestQuery(Query, BaseModel):
     lightweight: bool = False
 
 
-
 class ListActiveRequestsQuery(Query, BaseModel):
     """Query to list active requests."""
 
     model_config = ConfigDict(frozen=True)
-    
+
     provider_name: Optional[str] = None
     filter_expressions: list[str] = []
     all_resources: bool = False

@@ -7,17 +7,17 @@ from typing import List, Dict
 
 def get_available_profiles() -> List[Dict[str, str]]:
     """Get available AWS profiles from config files.
-    
+
     Returns:
         List of profile dictionaries with name and description
     """
     profiles = [{"name": None, "description": "Auto-discover credentials"}]
-    
+
     config_file = Path.home() / ".aws" / "config"
     creds_file = Path.home() / ".aws" / "credentials"
-    
+
     profile_names = set()
-    
+
     for file_path in [config_file, creds_file]:
         if file_path.exists():
             try:
@@ -31,11 +31,8 @@ def get_available_profiles() -> List[Dict[str, str]]:
             except Exception:
                 # Ignore parsing errors and continue
                 pass
-    
+
     for profile_name in sorted(profile_names):
-        profiles.append({
-            "name": profile_name,
-            "description": f"Profile: {profile_name}"
-        })
-    
+        profiles.append({"name": profile_name, "description": f"Profile: {profile_name}"})
+
     return profiles

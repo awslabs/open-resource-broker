@@ -46,17 +46,10 @@ class RequestRepository(AggregateRepository[Request]):
 
     @abstractmethod
     def count_by_status_and_date_range(
-        self, 
-        status: RequestStatus, 
-        start_date: datetime, 
-        end_date: datetime
+        self, status: RequestStatus, start_date: datetime, end_date: datetime
     ) -> int:
         """Count requests by status within date range."""
 
     @abstractmethod
-    def get_metrics_by_date_range(
-        self, 
-        start_date: datetime, 
-        end_date: datetime
-    ) -> dict[str, int]:
+    def get_metrics_by_date_range(self, start_date: datetime, end_date: datetime) -> dict[str, int]:
         """Get aggregated metrics within date range."""

@@ -113,7 +113,7 @@ class GetStorageHealthHandler(BaseQueryHandler[GetStorageHealthQuery, StorageHea
             Storage health response
         """
         strategy_name = query.strategy_name or "current"
-        
+
         if strategy_name != "current":
             health_info = self._storage_service.get_storage_health(strategy_name)
             healthy = health_info.get("status") != "error"
@@ -121,7 +121,7 @@ class GetStorageHealthHandler(BaseQueryHandler[GetStorageHealthQuery, StorageHea
         else:
             healthy = True
             status = "operational"
-        
+
         return StorageHealthResponse(
             strategy_name=strategy_name,
             healthy=healthy,

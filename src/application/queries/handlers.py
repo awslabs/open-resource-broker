@@ -33,6 +33,7 @@ from application.services.provider_registry_service import ProviderRegistryServi
 
 # Import for type hints
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     pass
 from domain.template.factory import TemplateFactory, get_default_template_factory
@@ -65,13 +66,13 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
         self._provider_registry_service = provider_registry_service
         self._cache_service = self._get_cache_service()
         self.event_publisher = self._get_event_publisher()
-        
+
         # Initialize services for SRP compliance
         from application.services.request_query_service import RequestQueryService
         from application.services.request_status_service import RequestStatusService
         from application.services.machine_sync_service import MachineSyncService
         from application.factories.request_dto_factory import RequestDTOFactory
-        
+
         self._query_service = RequestQueryService(uow_factory, logger)
         self._status_service = RequestStatusService(uow_factory, logger)
         self._machine_sync_service = container.get(MachineSyncService)
@@ -104,11 +105,11 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
             # ✅ FIXED: Trigger sync command instead of doing writes in query
             from application.dto.commands import SyncRequestCommand
             from infrastructure.di.buses import CommandBus
-            
+
             command_bus = self._container.get(CommandBus)
             sync_command = SyncRequestCommand(request_id=query.request_id)
             await command_bus.execute(sync_command)
-            
+
             # Re-query after sync to get updated state
             request = await self._query_service.get_request(query.request_id)
             machine_objects = await self._query_service.get_machines_for_request(request)
@@ -149,7 +150,7 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
 
             # Trigger population command if needed (no direct writes in query)
             await self._machine_sync_service.populate_missing_machine_ids(request)
-            
+
             # Re-query after sync to get updated state
             request = await self._query_service.get_request(query.request_id)
             machine_objects = await self._query_service.get_machines_for_request(request)
@@ -389,7 +390,7 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
             self.logger.warning("Failed to update machine status from AWS: %s", e)
             return machines, {}
 
-    # Provider Registry methods removed - use Provider Registry directly instead
+        # Provider Registry methods removed - use Provider Registry directly instead
         """Update ASG-specific metadata when capacity changes are detected."""
         try:
             from datetime import datetime
@@ -450,7 +451,6 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
                     }
                 )
 
-
                 action = "Initialized" if first_time_tracking else "Updated"
                 self.logger.info(
                     "%s ASG capacity metadata for request %s: %s -> %s (instances: %s)",
@@ -489,8 +489,6 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
             return {}
 
     # Provider Registry methods removed - use Provider Registry directly instead
-
-
 
     # def _create_machine_from_aws_data(self, aws_instance: dict[str, Any], request):
     #     """Create machine aggregate from AWS instance data."""
@@ -553,7 +551,8 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
                 "provider_type": request.provider_type,
                 "provider_name": request.provider_name,
                 "provider_api": request.metadata.get("provider_api") or request.provider_api,
-                "resource_id": aws_instance.get("resource_id") or (request.resource_ids[0] if request.resource_ids else None),
+                "resource_id": aws_instance.get("resource_id")
+                or (request.resource_ids[0] if request.resource_ids else None),
             }
         )
 
@@ -654,6 +653,7 @@ class ListRequestsHandler(BaseQueryHandler[ListRequestsQuery, list[RequestDTO]])
                 # Apply filters if provided
                 if query.status:
                     from domain.request.value_objects import RequestStatus
+
                     status_filter = RequestStatus(query.status)
                     requests = [r for r in requests if r.status == status_filter]
 
@@ -673,9 +673,10 @@ class ListRequestsHandler(BaseQueryHandler[ListRequestsQuery, list[RequestDTO]])
                     machines = []
                     if request.machine_ids:
                         machines = uow.machines.find_by_ids(request.machine_ids)
-                    
+
                     # Create RequestDTO using factory
                     from application.factories.request_dto_factory import RequestDTOFactory
+
                     dto_factory = RequestDTOFactory()
                     request_dto = dto_factory.create_from_domain(request, machines)
                     request_dtos.append(request_dto)
@@ -684,10 +685,12 @@ class ListRequestsHandler(BaseQueryHandler[ListRequestsQuery, list[RequestDTO]])
                 if query.filter_expressions:
                     # Convert RequestDTO objects to dicts for filtering
                     request_dicts = [dto.model_dump() for dto in request_dtos]
-                    
+
                     # Apply filters using GenericFilterService
-                    filtered_dicts = self._generic_filter_service.apply_filters(request_dicts, query.filter_expressions)
-                    
+                    filtered_dicts = self._generic_filter_service.apply_filters(
+                        request_dicts, query.filter_expressions
+                    )
+
                     # Convert back to RequestDTO objects
                     request_dtos = [RequestDTO.model_validate(d) for d in filtered_dicts]
 
@@ -743,10 +746,12 @@ class ListReturnRequestsHandler(BaseQueryHandler[ListReturnRequestsQuery, list[R
                 if query.filter_expressions:
                     # Convert RequestDTO objects to dicts for filtering
                     request_dicts = [dto.model_dump() for dto in request_dtos]
-                    
+
                     # Apply filters using GenericFilterService
-                    filtered_dicts = self._generic_filter_service.apply_filters(request_dicts, query.filter_expressions)
-                    
+                    filtered_dicts = self._generic_filter_service.apply_filters(
+                        request_dicts, query.filter_expressions
+                    )
+
                     # Convert back to RequestDTO objects
                     request_dtos = [RequestDTO.model_validate(d) for d in filtered_dicts]
 
@@ -785,18 +790,24 @@ class ListActiveRequestsHandler(BaseQueryHandler[ListActiveRequestsQuery, list[R
                 else:
                     # Existing filtered logic
                     from domain.request.value_objects import RequestStatus
-                    
-                    active_statuses = [RequestStatus.PENDING, RequestStatus.RUNNING, RequestStatus.PROVISIONING]
+
+                    active_statuses = [
+                        RequestStatus.PENDING,
+                        RequestStatus.RUNNING,
+                        RequestStatus.PROVISIONING,
+                    ]
                     requests = uow.requests.find_all()
                     active_requests = [r for r in requests if r.status in active_statuses]
 
                     # Apply template filter if provided
-                    if hasattr(query, 'template_id') and query.template_id:
-                        active_requests = [r for r in active_requests if r.template_id == query.template_id]
+                    if hasattr(query, "template_id") and query.template_id:
+                        active_requests = [
+                            r for r in active_requests if r.template_id == query.template_id
+                        ]
 
                     # Apply pagination
                     start_idx = 0
-                    end_idx = getattr(query, 'limit', None) or 100
+                    end_idx = getattr(query, "limit", None) or 100
                     active_requests = active_requests[start_idx:end_idx]
 
                 # Convert to DTOs
@@ -806,9 +817,10 @@ class ListActiveRequestsHandler(BaseQueryHandler[ListActiveRequestsQuery, list[R
                     machines = []
                     if request.machine_ids:
                         machines = uow.machines.find_by_ids(request.machine_ids)
-                    
+
                     # Create RequestDTO using factory
                     from application.factories.request_dto_factory import RequestDTOFactory
+
                     dto_factory = RequestDTOFactory()
                     request_dto = dto_factory.create_from_domain(request, machines)
                     request_dtos.append(request_dto)
@@ -817,10 +829,12 @@ class ListActiveRequestsHandler(BaseQueryHandler[ListActiveRequestsQuery, list[R
                 if query.filter_expressions:
                     # Convert RequestDTO objects to dicts for filtering
                     request_dicts = [dto.model_dump() for dto in request_dtos]
-                    
+
                     # Apply filters using GenericFilterService
-                    filtered_dicts = self._generic_filter_service.apply_filters(request_dicts, query.filter_expressions)
-                    
+                    filtered_dicts = self._generic_filter_service.apply_filters(
+                        request_dicts, query.filter_expressions
+                    )
+
                     # Convert back to RequestDTO objects
                     request_dtos = [RequestDTO.model_validate(d) for d in filtered_dicts]
 
@@ -869,6 +883,7 @@ class GetTemplateHandler(BaseQueryHandler[GetTemplateQuery, TemplateDTO]):
 
             # Apply template defaults resolution
             from application.services.template_defaults_service import TemplateDefaultsService
+
             if self._container.has(TemplateDefaultsService):
                 template_defaults_service = self._container.get(TemplateDefaultsService)
                 resolved_data = template_defaults_service.resolve_template_defaults(
@@ -885,7 +900,7 @@ class GetTemplateHandler(BaseQueryHandler[GetTemplateQuery, TemplateDTO]):
             domain_template = template_factory.create_template(resolved_data)
 
             self.logger.info("Retrieved template: %s", query.template_id)
-            
+
             # Convert domain template to DTO for CQRS compliance
             return TemplateDTO.from_domain(domain_template)
 
@@ -923,22 +938,24 @@ class ListTemplatesHandler(BaseQueryHandler[ListTemplatesQuery, list[TemplateDTO
 
             # Load templates with provider override if specified
             if query.provider_name:
-                template_dtos = await template_manager.load_templates(provider_override=query.provider_name)
+                template_dtos = await template_manager.load_templates(
+                    provider_override=query.provider_name
+                )
             elif query.provider_api:
                 template_dtos = await template_manager.get_templates_by_provider(query.provider_api)
             else:
                 template_dtos = await template_manager.load_templates()
 
-
-
             # Apply generic filters if provided
             if query.filter_expressions:
                 # Convert TemplateDTO objects to dicts for filtering
                 template_dicts = [dto.model_dump() for dto in template_dtos]
-                
+
                 # Apply filters using GenericFilterService
-                filtered_dicts = self._generic_filter_service.apply_filters(template_dicts, query.filter_expressions)
-                
+                filtered_dicts = self._generic_filter_service.apply_filters(
+                    template_dicts, query.filter_expressions
+                )
+
                 # Convert back to TemplateDTO objects
                 template_dtos = [TemplateDTO.model_validate(d) for d in filtered_dicts]
 
@@ -1088,9 +1105,10 @@ class ListMachinesHandler(BaseQueryHandler[MachineListQuery, list[MachineDTO]]):
         self.command_bus = command_bus
         self.timestamp_service = timestamp_service
         self._generic_filter_service = generic_filter_service
-        
+
         # Initialize machine sync service via DI
         from application.services.machine_sync_service import MachineSyncService
+
         self._machine_sync_service = container.get(MachineSyncService)
 
     async def execute_query(self, query: MachineListQuery) -> list[MachineDTO]:
@@ -1123,14 +1141,24 @@ class ListMachinesHandler(BaseQueryHandler[MachineListQuery, list[MachineDTO]]):
                             # Get request and trigger sync
                             request = uow.requests.get_by_id(machine.request_id)
                             if request:
-                                provider_machines, _ = await self._machine_sync_service.fetch_provider_machines(request, [machine])
+                                (
+                                    provider_machines,
+                                    _,
+                                ) = await self._machine_sync_service.fetch_provider_machines(
+                                    request, [machine]
+                                )
                                 if provider_machines:
-                                    synced_machines, _ = await self._machine_sync_service.sync_machines_with_provider(request, [machine], provider_machines)
+                                    (
+                                        synced_machines,
+                                        _,
+                                    ) = await self._machine_sync_service.sync_machines_with_provider(
+                                        request, [machine], provider_machines
+                                    )
                                     if synced_machines:
                                         machine = synced_machines[0]  # Use synced data
                         except Exception as e:
                             self.logger.debug(f"Sync failed for machine {machine.machine_id}: {e}")
-                    
+
                     machine_dto = MachineDTO(
                         machine_id=str(machine.machine_id),
                         name=machine.name or str(machine.machine_id),  # Fallback to machine_id
@@ -1142,7 +1170,9 @@ class ListMachinesHandler(BaseQueryHandler[MachineListQuery, list[MachineDTO]]):
                         public_dns_name=machine.public_dns_name,
                         price_type=machine.price_type,
                         result=MachineDTO._get_result_status(machine.status.value),
-                        launch_time=self.timestamp_service.format_with_type(machine.launch_time, query.timestamp_format or "auto"),
+                        launch_time=self.timestamp_service.format_with_type(
+                            machine.launch_time, query.timestamp_format or "auto"
+                        ),
                         message=machine.status_reason or "",
                         provider_api=machine.provider_api,
                         provider_name=machine.provider_name,
@@ -1163,7 +1193,9 @@ class ListMachinesHandler(BaseQueryHandler[MachineListQuery, list[MachineDTO]]):
                 # Apply generic filters if provided
                 if query.filter_expressions:
                     # Apply filters using GenericFilterService (machine_dtos are already dicts)
-                    machine_dtos = self._generic_filter_service.apply_filters(machine_dtos, query.filter_expressions)
+                    machine_dtos = self._generic_filter_service.apply_filters(
+                        machine_dtos, query.filter_expressions
+                    )
 
                 self.logger.info("Found %s machines", len(machine_dtos))
                 return machine_dtos

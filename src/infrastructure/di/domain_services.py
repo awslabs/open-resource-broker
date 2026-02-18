@@ -14,39 +14,28 @@ from domain.base.ports.logging_port import LoggingPort
 
 def register_domain_services(container: DIContainer) -> None:
     """Register domain services in the DI container."""
-    
+
     # Provider selection domain service
     container.register_singleton(
-        ProviderSelectionService, 
+        ProviderSelectionService,
         lambda c: ProviderSelectionService(
-            config=c.get(ConfigurationPort),
-            logger=c.get(LoggingPort)
-        )
+            config=c.get(ConfigurationPort), logger=c.get(LoggingPort)
+        ),
     )
-    
+
     # Template validation domain service
     container.register_singleton(
         TemplateValidationDomainService,
         lambda c: TemplateValidationDomainService(
-            config=c.get(ConfigurationPort),
-            logger=c.get(LoggingPort)
-        )
+            config=c.get(ConfigurationPort), logger=c.get(LoggingPort)
+        ),
     )
-    
+
     # Timestamp service
-    container.register_singleton(
-        TimestampService,
-        lambda c: ISOTimestampService()
-    )
-    
+    container.register_singleton(TimestampService, lambda c: ISOTimestampService())
+
     # Filter service
-    container.register_singleton(
-        FilterService,
-        lambda c: MachineFilterService()
-    )
-    
+    container.register_singleton(FilterService, lambda c: MachineFilterService())
+
     # Generic filter service
-    container.register_singleton(
-        GenericFilterService,
-        lambda c: GenericFilterService()
-    )
+    container.register_singleton(GenericFilterService, lambda c: GenericFilterService())

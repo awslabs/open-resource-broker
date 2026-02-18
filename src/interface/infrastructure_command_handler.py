@@ -86,16 +86,16 @@ async def _discover_provider_infrastructure(provider: Dict[str, Any], args) -> D
     try:
         from infrastructure.di.container import get_container
         from domain.base.ports.provider_port import ProviderPort
-        
+
         container = get_container()
         provider_strategy = container.get(ProviderPort)
-        
+
         # Pass CLI args to the provider strategy
         provider_with_args = {**provider, "cli_args": args}
-        
+
         # Use the provider strategy to discover infrastructure
         return provider_strategy.discover_infrastructure(provider_with_args)
-            
+
     except Exception as e:
         print_error(f"Failed to discover infrastructure for {provider['name']}: {e}")
         return {"provider": provider["name"], "error": str(e)}
@@ -105,7 +105,7 @@ def _show_provider_infrastructure(provider: Dict[str, Any]) -> None:
     """Show infrastructure configuration for a provider."""
     print_info(f"\nProvider: {provider['name']}")
     print_info(f"Type: {provider['type']}")
-    
+
     config = provider.get("config", {})
     if config:
         print_info(f"Region: {config.get('region', 'N/A')}")
@@ -119,7 +119,7 @@ def _show_provider_infrastructure(provider: Dict[str, Any]) -> None:
             print_info(f"  Subnets ({len(subnets)}):")
             for subnet in subnets:
                 print_info(f"    - {subnet}")
-        
+
         if "security_group_ids" in template_defaults:
             sgs = template_defaults["security_group_ids"]
             print_info(f"  Security Groups ({len(sgs)}):")
@@ -140,17 +140,20 @@ async def _validate_provider_infrastructure(provider: Dict[str, Any]) -> Dict[st
     try:
         from infrastructure.di.container import get_container
         from domain.base.ports.provider_port import ProviderPort
-        
+
         container = get_container()
         provider_strategy = container.get(ProviderPort)
-        
+
         # Check if provider strategy supports infrastructure validation
-        if hasattr(provider_strategy, 'validate_infrastructure'):
+        if hasattr(provider_strategy, "validate_infrastructure"):
             return provider_strategy.validate_infrastructure(provider)
         else:
             print_info(f"Infrastructure validation not supported for provider: {provider['name']}")
-            return {"provider": provider["name"], "error": "Infrastructure validation not supported"}
-            
+            return {
+                "provider": provider["name"],
+                "error": "Infrastructure validation not supported",
+            }
+
     except Exception as e:
         print_error(f"Failed to validate infrastructure for {provider['name']}: {e}")
         return {"provider": provider["name"], "error": str(e)}
@@ -163,10 +166,17 @@ def _get_active_providers() -> List[Dict[str, Any]]:
 
     if not config_file.exists():
         from providers.registry import get_provider_registry
+
         registry = get_provider_registry()
         registered_types = registry.get_registered_providers()
         default_type = registered_types[0] if registered_types else "aws"
-        return [{"name": "default", "type": default_type, "config": {"region": "us-east-1", "profile": "default"}}]
+        return [
+            {
+                "name": "default",
+                "type": default_type,
+                "config": {"region": "us-east-1", "profile": "default"},
+            }
+        ]
 
     with open(config_file) as f:
         config_dict = json.load(f)
@@ -182,56 +192,63 @@ def _get_active_providers() -> List[Dict[str, Any]]:
 
     if not active_providers:
         from providers.registry import get_provider_registry
+
         registry = get_provider_registry()
         registered_types = registry.get_registered_providers()
         default_type = registered_types[0] if registered_types else "aws"
-        active_providers = [{"name": "default", "type": default_type, "config": {"region": "us-east-1", "profile": "default"}}]
-    
+        active_providers = [
+            {
+                "name": "default",
+                "type": default_type,
+                "config": {"region": "us-east-1", "profile": "default"},
+            }
+        ]
+
     return active_providers
 
 
 def _get_active_providers_with_overrides() -> List[Dict[str, Any]]:
     """Get active providers with global overrides applied."""
     providers = _get_active_providers()
-    
+
     # Apply global overrides
     try:
         from infrastructure.di.container import get_container
         from domain.base.ports.configuration_port import ConfigurationPort
-        
+
         container = get_container()
         config = container.get(ConfigurationPort)
-        
+
         for provider in providers:
             if provider.get("type") == "aws":
                 provider_config = provider.get("config", {})
-                
+
                 # Apply region override
                 effective_region = config.get_effective_aws_region(
                     provider_config.get("region", "us-east-1")
                 )
                 provider_config["region"] = effective_region
-                
+
                 # Apply profile override
                 effective_profile = config.get_effective_aws_profile(
                     provider_config.get("profile", "default")
                 )
                 provider_config["profile"] = effective_profile
-                
+
                 provider["config"] = provider_config
     except Exception:
         # Fallback to original providers if override fails
         pass
-    
+
     return providers
 
 
 def _get_provider_config(provider_name: str) -> Dict[str, Any]:
     """Get configuration for specific provider."""
     active_providers = _get_active_providers()
-    
+
     for provider in active_providers:
         if provider["name"] == provider_name:
             return provider
-    
+
     raise ValueError(f"Provider '{provider_name}' not found in configuration")

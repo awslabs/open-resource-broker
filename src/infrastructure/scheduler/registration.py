@@ -145,6 +145,3 @@ def register_active_scheduler_only(scheduler_type: str = "default") -> bool:
     except Exception as e:
         logger.error("Failed to register active scheduler '%s': %s", scheduler_type, e)
         return False
-
-
-

@@ -120,7 +120,7 @@ class ASGHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
             )
 
             instances = []
-            
+
             return {
                 "success": True,
                 "resource_ids": [asg_name],

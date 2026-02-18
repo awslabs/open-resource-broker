@@ -57,8 +57,9 @@ class Application:
         if self._config_manager is None:
             if not self._container:
                 raise RuntimeError("Application not initialized - call initialize() first")
-            
+
             from config.managers.configuration_manager import ConfigurationManager
+
             self._config_manager = self._container.get(ConfigurationManager)
 
             # Extract provider type from config
@@ -142,8 +143,12 @@ class Application:
             provider_config = self._config_manager.get_provider_config()
             if provider_config:
                 for provider_instance in provider_config.get_active_providers():
-                    if not self._provider_registry.is_provider_instance_registered(provider_instance.name):
-                        self._provider_registry.ensure_provider_instance_registered_from_config(provider_instance)
+                    if not self._provider_registry.is_provider_instance_registered(
+                        provider_instance.name
+                    ):
+                        self._provider_registry.ensure_provider_instance_registered_from_config(
+                            provider_instance
+                        )
         except Exception as e:
             self.logger.error("Failed to register configured providers: %s", e)
 

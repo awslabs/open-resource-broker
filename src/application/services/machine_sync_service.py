@@ -32,16 +32,19 @@ class MachineSyncService:
         if request.needs_machine_id_population():
             try:
                 from application.dto.commands import PopulateMachineIdsCommand
-                populate_command = PopulateMachineIdsCommand(request_id=str(request.request_id.value))
+
+                populate_command = PopulateMachineIdsCommand(
+                    request_id=str(request.request_id.value)
+                )
                 await self.command_bus.execute(populate_command)
-                self.logger.debug(f"Triggered machine ID population for request {request.request_id.value}")
+                self.logger.debug(
+                    f"Triggered machine ID population for request {request.request_id.value}"
+                )
             except Exception as e:
                 self.logger.error(f"Failed to populate machine IDs: {e}")
 
     async def fetch_provider_machines(
-        self, 
-        request: Request, 
-        db_machines: list[Machine]
+        self, request: Request, db_machines: list[Machine]
     ) -> Tuple[list[Machine], dict]:
         """Fetch machines from provider."""
         try:
@@ -85,8 +88,10 @@ class MachineSyncService:
 
             # Get provider configuration
             config_port = self.container.get(ConfigurationPort)
-            provider_instance_config = config_port.get_provider_instance_config(request.provider_name)
-            
+            provider_instance_config = config_port.get_provider_instance_config(
+                request.provider_name
+            )
+
             # Execute operation using Provider Registry Service
             result = await self._provider_registry_service.execute_operation(
                 request.provider_name, operation
@@ -95,37 +100,40 @@ class MachineSyncService:
             if result.success and result.data:
                 instances = result.data.get("instances", [])
                 self.logger.debug(f"Provider returned {len(instances)} instances")
-                
+
                 # Get machine adapter from container (proper DI)
                 from providers.aws.infrastructure.adapters.machine_adapter import AWSMachineAdapter
+
                 machine_adapter = self.container.get(AWSMachineAdapter)
-                
+
                 # Convert raw AWS instances to domain machines using machine adapter
                 domain_machines = []
                 for aws_instance_data in instances:
                     try:
                         processed_data = machine_adapter.create_machine_from_aws_instance(
-                            aws_instance_data, 
-                            str(request.request_id), 
+                            aws_instance_data,
+                            str(request.request_id),
                             request.provider_api or "RunInstances",
-                            request.resource_ids[0] if request.resource_ids else ""
+                            request.resource_ids[0] if request.resource_ids else "",
                         )
-                        
+
                         machine = self._create_machine_from_processed_data(processed_data, request)
                         domain_machines.append(machine)
                     except Exception as e:
                         self.logger.warning(f"Failed to create machine from AWS data: {e}")
-                
+
                 return domain_machines, result.metadata or {}
             else:
                 self.logger.warning(f"Provider operation failed: {result.error_message}")
                 return db_machines, {}
-            
+
         except Exception as e:
             self.logger.error(f"Failed to fetch provider machines: {e}")
             return db_machines, {}
 
-    def _create_machine_from_processed_data(self, processed_data: dict, request: Request) -> Machine:
+    def _create_machine_from_processed_data(
+        self, processed_data: dict, request: Request
+    ) -> Machine:
         from datetime import datetime
         from domain.base.value_objects import InstanceType
         from domain.machine.machine_identifiers import MachineId
@@ -160,15 +168,12 @@ class MachineSyncService:
         )
 
     async def sync_machines_with_provider(
-        self, 
-        request: Request, 
-        db_machines: list[Machine], 
-        provider_machines: list[Machine]
+        self, request: Request, db_machines: list[Machine], provider_machines: list[Machine]
     ) -> Tuple[list[Machine], dict]:
         try:
             from domain.base import UnitOfWorkFactory
             from domain.machine.machine_status import MachineStatus
-            
+
             existing_by_id = {str(m.machine_id.value): m for m in db_machines}
             updated_machines = []
             to_upsert = []
@@ -189,9 +194,11 @@ class MachineSyncService:
                         or existing.public_dns_name != provider_machine.public_dns_name
                         or existing.price_type != provider_machine.price_type
                     )
-                    
+
                     # Debug logging
-                    self.logger.info(f"Machine {machine_id} sync check: existing.name='{existing.name}' vs provider.name='{provider_machine.name}', needs_update={needs_update}")
+                    self.logger.info(
+                        f"Machine {machine_id} sync check: existing.name='{existing.name}' vs provider.name='{provider_machine.name}', needs_update={needs_update}"
+                    )
 
                     if needs_update:
                         # Create updated machine with all provider data
@@ -204,14 +211,18 @@ class MachineSyncService:
                         machine_data["public_dns_name"] = provider_machine.public_dns_name
                         machine_data["price_type"] = provider_machine.price_type
                         machine_data["public_ip"] = provider_machine.public_ip
-                        machine_data["launch_time"] = provider_machine.launch_time or existing.launch_time
+                        machine_data["launch_time"] = (
+                            provider_machine.launch_time or existing.launch_time
+                        )
                         machine_data["version"] = existing.version + 1
 
                         updated_machine = Machine.model_validate(machine_data)
                         to_upsert.append(updated_machine)
                         updated_machines.append(updated_machine)
-                        
-                        self.logger.debug(f"Updated machine {machine_id} status: {existing.status} -> {provider_machine.status}")
+
+                        self.logger.debug(
+                            f"Updated machine {machine_id} status: {existing.status} -> {provider_machine.status}"
+                        )
                     else:
                         updated_machines.append(existing)
                 else:
@@ -226,11 +237,11 @@ class MachineSyncService:
                 with uow_factory.create_unit_of_work() as uow:
                     for machine in to_upsert:
                         uow.machines.save(machine)
-                
+
                 self.logger.info(f"Updated {len(to_upsert)} machines from provider sync")
 
             return updated_machines, {}
-            
+
         except Exception as e:
             self.logger.error(f"Failed to sync machines with provider: {e}")
             return db_machines, {}

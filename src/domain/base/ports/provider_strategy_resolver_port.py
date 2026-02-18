@@ -11,17 +11,15 @@ class ProviderStrategyResolverPort(ABC):
 
     @abstractmethod
     def resolve_strategy_identifier(
-        self, 
-        provider_type: str, 
-        provider_name: Optional[str] = None
+        self, provider_type: str, provider_name: Optional[str] = None
     ) -> Optional[str]:
         """
         Resolve the correct strategy identifier for a provider.
-        
+
         Args:
             provider_type: The provider type (e.g., 'aws')
             provider_name: The provider instance name (e.g., 'aws_default_us-east-1')
-            
+
         Returns:
             Strategy identifier if found, None otherwise
         """

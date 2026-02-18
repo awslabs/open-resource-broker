@@ -33,39 +33,41 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
     def get_template_paths(self) -> list[str]:
         """Get template file paths with fallback hierarchy."""
         paths = []
-        
+
         try:
             # 1. Provider-specific file (highest priority) - only if provider info available
             provider_name = self._get_provider_name()
             provider_type = self._get_active_provider_type()
-            
+
             provider_specific_filename = self.get_templates_filename(provider_name, provider_type)
-            provider_specific_path = self.config_manager.resolve_file("template", provider_specific_filename)
+            provider_specific_path = self.config_manager.resolve_file(
+                "template", provider_specific_filename
+            )
             paths.append(provider_specific_path)
-            
+
             # 2. Generic provider-type file (fallback)
             generic_filename = f"{provider_type}_templates.json"
             generic_path = self.config_manager.resolve_file("template", generic_filename)
-            
+
             # Avoid duplicates
             if generic_path != provider_specific_path:
                 paths.append(generic_path)
-                
+
         except Exception:
             # Fallback to default paths if provider info not available
             pass
-        
+
         # 3. Default fallback paths (always available)
         default_paths = [
             self.config_manager.resolve_file("template", "aws_templates.json"),
             self.config_manager.resolve_file("template", "templates.json"),
         ]
-        
+
         # Add default paths if not already included
         for default_path in default_paths:
             if default_path not in paths:
                 paths.append(default_path)
-        
+
         return paths
 
     def load_templates_from_path(self, template_path: str) -> list[dict[str, Any]]:
@@ -73,7 +75,7 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
         if not os.path.exists(template_path):
             self._logger.debug("Template file not found: %s", template_path)
             return []
-            
+
         try:
             templates = self._load_single_file(template_path)
             self._logger.debug("Loaded %d templates from %s", len(templates), template_path)
@@ -106,6 +108,7 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
         try:
             from infrastructure.di.container import get_container
             from application.services.provider_registry_service import ProviderRegistryService
+
             container = get_container()
             provider_service = container.get(ProviderRegistryService)
             selection_result = provider_service.select_active_provider()
@@ -119,6 +122,7 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
         try:
             from infrastructure.di.container import get_container
             from application.services.provider_registry_service import ProviderRegistryService
+
             container = get_container()
             provider_service = container.get(ProviderRegistryService)
             selection_result = provider_service.select_active_provider()
@@ -224,11 +228,11 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
         if config:
             template_config = config.get("template", {})
             patterns = template_config.get("filename_patterns", {})
-            
+
             # Use generic pattern for default scheduler
             if pattern := patterns.get("generic"):
                 return pattern.format(provider_name=provider_name, provider_type=provider_type)
-            
+
             # Check for explicit filename override
             if config_filename := template_config.get("templates_filename"):
                 return config_filename

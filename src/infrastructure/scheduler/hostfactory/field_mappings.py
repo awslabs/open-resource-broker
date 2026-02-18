@@ -25,7 +25,7 @@ class HostFactoryFieldMappings:
             "providerApi": "provider_api",  # Provider API type
             # Machine fields
             "machineId": "machine_id",
-            "name": "name", 
+            "name": "name",
             "status": "status",
             "result": "result",
             "message": "message",

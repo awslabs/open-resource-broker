@@ -24,10 +24,7 @@ class AWSHandlerFactory:
     """
 
     def __init__(
-        self, 
-        aws_client: AWSClient, 
-        logger: LoggingPort,
-        config: Optional[ConfigurationPort] = None
+        self, aws_client: AWSClient, logger: LoggingPort, config: Optional[ConfigurationPort] = None
     ) -> None:
         """
         Initialize the factory.
@@ -85,21 +82,21 @@ class AWSHandlerFactory:
 
         # Create the handler directly with factory's AWS client
         handler_class = self._handler_classes[handler_type]
-        
+
         # Get other dependencies from DI (not AWS client)
         from infrastructure.di.container import get_container
         from providers.aws.utilities.aws_operations import AWSOperations
         from providers.aws.infrastructure.launch_template.manager import AWSLaunchTemplateManager
         from providers.aws.infrastructure.adapters.machine_adapter import AWSMachineAdapter
-        
+
         container = get_container()
-        
+
         handler = handler_class(
             aws_client=self._aws_client,
             logger=self._logger,
             aws_ops=container.get(AWSOperations),
             launch_template_manager=container.get(AWSLaunchTemplateManager),
-            machine_adapter=container.get(AWSMachineAdapter)
+            machine_adapter=container.get(AWSMachineAdapter),
         )
 
         # Cache the handler for future use

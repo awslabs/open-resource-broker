@@ -21,12 +21,16 @@ from providers.aws.infrastructure.aws_client import AWSClient
 from providers.aws.services.instance_operation_service import AWSInstanceOperationService
 from providers.aws.services.health_check_service import AWSHealthCheckService
 from providers.aws.services.template_validation_service import AWSTemplateValidationService
-from providers.aws.services.infrastructure_discovery_service import AWSInfrastructureDiscoveryService
+from providers.aws.services.infrastructure_discovery_service import (
+    AWSInfrastructureDiscoveryService,
+)
 from providers.aws.services.handler_registry import AWSHandlerRegistry
 from providers.aws.services.capability_service import AWSCapabilityService
 
 if TYPE_CHECKING:
-    from providers.aws.infrastructure.adapters.aws_provisioning_adapter import AWSProvisioningAdapter
+    from providers.aws.infrastructure.adapters.aws_provisioning_adapter import (
+        AWSProvisioningAdapter,
+    )
     from providers.aws.infrastructure.aws_handler_factory import AWSHandlerFactory
 
 # Import strategy pattern interfaces
@@ -119,11 +123,8 @@ class AWSProviderStrategy(ProviderStrategy):
         """Get handler factory with provider-specific AWS client."""
         if self.aws_client:
             from providers.aws.infrastructure.aws_handler_factory import AWSHandlerFactory
-            return AWSHandlerFactory(
-                aws_client=self.aws_client,
-                logger=self._logger,
-                config=None
-            )
+
+            return AWSHandlerFactory(aws_client=self.aws_client, logger=self._logger, config=None)
         return None
 
     def _get_instance_service(self) -> AWSInstanceOperationService:
@@ -934,7 +935,7 @@ class AWSProviderStrategy(ProviderStrategy):
         except Exception as e:
             self._logger.error("Error getting supported APIs: %s", e)
             supported_apis = []
-        
+
         return ProviderCapabilities(
             provider_type="aws",
             supported_operations=[
@@ -1195,11 +1196,13 @@ class AWSProviderStrategy(ProviderStrategy):
     def get_available_credential_sources(self) -> list[dict]:
         """Get available AWS credential sources."""
         from providers.aws.profile_discovery import get_available_profiles
+
         return get_available_profiles()
 
     def test_credentials(self, credential_source: Optional[str] = None, **kwargs) -> dict:
         """Test AWS credentials."""
         from providers.aws.session_factory import AWSSessionFactory
+
         region = kwargs.get("region")
         return AWSSessionFactory.discover_credentials(credential_source, region)
 
@@ -1212,11 +1215,12 @@ class AWSProviderStrategy(ProviderStrategy):
         provider_type = self.provider_type  # Use dynamic provider type
         profile = config.get("profile", "default")
         region = config.get("region", "us-east-1")
-        
+
         # Sanitize profile name to only include valid characters
         import re
-        sanitized_profile = re.sub(r'[^a-zA-Z0-9\-_]', '-', profile)
-        
+
+        sanitized_profile = re.sub(r"[^a-zA-Z0-9\-_]", "-", profile)
+
         return f"{provider_type}_{sanitized_profile}_{region}"
 
     def parse_provider_name(self, provider_name: str) -> dict[str, str]:
@@ -1243,11 +1247,13 @@ class AWSProviderStrategy(ProviderStrategy):
     def get_available_credential_sources(self) -> list[dict]:
         """Get available AWS credential sources."""
         from providers.aws.profile_discovery import get_available_profiles
+
         return get_available_profiles()
 
     def test_credentials(self, credential_source: Optional[str] = None, **kwargs) -> dict:
         """Test AWS credentials."""
         from providers.aws.session_factory import AWSSessionFactory
+
         region = kwargs.get("region")
         return AWSSessionFactory.discover_credentials(credential_source, region)
 
@@ -1288,45 +1294,50 @@ class AWSProviderStrategy(ProviderStrategy):
     def discover_infrastructure(self, provider_config: dict[str, Any]) -> dict[str, Any]:
         """Discover AWS infrastructure for provider."""
         try:
-            from providers.aws.services.infrastructure_discovery_service import AWSInfrastructureDiscoveryService
+            from providers.aws.services.infrastructure_discovery_service import (
+                AWSInfrastructureDiscoveryService,
+            )
             from cli.console import print_info, print_separator
 
             config = provider_config.get("config", {})
             cli_args = provider_config.get("cli_args")
-            
+
             discovery = AWSInfrastructureDiscoveryService(
-                region=config.get("region", "us-east-1"),
-                profile=config.get("profile", "default")
+                region=config.get("region", "us-east-1"), profile=config.get("profile", "default")
             )
 
             # Handle summary flag
-            if cli_args and getattr(cli_args, 'summary', False):
+            if cli_args and getattr(cli_args, "summary", False):
                 return self._discover_infrastructure_summary(provider_config, discovery)
-            
+
             # Handle show flag (filter resources)
             show_filter = None
-            if cli_args and hasattr(cli_args, 'show') and cli_args.show is not None:
+            if cli_args and hasattr(cli_args, "show") and cli_args.show is not None:
                 if not cli_args.show.strip():
                     from cli.console import print_error, print_info
+
                     print_error("--show flag requires resource types")
                     print_info("Available resources: vpcs, subnets, security-groups (or sg), all")
                     print_info("Examples:")
                     print_info("  orb infra discover --show subnets")
                     print_info("  orb infra discover --show sg")
                     print_info("  orb infra discover --show all")
-                    return {"provider": provider_config.get("name", "unknown"), "error": "Invalid --show argument"}
-                
-                show_filter = [s.strip() for s in cli_args.show.split(',')]
+                    return {
+                        "provider": provider_config.get("name", "unknown"),
+                        "error": "Invalid --show argument",
+                    }
+
+                show_filter = [s.strip() for s in cli_args.show.split(",")]
                 # Handle aliases and special cases
-                show_filter = [f.replace('sg', 'security-groups') for f in show_filter]
-                
+                show_filter = [f.replace("sg", "security-groups") for f in show_filter]
+
                 # Handle "all" as special case - same as --all flag
-                if 'all' in show_filter:
+                if "all" in show_filter:
                     show_all = True
                     show_filter = None  # Show everything
-            
+
             # Handle all flag (no truncation)
-            show_all = cli_args and getattr(cli_args, 'all', False)
+            show_all = cli_args and getattr(cli_args, "all", False)
 
             vpcs = discovery.discover_vpcs()
             print_info(f"\nProvider: {provider_config.get('name', 'unknown')}")
@@ -1343,9 +1354,9 @@ class AWSProviderStrategy(ProviderStrategy):
 
             for vpc in vpcs:
                 print_info(f"  {vpc}")
-                
+
                 # Show subnets if not filtered out
-                if not show_filter or 'subnets' in show_filter:
+                if not show_filter or "subnets" in show_filter:
                     subnets = discovery.discover_subnets(vpc.id)
                     total_subnets += len(subnets)
                     if subnets:
@@ -1358,7 +1369,7 @@ class AWSProviderStrategy(ProviderStrategy):
                             print_info(f"      ... and {len(subnets) - 3} more")
 
                 # Show security groups if not filtered out
-                if not show_filter or 'security-groups' in show_filter:
+                if not show_filter or "security-groups" in show_filter:
                     sgs = discovery.discover_security_groups(vpc.id)
                     total_sgs += len(sgs)
                     if sgs:
@@ -1379,32 +1390,35 @@ class AWSProviderStrategy(ProviderStrategy):
 
         except Exception as e:
             from cli.console import print_error
+
             print_error(f"Failed to discover infrastructure: {e}")
             return {"provider": provider_config.get("name", "unknown"), "error": str(e)}
 
-    def _discover_infrastructure_summary(self, provider_config: dict[str, Any], discovery) -> dict[str, Any]:
+    def _discover_infrastructure_summary(
+        self, provider_config: dict[str, Any], discovery
+    ) -> dict[str, Any]:
         """Discover infrastructure summary (counts only)."""
         from cli.console import print_info, print_separator
-        
+
         config = provider_config.get("config", {})
         vpcs = discovery.discover_vpcs()
-        
+
         print_info(f"\nProvider: {provider_config.get('name', 'unknown')}")
         print_info(f"Region: {config.get('region', 'us-east-1')}")
         print_separator(width=50, char="-")
-        
+
         if not vpcs:
             print_info("No infrastructure found")
             return {"provider": provider_config.get("name", "unknown"), "vpcs": 0}
-        
+
         total_subnets = sum(len(discovery.discover_subnets(vpc.id)) for vpc in vpcs)
         total_sgs = sum(len(discovery.discover_security_groups(vpc.id)) for vpc in vpcs)
-        
+
         print_info(f"Infrastructure Summary:")
         print_info(f"  VPCs: {len(vpcs)}")
         print_info(f"  Subnets: {total_subnets}")
         print_info(f"  Security Groups: {total_sgs}")
-        
+
         return {
             "provider": provider_config.get("name", "unknown"),
             "vpcs": len(vpcs),
@@ -1412,39 +1426,42 @@ class AWSProviderStrategy(ProviderStrategy):
             "total_sgs": total_sgs,
         }
 
-    def discover_infrastructure_interactive(self, provider_config: dict[str, Any]) -> dict[str, Any]:
+    def discover_infrastructure_interactive(
+        self, provider_config: dict[str, Any]
+    ) -> dict[str, Any]:
         """Discover AWS infrastructure interactively."""
         try:
-            from providers.aws.services.infrastructure_discovery_service import AWSInfrastructureDiscoveryService
+            from providers.aws.services.infrastructure_discovery_service import (
+                AWSInfrastructureDiscoveryService,
+            )
             from cli.console import print_info, print_error, print_success
 
             config = provider_config.get("config", {})
             discovery = AWSInfrastructureDiscoveryService(
-                region=config.get("region", "us-east-1"),
-                profile=config.get("profile", "default")
+                region=config.get("region", "us-east-1"), profile=config.get("profile", "default")
             )
-            
+
             print_info("Discovering infrastructure...")
             discovered = {}
-            
+
             # Discover VPCs
             vpcs = discovery.discover_vpcs()
             if not vpcs:
                 print_info("No VPCs found, skipping infrastructure discovery")
                 return {}
-            
+
             print_info("")
             print_info("Found VPCs:")
             for i, vpc in enumerate(vpcs, 1):
                 print_info(f"  ({i}) {vpc}")
-            
+
             vpc_choice = input(f"\nSelect VPC (1): ").strip() or "1"
             try:
                 selected_vpc = vpcs[int(vpc_choice) - 1]
             except (ValueError, IndexError):
                 print_error("Invalid VPC selection, skipping infrastructure discovery")
                 return {}
-            
+
             # Discover subnets
             subnets = discovery.discover_subnets(selected_vpc.id)
             if subnets:
@@ -1453,20 +1470,22 @@ class AWSProviderStrategy(ProviderStrategy):
                 for i, subnet in enumerate(subnets, 1):
                     print_info(f"  ({i}) {subnet}")
                 print_info("  (s) Skip subnet selection")
-                
+
                 subnet_choice = input(f"\nSelect subnets (comma-separated) (1,2): ").strip()
-                if subnet_choice.lower() != 's':
+                if subnet_choice.lower() != "s":
                     if not subnet_choice:
                         subnet_choice = "1,2" if len(subnets) >= 2 else "1"
-                    
+
                     try:
-                        subnet_indices = [int(x.strip()) - 1 for x in subnet_choice.split(',')]
-                        selected_subnets = [subnets[i] for i in subnet_indices if 0 <= i < len(subnets)]
+                        subnet_indices = [int(x.strip()) - 1 for x in subnet_choice.split(",")]
+                        selected_subnets = [
+                            subnets[i] for i in subnet_indices if 0 <= i < len(subnets)
+                        ]
                         if selected_subnets:
                             discovered["subnet_ids"] = [s.id for s in selected_subnets]
                     except (ValueError, IndexError):
                         print_error("Invalid subnet selection, skipping subnets")
-            
+
             # Discover security groups
             sgs = discovery.discover_security_groups(selected_vpc.id)
             if sgs:
@@ -1475,27 +1494,28 @@ class AWSProviderStrategy(ProviderStrategy):
                 for i, sg in enumerate(sgs, 1):
                     print_info(f"  ({i}) {sg}")
                 print_info("  (s) Skip security group selection")
-                
+
                 sg_choice = input(f"\nSelect security groups (1): ").strip() or "1"
-                if sg_choice.lower() != 's':
+                if sg_choice.lower() != "s":
                     try:
-                        sg_indices = [int(x.strip()) - 1 for x in sg_choice.split(',')]
+                        sg_indices = [int(x.strip()) - 1 for x in sg_choice.split(",")]
                         selected_sgs = [sgs[i] for i in sg_indices if 0 <= i < len(sgs)]
                         if selected_sgs:
                             discovered["security_group_ids"] = [sg.id for sg in selected_sgs]
                     except (ValueError, IndexError):
                         print_error("Invalid security group selection, skipping security groups")
-            
+
             if discovered:
                 print_info("")
                 print_success("Infrastructure discovered and configured!")
             else:
                 print_info("No infrastructure selected")
-            
+
             return discovered
-            
+
         except Exception as e:
             from cli.console import print_error
+
             print_error(f"Failed to discover infrastructure: {e}")
             print_info("Continuing without infrastructure discovery...")
             return {}
@@ -1503,29 +1523,36 @@ class AWSProviderStrategy(ProviderStrategy):
     def validate_infrastructure(self, provider_config: dict[str, Any]) -> dict[str, Any]:
         """Validate AWS infrastructure configuration."""
         try:
-            from providers.aws.services.infrastructure_discovery_service import AWSInfrastructureDiscoveryService
+            from providers.aws.services.infrastructure_discovery_service import (
+                AWSInfrastructureDiscoveryService,
+            )
             from cli.console import print_info, print_success, print_error
 
             config = provider_config.get("config", {})
             template_defaults = provider_config.get("template_defaults", {})
-            
+
             if not template_defaults:
-                print_info(f"Provider {provider_config.get('name', 'unknown')}: No infrastructure defaults configured")
+                print_info(
+                    f"Provider {provider_config.get('name', 'unknown')}: No infrastructure defaults configured"
+                )
                 print_info("To configure infrastructure:")
                 print_info("  1. Run: orb init --interactive")
                 print_info("  2. Or manually add template_defaults to your provider config")
                 return {
-                    "provider": provider_config.get("name", "unknown"), 
+                    "provider": provider_config.get("name", "unknown"),
                     "status": "no_infrastructure_configured",
-                    "message": "No infrastructure defaults to validate. Run 'orb init --interactive' to configure."
+                    "message": "No infrastructure defaults to validate. Run 'orb init --interactive' to configure.",
                 }
 
             discovery = AWSInfrastructureDiscoveryService(
-                region=config.get("region", "us-east-1"),
-                profile=config.get("profile", "default")
+                region=config.get("region", "us-east-1"), profile=config.get("profile", "default")
             )
 
-            validation_results = {"provider": provider_config.get("name", "unknown"), "valid": True, "issues": []}
+            validation_results = {
+                "provider": provider_config.get("name", "unknown"),
+                "valid": True,
+                "issues": [],
+            }
 
             # Validate subnets
             if "subnet_ids" in template_defaults:
@@ -1533,11 +1560,15 @@ class AWSProviderStrategy(ProviderStrategy):
                     response = discovery.ec2_client.describe_subnets(
                         SubnetIds=template_defaults["subnet_ids"]
                     )
-                    print_success(f"Provider {provider_config.get('name', 'unknown')}: All {len(response['Subnets'])} subnets are valid")
+                    print_success(
+                        f"Provider {provider_config.get('name', 'unknown')}: All {len(response['Subnets'])} subnets are valid"
+                    )
                 except Exception as e:
                     validation_results["valid"] = False
                     validation_results["issues"].append(f"Invalid subnets: {e}")
-                    print_error(f"Provider {provider_config.get('name', 'unknown')}: Subnet validation failed: {e}")
+                    print_error(
+                        f"Provider {provider_config.get('name', 'unknown')}: Subnet validation failed: {e}"
+                    )
 
             # Validate security groups
             if "security_group_ids" in template_defaults:
@@ -1545,15 +1576,20 @@ class AWSProviderStrategy(ProviderStrategy):
                     response = discovery.ec2_client.describe_security_groups(
                         GroupIds=template_defaults["security_group_ids"]
                     )
-                    print_success(f"Provider {provider_config.get('name', 'unknown')}: All {len(response['SecurityGroups'])} security groups are valid")
+                    print_success(
+                        f"Provider {provider_config.get('name', 'unknown')}: All {len(response['SecurityGroups'])} security groups are valid"
+                    )
                 except Exception as e:
                     validation_results["valid"] = False
                     validation_results["issues"].append(f"Invalid security groups: {e}")
-                    print_error(f"Provider {provider_config.get('name', 'unknown')}: Security group validation failed: {e}")
+                    print_error(
+                        f"Provider {provider_config.get('name', 'unknown')}: Security group validation failed: {e}"
+                    )
 
             return validation_results
 
         except Exception as e:
             from cli.console import print_error
+
             print_error(f"Failed to validate infrastructure: {e}")
             return {"provider": provider_config.get("name", "unknown"), "error": str(e)}

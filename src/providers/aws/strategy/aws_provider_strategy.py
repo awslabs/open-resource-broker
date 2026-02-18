@@ -21,12 +21,16 @@ from providers.aws.infrastructure.aws_client import AWSClient
 from providers.aws.services.instance_operation_service import AWSInstanceOperationService
 from providers.aws.services.health_check_service import AWSHealthCheckService
 from providers.aws.services.template_validation_service import AWSTemplateValidationService
-from providers.aws.services.infrastructure_discovery_service import AWSInfrastructureDiscoveryService
+from providers.aws.services.infrastructure_discovery_service import (
+    AWSInfrastructureDiscoveryService,
+)
 from providers.aws.services.handler_registry import AWSHandlerRegistry
 from providers.aws.services.capability_service import AWSCapabilityService
 
 if TYPE_CHECKING:
-    from providers.aws.infrastructure.adapters.aws_provisioning_adapter import AWSProvisioningAdapter
+    from providers.aws.infrastructure.adapters.aws_provisioning_adapter import (
+        AWSProvisioningAdapter,
+    )
     from providers.aws.infrastructure.aws_handler_factory import AWSHandlerFactory
 
 # Import strategy pattern interfaces
@@ -106,14 +110,14 @@ class AWSProviderStrategy(ProviderStrategy):
                 try:
                     # Need config_port to create AWS client
                     from infrastructure.di.container import get_container
+
                     container = get_container()
                     from domain.base.ports.configuration_port import ConfigurationPort
+
                     config_port = container.get(ConfigurationPort)
-                    
+
                     self._aws_client = AWSClient(
-                        config=config_port,
-                        logger=self._logger,
-                        provider_name=self._provider_name
+                        config=config_port, logger=self._logger, provider_name=self._provider_name
                     )
                     self._logger.debug("AWS client created directly")
                 except Exception as exc:
@@ -133,9 +137,11 @@ class AWSProviderStrategy(ProviderStrategy):
     async def execute_operation(self, operation: ProviderOperation) -> ProviderResult:
         """Execute a provider operation using focused AWS services."""
         self._logger.debug("AWS strategy executing operation: %s", operation.operation_type)
-        
+
         if not self._initialized:
-            return ProviderResult.error_result("AWS provider strategy not initialized", "NOT_INITIALIZED")
+            return ProviderResult.error_result(
+                "AWS provider strategy not initialized", "NOT_INITIALIZED"
+            )
 
         start_time = time.time()
         is_dry_run = bool(operation.context and operation.context.get("dry_run", False))
@@ -143,6 +149,7 @@ class AWSProviderStrategy(ProviderStrategy):
         try:
             if is_dry_run:
                 from providers.aws.infrastructure.dry_run_adapter import aws_dry_run_context
+
                 with aws_dry_run_context():
                     result = await self._execute_operation_internal(operation)
             else:
@@ -151,11 +158,13 @@ class AWSProviderStrategy(ProviderStrategy):
             execution_time_ms = int((time.time() - start_time) * 1000)
             if result.metadata is None:
                 result.metadata = {}
-            result.metadata.update({
-                "execution_time_ms": execution_time_ms,
-                "provider": "aws",
-                "dry_run": is_dry_run,
-            })
+            result.metadata.update(
+                {
+                    "execution_time_ms": execution_time_ms,
+                    "provider": "aws",
+                    "dry_run": is_dry_run,
+                }
+            )
             return result
 
         except Exception as e:
@@ -221,8 +230,6 @@ class AWSProviderStrategy(ProviderStrategy):
         """Get supported APIs from handler registry."""
         return self._get_capability_service().get_supported_apis()
 
-
-
     # Service getters with lazy initialization
     def _get_handler_registry(self) -> AWSHandlerRegistry:
         """Get handler registry service with lazy initialization."""
@@ -231,7 +238,7 @@ class AWSProviderStrategy(ProviderStrategy):
             if handler_factory:
                 # Get provider defaults for handler registry
                 provider_defaults = self._get_provider_defaults()
-                
+
                 self._handler_registry = AWSHandlerRegistry(
                     handler_factory=handler_factory,
                     provider_instance_config=self._provider_instance_config,
@@ -244,11 +251,11 @@ class AWSProviderStrategy(ProviderStrategy):
         """Get provider defaults from configuration."""
         if not self._provider_instance_config:
             return None
-            
+
         try:
             from infrastructure.di.container import get_container
             from domain.base.ports import ConfigurationPort
-            
+
             container = get_container()
             config_port = container.get(ConfigurationPort)
             provider_config_root = config_port.get_provider_config()
@@ -262,6 +269,7 @@ class AWSProviderStrategy(ProviderStrategy):
         """Get handler factory with provider-specific AWS client."""
         if self.aws_client:
             from providers.aws.infrastructure.aws_handler_factory import AWSHandlerFactory
+
             return AWSHandlerFactory(aws_client=self.aws_client, logger=self._logger, config=None)
         return None
 
@@ -303,7 +311,9 @@ class AWSProviderStrategy(ProviderStrategy):
         """Get infrastructure discovery service with lazy initialization."""
         if self._infrastructure_service is None:
             self._infrastructure_service = AWSInfrastructureDiscoveryService(
-                region=self._aws_config.region, profile=self._aws_config.profile, logger=self._logger
+                region=self._aws_config.region,
+                profile=self._aws_config.profile,
+                logger=self._logger,
             )
         return self._infrastructure_service
 
@@ -319,7 +329,9 @@ class AWSProviderStrategy(ProviderStrategy):
         return self._aws_provisioning_port
 
     # Legacy methods that need to be kept for compatibility
-    async def _handle_describe_resource_instances(self, operation: ProviderOperation) -> ProviderResult:
+    async def _handle_describe_resource_instances(
+        self, operation: ProviderOperation
+    ) -> ProviderResult:
         """Handle resource-to-instance discovery operation."""
         return await self._get_instance_service().describe_resource_instances(operation)
 
@@ -328,13 +340,15 @@ class AWSProviderStrategy(ProviderStrategy):
         """Discover AWS infrastructure for provider."""
         return self._get_infrastructure_service().discover_infrastructure(provider_config)
 
-    def discover_infrastructure_interactive(self, provider_config: dict[str, Any]) -> dict[str, Any]:
+    def discover_infrastructure_interactive(
+        self, provider_config: dict[str, Any]
+    ) -> dict[str, Any]:
         """Discover AWS infrastructure interactively."""
         # Create fresh infrastructure service with runtime config
         config = provider_config.get("config", {})
         region = config.get("region", self._aws_config.region)
         profile = config.get("profile", self._aws_config.profile)
-        
+
         infrastructure_service = AWSInfrastructureDiscoveryService(
             region=region, profile=profile, logger=self._logger
         )
@@ -382,9 +396,13 @@ class AWSProviderStrategy(ProviderStrategy):
                         ssm_client = self.aws_client.ssm_client
                         response = ssm_client.get_parameter(Name=image_spec)
                         resolved_images[image_spec] = response["Parameter"]["Value"]
-                        self._logger.debug("Resolved %s to %s", image_spec, resolved_images[image_spec])
+                        self._logger.debug(
+                            "Resolved %s to %s", image_spec, resolved_images[image_spec]
+                        )
                     except Exception as e:
-                        self._logger.warning("Failed to resolve SSM parameter %s: %s", image_spec, e)
+                        self._logger.warning(
+                            "Failed to resolve SSM parameter %s: %s", image_spec, e
+                        )
                         # Fallback to original parameter
                         resolved_images[image_spec] = image_spec
                 else:
@@ -395,7 +413,9 @@ class AWSProviderStrategy(ProviderStrategy):
 
         except Exception as e:
             self._logger.error("Image resolution failed: %s", e)
-            return ProviderResult.error_result(f"Image resolution failed: {e}", "IMAGE_RESOLUTION_FAILED")
+            return ProviderResult.error_result(
+                f"Image resolution failed: {e}", "IMAGE_RESOLUTION_FAILED"
+            )
 
     def __str__(self) -> str:
         """Return string representation for debugging."""

@@ -83,7 +83,9 @@ def injectable(cls: type[T]) -> type[T]:
             # Try to resolve from DI container
             if param_name in hints:
                 annotation = hints[param_name]
-                resolved_value = _resolve_dependency(annotation, param, cls.__name__, param_name, None)
+                resolved_value = _resolve_dependency(
+                    annotation, param, cls.__name__, param_name, None
+                )
                 if resolved_value is not None:
                     resolved_kwargs[param_name] = resolved_value
                 elif param.default != inspect.Parameter.empty:
@@ -119,28 +121,28 @@ def injectable(cls: type[T]) -> type[T]:
 def _is_called_from_di_container() -> bool:
     """Check if we're being called from within the DI container to avoid circular dependency."""
     import traceback
-    
+
     # Get the current call stack
     stack = traceback.extract_stack()
-    
+
     # Look for DI container methods in the call stack
     di_indicators = [
-        'dependency_resolver.py',
-        '_create_direct_instance',
-        '_resolve_constructor_parameters',
-        'resolve',
-        'get_container'
+        "dependency_resolver.py",
+        "_create_direct_instance",
+        "_resolve_constructor_parameters",
+        "resolve",
+        "get_container",
     ]
-    
+
     for frame in stack:
         filename = frame.filename
         function_name = frame.name
-        
+
         # Check if any DI container indicators are in the call stack
         for indicator in di_indicators:
             if indicator in filename or indicator in function_name:
                 return True
-    
+
     return False
 
 
@@ -184,6 +186,7 @@ def _resolve_dependency(
         if container is None:
             # Import here to avoid circular imports
             from infrastructure.di.container import get_container
+
             container = get_container()
 
         # Handle Optional[T] types

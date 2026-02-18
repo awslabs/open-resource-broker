@@ -51,19 +51,19 @@ def _register_services_lazy(container: "DIContainer") -> "DIContainer":
 
     # 0. ALWAYS register all types first (required for any registry operations)
     from infrastructure.scheduler.registration import register_all_scheduler_types
-    from infrastructure.storage.registration import register_all_storage_types  
+    from infrastructure.storage.registration import register_all_storage_types
     from providers.registration import register_all_provider_types
-    
+
     register_all_scheduler_types()
     register_all_storage_types()
     register_all_provider_types()
 
     # 1. Register ConfigurationManager FIRST (port adapters depend on it)
     from config.managers.configuration_manager import ConfigurationManager
-    
+
     def create_configuration_manager(c):
         return ConfigurationManager()  # Uses default config discovery
-    
+
     container.register_singleton(ConfigurationManager, create_configuration_manager)
 
     # 2. Register port adapters (now ConfigurationManager is available)
@@ -73,7 +73,7 @@ def _register_services_lazy(container: "DIContainer") -> "DIContainer":
 
     # 3. Register remaining core services
     register_core_services(container)
-    
+
     # 4. Register domain services
     register_domain_services(container)
 
@@ -85,6 +85,7 @@ def _register_services_lazy(container: "DIContainer") -> "DIContainer":
 
     # 7. Register registry services
     from infrastructure.di.registry_services import register_registry_services
+
     register_registry_services(container)
 
     # 8. Register provider services immediately (fix for provider
@@ -96,6 +97,7 @@ def _register_services_lazy(container: "DIContainer") -> "DIContainer":
 
     # 10. Setup CQRS infrastructure immediately (handlers need to be registered before buses are used)
     from infrastructure.di.container import _setup_cqrs_infrastructure
+
     _setup_cqrs_infrastructure(container)
 
     # 11. Register lazy factories for non-essential services
@@ -115,9 +117,9 @@ def _register_services_eager(container: "DIContainer") -> "DIContainer":
 
     # Use standardized registration functions
     from infrastructure.scheduler.registration import register_all_scheduler_types
-    from infrastructure.storage.registration import register_all_storage_types  
+    from infrastructure.storage.registration import register_all_storage_types
     from providers.registration import register_all_provider_types
-    
+
     register_all_scheduler_types()
     register_all_storage_types()
     register_all_provider_types()

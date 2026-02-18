@@ -127,9 +127,9 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
             )
 
             fleet_id = response["FleetId"]
-            
+
             instance_ids = self._extract_instance_ids(response, self._extract_instant_instance_ids)
-            
+
             # Create instances using existing machine adapter
             instances = []
             if instance_ids and self._machine_adapter:
@@ -139,7 +139,7 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                         instance_ids,
                         request_id=str(request.request_id),
                         resource_id=fleet_id,
-                        provider_api="EC2Fleet"
+                        provider_api="EC2Fleet",
                     )
                     for instance_data in instance_details:
                         try:
@@ -153,9 +153,11 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                             # Machines will be populated later via status query
                             self._logger.debug("Skipping machine creation with partial data: %s", e)
                 except Exception as e:
-                    self._logger.warning("Failed to get instance details for fleet %s: %s", fleet_id, e)
+                    self._logger.warning(
+                        "Failed to get instance details for fleet %s: %s", fleet_id, e
+                    )
                     # Continue without instances, they'll be populated later via status query
-            
+
             return {
                 "success": True,
                 "resource_ids": [fleet_id],
@@ -172,7 +174,9 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
             self._logger.error("EC2Fleet creation failed: %s", e)
             return {"success": False, "resource_ids": [], "instances": [], "error_message": str(e)}
 
-    def _create_fleet_with_response(self, request: Request, aws_template: AWSTemplate) -> dict[str, Any]:
+    def _create_fleet_with_response(
+        self, request: Request, aws_template: AWSTemplate
+    ) -> dict[str, Any]:
         """Create EC2 Fleet and return full AWS response."""
         # Validate prerequisites
         self._validate_prerequisites(aws_template)
@@ -240,7 +244,7 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                 f"{error.get('error_code', 'Unknown')}: {error.get('error_message', 'No message')}"
                 for error in errors
             )
-            
+
             instance_ids = self._extract_instant_instance_ids(response)
             self._record_fleet_error_details(
                 request=request,
@@ -440,12 +444,14 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
     ) -> None:
         """Persist fleet error context in the request for downstream status handling."""
         # Store AWS-specific data in provider_data
-        request.provider_data.update({
-            "fleet_id": fleet_id,
-            "fleet_errors": errors,
-            "instance_ids": instance_ids,
-        })
-        
+        request.provider_data.update(
+            {
+                "fleet_id": fleet_id,
+                "fleet_errors": errors,
+                "instance_ids": instance_ids,
+            }
+        )
+
         # Keep operational metadata in metadata
         if not hasattr(request, "metadata") or request.metadata is None:
             request.metadata = {}

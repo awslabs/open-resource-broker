@@ -55,14 +55,20 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
         self._container = container
         self._query_bus = query_bus
         self._provider_registry_service = provider_registry_service
-        
+
         # Initialize services
         from application.services.request_creation_service import RequestCreationService
-        from application.services.provisioning_orchestration_service import ProvisioningOrchestrationService
-        from application.services.request_status_management_service import RequestStatusManagementService
-        
+        from application.services.provisioning_orchestration_service import (
+            ProvisioningOrchestrationService,
+        )
+        from application.services.request_status_management_service import (
+            RequestStatusManagementService,
+        )
+
         self._request_creation_service = RequestCreationService(logger)
-        self._provisioning_service = ProvisioningOrchestrationService(container, logger, provider_registry_service)
+        self._provisioning_service = ProvisioningOrchestrationService(
+            container, logger, provider_registry_service
+        )
         self._status_service = RequestStatusManagementService(uow_factory, logger)
 
     async def validate_command(self, command: CreateRequestCommand) -> None:
@@ -110,27 +116,25 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
     async def _validate_provider_availability(self) -> None:
         """Validate that providers are available."""
         from domain.base.ports.configuration_port import ConfigurationPort
-        
+
         config_manager = self._container.get(ConfigurationPort)
         provider_config = config_manager.get_provider_config()
-        
+
         if provider_config:
             from providers.registry import get_provider_registry
+
             registry = get_provider_registry()
             for provider_instance in provider_config.get_active_providers():
                 registry.ensure_provider_instance_registered_from_config(provider_instance)
-        
+
         available_strategies = self._provider_registry_service.get_available_strategies()
-        
+
         if not available_strategies:
             error_msg = "No provider strategies available - cannot create machine requests"
             self.logger.error(error_msg)
             raise ValueError(error_msg)
 
-        self.logger.debug(
-            "Available provider strategies: %s",
-            available_strategies
-        )
+        self.logger.debug("Available provider strategies: %s", available_strategies)
 
     async def _load_template(self, template_id: str) -> Any:
         """Load template using CQRS QueryBus."""
@@ -138,6 +142,7 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
             raise ValueError("QueryBus is required for template lookup")
 
         from application.dto.queries import GetTemplateQuery
+
         template_query = GetTemplateQuery(template_id=template_id)
         template = await self._query_bus.execute(template_query)
 
@@ -149,9 +154,9 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
 
     async def _select_and_validate_provider(self, template: Any) -> Any:
         """Select provider and validate template compatibility."""
-        
+
         selection_result = self._provider_registry_service.select_provider_for_template(template)
-        
+
         self.logger.info(
             "Selected provider: %s (%s)",
             selection_result.provider_name,
@@ -176,7 +181,7 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
     def _handle_dry_run(self, request: Any) -> Any:
         """Handle dry-run request."""
         from domain.request.value_objects import RequestStatus
-        
+
         self.logger.info(
             "Skipping actual provisioning for request %s (dry-run mode)",
             request.request_id,
@@ -192,6 +197,8 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
 
         for event in events:
             self.event_publisher.publish(event)
+
+
 @command_handler(CreateReturnRequestCommand)
 class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, str]):
     """Handler for creating return requests."""
@@ -217,16 +224,18 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
         await super().validate_command(command)
         if not command.machine_ids:
             raise ValueError("machine_ids is required and cannot be empty")
-        
+
         # Validate machines exist and don't already have return requests
         with self.uow_factory.create_unit_of_work() as uow:
             for machine_id in command.machine_ids:
                 machine = uow.machines.get_by_id(machine_id)
                 if not machine:
                     from domain.base.exceptions import EntityNotFoundError
+
                     raise EntityNotFoundError("Machine", machine_id)
                 if machine.return_request_id:
                     from domain.request.exceptions import RequestValidationError
+
                     raise RequestValidationError(
                         f"Machine {machine_id} already has pending return request: {machine.return_request_id}"
                     )
@@ -242,13 +251,13 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
 
             # Group machines by provider to handle multi-provider returns
             provider_groups = defaultdict(list)
-            
+
             with self.uow_factory.create_unit_of_work() as uow:
                 for machine_id in command.machine_ids:
                     machine = uow.machines.get_by_id(machine_id)
                     if not machine:
                         raise EntityNotFoundError("Machine", machine_id)
-                    
+
                     provider_key = (machine.provider_type, machine.provider_name)
                     provider_groups[provider_key].append(machine_id)
 
@@ -261,34 +270,38 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
                     provider_name=provider_name,
                     metadata=command.metadata or {},
                 )
-                
+
                 with self.uow_factory.create_unit_of_work() as uow:
                     events = uow.requests.save(request)
-                    
+
                     # CRITICAL: Update machine records with return_request_id
                     for machine_id in machine_ids:
                         machine = uow.machines.get_by_id(machine_id)
                         if machine:
                             # Update machine with return request ID
-                            updated_machine = machine.model_copy(update={"return_request_id": str(request.request_id)})
+                            updated_machine = machine.model_copy(
+                                update={"return_request_id": str(request.request_id)}
+                            )
                             uow.machines.save(updated_machine)
-                    
+
                     for event in events:
                         self.event_publisher.publish(event)
-                
+
                 created_requests.append(str(request.request_id))
                 self.logger.info(
                     "Return request created for provider %s: %s (%d machines)",
-                    provider_name, request.request_id, len(machine_ids)
+                    provider_name,
+                    request.request_id,
+                    len(machine_ids),
                 )
 
                 # Execute deprovisioning for this provider batch
                 try:
-                    provisioning_result = await self._execute_deprovisioning(
-                        machine_ids, request
+                    provisioning_result = await self._execute_deprovisioning(machine_ids, request)
+                    self.logger.info(
+                        f"Deprovisioning results for {provider_name}: {provisioning_result}"
                     )
-                    self.logger.info(f"Deprovisioning results for {provider_name}: {provisioning_result}")
-                    
+
                     # Update request status based on deprovisioning result
                     if provisioning_result.get("success", False):
                         # Update machine statuses to pending (termination in progress)
@@ -297,54 +310,63 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
                                 machine = uow.machines.get_by_id(machine_id)
                                 if machine:
                                     from domain.machine.machine_status import MachineStatus
+
                                     updated_machine = machine.update_status(
-                                        MachineStatus.PENDING, 
-                                        "Termination in progress"
+                                        MachineStatus.PENDING, "Termination in progress"
                                     )
                                     uow.machines.save(updated_machine)
-                        
+
                         self.logger.info("Termination initiated for request %s", request.request_id)
                     else:
                         # Update request status to failed
                         from application.dto.commands import UpdateRequestStatusCommand
                         from domain.request.request_types import RequestStatus
-                        
+
                         errors = provisioning_result.get("errors", [])
                         error_message = "; ".join(errors) if errors else "Deprovisioning failed"
-                        
+
                         update_command = UpdateRequestStatusCommand(
                             request_id=str(request.request_id),
                             status=RequestStatus.FAILED,
-                            message=f"Return request failed: {error_message}"
+                            message=f"Return request failed: {error_message}",
                         )
-                        
+
                         # Execute the status update command using existing command bus
                         from infrastructure.di.buses import CommandBus
+
                         command_bus = self._container.get(CommandBus)
                         await command_bus.execute(update_command)
-                        
+
                         self.logger.info("Updated request %s status to failed", request.request_id)
-                        
+
                 except Exception as e:
-                    self.logger.error("Deprovisioning failed for provider %s request %s: %s", 
-                                    provider_name, request.request_id, e)
-                    
+                    self.logger.error(
+                        "Deprovisioning failed for provider %s request %s: %s",
+                        provider_name,
+                        request.request_id,
+                        e,
+                    )
+
                     # Update request status to failed due to exception
                     try:
                         from application.dto.commands import UpdateRequestStatusCommand
                         from domain.request.request_types import RequestStatus
-                        
+
                         update_command = UpdateRequestStatusCommand(
                             request_id=str(request.request_id),
                             status=RequestStatus.FAILED,
-                            message=f"Return request failed: {str(e)}"
+                            message=f"Return request failed: {str(e)}",
                         )
-                        
+
                         from infrastructure.di.buses import CommandBus
+
                         command_bus = self._container.get(CommandBus)
                         await command_bus.execute(update_command)
-                        
-                        self.logger.info("Updated request %s status to failed due to exception", request.request_id)
+
+                        self.logger.info(
+                            "Updated request %s status to failed due to exception",
+                            request.request_id,
+                        )
                     except Exception as update_error:
                         self.logger.error("Failed to update request status: %s", update_error)
 
@@ -374,22 +396,25 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
                         machine = uow.machines.find_by_id(machine_id)
                         if not machine:
                             raise ValueError(f"Machine not found: {machine_id}")
-                        
+
                         # Use machine's actual provider context
                         group_key = (
                             machine.provider_name,
                             machine.provider_api or "RunInstances",  # Fallback for old machines
-                            machine.resource_id
+                            machine.resource_id,
                         )
                         resource_groups[group_key].append(machine)
-                        
+
                 except Exception as e:
                     self.logger.error("Failed to get machine context for %s: %s", machine_id, e)
                     raise ValueError(f"Cannot determine context for machine {machine_id}: {e}")
 
             self.logger.info(
                 "Grouped machines by resource context: %s",
-                {f"{pn}-{pa}-{rid}": len(machines) for (pn, pa, rid), machines in resource_groups.items()},
+                {
+                    f"{pn}-{pa}-{rid}": len(machines)
+                    for (pn, pa, rid), machines in resource_groups.items()
+                },
             )
 
             # Create tasks for parallel execution
@@ -456,10 +481,13 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
         try:
             instance_ids = [machine.machine_id.value for machine in machines]
             template_id = machines[0].template_id
-            
+
             self.logger.info(
-                "Processing resource group %s-%s-%s with %d machines", 
-                provider_name, provider_api, resource_id, len(machines)
+                "Processing resource group %s-%s-%s with %d machines",
+                provider_name,
+                provider_api,
+                resource_id,
+                len(machines),
             )
 
             # Get template for configuration
@@ -473,9 +501,10 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
 
             # Get scheduler for template formatting
             from domain.base.ports.scheduler_port import SchedulerPort
+
             scheduler = self._container.get(SchedulerPort)
             template_config = scheduler.format_template_for_provider(template)
-            
+
             self.logger.info("Using %s handler for resource %s", provider_api, resource_id)
 
             # Create operation using machine's actual provider context
@@ -498,21 +527,28 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
 
             # Get provider configuration
             from domain.base.ports.configuration_port import ConfigurationPort
+
             config_manager = self._container.get(ConfigurationPort)
             provider_instance_config = config_manager.get_provider_instance_config(provider_name)
             # Pass the full ProviderInstanceConfig object, not just the config dict
             provider_config = provider_instance_config if provider_instance_config else {}
 
             # Execute via provider registry service
-            result = await self._provider_registry_service.execute_operation(provider_name, operation)
+            result = await self._provider_registry_service.execute_operation(
+                provider_name, operation
+            )
 
             if result.success:
-                self.logger.info("Successfully terminated %d instances in resource %s", 
-                               len(instance_ids), resource_id)
+                self.logger.info(
+                    "Successfully terminated %d instances in resource %s",
+                    len(instance_ids),
+                    resource_id,
+                )
                 return {"success": True, "terminated_instances": len(instance_ids)}
             else:
-                self.logger.error("Termination failed for resource %s: %s", 
-                                resource_id, result.error_message)
+                self.logger.error(
+                    "Termination failed for resource %s: %s", resource_id, result.error_message
+                )
                 return {"success": False, "error_message": result.error_message}
 
         except Exception as e:
@@ -523,7 +559,7 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
 @command_handler(PopulateMachineIdsCommand)
 class PopulateMachineIdsHandler(BaseCommandHandler[PopulateMachineIdsCommand, None]):
     """Handler for populating requests with machine IDs."""
-    
+
     def __init__(
         self,
         uow_factory: UnitOfWorkFactory,
@@ -540,53 +576,57 @@ class PopulateMachineIdsHandler(BaseCommandHandler[PopulateMachineIdsCommand, No
 
     async def execute_command(self, command: PopulateMachineIdsCommand) -> None:
         """Discover and store machine IDs from provider resources."""
-        
+
         with self.uow_factory.create_unit_of_work() as uow:
             from domain.request.value_objects import RequestId
+
             request = uow.requests.get_by_id(RequestId(value=command.request_id))
             if not request or not request.needs_machine_id_population():
                 return
-            
+
             # Discover machine IDs from provider
             discovered_ids = await self._discover_machine_ids(request)
             if discovered_ids:
                 updated_request = request.update_machine_ids(discovered_ids)
                 uow.requests.save(updated_request)
-                
+
                 self.logger.info(
-                    "Populated request %s with %d machine IDs", 
-                    command.request_id, len(discovered_ids)
+                    "Populated request %s with %d machine IDs",
+                    command.request_id,
+                    len(discovered_ids),
                 )
 
     async def _discover_machine_ids(self, request) -> list[str]:
         """Discover machine IDs from provider resources."""
         try:
             from providers.base.strategy import ProviderOperation, ProviderOperationType
-            
+
             if not request.resource_ids:
                 return []
-            
+
             operation = ProviderOperation(
                 operation_type=ProviderOperationType.DESCRIBE_RESOURCE_INSTANCES,
-                parameters={"resource_ids": request.resource_ids}
+                parameters={"resource_ids": request.resource_ids},
             )
-            
+
             from domain.base.ports.configuration_port import ConfigurationPort
+
             config_manager = self._container.get(ConfigurationPort)
             provider_config = config_manager.get_provider_instance_config(request.provider_name)
-            
+
             result = await self._provider_registry_service.execute_operation(
                 request.provider_name, operation
             )
-            
+
             if result.success and result.data and "instances" in result.data:
                 return [instance.get("instance_id") for instance in result.data["instances"]]
-            
+
             return []
-            
+
         except Exception as e:
-            self.logger.error("Failed to discover machine IDs for request %s: %s", 
-                            request.request_id, e)
+            self.logger.error(
+                "Failed to discover machine IDs for request %s: %s", request.request_id, e
+            )
             return []
 
 
@@ -770,27 +810,30 @@ class SyncRequestHandler(BaseCommandHandler[SyncRequestCommand, None]):
             # Get request from database
             with self.uow_factory.create_unit_of_work() as uow:
                 from domain.request.value_objects import RequestId
+
                 request = uow.requests.get_by_id(RequestId(value=command.request_id))
-                
+
                 if not request:
                     raise EntityNotFoundError("Request", command.request_id)
 
             # Get existing machines
             from application.services.request_query_service import RequestQueryService
+
             query_service = RequestQueryService(self.uow_factory, self.logger)
             db_machines = await query_service.get_machines_for_request(request)
 
             # Get sync services
             from application.services.machine_sync_service import MachineSyncService
             from application.services.request_status_service import RequestStatusService
-            
+
             machine_sync_service = self._container.get(MachineSyncService)
             status_service = self._container.get(RequestStatusService)
 
             # Fetch current state from provider
-            provider_machines, provider_metadata = await machine_sync_service.fetch_provider_machines(
-                request, db_machines
-            )
+            (
+                provider_machines,
+                provider_metadata,
+            ) = await machine_sync_service.fetch_provider_machines(request, db_machines)
 
             # Sync machines with provider (this does the writes)
             synced_machines, _ = await machine_sync_service.sync_machines_with_provider(
