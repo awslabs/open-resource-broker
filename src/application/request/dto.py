@@ -99,7 +99,12 @@ class RequestDTO(BaseDTO):
     resource_ids: list[str] = Field(default_factory=list)
 
     @classmethod
-    def from_domain(cls, request: Request, long: bool = False, machine_references: Optional[list["MachineReferenceDTO"]] = None) -> "RequestDTO":
+    def from_domain(
+        cls,
+        request: Request,
+        long: bool = False,
+        machine_references: Optional[list["MachineReferenceDTO"]] = None,
+    ) -> "RequestDTO":
         """
         Create DTO from domain object.
 
@@ -118,7 +123,9 @@ class RequestDTO(BaseDTO):
             machine_refs = []
             # Get existing machine references
             if hasattr(request, "machine_references") and request.machine_references:
-                machine_refs = [MachineReferenceDTO.from_domain(m) for m in request.machine_references]
+                machine_refs = [
+                    MachineReferenceDTO.from_domain(m) for m in request.machine_references
+                ]
 
         # Create the DTO with all available fields
         return cls(
@@ -132,7 +139,9 @@ class RequestDTO(BaseDTO):
             machine_references=machine_refs,
             machine_ids=request.machine_ids,
             message=request.status_message or "",  # Provide empty string if None
-            resource_id=request.resource_ids[0] if request.resource_ids else None,  # First resource ID
+            resource_id=request.resource_ids[0]
+            if request.resource_ids
+            else None,  # First resource ID
             provider_api=request.provider_api,  # Available in domain model
             provider_name=request.provider_name,  # Available in domain model
             provider_type=request.provider_type,  # Available in domain model

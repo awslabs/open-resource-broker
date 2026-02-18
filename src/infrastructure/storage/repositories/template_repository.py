@@ -37,18 +37,18 @@ class TemplateSerializer:
         # Handle vmType (single type)
         if "vmType" in data:
             return {data["vmType"]: 1}
-        
+
         # Handle vmTypes (multiple types)
         if "vmTypes" in data:
             return data["vmTypes"]
-        
+
         # Handle legacy instance_type/instance_types
         if "instance_type" in data:
             return {data["instance_type"]: 1}
-        
+
         if "instance_types" in data:
             return data["instance_types"]
-        
+
         return {}
 
     @handle_infrastructure_exceptions(context="template_serialization")

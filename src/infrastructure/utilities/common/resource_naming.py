@@ -20,7 +20,7 @@ def get_resource_prefix(resource_type: str, config: Optional[ResourceConfig] = N
     if config is None:
         from infrastructure.di.container import get_container
         from config.managers.configuration_manager import ConfigurationManager
-        
+
         container = get_container()
         config_manager = container.get(ConfigurationManager)
         config = config_manager.app_config.resource

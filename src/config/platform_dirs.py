@@ -7,19 +7,19 @@ from pathlib import Path
 
 def in_virtualenv() -> bool:
     """Check if running in a virtual environment.
-    
+
     Handles both standard venvs (sys.prefix != sys.base_prefix) and
     symlink-based venvs like uv/mise (sys.executable not in sys.prefix).
     """
     # Standard venv detection
     if sys.prefix != sys.base_prefix:
         return True
-    
+
     # Symlink venv detection (uv, mise, etc.)
     # Don't resolve symlinks - we want to check the actual executable location
     executable_path = Path(sys.executable)  # Don't resolve!
     prefix_path = Path(sys.prefix)
-    
+
     try:
         # Check if executable is under prefix
         executable_path.relative_to(prefix_path)

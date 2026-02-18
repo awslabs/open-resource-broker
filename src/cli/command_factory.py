@@ -34,7 +34,13 @@ from application.template.commands import (
     UpdateTemplateCommand,
     ValidateTemplateCommand,
 )
-from application.commands.system import ReloadProviderConfigCommand, TestStorageCommand, MCPValidateCommand, RefreshTemplatesCommand, SetConfigurationCommand
+from application.commands.system import (
+    ReloadProviderConfigCommand,
+    TestStorageCommand,
+    MCPValidateCommand,
+    RefreshTemplatesCommand,
+    SetConfigurationCommand,
+)
 from application.queries.system import (
     GetSystemStatusQuery,
     GetProviderConfigQuery,
@@ -64,92 +70,101 @@ from domain.request.value_objects import RequestStatus
 # Simple data structures for utility commands that don't need full CQRS
 class InitCommandData:
     """Data structure for init command."""
+
     def __init__(self, **kwargs):
-        self.non_interactive = kwargs.get('non_interactive', False)
-        self.force = kwargs.get('force', False)
-        self.scheduler = kwargs.get('scheduler')
-        self.provider = kwargs.get('provider', 'aws')
-        self.region = kwargs.get('region')
-        self.profile = kwargs.get('profile')
-        self.config_dir = kwargs.get('config_dir')
+        self.non_interactive = kwargs.get("non_interactive", False)
+        self.force = kwargs.get("force", False)
+        self.scheduler = kwargs.get("scheduler")
+        self.provider = kwargs.get("provider", "aws")
+        self.region = kwargs.get("region")
+        self.profile = kwargs.get("profile")
+        self.config_dir = kwargs.get("config_dir")
 
 
 class MCPServeCommandData:
     """Data structure for MCP serve command."""
+
     def __init__(self, **kwargs):
-        self.port = kwargs.get('port', 3000)
-        self.host = kwargs.get('host', 'localhost')
-        self.stdio = kwargs.get('stdio', False)
-        self.log_level = kwargs.get('log_level', 'INFO')
+        self.port = kwargs.get("port", 3000)
+        self.host = kwargs.get("host", "localhost")
+        self.stdio = kwargs.get("stdio", False)
+        self.log_level = kwargs.get("log_level", "INFO")
 
 
 class MCPToolsCommandData:
     """Data structure for MCP tools commands."""
+
     def __init__(self, action: str, **kwargs):
         self.action = action  # list, call, info
-        self.tool_name = kwargs.get('tool_name')
-        self.args = kwargs.get('args')
-        self.file = kwargs.get('file')
-        self.format = kwargs.get('format', 'json')
-        self.type = kwargs.get('type')
+        self.tool_name = kwargs.get("tool_name")
+        self.args = kwargs.get("args")
+        self.file = kwargs.get("file")
+        self.format = kwargs.get("format", "json")
+        self.type = kwargs.get("type")
 
 
 class MCPValidateCommandData:
     """Data structure for MCP validate command."""
+
     def __init__(self, **kwargs):
-        self.config = kwargs.get('config')
-        self.format = kwargs.get('format', 'table')
+        self.config = kwargs.get("config")
+        self.format = kwargs.get("format", "table")
 
 
 class InfrastructureCommandData:
     """Data structure for infrastructure commands."""
+
     def __init__(self, action: str, **kwargs):
         self.action = action  # discover, show, validate
-        self.provider = kwargs.get('provider')
-        self.all_providers = kwargs.get('all_providers', False)
-        self.show = kwargs.get('show')
-        self.all = kwargs.get('all', False)
-        self.summary = kwargs.get('summary', False)
+        self.provider = kwargs.get("provider")
+        self.all_providers = kwargs.get("all_providers", False)
+        self.show = kwargs.get("show")
+        self.all = kwargs.get("all", False)
+        self.summary = kwargs.get("summary", False)
 
 
 class ProviderOperationCommandData:
     """Data structure for provider operation commands."""
+
     def __init__(self, action: str, **kwargs):
         self.action = action  # select, exec
-        self.provider = kwargs.get('provider')
-        self.strategy = kwargs.get('strategy')
-        self.operation = kwargs.get('operation')
-        self.params = kwargs.get('params')
+        self.provider = kwargs.get("provider")
+        self.strategy = kwargs.get("strategy")
+        self.operation = kwargs.get("operation")
+        self.params = kwargs.get("params")
 
 
 class TemplateUtilityCommandData:
     """Data structure for template utility commands."""
+
     def __init__(self, action: str, **kwargs):
         self.action = action  # refresh, generate
-        self.force = kwargs.get('force', False)
-        self.provider = kwargs.get('provider')
-        self.all_providers = kwargs.get('all_providers', False)
-        self.provider_api = kwargs.get('provider_api')
-        self.provider_specific = kwargs.get('provider_specific', False)
-        self.generic = kwargs.get('generic', False)
-        self.provider_type = kwargs.get('provider_type')
+        self.force = kwargs.get("force", False)
+        self.provider = kwargs.get("provider")
+        self.all_providers = kwargs.get("all_providers", False)
+        self.provider_api = kwargs.get("provider_api")
+        self.provider_specific = kwargs.get("provider_specific", False)
+        self.generic = kwargs.get("generic", False)
+        self.provider_type = kwargs.get("provider_type")
 
 
 class StorageTestCommandData:
     """Data structure for storage test command."""
+
     def __init__(self, **kwargs):
-        self.strategy = kwargs.get('strategy')
-        self.timeout = kwargs.get('timeout', 30)
+        self.strategy = kwargs.get("strategy")
+        self.timeout = kwargs.get("timeout", 30)
 
 
 class SystemServeCommandData:
     """Data structure for system serve command."""
+
     def __init__(self, **kwargs):
-        self.host = kwargs.get('host', '0.0.0.0')
-        self.port = kwargs.get('port', 8000)
-        self.workers = kwargs.get('workers', 1)
-        self.reload = kwargs.get('reload', False)
-        self.server_log_level = kwargs.get('server_log_level', 'info')
+        self.host = kwargs.get("host", "0.0.0.0")
+        self.port = kwargs.get("port", 8000)
+        self.workers = kwargs.get("workers", 1)
+        self.reload = kwargs.get("reload", False)
+        self.server_log_level = kwargs.get("server_log_level", "info")
 
 
 class CLICommandFactory:
@@ -170,7 +185,7 @@ class CLICommandFactory:
             filters["provider"] = provider
         if template_type:
             filters["template_type"] = template_type
-        
+
         return ListTemplatesQuery(
             provider_name=provider,
             provider_api=provider_api,
@@ -344,7 +359,7 @@ class CLICommandFactory:
         filters = {}
         if status:
             filters["status"] = status
-        
+
         return ListReturnRequestsQuery(
             filters=filters,
             pagination={"limit": limit, "offset": offset},
@@ -385,7 +400,7 @@ class CLICommandFactory:
             filters["template_id"] = template_id
         if request_id:
             filters["request_id"] = request_id
-        
+
         return ListMachinesQuery(
             provider_name=provider_name,
             template_id=template_id,
@@ -639,15 +654,21 @@ class CLICommandFactory:
         """Create MCP validate command data structure."""
         return MCPValidateCommandData(**kwargs)
 
-    def create_infrastructure_command_data(self, action: str, **kwargs: Any) -> InfrastructureCommandData:
+    def create_infrastructure_command_data(
+        self, action: str, **kwargs: Any
+    ) -> InfrastructureCommandData:
         """Create infrastructure command data structure."""
         return InfrastructureCommandData(action, **kwargs)
 
-    def create_provider_operation_command_data(self, action: str, **kwargs: Any) -> ProviderOperationCommandData:
+    def create_provider_operation_command_data(
+        self, action: str, **kwargs: Any
+    ) -> ProviderOperationCommandData:
         """Create provider operation command data structure."""
         return ProviderOperationCommandData(action, **kwargs)
 
-    def create_template_utility_command_data(self, action: str, **kwargs: Any) -> TemplateUtilityCommandData:
+    def create_template_utility_command_data(
+        self, action: str, **kwargs: Any
+    ) -> TemplateUtilityCommandData:
         """Create template utility command data structure."""
         return TemplateUtilityCommandData(action, **kwargs)
 
@@ -663,76 +684,82 @@ class CLICommandFactory:
         """Create appropriate Command or Query from CLI arguments."""
         # Process input data from -f/--file or -d/--data flags (HostFactory compatibility)
         input_data = self._process_input_data(args)
-        
+
         # Convert args to dict for easier processing
         args_dict = vars(args).copy()
-        args_dict['input_data'] = input_data
-        
+        args_dict["input_data"] = input_data
+
         # Handle positional vs flag arguments for template_id
-        if hasattr(args, 'template_id') and args.template_id:
-            args_dict['template_id'] = args.template_id
-        elif hasattr(args, 'flag_template_id') and args.flag_template_id:
-            args_dict['template_id'] = args.flag_template_id
-        
+        if hasattr(args, "template_id") and args.template_id:
+            args_dict["template_id"] = args.template_id
+        elif hasattr(args, "flag_template_id") and args.flag_template_id:
+            args_dict["template_id"] = args.flag_template_id
+
         # Handle positional vs flag arguments for machine_id
-        if hasattr(args, 'machine_id') and args.machine_id:
-            args_dict['machine_id'] = args.machine_id
-        elif hasattr(args, 'flag_machine_id') and args.flag_machine_id:
-            args_dict['machine_id'] = args.flag_machine_id
-        
+        if hasattr(args, "machine_id") and args.machine_id:
+            args_dict["machine_id"] = args.machine_id
+        elif hasattr(args, "flag_machine_id") and args.flag_machine_id:
+            args_dict["machine_id"] = args.flag_machine_id
+
         # Handle positional vs flag arguments for request_ids
         request_ids = []
-        if hasattr(args, 'request_ids') and args.request_ids:
+        if hasattr(args, "request_ids") and args.request_ids:
             request_ids.extend(args.request_ids)
-        if hasattr(args, 'flag_request_ids') and args.flag_request_ids:
+        if hasattr(args, "flag_request_ids") and args.flag_request_ids:
             request_ids.extend(args.flag_request_ids)
-        if hasattr(args, 'request_id') and args.request_id:
+        if hasattr(args, "request_id") and args.request_id:
             request_ids.append(args.request_id)
         if request_ids:
-            args_dict['request_id'] = request_ids[0] if len(request_ids) == 1 else request_ids
-        
+            args_dict["request_id"] = request_ids[0] if len(request_ids) == 1 else request_ids
+
         # Handle machine count (positional vs flag)
-        if hasattr(args, 'machine_count') and args.machine_count:
-            args_dict['count'] = args.machine_count
-        elif hasattr(args, 'flag_machine_count') and args.flag_machine_count:
-            args_dict['count'] = args.flag_machine_count
-        
+        if hasattr(args, "machine_count") and args.machine_count:
+            args_dict["count"] = args.machine_count
+        elif hasattr(args, "flag_machine_count") and args.flag_machine_count:
+            args_dict["count"] = args.flag_machine_count
+
         # Map CLI resource/action to command/query
         resource = args.resource
-        action = getattr(args, 'action', None)
-        
+        action = getattr(args, "action", None)
+
         # Normalize resource names (handle singular/plural)
-        if resource in ['template', 'machine', 'request', 'provider']:
-            resource = resource + 's'
-        elif resource == 'infra':
-            resource = 'infrastructure'
-        
+        if resource in ["template", "machine", "request", "provider"]:
+            resource = resource + "s"
+        elif resource == "infra":
+            resource = "infrastructure"
+
         # Use the existing mapping method
         return self.get_command_for_cli_args(resource, action, args_dict)
-    
+
     def _process_input_data(self, args):
         """Process input data from -f/--file or -d/--data flags."""
         input_data = None
         if hasattr(args, "file") and args.file:
             try:
                 import json
+
                 with open(args.file) as f:
                     input_data = json.load(f)
             except Exception as e:
                 from infrastructure.logging.logger import get_logger
+
                 logger = get_logger(__name__)
                 logger.error("Failed to load input file %s: %s", args.file, e)
                 from domain.base.exceptions import DomainException
+
                 raise DomainException(f"Failed to load input file: {e}")
         elif hasattr(args, "data") and args.data:
             try:
                 import json
+
                 input_data = json.loads(args.data)
             except Exception as e:
                 from infrastructure.logging.logger import get_logger
+
                 logger = get_logger(__name__)
                 logger.error("Failed to parse input data: %s", e)
                 from domain.base.exceptions import DomainException
+
                 raise DomainException(f"Failed to parse input data: {e}")
         return input_data
 
@@ -745,12 +772,12 @@ class CLICommandFactory:
     ) -> Union[Any, None]:
         """
         Map CLI command group and action to appropriate Command/Query.
-        
+
         Args:
             command_group: CLI command group (templates, requests, machines, system)
             command_action: CLI action (list, show, create, update, delete, status)
             args: CLI arguments dictionary
-            
+
         Returns:
             Appropriate Command or Query instance, or None for non-CQRS commands
         """
@@ -761,7 +788,7 @@ class CLICommandFactory:
                     provider_name=args.get("provider"),
                     provider_api=args.get("provider_api"),
                     active_only=args.get("active_only", True),
-                    filter_expressions=args.get("filter") or []
+                    filter_expressions=args.get("filter") or [],
                 )
             elif command_action == "show":
                 template_id = args.get("template_id")
@@ -774,16 +801,28 @@ class CLICommandFactory:
                 # Extract template data from input_data or args
                 input_data = args.get("input_data") or {}
                 return self.create_create_template_command(
-                    template_id=input_data.get("templateId") or input_data.get("template_id") or args.get("template_id"),
-                    provider_api=input_data.get("providerApi") or input_data.get("provider_api") or args.get("provider_api", "RunInstances"),
-                    image_id=input_data.get("imageId") or input_data.get("image_id") or args.get("image_id"),
+                    template_id=input_data.get("templateId")
+                    or input_data.get("template_id")
+                    or args.get("template_id"),
+                    provider_api=input_data.get("providerApi")
+                    or input_data.get("provider_api")
+                    or args.get("provider_api", "RunInstances"),
+                    image_id=input_data.get("imageId")
+                    or input_data.get("image_id")
+                    or args.get("image_id"),
                     name=input_data.get("name") or args.get("name"),
                     description=input_data.get("description") or args.get("description"),
-                    instance_type=input_data.get("instanceType") or input_data.get("instance_type") or args.get("instance_type"),
-                    subnet_ids=input_data.get("subnetIds") or input_data.get("subnet_ids") or args.get("subnet_ids"),
-                    security_group_ids=input_data.get("securityGroupIds") or input_data.get("security_group_ids") or args.get("security_group_ids"),
+                    instance_type=input_data.get("instanceType")
+                    or input_data.get("instance_type")
+                    or args.get("instance_type"),
+                    subnet_ids=input_data.get("subnetIds")
+                    or input_data.get("subnet_ids")
+                    or args.get("subnet_ids"),
+                    security_group_ids=input_data.get("securityGroupIds")
+                    or input_data.get("security_group_ids")
+                    or args.get("security_group_ids"),
                     tags=input_data.get("tags") or args.get("tags"),
-                    configuration=input_data or {}
+                    configuration=input_data or {},
                 )
             elif command_action == "update":
                 template_id = args.get("template_id")
@@ -794,7 +833,7 @@ class CLICommandFactory:
                     template_id=template_id,
                     name=input_data.get("name") or args.get("name"),
                     description=input_data.get("description") or args.get("description"),
-                    configuration=input_data or {}
+                    configuration=input_data or {},
                 )
             elif command_action == "delete":
                 template_id = args.get("template_id")
@@ -807,14 +846,12 @@ class CLICommandFactory:
                     raise ValueError("Template configuration is required for validate command")
                 return self.create_validate_template_command(
                     template_id=input_data.get("template_id", "validation"),
-                    configuration=input_data
+                    configuration=input_data,
                 )
             elif command_action == "refresh":
-                return self.create_refresh_templates_command(
-                    provider_name=args.get("provider")
-                )
+                return self.create_refresh_templates_command(provider_name=args.get("provider"))
             elif command_action == "generate":
-                generate_args = {k: v for k, v in args.items() if k != 'action'}
+                generate_args = {k: v for k, v in args.items() if k != "action"}
                 return self.create_template_utility_command_data("generate", **generate_args)
 
         # Request operations
@@ -831,18 +868,16 @@ class CLICommandFactory:
                     request_id=args.get("request_id"),
                     timeout=args.get("timeout"),
                     tags=input_data.get("tags") or args.get("tags"),
-                    dry_run=args.get("dry_run", False)
+                    dry_run=args.get("dry_run", False),
                 )
             elif command_action == "show":
                 # Show command: single entity via CQRS
                 request_id = args.get("request_id")
                 if not request_id:
                     raise ValueError("request_id is required for show command")
-                
+
                 return self.create_get_request_status_query(
-                    request_id=request_id,
-                    provider_name=args.get("provider"),
-                    include_machines=True
+                    request_id=request_id, provider_name=args.get("provider"), include_machines=True
                 )
             elif command_action == "status":
                 # Status command: multiple entities via interface handler
@@ -854,15 +889,14 @@ class CLICommandFactory:
                     template_id=args.get("template_id"),
                     limit=args.get("limit") or 50,
                     offset=args.get("offset") or 0,
-                    filter_expressions=args.get("filter") or []
+                    filter_expressions=args.get("filter") or [],
                 )
             elif command_action == "cancel":
                 request_id = args.get("request_id")
                 if not request_id:
                     raise ValueError("request_id is required for cancel command")
                 return self.create_cancel_request_command(
-                    request_id=request_id,
-                    reason=args.get("reason", "User requested cancellation")
+                    request_id=request_id, reason=args.get("reason", "User requested cancellation")
                 )
 
         # Machine operations
@@ -891,20 +925,20 @@ class CLICommandFactory:
                     count=count,
                     timeout=args.get("timeout"),
                     tags=input_data.get("tags") or args.get("tags"),
-                    dry_run=args.get("dry_run", False)
+                    dry_run=args.get("dry_run", False),
                 )
             elif command_action == "return":
                 # Check for --all flag first
                 if args.get("all", False):
                     return None  # Route to interface handler for --all support
-                
+
                 machine_ids = args.get("machine_ids", [])
                 if not machine_ids:
                     raise ValueError("machine_ids are required for return command")
                 return self.create_return_request_command(
                     machine_ids=machine_ids,
                     timeout=args.get("timeout"),
-                    force_return=args.get("force", False)
+                    force_return=args.get("force", False),
                 )
             elif command_action == "show":
                 # Show command: single entity via CQRS
@@ -920,25 +954,20 @@ class CLICommandFactory:
         elif command_group == "system":
             if command_action == "status":
                 return self.create_get_system_status_query(
-                    include_provider_health=True,
-                    detailed=args.get("detailed", False)
+                    include_provider_health=True, detailed=args.get("detailed", False)
                 )
             elif command_action == "health":
                 return self.create_get_system_status_query(
-                    include_provider_health=True,
-                    detailed=args.get("detailed", False)
+                    include_provider_health=True, detailed=args.get("detailed", False)
                 )
             elif command_action == "metrics":
                 return self.create_get_provider_metrics_query(
-                    provider_name=args.get("provider"),
-                    detailed=args.get("detailed", False)
+                    provider_name=args.get("provider"), detailed=args.get("detailed", False)
                 )
             elif command_action == "serve":
                 return self.create_system_serve_command_data(**args)
             elif command_action == "reload-config":
-                return self.create_reload_provider_config_command(
-                    config_path=args.get("config")
-                )
+                return self.create_reload_provider_config_command(config_path=args.get("config"))
 
         # Storage operations
         elif command_group == "storage":
@@ -946,29 +975,25 @@ class CLICommandFactory:
                 return self.create_list_storage_strategies_query(
                     include_current=True,
                     include_details=args.get("detailed", False),
-                    filter_expressions=args.get("filter") or []
+                    filter_expressions=args.get("filter") or [],
                 )
             elif command_action == "show":
                 return self.create_get_storage_health_query(
-                    strategy_name=args.get("strategy"),
-                    detailed=True
+                    strategy_name=args.get("strategy"), detailed=True
                 )
             elif command_action == "health":
                 return self.create_get_storage_health_query(
-                    strategy_name=args.get("strategy"),
-                    detailed=args.get("detailed", False)
+                    strategy_name=args.get("strategy"), detailed=args.get("detailed", False)
                 )
             elif command_action == "test":
                 return self.create_test_storage_command()
             elif command_action == "metrics":
                 return self.create_get_storage_metrics_query(
-                    strategy_name=args.get("strategy"),
-                    time_range=args.get("time_range", "1h")
+                    strategy_name=args.get("strategy"), time_range=args.get("time_range", "1h")
                 )
             elif command_action == "validate":
                 return self.create_get_storage_health_query(
-                    strategy_name=args.get("strategy"),
-                    detailed=True
+                    strategy_name=args.get("strategy"), detailed=True
                 )
 
         # Scheduler operations
@@ -977,7 +1002,7 @@ class CLICommandFactory:
                 return self.create_list_scheduler_strategies_query(
                     include_current=True,
                     include_details=args.get("long", False),
-                    filter_expressions=args.get("filter") or []
+                    filter_expressions=args.get("filter") or [],
                 )
             elif command_action == "show":
                 return self.create_get_scheduler_configuration_query(
@@ -996,49 +1021,50 @@ class CLICommandFactory:
                     include_capabilities=args.get("detailed", False),
                     include_metrics=args.get("detailed", False),
                     filter_expressions=args.get("filter") or [],
-                    provider_name=args.get("provider")
+                    provider_name=args.get("provider"),
                 )
             elif command_action == "show":
                 provider_name = args.get("provider")
                 if provider_name:
-                    return self.create_get_provider_capabilities_query(
-                        provider_name=provider_name
-                    )
+                    return self.create_get_provider_capabilities_query(provider_name=provider_name)
                 else:
                     return self.create_list_available_providers_query(
-                        include_health=True,
-                        include_capabilities=True,
-                        include_metrics=True
+                        include_health=True, include_capabilities=True, include_metrics=True
                     )
             elif command_action == "health":
                 return self.create_get_provider_health_query(
-                    provider_name=args.get("provider"),
-                    include_details=True
+                    provider_name=args.get("provider"), include_details=True
                 )
             elif command_action == "metrics":
                 return self.create_get_provider_metrics_query(
                     provider_name=args.get("provider"),
                     timeframe=args.get("timeframe", "1h"),
-                    detailed=args.get("detailed", False)
+                    detailed=args.get("detailed", False),
                 )
             elif command_action == "select":
-                filtered_args = {k: v for k, v in args.items() if k != 'action'}
+                filtered_args = {k: v for k, v in args.items() if k != "action"}
                 return self.create_provider_operation_command_data("select", **filtered_args)
             elif command_action == "exec":
                 return self.create_execute_provider_operation_command(
                     operation=args.get("operation"),
                     params=args.get("params"),
-                    provider_name=args.get("provider")
+                    provider_name=args.get("provider"),
                 )
 
         # Infrastructure operations
         elif command_group == "infrastructure" or command_group == "infra":
             if command_action == "discover":
-                return self.create_infrastructure_command_data("discover", **{k: v for k, v in args.items() if k != 'action'})
+                return self.create_infrastructure_command_data(
+                    "discover", **{k: v for k, v in args.items() if k != "action"}
+                )
             elif command_action == "show":
-                return self.create_infrastructure_command_data("show", **{k: v for k, v in args.items() if k != 'action'})
+                return self.create_infrastructure_command_data(
+                    "show", **{k: v for k, v in args.items() if k != "action"}
+                )
             elif command_action == "validate":
-                return self.create_infrastructure_command_data("validate", **{k: v for k, v in args.items() if k != 'action'})
+                return self.create_infrastructure_command_data(
+                    "validate", **{k: v for k, v in args.items() if k != "action"}
+                )
 
         # MCP operations
         elif command_group == "mcp":
@@ -1046,7 +1072,10 @@ class CLICommandFactory:
                 return self.create_mcp_serve_command_data(**args)
             elif command_action == "tools":
                 tools_action = args.get("tools_action")
-                return self.create_mcp_tools_command_data(tools_action, **{k: v for k, v in args.items() if k not in ['action', 'tools_action']})
+                return self.create_mcp_tools_command_data(
+                    tools_action,
+                    **{k: v for k, v in args.items() if k not in ["action", "tools_action"]},
+                )
             elif command_action == "validate":
                 return self.create_mcp_validate_command()
 
@@ -1058,25 +1087,20 @@ class CLICommandFactory:
         elif command_group == "config":
             if command_action == "show":
                 return self.create_get_provider_config_query(
-                    provider_name=args.get("provider"),
-                    include_sensitive=False
+                    provider_name=args.get("provider"), include_sensitive=False
                 )
             elif command_action == "get":
                 return self.create_get_configuration_query(
-                    key=args.get("key"),
-                    default=args.get("default")
+                    key=args.get("key"), default=args.get("default")
                 )
             elif command_action == "set":
                 return self.create_set_configuration_command(
-                    key=args.get("key"),
-                    value=args.get("value")
+                    key=args.get("key"), value=args.get("value")
                 )
             elif command_action == "validate":
                 return self.create_validate_provider_config_query(detailed=True)
             elif command_action == "reload":
-                return self.create_reload_provider_config_command(
-                    config_path=args.get("file")
-                )
+                return self.create_reload_provider_config_command(config_path=args.get("file"))
 
         # For commands not yet converted to CQRS, return None
         # This allows the execute_command function to fall back to legacy handlers
@@ -1092,7 +1116,7 @@ class CLICommandFactory:
         """Create command to execute provider operation."""
         from providers.base.strategy import ProviderOperation, ProviderOperationType
         import json
-        
+
         # Parse params if provided
         parsed_params = {}
         if params:
@@ -1100,17 +1124,16 @@ class CLICommandFactory:
                 parsed_params = json.loads(params)
             except json.JSONDecodeError:
                 raise ValueError(f"Invalid JSON in params: {params}")
-        
+
         # Create ProviderOperation
         provider_operation = ProviderOperation(
             operation_type=ProviderOperationType(operation),
             parameters=parsed_params,
-            context={"provider_override": provider_name} if provider_name else {}
+            context={"provider_override": provider_name} if provider_name else {},
         )
-        
+
         return ExecuteProviderOperationCommand(
-            operation=provider_operation,
-            strategy_override=provider_name
+            operation=provider_operation, strategy_override=provider_name
         )
 
     def create_test_storage_command(self) -> TestStorageCommand:

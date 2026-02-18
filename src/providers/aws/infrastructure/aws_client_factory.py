@@ -8,22 +8,20 @@ from providers.aws.infrastructure.aws_client import AWSClient
 
 class AWSClientFactory:
     """Factory for creating provider-specific AWS clients."""
-    
+
     def __init__(self, logger: LoggingPort):
         self._logger = logger
         self._clients: Dict[str, AWSClient] = {}
-        
+
     def get_client(self, provider_name: str, aws_config, config_port) -> AWSClient:
         """Get AWS client for specific provider instance."""
         if provider_name not in self._clients:
             self._logger.debug("Creating AWS client for provider: %s", provider_name)
             self._clients[provider_name] = AWSClient(
-                config=config_port,
-                logger=self._logger,
-                provider_name=provider_name
+                config=config_port, logger=self._logger, provider_name=provider_name
             )
         return self._clients[provider_name]
-        
+
     def cleanup(self) -> None:
         """Clean up all cached clients."""
         for client in self._clients.values():

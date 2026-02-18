@@ -15,10 +15,10 @@ class TemplateValidationDomainService:
         self._logger = logger
 
     def validate_template_requirements(
-        self, 
-        template: Any, 
+        self,
+        template: Any,
         provider_instance: str,
-        validation_level: ValidationLevel = ValidationLevel.STRICT
+        validation_level: ValidationLevel = ValidationLevel.STRICT,
     ) -> ValidationResult:
         """Business logic for template validation."""
         result = ValidationResult(
@@ -65,17 +65,21 @@ class TemplateValidationDomainService:
         """Get capabilities from merged provider configuration."""
         if not self._config:
             raise ValueError("No configuration manager available")
-            
+
         provider_config = self._config.get_provider_instance_config(provider_instance)
         if not provider_config:
             raise ValueError(f"Provider instance {provider_instance} not found in configuration")
-        
+
         provider_config_root = self._config.get_provider_config()
         provider_defaults = provider_config_root.provider_defaults.get(provider_config.type)
         effective_handlers = provider_config.get_effective_handlers(provider_defaults)
         supported_apis = list(effective_handlers.keys())
-        
-        from providers.base.strategy.provider_strategy import ProviderCapabilities, ProviderOperationType
+
+        from providers.base.strategy.provider_strategy import (
+            ProviderCapabilities,
+            ProviderOperationType,
+        )
+
         return ProviderCapabilities(
             provider_type=provider_config.type,
             supported_operations=[

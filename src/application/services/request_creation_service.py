@@ -25,12 +25,12 @@ class RequestCreationService:
     ) -> Request:
         """
         Create request aggregate with validation and metadata.
-        
+
         Args:
             command: The create request command
             template: The template to use for the request
             selection_result: The provider selection result
-            
+
         Returns:
             Request aggregate with proper metadata and provider information
         """
@@ -58,7 +58,7 @@ class RequestCreationService:
 
         # Store provider API in domain field
         request.provider_api = template.provider_api or "RunInstances"
-        
+
         self._logger.info(
             "Created request %s with provider API: %s",
             request.request_id,

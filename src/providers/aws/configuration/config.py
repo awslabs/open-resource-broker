@@ -76,11 +76,11 @@ class AWSProviderConfig(BaseSettings, BaseProviderConfig):
     """
 
     model_config = SettingsConfigDict(
-        env_prefix='ORB_AWS_',
+        env_prefix="ORB_AWS_",
         case_sensitive=False,
         populate_by_name=True,
-        env_nested_delimiter='__',  # Enable nested environment variables
-        extra="allow"
+        env_nested_delimiter="__",  # Enable nested environment variables
+        extra="allow",
     )
 
     # Provider identification (from BaseProviderConfig)
@@ -141,7 +141,7 @@ class AWSProviderConfig(BaseSettings, BaseProviderConfig):
     )
     describe_request_interval: int = Field(0, description="Delay between retries in milliseconds")
 
-    @field_validator('handlers', mode='before')
+    @field_validator("handlers", mode="before")
     @classmethod
     def parse_handlers_json(cls, v):
         """Parse handlers configuration from JSON string if needed."""
@@ -152,7 +152,7 @@ class AWSProviderConfig(BaseSettings, BaseProviderConfig):
                 return v
         return v
 
-    @field_validator('launch_template', mode='before')
+    @field_validator("launch_template", mode="before")
     @classmethod
     def parse_launch_template_json(cls, v):
         """Parse launch template configuration from JSON string if needed."""

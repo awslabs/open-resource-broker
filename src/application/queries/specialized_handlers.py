@@ -178,7 +178,9 @@ class GetMachineHealthHandler(BaseQueryHandler[GetMachineHealthQuery, MachineHea
                 try:
                     # Try to get health from provisioning service
                     if hasattr(self.provisioning_port, "get_machine_health"):
-                        health_info = self.provisioning_port.get_machine_health(machine.provider_name)
+                        health_info = self.provisioning_port.get_machine_health(
+                            machine.provider_name
+                        )
                         health_status = health_info.get("status", "unknown")
                         health_details = health_info.get("details", {})
                         last_health_check = health_info.get("timestamp")

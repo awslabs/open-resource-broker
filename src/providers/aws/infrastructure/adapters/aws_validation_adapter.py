@@ -74,8 +74,11 @@ class AWSValidationAdapter(BaseProviderValidationAdapter):
 
             # Ensure aws_handlers is a dictionary before calling .keys()
             if not isinstance(aws_handlers, dict):
-                self._logger.error("AWS handlers configuration is not a dictionary: %s (type: %s)", 
-                                 aws_handlers, type(aws_handlers))
+                self._logger.error(
+                    "AWS handlers configuration is not a dictionary: %s (type: %s)",
+                    aws_handlers,
+                    type(aws_handlers),
+                )
                 return False
 
             supported_apis = list(aws_handlers.keys())
@@ -116,8 +119,11 @@ class AWSValidationAdapter(BaseProviderValidationAdapter):
 
             # Ensure aws_handlers is a dictionary before calling .keys()
             if not isinstance(aws_handlers, dict):
-                self._logger.error("AWS handlers configuration is not a dictionary: %s (type: %s)", 
-                                 aws_handlers, type(aws_handlers))
+                self._logger.error(
+                    "AWS handlers configuration is not a dictionary: %s (type: %s)",
+                    aws_handlers,
+                    type(aws_handlers),
+                )
                 return []
 
             return list(aws_handlers.keys())
@@ -195,8 +201,11 @@ class AWSValidationAdapter(BaseProviderValidationAdapter):
 
             # Ensure aws_handlers is a dictionary
             if not isinstance(aws_handlers, dict):
-                self._logger.error("AWS handlers configuration is not a dictionary: %s (type: %s)", 
-                                 aws_handlers, type(aws_handlers))
+                self._logger.error(
+                    "AWS handlers configuration is not a dictionary: %s (type: %s)",
+                    aws_handlers,
+                    type(aws_handlers),
+                )
                 # Fall back to hardcoded values
                 if api == "EC2Fleet":
                     return ["instant", "request", "maintain"]

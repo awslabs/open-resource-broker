@@ -56,10 +56,10 @@ def create_aws_strategy(provider_config: Any) -> Any:
 
         # Create AWS provider strategy
         strategy = AWSProviderStrategy(
-            config=aws_config, 
+            config=aws_config,
             logger=logger,
             provider_name=provider_name,
-            provider_instance_config=provider_instance_config
+            provider_instance_config=provider_instance_config,
         )
 
         # Initialize the strategy
@@ -104,10 +104,10 @@ def register_aws_provider_settings() -> None:
     try:
         from config.schemas.provider_settings_registry import ProviderSettingsRegistry
         from providers.aws.configuration.config import AWSProviderConfig
-        
+
         # Register AWSProviderConfig as the settings class for AWS providers
         ProviderSettingsRegistry._settings_classes["aws"] = AWSProviderConfig
-        
+
     except ImportError:
         # Registry not available, skip registration
         pass
@@ -260,6 +260,7 @@ def register_aws_provider_instance(provider_instance, logger=None) -> bool:
             logger.debug("Registering AWS provider instance: %s", provider_instance.name)
 
         from providers.registry import get_provider_registry
+
         registry = get_provider_registry()
 
         # Register AWS as provider type if not already registered
@@ -283,16 +284,17 @@ def register_aws_provider_instance(provider_instance, logger=None) -> bool:
         )
 
         if logger:
-            logger.debug("Successfully registered AWS provider instance: %s", provider_instance.name)
+            logger.debug(
+                "Successfully registered AWS provider instance: %s", provider_instance.name
+            )
         return True
 
     except Exception as e:
         if logger:
-            logger.error("Failed to register AWS provider instance '%s': %s", provider_instance.name, str(e))
+            logger.error(
+                "Failed to register AWS provider instance '%s': %s", provider_instance.name, str(e)
+            )
         return False
-
-
-
 
 
 def register_aws_extensions(logger: Optional["LoggingPort"] = None) -> None:
@@ -376,7 +378,7 @@ def initialize_aws_provider(
     try:
         # Register AWS provider settings
         register_aws_provider_settings()
-        
+
         # Register AWS extensions
         register_aws_extensions(logger)
 
@@ -413,32 +415,37 @@ def register_aws_services_with_di(container) -> None:
         # Register AWS Template Adapter
         from domain.base.ports.template_adapter_port import TemplateAdapterPort
         from providers.aws.infrastructure.adapters.template_adapter import AWSTemplateAdapter
-        
+
         if not container.is_registered(TemplateAdapterPort):
+
             def create_aws_template_adapter(c):
                 from domain.base.ports import ConfigurationPort
                 from providers.aws.infrastructure.aws_client import AWSClient
-                from infrastructure.template.configuration_manager import TemplateConfigurationManager
-                
+                from infrastructure.template.configuration_manager import (
+                    TemplateConfigurationManager,
+                )
+
                 template_config_manager = c.get(TemplateConfigurationManager)
                 aws_client = c.get(AWSClient)
                 logger_port = c.get(LoggingPort)
-                
+
                 return AWSTemplateAdapter(template_config_manager, aws_client, logger_port)
-            
+
             container.register_singleton(TemplateAdapterPort, create_aws_template_adapter)
             logger.debug("AWS Template Adapter registered with DI container")
 
         # Register AWS Machine Adapter
         from providers.aws.infrastructure.adapters.machine_adapter import AWSMachineAdapter
-        
+
         if not container.is_registered(AWSMachineAdapter):
+
             def create_machine_adapter(c):
                 from providers.aws.infrastructure.aws_client import AWSClient
+
                 aws_client = c.get(AWSClient)
                 logger_port = c.get(LoggingPort)
                 return AWSMachineAdapter(aws_client, logger_port)
-            
+
             container.register_singleton(AWSMachineAdapter, create_machine_adapter)
             logger.debug("AWS Machine Adapter registered with DI container")
 
@@ -459,9 +466,12 @@ def register_aws_services_with_di(container) -> None:
             logger.debug("AWS Launch Template Manager registered with DI container")
 
         # Register AWS Native Spec Service if not already registered
-        from providers.aws.infrastructure.services.aws_native_spec_service import AWSNativeSpecService
+        from providers.aws.infrastructure.services.aws_native_spec_service import (
+            AWSNativeSpecService,
+        )
 
         if not container.is_registered(AWSNativeSpecService):
+
             def create_aws_native_spec_service(c):
                 from application.services.native_spec_service import NativeSpecService
                 from domain.base.ports.configuration_port import ConfigurationPort

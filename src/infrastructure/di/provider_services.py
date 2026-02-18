@@ -9,7 +9,7 @@ def register_provider_services(container: DIContainer) -> None:
 
     # Register enhanced application services
     _register_application_services(container)
-    
+
     # Register provider-specific utility services
     _register_provider_utility_services(container)
 
@@ -24,7 +24,7 @@ def _register_application_services(container: DIContainer) -> None:
     from domain.services.template_validation_domain_service import TemplateValidationDomainService
     from domain.base.ports.logging_port import LoggingPort
     from providers.registry import get_provider_registry
-    
+
     # Enhanced provider registry service
     container.register_singleton(
         ProviderRegistryService,
@@ -32,10 +32,10 @@ def _register_application_services(container: DIContainer) -> None:
             registry=get_provider_registry(),
             selection_service=c.get(ProviderSelectionService),
             validation_service=c.get(TemplateValidationDomainService),
-            logger=c.get(LoggingPort)
-        )
+            logger=c.get(LoggingPort),
+        ),
     )
-    
+
     # Machine sync service
     container.register_singleton(
         MachineSyncService,
@@ -43,8 +43,8 @@ def _register_application_services(container: DIContainer) -> None:
             command_bus=c.get(CommandBus),
             container=c,
             logger=c.get(LoggingPort),
-            provider_registry_service=c.get(ProviderRegistryService)
-        )
+            provider_registry_service=c.get(ProviderRegistryService),
+        ),
     )
 
 
@@ -60,6 +60,7 @@ def _register_provider_utility_services(container: DIContainer) -> None:
         if importlib.util.find_spec("src.providers.aws"):
             try:
                 from providers.aws.registration import register_aws_services_with_di
+
                 register_aws_services_with_di(container)
                 logger.debug("AWS utility services registered with DI")
             except Exception as e:
@@ -71,5 +72,3 @@ def _register_provider_utility_services(container: DIContainer) -> None:
         logger.debug("AWS provider not available, skipping AWS utility service registration")
     except Exception as e:
         logger.warning("Failed to register AWS utility services: %s", str(e))
-
-

@@ -15,7 +15,7 @@ from providers.results import ProviderSelectionResult
 @dataclass
 class ProvisioningResult:
     """Result of provisioning operation."""
-    
+
     success: bool
     resource_ids: list[str]
     instance_ids: list[str]
@@ -26,17 +26,19 @@ class ProvisioningResult:
 
 class ProvisioningOrchestrationService:
     """Service for orchestrating provider provisioning operations."""
-    
-    def __init__(self, container: ContainerPort, logger: LoggingPort, provider_registry_service: "ProviderRegistryService"):
+
+    def __init__(
+        self,
+        container: ContainerPort,
+        logger: LoggingPort,
+        provider_registry_service: "ProviderRegistryService",
+    ):
         self._container = container
         self._logger = logger
         self._provider_registry_service = provider_registry_service
-    
+
     async def execute_provisioning(
-        self,
-        template: Template,
-        request: Request,
-        selection_result: ProviderSelectionResult
+        self, template: Template, request: Request, selection_result: ProviderSelectionResult
     ) -> ProvisioningResult:
         """Execute provisioning via selected provider using registry execution."""
         try:
@@ -61,10 +63,14 @@ class ProvisioningOrchestrationService:
                 },
             )
 
-            provider_instance_config = config_manager.get_provider_instance_config(selection_result.provider_name)
+            provider_instance_config = config_manager.get_provider_instance_config(
+                selection_result.provider_name
+            )
             provider_config = provider_instance_config.config if provider_instance_config else {}
 
-            result = await self._provider_registry_service.execute_operation(selection_result.provider_name, operation)
+            result = await self._provider_registry_service.execute_operation(
+                selection_result.provider_name, operation
+            )
 
             if result.success:
                 self._logger.info("Provider result.data: %s", result.data)

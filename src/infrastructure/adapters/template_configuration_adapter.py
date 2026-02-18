@@ -67,7 +67,8 @@ class TemplateConfigurationAdapter(TemplateConfigurationPort):
                 image_id=image_id or "",
                 instance_type=config.get("instanceType") or config.get("instance_type", ""),
                 subnet_ids=config.get("subnetIds") or config.get("subnet_ids", []),
-                security_group_ids=config.get("securityGroupIds") or config.get("security_group_ids", []),
+                security_group_ids=config.get("securityGroupIds")
+                or config.get("security_group_ids", []),
                 price_type=config.get("priceType") or config.get("price_type", "ondemand"),
                 provider_api=provider_api or "",
                 metadata=config.get("metadata", {}),

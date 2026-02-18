@@ -29,6 +29,6 @@ class SchedulerRegistryService:
         """Get scheduler capabilities (if supported)."""
         try:
             strategy = self._registry.create_strategy(scheduler_type, {})
-            return getattr(strategy, 'get_capabilities', lambda: {})()
+            return getattr(strategy, "get_capabilities", lambda: {})()
         except Exception:
             return {}

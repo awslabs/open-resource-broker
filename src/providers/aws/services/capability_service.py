@@ -24,7 +24,9 @@ class AWSCapabilityService:
                 supported_apis = self._handler_registry.get_supported_apis()
                 self._logger.debug("Supported APIs from handler registry: %s", supported_apis)
             else:
-                self._logger.warning("Handler registry not available, returning empty supported APIs")
+                self._logger.warning(
+                    "Handler registry not available, returning empty supported APIs"
+                )
                 supported_apis = []
         except Exception as e:
             self._logger.error("Error getting supported APIs: %s", e)
@@ -78,8 +80,8 @@ class AWSCapabilityService:
         """Generate AWS provider name: aws_{profile}_{region}"""
         profile = config.get("profile", "default")
         region = config.get("region", "us-east-1")
-        
-        sanitized_profile = re.sub(r'[^a-zA-Z0-9\-_]', '-', profile)
+
+        sanitized_profile = re.sub(r"[^a-zA-Z0-9\-_]", "-", profile)
         return f"aws_{sanitized_profile}_{region}"
 
     def parse_provider_name(self, provider_name: str) -> dict[str, str]:
@@ -89,7 +91,7 @@ class AWSCapabilityService:
             return {
                 "type": "aws",
                 "profile": parts[1],
-                "region": "_".join(parts[2:])  # Handle regions with underscores
+                "region": "_".join(parts[2:]),  # Handle regions with underscores
             }
         return {"type": "aws", "profile": "default", "region": "us-east-1"}
 

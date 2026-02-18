@@ -234,7 +234,9 @@ class ValidateSchedulerConfigurationHandler(
 
             # Try to create scheduler strategy
             try:
-                strategy = self._scheduler_service.create_scheduler_strategy(scheduler_name, config_manager)
+                strategy = self._scheduler_service.create_scheduler_strategy(
+                    scheduler_name, config_manager
+                )
                 if strategy is None:
                     errors.append(f"Failed to create scheduler strategy '{scheduler_name}'")
             except Exception as e:

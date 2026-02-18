@@ -53,17 +53,17 @@ class AppConfig(BaseModel):
     def merge_core_settings(self) -> "AppConfig":
         """Merge BaseSettings values into main config."""
         core = CoreAppSettings()
-        
+
         # Override existing fields with environment variables
         self.environment = core.environment
         self.debug = core.debug
         self.request_timeout = core.request_timeout
         self.max_machines_per_request = core.max_machines_per_request
-        
+
         # Override logging level if LOG_LEVEL env var is set
-        if hasattr(self, 'logging') and self.logging:
+        if hasattr(self, "logging") and self.logging:
             self.logging.level = core.log_level
-        
+
         return self
 
     @model_validator(mode="after")

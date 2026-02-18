@@ -43,8 +43,9 @@ class ConfigurationManager:
         # Use platform dirs for default config file discovery
         if config_file is None:
             from config.platform_dirs import get_config_location
+
             config_file = str(get_config_location() / "config.json")
-        
+
         self._config_file = config_file
         self._loader: Optional[ConfigurationLoader] = None
         self._app_config: Optional[AppConfig] = None
@@ -264,10 +265,11 @@ class ConfigurationManager:
         """Get the actual config file that was loaded."""
         # Check standard locations that exist
         import os
+
         # Get current working directory and check relative paths
         candidates = [
             "config/config.json",  # Relative to project root
-            "conf/config.json"     # Alternative location
+            "conf/config.json",  # Alternative location
         ]
         for path in candidates:
             if os.path.exists(path):

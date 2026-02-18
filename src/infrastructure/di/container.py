@@ -55,8 +55,9 @@ class LazyLoadingConfig:
 
         try:
             from config.managers.configuration_manager import ConfigurationManager
+
             config_manager = container.get(ConfigurationManager)
-            
+
             performance_config = config_manager.get("performance", {})
             lazy_config = performance_config.get("lazy_loading", {})
             return cls(lazy_config)

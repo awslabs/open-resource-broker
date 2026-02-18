@@ -18,15 +18,15 @@ from providers.registry import get_provider_registry
 class ProviderExecutionService:
     """
     Service for executing operations with provider strategies using Provider Registry.
-    
+
     Replaces ProviderContext with a cleaner registry-based approach.
     """
 
     def __init__(
-        self, 
-        logger: LoggingPort, 
+        self,
+        logger: LoggingPort,
         config_port: ConfigurationPort,
-        metrics: Optional[MetricsCollector] = None
+        metrics: Optional[MetricsCollector] = None,
     ) -> None:
         """Initialize the provider execution service."""
         self._logger = logger
@@ -35,9 +35,7 @@ class ProviderExecutionService:
         self._metrics = metrics or MetricsCollector(config={"METRICS_ENABLED": True})
 
     async def execute_operation(
-        self, 
-        provider_identifier: str, 
-        operation: ProviderOperation
+        self, provider_identifier: str, operation: ProviderOperation
     ) -> ProviderResult:
         """
         Execute an operation using a specific provider strategy.
@@ -56,8 +54,7 @@ class ProviderExecutionService:
             strategy = self._create_strategy(provider_identifier)
             if not strategy:
                 return ProviderResult.error_result(
-                    f"Provider strategy not found: {provider_identifier}",
-                    "STRATEGY_NOT_FOUND"
+                    f"Provider strategy not found: {provider_identifier}", "STRATEGY_NOT_FOUND"
                 )
 
             # Initialize strategy if needed
@@ -65,7 +62,7 @@ class ProviderExecutionService:
                 if not strategy.initialize():
                     return ProviderResult.error_result(
                         f"Failed to initialize strategy {provider_identifier}",
-                        "STRATEGY_INITIALIZATION_FAILED"
+                        "STRATEGY_INITIALIZATION_FAILED",
                     )
 
             # Check if strategy supports the operation
@@ -73,12 +70,14 @@ class ProviderExecutionService:
             if not capabilities.supports_operation(operation.operation_type):
                 response_time_ms = (time.time() - start_time) * 1000
                 if self._metrics:
-                    op_base = f"provider.{provider_identifier}.{operation.operation_type.name.lower()}"
+                    op_base = (
+                        f"provider.{provider_identifier}.{operation.operation_type.name.lower()}"
+                    )
                     self._metrics.increment_counter(f"{op_base}.error_total")
                     self._metrics.record_time(f"{op_base}.duration", response_time_ms / 1000.0)
                 return ProviderResult.error_result(
                     f"Strategy {provider_identifier} does not support operation {operation.operation_type}",
-                    "OPERATION_NOT_SUPPORTED"
+                    "OPERATION_NOT_SUPPORTED",
                 )
 
             # Execute the operation
@@ -151,12 +150,12 @@ class ProviderExecutionService:
             if self._registry.is_provider_instance_registered(provider_identifier):
                 provider_config = self._get_provider_config(provider_identifier)
                 return self._registry.get_or_create_strategy(provider_identifier, provider_config)
-            
+
             # Try provider type
             if self._registry.is_provider_registered(provider_identifier):
                 provider_config = self._get_provider_config(provider_identifier)
                 return self._registry.get_or_create_strategy(provider_identifier, provider_config)
-            
+
             return None
         except Exception as e:
             self._logger.error("Error creating strategy %s: %s", provider_identifier, e)
@@ -165,9 +164,10 @@ class ProviderExecutionService:
     def _get_provider_config(self, provider_identifier: str) -> dict[str, Any]:
         """Get provider configuration from config port."""
         try:
-            provider_instance_config = self._config_port.get_provider_instance_config(provider_identifier)
+            provider_instance_config = self._config_port.get_provider_instance_config(
+                provider_identifier
+            )
             return provider_instance_config.config if provider_instance_config else {}
         except Exception as e:
             self._logger.warning("Could not get config for %s: %s", provider_identifier, e)
             return {}
-

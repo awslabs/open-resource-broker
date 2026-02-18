@@ -7,7 +7,7 @@ from dataclasses import dataclass
 @dataclass
 class TemplateGenerationRequest:
     """Request object for template generation."""
-    
+
     specific_provider: Optional[str] = None
     all_providers: bool = False
     provider_api: Optional[str] = None
@@ -19,7 +19,7 @@ class TemplateGenerationRequest:
 @dataclass
 class ProviderTemplateResult:
     """Result for template generation for a single provider."""
-    
+
     provider: str
     filename: str
     templates_count: int
@@ -31,7 +31,7 @@ class ProviderTemplateResult:
 @dataclass
 class TemplateGenerationResult:
     """Overall result for template generation operation."""
-    
+
     status: str  # "success", "error"
     message: str
     providers: List[ProviderTemplateResult]

@@ -21,20 +21,30 @@ class HostFactoryFieldMapper(SchedulerFieldMapper):
         """Map HostFactory format → internal format with transformations."""
         # First apply base mapping with nested field support
         mapped = self._map_with_nested_support(external_template, self.field_mappings)
-        
+
         # Apply HostFactory-specific input transformations
         return self._apply_input_transformations(mapped)
 
-    def map_output_fields(self, internal_template: Dict[str, Any], copy_unmapped: bool = False) -> Dict[str, Any]:
+    def map_output_fields(
+        self, internal_template: Dict[str, Any], copy_unmapped: bool = False
+    ) -> Dict[str, Any]:
         """Map internal format → HostFactory format with transformations."""
         # Apply internal → external mappings with nested field support
         reverse_mappings = {v: k for k, v in self.field_mappings.items()}
-        mapped = self._map_with_nested_support(internal_template, reverse_mappings, reverse=True, copy_unmapped=copy_unmapped)
+        mapped = self._map_with_nested_support(
+            internal_template, reverse_mappings, reverse=True, copy_unmapped=copy_unmapped
+        )
 
         # Apply HostFactory-specific transformations
         return self._apply_output_transformations(mapped)
 
-    def _map_with_nested_support(self, source: Dict[str, Any], mappings: Dict[str, str], reverse: bool = False, copy_unmapped: bool = True) -> Dict[str, Any]:
+    def _map_with_nested_support(
+        self,
+        source: Dict[str, Any],
+        mappings: Dict[str, str],
+        reverse: bool = False,
+        copy_unmapped: bool = True,
+    ) -> Dict[str, Any]:
         """Map fields with support for nested provider_data access."""
         mapped = {}
 
@@ -84,20 +94,20 @@ class HostFactoryFieldMapper(SchedulerFieldMapper):
         """Set value in nested dictionary using dot notation."""
         keys = nested_key.split(".")
         current = data
-        
+
         # Navigate to the parent of the target key
         for key in keys[:-1]:
             if key not in current:
                 current[key] = {}
             current = current[key]
-        
+
         # Set the final value
         current[keys[-1]] = value
 
     def _apply_input_transformations(self, mapped: Dict[str, Any]) -> Dict[str, Any]:
         """Apply HostFactory-specific input transformations."""
         from infrastructure.scheduler.hostfactory.transformations import HostFactoryTransformations
-        
+
         # Apply all transformations from the transformations module
         return HostFactoryTransformations.apply_transformations(mapped)
 
@@ -115,7 +125,7 @@ class HostFactoryFieldMapper(SchedulerFieldMapper):
                     mapped["vmTypes"] = machine_types
             # Remove internal field from output
             del mapped["machine_types"]
-        
+
         # Transform vmType → HF attributes (vmType is the external field name)
         if "vmType" in mapped:
             mapped["attributes"] = self._create_hf_attributes(mapped["vmType"])

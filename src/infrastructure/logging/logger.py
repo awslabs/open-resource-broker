@@ -208,7 +208,7 @@ def setup_logging(config: LoggingConfig) -> None:
     try:
         from infrastructure.di.container import get_container
         from config.managers.configuration_manager import ConfigurationManager
-        
+
         container = get_container()
         config_manager = container.get(ConfigurationManager)
         console_enabled = config_manager.get("logging.console_enabled", config.console_enabled)

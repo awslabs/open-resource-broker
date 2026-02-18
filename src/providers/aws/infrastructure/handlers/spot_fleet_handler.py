@@ -126,9 +126,9 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
             )
 
             fleet_id = response["SpotFleetRequestId"]
-            
+
             instances = []
-            
+
             return {
                 "success": True,
                 "resource_ids": [fleet_id],
@@ -140,7 +140,9 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
             self._logger.error("SpotFleet creation failed: %s", e)
             return {"success": False, "resource_ids": [], "instances": [], "error_message": str(e)}
 
-    def _create_spot_fleet_with_response(self, request: Request, aws_template: AWSTemplate) -> dict[str, Any]:
+    def _create_spot_fleet_with_response(
+        self, request: Request, aws_template: AWSTemplate
+    ) -> dict[str, Any]:
         """Create Spot Fleet and return full AWS response."""
         # Validate Spot Fleet specific prerequisites
         self._validate_spot_prerequisites(aws_template)
@@ -447,7 +449,9 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                 )
         else:
             # Single instance type
-            single_type = list(template.machine_types.keys())[0] if template.machine_types else "t3.medium"
+            single_type = (
+                list(template.machine_types.keys())[0] if template.machine_types else "t3.medium"
+            )
             instance_overrides.append(
                 {
                     "instance_type": single_type,
@@ -793,7 +797,11 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                 instance_types = list(aws_template.machine_types.keys())
             else:
                 # Fallback to single type if machine_types is empty
-                single_type = list(aws_template.machine_types.keys())[0] if aws_template.machine_types else "t3.medium"
+                single_type = (
+                    list(aws_template.machine_types.keys())[0]
+                    if aws_template.machine_types
+                    else "t3.medium"
+                )
                 instance_types = [single_type]
 
             if not instance_types:

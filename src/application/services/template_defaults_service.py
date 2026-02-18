@@ -88,9 +88,7 @@ class TemplateDefaultsService(TemplateDefaultsPort):
                 )
 
                 # 3. Apply provider instance defaults
-                provider_instance_defaults = self._get_provider_instance_defaults(
-                    provider_name
-                )
+                provider_instance_defaults = self._get_provider_instance_defaults(provider_name)
                 resolved_defaults.update(provider_instance_defaults)
                 self.logger.debug(
                     "Applied %s provider instance defaults for %s",
@@ -104,23 +102,30 @@ class TemplateDefaultsService(TemplateDefaultsPort):
         self.logger.debug("Final template has %s fields after default resolution", len(result))
         return result
 
-    def _coalesce_merge(self, defaults: dict[str, Any], overrides: dict[str, Any]) -> dict[str, Any]:
+    def _coalesce_merge(
+        self, defaults: dict[str, Any], overrides: dict[str, Any]
+    ) -> dict[str, Any]:
         """
         Merge dictionaries with coalesce logic for empty collections.
-        
-        Empty collections in infrastructure fields are treated as "unset" 
+
+        Empty collections in infrastructure fields are treated as "unset"
         so provider defaults can apply.
         """
-        INFRASTRUCTURE_FIELDS = {"subnet_ids", "security_group_ids", "network_zones", "instance_types"}
+        INFRASTRUCTURE_FIELDS = {
+            "subnet_ids",
+            "security_group_ids",
+            "network_zones",
+            "instance_types",
+        }
         result = defaults.copy()
-        
+
         for key, value in overrides.items():
             if value is not None:
                 # For infrastructure fields, treat empty collections as "unset"
                 if key in INFRASTRUCTURE_FIELDS and self._is_empty_collection(value):
                     continue  # Skip empty collections, keep default
                 result[key] = value
-        
+
         return result
 
     def _is_empty_collection(self, value: Any) -> bool:

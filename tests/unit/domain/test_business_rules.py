@@ -381,7 +381,6 @@ class TestTemplateBusinessRules:
             name="Fleet Template",
             provider_api="EC2Fleet",
             image_id="ami-123",
-            machine_types={"t2.micro": 1},
             machine_types=["t2.micro", "t2.small", "t3.micro"],  # Mixed types
         )
 

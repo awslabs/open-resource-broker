@@ -10,21 +10,19 @@ def register_registry_services(container: DIContainer) -> None:
     from application.services.storage_registry_service import StorageRegistryService
     from infrastructure.scheduler.registry import get_scheduler_registry
     from infrastructure.storage.registry import get_storage_registry
-    
+
     # Scheduler registry service
     container.register_singleton(
         SchedulerRegistryService,
         lambda c: SchedulerRegistryService(
-            registry=get_scheduler_registry(),
-            logger=c.get(LoggingPort)
-        )
+            registry=get_scheduler_registry(), logger=c.get(LoggingPort)
+        ),
     )
-    
+
     # Storage registry service
     container.register_singleton(
         StorageRegistryService,
         lambda c: StorageRegistryService(
-            registry=get_storage_registry(),
-            logger=c.get(LoggingPort)
-        )
+            registry=get_storage_registry(), logger=c.get(LoggingPort)
+        ),
     )

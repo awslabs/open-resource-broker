@@ -16,7 +16,7 @@ class ProviderSelectionService:
     def select_provider_for_template(self, template: Any) -> Any:
         """
         Select provider instance for template requirements.
-        
+
         Implements selection algorithm:
         1. CLI override (--provider flag)
         2. Explicit provider instance (template.provider_name)
@@ -74,6 +74,7 @@ class ProviderSelectionService:
             reason = f"load_balanced_{self._provider_config.selection_policy.lower()}"
 
         from providers.results import ProviderSelectionResult
+
         result = ProviderSelectionResult(
             provider_type=selected.type,
             provider_name=selected.name,
@@ -98,6 +99,7 @@ class ProviderSelectionService:
             raise ValueError(f"Provider instance '{provider_name}' is disabled")
 
         from providers.results import ProviderSelectionResult
+
         return ProviderSelectionResult(
             provider_type=provider_instance.type,
             provider_name=provider_name,
@@ -118,6 +120,7 @@ class ProviderSelectionService:
             self._logger.info("Selected explicit provider: %s", provider_name)
 
         from providers.results import ProviderSelectionResult
+
         return ProviderSelectionResult(
             provider_type=provider_instance.type,
             provider_name=provider_name,
@@ -142,6 +145,7 @@ class ProviderSelectionService:
             )
 
         from providers.results import ProviderSelectionResult
+
         return ProviderSelectionResult(
             provider_type=provider_type,
             provider_name=selected_instance.name,
@@ -167,6 +171,7 @@ class ProviderSelectionService:
             )
 
         from providers.results import ProviderSelectionResult
+
         return ProviderSelectionResult(
             provider_type=selected_instance.type,
             provider_name=selected_instance.name,
@@ -200,6 +205,7 @@ class ProviderSelectionService:
             self._logger.info("Selected default provider: %s", default_provider_instance)
 
         from providers.results import ProviderSelectionResult
+
         return ProviderSelectionResult(
             provider_type=default_provider_type,
             provider_name=default_provider_instance,
@@ -230,7 +236,9 @@ class ProviderSelectionService:
             if provider.type == provider_type and provider.enabled
         ]
 
-    def _apply_load_balancing_strategy(self, instances: list[Any], selection_policy: str = None) -> Any:
+    def _apply_load_balancing_strategy(
+        self, instances: list[Any], selection_policy: str = None
+    ) -> Any:
         """Apply load balancing strategy to select instance."""
         if not selection_policy and self._provider_config:
             selection_policy = self._provider_config.selection_policy
@@ -284,7 +292,7 @@ class ProviderSelectionService:
             self._provider_config = self._config.get_provider_config() if self._config else None
         if not self._provider_config:
             return []
-        
+
         compatible = []
         for provider in self._provider_config.providers:
             if not provider.enabled:

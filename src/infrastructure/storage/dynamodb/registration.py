@@ -92,9 +92,10 @@ def create_dynamodb_unit_of_work(config: Any) -> Any:
 
         # Create AWS client with extracted configuration
         from providers.aws.session_factory import AWSSessionFactory
+
         session = AWSSessionFactory.create_session(
             profile=dynamodb_config.profile if dynamodb_config.profile else None,
-            region=dynamodb_config.region
+            region=dynamodb_config.region,
         )
         aws_client = session.client("dynamodb")
 
@@ -113,8 +114,7 @@ def create_dynamodb_unit_of_work(config: Any) -> Any:
         table_prefix = config.get("table_prefix", "hostfactory")
 
         session = AWSSessionFactory.create_session(
-            profile=profile if profile else None,
-            region=region
+            profile=profile if profile else None, region=region
         )
         aws_client = session.client("dynamodb")
 

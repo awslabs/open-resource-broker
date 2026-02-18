@@ -75,20 +75,26 @@ class GetProviderHealthHandler(BaseQueryHandler[GetProviderHealthQuery, Provider
 
             # Get health information from registry service
             health_status = self._provider_registry_service.check_strategy_health(provider_name)
-            
+
             health_info = {
                 "provider_name": provider_name,
                 "status": "active",
                 "health": "healthy" if health_status and health_status.is_healthy else "unhealthy",
                 "last_check": self.timestamp_service.current_timestamp(),
-                "message": getattr(health_status, 'message', None) or getattr(health_status, 'error_message', None) or "No health data available",
+                "message": getattr(health_status, "message", None)
+                or getattr(health_status, "error_message", None)
+                or "No health data available",
             }
 
             if health_status:
-                health_info.update({
-                    "details": getattr(health_status, 'details', {}),
-                    "timestamp": self.timestamp_service.format_for_display(getattr(health_status, 'timestamp', time.time())),
-                })
+                health_info.update(
+                    {
+                        "details": getattr(health_status, "details", {}),
+                        "timestamp": self.timestamp_service.format_for_display(
+                            getattr(health_status, "timestamp", time.time())
+                        ),
+                    }
+                )
             else:
                 health_info["timestamp"] = self.timestamp_service.current_timestamp()
 
@@ -106,9 +112,7 @@ class GetProviderHealthHandler(BaseQueryHandler[GetProviderHealthQuery, Provider
 
 
 @query_handler(ListAvailableProvidersQuery)
-class ListAvailableProvidersHandler(
-    BaseQueryHandler[ListAvailableProvidersQuery, dict[str, Any]]
-):
+class ListAvailableProvidersHandler(BaseQueryHandler[ListAvailableProvidersQuery, dict[str, Any]]):
     """Handler for listing available providers."""
 
     def __init__(
@@ -138,7 +142,7 @@ class ListAvailableProvidersHandler(
         try:
             # Get configured providers from configuration (not registry)
             provider_config = self._config_manager.get_provider_config()
-            
+
             if not provider_config:
                 return {
                     "providers": [],
@@ -148,7 +152,7 @@ class ListAvailableProvidersHandler(
 
             # Get active providers from configuration
             active_providers = provider_config.get_active_providers()
-            
+
             # Filter by provider name if specified (restore lost functionality)
             if query.provider_name:
                 active_providers = [p for p in active_providers if p.name == query.provider_name]
@@ -158,7 +162,7 @@ class ListAvailableProvidersHandler(
                         "count": 0,
                         "message": f"Provider '{query.provider_name}' not found in configuration",
                     }
-            
+
             providers_info = []
             for provider_instance in active_providers:
                 # Get effective handlers using inheritance
@@ -166,15 +170,17 @@ class ListAvailableProvidersHandler(
                 effective_handlers = provider_instance.get_effective_handlers(provider_defaults)
                 handler_names = list(effective_handlers.keys())
 
-                providers_info.append({
-                    "name": provider_instance.name,
-                    "type": provider_instance.type,
-                    "region": provider_instance.config.get("region", "unknown"),
-                    "status": "active" if provider_instance.enabled else "disabled",
-                    "capabilities": handler_names,  # Real handler names from inheritance
-                    "weight": provider_instance.weight,
-                    "priority": provider_instance.priority,
-                })
+                providers_info.append(
+                    {
+                        "name": provider_instance.name,
+                        "type": provider_instance.type,
+                        "region": provider_instance.config.get("region", "unknown"),
+                        "status": "active" if provider_instance.enabled else "disabled",
+                        "capabilities": handler_names,  # Real handler names from inheritance
+                        "weight": provider_instance.weight,
+                        "priority": provider_instance.priority,
+                    }
+                )
 
             # Apply generic filters if provided
             if query.filter_expressions:
@@ -227,12 +233,16 @@ class GetProviderCapabilitiesHandler(
 
         try:
             # Get capabilities from registry service
-            capabilities_obj = self._provider_registry_service.get_strategy_capabilities(query.provider_name)
-            
+            capabilities_obj = self._provider_registry_service.get_strategy_capabilities(
+                query.provider_name
+            )
+
             capabilities = {
                 "provider_name": query.provider_name,
                 "capabilities": capabilities_obj.supported_apis if capabilities_obj else [],
-                "supported_operations": capabilities_obj.supported_operations if capabilities_obj else [],
+                "supported_operations": capabilities_obj.supported_operations
+                if capabilities_obj
+                else [],
                 "features": capabilities_obj.features if capabilities_obj else {},
             }
 
@@ -274,7 +284,7 @@ class GetProviderMetricsHandler(BaseQueryHandler[GetProviderMetricsQuery, dict[s
 
         try:
             # Get basic metrics (registry doesn't store detailed metrics)
-            
+
             metrics = {
                 "provider_name": query.provider_name,
                 "timestamp": self.timestamp_service.current_timestamp(),

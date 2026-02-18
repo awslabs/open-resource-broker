@@ -105,7 +105,7 @@ class GetProviderConfigHandler(BaseQueryHandler[GetProviderConfigQuery, Provider
 
                 # Get full configuration sources
                 config_sources = config_manager.get_configuration_sources()
-                
+
                 # Determine default provider
                 active_providers = (
                     provider_config.get_active_providers()
@@ -113,26 +113,25 @@ class GetProviderConfigHandler(BaseQueryHandler[GetProviderConfigQuery, Provider
                     else []
                 )
                 default_provider = active_providers[0].name if active_providers else None
-                
+
                 # Get last updated time from config file
                 last_updated = None
                 if config_sources.get("config_file"):
                     import os
+
                     try:
                         mtime = os.path.getmtime(config_sources["config_file"])
                         last_updated = self.timestamp_service.format_for_display(mtime)
                     except (OSError, ValueError):
                         pass
-                
+
                 return ProviderConfigDTO(
                     provider_mode=(
                         provider_config.get_mode().value
                         if hasattr(provider_config, "get_mode")
                         else "legacy"
                     ),
-                    active_providers=(
-                        [p.name for p in active_providers]
-                    ),
+                    active_providers=([p.name for p in active_providers]),
                     provider_count=len(active_providers),
                     default_provider=default_provider,
                     configuration_source=config_sources["primary_source"],
@@ -366,18 +365,26 @@ class GetProviderMetricsHandler(BaseQueryHandler[GetProviderMetricsQuery, Provid
                     "total": len(all_requests),
                     "completed": sum(1 for r in all_requests if r.status.value == "complete"),
                     "failed": sum(1 for r in all_requests if r.status.value == "failed"),
-                    "in_progress": sum(1 for r in all_requests if r.status.value in ["in_progress", "running", "shutting-down"]),
-                    "pending": sum(1 for r in all_requests if r.status.value == "pending")
+                    "in_progress": sum(
+                        1
+                        for r in all_requests
+                        if r.status.value in ["in_progress", "running", "shutting-down"]
+                    ),
+                    "pending": sum(1 for r in all_requests if r.status.value == "pending"),
                 }
-                
+
                 # Get timeframe-specific metrics for comparison
                 timeframe_requests = uow.requests.find_by_date_range(start_time, end_time)
                 timeframe_metrics = {
                     "total": len(timeframe_requests),
                     "completed": sum(1 for r in timeframe_requests if r.status.value == "complete"),
                     "failed": sum(1 for r in timeframe_requests if r.status.value == "failed"),
-                    "in_progress": sum(1 for r in timeframe_requests if r.status.value in ["in_progress", "running", "shutting-down"]),
-                    "pending": sum(1 for r in timeframe_requests if r.status.value == "pending")
+                    "in_progress": sum(
+                        1
+                        for r in timeframe_requests
+                        if r.status.value in ["in_progress", "running", "shutting-down"]
+                    ),
+                    "pending": sum(1 for r in timeframe_requests if r.status.value == "pending"),
                 }
 
             # Build response with all-time data and timeframe annotation

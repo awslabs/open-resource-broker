@@ -45,51 +45,55 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
     def get_template_paths(self) -> list[str]:
         """Get template file paths with fallback hierarchy."""
         paths = []
-        
+
         try:
             # 1. Provider-specific file (highest priority) - only if provider info available
             provider_name = self._get_provider_name()
             provider_type = self._get_active_provider_type()
-            
+
             provider_specific_filename = self.get_templates_filename(provider_name, provider_type)
-            provider_specific_path = self.config_manager.resolve_file("template", provider_specific_filename)
+            provider_specific_path = self.config_manager.resolve_file(
+                "template", provider_specific_filename
+            )
             paths.append(provider_specific_path)
-            
+
             # 2. Generic provider-type file (fallback)
             generic_filename = f"{provider_type}_templates.json"
             generic_path = self.config_manager.resolve_file("template", generic_filename)
-            
+
             # Avoid duplicates
             if generic_path != provider_specific_path:
                 paths.append(generic_path)
-                
+
         except Exception:
             # Fallback to default paths if provider info not available
             pass
-        
+
         # 3. Default fallback paths (always available)
         default_paths = [
             self.config_manager.resolve_file("template", "aws_templates.json"),
             self.config_manager.resolve_file("template", "templates.json"),
         ]
-        
+
         # Add default paths if not already included
         for default_path in default_paths:
             if default_path not in paths:
                 paths.append(default_path)
-        
+
         return paths
 
-    def load_templates_from_path(self, template_path: str, provider_override=None) -> list[dict[str, Any]]:
+    def load_templates_from_path(
+        self, template_path: str, provider_override=None
+    ) -> list[dict[str, Any]]:
         """Load templates from a specific path."""
         if not os.path.exists(template_path):
             self._logger.debug("Template file not found: %s", template_path)
             return []
-            
+
         try:
             templates = self._load_single_file(template_path)
             self._logger.debug("Loaded %d templates from %s", len(templates), template_path)
-            
+
             # Process each template with field mapping
             processed_templates = []
             for template in templates:
@@ -131,7 +135,9 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         except Exception:
             return []
 
-    def _map_template_fields(self, template: dict[str, Any], provider_override=None) -> dict[str, Any]:
+    def _map_template_fields(
+        self, template: dict[str, Any], provider_override=None
+    ) -> dict[str, Any]:
         """Map HostFactory fields to internal format with business logic."""
         if template is None:
             raise ValueError("Template cannot be None in field mapping")
@@ -187,6 +193,7 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         try:
             from infrastructure.di.container import get_container
             from application.services.provider_registry_service import ProviderRegistryService
+
             container = get_container()
             provider_service = container.get(ProviderRegistryService)
             selection_result = provider_service.select_active_provider()
@@ -204,6 +211,7 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         try:
             from infrastructure.di.container import get_container
             from application.services.provider_registry_service import ProviderRegistryService
+
             container = get_container()
             provider_service = container.get(ProviderRegistryService)
             selection_result = provider_service.select_active_provider()
@@ -271,11 +279,11 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
 
         # Prefer snake_case in API responses
         request_id = request_dict.get("request_id", request_dict.get("requestId"))
-        
+
         # Handle UUID objects and nested value objects
-        if isinstance(request_id, dict) and 'value' in request_id:
-            request_id = str(request_id['value'])
-        elif hasattr(request_id, 'value'):
+        if isinstance(request_id, dict) and "value" in request_id:
+            request_id = str(request_id["value"])
+        elif hasattr(request_id, "value"):
             request_id = str(request_id.value)
         elif request_id:
             request_id = str(request_id)
@@ -479,14 +487,19 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
             try:
                 from infrastructure.di.container import get_container
                 from application.services.provider_registry_service import ProviderRegistryService
+
                 container = get_container()
                 provider_service = container.get(ProviderRegistryService)
                 selection_result = provider_service.select_active_provider()
                 active_provider = selection_result.provider_name
             except Exception:
                 active_provider = "aws_default"
-        
-        provider_type = active_provider.split("-")[0] if "-" in active_provider else active_provider.split("_")[0]
+
+        provider_type = (
+            active_provider.split("-")[0]
+            if "-" in active_provider
+            else active_provider.split("_")[0]
+        )
 
         # Build config file path
         config_file = f"{provider_type}prov_config.json"
@@ -610,7 +623,7 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
 
         return {
             "templates": formatted_templates,
-            "message": f"Retrieved {len(formatted_templates)} templates successfully"
+            "message": f"Retrieved {len(formatted_templates)} templates successfully",
         }
 
     def format_templates_for_generation(self, templates: list[dict]) -> list[dict]:
@@ -633,40 +646,36 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         for request_dto in requests:
             # Use DTO's to_dict() method
             req_dict = request_dto.to_dict()
-            
+
             # Rename machine_references to machines for HostFactory compatibility
             if "machine_references" in req_dict:
                 req_dict["machines"] = req_dict.pop("machine_references")
-            
+
             # Convert machines to camelCase using existing method
             machines = []
             if "machines" in req_dict:
-                machines = [
-                    self._convert_machine_to_camel(m) for m in req_dict["machines"]
-                ]
-            
+                machines = [self._convert_machine_to_camel(m) for m in req_dict["machines"]]
+
             # Create HostFactory-compliant request object (only HF spec fields)
             hf_request = {
                 "requestId": req_dict.get("request_id"),
                 "status": req_dict.get("status"),
-                "machines": machines
+                "machines": machines,
             }
-            
+
             # Add optional message if present
             if req_dict.get("message"):
                 hf_request["message"] = req_dict["message"]
-                
+
             # Add provider information if present
             if req_dict.get("provider_name"):
                 hf_request["providerName"] = req_dict["provider_name"]
             if req_dict.get("provider_type"):
                 hf_request["providerType"] = req_dict["provider_type"]
-            
+
             formatted_requests.append(hf_request)
 
-        return {
-            "requests": formatted_requests
-        }
+        return {"requests": formatted_requests}
 
     def _convert_machine_to_camel(self, machine: dict[str, Any]) -> dict[str, Any]:
         """Convert machine dict from snake_case to camelCase for HostFactory."""
@@ -748,11 +757,11 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         if config:
             template_config = config.get("template", {})
             patterns = template_config.get("filename_patterns", {})
-            
+
             # Use provider_specific pattern by default
             if pattern := patterns.get("provider_specific"):
                 return pattern.format(provider_name=provider_name, provider_type=provider_type)
-            
+
             # Check for explicit filename override
             if config_filename := template_config.get("templates_filename"):
                 return config_filename
@@ -851,7 +860,9 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
             # Follow exact HostFactory getRequestStatus output format
             formatted_machine = {
                 "machineId": machine.get("instance_id"),
-                "name": machine.get("name", machine.get("instance_id", machine.get("private_ip", ""))),
+                "name": machine.get(
+                    "name", machine.get("instance_id", machine.get("private_ip", ""))
+                ),
                 "result": self._map_machine_status_to_result(machine.get("status")),
                 "status": machine.get("status", "unknown"),
                 "privateIpAddress": machine.get("private_ip"),
@@ -943,7 +954,7 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         machine_types = internal_data.get("machine_types", {})
         if not machine_types:
             return {}
-        
+
         if len(machine_types) == 1 and list(machine_types.values())[0] == 1:
             return {"vmType": list(machine_types.keys())[0]}
         else:

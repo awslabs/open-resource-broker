@@ -8,19 +8,13 @@ from providers.results import ValidationResult
 
 class TemplateValidationService:
     """Generic template validation service."""
-    
-    def __init__(
-        self, 
-        validation_service: TemplateValidationDomainService,
-        logger: LoggingPort
-    ):
+
+    def __init__(self, validation_service: TemplateValidationDomainService, logger: LoggingPort):
         self._validation_service = validation_service
         self._logger = logger
-    
+
     async def validate_template_requirements(
-        self,
-        template: Template,
-        provider_instance: str
+        self, template: Template, provider_instance: str
     ) -> ValidationResult:
         """Validate template against provider capabilities."""
         return self._validation_service.validate_template_requirements(template, provider_instance)

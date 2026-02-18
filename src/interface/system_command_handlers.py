@@ -139,13 +139,14 @@ async def handle_select_provider_strategy(args) -> dict[str, Any]:
     default_provider = "aws"  # Keep as fallback
     try:
         from providers.registry import get_provider_registry
+
         registry = get_provider_registry()
         registered_types = registry.get_registered_providers()
         if registered_types:
             default_provider = registered_types[0]
     except Exception:
         pass  # Use fallback
-    
+
     provider = getattr(args, "provider", default_provider)
     return {
         "result": {"selected_provider": provider},
@@ -186,15 +187,11 @@ async def handle_system_status(args) -> dict[str, Any]:
     from application.queries.system import GetSystemStatusQuery
 
     query = GetSystemStatusQuery(
-        include_provider_health=True,
-        detailed=getattr(args, 'detailed', False)
+        include_provider_health=True, detailed=getattr(args, "detailed", False)
     )
     status = await query_bus.execute(query)
 
-    return {
-        "system_status": status,
-        "message": "System status retrieved successfully"
-    }
+    return {"system_status": status, "message": "System status retrieved successfully"}
 
 
 @handle_interface_exceptions(context="system_metrics", interface_type="cli")

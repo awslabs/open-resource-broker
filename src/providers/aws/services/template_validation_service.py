@@ -21,7 +21,9 @@ class AWSTemplateValidationService:
                 {"operation": "get_available_templates"},
             )
         except Exception as e:
-            return ProviderResult.error_result(f"Failed to get available templates: {e}", "GET_TEMPLATES_ERROR")
+            return ProviderResult.error_result(
+                f"Failed to get available templates: {e}", "GET_TEMPLATES_ERROR"
+            )
 
     def _get_aws_templates(self) -> list[dict[str, Any]]:
         """Get available AWS templates using scheduler strategy."""
@@ -39,7 +41,9 @@ class AWSTemplateValidationService:
                         template_data = scheduler_strategy.load_templates_from_path(template_path)
                         templates.extend(template_data)
                     except Exception as e:
-                        self._logger.warning("Failed to load templates from %s: %s", template_path, e)
+                        self._logger.warning(
+                            "Failed to load templates from %s: %s", template_path, e
+                        )
                 return templates
             else:
                 self._logger.warning("No scheduler strategy available, using fallback templates")
@@ -87,7 +91,9 @@ class AWSTemplateValidationService:
             )
 
         except Exception as e:
-            return ProviderResult.error_result(f"Failed to validate template: {e}", "VALIDATE_TEMPLATE_ERROR")
+            return ProviderResult.error_result(
+                f"Failed to validate template: {e}", "VALIDATE_TEMPLATE_ERROR"
+            )
 
     def _validate_aws_template(self, template_config: dict[str, Any]) -> dict[str, Any]:
         """Validate AWS-specific template configuration."""
@@ -115,7 +121,9 @@ class AWSTemplateValidationService:
 
         if "instance_type" in template_config:
             instance_type = template_config["instance_type"]
-            if not any(instance_type.startswith(prefix) for prefix in ["t3.", "t2.", "m5.", "c5.", "r5."]):
+            if not any(
+                instance_type.startswith(prefix) for prefix in ["t3.", "t2.", "m5.", "c5.", "r5."]
+            ):
                 validation_warnings.append(f"Uncommon instance type: {instance_type}")
 
         return {

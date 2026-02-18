@@ -26,7 +26,7 @@ def register_port_adapters(container):
     def create_configuration_adapter(container):
         """Create configuration adapter using DI-managed ConfigurationManager."""
         from infrastructure.adapters.configuration_adapter import ConfigurationAdapter
-        
+
         config_manager = container.get(ConfigurationManager)  # Use DI instance
         return ConfigurationAdapter(config_manager)
 

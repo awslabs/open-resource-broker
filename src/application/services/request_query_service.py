@@ -27,10 +27,10 @@ class RequestQueryService:
         with self.uow_factory.create_unit_of_work() as uow:
             request_id_obj = RequestId(value=request_id)
             request = uow.requests.get_by_id(request_id_obj)
-            
+
             if not request:
                 raise EntityNotFoundError("Request", request_id)
-            
+
             return request
 
     async def get_machines_for_request(self, request: Request) -> list[Machine]:
@@ -41,7 +41,9 @@ class RequestQueryService:
                     machines = uow.machines.find_by_return_request_id(str(request.request_id.value))
                 else:
                     machines = uow.machines.find_by_request_id(str(request.request_id.value))
-                self.logger.debug(f"Found {len(machines)} machines for request {request.request_id.value}")
+                self.logger.debug(
+                    f"Found {len(machines)} machines for request {request.request_id.value}"
+                )
                 return machines
         except Exception as e:
             self.logger.error(f"Failed to get machines for request {request.request_id.value}: {e}")

@@ -112,7 +112,9 @@ class TemplateConfigurationManager:
 
         self.logger.info("Template configuration manager initialized")
 
-    async def load_templates(self, force_refresh: bool = False, provider_override: Optional[str] = None) -> list[TemplateDTO]:
+    async def load_templates(
+        self, force_refresh: bool = False, provider_override: Optional[str] = None
+    ) -> list[TemplateDTO]:
         """
         Load all templates using cache service and scheduler strategy.
 
@@ -129,7 +131,9 @@ class TemplateConfigurationManager:
             lambda: self._load_templates_from_scheduler(provider_override)
         )
 
-    async def _load_templates_from_scheduler(self, provider_override: Optional[str] = None) -> list[TemplateDTO]:
+    async def _load_templates_from_scheduler(
+        self, provider_override: Optional[str] = None
+    ) -> list[TemplateDTO]:
         """Load templates using scheduler strategy with batch AMI resolution."""
         try:
             # Get template file paths from scheduler strategy
@@ -144,7 +148,9 @@ class TemplateConfigurationManager:
             for template_path in template_paths:
                 try:
                     # Use scheduler strategy to load and parse templates
-                    template_dicts = self.scheduler_strategy.load_templates_from_path(template_path, provider_override)
+                    template_dicts = self.scheduler_strategy.load_templates_from_path(
+                        template_path, provider_override
+                    )
                     all_template_dicts.extend(template_dicts)
 
                 except Exception as e:
@@ -198,8 +204,9 @@ class TemplateConfigurationManager:
 
         # Create domain Template object from dict with defaults
         from domain.template.template_aggregate import Template
+
         template_domain = Template(**template_with_defaults)
-        
+
         # Convert domain → DTO using existing method
         return TemplateDTO.from_domain(template_domain)
 
@@ -216,6 +223,7 @@ class TemplateConfigurationManager:
             registry = get_provider_registry()
             from infrastructure.di.container import get_container
             from application.services.provider_registry_service import ProviderRegistryService
+
             container = get_container()
             provider_service = container.get(ProviderRegistryService)
             selection_result = provider_service.select_active_provider()
@@ -236,7 +244,9 @@ class TemplateConfigurationManager:
         # 3. Fallback to default
         return "aws"
 
-    async def _batch_resolve_images(self, template_dicts: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    async def _batch_resolve_images(
+        self, template_dicts: list[dict[str, Any]]
+    ) -> list[dict[str, Any]]:
         """Batch resolve image IDs from specifications using provider registry."""
         try:
             if not self._is_image_resolution_enabled():
@@ -244,20 +254,22 @@ class TemplateConfigurationManager:
 
             # Group templates by provider instance
             templates_by_provider = self._group_templates_by_provider(template_dicts)
-            
+
             resolved_templates = []
             for provider_instance, templates in templates_by_provider.items():
                 # Collect image specifications for this provider
                 image_specifications = self._extract_image_specifications(templates)
-                
+
                 if image_specifications:
                     # Use provider registry to execute image resolution
-                    resolved_images = await self._resolve_images_via_provider(provider_instance, image_specifications)
+                    resolved_images = await self._resolve_images_via_provider(
+                        provider_instance, image_specifications
+                    )
                     # Apply resolved images to templates
                     templates = self._apply_resolved_images(templates, resolved_images)
-                
+
                 resolved_templates.extend(templates)
-            
+
             return resolved_templates
 
         except Exception as e:
@@ -268,7 +280,10 @@ class TemplateConfigurationManager:
         """Check if image resolution is enabled."""
         try:
             provider_config = self.config_manager.get_provider_config()
-            if hasattr(provider_config, "provider_defaults") and "aws" in provider_config.provider_defaults:
+            if (
+                hasattr(provider_config, "provider_defaults")
+                and "aws" in provider_config.provider_defaults
+            ):
                 aws_defaults = provider_config.provider_defaults["aws"]
                 if hasattr(aws_defaults, "extensions"):
                     return getattr(aws_defaults.extensions, "ami_resolution_enabled", True)
@@ -276,7 +291,9 @@ class TemplateConfigurationManager:
         except Exception:
             return True
 
-    def _group_templates_by_provider(self, template_dicts: list[dict[str, Any]]) -> dict[str, list[dict[str, Any]]]:
+    def _group_templates_by_provider(
+        self, template_dicts: list[dict[str, Any]]
+    ) -> dict[str, list[dict[str, Any]]]:
         """Group templates by provider instance."""
         groups = {}
         for template_dict in template_dicts:
@@ -295,49 +312,61 @@ class TemplateConfigurationManager:
                 specifications.add(image_id)
         return list(specifications)
 
-    async def _resolve_images_via_provider(self, provider_instance: str, image_specifications: list[str]) -> dict[str, str]:
+    async def _resolve_images_via_provider(
+        self, provider_instance: str, image_specifications: list[str]
+    ) -> dict[str, str]:
         """Resolve image specifications via provider registry service."""
         if not self.provider_registry_service:
             self.logger.debug("Provider registry service not available, skipping image resolution")
             return {}
-        
+
         try:
             from providers.base.strategy import ProviderOperation, ProviderOperationType
-            
+
             operation = ProviderOperation(
                 operation_type=ProviderOperationType.RESOLVE_IMAGE,
-                parameters={'image_specifications': image_specifications}
+                parameters={"image_specifications": image_specifications},
             )
-            
-            result = await self.provider_registry_service.execute_operation(provider_instance, operation)
-            
+
+            result = await self.provider_registry_service.execute_operation(
+                provider_instance, operation
+            )
+
             if result.success and result.data:
-                return result.data.get('resolved_images', {})
+                return result.data.get("resolved_images", {})
             else:
-                self.logger.warning("Image resolution failed for provider %s: %s", provider_instance, result.error_message)
+                self.logger.warning(
+                    "Image resolution failed for provider %s: %s",
+                    provider_instance,
+                    result.error_message,
+                )
                 return {}
-                
+
         except Exception as e:
             self.logger.warning("Image resolution failed for provider %s: %s", provider_instance, e)
             return {}
 
-    def _apply_resolved_images(self, templates: list[dict[str, Any]], resolved_images: dict[str, str]) -> list[dict[str, Any]]:
+    def _apply_resolved_images(
+        self, templates: list[dict[str, Any]], resolved_images: dict[str, str]
+    ) -> list[dict[str, Any]]:
         """Apply resolved images to templates."""
         resolved_templates = []
         for template_dict in templates:
             resolved_template = template_dict.copy()
-            
+
             image_id = resolved_template.get("image_id") or resolved_template.get("imageId")
             if image_id and image_id in resolved_images:
                 resolved_ami = resolved_images[image_id]
                 resolved_template["image_id"] = resolved_ami
                 if "imageId" in resolved_template:
                     resolved_template["imageId"] = resolved_ami
-            
+
             resolved_templates.append(resolved_template)
         return resolved_templates
 
-    async def _batch_resolve_amis(self, template_dicts: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    async def _batch_resolve_amis(
+        self, template_dicts: list[dict[str, Any]]
+    ) -> list[dict[str, Any]]:
         """Batch resolve AMI IDs from SSM parameters using provider registry."""
         try:
             # Check if AMI resolution is enabled
@@ -346,20 +375,22 @@ class TemplateConfigurationManager:
 
             # Group templates by provider instance
             templates_by_provider = self._group_templates_by_provider(template_dicts)
-            
+
             resolved_templates = []
             for provider_instance, templates in templates_by_provider.items():
                 # Collect SSM parameters for this provider
                 ssm_parameters = self._extract_ssm_parameters(templates)
-                
+
                 if ssm_parameters:
                     # Use provider registry to execute AMI resolution
-                    resolved_amis = await self._resolve_amis_via_provider(provider_instance, ssm_parameters)
+                    resolved_amis = await self._resolve_amis_via_provider(
+                        provider_instance, ssm_parameters
+                    )
                     # Apply resolved AMIs to templates
                     templates = self._apply_resolved_amis(templates, resolved_amis)
-                
+
                 resolved_templates.extend(templates)
-            
+
             self.logger.info(
                 "Batch resolved AMI parameters for %s templates across %s providers",
                 len(template_dicts),
@@ -371,7 +402,9 @@ class TemplateConfigurationManager:
             self.logger.error("Batch AMI resolution failed: %s", e)
             return template_dicts  # Return original on error
 
-    def _group_templates_by_provider(self, template_dicts: list[dict[str, Any]]) -> dict[str, list[dict[str, Any]]]:
+    def _group_templates_by_provider(
+        self, template_dicts: list[dict[str, Any]]
+    ) -> dict[str, list[dict[str, Any]]]:
         """Group templates by provider instance."""
         templates_by_provider = {}
         for template_dict in template_dicts:
@@ -395,61 +428,71 @@ class TemplateConfigurationManager:
         try:
             # Check the AMI resolution config setting
             from providers.aws.configuration.template_extension import AMIResolutionConfig
-            
+
             ami_config = self.config_manager.get_typed(AMIResolutionConfig)
             return ami_config.enabled
-            
+
         except Exception as e:
             self.logger.debug("Could not get AMI resolution config: %s", e)
             # Default to enabled if config not available
             return True
-            
+
         except Exception as e:
             self.logger.debug("Could not determine AMI resolution status: %s", e)
             # Default to enabled for backward compatibility
             return True
 
-    async def _resolve_amis_via_provider(self, provider_instance: str, ssm_parameters: list[str]) -> dict[str, str]:
+    async def _resolve_amis_via_provider(
+        self, provider_instance: str, ssm_parameters: list[str]
+    ) -> dict[str, str]:
         """Resolve AMI parameters using provider registry service."""
         if not self.provider_registry_service:
             self.logger.debug("Provider registry service not available, skipping AMI resolution")
             return {}
-        
+
         try:
             from providers.base.strategy import ProviderOperation, ProviderOperationType
-            
+
             operation = ProviderOperation(
                 operation_type=ProviderOperationType.RESOLVE_IMAGE,
-                parameters={"image_specifications": ssm_parameters}
+                parameters={"image_specifications": ssm_parameters},
             )
-            
-            result = await self.provider_registry_service.execute_operation(provider_instance, operation)
-            
+
+            result = await self.provider_registry_service.execute_operation(
+                provider_instance, operation
+            )
+
             if result.success and result.data:
                 return result.data.get("resolved_amis", {})
             else:
-                self.logger.warning("AMI resolution failed for provider %s: %s", provider_instance, result.error_message)
+                self.logger.warning(
+                    "AMI resolution failed for provider %s: %s",
+                    provider_instance,
+                    result.error_message,
+                )
                 return {}
-                
+
         except Exception as e:
             self.logger.warning("AMI resolution failed for provider %s: %s", provider_instance, e)
             return {}
 
-    def _apply_resolved_amis(self, templates: list[dict[str, Any]], resolved_amis: dict[str, str]) -> list[dict[str, Any]]:
+    def _apply_resolved_amis(
+        self, templates: list[dict[str, Any]], resolved_amis: dict[str, str]
+    ) -> list[dict[str, Any]]:
         """Apply resolved AMI IDs to templates."""
         resolved_templates = []
         for template_dict in templates:
             resolved_template = template_dict.copy()
-            
+
             image_id = resolved_template.get("image_id") or resolved_template.get("imageId")
             if image_id and image_id in resolved_amis:
                 resolved_ami = resolved_amis[image_id]
                 resolved_template["image_id"] = resolved_ami
                 if "imageId" in resolved_template:
                     resolved_template["imageId"] = resolved_ami
-            
+
             resolved_templates.append(resolved_template)
-        
+
         return resolved_templates
 
     async def get_template_by_id(self, template_id: str) -> Optional[TemplateDTO]:
@@ -709,21 +752,25 @@ class TemplateConfigurationManager:
         self.cache_service.invalidate()
         self.logger.info("Cleared template cache")
 
-    def _deduplicate_template_dicts(self, template_dicts: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    def _deduplicate_template_dicts(
+        self, template_dicts: list[dict[str, Any]]
+    ) -> list[dict[str, Any]]:
         """Deduplicate template dictionaries by template_id."""
         if not template_dicts:
             return []
-        
+
         seen_ids = set()
         unique_templates = []
-        
+
         for template_dict in template_dicts:
             template_id = template_dict.get("template_id", template_dict.get("templateId", ""))
             if template_id and template_id not in seen_ids:
                 seen_ids.add(template_id)
                 unique_templates.append(template_dict)
-        
-        self.logger.debug("Deduplicated %d templates to %d unique", len(template_dicts), len(unique_templates))
+
+        self.logger.debug(
+            "Deduplicated %d templates to %d unique", len(template_dicts), len(unique_templates)
+        )
         return unique_templates
 
 

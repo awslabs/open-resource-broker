@@ -26,7 +26,7 @@ Usage Example:
 
     # Get registry for strategy execution
     registry = get_provider_registry()
-    
+
     # Or use advanced strategies
     composite = CompositeProviderStrategy([aws_strategy, provider1_strategy])
     fallback = FallbackProviderStrategy(aws_strategy, [provider1_strategy])

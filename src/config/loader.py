@@ -53,8 +53,6 @@ class ConfigurationLoader:
     - Configuration validation
     """
 
-
-
     # Default configuration file name
     DEFAULT_CONFIG_FILENAME = "default_config.json"
 

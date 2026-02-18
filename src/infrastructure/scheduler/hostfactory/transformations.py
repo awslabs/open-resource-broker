@@ -11,7 +11,7 @@ class HostFactoryTransformations:
     @staticmethod
     def transform_subnet_id(value: Any) -> list[str]:
         """Transform HostFactory subnetId field to subnet_ids list.
-        
+
         Handles both single subnet and comma-delimited multiple subnets.
         """
         if isinstance(value, str):

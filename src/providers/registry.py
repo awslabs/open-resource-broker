@@ -72,11 +72,11 @@ class ProviderRegistry(BaseRegistry):
     def get_or_create_strategy(self, provider_identifier: str, config: Any = None) -> Optional[Any]:
         """
         Get cached strategy or create new one with auto-registration.
-        
+
         Args:
             provider_identifier: Provider type or instance name
             config: Configuration (ProviderInstanceConfig object or dict)
-            
+
         Returns:
             Strategy instance or None if creation failed
         """
@@ -85,17 +85,23 @@ class ProviderRegistry(BaseRegistry):
             return self._strategy_cache[provider_identifier]
 
         # Auto-register if needed
-        if config and hasattr(config, 'name') and hasattr(config, 'type'):
+        if config and hasattr(config, "name") and hasattr(config, "type"):
             # It's a ProviderInstanceConfig object - register the instance
             self.ensure_provider_instance_registered_from_config(config)
-        elif not self.is_provider_instance_registered(provider_identifier) and not self.is_provider_registered(provider_identifier):
+        elif not self.is_provider_instance_registered(
+            provider_identifier
+        ) and not self.is_provider_registered(provider_identifier):
             # Try to auto-register the provider type
-            provider_type = provider_identifier.split('_')[0] if '_' in provider_identifier else provider_identifier
+            provider_type = (
+                provider_identifier.split("_")[0]
+                if "_" in provider_identifier
+                else provider_identifier
+            )
             self.ensure_provider_type_registered(provider_type)
 
         # Create new strategy
         strategy = None
-        
+
         # Try instance creation first
         if self.is_provider_instance_registered(provider_identifier):
             # If no config provided, get the stored provider instance config
@@ -104,10 +110,11 @@ class ProviderRegistry(BaseRegistry):
                 try:
                     from infrastructure.di.container import get_container
                     from domain.base.ports.configuration_port import ConfigurationPort
+
                     container = get_container()
                     config_port = container.get(ConfigurationPort)
                     provider_config = config_port.get_provider_config()
-                    
+
                     if provider_config:
                         for instance in provider_config.get_active_providers():
                             if instance.name == provider_identifier:
@@ -115,33 +122,37 @@ class ProviderRegistry(BaseRegistry):
                                 break
                 except Exception as e:
                     if self._logger:
-                        self._logger.warning("Failed to retrieve provider instance config for %s: %s", provider_identifier, e)
-            
+                        self._logger.warning(
+                            "Failed to retrieve provider instance config for %s: %s",
+                            provider_identifier,
+                            e,
+                        )
+
             strategy = self.create_strategy_by_instance(provider_identifier, config)
         # Fall back to type creation
         elif self.is_provider_registered(provider_identifier):
             strategy = self.create_strategy_by_type(provider_identifier, config)
-        
+
         if strategy:
             # Initialize strategy
-            if hasattr(strategy, 'initialize') and not strategy.is_initialized:
+            if hasattr(strategy, "initialize") and not strategy.is_initialized:
                 if not strategy.initialize():
                     if self._logger:
                         self._logger.error("Failed to initialize strategy: %s", provider_identifier)
                     return None
-            
+
             # Cache strategy
             self._strategy_cache[provider_identifier] = strategy
-            
+
         return strategy
 
     def ensure_provider_type_registered(self, provider_type: str) -> bool:
         """
         Ensure provider type is registered by dynamically importing and registering if needed.
-        
+
         Args:
             provider_type: Type identifier for the provider (e.g., 'aws', 'azure')
-            
+
         Returns:
             True if provider is registered (was already or just registered), False if failed
         """
@@ -150,22 +161,22 @@ class ProviderRegistry(BaseRegistry):
             if self._logger:
                 self._logger.debug("Provider type '%s' already registered", provider_type)
             return True
-        
+
         # Try to dynamically import and register
         try:
             if self._logger:
                 self._logger.debug("Attempting to register provider type: %s", provider_type)
-            
+
             # Import the provider's registration module
             module_name = f"providers.{provider_type}.registration"
             registration_module = importlib.import_module(module_name)
-            
+
             # Call the provider's registration function
             register_function_name = f"register_{provider_type}_provider"
             if hasattr(registration_module, register_function_name):
                 register_function = getattr(registration_module, register_function_name)
                 register_function(self, self._logger)
-                
+
                 if self._logger:
                     self._logger.info("Successfully registered provider type: %s", provider_type)
                 return True
@@ -177,10 +188,12 @@ class ProviderRegistry(BaseRegistry):
                         module_name,
                     )
                 return False
-                
+
         except ImportError as e:
             if self._logger:
-                self._logger.warning("Failed to import provider registration module '%s': %s", module_name, e)
+                self._logger.warning(
+                    "Failed to import provider registration module '%s': %s", module_name, e
+                )
             return False
         except Exception as e:
             if self._logger:
@@ -191,39 +204,46 @@ class ProviderRegistry(BaseRegistry):
         """
         Ensure provider instance is registered from config.
         Handles both type and instance registration.
-        
+
         Args:
             provider_instance: ProviderInstanceConfig object
-            
+
         Returns:
             True if registered successfully, False otherwise
         """
         # Already registered?
         if self.is_provider_instance_registered(provider_instance.name):
             if self._logger:
-                self._logger.debug("Provider instance '%s' already registered", provider_instance.name)
+                self._logger.debug(
+                    "Provider instance '%s' already registered", provider_instance.name
+                )
             return True
-        
+
         try:
             import importlib
+
             provider_type = provider_instance.type
-            
+
             if self._logger:
                 self._logger.debug("Registering provider instance: %s", provider_instance.name)
-            
+
             # Dynamically import provider registration module
-            module = importlib.import_module(f'providers.{provider_type}.registration')
-            
+            module = importlib.import_module(f"providers.{provider_type}.registration")
+
             # Call provider's instance registration function
-            register_func = getattr(module, f'register_{provider_type}_provider_instance')
+            register_func = getattr(module, f"register_{provider_type}_provider_instance")
             register_func(provider_instance, self._logger)
-            
+
             if self._logger:
-                self._logger.info("Successfully registered provider instance: %s", provider_instance.name)
+                self._logger.info(
+                    "Successfully registered provider instance: %s", provider_instance.name
+                )
             return True
         except (ImportError, AttributeError) as e:
             if self._logger:
-                self._logger.warning(f"Failed to register provider instance '{provider_instance.name}': {e}")
+                self._logger.warning(
+                    f"Failed to register provider instance '{provider_instance.name}': {e}"
+                )
             return False
 
     def register(
@@ -477,13 +497,14 @@ _registry_lock = threading.Lock()
 def get_provider_registry() -> ProviderRegistry:
     """Get the singleton provider registry instance."""
     global _provider_registry_instance
-    
+
     if _provider_registry_instance is None:
         with _registry_lock:
             if _provider_registry_instance is None:
                 # Use basic logger - no DI container dependency
                 from infrastructure.logging.logger import get_logger
+
                 logger = get_logger(__name__)
                 _provider_registry_instance = ProviderRegistry()
-    
+
     return _provider_registry_instance

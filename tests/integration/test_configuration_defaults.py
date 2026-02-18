@@ -121,7 +121,9 @@ def test_template_defaults_precedence():
         assert template.security_group_ids == ["sg-explicit-456"], (
             "Explicit security_group_ids should be preserved"
         )
-        assert template.machine_types == {"t3.large": 1}, "Explicit machine_types should be preserved"
+        assert template.machine_types == {"t3.large": 1}, (
+            "Explicit machine_types should be preserved"
+        )
 
         print("PASS: Template values correctly override defaults (correct precedence)")
 

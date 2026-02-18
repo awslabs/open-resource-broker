@@ -27,7 +27,7 @@ class ProviderSelectionResult:
 
 class ValidationLevel(str, Enum):
     """Validation strictness levels."""
-    
+
     STRICT = "strict"
     PERMISSIVE = "permissive"
     WARN_ONLY = "warn_only"

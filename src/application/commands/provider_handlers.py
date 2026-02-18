@@ -138,9 +138,11 @@ class ExecuteProviderOperationHandler(
         try:
             # Use specific strategy if override provided, otherwise use default
             provider_identifier = command.strategy_override or "aws"  # Default fallback
-            
+
             # Execute operation through registry service
-            result = await self._provider_registry_service.execute_operation(provider_identifier, operation)
+            result = await self._provider_registry_service.execute_operation(
+                provider_identifier, operation
+            )
 
             execution_time = (time.time() - start_time) * 1000  # Convert to milliseconds
 
@@ -214,12 +216,11 @@ class RegisterProviderStrategyHandler(
         try:
             # Register provider strategy through service
             success = self._provider_registry_service.register_provider_strategy(
-                command.provider_type.lower(), 
-                command.config
+                command.provider_type.lower(), command.config
             )
             if not success:
                 raise ValueError(f"Failed to register provider strategy: {command.provider_type}")
-            
+
             self.logger.info("Strategy registered successfully: %s", command.strategy_name)
 
             # Publish registration event
@@ -273,7 +274,9 @@ class UpdateProviderHealthHandler(BaseCommandHandler[UpdateProviderHealthCommand
 
         try:
             # Get current health status for comparison using service
-            old_status = self._provider_registry_service.check_strategy_health(command.provider_name)
+            old_status = self._provider_registry_service.check_strategy_health(
+                command.provider_name
+            )
 
             # Health status updates are handled by the registry automatically
             # when strategies are accessed
@@ -339,7 +342,9 @@ class ConfigureProviderStrategyHandler(
 
             # Configuration updates are handled at the provider level
             # Registry pattern doesn't require global configuration updates
-            self.logger.info("Provider strategy configuration noted (registry pattern handles per-provider config)")
+            self.logger.info(
+                "Provider strategy configuration noted (registry pattern handles per-provider config)"
+            )
 
             self.logger.info("Provider strategy configuration updated successfully")
 

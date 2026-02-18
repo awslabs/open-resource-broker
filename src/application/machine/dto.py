@@ -35,7 +35,7 @@ class MachineDTO(BaseDTO):
     health_checks: Optional[dict[str, Any]] = Field(default=None)
     provider_data: dict[str, Any] = Field(default_factory=dict)
     version: int = 0
-    
+
     # Additional fields needed by formatter
     template_id: Optional[str] = None
     image_id: Optional[str] = None
@@ -82,7 +82,9 @@ class MachineDTO(BaseDTO):
             "launch_time": int(machine.launch_time.timestamp()),
             "message": machine.message,
             "request_id": str(machine.request_id) if machine.request_id else None,
-            "return_request_id": str(machine.return_request_id) if machine.return_request_id else None,
+            "return_request_id": str(machine.return_request_id)
+            if machine.return_request_id
+            else None,
             "provider_data": machine.provider_data,
             "version": machine.version,
         }

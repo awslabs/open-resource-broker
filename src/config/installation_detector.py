@@ -46,10 +46,9 @@ def detect_installation_mode(package_name: str = "orb-py") -> Tuple[str, Optiona
         # Check for older editable install (egg-info in source tree)
         # If dist_path is within current working directory or has .egg-info suffix
         cwd = Path.cwd()
-        if (str(dist_path).startswith(str(cwd)) or 
-            dist_path.name.endswith('.egg-info')):
+        if str(dist_path).startswith(str(cwd)) or dist_path.name.endswith(".egg-info"):
             # This is likely an editable install
-            if dist_path.name.endswith('.egg-info'):
+            if dist_path.name.endswith(".egg-info"):
                 # Source directory is parent of egg-info directory
                 # For src/package.egg-info -> project_root
                 source_path = dist_path.parent.parent
