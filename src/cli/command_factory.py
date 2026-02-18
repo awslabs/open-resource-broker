@@ -191,10 +191,13 @@ class CLICommandFactory:
         self,
         template_id: str,
         provider_name: Optional[str] = None,
+        provider: Optional[str] = None,  # CLI compatibility
         **kwargs: Any,
     ) -> GetTemplateQuery:
         """Create query to get template details."""
-        return GetTemplateQuery(template_id=template_id, provider_name=provider_name)
+        # Use provider if provider_name not specified (CLI compatibility)
+        effective_provider = provider_name or provider
+        return GetTemplateQuery(template_id=template_id, provider_name=effective_provider)
 
     def create_create_template_command(
         self,
