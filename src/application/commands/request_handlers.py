@@ -15,6 +15,7 @@ from application.dto.commands import (
     CreateReturnRequestCommand,
     PopulateMachineIdsCommand,
     UpdateRequestStatusCommand,
+    SyncRequestCommand,
 )
 
 from domain.base import UnitOfWorkFactory
@@ -742,4 +743,73 @@ class CompleteRequestHandler(BaseCommandHandler[CompleteRequestCommand, None]):
             raise
         except Exception as e:
             self.logger.error("Failed to complete request: %s", e)
+            raise
+
+
+@command_handler(SyncRequestCommand)
+class SyncRequestHandler(BaseCommandHandler[SyncRequestCommand, None]):
+    """Handler for syncing request with provider state."""
+
+    def __init__(
+        self,
+        uow_factory: UnitOfWorkFactory,
+        logger: LoggingPort,
+        container: ContainerPort,
+        event_publisher: EventPublisherPort,
+        error_handler: ErrorHandlingPort,
+    ) -> None:
+        super().__init__(logger, event_publisher, error_handler)
+        self.uow_factory = uow_factory
+        self._container = container
+
+    async def execute_command(self, command: SyncRequestCommand) -> None:
+        """Execute sync request command."""
+        self.logger.info("Syncing request with provider: %s", command.request_id)
+
+        try:
+            # Get request from database
+            with self.uow_factory.create_unit_of_work() as uow:
+                from domain.request.value_objects import RequestId
+                request = uow.requests.get_by_id(RequestId(value=command.request_id))
+                
+                if not request:
+                    raise EntityNotFoundError("Request", command.request_id)
+
+            # Get existing machines
+            from application.services.request_query_service import RequestQueryService
+            query_service = RequestQueryService(self.uow_factory, self.logger)
+            db_machines = await query_service.get_machines_for_request(request)
+
+            # Get sync services
+            from application.services.machine_sync_service import MachineSyncService
+            from application.services.request_status_service import RequestStatusService
+            
+            machine_sync_service = self._container.get(MachineSyncService)
+            status_service = self._container.get(RequestStatusService)
+
+            # Fetch current state from provider
+            provider_machines, provider_metadata = await machine_sync_service.fetch_provider_machines(
+                request, db_machines
+            )
+
+            # Sync machines with provider (this does the writes)
+            synced_machines, _ = await machine_sync_service.sync_machines_with_provider(
+                request, db_machines, provider_machines
+            )
+
+            # Update request status based on machine states
+            new_status, status_message = status_service.determine_status_from_machines(
+                db_machines, synced_machines, request, provider_metadata
+            )
+
+            if new_status:
+                await status_service.update_request_status(request, new_status, status_message)
+
+            self.logger.info("Successfully synced request: %s", command.request_id)
+
+        except EntityNotFoundError:
+            self.logger.error("Request not found for sync: %s", command.request_id)
+            raise
+        except Exception as e:
+            self.logger.error("Failed to sync request: %s", e)
             raise

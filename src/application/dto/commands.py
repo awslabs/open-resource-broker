@@ -49,6 +49,14 @@ class CancelRequestCommand(Command, BaseModel):
     reason: str
 
 
+class SyncRequestCommand(Command, BaseModel):
+    """Command to sync request with provider state."""
+
+    model_config = ConfigDict(frozen=True)
+
+    request_id: str
+
+
 class CleanupOldRequestsCommand(Command, BaseModel):
     """Command to clean up old requests."""
 

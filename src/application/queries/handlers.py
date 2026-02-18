@@ -78,7 +78,7 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
         self._dto_factory = RequestDTOFactory()
 
     async def execute_query(self, query: GetRequestQuery) -> RequestDTO:
-        """Execute get request query with command-driven population."""
+        """Execute get request query with command-driven sync."""
         self.logger.info("Getting request details for: %s", query.request_id)
 
         try:
@@ -100,55 +100,68 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
 
             # Trigger population command if needed (no direct writes in query)
             await self._machine_sync_service.populate_missing_machine_ids(request)
+
+            # ✅ FIXED: Trigger sync command instead of doing writes in query
+            from application.dto.commands import SyncRequestCommand
+            from infrastructure.di.buses import CommandBus
             
-            # Re-query after population using query service
+            command_bus = self._container.get(CommandBus)
+            sync_command = SyncRequestCommand(request_id=query.request_id)
+            await command_bus.execute(sync_command)
+            
+            # Re-query after sync to get updated state
+            request = await self._query_service.get_request(query.request_id)
+            machine_objects = await self._query_service.get_machines_for_request(request)
+
+            # Create RequestDTO using factory
+            request_dto = self._dto_factory.create_from_domain(request, machine_objects)
+
+            # Cache result if caching is enabled
+            if self._cache_service and self._cache_service.is_caching_enabled():
+                self._cache_service.cache_request(query.request_id, request_dto)
+
+            self.logger.info("Retrieved request: %s", query.request_id)
+            return request_dto
+
+        except EntityNotFoundError:
+            self.logger.error("Request not found: %s", query.request_id)
+            raise
+        except Exception as e:
+            self.logger.error("Failed to get request: %s", e)
+            raise
+
+        try:
+            # Check cache first if enabled
+            if self._cache_service and self._cache_service.is_caching_enabled():
+                cached_result = self._cache_service.get_cached_request(query.request_id)
+                if cached_result:
+                    self.logger.info("Cache hit for request: %s", query.request_id)
+                    return cached_result
+
+            # Get request from storage using query service
             request = await self._query_service.get_request(query.request_id)
 
-            # Get machines using query service
-            machine_obj_from_db = await self._query_service.get_machines_for_request(request)
+            # Lightweight mode: return basic request data without machine fetching or provider sync
+            if query.lightweight:
+                request_dto = self._dto_factory.create_from_domain(request, [])
+                self.logger.info("Retrieved lightweight request: %s", query.request_id)
+                return request_dto
 
-            self.logger.debug(f"Machines associated with this request in DB: {machine_obj_from_db}")
-
-            # Fetch machines from provider first
-            machine_objects_from_provider, provider_metadata = await self._machine_sync_service.fetch_provider_machines(
-                request, machine_obj_from_db
-            )
-
-            # Then sync/merge with DB machines
-            machine_objects_from_provider, provider_metadata = await self._machine_sync_service.sync_machines_with_provider(
-                request, machine_obj_from_db, machine_objects_from_provider
-            )
-            self.logger.debug(f"Machines from DB:  {machine_obj_from_db}")
-            self.logger.debug(f"Machines from cloud provider:  {machine_objects_from_provider}")
-
-            # Determine if request status needs updating based on machine states
-            new_status, status_message = self._status_service.determine_status_from_machines(
-                machine_obj_from_db, machine_objects_from_provider, request, provider_metadata
-            )
-
-            # Update request status if needed
-            if new_status:
-                updated_request = await self._status_service.update_request_status(
-                    request, new_status, status_message
-                )
-                # Update the request object for DTO creation
-                request = updated_request
-
-            # Convert machines directly to DTOs - use provider machines if available, otherwise DB machines
-            machines_for_response = machine_objects_from_provider if machine_objects_from_provider else machine_obj_from_db
+            # Trigger population command if needed (no direct writes in query)
+            await self._machine_sync_service.populate_missing_machine_ids(request)
             
+            # Re-query after sync to get updated state
+            request = await self._query_service.get_request(query.request_id)
+            machine_objects = await self._query_service.get_machines_for_request(request)
+
             # Create RequestDTO using factory
-            request_dto = self._dto_factory.create_from_domain(request, machines_for_response)
+            request_dto = self._dto_factory.create_from_domain(request, machine_objects)
 
-            # Cache the result if caching is enabled
+            # Cache result if caching is enabled
             if self._cache_service and self._cache_service.is_caching_enabled():
-                self._cache_service.cache_request(request_dto)
+                self._cache_service.cache_request(query.request_id, request_dto)
 
-            self.logger.info(
-                "Retrieved request with %s machines: %s",
-                len(machines_for_response),
-                query.request_id,
-            )
+            self.logger.info("Retrieved request: %s", query.request_id)
             return request_dto
 
         except EntityNotFoundError:
