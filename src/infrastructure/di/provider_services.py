@@ -17,10 +17,8 @@ def register_provider_services(container: DIContainer) -> None:
 def _register_application_services(container: DIContainer) -> None:
     """Register enhanced application services with proper dependencies."""
     from application.services.provider_registry_service import ProviderRegistryService
-    from application.services.template_validation_service import TemplateValidationService
     from application.services.machine_sync_service import MachineSyncService
     from infrastructure.di.buses import CommandBus
-    from domain.services.provider_selection_service import ProviderSelectionService
     from domain.services.template_validation_domain_service import TemplateValidationDomainService
     from domain.base.ports.logging_port import LoggingPort
     from providers.registry import get_provider_registry
@@ -30,7 +28,6 @@ def _register_application_services(container: DIContainer) -> None:
         ProviderRegistryService,
         lambda c: ProviderRegistryService(
             registry=get_provider_registry(),
-            selection_service=c.get(ProviderSelectionService),
             validation_service=c.get(TemplateValidationDomainService),
             logger=c.get(LoggingPort),
         ),
