@@ -271,13 +271,8 @@ class CLIResponseFormatter:
 
         try:
             # Apply context-specific formatting
-            if context == "request_status" and hasattr(
-                self.scheduler_strategy, "format_request_status_response"
-            ):
-                # For request status queries, pass RequestDTO directly to scheduler strategy
-                return self.scheduler_strategy.format_request_status_response([data])
-
-            elif context == "templates":
+            # Note: request_status is already formatted by handler, skip double-formatting
+            if context == "templates":
                 # For templates list, use format_templates_response for the whole list
                 if isinstance(data, list) and hasattr(
                     self.scheduler_strategy, "format_templates_response"
