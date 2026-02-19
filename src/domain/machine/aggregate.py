@@ -44,6 +44,7 @@ class Machine(AggregateRoot):
     public_dns_name: Optional[str] = None
     subnet_id: Optional[str] = None
     security_group_ids: list[str] = Field(default_factory=list)
+    vpc_id: Optional[str] = None
 
     # Machine state
     status: MachineStatus = Field(default=MachineStatus.PENDING)
@@ -194,6 +195,7 @@ class Machine(AggregateRoot):
             "status_reason": self.status_reason,
             "subnet_id": self.subnet_id,
             "security_group_ids": self.security_group_ids,
+            "vpc_id": self.vpc_id,
             "tags": self.tags.to_dict(),
             "metadata": self.metadata,
             "provider_data": self.provider_data,
@@ -225,6 +227,7 @@ class Machine(AggregateRoot):
             "status_reason": data.get("status_reason"),
             "subnet_id": data.get("subnet_id"),
             "security_group_ids": data.get("security_group_ids", []),
+            "vpc_id": data.get("vpc_id"),
             "tags": Tags.from_dict(data.get("tags", {})),
             "metadata": data.get("metadata", {}),
             "provider_data": data.get("provider_data", {}),

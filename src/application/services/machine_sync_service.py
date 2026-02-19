@@ -200,6 +200,9 @@ class MachineSyncService:
                         or existing.private_dns_name != provider_machine.private_dns_name
                         or existing.public_dns_name != provider_machine.public_dns_name
                         or existing.price_type != provider_machine.price_type
+                        or existing.subnet_id != provider_machine.subnet_id
+                        or existing.security_group_ids != provider_machine.security_group_ids
+                        or existing.vpc_id != provider_machine.vpc_id
                     )
 
                     # Debug logging
@@ -221,6 +224,9 @@ class MachineSyncService:
                         machine_data["launch_time"] = (
                             provider_machine.launch_time or existing.launch_time
                         )
+                        machine_data["subnet_id"] = provider_machine.subnet_id
+                        machine_data["security_group_ids"] = provider_machine.security_group_ids
+                        machine_data["vpc_id"] = provider_machine.vpc_id
                         machine_data["version"] = existing.version + 1
 
                         updated_machine = Machine.model_validate(machine_data)
