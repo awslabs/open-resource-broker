@@ -68,6 +68,7 @@ class ValidateTemplateQuery(Query, BaseModel):
     model_config = ConfigDict(frozen=True)
 
     template_config: dict
+    template_id: Optional[str] = None  # For validating loaded templates
 
 
 class GetMachineQuery(Query, BaseModel):

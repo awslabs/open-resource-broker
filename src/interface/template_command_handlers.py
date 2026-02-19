@@ -437,13 +437,13 @@ async def handle_validate_template(args: argparse.Namespace) -> dict[str, Any]:
         template_id = None
 
         # Check if template file is provided
-        if hasattr(args, "template_file") and args.template_file:
+        if hasattr(args, "file") and args.file:
             import json
             from pathlib import Path
 
             import yaml
 
-            template_file = Path(args.template_file)
+            template_file = Path(args.file)
             if not template_file.exists():
                 return {
                     "success": False,
@@ -464,31 +464,44 @@ async def handle_validate_template(args: argparse.Namespace) -> dict[str, Any]:
                     "error": f"Failed to parse template file: {e!s}",
                     "valid": False,
                 }
+
+        # Check for --all flag first
+        elif hasattr(args, "all") and args.all:
+            # Validate all loaded templates
+            from application.dto.queries import ListTemplatesQuery
+
+            list_query = ListTemplatesQuery()
+            templates_result = await query_bus.execute(list_query)
+
+            results = []
+            for template in templates_result:
+                validate_query = ValidateTemplateQuery(
+                    template_config={"template_id": template.template_id},
+                    template_id=template.template_id,
+                )
+                validation_result = await query_bus.execute(validate_query)
+                results.append(validation_result)
+
+            return {
+                "success": True,
+                "message": f"Validated {len(results)} templates",
+                "results": results,
+            }
+
+        # Check if template_id is provided (loaded template)
+        elif hasattr(args, "template_id") and args.template_id:
+            template_id = args.template_id
+            template_config = {"template_id": template_id}  # Will be loaded by handler
+
         else:
-            # Extract from command line args
-            template_id = getattr(args, "template_id", "cli-template")
-
-            # Build configuration from args
-            if hasattr(args, "name"):
-                template_config["name"] = args.name
-            if hasattr(args, "provider_api"):
-                template_config["provider_api"] = args.provider_api
-            if hasattr(args, "image_id"):
-                template_config["image_id"] = args.image_id
-            if hasattr(args, "instance_type"):
-                template_config["instance_type"] = args.instance_type
-            if hasattr(args, "configuration"):
-                template_config.update(args.configuration)
-
-        if not template_config:
             return {
                 "success": False,
-                "error": "No template data provided for validation",
+                "error": "Must provide either template_id, --file, or --all",
                 "valid": False,
             }
 
         # Use ValidateTemplateQuery for validation
-        query = ValidateTemplateQuery(template_config=template_config)
+        query = ValidateTemplateQuery(template_config=template_config, template_id=template_id)
         validation_result = await query_bus.execute(query)
 
         # Check if validation result has errors
