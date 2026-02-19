@@ -344,6 +344,12 @@ class CLICommandFactoryOrchestrator:
                     count=args.get("count", 1),
                     provider=args.get("provider"),
                 )
+            elif command_action == "show":
+                return self.create_get_request_status_query(
+                    request_id=args.get("request_id"),
+                    provider=args.get("provider"),
+                    lightweight=False,
+                )
             elif command_action == "status":
                 # Return None to trigger fallback to scheduler-aware handler
                 return None

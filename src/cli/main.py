@@ -900,6 +900,55 @@ async def execute_command(args, app, resource_parsers) -> Union[str, tuple[str, 
         else:
             raise ValueError(f"Unknown provider config action: {args.action}")
     else:
+        # Validate show commands before creating command/query
+        if hasattr(args, "resource") and hasattr(args, "action") and args.action == "show":
+            # Check for --all flag on show commands
+            if getattr(args, "all", False):
+                resource_name = args.resource
+                if resource_name in ["templates", "template"]:
+                    raise DomainException(
+                        "The --all flag is not supported with 'show' commands. "
+                        "Use 'orb templates list' to see multiple templates."
+                    )
+                elif resource_name in ["machines", "machine"]:
+                    raise DomainException(
+                        "The --all flag is not supported with 'show' commands. "
+                        "Use 'orb machines list' to see multiple machines."
+                    )
+                elif resource_name in ["requests", "request"]:
+                    raise DomainException(
+                        "The --all flag is not supported with 'show' commands. "
+                        "Use 'orb requests list' to see multiple requests."
+                    )
+
+            # Validate that required ID is provided (either positional or flag)
+            resource_name = args.resource
+            if resource_name in ["templates", "template"]:
+                template_id = getattr(args, "template_id", None) or getattr(
+                    args, "flag_template_id", None
+                )
+                if not template_id:
+                    raise DomainException(
+                        "Template ID is required for 'show' command. "
+                        "Usage: orb templates show <template-id> or orb templates show --template-id <template-id>"
+                    )
+            elif resource_name in ["machines", "machine"]:
+                machine_id = getattr(args, "machine_id", None) or getattr(
+                    args, "flag_machine_id", None
+                )
+                if not machine_id:
+                    raise DomainException(
+                        "Machine ID is required for 'show' command. "
+                        "Usage: orb machines show <machine-id> or orb machines show --machine-id <machine-id>"
+                    )
+            elif resource_name in ["requests", "request"]:
+                request_id = getattr(args, "request_id", None)
+                if not request_id:
+                    raise DomainException(
+                        "Request ID is required for 'show' command. "
+                        "Usage: orb requests show <request-id>"
+                    )
+
         # Create command or query from CLI args
         command_or_query = cli_command_factory.create_command_or_query(args)
 
