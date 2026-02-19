@@ -22,13 +22,9 @@ class TemplateSerializer:
         # Get defaults service from DI container if not provided
         if not self.defaults_service:
             try:
-                from domain.template.ports.template_defaults_port import (
-                    TemplateDefaultsPort,
-                )
-                from infrastructure.di.container import get_container
-
-                container = get_container()
-                self.defaults_service = container.get(TemplateDefaultsPort)
+                # Don't try to get container during initialization - causes circular dependency
+                # Defaults service will be injected later if needed
+                pass
             except Exception as e:
                 self.logger.debug("Could not get defaults service from container: %s", e)
 

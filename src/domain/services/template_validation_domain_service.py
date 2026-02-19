@@ -10,7 +10,22 @@ from domain.base.results import ValidationResult, ValidationLevel
 class TemplateValidationDomainService:
     """Domain service for template validation business logic."""
 
-    def __init__(self, config: ConfigurationPort, logger: LoggingPort):
+    def __init__(self):
+        self._config = None
+        self._logger = None
+
+    @property
+    def config(self):
+        # Return None if not available - service should handle gracefully
+        return self._config
+
+    @property
+    def logger(self):
+        # Return None if not available - service should handle gracefully
+        return self._logger
+
+    def inject_dependencies(self, config: ConfigurationPort, logger: LoggingPort):
+        """Inject dependencies after container is ready."""
         self._config = config
         self._logger = logger
         self._initialized = False
@@ -28,7 +43,7 @@ class TemplateValidationDomainService:
     ) -> ValidationResult:
         """Business logic for template validation."""
         self._ensure_initialized()
-        
+
         result = ValidationResult(
             is_valid=True,
             errors=[],
@@ -54,16 +69,16 @@ class TemplateValidationDomainService:
 
             result.is_valid = len(result.errors) == 0
 
-            if self._logger:
-                self._logger.info(
+            if self.logger:
+                self.logger.info(
                     "Validation result for %s: %s",
                     template.template_id,
                     "VALID" if result.is_valid else "INVALID",
                 )
 
         except Exception as e:
-            if self._logger:
-                self._logger.error("Validation failed with exception: %s", str(e))
+            if self.logger:
+                self.logger.error("Validation failed with exception: %s", str(e))
             result.is_valid = False
             result.errors.append(f"Validation error: {e!s}")
 
@@ -72,15 +87,15 @@ class TemplateValidationDomainService:
     def _get_config_based_capabilities(self, provider_instance: str) -> Any:
         """Get capabilities from merged provider configuration."""
         self._ensure_initialized()
-        
-        if not self._config:
+
+        if not self.config:
             raise ValueError("No configuration manager available")
 
-        provider_config = self._config.get_provider_instance_config(provider_instance)
+        provider_config = self.config.get_provider_instance_config(provider_instance)
         if not provider_config:
             raise ValueError(f"Provider instance {provider_instance} not found in configuration")
 
-        provider_config_root = self._config.get_provider_config()
+        provider_config_root = self.config.get_provider_config()
         provider_defaults = provider_config_root.provider_defaults.get(provider_config.type)
         effective_handlers = provider_config.get_effective_handlers(provider_defaults)
         supported_apis = list(effective_handlers.keys())
@@ -116,8 +131,8 @@ class TemplateValidationDomainService:
             else:
                 result.supported_features.append(f"API: {template.provider_api}")
         except Exception as e:
-            if self._logger:
-                self._logger.error("Error in API validation: %s", e)
+            if self.logger:
+                self.logger.error("Error in API validation: %s", e)
             result.errors.append(f"API validation error: {e}")
 
     def _validate_pricing_model(self, template: Any, capabilities: Any, result: Any) -> None:

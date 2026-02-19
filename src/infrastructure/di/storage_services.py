@@ -16,15 +16,27 @@ if TYPE_CHECKING:
 def register_storage_services(container: "DIContainer") -> None:
     """Register storage services respecting lazy loading configuration."""
 
-    # Register new orchestrator
+    # Register new orchestrator with lazy initialization
+    def create_orchestrator(c):
+        from infrastructure.storage.factories.storage_factory_orchestrator import (
+            StorageFactoryOrchestrator,
+        )
+
+        config = c.get(ConfigurationPort)
+        return StorageFactoryOrchestrator(config_manager=config)
+
     from infrastructure.storage.factories.storage_factory_orchestrator import (
         StorageFactoryOrchestrator,
     )
 
-    container.register_factory(StorageFactoryOrchestrator, create_storage_orchestrator)
+    container.register_factory(StorageFactoryOrchestrator, create_orchestrator)
 
-    # Register storage strategy factory (delegates to orchestrator)
-    container.register_factory(StorageStrategyFactory, create_storage_strategy_factory)
+    # Register storage strategy factory with lazy initialization
+    def create_factory(c):
+        config = c.get(ConfigurationPort)
+        return StorageStrategyFactory(config_manager=config)
+
+    container.register_factory(StorageStrategyFactory, create_factory)
 
     # ALWAYS register JSON storage as it's the default and most critical
     from infrastructure.storage.registry import get_storage_registry
@@ -42,22 +54,6 @@ def register_storage_services(container: "DIContainer") -> None:
         # Preload critical storage types only
         _register_critical_storage_types(container, lazy_config.preload_critical)
     # Lazy mode (default): JSON already registered above, other types will register on-demand
-
-
-def create_storage_orchestrator(container: "DIContainer") -> "StorageFactoryOrchestrator":
-    """Create storage factory orchestrator with configuration."""
-    from infrastructure.storage.factories.storage_factory_orchestrator import (
-        StorageFactoryOrchestrator,
-    )
-
-    config = container.get(ConfigurationPort)
-    return StorageFactoryOrchestrator(config_manager=config)
-
-
-def create_storage_strategy_factory(container: "DIContainer") -> StorageStrategyFactory:
-    """Create storage strategy factory with configuration."""
-    config = container.get(ConfigurationPort)
-    return StorageStrategyFactory(config_manager=config)
 
 
 def _register_critical_storage_types(container: "DIContainer", critical_types: list[str]) -> None:
@@ -78,26 +74,12 @@ def _register_critical_storage_types(container: "DIContainer", critical_types: l
 
 def _register_configured_storage_strategy(container: "DIContainer") -> None:
     """Register only the configured storage strategy."""
-    try:
-        config = container.get(ConfigurationPort)
-        storage_type = config.get_storage_strategy()
+    # Make this lazy too - don't access config during registration
+    # For now, just register JSON as the default
+    from infrastructure.storage.registry import get_storage_registry
 
-        logger = get_logger(__name__)
+    registry = get_storage_registry()
+    registry.ensure_type_registered("json")
 
-        # Registry handles dynamic registration - no hardcoded types here
-        from infrastructure.storage.registry import get_storage_registry
-
-        registry = get_storage_registry()
-        registry.ensure_type_registered(storage_type)
-
-        logger.info("Registered configured storage strategy: %s", storage_type)
-
-    except Exception as e:
-        logger = get_logger(__name__)
-        logger.error("Failed to register configured storage strategy: %s", e)
-        # Fallback to json
-        from infrastructure.storage.registry import get_storage_registry
-
-        registry = get_storage_registry()
-        registry.ensure_type_registered("json")
-        logger.info("Registered fallback storage strategy: json")
+    logger = get_logger(__name__)
+    logger.info("Registered fallback storage strategy: json")
