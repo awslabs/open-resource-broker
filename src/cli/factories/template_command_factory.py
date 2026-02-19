@@ -3,7 +3,7 @@
 from typing import Any, Optional
 
 from application.dto.bulk_queries import GetMultipleTemplatesQuery
-from application.dto.queries import GetTemplateQuery, ListTemplatesQuery
+from application.dto.queries import GetTemplateQuery, ListTemplatesQuery, ValidateTemplateQuery
 from application.template.commands import (
     CreateTemplateCommand,
     DeleteTemplateCommand,
@@ -88,6 +88,15 @@ class TemplateCommandFactory:
     ) -> ValidateTemplateCommand:
         """Create command to validate template."""
         return ValidateTemplateCommand(template_id=template_id)
+
+    def create_validate_template_query(
+        self,
+        template_config: dict,
+        template_id: Optional[str] = None,
+        **kwargs: Any,
+    ) -> ValidateTemplateQuery:
+        """Create query to validate template configuration."""
+        return ValidateTemplateQuery(template_config=template_config, template_id=template_id)
 
     def create_get_multiple_templates_query(
         self,

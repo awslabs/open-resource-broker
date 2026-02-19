@@ -52,6 +52,7 @@ class Machine(AggregateRoot):
 
     # Lifecycle timestamps
     launch_time: Optional[datetime] = None
+    launched_at: Optional[datetime] = None
     termination_time: Optional[datetime] = None
 
     # Tags and metadata
@@ -66,6 +67,16 @@ class Machine(AggregateRoot):
 
     def __init__(self, **data) -> None:
         """Initialize the instance."""
+        # Handle instance_id parameter (map to machine_id)
+        if "instance_id" in data and "machine_id" not in data:
+            from domain.base.value_objects import InstanceId
+
+            instance_id = data.pop("instance_id")
+            if isinstance(instance_id, InstanceId):
+                data["machine_id"] = MachineId(value=instance_id.value)
+            else:
+                data["machine_id"] = MachineId(value=str(instance_id))
+
         # Set default ID if not provided
         if "id" not in data:
             data["id"] = data.get("machine_id", f"machine-{data.get('template_id', 'unknown')}")
@@ -77,6 +88,40 @@ class Machine(AggregateRoot):
             data["created_at"] = datetime.utcnow()
 
         super().__init__(**data)
+
+    def start_launching(self) -> "Machine":
+        """Transition machine from PENDING to LAUNCHING status."""
+        if self.status != MachineStatus.PENDING:
+            raise ValueError(f"Cannot start launching from status {self.status}")
+
+        data = self.model_dump()
+        data["status"] = MachineStatus.LAUNCHING
+        data["launched_at"] = datetime.utcnow()
+        data["version"] = self.version + 1
+
+        updated_machine = Machine.model_validate(data)
+
+        # Generate domain event for status change
+        from domain.base.events.domain_events import MachineStatusChangedEvent
+
+        status_event = MachineStatusChangedEvent(
+            aggregate_id=str(self.machine_id),
+            aggregate_type="Machine",
+            machine_id=str(self.machine_id),
+            request_id=str(self.request_id) if self.request_id else "unknown",
+            old_status=self.status.value,
+            new_status=MachineStatus.LAUNCHING.value,
+            reason="Machine launching initiated",
+            metadata={
+                "reason": "Machine launching initiated",
+                "timestamp": data["launched_at"].isoformat(),
+                "machine_type": str(self.instance_type),
+                "provider_type": self.provider_type,
+            },
+        )
+        updated_machine.add_domain_event(status_event)
+
+        return updated_machine
 
     def update_status(self, new_status: MachineStatus, reason: Optional[str] = None) -> "Machine":
         """Update machine status and generate domain event."""
