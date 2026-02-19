@@ -31,6 +31,7 @@ class MachineSyncService:
         """Lazy load provider registry service to avoid circular dependency."""
         if self._provider_registry_service is None:
             from application.services.provider_registry_service import ProviderRegistryService
+
             self._provider_registry_service = self.container.get(ProviderRegistryService)
         return self._provider_registry_service
 

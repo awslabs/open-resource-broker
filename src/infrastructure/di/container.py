@@ -324,6 +324,7 @@ class DIContainer(DIContainerPort, CQRSHandlerRegistrationPort, ContainerPort):
 # Singleton container management
 _container_instance: Optional[DIContainer] = None
 _container_lock = threading.Lock()
+_container_ready = threading.Event()
 
 
 def get_container() -> DIContainer:
@@ -333,7 +334,13 @@ def get_container() -> DIContainer:
     with _container_lock:
         if _container_instance is None:
             _container_instance = _create_configured_container()
+            _container_ready.set()  # Signal that container is ready
         return _container_instance
+
+
+def is_container_ready() -> bool:
+    """Check if the container is fully initialized and ready for use."""
+    return _container_ready.is_set()
 
 
 def _create_configured_container() -> DIContainer:

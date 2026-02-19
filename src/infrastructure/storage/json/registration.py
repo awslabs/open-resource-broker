@@ -42,16 +42,8 @@ def create_json_strategy(config: Any) -> Any:
 
     # Try to inject metrics collector from DI container
     metrics = None
-    try:
-        from infrastructure.di.container import get_container
-        from monitoring.metrics import MetricsCollector
-
-        container = get_container()
-        metrics = container.get_optional(MetricsCollector)
-    except (AttributeError, ImportError):
-        # Metrics collector not available, proceed without instrumentation
-        # This is expected when metrics are disabled or during testing
-        metrics = None
+    # Don't try to get container during registration - causes circular dependency
+    # Metrics will be injected later if needed
 
     return JSONStorageStrategy(
         file_path=file_path, create_dirs=True, entity_type="generic", metrics=metrics
@@ -91,17 +83,16 @@ def create_json_unit_of_work(config: Any) -> Any:
     # Handle different config types
     if isinstance(config, ConfigurationManager):
         # Try to get scheduler strategy to determine base path
+        base_path = "data"  # Default fallback
         try:
-            from infrastructure.di.container import get_container
-
-            container = get_container()
-            scheduler_strategy = container.get(SchedulerPort)
-            base_path = scheduler_strategy.get_storage_base_path()
-        except Exception:
-            # Fallback to configuration if scheduler not available
+            # Don't try to get container during registration - causes circular dependency
+            # Use configuration fallback instead
             storage_config = config.get_typed(StorageConfig)
             json_config = storage_config.json_strategy
             base_path = json_config.base_path
+        except Exception:
+            # Fallback to default
+            base_path = "data"
 
         # Extract JSON-specific configuration through StorageConfig
         storage_config = config.get_typed(StorageConfig)

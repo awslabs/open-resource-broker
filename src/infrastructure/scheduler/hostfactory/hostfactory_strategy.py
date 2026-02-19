@@ -20,16 +20,39 @@ from infrastructure.utilities.common.serialization import serialize_enum
 class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
     """HostFactory scheduler strategy for field mapping and response formatting."""
 
-    def __init__(
-        self,
-        config_manager: ConfigurationPort,
-        logger: LoggingPort,
-        template_defaults_service=None,
-    ) -> None:
+    def __init__(self) -> None:
         """Initialize the instance."""
-        self.config_manager = config_manager
-        self._logger = logger
-        self.template_defaults_service = template_defaults_service
+        self._config_manager = None
+        self._logger = None
+        self._template_defaults_service = None
+
+    @property
+    def config_manager(self):
+        if self._config_manager is None:
+            from infrastructure.di.container import get_container, is_container_ready
+
+            if is_container_ready():
+                self._config_manager = get_container().get(ConfigurationPort)
+        return self._config_manager
+
+    @property
+    def logger(self):
+        if self._logger is None:
+            from infrastructure.di.container import get_container, is_container_ready
+
+            if is_container_ready():
+                self._logger = get_container().get(LoggingPort)
+        return self._logger
+
+    @property
+    def template_defaults_service(self):
+        if self._template_defaults_service is None:
+            from infrastructure.di.container import get_container, is_container_ready
+            from domain.template.ports.template_defaults_port import TemplateDefaultsPort
+
+            if is_container_ready():
+                self._template_defaults_service = get_container().get_optional(TemplateDefaultsPort)
+        return self._template_defaults_service
 
         # Initialize field mapper lazily - will be created when first needed
         self._field_mapper = None
@@ -87,12 +110,12 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
     ) -> list[dict[str, Any]]:
         """Load templates from a specific path."""
         if not os.path.exists(template_path):
-            self._logger.debug("Template file not found: %s", template_path)
+            self.logger.debug("Template file not found: %s", template_path)
             return []
 
         try:
             templates = self._load_single_file(template_path)
-            self._logger.debug("Loaded %d templates from %s", len(templates), template_path)
+            self.logger.debug("Loaded %d templates from %s", len(templates), template_path)
 
             # Process each template with field mapping
             processed_templates = []
@@ -104,7 +127,7 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
                     processed_template = self._map_template_fields(template, provider_override)
                     processed_templates.append(processed_template)
                 except Exception as e:
-                    self._logger.warning(
+                    self.logger.warning(
                         "Skipping invalid template %s: %s",
                         template.get("id", "unknown"),
                         e,
@@ -113,7 +136,7 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
 
             return processed_templates
         except Exception as e:
-            self._logger.error("Error loading templates from %s: %s", template_path, e)
+            self.logger.error("Error loading templates from %s: %s", template_path, e)
             return []
 
     def _load_single_file(self, template_path: str) -> list[dict[str, Any]]:
@@ -199,7 +222,7 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
             selection_result = provider_service.select_active_provider()
             return selection_result.provider_name
         except Exception as e:
-            self._logger.warning("Failed to get provider instance name: %s", e)
+            self.logger.warning("Failed to get provider instance name: %s", e)
             return "default"
 
     def _map_hostfactory_to_internal_field(self, hf_field: str) -> str:
@@ -216,10 +239,10 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
             provider_service = container.get(ProviderRegistryService)
             selection_result = provider_service.select_active_provider()
             provider_type = selection_result.provider_type
-            self._logger.debug("Active provider type: %s", provider_type)
+            self.logger.debug("Active provider type: %s", provider_type)
             return provider_type
         except Exception as e:
-            self._logger.warning("Failed to get active provider type, defaulting to 'aws': %s", e)
+            self.logger.warning("Failed to get active provider type, defaulting to 'aws': %s", e)
             return "aws"  # Default fallback
 
     def convert_cli_args_to_hostfactory_input(self, operation: str, args: Any) -> dict[str, Any]:
@@ -565,7 +588,7 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         """
 
         # DEBUG: Log the raw input data
-        self._logger.debug("parse_request_data input: %s", raw_data)
+        self.logger.debug("parse_request_data input: %s", raw_data)
 
         # Request Status
         # Handles 2 formats of requests
@@ -577,21 +600,21 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
             result = [
                 {"request_id": req.get("requestId", req.get("request_id"))} for req in requests_list
             ]
-            self._logger.debug("parse_request_data output (requests): %s", result)
+            self.logger.debug("parse_request_data output (requests): %s", result)
             return result
 
         # Request Machines
         # Handle nested HostFactory format: {"template": {"templateId": "...", "machineCount": ...}}
         if "template" in raw_data:
             template_data = raw_data["template"]
-            self._logger.debug("Found template data: %s", template_data)
+            self.logger.debug("Found template data: %s", template_data)
             result = {
                 "template_id": template_data.get("templateId"),
                 "requested_count": template_data.get("machineCount", 1),
                 "request_type": template_data.get("requestType", "provision"),
                 "metadata": raw_data.get("metadata", {}),
             }
-            self._logger.debug("parse_request_data output (template): %s", result)
+            self.logger.debug("parse_request_data output (template): %s", result)
             return result
 
         # Handle flat HostFactory format: {"templateId": ..., "maxNumber": ...}
@@ -605,7 +628,7 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
             "request_id": raw_data.get("requestId", raw_data.get("request_id")),
             "metadata": raw_data.get("metadata", {}),
         }
-        self._logger.debug("parse_request_data output (flat): %s", result)
+        self.logger.debug("parse_request_data output (flat): %s", result)
         return result
 
     def format_templates_response(self, templates: list[TemplateDTO]) -> dict[str, Any]:
@@ -828,13 +851,13 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         }
 
     def get_directory(self, file_type: str) -> str | None:
-        self._logger.debug("[HF_STRATEGY] get_directory called with file_type=%s", file_type)
+        self.logger.debug("[HF_STRATEGY] get_directory called with file_type=%s", file_type)
 
         if file_type in ["conf", "template", "legacy"]:
             confdir = os.environ.get("HF_PROVIDER_CONFDIR")
             workdir = os.environ.get("HF_PROVIDER_WORKDIR", os.getcwd())
             result = confdir if confdir else os.path.join(workdir, "config")
-            self._logger.debug(
+            self.logger.debug(
                 "[HF_STRATEGY] file_type=%s: HF_PROVIDER_CONFDIR=%s, HF_PROVIDER_WORKDIR=%s, result=%s",
                 file_type,
                 confdir,
@@ -846,7 +869,7 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
             logdir = os.environ.get("HF_PROVIDER_LOGDIR")
             workdir = os.environ.get("HF_PROVIDER_WORKDIR", os.getcwd())
             result = logdir if logdir else os.path.join(workdir, "logs")
-            self._logger.info(
+            self.logger.info(
                 "[HF_STRATEGY] file_type=log: HF_PROVIDER_LOGDIR=%s, HF_PROVIDER_WORKDIR=%s, result=%s",
                 logdir,
                 workdir,
@@ -855,7 +878,7 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
             return result
         elif file_type in ["work", "data"]:
             result = os.environ.get("HF_PROVIDER_WORKDIR", os.getcwd())
-            self._logger.debug(
+            self.logger.debug(
                 "[HF_STRATEGY] file_type=%s: HF_PROVIDER_WORKDIR=%s, result=%s",
                 file_type,
                 os.environ.get("HF_PROVIDER_WORKDIR"),
@@ -864,7 +887,7 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
             return result
         else:
             result = os.environ.get("HF_PROVIDER_WORKDIR", os.getcwd())
-            self._logger.debug(
+            self.logger.debug(
                 "[HF_STRATEGY] file_type=%s (default): HF_PROVIDER_WORKDIR=%s, result=%s",
                 file_type,
                 os.environ.get("HF_PROVIDER_WORKDIR"),

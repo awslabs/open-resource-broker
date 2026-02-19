@@ -22,10 +22,29 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
     - Simple integration for systems using domain format directly
     """
 
-    def __init__(self, config_manager: ConfigurationManager, logger: "LoggingPort") -> None:
+    def __init__(self) -> None:
         """Initialize the instance."""
-        self.config_manager = config_manager
-        self._logger = logger
+        self._config_manager = None
+        self._logger = None
+
+    @property
+    def config_manager(self):
+        if self._config_manager is None:
+            from infrastructure.di.container import get_container, is_container_ready
+            from domain.base.ports.configuration_port import ConfigurationPort
+
+            if is_container_ready():
+                self._config_manager = get_container().get(ConfigurationPort)
+        return self._config_manager
+
+    @property
+    def logger(self):
+        if self._logger is None:
+            from infrastructure.di.container import get_container, is_container_ready
+
+            if is_container_ready():
+                self._logger = get_container().get(LoggingPort)
+        return self._logger
 
         # Initialize field mapper
         self.field_mapper = DefaultFieldMapper()
@@ -73,15 +92,15 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
     def load_templates_from_path(self, template_path: str) -> list[dict[str, Any]]:
         """Load templates from a specific path."""
         if not os.path.exists(template_path):
-            self._logger.debug("Template file not found: %s", template_path)
+            self.logger.debug("Template file not found: %s", template_path)
             return []
 
         try:
             templates = self._load_single_file(template_path)
-            self._logger.debug("Loaded %d templates from %s", len(templates), template_path)
+            self.logger.debug("Loaded %d templates from %s", len(templates), template_path)
             return templates
         except Exception as e:
-            self._logger.error("Error loading templates from %s: %s", template_path, e)
+            self.logger.error("Error loading templates from %s: %s", template_path, e)
             return []
 
     def _load_single_file(self, template_path: str) -> list[dict[str, Any]]:
@@ -114,7 +133,7 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
             selection_result = provider_service.select_active_provider()
             return selection_result.provider_name
         except Exception as e:
-            self._logger.warning("Failed to get provider instance name: %s", e)
+            self.logger.warning("Failed to get provider instance name: %s", e)
             return "default"
 
     def _get_active_provider_type(self) -> str:
@@ -127,10 +146,10 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
             provider_service = container.get(ProviderRegistryService)
             selection_result = provider_service.select_active_provider()
             provider_type = selection_result.provider_type
-            self._logger.debug("Active provider type: %s", provider_type)
+            self.logger.debug("Active provider type: %s", provider_type)
             return provider_type
         except Exception as e:
-            self._logger.warning("Failed to get active provider type, defaulting to 'aws': %s", e)
+            self.logger.warning("Failed to get active provider type, defaulting to 'aws': %s", e)
             return "aws"
 
     def get_config_file_path(self) -> str:

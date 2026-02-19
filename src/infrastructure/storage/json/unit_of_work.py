@@ -57,16 +57,8 @@ class JSONUnitOfWork(BaseUnitOfWork):
 
         # Try to inject metrics collector from DI container
         metrics = None
-        try:
-            from infrastructure.di.container import get_container
-            from monitoring.metrics import MetricsCollector
-
-            container = get_container()
-            metrics = container.get_optional(MetricsCollector)
-        except (AttributeError, ImportError):
-            # Metrics collector not available, proceed without instrumentation
-            # This is expected when metrics are disabled or during testing
-            metrics = None
+        # Don't try to get container during initialization - causes circular dependency
+        # Metrics will be injected later if needed
 
         # Create storage strategies for each repository
         machine_strategy = JSONStorageStrategy(

@@ -35,14 +35,16 @@ def register_port_adapters(container):
     # Register UnitOfWorkFactory (abstract -> concrete mapping)
     # This was previously in _setup_core_dependencies but got lost during DI cleanup
     # Using consistent Base* naming pattern for abstract classes
-    from domain.base import UnitOfWorkFactory as BaseUnitOfWorkFactory
-    from infrastructure.utilities.factories.repository_factory import UnitOfWorkFactory
+    def create_unit_of_work_factory(c):
+        from domain.base import UnitOfWorkFactory as BaseUnitOfWorkFactory
+        from infrastructure.utilities.factories.repository_factory import UnitOfWorkFactory
 
-    config_manager = container.get(ConfigurationManager)
-    container.register_instance(
-        BaseUnitOfWorkFactory,
-        UnitOfWorkFactory(config_manager, LoggingAdapter("unit_of_work")),
-    )
+        config_manager = c.get(ConfigurationManager)
+        return UnitOfWorkFactory(config_manager, LoggingAdapter("unit_of_work"))
+
+    from domain.base import UnitOfWorkFactory as BaseUnitOfWorkFactory
+
+    container.register_singleton(BaseUnitOfWorkFactory, create_unit_of_work_factory)
 
     # Register logging port adapter
     container.register_singleton(LoggingPort, lambda c: LoggingAdapter("application"))
@@ -60,7 +62,7 @@ def register_port_adapters(container):
         """Create template configuration manager with dependencies."""
         return TemplateConfigurationManager(
             config_manager=c.get(ConfigurationPort),
-            scheduler_strategy=c.get(SchedulerPort),
+            scheduler_strategy=c.get_optional(SchedulerPort),
             logger=c.get(LoggingPort),
             event_publisher=c.get_optional(EventPublisherPort),
         )
