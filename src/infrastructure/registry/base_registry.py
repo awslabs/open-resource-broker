@@ -57,17 +57,19 @@ class BaseRegistry(ABC):
                     cls._instances[registry_name] = super().__new__(cls)
         return cls._instances[registry_name]
 
-    def __init__(self, mode: RegistryMode = RegistryMode.SINGLE_CHOICE) -> None:
+    def __init__(self, mode: RegistryMode = RegistryMode.SINGLE_CHOICE, factory=None) -> None:
         """
-        Initialize registry with specified mode.
+        Initialize registry with specified mode and factory.
 
         Args:
             mode: Registry operation mode (single or multi choice)
+            factory: RegistryFactory for dependency injection
         """
         if hasattr(self, "_initialized"):
             return
 
         self.mode = mode
+        self._factory = factory
         # Type-based registrations
         self._type_registrations: dict[str, BaseRegistration] = {}
         self._instance_registrations: dict[
@@ -75,73 +77,7 @@ class BaseRegistry(ABC):
         ] = {}  # Instance-based registrations (multi-choice only)
         self._registry_lock = threading.RLock()  # Use RLock for nested locking
 
-        # Lazy initialization state
-        self._dependencies_initialized = False
-        self._logger_port = None
-        self._config_port = None
-        self._metrics = None
-        self._fallback_logger = None
-
         self._initialized = True
-
-    def _ensure_dependencies(self) -> None:
-        """Ensure dependencies are initialized (lazy loading)."""
-        if not self._dependencies_initialized:
-            with self._registry_lock:
-                if not self._dependencies_initialized:
-                    try:
-                        # Avoid circular dependency by checking if container is available AND ready
-                        import sys
-
-                        if "infrastructure.di.container" in sys.modules:
-                            from infrastructure.di.container import (
-                                get_container,
-                                is_container_ready,
-                            )
-
-                            # Only try to get dependencies if container is fully ready
-                            if is_container_ready():
-                                from domain.base.ports import LoggingPort, ConfigurationPort
-                                from monitoring.metrics import MetricsCollector
-
-                                container = get_container()
-                                self._logger_port = container.get(LoggingPort)
-                                self._config_port = container.get(ConfigurationPort)
-                                self._metrics = container.get(MetricsCollector)
-                    except (ImportError, AttributeError, Exception):
-                        # Fallback if DI container not available or circular dependency
-                        pass
-                    self._dependencies_initialized = True
-
-    @property
-    def logger(self):
-        """Get logger with lazy initialization."""
-        self._ensure_dependencies()
-        if self._logger_port:
-            return self._logger_port
-        if not self._fallback_logger:
-            try:
-                from infrastructure.logging.logger import get_logger
-
-                self._fallback_logger = get_logger(__name__)
-            except (ImportError, Exception):
-                # Ultimate fallback - use standard logging
-                import logging
-
-                self._fallback_logger = logging.getLogger(__name__)
-        return self._fallback_logger
-
-    @property
-    def config_port(self):
-        """Get config port with lazy initialization."""
-        self._ensure_dependencies()
-        return self._config_port
-
-    @property
-    def metrics(self):
-        """Get metrics with lazy initialization."""
-        self._ensure_dependencies()
-        return self._metrics
 
     @abstractmethod
     def register(
@@ -176,14 +112,16 @@ class BaseRegistry(ABC):
         with self._registry_lock:
             if type_name in self._type_registrations:
                 # Idempotent operation - log debug and return
-                self.logger.debug("Type '%s' already registered, skipping", type_name)
                 return
 
             registration = self._create_registration(
                 type_name, strategy_factory, config_factory, **additional_factories
             )
             self._type_registrations[type_name] = registration
-            self.logger.info("Registered type: %s", type_name)
+            
+            # Register with factory if available
+            if self._factory:
+                self._factory.register_constructor(type_name, strategy_factory)
 
     def register_instance(
         self,
@@ -212,19 +150,26 @@ class BaseRegistry(ABC):
         with self._registry_lock:
             if instance_name in self._instance_registrations:
                 # Idempotent operation - log debug and return
-                self.logger.debug("Instance '%s' already registered, skipping", instance_name)
                 return
 
             registration = self._create_registration(
                 type_name, strategy_factory, config_factory, **additional_factories
             )
             self._instance_registrations[instance_name] = registration
-            self.logger.info("Registered instance: %s (type: %s)", instance_name, type_name)
+            
+            # Register with factory if available
+            if self._factory:
+                self._factory.register_constructor(instance_name, strategy_factory)
 
     def create_strategy_by_type(self, type_name: str, config: Any) -> Any:
         """Create strategy by type name."""
         registration = self._get_type_registration(type_name)
-        return self._create_strategy_from_registration(registration, config, type_name)
+        
+        # Use factory if available, otherwise use registration directly
+        if self._factory:
+            return self._factory.create_instance(type_name, **config if isinstance(config, dict) else {})
+        else:
+            return self._create_strategy_from_registration(registration, config, type_name)
 
     def create_strategy_by_instance(self, instance_name: str, config: Any) -> Any:
         """Create strategy by instance name (multi-choice mode only)."""
@@ -232,7 +177,12 @@ class BaseRegistry(ABC):
             raise ValueError("Instance-based creation only supported in MULTI_CHOICE mode")
 
         registration = self._get_instance_registration(instance_name)
-        return self._create_strategy_from_registration(registration, config, instance_name)
+        
+        # Use factory if available, otherwise use registration directly
+        if self._factory:
+            return self._factory.create_instance(instance_name, **config if isinstance(config, dict) else {})
+        else:
+            return self._create_strategy_from_registration(registration, config, instance_name)
 
     def is_registered(self, type_name: str) -> bool:
         """Check if a type is registered."""
@@ -285,7 +235,6 @@ class BaseRegistry(ABC):
         with self._registry_lock:
             if type_name in self._type_registrations:
                 del self._type_registrations[type_name]
-                self.logger.info("Unregistered type: %s", type_name)
                 return True
             return False
 
@@ -294,7 +243,6 @@ class BaseRegistry(ABC):
         with self._registry_lock:
             if instance_name in self._instance_registrations:
                 del self._instance_registrations[instance_name]
-                self.logger.info("Unregistered instance: %s", instance_name)
                 return True
             return False
 
@@ -312,12 +260,8 @@ class BaseRegistry(ABC):
                 component = factory(config)
             else:
                 component = factory()
-            self.logger.debug("Created %s for type: %s", factory_name, type_name)
             return component
-        except Exception as e:
-            self.logger.warning(
-                "Failed to create %s for type '%s': %s", factory_name, type_name, str(e)
-            )
+        except Exception:
             return None
 
     def ensure_types_registered(self, register_function: Callable) -> None:
@@ -335,7 +279,6 @@ class BaseRegistry(ABC):
         with self._registry_lock:
             self._type_registrations.clear()
             self._instance_registrations.clear()
-            self.logger.info("Cleared all registrations")
 
     # Protected methods for subclass implementation
 
@@ -375,11 +318,9 @@ class BaseRegistry(ABC):
         """Create strategy from registration with error handling."""
         try:
             strategy = registration.strategy_factory(config)
-            self.logger.debug("Created strategy for: %s", identifier)
             return strategy
         except Exception as e:
             from domain.base.exceptions import ConfigurationError
 
             error_msg = f"Failed to create strategy for '{identifier}': {e!s}"
-            self.logger.error(error_msg)
             raise ConfigurationError(error_msg)
