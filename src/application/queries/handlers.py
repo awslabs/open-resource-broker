@@ -1044,7 +1044,42 @@ class ValidateTemplateHandler(BaseQueryHandler[ValidateTemplateQuery, Validation
 
     async def execute_query(self, query: ValidateTemplateQuery) -> dict[str, Any]:
         """Execute validate template query."""
-        self.logger.info("Validating template: %s", query.template_id)
+        template_config = query.template_config
+        template_id = getattr(query, "template_id", None)
+
+        # If template_id is provided in template_config, extract it
+        if not template_id and isinstance(template_config, dict):
+            template_id = template_config.get("template_id")
+
+        # If we have a template_id but no actual config, load from storage
+        if template_id and (not template_config or template_config == {"template_id": template_id}):
+            self.logger.info("Loading template from storage: %s", template_id)
+            try:
+                from infrastructure.template.configuration_manager import (
+                    TemplateConfigurationManager,
+                )
+
+                template_manager = self.container.get(TemplateConfigurationManager)
+                template_dto = await template_manager.get_template_by_id(template_id)
+
+                if not template_dto:
+                    from domain.base.exceptions import EntityNotFoundError
+
+                    raise EntityNotFoundError("Template", template_id)
+
+                template_config = template_dto.configuration or {}
+                template_config["template_id"] = template_dto.template_id
+
+            except Exception as e:
+                self.logger.error("Failed to load template %s: %s", template_id, e)
+                return {
+                    "template_id": template_id,
+                    "success": False,
+                    "valid": False,
+                    "error": f"Failed to load template: {e}",
+                }
+
+        self.logger.info("Validating template: %s", template_id or "file-template")
 
         try:
             # Get template configuration port for validation
@@ -1053,32 +1088,38 @@ class ValidateTemplateHandler(BaseQueryHandler[ValidateTemplateQuery, Validation
             template_port = self.container.get(TemplateConfigurationPort)
 
             # Validate template configuration
-            validation_errors = template_port.validate_template_config(query.configuration)
+            validation_errors = template_port.validate_template_config(template_config)
 
             # Log validation results
             if validation_errors:
                 self.logger.warning(
                     "Template validation failed for %s: %s",
-                    query.template_id,
+                    template_id or "file-template",
                     validation_errors,
                 )
             else:
-                self.logger.info("Template validation passed for %s", query.template_id)
+                self.logger.info(
+                    "Template validation passed for %s", template_id or "file-template"
+                )
 
             return {
-                "template_id": query.template_id,
-                "is_valid": len(validation_errors) == 0,
+                "template_id": template_id or template_config.get("template_id", "file-template"),
+                "success": len(validation_errors) == 0,
+                "valid": len(validation_errors) == 0,
                 "validation_errors": validation_errors,
-                "configuration": query.configuration,
+                "configuration": template_config,
             }
 
         except Exception as e:
-            self.logger.error("Template validation failed for %s: %s", query.template_id, e)
+            self.logger.error(
+                "Template validation failed for %s: %s", template_id or "file-template", e
+            )
             return {
-                "template_id": query.template_id,
-                "is_valid": False,
+                "template_id": template_id or template_config.get("template_id", "file-template"),
+                "success": False,
+                "valid": False,
                 "validation_errors": [f"Validation error: {e!s}"],
-                "configuration": query.configuration,
+                "configuration": template_config,
             }
 
 

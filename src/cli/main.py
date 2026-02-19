@@ -169,6 +169,11 @@ def add_machine_actions(subparsers):
     add_force_argument(machines_stop)
     machines_stop.add_argument("machine_ids", nargs="*", help="Machine IDs to stop")
 
+    # Machines start
+    machines_start = subparsers.add_parser("start", help="Start stopped machines")
+    add_global_arguments(machines_start)
+    machines_start.add_argument("machine_ids", nargs="*", help="Machine IDs to start")
+
 
 def add_request_actions(subparsers):
     """Add request actions to a subparser."""
@@ -410,7 +415,10 @@ def add_template_actions(subparsers):
     # Templates validate
     templates_validate = subparsers.add_parser("validate", help="Validate template")
     add_global_arguments(templates_validate)
-    templates_validate.add_argument("--file", required=True, help="Template file to validate")
+    templates_validate.add_argument(
+        "template_id", nargs="?", help="Template ID to validate (loaded template)"
+    )
+    templates_validate.add_argument("--file", help="Template file to validate (pre-import)")
 
     # Templates refresh
     templates_refresh = subparsers.add_parser("refresh", help="Refresh template cache")
@@ -906,6 +914,15 @@ async def execute_command(args, app, resource_parsers) -> Union[str, tuple[str, 
                 from interface.machine_command_handlers import handle_get_machine_status
 
                 result = await handle_get_machine_status(args)
+            # Handle templates validate (uses query handler directly)
+            elif (
+                hasattr(args, "resource")
+                and args.resource in ["templates", "template"]
+                and args.action == "validate"
+            ):
+                from interface.template_command_handlers import handle_validate_template
+
+                result = await handle_validate_template(args)
             # Handle machine return with --all or multiple IDs
             elif (
                 hasattr(args, "resource")
@@ -924,6 +941,15 @@ async def execute_command(args, app, resource_parsers) -> Union[str, tuple[str, 
                 from interface.machine_command_handlers import handle_stop_machines
 
                 result = await handle_stop_machines(args)
+            # Handle machine start with --all or multiple IDs
+            elif (
+                hasattr(args, "resource")
+                and args.resource in ["machines", "machine"]
+                and args.action == "start"
+            ):
+                from interface.machine_command_handlers import handle_start_machines
+
+                result = await handle_start_machines(args)
             # Handle request status with multiple IDs (but not single request show)
             elif (
                 hasattr(args, "resource")

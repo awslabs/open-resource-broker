@@ -312,7 +312,8 @@ class CLICommandFactoryOrchestrator:
             elif command_action == "delete":
                 return self.create_delete_template_command(template_id=args.get("template_id"))
             elif command_action == "validate":
-                return self.create_validate_template_command(template_id=args.get("template_id"))
+                # Return None to trigger fallback to direct handler
+                return None
             elif command_action == "refresh":
                 return self.create_template_utility_command_data("refresh", **args)
             elif command_action == "generate":
