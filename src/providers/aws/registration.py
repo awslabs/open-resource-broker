@@ -414,38 +414,34 @@ def register_aws_services_with_di(container) -> None:
         from domain.base.ports.template_adapter_port import TemplateAdapterPort
         from providers.aws.infrastructure.adapters.template_adapter import AWSTemplateAdapter
 
-        if not container.is_registered(TemplateAdapterPort):
+        def create_aws_template_adapter(c):
+            from domain.base.ports import ConfigurationPort
+            from providers.aws.infrastructure.aws_client import AWSClient
+            from infrastructure.template.configuration_manager import (
+                TemplateConfigurationManager,
+            )
 
-            def create_aws_template_adapter(c):
-                from domain.base.ports import ConfigurationPort
-                from providers.aws.infrastructure.aws_client import AWSClient
-                from infrastructure.template.configuration_manager import (
-                    TemplateConfigurationManager,
-                )
+            template_config_manager = c.get(TemplateConfigurationManager)
+            aws_client = c.get(AWSClient)
+            logger_port = c.get(LoggingPort)
 
-                template_config_manager = c.get(TemplateConfigurationManager)
-                aws_client = c.get(AWSClient)
-                logger_port = c.get(LoggingPort)
+            return AWSTemplateAdapter(template_config_manager, aws_client, logger_port)
 
-                return AWSTemplateAdapter(template_config_manager, aws_client, logger_port)
-
-            container.register_singleton(TemplateAdapterPort, create_aws_template_adapter)
-            logger.debug("AWS Template Adapter registered with DI container")
+        container.register_singleton(TemplateAdapterPort, create_aws_template_adapter)
+        logger.debug("AWS Template Adapter registered with DI container")
 
         # Register AWS Machine Adapter
         from providers.aws.infrastructure.adapters.machine_adapter import AWSMachineAdapter
 
-        if not container.is_registered(AWSMachineAdapter):
+        def create_machine_adapter(c):
+            from providers.aws.infrastructure.aws_client import AWSClient
 
-            def create_machine_adapter(c):
-                from providers.aws.infrastructure.aws_client import AWSClient
+            aws_client = c.get(AWSClient)
+            logger_port = c.get(LoggingPort)
+            return AWSMachineAdapter(aws_client, logger_port)
 
-                aws_client = c.get(AWSClient)
-                logger_port = c.get(LoggingPort)
-                return AWSMachineAdapter(aws_client, logger_port)
-
-            container.register_singleton(AWSMachineAdapter, create_machine_adapter)
-            logger.debug("AWS Machine Adapter registered with DI container")
+        container.register_singleton(AWSMachineAdapter, create_machine_adapter)
+        logger.debug("AWS Machine Adapter registered with DI container")
 
         # Register AWS-specific utility services only
         from providers.aws.infrastructure.launch_template.manager import AWSLaunchTemplateManager
@@ -453,10 +449,9 @@ def register_aws_services_with_di(container) -> None:
         # Image resolution now handled by generic service in provider strategy
         # No need for separate AMI resolver registration
 
-        # Register AWS Launch Template Manager if not already registered
-        if not container.is_registered(AWSLaunchTemplateManager):
-            container.register_singleton(AWSLaunchTemplateManager)
-            logger.debug("AWS Launch Template Manager registered with DI container")
+        # Register AWS Launch Template Manager
+        container.register_singleton(AWSLaunchTemplateManager)
+        logger.debug("AWS Launch Template Manager registered with DI container")
 
         # Register AWS Native Spec Service if not already registered
         from providers.aws.infrastructure.services.aws_native_spec_service import (

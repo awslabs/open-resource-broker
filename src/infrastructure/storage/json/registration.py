@@ -169,13 +169,6 @@ def register_json_storage() -> None:
 
         logger.info("Successfully registered JSON storage type")
 
-    except ValueError as e:
-        # Handle "already registered" errors gracefully
-        if "already registered" in str(e):
-            logger.debug("JSON storage type already registered: %s", str(e))
-        else:
-            logger.error("Failed to register JSON storage type: %s", e)
-            raise
     except Exception as e:
         logger.error("Failed to register JSON storage type: %s", e)
         raise

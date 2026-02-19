@@ -1,8 +1,4 @@
-"""Central Provider Registration Module.
-
-This module provides centralized registration of all provider types,
-ensuring all provider implementations are registered with the provider registry.
-"""
+"""Provider registration functions."""
 
 
 def register_all_provider_types() -> None:
