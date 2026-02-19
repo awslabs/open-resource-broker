@@ -20,12 +20,19 @@ class MachineSyncService:
         command_bus: CommandBus,
         container: ContainerPort,
         logger: LoggingPort,
-        provider_registry_service: "ProviderRegistryService",
     ) -> None:
         self.command_bus = command_bus
         self.container = container
         self.logger = logger
-        self._provider_registry_service = provider_registry_service
+        self._provider_registry_service = None  # Lazy loaded
+
+    @property
+    def provider_registry_service(self):
+        """Lazy load provider registry service to avoid circular dependency."""
+        if self._provider_registry_service is None:
+            from application.services.provider_registry_service import ProviderRegistryService
+            self._provider_registry_service = self.container.get(ProviderRegistryService)
+        return self._provider_registry_service
 
     async def populate_missing_machine_ids(self, request: Request) -> None:
         """Populate missing machine IDs via command."""
@@ -93,7 +100,7 @@ class MachineSyncService:
             )
 
             # Execute operation using Provider Registry Service
-            result = await self._provider_registry_service.execute_operation(
+            result = await self.provider_registry_service.execute_operation(
                 request.provider_name, operation
             )
 

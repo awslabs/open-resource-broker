@@ -42,7 +42,6 @@ def _register_application_services(container: DIContainer) -> None:
             command_bus=c.get(CommandBus),
             container=c,
             logger=c.get(LoggingPort),
-            provider_registry_service=c.get(ProviderRegistryService),
         ),
     )
 

@@ -77,13 +77,8 @@ class Application:
     async def initialize(self, dry_run: bool = False) -> bool:
         """Initialize the application with DI container."""
         try:
-            # Ensure container is available first
+            # Ensure container is available first (services already registered in get_container)
             self._ensure_container()
-
-            # Register all services after container creation but before service resolution
-            from infrastructure.di.services import register_all_services
-
-            register_all_services(self._container)
 
             # Now we can ensure config manager is available
             self._ensure_config_manager()
