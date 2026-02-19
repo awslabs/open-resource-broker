@@ -608,7 +608,11 @@ class PopulateMachineIdsHandler(BaseCommandHandler[PopulateMachineIdsCommand, No
             )
 
             if result.success and result.data and "instances" in result.data:
-                return [instance.get("instance_id") for instance in result.data["instances"]]
+                return [
+                    instance.get("instance_id")
+                    for instance in result.data["instances"]
+                    if instance.get("instance_id")
+                ]
 
             return []
 
