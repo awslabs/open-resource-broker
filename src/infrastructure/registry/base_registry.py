@@ -118,7 +118,7 @@ class BaseRegistry(ABC):
                 type_name, strategy_factory, config_factory, **additional_factories
             )
             self._type_registrations[type_name] = registration
-            
+
             # Register with factory if available
             if self._factory:
                 self._factory.register_constructor(type_name, strategy_factory)
@@ -156,7 +156,7 @@ class BaseRegistry(ABC):
                 type_name, strategy_factory, config_factory, **additional_factories
             )
             self._instance_registrations[instance_name] = registration
-            
+
             # Register with factory if available
             if self._factory:
                 self._factory.register_constructor(instance_name, strategy_factory)
@@ -164,10 +164,11 @@ class BaseRegistry(ABC):
     def create_strategy_by_type(self, type_name: str, config: Any) -> Any:
         """Create strategy by type name."""
         registration = self._get_type_registration(type_name)
-        
+
         # Use factory if available, otherwise use registration directly
         if self._factory:
-            return self._factory.create_instance(type_name, **config if isinstance(config, dict) else {})
+            # For factory, we need to call the constructor with config as first argument
+            return registration.strategy_factory(config)
         else:
             return self._create_strategy_from_registration(registration, config, type_name)
 
@@ -177,10 +178,12 @@ class BaseRegistry(ABC):
             raise ValueError("Instance-based creation only supported in MULTI_CHOICE mode")
 
         registration = self._get_instance_registration(instance_name)
-        
+
         # Use factory if available, otherwise use registration directly
         if self._factory:
-            return self._factory.create_instance(instance_name, **config if isinstance(config, dict) else {})
+            return self._factory.create_instance(
+                instance_name, **config if isinstance(config, dict) else {}
+            )
         else:
             return self._create_strategy_from_registration(registration, config, instance_name)
 
