@@ -1,5 +1,8 @@
 """Command handlers for machine operations."""
 
+# Import for type hints
+from typing import TYPE_CHECKING
+
 from application.base.handlers import BaseCommandHandler
 from application.decorators import command_handler
 from application.dto.base import BaseResponse
@@ -13,9 +16,6 @@ from application.machine.commands import (
     ValidateProviderStateCommand,
 )
 from domain.base.ports import ContainerPort, ErrorHandlingPort, EventPublisherPort, LoggingPort
-
-# Import for type hints
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from application.services.provider_registry_service import ProviderRegistryService

@@ -7,6 +7,7 @@ following SRP while maintaining backward compatibility.
 from typing import Any, Optional
 
 from infrastructure.storage.base.strategy import BaseStorageStrategy
+
 from .factories.storage_factory_orchestrator import StorageFactoryOrchestrator
 
 

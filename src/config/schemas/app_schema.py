@@ -6,7 +6,6 @@ from typing import Any, Optional
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from .app_config_settings import CoreAppSettings
-
 from .common_schema import (
     DatabaseConfig,
     EventsConfig,

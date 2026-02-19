@@ -1,7 +1,8 @@
 """AWS Session Factory - Centralized boto3 session creation."""
 
-import boto3
 from typing import Optional
+
+import boto3
 
 
 class AWSSessionFactory:

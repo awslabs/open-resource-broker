@@ -2,7 +2,6 @@
 
 from unittest.mock import Mock
 
-
 from infrastructure.registry.base_registry import BaseRegistry, RegistryMode
 from infrastructure.registry.registry_factory import RegistryFactory
 

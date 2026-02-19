@@ -3,19 +3,19 @@
 from typing import Any, Optional
 
 from application.commands.system import (
-    ReloadProviderConfigCommand,
-    TestStorageCommand,
     MCPValidateCommand,
     RefreshTemplatesCommand,
+    ReloadProviderConfigCommand,
     SetConfigurationCommand,
-)
-from application.queries.system import (
-    GetSystemStatusQuery,
-    GetProviderConfigQuery,
-    GetProviderMetricsQuery,
-    ValidateProviderConfigQuery,
+    TestStorageCommand,
 )
 from application.dto.queries import GetConfigurationQuery
+from application.queries.system import (
+    GetProviderConfigQuery,
+    GetProviderMetricsQuery,
+    GetSystemStatusQuery,
+    ValidateProviderConfigQuery,
+)
 
 
 class SystemCommandFactory:

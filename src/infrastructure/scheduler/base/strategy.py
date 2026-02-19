@@ -7,9 +7,10 @@ ensuring consistent interface implementation across different scheduler types.
 from abc import ABC
 from typing import Any
 
+from application.request.dto import RequestDTO
+
 # Import from Application layer (correct Clean Architecture)
 from domain.base.ports.scheduler_port import SchedulerPort
-from application.request.dto import RequestDTO
 from infrastructure.template.dtos import TemplateDTO
 
 

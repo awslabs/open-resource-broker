@@ -5,10 +5,10 @@ from unittest.mock import MagicMock, Mock, patch
 import pytest
 
 from application.request.dto import MachineReferenceDTO
-from providers.results import ProviderSelectionResult
 from domain.base.ports import LoggingPort
 from domain.base.ports.configuration_port import ConfigurationPort
 from infrastructure.scheduler.hostfactory.hostfactory_strategy import HostFactorySchedulerStrategy
+from providers.results import ProviderSelectionResult
 
 
 class MockRequestDTO:

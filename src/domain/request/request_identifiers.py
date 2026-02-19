@@ -6,7 +6,7 @@ import re
 import uuid
 from typing import Optional
 
-from pydantic import field_validator, field_serializer
+from pydantic import field_serializer, field_validator
 
 from domain.base.value_objects import ValueObject
 from domain.request.request_types import RequestType

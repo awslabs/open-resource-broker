@@ -14,6 +14,8 @@ import pytest
 
 # Import strategy components with error handling
 try:
+    from providers.base.strategy.provider_context import ProviderContext
+
     from infrastructure.factories.provider_strategy_factory import (
         ProviderStrategyFactory,
     )
@@ -22,7 +24,6 @@ try:
     from providers.base.strategy.load_balancing_strategy import (
         LoadBalancingProviderStrategy,
     )
-    from providers.base.strategy.provider_context import ProviderContext
     from providers.base.strategy.provider_selector import ProviderSelector
     from providers.base.strategy.provider_strategy import (
         ProviderOperation,

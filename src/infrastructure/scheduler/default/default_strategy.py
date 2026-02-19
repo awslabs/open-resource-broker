@@ -31,8 +31,8 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
     @property
     def config_manager(self):
         if self._config_manager is None:
-            from infrastructure.di.container import get_container, is_container_ready
             from domain.base.ports.configuration_port import ConfigurationPort
+            from infrastructure.di.container import get_container, is_container_ready
 
             if is_container_ready():
                 self._config_manager = get_container().get(ConfigurationPort)
@@ -123,8 +123,8 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
     def _get_provider_name(self) -> str:
         """Get the active provider instance name via proper DI."""
         try:
-            from infrastructure.di.container import get_container
             from application.services.provider_registry_service import ProviderRegistryService
+            from infrastructure.di.container import get_container
 
             container = get_container()
             provider_service = container.get(ProviderRegistryService)
@@ -137,8 +137,8 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
     def _get_active_provider_type(self) -> str:
         """Get the active provider type via proper DI."""
         try:
-            from infrastructure.di.container import get_container
             from application.services.provider_registry_service import ProviderRegistryService
+            from infrastructure.di.container import get_container
 
             container = get_container()
             provider_service = container.get(ProviderRegistryService)

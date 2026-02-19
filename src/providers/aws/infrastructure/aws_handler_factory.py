@@ -85,9 +85,9 @@ class AWSHandlerFactory:
 
         # Get other dependencies from DI (not AWS client)
         from infrastructure.di.container import get_container
-        from providers.aws.utilities.aws_operations import AWSOperations
-        from providers.aws.infrastructure.launch_template.manager import AWSLaunchTemplateManager
         from providers.aws.infrastructure.adapters.machine_adapter import AWSMachineAdapter
+        from providers.aws.infrastructure.launch_template.manager import AWSLaunchTemplateManager
+        from providers.aws.utilities.aws_operations import AWSOperations
 
         container = get_container()
 

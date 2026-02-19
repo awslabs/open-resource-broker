@@ -2,8 +2,8 @@
 
 from typing import Any, Optional
 
-from application.dto.queries import GetMachineQuery, ListMachinesQuery
 from application.dto.bulk_queries import GetMultipleMachinesQuery
+from application.dto.queries import GetMachineQuery, ListMachinesQuery
 from application.machine.commands import UpdateMachineStatusCommand
 
 

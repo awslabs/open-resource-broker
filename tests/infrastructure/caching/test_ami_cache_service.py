@@ -1,6 +1,7 @@
 """Tests for infrastructure AMI cache service."""
 
 import time
+
 from src.infrastructure.caching.ami_cache_service import AMICacheService
 
 

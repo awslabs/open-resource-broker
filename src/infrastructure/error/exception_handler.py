@@ -16,7 +16,9 @@ import json
 import threading
 from datetime import datetime
 from http import HTTPStatus
-from typing import Any, Callable, Optional
+
+# Import for HTTP error handling delegation
+from typing import TYPE_CHECKING, Any, Callable, Optional
 
 from pydantic import Field
 
@@ -46,9 +48,6 @@ from domain.template.exceptions import (
 )
 from infrastructure.error.exception_type_mapper import ExceptionTypeMapper
 from infrastructure.logging.logger import get_logger
-
-# Import for HTTP error handling delegation
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from infrastructure.error.http_response_handler import HTTPErrorResponseHandler

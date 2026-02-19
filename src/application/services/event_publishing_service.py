@@ -1,8 +1,8 @@
 """Event publishing service for centralizing event publishing logic."""
 
+from domain.base.events import RequestCompletedEvent, RequestCreatedEvent
 from domain.base.ports.event_publisher_port import EventPublisherPort
 from domain.request.aggregate import Request
-from domain.base.events import RequestCreatedEvent, RequestCompletedEvent
 
 
 class EventPublishingService:

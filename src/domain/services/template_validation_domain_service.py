@@ -4,7 +4,7 @@ from typing import Any
 
 from domain.base.ports.configuration_port import ConfigurationPort
 from domain.base.ports.logging_port import LoggingPort
-from domain.base.results import ValidationResult, ValidationLevel
+from domain.base.results import ValidationLevel, ValidationResult
 
 
 class TemplateValidationDomainService:

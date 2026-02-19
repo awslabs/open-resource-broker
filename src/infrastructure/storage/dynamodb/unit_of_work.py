@@ -5,6 +5,9 @@ from typing import Optional
 from domain.base.dependency_injection import injectable
 from infrastructure.storage.base.unit_of_work import BaseUnitOfWork
 
+# Import DynamoDB storage strategy
+from infrastructure.storage.dynamodb.strategy import DynamoDBStorageStrategy
+
 # Import new simplified repositories
 from infrastructure.storage.repositories.machine_repository import (
     MachineRepositoryImpl as MachineRepository,
@@ -15,9 +18,6 @@ from infrastructure.storage.repositories.request_repository import (
 from infrastructure.storage.repositories.template_repository import (
     TemplateRepositoryImpl as TemplateRepository,
 )
-
-# Import DynamoDB storage strategy
-from infrastructure.storage.dynamodb.strategy import DynamoDBStorageStrategy
 
 
 @injectable

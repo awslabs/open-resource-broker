@@ -1,7 +1,8 @@
 """Tests for EventPublisher component."""
 
-import pytest
 from dataclasses import dataclass
+
+import pytest
 
 from infrastructure.storage.components.event_publisher import (
     EventPublisher,

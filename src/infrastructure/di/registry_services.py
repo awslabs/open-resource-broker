@@ -1,7 +1,7 @@
 """Registry services DI registration."""
 
-from infrastructure.di.container import DIContainer
 from domain.base.ports.logging_port import LoggingPort
+from infrastructure.di.container import DIContainer
 
 
 def register_registry_services(container: DIContainer) -> None:

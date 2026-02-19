@@ -7,8 +7,8 @@ from domain.base.ports import LoggingPort
 from providers.base.strategy import ProviderHealthStatus
 
 if TYPE_CHECKING:
-    from providers.aws.infrastructure.aws_client import AWSClient
     from providers.aws.configuration.config import AWSProviderConfig
+    from providers.aws.infrastructure.aws_client import AWSClient
 
 
 class AWSHealthCheckService:

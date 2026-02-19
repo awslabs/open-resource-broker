@@ -1,11 +1,11 @@
 """Domain value objects and services for filtering."""
 
+import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any
-import re
 from fnmatch import fnmatch
+from typing import Any
 
 
 class FilterOperator(Enum):

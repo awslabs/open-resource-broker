@@ -3,8 +3,8 @@
 from abc import ABC
 from typing import Any, Callable
 
-from domain.base.ports.logging_port import LoggingPort
 from domain.base import UnitOfWorkFactory
+from domain.base.ports.logging_port import LoggingPort
 
 
 class BaseQueryService(ABC):

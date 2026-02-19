@@ -1,7 +1,7 @@
 """CLI argument extraction utilities."""
 
-from typing import Any, Optional, List
 import argparse
+from typing import Any, List, Optional
 
 
 class ArgsExtractor:

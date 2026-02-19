@@ -3,8 +3,8 @@
 from typing import Any, Optional
 
 from application.queries.scheduler import (
-    ListSchedulerStrategiesQuery,
     GetSchedulerConfigurationQuery,
+    ListSchedulerStrategiesQuery,
     ValidateSchedulerConfigurationQuery,
 )
 

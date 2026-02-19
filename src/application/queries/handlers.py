@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
-from typing import Any, TypeVar
-
-from domain.services.timestamp_service import TimestampService
-from domain.services.generic_filter_service import GenericFilterService
+# Import for type hints
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from application.base.handlers import BaseQueryHandler
 from application.decorators import query_handler
 from application.dto.queries import (
+    GetConfigurationQuery,
     GetMachineQuery,
     GetRequestQuery,
     GetTemplateQuery,
@@ -19,25 +18,23 @@ from application.dto.queries import (
     ListTemplatesQuery,
     ValidateTemplateQuery,
 )
-from application.dto.queries import GetConfigurationQuery
-from application.request.queries import ListRequestsQuery
 from application.dto.responses import MachineDTO, RequestDTO
 from application.dto.system import ValidationDTO
+from application.request.queries import ListRequestsQuery
+from application.services.provider_registry_service import ProviderRegistryService
 from domain.base import UnitOfWorkFactory
 
 # Exception handling through BaseQueryHandler (Clean Architecture compliant)
 from domain.base.exceptions import EntityNotFoundError
 from domain.base.ports import ContainerPort, ErrorHandlingPort, LoggingPort
-from application.services.provider_registry_service import ProviderRegistryService
-
-# Import for type hints
-from typing import TYPE_CHECKING
+from domain.services.generic_filter_service import GenericFilterService
+from domain.services.timestamp_service import TimestampService
 
 if TYPE_CHECKING:
     pass
 from domain.template.factory import TemplateFactory, get_default_template_factory
-from infrastructure.di.buses import CommandBus
 from domain.template.template_aggregate import Template
+from infrastructure.di.buses import CommandBus
 from infrastructure.template.dtos import TemplateDTO
 
 T = TypeVar("T")
@@ -67,10 +64,10 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
         self.event_publisher = self._get_event_publisher()
 
         # Initialize services for SRP compliance
+        from application.factories.request_dto_factory import RequestDTOFactory
+        from application.services.machine_sync_service import MachineSyncService
         from application.services.request_query_service import RequestQueryService
         from application.services.request_status_service import RequestStatusService
-        from application.services.machine_sync_service import MachineSyncService
-        from application.factories.request_dto_factory import RequestDTOFactory
 
         self._query_service = RequestQueryService(uow_factory, logger)
         self._status_service = RequestStatusService(uow_factory, logger)
@@ -509,8 +506,8 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
 
     def _create_machine_from_aws_data(self, aws_instance: dict[str, Any], request):
         """Create machine aggregate using Pydantic validation with format detection."""
-        from domain.machine.machine_identifiers import MachineId
         from domain.machine.aggregate import Machine
+        from domain.machine.machine_identifiers import MachineId
 
         # Detect format and normalize to snake_case for Pydantic
         if "instance_id" in aws_instance:

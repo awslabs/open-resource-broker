@@ -71,7 +71,7 @@ repos:
 
       - id: validate-imports
         name: Validate Python Imports
-        entry: make ci-imports
+        entry: make ci-arch-imports
         language: system
         files: \.(py)$
         pass_filenames: false

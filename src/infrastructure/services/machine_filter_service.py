@@ -3,7 +3,7 @@
 import re
 from typing import Tuple
 
-from domain.services.filter_service import FilterService, MachineFilter, FilterOperator
+from domain.services.filter_service import FilterOperator, FilterService, MachineFilter
 
 
 class MachineFilterService(FilterService):

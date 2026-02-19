@@ -1,6 +1,7 @@
 """Request storage factory for creating request-specific storage strategies."""
 
 from typing import Any
+
 from infrastructure.storage.base.strategy import BaseStorageStrategy
 
 

@@ -13,7 +13,7 @@ from application.queries.storage import (
     ListStorageStrategiesQuery,
 )
 from application.services.storage_registry_service import StorageRegistryService
-from domain.base.ports import LoggingPort, ErrorHandlingPort
+from domain.base.ports import ErrorHandlingPort, LoggingPort
 from domain.services.generic_filter_service import GenericFilterService
 
 
@@ -45,8 +45,8 @@ class ListStorageStrategiesHandler(
             Storage strategies list response
         """
         # Access infrastructure through DI container
-        from infrastructure.di.container import get_container
         from config.managers.configuration_manager import ConfigurationManager
+        from infrastructure.di.container import get_container
 
         container = get_container()
         config_manager = container.get(ConfigurationManager)

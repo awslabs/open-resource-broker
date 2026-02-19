@@ -202,3 +202,84 @@ async def handle_stop_machines(args: "argparse.Namespace") -> dict[str, Any]:
         "stopped_machines": stopped_machines,
         "failed_machines": failed_machines,
     }
+
+
+@handle_interface_exceptions(context="start_machines", interface_type="cli")
+async def handle_start_machines(args: "argparse.Namespace") -> dict[str, Any]:
+    """
+    Handle start machines operations.
+
+    Args:
+        args: Argument namespace with machine_ids and all flags
+
+    Returns:
+        Start operation results
+    """
+    # Validation: Cannot use both --all and specific IDs
+    has_all = getattr(args, "all", False)
+    machine_ids_from_args = getattr(args, "machine_ids", []) or []
+
+    if has_all and machine_ids_from_args:
+        return {
+            "error": "Cannot use --all with specific machine IDs",
+            "message": "Use either --all or specific IDs, not both",
+        }
+
+    # Validation: Must specify either --all or specific IDs
+    if not has_all and not machine_ids_from_args:
+        return {
+            "error": "No machines specified",
+            "message": "Specify machine IDs or use --all",
+        }
+
+    container = get_container()
+    query_bus = container.get(QueryBus)
+
+    # Get machines to start
+    if has_all:
+        from application.dto.queries import ListMachinesQuery
+
+        query = ListMachinesQuery(status="stopped")
+        machine_dtos = await query_bus.execute(query)
+        machine_ids = [machine["machine_id"] for machine in machine_dtos]
+    else:
+        machine_ids = machine_ids_from_args
+
+    if not machine_ids:
+        return {
+            "success": True,
+            "message": "No machines to start",
+            "started_machines": [],
+        }
+
+    # Start machines using AWS instance manager
+    from providers.aws.managers.aws_instance_manager import AWSInstanceManager
+
+    instance_manager = container.get(AWSInstanceManager)
+    start_results = instance_manager.start_instances(machine_ids)
+
+    # Update machine status to "pending" for successfully started machines
+    from application.machine.commands import UpdateMachineStatusCommand
+    from infrastructure.di.buses import CommandBus
+
+    command_bus = container.get(CommandBus)
+
+    started_machines = []
+    failed_machines = []
+
+    for machine_id, success in start_results.items():
+        if success:
+            # Update status to pending (starting)
+            command = UpdateMachineStatusCommand(machine_id=machine_id, status="pending")
+            await command_bus.execute(command)
+            started_machines.append(machine_id)
+        else:
+            failed_machines.append(machine_id)
+
+    return {
+        "success": len(failed_machines) == 0,
+        "message": f"Started {len(started_machines)} machines"
+        + (f", failed to start {len(failed_machines)}" if failed_machines else ""),
+        "started_machines": started_machines,
+        "failed_machines": failed_machines,
+    }

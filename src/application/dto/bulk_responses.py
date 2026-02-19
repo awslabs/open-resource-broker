@@ -1,8 +1,10 @@
 """Bulk response DTOs for CQRS compliance."""
 
 from typing import List
+
 from pydantic import BaseModel
-from application.dto.responses import RequestDTO, MachineDTO
+
+from application.dto.responses import MachineDTO, RequestDTO
 from infrastructure.template.dtos import TemplateDTO
 
 

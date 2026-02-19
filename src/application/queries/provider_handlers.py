@@ -7,10 +7,6 @@ leveraging the Provider Registry for clean CQRS interfaces.
 import time
 from typing import Any
 
-from application.services.provider_registry_service import ProviderRegistryService
-from domain.services.timestamp_service import TimestampService
-from domain.services.generic_filter_service import GenericFilterService
-
 from application.base.handlers import BaseQueryHandler
 from application.decorators import query_handler
 from application.dto.system import (
@@ -25,7 +21,10 @@ from application.provider.queries import (
     GetProviderStrategyConfigQuery,
     ListAvailableProvidersQuery,
 )
+from application.services.provider_registry_service import ProviderRegistryService
 from domain.base.ports import ConfigurationPort, ErrorHandlingPort, LoggingPort
+from domain.services.generic_filter_service import GenericFilterService
+from domain.services.timestamp_service import TimestampService
 
 
 @query_handler(GetProviderHealthQuery)

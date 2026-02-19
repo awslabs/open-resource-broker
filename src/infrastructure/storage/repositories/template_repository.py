@@ -15,8 +15,8 @@ from infrastructure.storage.components import (
     EventPublisher,
     MemoryEntityCache,
     NoOpEventPublisher,
-    VersionManager,
     NoOpVersionManager,
+    VersionManager,
 )
 
 
@@ -235,16 +235,21 @@ class TemplateRepositoryImpl(TemplateRepositoryInterface):
     def save(self, template: Template) -> list[Any]:
         """Save template using storage strategy and return extracted events."""
         try:
-            # Increment version
-            version = self.version_manager.increment_version(str(template.template_id.value))
+            # Increment version - handle both string and TemplateId types
+            template_id_str = (
+                str(template.template_id.value)
+                if hasattr(template.template_id, "value")
+                else str(template.template_id)
+            )
+            version = self.version_manager.increment_version(template_id_str)
 
             # Save the template
             template_data = self.serializer.to_dict(template)
             template_data["version"] = version
-            self.storage_strategy.save(str(template.template_id.value), template_data)
+            self.storage_strategy.save(template_id_str, template_data)
 
             # Update cache
-            self.cache.put(str(template.template_id.value), template)
+            self.cache.put(template_id_str, template)
 
             # Extract and publish events
             events = template.get_domain_events()

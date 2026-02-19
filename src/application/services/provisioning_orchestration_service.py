@@ -1,7 +1,7 @@
 """Service for orchestrating provider provisioning operations."""
 
 from dataclasses import dataclass
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from application.services.provider_registry_service import ProviderRegistryService
@@ -42,8 +42,8 @@ class ProvisioningOrchestrationService:
     ) -> ProvisioningResult:
         """Execute provisioning via selected provider using registry execution."""
         try:
-            from domain.base.ports.scheduler_port import SchedulerPort
             from domain.base.ports.configuration_port import ConfigurationPort
+            from domain.base.ports.scheduler_port import SchedulerPort
             from providers.base.strategy import ProviderOperation, ProviderOperationType
 
             scheduler = self._container.get(SchedulerPort)

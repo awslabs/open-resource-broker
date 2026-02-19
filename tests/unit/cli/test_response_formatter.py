@@ -2,7 +2,8 @@
 
 import unittest
 from unittest.mock import Mock
-from application.dto.base import BaseResponse, BaseDTO
+
+from application.dto.base import BaseDTO, BaseResponse
 from cli.response_formatter import CLIResponseFormatter, create_cli_formatter
 
 

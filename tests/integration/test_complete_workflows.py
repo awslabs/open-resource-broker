@@ -13,7 +13,7 @@ import pytest
 try:
     from application.service import ApplicationService
     from domain.request.aggregate import Request
-    from infrastructure.persistence.repositories.request_repository import (
+    from infrastructure.storage.repositories.request_repository import (
         RequestRepository,
     )
 

@@ -9,7 +9,6 @@ This module provides registration functions for different scheduler strategies:
 
 from typing import TYPE_CHECKING, Any
 
-
 if TYPE_CHECKING:
     from domain.base.ports.scheduler_port import SchedulerPort
     from infrastructure.scheduler.registry import SchedulerRegistry

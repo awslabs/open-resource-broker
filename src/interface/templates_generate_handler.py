@@ -2,10 +2,10 @@
 
 from typing import Any, Dict
 
+from application.dto.template_generation_dto import TemplateGenerationRequest
+from application.services.template_generation_service import TemplateGenerationService
 from cli.console import print_info, print_success
 from infrastructure.di.container import get_container
-from application.services.template_generation_service import TemplateGenerationService
-from application.dto.template_generation_dto import TemplateGenerationRequest
 
 
 async def handle_templates_generate(args) -> Dict[str, Any]:

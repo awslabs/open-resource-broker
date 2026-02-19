@@ -2,7 +2,7 @@
 
 import json
 import re
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
 
 from cli.console import print_error, print_info, print_success
 from config.platform_dirs import get_config_location

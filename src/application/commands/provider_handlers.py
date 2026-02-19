@@ -7,7 +7,6 @@ integrating the existing provider strategy ecosystem with the CQRS architecture.
 import time
 from typing import Any
 
-from application.services.provider_registry_service import ProviderRegistryService
 from application.base.handlers import BaseCommandHandler
 from application.decorators import command_handler
 from application.provider.commands import (
@@ -17,6 +16,7 @@ from application.provider.commands import (
     SelectProviderStrategyCommand,
     UpdateProviderHealthCommand,
 )
+from application.services.provider_registry_service import ProviderRegistryService
 from domain.base.events.provider_events import (
     ProviderHealthChangedEvent,
     ProviderOperationExecutedEvent,

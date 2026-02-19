@@ -2,9 +2,10 @@
 
 from typing import Any, Dict, List
 
-from domain.base.ports import LoggingPort
 from domain.base import UnitOfWorkFactory
+from domain.base.ports import LoggingPort
 from domain.machine.aggregate import Machine
+
 from .provisioning_orchestration_service import ProvisioningResult
 
 
@@ -169,6 +170,7 @@ class RequestStatusManagementService:
     ) -> Machine:
         """Create machine aggregate from instance data."""
         from datetime import datetime
+
         from domain.base.value_objects import InstanceType
         from domain.machine.machine_identifiers import MachineId
         from domain.machine.machine_status import MachineStatus

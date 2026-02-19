@@ -4,11 +4,11 @@ from typing import Any
 
 from application.base.handlers import BaseCommandHandler
 from application.commands.system import (
-    ReloadProviderConfigCommand,
+    MCPValidateCommand,
     RefreshTemplatesCommand,
+    ReloadProviderConfigCommand,
     SetConfigurationCommand,
     TestStorageCommand,
-    MCPValidateCommand,
 )
 from application.decorators import command_handler
 from domain.base.ports import (

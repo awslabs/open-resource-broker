@@ -16,16 +16,16 @@ from domain.base.ports import LoggingPort
 # Import AWS-specific components
 from providers.aws.configuration.config import AWSProviderConfig
 from providers.aws.infrastructure.aws_client import AWSClient
-
-# Import focused services
-from providers.aws.services.instance_operation_service import AWSInstanceOperationService
+from providers.aws.services.capability_service import AWSCapabilityService
+from providers.aws.services.handler_registry import AWSHandlerRegistry
 from providers.aws.services.health_check_service import AWSHealthCheckService
-from providers.aws.services.template_validation_service import AWSTemplateValidationService
 from providers.aws.services.infrastructure_discovery_service import (
     AWSInfrastructureDiscoveryService,
 )
-from providers.aws.services.handler_registry import AWSHandlerRegistry
-from providers.aws.services.capability_service import AWSCapabilityService
+
+# Import focused services
+from providers.aws.services.instance_operation_service import AWSInstanceOperationService
+from providers.aws.services.template_validation_service import AWSTemplateValidationService
 
 if TYPE_CHECKING:
     from providers.aws.infrastructure.adapters.aws_provisioning_adapter import (
@@ -253,8 +253,8 @@ class AWSProviderStrategy(ProviderStrategy):
             return None
 
         try:
-            from infrastructure.di.container import get_container
             from domain.base.ports import ConfigurationPort
+            from infrastructure.di.container import get_container
 
             container = get_container()
             config_port = container.get(ConfigurationPort)
@@ -405,11 +405,12 @@ class AWSProviderStrategy(ProviderStrategy):
 
     def _create_image_resolution_service(self):
         """Create AWS image resolution service with provider-specific context."""
+        import os
+
+        from src.providers.aws.infrastructure.caching.aws_image_cache import AWSImageCache
         from src.providers.aws.infrastructure.services.aws_image_resolution_service import (
             AWSImageResolutionService,
         )
-        from src.providers.aws.infrastructure.caching.aws_image_cache import AWSImageCache
-        import os
 
         # Determine cache directory
         try:

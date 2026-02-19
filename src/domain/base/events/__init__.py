@@ -45,6 +45,16 @@ from .infrastructure_events import (
     ResourceUpdatedEvent,
 )
 
+# Provider events (Provider-agnostic)
+from .provider_events import (
+    ProviderConfigurationEvent,
+    ProviderCredentialsEvent,
+    ProviderHealthCheckEvent,
+    ProviderOperationEvent,
+    ProviderRateLimitEvent,
+    ProviderResourceStateChangedEvent,
+)
+
 # Storage events (Repository and storage)
 from .storage_events import (  # Repository operations; Storage strategy
     ConnectionPoolEvent,
@@ -60,16 +70,6 @@ from .storage_events import (  # Repository operations; Storage strategy
     StorageStrategySelectedEvent,
     TransactionCommittedEvent,
     TransactionStartedEvent,
-)
-
-# Provider events (Provider-agnostic)
-from .provider_events import (
-    ProviderConfigurationEvent,
-    ProviderCredentialsEvent,
-    ProviderHealthCheckEvent,
-    ProviderOperationEvent,
-    ProviderRateLimitEvent,
-    ProviderResourceStateChangedEvent,
 )
 
 # System events (Configuration, lifecycle, security, performance)

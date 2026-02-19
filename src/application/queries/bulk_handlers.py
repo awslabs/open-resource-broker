@@ -3,18 +3,18 @@
 from application.base.handlers import BaseQueryHandler
 from application.decorators import query_handler
 from application.dto.bulk_queries import (
+    GetMultipleMachinesQuery,
     GetMultipleRequestsQuery,
     GetMultipleTemplatesQuery,
-    GetMultipleMachinesQuery,
 )
 from application.dto.bulk_responses import (
+    BulkMachineResponse,
     BulkRequestResponse,
     BulkTemplateResponse,
-    BulkMachineResponse,
 )
+from domain.base import UnitOfWorkFactory
 from domain.base.exceptions import EntityNotFoundError
 from domain.base.ports import ContainerPort, ErrorHandlingPort, LoggingPort
-from domain.base import UnitOfWorkFactory
 
 
 @query_handler(GetMultipleRequestsQuery)
@@ -32,8 +32,8 @@ class GetMultipleRequestsHandler(BaseQueryHandler[GetMultipleRequestsQuery, Bulk
         self.uow_factory = uow_factory
         self._container = container
 
-        from application.services.request_query_service import RequestQueryService
         from application.factories.request_dto_factory import RequestDTOFactory
+        from application.services.request_query_service import RequestQueryService
 
         self._query_service = RequestQueryService(uow_factory, logger)
         self._dto_factory = RequestDTOFactory()
@@ -80,8 +80,8 @@ class GetMultipleTemplatesHandler(
         self.uow_factory = uow_factory
         self._container = container
 
-        from application.services.template_query_service import TemplateQueryService
         from application.factories.template_dto_factory import TemplateDTOFactory
+        from application.services.template_query_service import TemplateQueryService
 
         self._query_service = TemplateQueryService(uow_factory, logger)
         self._dto_factory = TemplateDTOFactory()
@@ -126,8 +126,8 @@ class GetMultipleMachinesHandler(BaseQueryHandler[GetMultipleMachinesQuery, Bulk
         self.uow_factory = uow_factory
         self._container = container
 
-        from application.services.machine_query_service import MachineQueryService
         from application.factories.machine_dto_factory import MachineDTOFactory
+        from application.services.machine_query_service import MachineQueryService
 
         self._query_service = MachineQueryService(uow_factory, logger)
         self._dto_factory = MachineDTOFactory()

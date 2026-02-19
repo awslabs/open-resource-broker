@@ -4,8 +4,9 @@ Tests for HTTPErrorResponseHandler.
 Verifies HTTP error response formatting for all exception types.
 """
 
-import pytest
 from http import HTTPStatus
+
+import pytest
 
 from domain.base.exceptions import (
     BusinessRuleViolationError,

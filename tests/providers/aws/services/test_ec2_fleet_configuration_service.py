@@ -1,7 +1,8 @@
 """Tests for EC2FleetConfigurationService."""
 
-import pytest
 from unittest.mock import Mock
+
+import pytest
 
 from domain.request.aggregate import Request
 from domain.request.value_objects import RequestId

@@ -1,7 +1,7 @@
 """Infrastructure service registrations for dependency injection."""
 
-from domain.base.ports.logging_port import LoggingPort
 from domain.base.ports.configuration_port import ConfigurationPort
+from domain.base.ports.logging_port import LoggingPort
 from domain.machine.repository import MachineRepository
 from domain.request.repository import RequestRepository
 from domain.template.repository import TemplateRepository
@@ -42,10 +42,10 @@ def _register_template_services(container: DIContainer):
     # Register template generation service
     def create_template_generation_service(c):
         """Create template generation service with injected dependencies."""
+        from application.services.provider_registry_service import ProviderRegistryService
         from application.services.template_generation_service import (
             TemplateGenerationService,
         )
-        from application.services.provider_registry_service import ProviderRegistryService
         from domain.base.ports.scheduler_port import SchedulerPort
 
         return TemplateGenerationService(
@@ -64,8 +64,8 @@ def _register_template_services(container: DIContainer):
         container: DIContainer,
     ) -> TemplateConfigurationManager:
         """Create TemplateConfigurationManager."""
-        from domain.base.ports.scheduler_port import SchedulerPort
         from application.services.provider_registry_service import ProviderRegistryService
+        from domain.base.ports.scheduler_port import SchedulerPort
 
         return TemplateConfigurationManager(
             config_manager=container.get(ConfigurationPort),

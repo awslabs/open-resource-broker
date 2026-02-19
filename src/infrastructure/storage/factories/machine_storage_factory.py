@@ -1,6 +1,7 @@
 """Machine storage factory for creating machine-specific storage strategies."""
 
 from typing import Any
+
 from infrastructure.storage.base.strategy import BaseStorageStrategy
 
 

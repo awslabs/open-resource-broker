@@ -6,14 +6,14 @@ from typing import TYPE_CHECKING, Any, Union
 if TYPE_CHECKING:
     pass
 
-from domain.base.ports.configuration_port import ConfigurationPort
-from domain.base.ports.logging_port import LoggingPort
 from application.dto.responses import MachineDTO
 from application.request.dto import RequestDTO
-from infrastructure.template.dtos import TemplateDTO
+from domain.base.ports.configuration_port import ConfigurationPort
+from domain.base.ports.logging_port import LoggingPort
 from infrastructure.scheduler.base.strategy import BaseSchedulerStrategy
 from infrastructure.scheduler.hostfactory.field_mapper import HostFactoryFieldMapper
 from infrastructure.scheduler.hostfactory.transformations import HostFactoryTransformations
+from infrastructure.template.dtos import TemplateDTO
 from infrastructure.utilities.common.serialization import serialize_enum
 
 
@@ -49,8 +49,8 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
     @property
     def template_defaults_service(self):
         if self._template_defaults_service is None:
-            from infrastructure.di.container import get_container, is_container_ready
             from domain.template.ports.template_defaults_port import TemplateDefaultsPort
+            from infrastructure.di.container import get_container, is_container_ready
 
             if is_container_ready():
                 self._template_defaults_service = get_container().get_optional(TemplateDefaultsPort)
@@ -213,8 +213,8 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
     def _get_provider_name(self) -> str:
         """Get the active provider instance name."""
         try:
-            from infrastructure.di.container import get_container
             from application.services.provider_registry_service import ProviderRegistryService
+            from infrastructure.di.container import get_container
 
             container = get_container()
             provider_service = container.get(ProviderRegistryService)
@@ -231,8 +231,8 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
     def _get_active_provider_type(self) -> str:
         """Get the active provider type from configuration."""
         try:
-            from infrastructure.di.container import get_container
             from application.services.provider_registry_service import ProviderRegistryService
+            from infrastructure.di.container import get_container
 
             container = get_container()
             provider_service = container.get(ProviderRegistryService)
@@ -507,8 +507,8 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         if not active_provider:
             # Get from provider registry instead of hardcoded default
             try:
-                from infrastructure.di.container import get_container
                 from application.services.provider_registry_service import ProviderRegistryService
+                from infrastructure.di.container import get_container
 
                 container = get_container()
                 provider_service = container.get(ProviderRegistryService)

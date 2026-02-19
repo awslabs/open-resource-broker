@@ -5,8 +5,8 @@ from typing import Any, Optional, Protocol, runtime_checkable
 
 from pydantic import BaseModel, ConfigDict
 
-from domain.machine.machine_identifiers import MachineId
 from domain.base.value_objects import InstanceType, Tags
+from domain.machine.machine_identifiers import MachineId
 
 
 class InstanceState(str, Enum):

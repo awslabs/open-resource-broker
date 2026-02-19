@@ -1,9 +1,9 @@
 """Request DTO factory for data transformation."""
 
-from domain.request.aggregate import Request
+from application.request.dto import MachineReferenceDTO, RequestDTO
 from domain.machine.aggregate import Machine
+from domain.request.aggregate import Request
 from domain.request.request_types import RequestType
-from application.request.dto import RequestDTO, MachineReferenceDTO
 
 
 class RequestDTOFactory:

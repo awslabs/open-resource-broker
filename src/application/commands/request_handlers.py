@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from typing import Any
 
-from application.services.provider_registry_service import ProviderRegistryService
-
 from application.base.handlers import BaseCommandHandler
 from application.decorators import command_handler
 from application.dto.commands import (
@@ -14,10 +12,10 @@ from application.dto.commands import (
     CreateRequestCommand,
     CreateReturnRequestCommand,
     PopulateMachineIdsCommand,
-    UpdateRequestStatusCommand,
     SyncRequestCommand,
+    UpdateRequestStatusCommand,
 )
-
+from application.services.provider_registry_service import ProviderRegistryService
 from domain.base import UnitOfWorkFactory
 from domain.base.exceptions import EntityNotFoundError
 from domain.base.ports import (
@@ -52,10 +50,10 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, str])
         self._provider_registry_service = provider_registry_service
 
         # Initialize services
-        from application.services.request_creation_service import RequestCreationService
         from application.services.provisioning_orchestration_service import (
             ProvisioningOrchestrationService,
         )
+        from application.services.request_creation_service import RequestCreationService
         from application.services.request_status_management_service import (
             RequestStatusManagementService,
         )
@@ -240,9 +238,10 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
         self.logger.info("Creating return request for machines: %s", command.machine_ids)
 
         try:
-            from domain.request.aggregate import Request
-            from domain.base.exceptions import EntityNotFoundError
             from collections import defaultdict
+
+            from domain.base.exceptions import EntityNotFoundError
+            from domain.request.aggregate import Request
 
             # Group machines by provider to handle multi-provider returns
             provider_groups = defaultdict(list)

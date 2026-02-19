@@ -6,10 +6,10 @@ from infrastructure.storage.base import (
     StrategyBasedRepository,
     StrategyUnitOfWork,
 )
+from infrastructure.storage.factory import StorageStrategyFactory
 
 # Registry and factory are now in this module
 from infrastructure.storage.registry import StorageRegistry
-from infrastructure.storage.factory import StorageStrategyFactory
 
 __all__: list[str] = [
     "BaseUnitOfWork",

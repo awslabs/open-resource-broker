@@ -1,7 +1,7 @@
 """AWS Infrastructure Discovery Service - Handles infrastructure discovery operations."""
 
-from typing import Any, Optional
 from dataclasses import dataclass
+from typing import Any, Optional
 
 import boto3
 
@@ -320,7 +320,7 @@ class AWSInfrastructureDiscoveryService:
     ) -> dict[str, Any]:
         """Discover AWS infrastructure interactively."""
         try:
-            from cli.console import print_info, print_error, print_success
+            from cli.console import print_error, print_info, print_success
 
             provider_config.get("config", {})  # config extracted but not used
 
@@ -406,7 +406,7 @@ class AWSInfrastructureDiscoveryService:
     def validate_infrastructure(self, provider_config: dict[str, Any]) -> dict[str, Any]:
         """Validate AWS infrastructure configuration."""
         try:
-            from cli.console import print_info, print_success, print_error
+            from cli.console import print_error, print_info, print_success
 
             provider_config.get("config", {})  # config extracted but not used
             template_defaults = provider_config.get("template_defaults", {})

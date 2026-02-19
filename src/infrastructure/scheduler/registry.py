@@ -3,7 +3,6 @@
 from typing import Any, Callable
 
 from domain.base.exceptions import ConfigurationError
-
 from infrastructure.registry.base_registry import BaseRegistration, BaseRegistry, RegistryMode
 
 

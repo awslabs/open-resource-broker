@@ -9,10 +9,10 @@ from application.dto.responses import ReturnRequestResponse
 from application.request.queries import ListRequestsQuery
 from config import RequestConfig
 from config.managers.configuration_manager import ConfigurationManager
-from infrastructure.di.container import get_container
 from domain.base.dependency_injection import injectable
 from domain.base.ports import ErrorHandlingPort, LoggingPort
 from domain.base.ports.scheduler_port import SchedulerPort
+from infrastructure.di.container import get_container
 
 # Exception handling infrastructure
 from infrastructure.error.decorators import handle_interface_exceptions

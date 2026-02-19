@@ -2,7 +2,7 @@
 
 import configparser
 from pathlib import Path
-from typing import List, Dict
+from typing import Dict, List
 
 
 def get_available_profiles() -> List[Dict[str, str]]:

@@ -3,6 +3,7 @@
 from typing import Optional
 
 from pydantic import Field
+
 from application.dto.base import BaseQuery
 
 

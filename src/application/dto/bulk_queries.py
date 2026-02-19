@@ -1,7 +1,9 @@
 """Bulk query DTOs for CQRS compliance."""
 
-from typing import Optional, List
+from typing import List, Optional
+
 from pydantic import BaseModel, ConfigDict
+
 from application.interfaces.command_query import Query
 
 

@@ -1,12 +1,14 @@
 """Tests for AWS AMI resolver caching functionality."""
 
-import pytest
-import time
-import tempfile
 import os
-from unittest.mock import patch, MagicMock
-from src.providers.aws.domain.services.ami_resolver import AWSAMIResolver
+import tempfile
+import time
+from unittest.mock import MagicMock, patch
+
+import pytest
+
 from src.infrastructure.caching.ami_cache_service import AMICacheService
+from src.providers.aws.domain.services.ami_resolver import AWSAMIResolver
 
 
 class TestAMICacheService:

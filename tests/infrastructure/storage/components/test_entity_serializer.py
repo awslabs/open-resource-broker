@@ -1,8 +1,9 @@
 """Tests for EntitySerializer component."""
 
-import pytest
 from dataclasses import dataclass
 from typing import Any, Dict
+
+import pytest
 
 from infrastructure.storage.components.entity_serializer import (
     BaseEntitySerializer,

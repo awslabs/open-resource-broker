@@ -2,7 +2,7 @@
 
 from typing import Any, Optional
 
-from domain.base.value_objects import InstanceId
+from domain.machine.machine_identifiers import MachineId
 from infrastructure.interfaces.provider import ProviderConfig, ProviderPort
 
 
@@ -39,7 +39,7 @@ class MockProvider(ProviderPort):
         """Configure mock responses for testing."""
         self._responses[operation] = response
 
-    def create_instances(self, template_config: dict[str, Any], count: int) -> list[InstanceId]:
+    def create_instances(self, template_config: dict[str, Any], count: int) -> list[MachineId]:
         """Create mock instances."""
         if "create_instances" in self._responses:
             return self._responses["create_instances"]
@@ -48,7 +48,7 @@ class MockProvider(ProviderPort):
         instance_ids = []
         for _i in range(count):
             self._instance_counter += 1
-            instance_id = InstanceId(value=f"mock-{self._instance_counter:04d}")
+            instance_id = MachineId(value=f"mock-{self._instance_counter:04d}")
             instance_ids.append(instance_id)
 
             # Track instance state
@@ -62,7 +62,7 @@ class MockProvider(ProviderPort):
 
         return instance_ids
 
-    def terminate_instances(self, instance_ids: list[InstanceId]) -> bool:
+    def terminate_instances(self, instance_ids: list[MachineId]) -> bool:
         """Terminate mock instances."""
         if "terminate_instances" in self._responses:
             return self._responses["terminate_instances"]
@@ -74,7 +74,7 @@ class MockProvider(ProviderPort):
 
         return True
 
-    def get_instance_status(self, instance_ids: list[InstanceId]) -> dict[InstanceId, str]:
+    def get_instance_status(self, instance_ids: list[MachineId]) -> dict[MachineId, str]:
         """Get mock instance status."""
         if "get_instance_status" in self._responses:
             return self._responses["get_instance_status"]

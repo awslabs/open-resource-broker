@@ -14,11 +14,11 @@ from config.schemas.provider_strategy_schema import (
 from domain.base.exceptions import ConfigurationError
 from domain.base.ports import ConfigurationPort, LoggingPort
 from infrastructure.error.decorators import handle_infrastructure_exceptions
+from providers.base.strategy.provider_strategy import ProviderStrategy
 from providers.registry import (
     UnsupportedProviderError,
     get_provider_registry,
 )
-from providers.base.strategy.provider_strategy import ProviderStrategy
 
 
 class ProviderCreationError(Exception):

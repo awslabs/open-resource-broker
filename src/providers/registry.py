@@ -1,12 +1,11 @@
 """Provider Registry - Registry pattern for provider strategy factories."""
 
-from abc import ABC, abstractmethod
-from typing import Any, Callable, Optional, List
-import threading
 import importlib
+import threading
+from abc import ABC, abstractmethod
+from typing import Any, Callable, List, Optional
 
 from domain.base.exceptions import ConfigurationError
-
 from infrastructure.registry.base_registry import BaseRegistration, BaseRegistry, RegistryMode
 
 
@@ -109,8 +108,8 @@ class ProviderRegistry(BaseRegistry):
             if config is None:
                 # Get the provider instance config from configuration manager
                 try:
-                    from infrastructure.di.container import get_container
                     from domain.base.ports.configuration_port import ConfigurationPort
+                    from infrastructure.di.container import get_container
 
                     container = get_container()
                     config_port = container.get(ConfigurationPort)
@@ -743,8 +742,8 @@ class ProviderRegistry(BaseRegistry):
     def _get_config_port(self) -> Optional[Any]:
         """Get configuration port from DI container using lazy injection."""
         try:
-            from infrastructure.di.container import get_container
             from domain.base.ports.configuration_port import ConfigurationPort
+            from infrastructure.di.container import get_container
 
             container = get_container()
             return container.get(ConfigurationPort)

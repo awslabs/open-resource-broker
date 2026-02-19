@@ -1,9 +1,9 @@
 """Scheduler service registrations for dependency injection."""
 
 from domain.base.ports import ConfigurationPort
-from infrastructure.scheduler.factory import SchedulerStrategyFactory
-from infrastructure.logging.logger import get_logger
 from infrastructure.di.container import DIContainer
+from infrastructure.logging.logger import get_logger
+from infrastructure.scheduler.factory import SchedulerStrategyFactory
 
 
 def register_scheduler_services(container: DIContainer) -> None:

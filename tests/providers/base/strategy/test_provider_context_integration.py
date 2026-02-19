@@ -3,9 +3,9 @@
 from unittest.mock import Mock
 
 import pytest
+from providers.base.strategy.provider_context import ProviderContext
 
 from domain.base.ports import LoggingPort
-from providers.base.strategy.provider_context import ProviderContext
 from providers.base.strategy.provider_strategy import (
     ProviderOperation,
     ProviderOperationType,

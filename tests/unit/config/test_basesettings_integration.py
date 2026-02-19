@@ -1,7 +1,7 @@
 """Comprehensive tests for BaseSettings integration."""
 
 import os
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 
 class TestBaseSettingsIntegrationConcepts:

@@ -4,8 +4,9 @@ Tests for ExceptionTypeMapper.
 Tests handler registration, lookup, MRO resolution, and caching behavior.
 """
 
-import pytest
 from unittest.mock import Mock
+
+import pytest
 
 from infrastructure.error.exception_type_mapper import ExceptionTypeMapper
 

@@ -1,4 +1,5 @@
 from typing import Any
+
 from domain.base.ports.logging_port import LoggingPort
 from infrastructure.storage.registry import StorageRegistry
 

@@ -1,10 +1,10 @@
 """Integration tests showing utilities working with ExceptionHandler."""
 
-from domain.base.exceptions import ValidationError, EntityNotFoundError
-from infrastructure.error.exception_handler import ExceptionHandler, ExceptionContext
+from domain.base.exceptions import EntityNotFoundError, ValidationError
+from infrastructure.error.exception_handler import ExceptionContext, ExceptionHandler
 from infrastructure.error.utilities import (
-    format_error_message,
     build_error_context,
+    format_error_message,
     format_stack_trace,
     generate_error_code,
 )

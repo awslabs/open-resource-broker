@@ -2,6 +2,7 @@
 
 from typing import Any, Optional
 
+from application.dto.bulk_queries import GetMultipleRequestsQuery
 from application.dto.commands import (
     CancelRequestCommand,
     CreateRequestCommand,
@@ -12,7 +13,6 @@ from application.dto.queries import (
     ListActiveRequestsQuery,
     ListReturnRequestsQuery,
 )
-from application.dto.bulk_queries import GetMultipleRequestsQuery
 from application.request.queries import ListRequestsQuery
 
 

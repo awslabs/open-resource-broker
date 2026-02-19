@@ -17,8 +17,8 @@ def test_scheduler_selection():
     print("=== Testing Scheduler Selection ===")
 
     # Step 1: Get initial configuration
-    from infrastructure.di.container import get_container
     from domain.base.ports.configuration_port import ConfigurationPort
+    from infrastructure.di.container import get_container
 
     container = get_container()
     config = container.get(ConfigurationPort)

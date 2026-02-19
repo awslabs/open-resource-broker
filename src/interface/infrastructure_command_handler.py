@@ -84,8 +84,8 @@ async def handle_infrastructure_validate(args) -> Dict[str, Any]:
 async def _discover_provider_infrastructure(provider: Dict[str, Any], args) -> Dict[str, Any]:
     """Discover infrastructure for a provider using strategy pattern."""
     try:
-        from infrastructure.di.container import get_container
         from domain.base.ports.provider_port import ProviderPort
+        from infrastructure.di.container import get_container
 
         container = get_container()
         provider_strategy = container.get(ProviderPort)
@@ -138,8 +138,8 @@ def _show_provider_infrastructure(provider: Dict[str, Any]) -> None:
 async def _validate_provider_infrastructure(provider: Dict[str, Any]) -> Dict[str, Any]:
     """Validate infrastructure for a provider using strategy pattern."""
     try:
-        from infrastructure.di.container import get_container
         from domain.base.ports.provider_port import ProviderPort
+        from infrastructure.di.container import get_container
 
         container = get_container()
         provider_strategy = container.get(ProviderPort)
@@ -213,8 +213,8 @@ def _get_active_providers_with_overrides() -> List[Dict[str, Any]]:
 
     # Apply global overrides
     try:
-        from infrastructure.di.container import get_container
         from domain.base.ports.configuration_port import ConfigurationPort
+        from infrastructure.di.container import get_container
 
         container = get_container()
         config = container.get(ConfigurationPort)

@@ -4,7 +4,6 @@ from abc import ABC, abstractmethod
 from typing import Any, Callable, Optional
 
 from domain.base.exceptions import ConfigurationError
-
 from infrastructure.registry.base_registry import BaseRegistration, BaseRegistry, RegistryMode
 
 

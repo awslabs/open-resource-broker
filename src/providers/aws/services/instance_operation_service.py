@@ -6,10 +6,10 @@ from domain.base.ports import LoggingPort
 from providers.base.strategy import ProviderOperation, ProviderResult
 
 if TYPE_CHECKING:
-    from providers.aws.infrastructure.aws_client import AWSClient
     from providers.aws.infrastructure.adapters.aws_provisioning_adapter import (
         AWSProvisioningAdapter,
     )
+    from providers.aws.infrastructure.aws_client import AWSClient
 
 
 class AWSInstanceOperationService:

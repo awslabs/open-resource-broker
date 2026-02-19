@@ -1,10 +1,10 @@
 """AWS implementation of image resolution service."""
 
-from src.domain.services.image_resolution_service import ImageResolutionService
-from src.domain.exceptions.image_resolution_error import ImageResolutionError
-from src.providers.aws.infrastructure.caching.aws_image_cache import AWSImageCache
 from src.domain.base.ports.logging_port import LoggingPort
+from src.domain.exceptions.image_resolution_error import ImageResolutionError
+from src.domain.services.image_resolution_service import ImageResolutionService
 from src.providers.aws.infrastructure.aws_client import AWSClient
+from src.providers.aws.infrastructure.caching.aws_image_cache import AWSImageCache
 
 
 class AWSImageResolutionService(ImageResolutionService):

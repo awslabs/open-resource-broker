@@ -57,8 +57,8 @@ class AWSValidationAdapter(BaseProviderValidationAdapter):
         """
         try:
             # Get supported APIs from configuration
-            from infrastructure.di.container import get_container
             from config.managers.configuration_manager import ConfigurationManager
+            from infrastructure.di.container import get_container
 
             container = get_container()
             config_manager = container.get(ConfigurationManager)
@@ -102,8 +102,8 @@ class AWSValidationAdapter(BaseProviderValidationAdapter):
         """
         try:
             # Get supported APIs from configuration
-            from infrastructure.di.container import get_container
             from config.managers.configuration_manager import ConfigurationManager
+            from infrastructure.di.container import get_container
 
             container = get_container()
             config_manager = container.get(ConfigurationManager)
@@ -184,8 +184,8 @@ class AWSValidationAdapter(BaseProviderValidationAdapter):
 
         try:
             # Get fleet types from configuration
-            from infrastructure.di.container import get_container
             from config.managers.configuration_manager import ConfigurationManager
+            from infrastructure.di.container import get_container
 
             container = get_container()
             config_manager = container.get(ConfigurationManager)

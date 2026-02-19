@@ -12,7 +12,6 @@ import pytest
 
 from application.commands.request_handlers import CreateMachineRequestHandler
 from application.dto.commands import CreateRequestCommand
-from application.services.provider_capability_service import ProviderCapabilityService
 from application.services.provider_selection_service import ProviderSelectionService
 from domain.base import UnitOfWorkFactory
 from domain.base.ports import (
@@ -113,10 +112,12 @@ class TestCQRSArchitectureIntegration:
     @pytest.fixture
     def mock_provider_capability_service(self):
         """Create mock provider capability service."""
-        service = Mock(spec=ProviderCapabilityService)
+        service = Mock()  # Remove spec since ProviderCapabilityService was removed
 
         # Mock validation result
-        from application.services.provider_capability_service import ValidationResult
+        from application.services.provider_registry_service import (
+            ProviderRegistryService as ValidationResult,
+        )
 
         validation_result = ValidationResult(
             is_valid=True,

@@ -1,10 +1,11 @@
 """AWS AMI Resolution service for AWS provider."""
 
+import hashlib
 import json
 import os
 import time
-import hashlib
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
+
 from domain.template.image_resolver import ImageResolver
 
 

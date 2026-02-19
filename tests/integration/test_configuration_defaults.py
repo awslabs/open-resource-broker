@@ -20,7 +20,7 @@ def test_template_defaults_integration():
         )
         from config.manager import ConfigurationManager
         from infrastructure.logging.logger import get_logger
-        from infrastructure.persistence.repositories.template_repository import (
+        from infrastructure.storage.repositories.template_repository import (
             TemplateSerializer,
         )
 
@@ -81,7 +81,7 @@ def test_template_defaults_precedence():
         )
         from config.manager import ConfigurationManager
         from infrastructure.logging.logger import get_logger
-        from infrastructure.persistence.repositories.template_repository import (
+        from infrastructure.storage.repositories.template_repository import (
             TemplateSerializer,
         )
 

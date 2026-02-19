@@ -15,6 +15,7 @@ from application.commands.machine_handlers import (
 )
 from domain.base.ports.logging_port import LoggingPort
 from infrastructure.di.buses import CommandBus
+
 # Provider Context removed - using Provider Registry instead
 
 if TYPE_CHECKING:

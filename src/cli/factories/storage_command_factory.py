@@ -3,9 +3,9 @@
 from typing import Any, Optional
 
 from application.queries.storage import (
-    ListStorageStrategiesQuery,
     GetStorageHealthQuery,
     GetStorageMetricsQuery,
+    ListStorageStrategiesQuery,
 )
 
 

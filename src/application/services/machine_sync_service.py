@@ -1,14 +1,14 @@
 """Machine sync service for provider integration."""
 
-from typing import Tuple, TYPE_CHECKING
+from typing import TYPE_CHECKING, Tuple
 
 if TYPE_CHECKING:
     pass
 
-from domain.base.ports.logging_port import LoggingPort
 from domain.base.ports.container_port import ContainerPort
-from domain.request.aggregate import Request
+from domain.base.ports.logging_port import LoggingPort
 from domain.machine.aggregate import Machine
+from domain.request.aggregate import Request
 from infrastructure.di.buses import CommandBus
 
 
@@ -56,8 +56,8 @@ class MachineSyncService:
     ) -> Tuple[list[Machine], dict]:
         """Fetch machines from provider."""
         try:
-            from providers.base.strategy import ProviderOperation, ProviderOperationType
             from domain.base.ports.configuration_port import ConfigurationPort
+            from providers.base.strategy import ProviderOperation, ProviderOperationType
 
             # Use resource-level discovery when available (handles scaling/replacement)
             if request.resource_ids:
@@ -141,6 +141,7 @@ class MachineSyncService:
         self, processed_data: dict, request: Request
     ) -> Machine:
         from datetime import datetime
+
         from domain.base.value_objects import InstanceType
         from domain.machine.machine_identifiers import MachineId
         from domain.machine.machine_status import MachineStatus

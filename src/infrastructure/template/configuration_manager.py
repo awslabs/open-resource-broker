@@ -28,8 +28,8 @@ from .services.template_storage_service import TemplateStorageService
 from .template_cache_service import TemplateCacheService, create_template_cache_service
 
 if TYPE_CHECKING:
-    from application.services.template_defaults_service import TemplateDefaultsService
     from application.services.provider_registry_service import ProviderRegistryService
+    from application.services.template_defaults_service import TemplateDefaultsService
 
 
 class TemplateConfigurationError(DomainException):
@@ -230,8 +230,8 @@ class TemplateConfigurationManager:
             from providers.registry import get_provider_registry
 
             get_provider_registry()
-            from infrastructure.di.container import get_container
             from application.services.provider_registry_service import ProviderRegistryService
+            from infrastructure.di.container import get_container
 
             container = get_container()
             provider_service = container.get(ProviderRegistryService)

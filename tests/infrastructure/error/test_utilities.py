@@ -1,9 +1,9 @@
 """Tests for error handling utilities."""
 
-from domain.base.exceptions import ValidationError, EntityNotFoundError
+from domain.base.exceptions import EntityNotFoundError, ValidationError
 from infrastructure.error.utilities import (
-    format_error_message,
     build_error_context,
+    format_error_message,
     format_stack_trace,
     generate_error_code,
 )

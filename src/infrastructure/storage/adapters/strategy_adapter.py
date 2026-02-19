@@ -2,11 +2,11 @@
 
 from typing import Any, Optional, Union
 
+from ..base.strategy import StorageStrategy
+from ..interfaces.batch_storage import BatchStorage
 from ..interfaces.storage_reader import StorageReader
 from ..interfaces.storage_writer import StorageWriter
-from ..interfaces.batch_storage import BatchStorage
 from ..interfaces.transactional_storage import TransactionalStorage
-from ..base.strategy import StorageStrategy
 
 
 class StorageStrategyAdapter(StorageReader, StorageWriter, BatchStorage, TransactionalStorage):

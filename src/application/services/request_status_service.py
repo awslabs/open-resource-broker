@@ -2,10 +2,10 @@
 
 from typing import Optional, Tuple
 
-from domain.base.ports.logging_port import LoggingPort
 from domain.base import UnitOfWorkFactory
-from domain.request.aggregate import Request
+from domain.base.ports.logging_port import LoggingPort
 from domain.machine.aggregate import Machine
+from domain.request.aggregate import Request
 from domain.request.request_types import RequestStatus, RequestType
 
 

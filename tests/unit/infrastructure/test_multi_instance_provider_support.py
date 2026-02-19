@@ -3,12 +3,12 @@
 from unittest.mock import Mock, patch
 
 import pytest
+from src.infrastructure.registry.provider_registry import ProviderRegistry
 
 from src.config.schemas.provider_strategy_schema import (
     ProviderConfig,
     ProviderInstanceConfig,
 )
-from src.infrastructure.registry.provider_registry import ProviderRegistry
 
 
 class TestMultiInstanceProviderSupport:

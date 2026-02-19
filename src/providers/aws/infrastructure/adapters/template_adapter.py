@@ -265,8 +265,8 @@ class AWSTemplateAdapter(TemplateAdapterPort):
     def get_supported_provider_apis(self) -> list[str]:
         """Get the list of provider APIs supported by this adapter."""
         try:
-            from infrastructure.di.container import get_container
             from config.managers.configuration_manager import ConfigurationManager
+            from infrastructure.di.container import get_container
 
             container = get_container()
             config_manager = container.get(ConfigurationManager)

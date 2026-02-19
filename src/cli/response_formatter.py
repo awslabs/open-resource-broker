@@ -5,11 +5,11 @@ Handles formatting of CQRS Command/Query results, direct function results,
 errors, and different output formats with scheduler strategy integration.
 """
 
-from typing import Any, Optional, Union
 import traceback
+from typing import Any, Optional, Union
 
+from application.dto.base import BaseDTO, BaseResponse
 from cli.formatters import format_output
-from application.dto.base import BaseResponse, BaseDTO
 
 
 class CLIResponseFormatter:

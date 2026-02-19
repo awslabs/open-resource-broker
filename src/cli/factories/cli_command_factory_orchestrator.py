@@ -2,13 +2,13 @@
 
 from typing import Any
 
-from .template_command_factory import TemplateCommandFactory
-from .request_command_factory import RequestCommandFactory
 from .machine_command_factory import MachineCommandFactory
-from .system_command_factory import SystemCommandFactory
 from .provider_command_factory import ProviderCommandFactory
-from .storage_command_factory import StorageCommandFactory
+from .request_command_factory import RequestCommandFactory
 from .scheduler_command_factory import SchedulerCommandFactory
+from .storage_command_factory import StorageCommandFactory
+from .system_command_factory import SystemCommandFactory
+from .template_command_factory import TemplateCommandFactory
 from .utility_command_factory import UtilityCommandFactory
 
 

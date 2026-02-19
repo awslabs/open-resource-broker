@@ -1,9 +1,9 @@
 """Unit tests for provider configuration."""
 
 import os
-import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
+import pytest
 
 from config.schemas.provider_strategy_schema import (
     CircuitBreakerConfig,

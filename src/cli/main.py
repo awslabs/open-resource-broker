@@ -819,9 +819,9 @@ async def execute_command(args, app, resource_parsers) -> Union[str, tuple[str, 
 
     if args.resource == "mcp" and args.action == "tools":
         from interface.mcp_command_handlers import (
-            handle_mcp_tools_list,
             handle_mcp_tools_call,
             handle_mcp_tools_info,
+            handle_mcp_tools_list,
         )
 
         tools_action = getattr(args, "tools_action", None)
@@ -841,12 +841,12 @@ async def execute_command(args, app, resource_parsers) -> Union[str, tuple[str, 
         return formatter.format_response(result, args)
 
     # Use pure CQRS pattern for all other commands
-    from infrastructure.di.container import get_container
-    from infrastructure.di.buses import CommandBus, QueryBus
-    from domain.base.ports.scheduler_port import SchedulerPort
-    from cli.command_factory import cli_command_factory
     from application.interfaces.command_query import Command
+    from cli.command_factory import cli_command_factory
     from cli.response_formatter import create_cli_formatter
+    from domain.base.ports.scheduler_port import SchedulerPort
+    from infrastructure.di.buses import CommandBus, QueryBus
+    from infrastructure.di.container import get_container
 
     container = get_container()
     command_bus = container.get(CommandBus)
@@ -878,11 +878,11 @@ async def execute_command(args, app, resource_parsers) -> Union[str, tuple[str, 
     ):
         from interface.provider_config_handler import (
             handle_provider_add,
-            handle_provider_remove,
-            handle_provider_update,
-            handle_provider_set_default,
             handle_provider_get_default,
+            handle_provider_remove,
+            handle_provider_set_default,
             handle_provider_show,
+            handle_provider_update,
         )
 
         if args.action == "add":
@@ -1088,8 +1088,8 @@ async def main() -> None:
         if hasattr(args, "scheduler") and args.scheduler:
             try:
                 # Use DI container's ConfigurationPort for consistency
-                from infrastructure.di.container import get_container
                 from domain.base.ports.configuration_port import ConfigurationPort
+                from infrastructure.di.container import get_container
 
                 container = get_container()
                 config = container.get(ConfigurationPort)
@@ -1103,8 +1103,8 @@ async def main() -> None:
         if hasattr(args, "provider") and args.provider:
             try:
                 # Use DI container's ConfigurationPort for consistency
-                from infrastructure.di.container import get_container
                 from domain.base.ports.configuration_port import ConfigurationPort
+                from infrastructure.di.container import get_container
 
                 container = get_container()
                 config = container.get(ConfigurationPort)
@@ -1116,8 +1116,8 @@ async def main() -> None:
         # Handle global AWS overrides
         if hasattr(args, "region") and args.region:
             try:
-                from infrastructure.di.container import get_container
                 from domain.base.ports.configuration_port import ConfigurationPort
+                from infrastructure.di.container import get_container
 
                 container = get_container()
                 config = container.get(ConfigurationPort)
@@ -1128,8 +1128,8 @@ async def main() -> None:
 
         if hasattr(args, "profile") and args.profile:
             try:
-                from infrastructure.di.container import get_container
                 from domain.base.ports.configuration_port import ConfigurationPort
+                from infrastructure.di.container import get_container
 
                 container = get_container()
                 config = container.get(ConfigurationPort)
@@ -1254,8 +1254,8 @@ async def main() -> None:
             # Restore original overrides if they were active
             if scheduler_override_active:
                 try:
-                    from infrastructure.di.container import get_container
                     from domain.base.ports.configuration_port import ConfigurationPort
+                    from infrastructure.di.container import get_container
 
                     container = get_container()
                     config = container.get(ConfigurationPort)

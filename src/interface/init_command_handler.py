@@ -10,9 +10,9 @@ from cli.console import (
     print_command,
     print_error,
     print_info,
+    print_newline,
     print_separator,
     print_success,
-    print_newline,
 )
 from config.platform_dirs import (
     get_config_location,
@@ -104,8 +104,8 @@ async def handle_init(args) -> int:
 
 def _get_available_schedulers() -> list[dict[str, str]]:
     """Get available schedulers from registry."""
-    from infrastructure.scheduler.registry import get_scheduler_registry
     from infrastructure.scheduler.registration import register_all_scheduler_types
+    from infrastructure.scheduler.registry import get_scheduler_registry
 
     registry = get_scheduler_registry()
     scheduler_types = registry.get_available_types_with_registration(register_all_scheduler_types)

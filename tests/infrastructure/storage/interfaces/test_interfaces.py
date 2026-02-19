@@ -1,17 +1,18 @@
 """Tests for segregated storage interfaces."""
 
-import pytest
 from typing import Any, Optional, Union
 from unittest.mock import Mock
 
-from infrastructure.storage.interfaces import (
-    StorageReader,
-    StorageWriter,
-    BatchStorage,
-    TransactionalStorage,
-)
+import pytest
+
 from infrastructure.storage.adapters.strategy_adapter import StorageStrategyAdapter
 from infrastructure.storage.base.strategy import BaseStorageStrategy, StorageStrategy
+from infrastructure.storage.interfaces import (
+    BatchStorage,
+    StorageReader,
+    StorageWriter,
+    TransactionalStorage,
+)
 
 
 class MockStorageStrategy(BaseStorageStrategy):

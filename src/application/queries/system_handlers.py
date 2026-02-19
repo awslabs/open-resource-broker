@@ -2,9 +2,6 @@
 
 from typing import TYPE_CHECKING, Any
 
-from domain.base import UnitOfWorkFactory
-from domain.services.timestamp_service import TimestampService
-
 from application.base.handlers import BaseQueryHandler
 from application.decorators import query_handler
 from application.dto.system import (
@@ -21,7 +18,9 @@ from application.queries.system import (
     GetSystemStatusQuery,
     ValidateProviderConfigQuery,
 )
+from domain.base import UnitOfWorkFactory
 from domain.base.ports import ContainerPort, ErrorHandlingPort, LoggingPort
+from domain.services.timestamp_service import TimestampService
 
 # Use TYPE_CHECKING to avoid direct infrastructure imports
 if TYPE_CHECKING:
@@ -47,8 +46,8 @@ class GetConfigurationSectionHandler(
             Configuration section response
         """
         # Access configuration through DI container
-        from infrastructure.di.container import get_container
         from config.managers.configuration_manager import ConfigurationManager
+        from infrastructure.di.container import get_container
 
         container = get_container()
         config_manager = container.get(ConfigurationManager)
