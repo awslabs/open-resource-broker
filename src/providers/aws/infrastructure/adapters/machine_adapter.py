@@ -205,6 +205,10 @@ class AWSMachineAdapter:
                         if aws_instance_data.get("InstanceLifecycle") == "spot"
                         else PriceType.ON_DEMAND.value
                     ),
+                    "subnet_id": aws_instance_data.get("SubnetId"),
+                    "security_group_ids": [
+                        sg["GroupId"] for sg in aws_instance_data.get("SecurityGroups", [])
+                    ],
                     "metadata": {
                         "availability_zone": aws_instance_data["Placement"]["AvailabilityZone"],
                         "subnet_id": aws_instance_data["SubnetId"],

@@ -170,6 +170,8 @@ class MachineSyncService:
             private_dns_name=processed_data.get("private_dns_name"),
             public_dns_name=processed_data.get("public_dns_name"),
             launch_time=launch_time,
+            subnet_id=processed_data.get("subnet_id"),
+            security_group_ids=processed_data.get("security_group_ids", []),
             metadata=processed_data.get("metadata", {}),
         )
 

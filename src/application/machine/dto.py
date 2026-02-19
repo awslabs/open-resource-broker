@@ -79,7 +79,7 @@ class MachineDTO(BaseDTO):
             "private_ip": str(machine.private_ip),
             "public_ip": str(machine.public_ip) if machine.public_ip else None,
             "result": cls._get_result_status(status),
-            "launch_time": int(machine.launch_time.timestamp()),
+            "launch_time": int(machine.launch_time.timestamp()) if machine.launch_time else None,
             "message": machine.message,
             "request_id": str(machine.request_id) if machine.request_id else None,
             "return_request_id": str(machine.return_request_id)
@@ -87,6 +87,13 @@ class MachineDTO(BaseDTO):
             else None,
             "provider_data": machine.provider_data,
             "version": machine.version,
+            "subnet_id": machine.subnet_id,
+            "security_group_ids": machine.security_group_ids or [],
+            "template_id": machine.template_id,
+            "image_id": machine.image_id,
+            "status_reason": machine.status_reason,
+            "termination_time": machine.termination_time,
+            "tags": machine.tags,
         }
 
         # Add additional fields for long format

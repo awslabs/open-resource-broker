@@ -439,6 +439,7 @@ class AWSHandler(ABC):
             "instance_type": inst.get("InstanceType"),
             "image_id": inst.get("ImageId"),
             "subnet_id": inst.get("SubnetId"),
+            "security_group_ids": [sg["GroupId"] for sg in inst.get("SecurityGroups", [])],
             "vpc_id": inst.get("VpcId"),
         }
 

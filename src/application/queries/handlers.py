@@ -532,7 +532,9 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
                 "public_ip": aws_instance.get("PublicIpAddress"),
                 "launch_time": aws_instance.get("LaunchTime"),
                 "subnet_id": aws_instance.get("SubnetId"),
-                "security_group_ids": aws_instance.get("SecurityGroups", []),
+                "security_group_ids": [
+                    sg["GroupId"] for sg in aws_instance.get("SecurityGroups", [])
+                ],
                 "tags": {
                     "tags": {
                         tag.get("Key", ""): tag.get("Value", "")
@@ -1195,6 +1197,13 @@ class ListMachinesHandler(BaseQueryHandler[ListMachinesQuery, list[MachineDTO]])
                         request_id=machine.request_id,
                         return_request_id=machine.return_request_id,
                         metadata=machine.metadata or {},
+                        subnet_id=machine.subnet_id,
+                        security_group_ids=machine.security_group_ids or [],
+                        template_id=machine.template_id,
+                        image_id=machine.image_id,
+                        status_reason=machine.status_reason,
+                        termination_time=machine.termination_time,
+                        tags=machine.tags,
                     )
                     machine_dtos.append(machine_dto.to_dict())
 
