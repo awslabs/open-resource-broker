@@ -59,7 +59,7 @@ class BaseRegistry(ABC):
 
     def __init__(self, mode: RegistryMode = RegistryMode.SINGLE_CHOICE) -> None:
         """
-        Initialize registry with specified mode and dependencies.
+        Initialize registry with specified mode.
 
         Args:
             mode: Registry operation mode (single or multi choice)
@@ -75,33 +75,67 @@ class BaseRegistry(ABC):
         ] = {}  # Instance-based registrations (multi-choice only)
         self._registry_lock = threading.RLock()  # Use RLock for nested locking
 
-        # Initialize dependencies once for ALL registries
-        self._initialize_dependencies()
+        # Lazy initialization state
+        self._dependencies_initialized = False
+        self._logger_port = None
+        self._config_port = None
+        self._metrics = None
+        self._fallback_logger = None
+
         self._initialized = True
 
-    def _initialize_dependencies(self) -> None:
-        """Initialize dependencies once at construction."""
-        try:
-            from infrastructure.di.container import get_container
-            from domain.base.ports import LoggingPort, ConfigurationPort
-            from monitoring.metrics import MetricsCollector
+    def _ensure_dependencies(self) -> None:
+        """Ensure dependencies are initialized (lazy loading)."""
+        if not self._dependencies_initialized:
+            with self._registry_lock:
+                if not self._dependencies_initialized:
+                    try:
+                        # Avoid circular dependency by checking if container is available
+                        import sys
 
-            container = get_container()
-            self._logger_port = container.get(LoggingPort)
-            self._config_port = container.get(ConfigurationPort)
-            self._metrics = container.get(MetricsCollector)
+                        if "infrastructure.di.container" in sys.modules:
+                            from infrastructure.di.container import get_container
+                            from domain.base.ports import LoggingPort, ConfigurationPort
+                            from monitoring.metrics import MetricsCollector
 
-            # Set up logger property for backward compatibility
-            self.logger = self._logger_port
+                            container = get_container()
+                            self._logger_port = container.get(LoggingPort)
+                            self._config_port = container.get(ConfigurationPort)
+                            self._metrics = container.get(MetricsCollector)
+                    except (ImportError, AttributeError, Exception):
+                        # Fallback if DI container not available or circular dependency
+                        pass
+                    self._dependencies_initialized = True
 
-        except Exception as e:
-            # Graceful fallback if DI container not available
-            from infrastructure.logging.logger import get_logger
+    @property
+    def logger(self):
+        """Get logger with lazy initialization."""
+        self._ensure_dependencies()
+        if self._logger_port:
+            return self._logger_port
+        if not self._fallback_logger:
+            try:
+                from infrastructure.logging.logger import get_logger
 
-            self._logger_port = None
-            self._config_port = None
-            self._metrics = None
-            self.logger = get_logger(__name__)
+                self._fallback_logger = get_logger(__name__)
+            except (ImportError, Exception):
+                # Ultimate fallback - use standard logging
+                import logging
+
+                self._fallback_logger = logging.getLogger(__name__)
+        return self._fallback_logger
+
+    @property
+    def config_port(self):
+        """Get config port with lazy initialization."""
+        self._ensure_dependencies()
+        return self._config_port
+
+    @property
+    def metrics(self):
+        """Get metrics with lazy initialization."""
+        self._ensure_dependencies()
+        return self._metrics
 
     @abstractmethod
     def register(

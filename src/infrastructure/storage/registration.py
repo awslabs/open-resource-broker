@@ -11,17 +11,22 @@ from infrastructure.logging.logger import get_logger
 
 def register_all_storage_types() -> None:
     """Register all available storage types."""
+    from infrastructure.storage.registry import get_storage_registry
+
+    registry = get_storage_registry()
+
     # Register all available storage types
     from infrastructure.storage.json.registration import register_json_storage
 
     register_json_storage()
 
-    try:
-        from infrastructure.storage.sql.registration import register_sql_storage
+    from infrastructure.storage.sql.registration import register_sql_storage
 
-        register_sql_storage()
-    except ImportError:
-        pass
+    register_sql_storage()
+
+    from infrastructure.storage.dynamodb.registration import register_dynamodb_storage
+
+    register_dynamodb_storage()
 
 
 def get_available_storage_types() -> list:
