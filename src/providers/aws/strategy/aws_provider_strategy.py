@@ -401,7 +401,7 @@ class AWSProviderStrategy(ProviderStrategy):
             return ProviderResult.success_result({"resolved_images": resolved_images})
 
         except Exception as e:
-            return ProviderResult.failure_result(f"Image resolution failed: {e!s}")
+            return ProviderResult.error_result(f"Image resolution failed: {e!s}")
 
     def _create_image_resolution_service(self):
         """Create AWS image resolution service with provider-specific context."""
@@ -432,7 +432,6 @@ class AWSProviderStrategy(ProviderStrategy):
             aws_client=self.aws_client,
             cache=cache,
             logger=self._logger,
-            region=self._aws_config.region,
         )
 
     def __str__(self) -> str:

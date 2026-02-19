@@ -1,11 +1,10 @@
 """AWS implementation of image resolution service."""
 
-import boto3
-
 from src.domain.services.image_resolution_service import ImageResolutionService
 from src.domain.exceptions.image_resolution_error import ImageResolutionError
 from src.providers.aws.infrastructure.caching.aws_image_cache import AWSImageCache
 from src.domain.base.ports.logging_port import LoggingPort
+from src.providers.aws.infrastructure.aws_client import AWSClient
 
 
 class AWSImageResolutionService(ImageResolutionService):
@@ -18,16 +17,14 @@ class AWSImageResolutionService(ImageResolutionService):
 
     def __init__(
         self,
-        aws_client: boto3.Session,
+        aws_client: AWSClient,
         cache: AWSImageCache,
         logger: LoggingPort,
-        region: str = "us-east-1",
     ):
         self._aws_client = aws_client
         self._cache = cache
         self._logger = logger
-        self._region = region
-        self._ssm_client = aws_client.client("ssm", region_name=region)
+        self._ssm_client = aws_client.ssm_client
 
     def resolve_image_id(self, image_specification: str) -> str:
         """Resolve image specification to AMI ID."""
