@@ -888,7 +888,7 @@ async def execute_command(args, app, resource_parsers) -> Union[str, tuple[str, 
             # Handle machine status with multiple IDs
             if (
                 hasattr(args, "resource")
-                and args.resource == "machines"
+                and args.resource in ["machines", "machine"]
                 and args.action == "status"
             ):
                 from interface.machine_command_handlers import handle_get_machine_status
@@ -897,7 +897,7 @@ async def execute_command(args, app, resource_parsers) -> Union[str, tuple[str, 
             # Handle machine return with --all or multiple IDs
             elif (
                 hasattr(args, "resource")
-                and args.resource == "machines"
+                and args.resource in ["machines", "machine"]
                 and args.action == "return"
             ):
                 from interface.request_command_handlers import handle_request_return_machines
@@ -914,7 +914,9 @@ async def execute_command(args, app, resource_parsers) -> Union[str, tuple[str, 
                 result = await handle_get_request_status(args)
             # Handle machines list with scheduler-aware formatting
             elif (
-                hasattr(args, "resource") and args.resource == "machines" and args.action == "list"
+                hasattr(args, "resource")
+                and args.resource in ["machines", "machine"]
+                and args.action == "list"
             ):
                 from interface.machine_command_handlers import handle_list_machines
 
