@@ -782,10 +782,14 @@ class ListActiveRequestsHandler(BaseQueryHandler[ListActiveRequestsQuery, list[R
         logger: LoggingPort,
         error_handler: ErrorHandlingPort,
         generic_filter_service: GenericFilterService,
+        container: ContainerPort,
+        command_bus: CommandBus,
     ) -> None:
         super().__init__(logger, error_handler)
         self.uow_factory = uow_factory
         self._generic_filter_service = generic_filter_service
+        self._container = container
+        self.command_bus = command_bus
 
     async def execute_query(self, query: ListActiveRequestsQuery) -> list[RequestDTO]:
         """Execute list active requests query."""
@@ -793,11 +797,12 @@ class ListActiveRequestsHandler(BaseQueryHandler[ListActiveRequestsQuery, list[R
 
         try:
             with self.uow_factory.create_unit_of_work() as uow:
+                # Get initial requests
                 if query.all_resources:
-                    # Use repository to get ALL active requests
-                    active_requests = uow.requests.find_active_requests()
+                    # Get ALL requests (not just active)
+                    requests = uow.requests.find_all()
                 else:
-                    # Existing filtered logic
+                    # Get only active requests
                     from domain.request.value_objects import RequestStatus
 
                     active_statuses = [
@@ -805,27 +810,75 @@ class ListActiveRequestsHandler(BaseQueryHandler[ListActiveRequestsQuery, list[R
                         RequestStatus.RUNNING,
                         RequestStatus.PROVISIONING,
                     ]
-                    requests = uow.requests.find_all()
-                    active_requests = [r for r in requests if r.status in active_statuses]
+                    all_requests = uow.requests.find_all()
+                    requests = [r for r in all_requests if r.status in active_statuses]
 
                     # Apply template filter if provided
                     if hasattr(query, "template_id") and query.template_id:
-                        active_requests = [
-                            r for r in active_requests if r.template_id == query.template_id
-                        ]
+                        requests = [r for r in requests if r.template_id == query.template_id]
 
                     # Apply pagination
                     start_idx = 0
                     end_idx = getattr(query, "limit", None) or 100
-                    active_requests = active_requests[start_idx:end_idx]
+                    requests = requests[start_idx:end_idx]
+
+                # Sync each request with provider (like GetRequestHandler does)
+                from application.dto.commands import SyncRequestCommand
+                from application.services.machine_sync_service import MachineSyncService
+
+                # Get machine sync service
+                machine_sync_service = self._container.get(MachineSyncService)
+
+                for request in requests:
+                    try:
+                        # Populate missing machine IDs first (like GetRequestHandler)
+                        await machine_sync_service.populate_missing_machine_ids(request)
+
+                        # Then sync with provider
+                        sync_command = SyncRequestCommand(request_id=str(request.request_id.value))
+                        await self.command_bus.execute(sync_command)
+                    except Exception as e:
+                        self.logger.warning(
+                            "Failed to sync request %s: %s", request.request_id.value, e
+                        )
+
+            # Create new unit of work after sync to get fresh data
+            with self.uow_factory.create_unit_of_work() as uow:
+                # Re-query with same logic to get updated state
+                if query.all_resources:
+                    requests = uow.requests.find_all()
+                else:
+                    from domain.request.value_objects import RequestStatus
+
+                    active_statuses = [
+                        RequestStatus.PENDING,
+                        RequestStatus.RUNNING,
+                        RequestStatus.PROVISIONING,
+                    ]
+                    all_requests = uow.requests.find_all()
+                    requests = [r for r in all_requests if r.status in active_statuses]
+
+                    # Apply same filters again
+                    if hasattr(query, "template_id") and query.template_id:
+                        requests = [r for r in requests if r.template_id == query.template_id]
+
+                    # Apply same pagination
+                    start_idx = 0
+                    end_idx = getattr(query, "limit", None) or 100
+                    requests = requests[start_idx:end_idx]
 
                 # Convert to DTOs
                 request_dtos = []
-                for request in active_requests:
-                    # Query machines for this request if machine_ids exist
-                    machines = []
-                    if request.machine_ids:
-                        machines = uow.machines.find_by_ids(request.machine_ids)
+                for request in requests:
+                    # Query machines for this request using same method as GetRequestHandler
+                    from domain.request.value_objects import RequestType
+
+                    if request.request_type == RequestType.RETURN:
+                        machines = uow.machines.find_by_return_request_id(
+                            str(request.request_id.value)
+                        )
+                    else:
+                        machines = uow.machines.find_by_request_id(str(request.request_id.value))
 
                     # Create RequestDTO using factory
                     from application.factories.request_dto_factory import RequestDTOFactory
