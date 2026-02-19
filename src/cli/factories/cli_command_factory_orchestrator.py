@@ -265,6 +265,12 @@ class CLICommandFactoryOrchestrator:
         if request_ids:
             args_dict["request_ids"] = request_ids
 
+        # Normalize machine_count arguments
+        if "machine_count" in args_dict and args_dict["machine_count"] is not None:
+            args_dict["count"] = args_dict["machine_count"]
+        elif "flag_machine_count" in args_dict and args_dict["flag_machine_count"] is not None:
+            args_dict["count"] = args_dict["flag_machine_count"]
+
         # Extract command group and action
         command_group = getattr(args, "resource", None)
         command_action = getattr(args, "action", None)
@@ -360,7 +366,7 @@ class CLICommandFactoryOrchestrator:
             elif command_action == "request":
                 return self.create_create_request_command(
                     template_id=args.get("template_id"),
-                    count=args.get("count", 1),
+                    count=args.get("machine_count") or args.get("flag_machine_count", 1),
                     provider=args.get("provider"),
                 )
 

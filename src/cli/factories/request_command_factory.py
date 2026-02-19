@@ -30,7 +30,7 @@ class RequestCommandFactory:
         provider_name = kwargs.get("provider_name") or provider
         return CreateRequestCommand(
             template_id=template_id,
-            count=count,
+            requested_count=count,
             provider_name=provider_name,
         )
 
