@@ -145,6 +145,12 @@ def add_machine_actions(subparsers):
     add_force_argument(machines_return)
     machines_return.add_argument("machine_ids", nargs="*", help="Machine IDs to return")
 
+    # Machines terminate (alias for return)
+    machines_terminate = subparsers.add_parser("terminate", help="Terminate (return) machines")
+    add_global_arguments(machines_terminate)
+    add_force_argument(machines_terminate)
+    machines_terminate.add_argument("machine_ids", nargs="*", help="Machine IDs to terminate")
+
     # Machines status
     machines_status = subparsers.add_parser("status", help="Check machine status")
     add_global_arguments(machines_status)
@@ -156,6 +162,12 @@ def add_machine_actions(subparsers):
         dest="flag_machine_ids",
         help="Machine ID to check",
     )
+
+    # Machines stop
+    machines_stop = subparsers.add_parser("stop", help="Stop running machines")
+    add_global_arguments(machines_stop)
+    add_force_argument(machines_stop)
+    machines_stop.add_argument("machine_ids", nargs="*", help="Machine IDs to stop")
 
 
 def add_request_actions(subparsers):
@@ -898,11 +910,20 @@ async def execute_command(args, app, resource_parsers) -> Union[str, tuple[str, 
             elif (
                 hasattr(args, "resource")
                 and args.resource in ["machines", "machine"]
-                and args.action == "return"
+                and args.action in ["return", "terminate"]
             ):
                 from interface.request_command_handlers import handle_request_return_machines
 
                 result = await handle_request_return_machines(args)
+            # Handle machine stop with --all or multiple IDs
+            elif (
+                hasattr(args, "resource")
+                and args.resource in ["machines", "machine"]
+                and args.action == "stop"
+            ):
+                from interface.machine_command_handlers import handle_stop_machines
+
+                result = await handle_stop_machines(args)
             # Handle request status with multiple IDs (but not single request show)
             elif (
                 hasattr(args, "resource")

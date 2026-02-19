@@ -119,7 +119,7 @@ class CLIResponseFormatter:
 
         if resource == "requests" and action == "status":
             return "request_status"
-        elif resource == "machines" and action == "return":
+        elif resource == "machines" and action in ["return", "terminate"]:
             return "requests"  # Return requests should be formatted like requests
 
         # Map resource names to contexts
