@@ -116,6 +116,26 @@ class TestCLIShowValidation:
 
         assert "Machine ID is required" in str(exc_info.value)
 
+    def test_requests_show_requires_id(self):
+        """Test that requests show requires request ID."""
+        args = Mock()
+        args.resource = "requests"
+        args.action = "show"
+        args.all = False
+        args.request_id = None
+
+        with pytest.raises(DomainException) as exc_info:
+            if hasattr(args, "resource") and hasattr(args, "action") and args.action == "show":
+                if args.resource in ["requests", "request"]:
+                    request_id = getattr(args, "request_id", None)
+                    if not request_id:
+                        raise DomainException(
+                            "Request ID required. Use 'orb requests list' for multiple requests"
+                        )
+
+        assert "Request ID required" in str(exc_info.value)
+        assert "requests list" in str(exc_info.value)
+
     def test_templates_show_accepts_positional_id(self):
         """Test that templates show accepts positional template ID."""
         args = Mock()

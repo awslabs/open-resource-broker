@@ -194,7 +194,7 @@ def add_request_actions(subparsers):
     # Requests show
     requests_show = subparsers.add_parser("show", help="Show request details")
     add_global_arguments(requests_show)
-    requests_show.add_argument("request_id", help="Request ID to show")
+    requests_show.add_argument("request_id", nargs="?", help="Request ID to show")
 
     # Requests cancel
     requests_cancel = subparsers.add_parser("cancel", help="Cancel request")
@@ -945,8 +945,7 @@ async def execute_command(args, app, resource_parsers) -> Union[str, tuple[str, 
                 request_id = getattr(args, "request_id", None)
                 if not request_id:
                     raise DomainException(
-                        "Request ID is required for 'show' command. "
-                        "Usage: orb requests show <request-id>"
+                        "Request ID required. Use 'orb requests list' for multiple requests"
                     )
 
         # Create command or query from CLI args
