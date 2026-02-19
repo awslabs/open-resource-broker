@@ -491,11 +491,11 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
 
     # def _create_machine_from_aws_data(self, aws_instance: dict[str, Any], request):
     #     """Create machine aggregate from AWS instance data."""
-    #     from domain.base.value_objects import InstanceId
+    #     from domain.machine.machine_identifiers import MachineId
     #     from domain.machine.aggregate import Machine
 
     #     return Machine(
-    #         instance_id=InstanceId(value=aws_instance["InstanceId"]),
+    #         instance_id=MachineId(value=aws_instance["InstanceId"]),
     #         request_id=str(request.request_id),
     #         # Use first for backward compatibility
     #         resource_id=request.resource_ids[0] if request.resource_ids else None,
