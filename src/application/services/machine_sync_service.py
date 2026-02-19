@@ -1,6 +1,6 @@
 """Machine sync service for provider integration."""
 
-from typing import Optional, Tuple, TYPE_CHECKING
+from typing import Tuple, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from application.services.provider_registry_service import ProviderRegistryService
@@ -172,7 +172,6 @@ class MachineSyncService:
     ) -> Tuple[list[Machine], dict]:
         try:
             from domain.base import UnitOfWorkFactory
-            from domain.machine.machine_status import MachineStatus
 
             existing_by_id = {str(m.machine_id.value): m for m in db_machines}
             updated_machines = []

@@ -238,7 +238,7 @@ class RegisterProviderStrategyHandler(
                 "strategy_name": command.strategy_name,
                 "provider_type": command.provider_type,
                 "status": "registered",
-                "capabilities": strategy.get_capabilities().model_dump(),
+                "capabilities": command.capabilities or {},
             }
 
         except Exception as e:

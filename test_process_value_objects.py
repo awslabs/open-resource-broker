@@ -2,14 +2,12 @@
 """Test script to verify process_value_objects function."""
 
 import sys
-import os
 
 sys.path.insert(0, "/Users/flamurg/src/aws/symphony/open-resource-broker/src")
 
 from domain.request.request_identifiers import RequestId
 from domain.request.value_objects import RequestType
 from infrastructure.utilities.common.serialization import process_value_objects
-import json
 
 
 def test_process_value_objects():

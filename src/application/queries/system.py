@@ -1,6 +1,6 @@
 """System-level queries for administrative operations."""
 
-from typing import Any, Optional
+from typing import Optional
 
 from pydantic import BaseModel, ConfigDict
 

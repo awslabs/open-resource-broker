@@ -78,7 +78,6 @@ def create_dynamodb_unit_of_work(config: Any) -> Any:
     Returns:
         DynamoDBUnitOfWork instance with correctly configured AWS client
     """
-    import boto3
 
     from config.manager import ConfigurationManager
     from config.schemas.storage_schema import StorageConfig

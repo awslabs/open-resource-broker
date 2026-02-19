@@ -1,7 +1,5 @@
 """Core service registrations for dependency injection."""
 
-from typing import TYPE_CHECKING
-
 from config.managers.configuration_manager import ConfigurationManager
 from domain.base.ports import (
     ConfigurationPort,

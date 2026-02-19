@@ -6,8 +6,6 @@ ensuring all storage implementations are registered with the storage registry.
 CLEAN ARCHITECTURE: Only registers storage strategies, no repository knowledge.
 """
 
-from infrastructure.logging.logger import get_logger
-
 
 def register_all_storage_types() -> None:
     """Register all available storage types."""

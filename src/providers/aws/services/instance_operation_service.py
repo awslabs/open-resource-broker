@@ -1,9 +1,9 @@
 """AWS Instance Operation Service - Handles instance creation and termination."""
 
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Optional
 
 from domain.base.ports import LoggingPort
-from providers.base.strategy import ProviderOperation, ProviderOperationType, ProviderResult
+from providers.base.strategy import ProviderOperation, ProviderResult
 
 if TYPE_CHECKING:
     from providers.aws.infrastructure.aws_client import AWSClient

@@ -160,22 +160,6 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
         except Exception as e:
             self._logger.error("RunInstances failed: %s", e)
             return {"success": False, "resource_ids": [], "instances": [], "error_message": str(e)}
-            #     instance_details, resource_id, request, aws_template
-            # )
-
-            return {
-                "success": True,
-                "resource_ids": [resource_id],
-                "instances": [],  # RunInstances instances come later via status queries
-                "provider_data": {"resource_type": "run_instances"},
-            }
-        except Exception as e:
-            return {
-                "success": False,
-                "resource_ids": [],
-                "instances": [],
-                "error_message": str(e),
-            }
 
     def _create_instances_with_response(
         self, request: Request, aws_template: AWSTemplate

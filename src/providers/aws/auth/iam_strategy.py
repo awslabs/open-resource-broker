@@ -2,7 +2,6 @@
 
 from typing import Any, Optional
 
-import boto3
 from botocore.exceptions import ClientError, NoCredentialsError
 
 from domain.base.dependency_injection import injectable

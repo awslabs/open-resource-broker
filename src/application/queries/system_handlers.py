@@ -3,14 +3,12 @@
 from typing import TYPE_CHECKING, Any
 
 from domain.base import UnitOfWorkFactory
-from domain.request.repository import RequestRepository
 from domain.services.timestamp_service import TimestampService
 
 from application.base.handlers import BaseQueryHandler
 from application.decorators import query_handler
 from application.dto.system import (
     ConfigurationSectionResponse,
-    ConfigurationValueResponse,
     ProviderConfigDTO,
     ProviderMetricsDTO,
     SystemStatusDTO,

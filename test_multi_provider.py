@@ -2,7 +2,6 @@
 """Test multi-provider functionality directly."""
 
 import asyncio
-import json
 from config.managers.configuration_manager import ConfigurationManager
 from config.schemas.provider_strategy_schema import ProviderInstanceConfig
 from providers.registry import get_provider_registry
@@ -44,7 +43,7 @@ async def test_multi_provider():
     )
 
     # Test provider capabilities for each registered instance
-    print(f"\nTesting provider capabilities:")
+    print("\nTesting provider capabilities:")
 
     for instance_name in registry.get_registered_provider_instances():
         try:
@@ -59,7 +58,7 @@ async def test_multi_provider():
             print(f"  {instance_name}: ERROR - {e}")
 
     # Test template validation
-    print(f"\n=== Testing Template Validation ===")
+    print("\n=== Testing Template Validation ===")
     from domain.template.template_aggregate import Template
 
     test_template = Template(

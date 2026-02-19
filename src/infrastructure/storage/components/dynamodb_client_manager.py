@@ -2,11 +2,9 @@
 
 from typing import Any, Optional
 
-import boto3
 from botocore.exceptions import ClientError
 
 from .resource_manager import StorageResourceManager as ResourceManager
-from providers.aws.session_factory import AWSSessionFactory
 
 
 class DynamoDBClientManager(ResourceManager):

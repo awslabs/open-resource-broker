@@ -1,7 +1,6 @@
 """AWS implementation of image resolution service."""
 
 import boto3
-from typing import Optional
 
 from src.domain.services.image_resolution_service import ImageResolutionService
 from src.domain.exceptions.image_resolution_error import ImageResolutionError
@@ -48,7 +47,7 @@ class AWSImageResolutionService(ImageResolutionService):
             return resolved_ami
         except Exception as e:
             raise ImageResolutionError(
-                f"Failed to resolve image specification: {str(e)}",
+                f"Failed to resolve image specification: {e!s}",
                 image_specification=image_specification,
             )
 
@@ -85,6 +84,6 @@ class AWSImageResolutionService(ImageResolutionService):
             )
         except Exception as e:
             raise ImageResolutionError(
-                f"Failed to resolve SSM parameter {ssm_parameter}: {str(e)}",
+                f"Failed to resolve SSM parameter {ssm_parameter}: {e!s}",
                 image_specification=ssm_parameter,
             )

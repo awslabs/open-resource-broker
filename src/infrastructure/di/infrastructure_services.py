@@ -137,12 +137,13 @@ def _register_ami_resolver_if_enabled(container: DIContainer) -> None:
                                 instance_extension_config
                                 and instance_extension_config.ami_resolution.enabled
                             ):
-                                container.register_singleton(CachingAMIResolver)
+                                # TODO: CachingAMIResolver not implemented yet
+                                # container.register_singleton(CachingAMIResolver)
                                 # Register interface to resolve to concrete
                                 # implementation
-                                from domain.base.ports.template_resolver_port import (
-                                    TemplateResolverPort,
-                                )
+                                # from domain.base.ports.template_resolver_port import (
+                                #     TemplateResolverPort,
+                                # )
 
                                 # Image resolution now handled by generic service
                                 logger.info(
@@ -168,12 +169,13 @@ def _register_ami_resolver_if_enabled(container: DIContainer) -> None:
         except Exception as e:
             logger.warning("Could not determine AMI resolution configuration: %s", e)
             # Register with default configuration as fallback
-            container.register_singleton(CachingAMIResolver)
+            # TODO: CachingAMIResolver not implemented yet
+            # container.register_singleton(CachingAMIResolver)
             # Register interface to resolve to concrete implementation
-            from domain.base.ports.template_resolver_port import TemplateResolverPort
+            # from domain.base.ports.template_resolver_port import TemplateResolverPort
 
-            container.register_singleton(TemplateResolverPort, lambda c: c.get(CachingAMIResolver))
-            logger.info("AMI resolver registered with fallback configuration")
+            # container.register_singleton(TemplateResolverPort, lambda c: c.get(CachingAMIResolver))
+            logger.info("AMI resolver registration skipped - not implemented yet")
 
     except Exception as e:
         logger = get_logger(__name__)

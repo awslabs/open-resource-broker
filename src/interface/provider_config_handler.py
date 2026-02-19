@@ -2,7 +2,6 @@
 
 import json
 import re
-from pathlib import Path
 from typing import Dict, Any, Optional
 
 from cli.console import print_error, print_info, print_success
@@ -310,16 +309,15 @@ async def handle_provider_show(args) -> int:
                         print_info(f"Region: {p['config']['region']}")
                         print_info(f"Profile: {p['config']['profile']}")
                         break
+            elif providers:
+                first_provider = providers[0]
+                print_info(f"No explicit default set. First provider: {first_provider['name']}")
+                print_info(f"Type: {first_provider['type']}")
+                print_info(f"Region: {first_provider['config']['region']}")
+                print_info(f"Profile: {first_provider['config']['profile']}")
             else:
-                if providers:
-                    first_provider = providers[0]
-                    print_info(f"No explicit default set. First provider: {first_provider['name']}")
-                    print_info(f"Type: {first_provider['type']}")
-                    print_info(f"Region: {first_provider['config']['region']}")
-                    print_info(f"Profile: {first_provider['config']['profile']}")
-                else:
-                    print_error("No providers configured")
-                    return 1
+                print_error("No providers configured")
+                return 1
 
         return 0
 

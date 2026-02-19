@@ -8,7 +8,6 @@ import os
 from typing import Any, Optional
 
 from config.schemas.provider_strategy_schema import (
-    ProviderConfig,
     ProviderInstanceConfig,
     ProviderMode,
 )
@@ -19,6 +18,7 @@ from providers.registry import (
     UnsupportedProviderError,
     get_provider_registry,
 )
+from providers.base.strategy.provider_strategy import ProviderStrategy
 
 
 class ProviderCreationError(Exception):

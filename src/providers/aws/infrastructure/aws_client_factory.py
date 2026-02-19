@@ -1,6 +1,6 @@
 """AWS Client Factory - Provider-specific AWS client creation."""
 
-from typing import Dict, Optional
+from typing import Dict
 
 from domain.base.ports import LoggingPort
 from providers.aws.infrastructure.aws_client import AWSClient

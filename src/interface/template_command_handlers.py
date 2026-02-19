@@ -22,7 +22,7 @@ from application.template.commands import (
     DeleteTemplateCommand,
     UpdateTemplateCommand,
 )
-from cli.console import print_command, print_info
+from cli.console import print_info
 from domain.base.ports.scheduler_port import SchedulerPort
 from infrastructure.di.buses import CommandBus, QueryBus
 from infrastructure.di.container import get_container
@@ -211,7 +211,7 @@ async def handle_create_template(args: argparse.Namespace) -> dict[str, Any]:
         try:
             import json
 
-            with open(args.file, "r") as f:
+            with open(args.file) as f:
                 template_config = json.load(f)
         except FileNotFoundError:
             return {"success": False, "error": f"Template file not found: {args.file}"}

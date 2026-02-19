@@ -1,10 +1,7 @@
 """Comprehensive tests for BaseSettings integration."""
 
 import os
-import pytest
 from unittest.mock import patch, MagicMock
-
-from pydantic import ValidationError
 
 
 class TestBaseSettingsIntegrationConcepts:

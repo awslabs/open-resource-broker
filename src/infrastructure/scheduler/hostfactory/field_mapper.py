@@ -58,14 +58,13 @@ class HostFactoryFieldMapper(SchedulerFieldMapper):
                         mapped[target_field] = value
                 elif source_field in source:
                     mapped[target_field] = source[source_field]
-            else:
-                # For input mapping: external → internal
-                if source_field in source:
-                    if "." in target_field:
-                        # Handle nested field setting (e.g., provider_data.fleet_type)
-                        self._set_nested_value(mapped, target_field, source[source_field])
-                    else:
-                        mapped[target_field] = source[source_field]
+            # For input mapping: external → internal
+            elif source_field in source:
+                if "." in target_field:
+                    # Handle nested field setting (e.g., provider_data.fleet_type)
+                    self._set_nested_value(mapped, target_field, source[source_field])
+                else:
+                    mapped[target_field] = source[source_field]
 
         # Only copy unmapped fields if requested
         if copy_unmapped:

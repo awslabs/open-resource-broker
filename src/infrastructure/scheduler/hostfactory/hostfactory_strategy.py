@@ -4,7 +4,7 @@ import os
 from typing import TYPE_CHECKING, Any, Union
 
 if TYPE_CHECKING:
-    from domain.request.aggregate import Request
+    pass
 
 from domain.base.ports.configuration_port import ConfigurationPort
 from domain.base.ports.logging_port import LoggingPort
@@ -885,16 +885,15 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
                 return "executing"
             else:
                 return "fail"
+        # For acquire requests, running is success
+        elif status == "running":
+            return "succeed"
+        elif status in ["pending", "launching"]:
+            return "executing"
+        elif status in ["terminated", "failed", "error"]:
+            return "fail"
         else:
-            # For acquire requests, running is success
-            if status == "running":
-                return "succeed"
-            elif status in ["pending", "launching"]:
-                return "executing"
-            elif status in ["terminated", "failed", "error"]:
-                return "fail"
-            else:
-                return "executing"  # Default for unknown states
+            return "executing"  # Default for unknown states
 
     def _map_domain_status_to_hostfactory(self, domain_status: str) -> str:
         """Map domain status to HostFactory status per hf_docs/input-output.md."""

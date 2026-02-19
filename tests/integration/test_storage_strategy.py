@@ -141,7 +141,7 @@ def test_machine_repository_enhancements():
     print("\n=== Machine Repository Enhancement Test ===")
 
     try:
-        from domain.base.value_objects import InstanceId, InstanceType, Tags
+        from domain.base.value_objects import InstanceId, Tags
         from domain.machine.aggregate import Machine
         from infrastructure.persistence.repositories.machine_repository import (
             MachineSerializer,

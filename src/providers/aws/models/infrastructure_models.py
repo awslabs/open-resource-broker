@@ -1,7 +1,6 @@
 """AWS infrastructure models for discovery and selection."""
 
 from dataclasses import dataclass
-from typing import Optional
 
 
 @dataclass

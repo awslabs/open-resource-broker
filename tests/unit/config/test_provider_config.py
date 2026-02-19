@@ -4,7 +4,6 @@ import os
 import pytest
 from unittest.mock import patch, MagicMock
 
-from pydantic import ValidationError
 
 from config.schemas.provider_strategy_schema import (
     CircuitBreakerConfig,

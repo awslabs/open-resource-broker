@@ -3,7 +3,6 @@
 import threading
 from typing import TYPE_CHECKING, Any, Optional, TypeVar
 
-import boto3
 from botocore.config import Config
 from botocore.exceptions import ClientError
 
@@ -16,7 +15,6 @@ from providers.aws.exceptions.aws_exceptions import (
     NetworkError,
 )
 from providers.aws.infrastructure.instrumentation.botocore_metrics import BotocoreMetricsHandler
-from providers.aws.session_factory import AWSSessionFactory
 
 if TYPE_CHECKING:
     from providers.aws.configuration.config import AWSProviderConfig

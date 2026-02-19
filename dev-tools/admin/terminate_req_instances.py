@@ -77,13 +77,7 @@ def _terminate_instances(ec2_client, instance_ids: List[str], dry_run: bool) -> 
                     and attempt < TERMINATE_MAX_RETRIES
                 ):
                     print(
-                        "TerminateInstances throttled (%s). Retrying in %ss (attempt %s/%s)."
-                        % (
-                            error_code,
-                            TERMINATE_RETRY_SLEEP_SECONDS,
-                            attempt,
-                            TERMINATE_MAX_RETRIES,
-                        )
+                        f"TerminateInstances throttled ({error_code}). Retrying in {TERMINATE_RETRY_SLEEP_SECONDS}s (attempt {attempt}/{TERMINATE_MAX_RETRIES})."
                     )
                     time.sleep(TERMINATE_RETRY_SLEEP_SECONDS)
                     continue

@@ -1,7 +1,5 @@
 """Request query service for pure data retrieval."""
 
-from typing import Optional
-
 from domain.base.ports.logging_port import LoggingPort
 from domain.base import UnitOfWorkFactory
 from domain.request.aggregate import Request

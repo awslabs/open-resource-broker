@@ -13,7 +13,6 @@ from domain.base.ports.configuration_port import ConfigurationPort
 
 if TYPE_CHECKING:
     from domain.base.ports.scheduler_port import SchedulerPort
-    from infrastructure.di.container import DIContainer
     from infrastructure.scheduler.registry import SchedulerRegistry
 
 

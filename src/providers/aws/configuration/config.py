@@ -3,7 +3,7 @@
 from typing import Any, Optional
 import json
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator, field_validator
+from pydantic import BaseModel, Field, model_validator, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from infrastructure.interfaces.provider import BaseProviderConfig

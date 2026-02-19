@@ -5,8 +5,6 @@ This module now imports from the organized configuration managers package.
 All functionality maintains backward compatibility.
 """
 
-from typing import Optional
-
 # Import supporting classes for direct access if needed
 from .managers import (
     ConfigCacheManager,

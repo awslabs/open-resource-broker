@@ -38,7 +38,7 @@ class RequestSerializer:
                     parsed = ast.literal_eval(request_id_data)
                     if isinstance(parsed, dict) and "value" in parsed:
                         return RequestId(value=parsed["value"])
-                except:
+                except (ValueError, SyntaxError):
                     pass
             # Handle direct string format
             return RequestId(value=request_id_data)

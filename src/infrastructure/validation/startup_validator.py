@@ -6,7 +6,6 @@ import sys
 from pathlib import Path
 from typing import Optional
 
-import boto3
 from botocore.exceptions import ClientError, NoCredentialsError
 from pydantic import ValidationError
 

@@ -3,7 +3,7 @@
 import json
 from typing import Any, Dict, List
 
-from cli.console import print_error, print_info, print_success, print_separator
+from cli.console import print_error, print_info, print_separator
 from config.platform_dirs import get_config_location
 
 

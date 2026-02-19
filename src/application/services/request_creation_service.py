@@ -1,7 +1,5 @@
 """Service for creating request aggregates with proper validation and metadata."""
 
-from typing import Any
-
 from application.dto.commands import CreateRequestCommand
 from domain.base.ports import LoggingPort
 from domain.request.aggregate import Request

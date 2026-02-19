@@ -9,7 +9,6 @@ from typing import Any
 
 # Import from Application layer (correct Clean Architecture)
 from domain.base.ports.scheduler_port import SchedulerPort
-from application.dto.responses import MachineDTO
 from application.request.dto import RequestDTO
 from infrastructure.template.dtos import TemplateDTO
 

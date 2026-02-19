@@ -39,8 +39,7 @@ def _iter_ec2_fleets(ec2_client) -> Iterable[dict[str, Any]]:
     paginator = ec2_client.get_paginator("describe_fleets")
     filters = [{"Name": "fleet-state", "Values": list(EC2_FLEET_ACTIVE_STATES)}]
     for page in paginator.paginate(Filters=filters):
-        for fleet in page.get("Fleets", []):
-            yield fleet
+        yield from page.get("Fleets", [])
 
 
 def _iter_spot_fleets(ec2_client) -> Iterable[dict[str, Any]]:

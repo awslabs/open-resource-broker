@@ -2,10 +2,7 @@
 """Comprehensive Phase 4 testing script."""
 
 import asyncio
-import json
-import os
 from config.managers.configuration_manager import ConfigurationManager
-from config.schemas.provider_strategy_schema import ProviderInstanceConfig
 from providers.registry import get_provider_registry
 from providers.aws.registration import register_aws_provider_instance
 

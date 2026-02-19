@@ -1,6 +1,6 @@
 """CLI argument extraction utilities."""
 
-from typing import Any, Optional, Union, List
+from typing import Any, Optional, List
 import argparse
 
 

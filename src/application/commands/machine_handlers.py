@@ -131,7 +131,9 @@ class ConvertMachineStatusCommandHandler(
         )
 
         # Execute via registry
-        result = await registry.execute_operation(command.provider_type, operation)
+        result = await self._provider_registry_service.execute_operation(
+            command.provider_type, operation
+        )
 
         if result.success:
             status = result.data.get("status", MachineStatus.UNKNOWN)

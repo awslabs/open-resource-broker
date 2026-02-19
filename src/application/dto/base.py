@@ -6,7 +6,7 @@ from typing import Any, Optional, Union, TYPE_CHECKING
 from pydantic import BaseModel, ConfigDict
 
 if TYPE_CHECKING:
-    from application.interfaces.command_query import Command
+    pass
 
 
 class BaseDTO(BaseModel):

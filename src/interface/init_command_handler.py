@@ -4,7 +4,7 @@ import json
 import platform
 import shutil
 from pathlib import Path
-from typing import Any, Dict, Optional, Optional
+from typing import Any, Dict, Optional
 
 from cli.console import (
     print_command,

@@ -14,7 +14,6 @@ from application.dto.queries import (
     GetRequestQuery,
     GetTemplateQuery,
     ListActiveRequestsQuery,
-    ListMachinesQuery,
     ListReturnRequestsQuery,
     ListTemplatesQuery,
     ValidateTemplateQuery,
@@ -1128,17 +1127,16 @@ class ListMachinesHandler(BaseQueryHandler[MachineListQuery, list[MachineDTO]]):
                 if query.all_resources:
                     # Use repository to get ALL active machines
                     machines = uow.machines.find_active_machines()
-                else:
-                    # Existing filtered logic
-                    if query.status:
-                        from domain.machine.value_objects import MachineStatus
+                # Existing filtered logic
+                elif query.status:
+                    from domain.machine.value_objects import MachineStatus
 
-                        status_enum = MachineStatus(query.status)
-                        machines = uow.machines.find_by_status(status_enum)
-                    elif query.request_id:
-                        machines = uow.machines.find_by_request_id(query.request_id)
-                    else:
-                        machines = uow.machines.get_all()
+                    status_enum = MachineStatus(query.status)
+                    machines = uow.machines.find_by_status(status_enum)
+                elif query.request_id:
+                    machines = uow.machines.find_by_request_id(query.request_id)
+                else:
+                    machines = uow.machines.get_all()
 
                 # Apply provider filtering if specified
                 if query.provider_name:

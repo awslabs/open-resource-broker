@@ -303,7 +303,7 @@ class AWSInfrastructureDiscoveryService:
         total_subnets = sum(len(self.discover_subnets(vpc.id)) for vpc in vpcs)
         total_sgs = sum(len(self.discover_security_groups(vpc.id)) for vpc in vpcs)
 
-        print_info(f"Infrastructure Summary:")
+        print_info("Infrastructure Summary:")
         print_info(f"  VPCs: {len(vpcs)}")
         print_info(f"  Subnets: {total_subnets}")
         print_info(f"  Security Groups: {total_sgs}")
@@ -338,7 +338,7 @@ class AWSInfrastructureDiscoveryService:
             for i, vpc in enumerate(vpcs, 1):
                 print_info(f"  ({i}) {vpc}")
 
-            vpc_choice = input(f"\nSelect VPC (1): ").strip() or "1"
+            vpc_choice = input("\nSelect VPC (1): ").strip() or "1"
             try:
                 selected_vpc = vpcs[int(vpc_choice) - 1]
             except (ValueError, IndexError):
@@ -354,7 +354,7 @@ class AWSInfrastructureDiscoveryService:
                     print_info(f"  ({i}) {subnet}")
                 print_info("  (s) Skip subnet selection")
 
-                subnet_choice = input(f"\nSelect subnets (comma-separated) (1,2): ").strip()
+                subnet_choice = input("\nSelect subnets (comma-separated) (1,2): ").strip()
                 if subnet_choice.lower() != "s":
                     if not subnet_choice:
                         subnet_choice = "1,2" if len(subnets) >= 2 else "1"
@@ -378,7 +378,7 @@ class AWSInfrastructureDiscoveryService:
                     print_info(f"  ({i}) {sg}")
                 print_info("  (s) Skip security group selection")
 
-                sg_choice = input(f"\nSelect security groups (1): ").strip() or "1"
+                sg_choice = input("\nSelect security groups (1): ").strip() or "1"
                 if sg_choice.lower() != "s":
                     try:
                         sg_indices = [int(x.strip()) - 1 for x in sg_choice.split(",")]

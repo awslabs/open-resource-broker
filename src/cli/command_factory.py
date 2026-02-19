@@ -6,7 +6,6 @@ from application.dto.commands import (
     CancelRequestCommand,
     CreateRequestCommand,
     CreateReturnRequestCommand,
-    UpdateRequestStatusCommand,
 )
 from application.dto.queries import (
     GetConfigurationQuery,
@@ -16,15 +15,17 @@ from application.dto.queries import (
     ListActiveRequestsQuery,
     ListReturnRequestsQuery,
     ListTemplatesQuery,
-    ValidateTemplateQuery,
+)
+from application.dto.bulk_queries import (
+    GetMultipleRequestsQuery,
+    GetMultipleTemplatesQuery,
+    GetMultipleMachinesQuery,
 )
 from application.machine.queries import ListMachinesQuery
 from application.machine.commands import (
-    RegisterMachineCommand,
     UpdateMachineStatusCommand,
 )
 from application.request.queries import (
-    GetRequestHistoryQuery,
     ListRequestsQuery,
 )
 from application.provider.commands import ExecuteProviderOperationCommand
@@ -61,10 +62,8 @@ from application.provider.queries import (
     GetProviderHealthQuery,
     ListAvailableProvidersQuery,
     GetProviderCapabilitiesQuery,
-    GetProviderMetricsQuery as ProviderMetricsQuery,
     GetProviderStrategyConfigQuery,
 )
-from domain.request.value_objects import RequestStatus
 
 
 # Simple data structures for utility commands that don't need full CQRS
@@ -1168,10 +1167,8 @@ class CLICommandFactory:
         lightweight: bool = False,
         include_machines: bool = True,
         **kwargs: Any,
-    ) -> "GetMultipleRequestsQuery":
+    ) -> GetMultipleRequestsQuery:
         """Create query to get multiple requests by IDs."""
-        from application.dto.bulk_queries import GetMultipleRequestsQuery
-
         return GetMultipleRequestsQuery(
             request_ids=request_ids,
             provider_name=provider_name,
@@ -1185,10 +1182,8 @@ class CLICommandFactory:
         provider_name: Optional[str] = None,
         active_only: bool = True,
         **kwargs: Any,
-    ) -> "GetMultipleTemplatesQuery":
+    ) -> GetMultipleTemplatesQuery:
         """Create query to get multiple templates by IDs."""
-        from application.dto.bulk_queries import GetMultipleTemplatesQuery
-
         return GetMultipleTemplatesQuery(
             template_ids=template_ids, provider_name=provider_name, active_only=active_only
         )
@@ -1199,10 +1194,8 @@ class CLICommandFactory:
         provider_name: Optional[str] = None,
         include_requests: bool = True,
         **kwargs: Any,
-    ) -> "GetMultipleMachinesQuery":
+    ) -> GetMultipleMachinesQuery:
         """Create query to get multiple machines by IDs."""
-        from application.dto.bulk_queries import GetMultipleMachinesQuery
-
         return GetMultipleMachinesQuery(
             machine_ids=machine_ids, provider_name=provider_name, include_requests=include_requests
         )

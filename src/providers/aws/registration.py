@@ -415,7 +415,6 @@ def register_aws_services_with_di(container) -> None:
         from providers.aws.infrastructure.adapters.template_adapter import AWSTemplateAdapter
 
         def create_aws_template_adapter(c):
-            from domain.base.ports import ConfigurationPort
             from providers.aws.infrastructure.aws_client import AWSClient
             from infrastructure.template.configuration_manager import (
                 TemplateConfigurationManager,

@@ -43,11 +43,10 @@ class RequestDTOFactory:
                 return "executing"
             else:
                 return "fail"
+        # For acquire requests, running is success, pending is executing
+        elif status == "running":
+            return "succeed"
+        elif status in ["pending", "launching"]:
+            return "executing"
         else:
-            # For acquire requests, running is success, pending is executing
-            if status == "running":
-                return "succeed"
-            elif status in ["pending", "launching"]:
-                return "executing"
-            else:
-                return "fail"
+            return "fail"

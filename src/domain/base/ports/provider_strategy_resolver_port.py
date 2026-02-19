@@ -3,8 +3,6 @@
 from abc import ABC, abstractmethod
 from typing import Optional
 
-from domain.base.value_objects import ProviderType
-
 
 class ProviderStrategyResolverPort(ABC):
     """Domain port for resolving provider strategy identifiers."""

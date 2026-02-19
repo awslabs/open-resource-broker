@@ -9,7 +9,7 @@ from typing import Any, Optional, Union
 import traceback
 
 from cli.formatters import format_output
-from application.dto.base import BaseResponse, PaginatedResponse, BaseDTO
+from application.dto.base import BaseResponse, BaseDTO
 
 
 class CLIResponseFormatter:
@@ -383,7 +383,7 @@ class CLIResponseFormatter:
         """Format error when main formatting fails."""
         error_data = {
             "error": True,
-            "message": f"Formatting error: {str(error)}",
+            "message": f"Formatting error: {error!s}",
             "type": error.__class__.__name__,
             "traceback": traceback.format_exc() if format_type == "json" else None,
         }
@@ -395,7 +395,7 @@ class CLIResponseFormatter:
             formatted_output = format_output(error_data, format_type)
         except Exception:
             # Ultimate fallback - plain text
-            formatted_output = f"Error: {str(error)}"
+            formatted_output = f"Error: {error!s}"
 
         return formatted_output, 1
 

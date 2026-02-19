@@ -54,7 +54,7 @@ class AWSImageCache(ImageCache):
         """Load cache from disk."""
         if os.path.exists(self._cache_file):
             try:
-                with open(self._cache_file, "r") as f:
+                with open(self._cache_file) as f:
                     self._runtime_cache = json.load(f)
             except (json.JSONDecodeError, IOError):
                 self._runtime_cache = {}

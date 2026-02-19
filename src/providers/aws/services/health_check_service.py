@@ -1,7 +1,7 @@
 """AWS Health Check Service - Handles provider health monitoring and credentials."""
 
 import time
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Optional
 
 from domain.base.ports import LoggingPort
 from providers.base.strategy import ProviderHealthStatus

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
 from application.services.provider_registry_service import ProviderRegistryService
 
@@ -26,11 +26,6 @@ from domain.base.ports import (
     EventPublisherPort,
     LoggingPort,
 )
-from domain.base.ports.scheduler_port import SchedulerPort
-from domain.base.value_objects import InstanceType
-from domain.machine.aggregate import Machine
-from domain.machine.machine_identifiers import MachineId
-from domain.machine.machine_status import MachineStatus
 from domain.request.repository import RequestRepository
 from infrastructure.di.buses import QueryBus
 
@@ -211,7 +206,7 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
         event_publisher: EventPublisherPort,
         error_handler: ErrorHandlingPort,
         query_bus: QueryBus,  # Add QueryBus for template lookup
-        provider_registry_service: "ProviderRegistryService",  # Add missing dependency with type
+        provider_registry_service: ProviderRegistryService,  # Add missing dependency with type
     ) -> None:
         super().__init__(logger, event_publisher, error_handler)
         self.uow_factory = uow_factory
@@ -355,7 +350,7 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
                         update_command = UpdateRequestStatusCommand(
                             request_id=str(request.request_id),
                             status=RequestStatus.FAILED,
-                            message=f"Return request failed: {str(e)}",
+                            message=f"Return request failed: {e!s}",
                         )
 
                         from infrastructure.di.buses import CommandBus
@@ -372,10 +367,6 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
 
             # Return first request ID for backward compatibility
             return created_requests[0] if created_requests else None
-
-        except Exception as e:
-            self.logger.error("Failed to create return request: %s", e)
-            raise
 
         except Exception as e:
             self.logger.error("Failed to create return request: %s", e)

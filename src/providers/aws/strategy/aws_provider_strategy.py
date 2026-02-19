@@ -265,7 +265,7 @@ class AWSProviderStrategy(ProviderStrategy):
                 self._logger.warning("Failed to get provider defaults: %s", e)
             return None
 
-    def _get_handler_factory(self) -> Optional["AWSHandlerFactory"]:
+    def _get_handler_factory(self) -> Optional[AWSHandlerFactory]:
         """Get handler factory with provider-specific AWS client."""
         if self.aws_client:
             from providers.aws.infrastructure.aws_handler_factory import AWSHandlerFactory
@@ -317,7 +317,7 @@ class AWSProviderStrategy(ProviderStrategy):
             )
         return self._infrastructure_service
 
-    def _resolve_provisioning_port(self) -> Optional["AWSProvisioningAdapter"]:
+    def _resolve_provisioning_port(self) -> Optional[AWSProvisioningAdapter]:
         """Lazily resolve the AWS provisioning adapter when first needed."""
         if self._aws_provisioning_port is None and self._aws_provisioning_port_resolver:
             try:
@@ -401,7 +401,7 @@ class AWSProviderStrategy(ProviderStrategy):
             return ProviderResult.success_result({"resolved_images": resolved_images})
 
         except Exception as e:
-            return ProviderResult.failure_result(f"Image resolution failed: {str(e)}")
+            return ProviderResult.failure_result(f"Image resolution failed: {e!s}")
 
     def _create_image_resolution_service(self):
         """Create AWS image resolution service with provider-specific context."""

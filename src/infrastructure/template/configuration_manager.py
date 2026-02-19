@@ -412,9 +412,9 @@ class TemplateConfigurationManager:
         specifications = []
         for template in templates:
             # Look for image specifications in various template fields
-            if "image_id" in template and template["image_id"]:
+            if template.get("image_id"):
                 specifications.append(template["image_id"])
-            if "ami_id" in template and template["ami_id"]:  # Legacy support
+            if template.get("ami_id"):  # Legacy support
                 specifications.append(template["ami_id"])
         return list(set(specifications))  # Remove duplicates
 
@@ -476,8 +476,6 @@ class TemplateConfigurationManager:
             if "ami_id" in template and template["ami_id"] in resolved_images:  # Legacy support
                 template["ami_id"] = resolved_images[template["ami_id"]]
         return templates
-
-        return resolved_templates
 
     async def get_template_by_id(self, template_id: str) -> Optional[TemplateDTO]:
         """
@@ -542,7 +540,6 @@ class TemplateConfigurationManager:
 
     def get_all_templates_sync(self) -> list[TemplateDTO]:
         """Get all templates synchronously for adapter compatibility."""
-        import asyncio
 
         try:
             # Try to get existing event loop
@@ -597,7 +594,6 @@ class TemplateConfigurationManager:
 
     def get_template(self, template_id: str) -> Optional[TemplateDTO]:
         """Get template by ID synchronously for compatibility."""
-        import asyncio
 
         try:
             loop = asyncio.get_event_loop()

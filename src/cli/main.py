@@ -12,11 +12,10 @@ import asyncio
 import logging
 import os
 import sys
-from typing import Any, Union
+from typing import Union
 
 from _package import DOCS_URL
 from cli.completion import generate_bash_completion, generate_zsh_completion
-from cli.formatters import format_output
 from domain.base.exceptions import DomainException
 from domain.request.value_objects import RequestStatus
 from infrastructure.logging.logger import get_logger
@@ -1104,7 +1103,7 @@ async def main() -> None:
                 else:
                     print(f"Error: {result.get('message')}", file=sys.stderr)
                     sys.exit(1)
-            except Exception as e:
+            except Exception:
                 import traceback
 
                 traceback.print_exc()
