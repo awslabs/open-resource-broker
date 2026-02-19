@@ -136,6 +136,26 @@ class InstanceType(ValueObject):
         return stripped
 
 
+class InstanceId(ValueObject):
+    """Instance identifier value object."""
+
+    value: str
+
+    def __str__(self) -> str:
+        return self.value
+
+    @field_validator("value")
+    @classmethod
+    def validate_instance_id(cls, v: str) -> str:
+        """Validate instance ID format."""
+        if not v or not isinstance(v, str):
+            raise ValueError("Instance ID must be a non-empty string")
+        stripped = v.strip()
+        if not stripped:
+            raise ValueError("Instance ID must be a non-empty string")
+        return stripped
+
+
 class Tags(ValueObject):
     """Tags value object for resource tagging."""
 

@@ -50,6 +50,10 @@ class CLICommandFactoryOrchestrator:
         """Create command to validate template."""
         return self._template_factory.create_validate_template_command(**kwargs)
 
+    def create_validate_template_query(self, **kwargs: Any):
+        """Create query to validate template configuration."""
+        return self._template_factory.create_validate_template_query(**kwargs)
+
     def create_get_multiple_templates_query(self, **kwargs: Any):
         """Create query to get multiple templates by IDs."""
         return self._template_factory.create_get_multiple_templates_query(**kwargs)
@@ -203,7 +207,9 @@ class CLICommandFactoryOrchestrator:
 
     def create_mcp_tools_command_data(self, action: str, **kwargs: Any):
         """Create MCP tools command data structure."""
-        return self._utility_factory.create_mcp_tools_command_data(action, **kwargs)
+        # Remove action from kwargs to avoid duplicate argument
+        filtered_kwargs = {k: v for k, v in kwargs.items() if k != "action"}
+        return self._utility_factory.create_mcp_tools_command_data(action, **filtered_kwargs)
 
     def create_mcp_validate_command_data(self, **kwargs: Any):
         """Create MCP validate command data structure."""
@@ -211,15 +217,23 @@ class CLICommandFactoryOrchestrator:
 
     def create_infrastructure_command_data(self, action: str, **kwargs: Any):
         """Create infrastructure command data structure."""
-        return self._utility_factory.create_infrastructure_command_data(action, **kwargs)
+        # Remove action from kwargs to avoid duplicate argument
+        filtered_kwargs = {k: v for k, v in kwargs.items() if k != "action"}
+        return self._utility_factory.create_infrastructure_command_data(action, **filtered_kwargs)
 
     def create_provider_operation_command_data(self, action: str, **kwargs: Any):
         """Create provider operation command data structure."""
-        return self._utility_factory.create_provider_operation_command_data(action, **kwargs)
+        # Remove action from kwargs to avoid duplicate argument
+        filtered_kwargs = {k: v for k, v in kwargs.items() if k != "action"}
+        return self._utility_factory.create_provider_operation_command_data(
+            action, **filtered_kwargs
+        )
 
     def create_template_utility_command_data(self, action: str, **kwargs: Any):
         """Create template utility command data structure."""
-        return self._utility_factory.create_template_utility_command_data(action, **kwargs)
+        # Remove action from kwargs to avoid duplicate argument
+        filtered_kwargs = {k: v for k, v in kwargs.items() if k != "action"}
+        return self._utility_factory.create_template_utility_command_data(action, **filtered_kwargs)
 
     def create_storage_test_command_data(self, **kwargs: Any):
         """Create storage test command data structure."""
@@ -312,12 +326,15 @@ class CLICommandFactoryOrchestrator:
             elif command_action == "delete":
                 return self.create_delete_template_command(template_id=args.get("template_id"))
             elif command_action == "validate":
-                # Return None to trigger fallback to direct handler
-                return None
+                return self.create_validate_template_query(
+                    template_config=args.get("template_config", {}),
+                    template_id=args.get("template_id"),
+                )
             elif command_action == "refresh":
-                return self.create_template_utility_command_data("refresh", **args)
+                return self.create_refresh_templates_command(provider_name=args.get("provider"))
             elif command_action == "generate":
-                return self.create_template_utility_command_data("generate", **args)
+                filtered_args = {k: v for k, v in args.items() if k != "action"}
+                return self.create_template_utility_command_data("generate", **filtered_args)
 
         # Request operations
         elif command_group in ["requests", "request"]:
@@ -447,17 +464,14 @@ class CLICommandFactoryOrchestrator:
         # Infrastructure operations
         elif command_group in {"infrastructure", "infra"}:
             if command_action == "discover":
-                return self.create_infrastructure_command_data(
-                    "discover", **{k: v for k, v in args.items() if k != "action"}
-                )
+                filtered_args = {k: v for k, v in args.items() if k != "action"}
+                return self.create_infrastructure_command_data("discover", **filtered_args)
             elif command_action == "show":
-                return self.create_infrastructure_command_data(
-                    "show", **{k: v for k, v in args.items() if k != "action"}
-                )
+                filtered_args = {k: v for k, v in args.items() if k != "action"}
+                return self.create_infrastructure_command_data("show", **filtered_args)
             elif command_action == "validate":
-                return self.create_infrastructure_command_data(
-                    "validate", **{k: v for k, v in args.items() if k != "action"}
-                )
+                filtered_args = {k: v for k, v in args.items() if k != "action"}
+                return self.create_infrastructure_command_data("validate", **filtered_args)
 
         # MCP operations
         elif command_group == "mcp":
@@ -465,10 +479,10 @@ class CLICommandFactoryOrchestrator:
                 return self.create_mcp_serve_command_data(**args)
             elif command_action == "tools":
                 tools_action = args.get("tools_action")
-                return self.create_mcp_tools_command_data(
-                    tools_action,
-                    **{k: v for k, v in args.items() if k not in ["action", "tools_action"]},
-                )
+                filtered_args = {
+                    k: v for k, v in args.items() if k not in ["action", "tools_action"]
+                }
+                return self.create_mcp_tools_command_data(tools_action, **filtered_args)
             elif command_action == "validate":
                 return self.create_mcp_validate_command()
 
