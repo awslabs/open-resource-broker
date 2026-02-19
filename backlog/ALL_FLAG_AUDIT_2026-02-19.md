@@ -2,14 +2,14 @@
 
 **Date**: 2026-02-19  
 **Analyst**: orb-architect  
-**Status**: ANALYSIS COMPLETE
+**Status**: ANALYSIS COMPLETE (CORRECTED)
 
 ## Executive Summary
 
 - **Working**: 3/3 implemented --all flags work correctly
-- **Missing**: 2 high-priority --all implementations needed
+- **Missing**: 1 high-priority --all implementation needed
 - **Broken**: 0 broken implementations found
-- **Safety**: Good validation patterns, some inconsistency
+- **Clarifications**: Stop/start commands don't exist, validate needs enhancement
 
 ---
 
@@ -29,9 +29,10 @@
 
 ### 3. machines return --all ✅
 - **Command**: `orb machines return --all --force`
-- **Behavior**: Returns all active machines
+- **Behavior**: Returns (terminates) all active machines
 - **Validation**: Requires --force flag for safety
 - **Status**: WORKING
+- **Note**: "Return" is HostFactory terminology for terminate
 
 ---
 
@@ -39,45 +40,34 @@
 
 ### P1: High Priority
 
-#### 1. Machine Stop/Start Commands
-**Missing**: `orb machines stop --all` and `orb machines start --all`
+#### Templates Validate Loaded Templates
+**Missing**: `orb templates validate --all` and `orb templates validate template-id`
 
 **Why Needed**:
-- Stop all machines for cost savings
-- Start all stopped machines to resume work
-- Common operational tasks
+- Validate templates already loaded in system
+- Catch configuration errors in existing templates
+- Quality assurance for deployed templates
 
-**Current State**: Commands don't exist at all
+**Current State**: 
+- Only validates external files: `orb templates validate --file template.json`
+- This is for pre-import validation
 
-**Implementation Needed**:
-- Add CLI parser entries
-- Create handlers for stop/start operations
-- Support both individual IDs and --all flag
-- Add --force requirement for stop --all
+**Enhancement Needed**:
+- Keep existing --file functionality (pre-import validation)
+- Add support for validating loaded templates (post-import validation)
+- `orb templates validate template-id` - validate specific loaded template
+- `orb templates validate --all` - validate all loaded templates
 
----
-
-#### 2. Templates Validate --all
-**Missing**: `orb templates validate --all`
-
-**Why Needed**:
-- Validate all templates in system
-- Catch configuration errors across all templates
-- Quality assurance
-
-**Current State**: Only validates single template from file
-
-**Implementation Needed**:
-- Modify existing validate handler
-- Add --all flag support
-- Iterate through all templates
-- Report validation results
+**Implementation**:
+- Modify validate handler to support both modes
+- Without --file: validate loaded templates
+- With --file: validate external file (current behavior)
 
 ---
 
 ### P2: Medium Priority
 
-#### 3. Standardize Safety Patterns
+#### Standardize Safety Patterns
 **Issue**: Inconsistent --force requirements
 
 **Current**:
@@ -93,15 +83,43 @@
 
 ### P3: Low Priority
 
-#### 4. Machine Terminate Command
-**Issue**: No explicit terminate command
+#### Machine Terminate Alias
+**Issue**: No explicit terminate command (only "return")
 
 **Current**: `machines return` handles termination
 
+**Clarification**:
+- "Return" is HostFactory standard terminology
+- Means "return machines to provider" = terminate/destroy
+- Not ORB-specific, this is how HostFactory works
+
 **Recommendation**:
-- Add `machines terminate` as alias to `machines return`
-- Or document that return=terminate
-- Improve clarity for users
+- Keep `machines return` as primary (HostFactory standard)
+- Could add `machines terminate` as alias for clarity
+- Both would do same thing
+- Priority: P3 (nice-to-have)
+
+---
+
+## Clarifications
+
+### 1. Stop/Start Commands
+**CORRECTION**: We do NOT have stop/start commands.
+- Architect was incorrect in original report
+- Not relevant to --all flag audit
+- Separate decision if we want to add them in future
+
+### 2. Templates Validate Purpose
+**Current**: Validates external template files before import
+**Enhancement**: Should also validate loaded templates in system
+**User's Point**: Valid - validate should work on loaded templates too
+
+### 3. Return vs Terminate
+**Clarification**: "Return" is HostFactory terminology
+- Return = terminate/destroy machines
+- Standard HostFactory vocabulary
+- Not confusing to HostFactory users
+- Could add terminate alias for non-HostFactory users
 
 ---
 
@@ -109,55 +127,22 @@
 
 ### Immediate (P1)
 
-1. **Add machine stop command**
-   - `orb machines stop [machine-ids...] [--all] [--force]`
-   - Stop running machines
-   - Requires --force for --all
-
-2. **Add machine start command**
-   - `orb machines start [machine-ids...] [--all]`
-   - Start stopped machines
-   - No --force needed (not destructive)
-
-3. **Add templates validate --all**
-   - `orb templates validate --all`
-   - Validate all templates
+1. **Add templates validate for loaded templates**
+   - `orb templates validate template-id` - validate specific template
+   - `orb templates validate --all` - validate all templates
+   - Keep existing --file functionality
    - Report validation results
 
 ### Future (P2-P3)
 
-4. **Standardize safety patterns** (P2)
+2. **Standardize safety patterns** (P2)
    - Audit all destructive operations
    - Add --force requirements consistently
    - Update documentation
 
-5. **Consider terminate alias** (P3)
-   - Add explicit terminate command
-   - Or improve documentation
-
----
-
-## Safety Patterns
-
-### Current Good Practices
-
-1. **Validation**: Prevents --all with specific IDs
-   ```
-   Error: Cannot use --all with specific IDs
-   ```
-
-2. **Force Flag**: Destructive operations require --force
-   ```
-   orb machines return --all --force
-   ```
-
-3. **Confirmation**: Interactive prompts for destructive actions
-
-### Recommendations
-
-- Apply --force pattern to all destructive --all operations
-- Document safety requirements in help text
-- Consider dry-run mode for testing
+3. **Consider terminate alias** (P3)
+   - Add `machines terminate` as alias to `machines return`
+   - Improve clarity for non-HostFactory users
 
 ---
 
@@ -187,19 +172,13 @@ These are already global:
 
 ## Next Steps
 
-1. Create tasks for P1 implementations:
-   - machines stop --all
-   - machines start --all
-   - templates validate --all
-
+1. Create task for templates validate enhancement (P1)
 2. Review safety patterns (P2)
-
 3. Update documentation
-
 4. Consider P3 enhancements
 
 ---
 
-**Document Version**: 1.0  
+**Document Version**: 1.1 (Corrected)  
 **Last Updated**: 2026-02-19  
 **Status**: READY FOR TASK CREATION
