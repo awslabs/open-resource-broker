@@ -1,7 +1,8 @@
 """Test CLI validation for show commands."""
 
-import pytest
 from unittest.mock import Mock
+
+import pytest
 
 from domain.base.exceptions import DomainException
 
