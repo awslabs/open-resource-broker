@@ -3,6 +3,7 @@
 import hashlib
 import json
 import os
+import tempfile
 import time
 from typing import Any, Dict, Optional
 
@@ -41,7 +42,9 @@ class AWSAMIResolver(ImageResolver):
 
         # Persistent cache configuration
         self._persistent_cache_enabled = cache_config.get("persistent", False)
-        self._cache_file_path = cache_config.get("file_path", "/tmp/ami_cache.json")
+        self._cache_file_path = cache_config.get(
+            "file_path", os.path.join(tempfile.gettempdir(), "ami_cache.json")
+        )
         self._allow_stale_fallback = cache_config.get("allow_stale_fallback", True)
         self._max_stale_age_seconds = cache_config.get("max_stale_age_seconds", 86400)
 
@@ -229,7 +232,7 @@ class AWSAMIResolver(ImageResolver):
 
     def _generate_cache_key(self, reference: str) -> str:
         """Generate consistent cache key from reference."""
-        return hashlib.md5(reference.encode()).hexdigest()
+        return hashlib.sha256(reference.encode()).hexdigest()
 
     def _load_persistent_cache(self) -> None:
         """Load cache from persistent file."""

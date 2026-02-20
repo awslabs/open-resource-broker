@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Test for the return validation fix - filter instead of block."""
 
-import pytest
 from unittest.mock import Mock
+
+import pytest
 
 from application.commands.request_handlers import CreateReturnRequestHandler
 from application.dto.commands import CreateReturnRequestCommand
