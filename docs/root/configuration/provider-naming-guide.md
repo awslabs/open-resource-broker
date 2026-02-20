@@ -299,6 +299,5 @@ The naming convention is designed to be extensible for future provider types:
 **Potential Future Patterns:**
 - `provider1_{account}_{region}` - Provider1 providers
 - `provider2_{project}_{region}` - Provider2 providers
-- `openstack_{tenant}_{region}` - OpenStack providers
 
 This structured approach ensures consistency and scalability as new provider types are added to the system.
