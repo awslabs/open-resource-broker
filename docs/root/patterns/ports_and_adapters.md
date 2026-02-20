@@ -471,7 +471,7 @@ class DynamoDBTemplateRepository(TemplateRepository):
 **Business Logic Isolation**
 - Domain logic doesn't depend on specific technologies
 - Can switch from DynamoDB to PostgreSQL without changing business rules
-- Can switch from AWS to Azure without changing core functionality
+- Can switch from AWS to Provider1 without changing core functionality
 
 **Framework Flexibility**
 - Infrastructure can use different frameworks

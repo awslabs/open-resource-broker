@@ -17,17 +17,17 @@ The Open Resource Broker uses Pydantic BaseSettings to provide:
 ### Step 1: Define Configuration Schema
 
 ```python
-# src/providers/azure/configuration/config.py
+# src/providers/provider1/configuration/config.py
 from typing import Optional, List
 from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from infrastructure.interfaces.provider import BaseProviderConfig
 
-class AzureProviderConfig(BaseSettings, BaseProviderConfig):
-    """Azure provider configuration with automatic environment variable support."""
+class Provider1ProviderConfig(BaseSettings, BaseProviderConfig):
+    """Provider1 provider configuration with automatic environment variable support."""
     
     model_config = SettingsConfigDict(
-        env_prefix='ORB_AZURE_',           # Environment variable prefix
+        env_prefix='ORB_PROVIDER1_',           # Environment variable prefix
         case_sensitive=False,              # Case insensitive env vars
         populate_by_name=True,             # Support field aliases
         env_nested_delimiter='__',         # Nested object delimiter
@@ -35,21 +35,21 @@ class AzureProviderConfig(BaseSettings, BaseProviderConfig):
     )
     
     # Provider identification
-    provider_type: str = "azure"
+    provider_type: str = "provider1"
     
-    # Authentication fields - automatically mapped to ORB_AZURE_* env vars
-    subscription_id: str = Field(..., description="Azure subscription ID")
-    tenant_id: str = Field(..., description="Azure tenant ID")
-    client_id: str = Field(..., description="Azure client ID")
-    client_secret: str = Field(..., description="Azure client secret")
+    # Authentication fields - automatically mapped to ORB_PROVIDER1_* env vars
+    account_id: str = Field(..., description="Provider1 subscription ID")
+    tenant_id: str = Field(..., description="Provider1 tenant ID")
+    client_id: str = Field(..., description="Provider1 client ID")
+    client_secret: str = Field(..., description="Provider1 client secret")
     
     # Service configuration
-    resource_group: str = Field(..., description="Azure resource group")
-    location: str = Field("East US", description="Azure location")
+    resource_group: str = Field(..., description="Provider1 resource group")
+    location: str = Field("East US", description="Provider1 location")
     
     # Optional settings with defaults
-    endpoint_url: Optional[str] = Field(None, description="Azure endpoint URL")
-    max_retries: int = Field(3, description="Maximum retries for Azure API calls")
+    endpoint_url: Optional[str] = Field(None, description="Provider1 endpoint URL")
+    max_retries: int = Field(3, description="Maximum retries for Provider1 API calls")
     timeout: int = Field(30, description="Request timeout in seconds")
     
     # Complex nested configuration
@@ -59,51 +59,51 @@ class AzureProviderConfig(BaseSettings, BaseProviderConfig):
     )
     
     @model_validator(mode="after")
-    def validate_authentication(self) -> "AzureProviderConfig":
+    def validate_authentication(self) -> "Provider1ProviderConfig":
         """Validate that required authentication fields are provided."""
-        if not all([self.subscription_id, self.tenant_id, self.client_id, self.client_secret]):
-            raise ValueError("All authentication fields are required for Azure provider")
+        if not all([self.account_id, self.tenant_id, self.client_id, self.client_secret]):
+            raise ValueError("All authentication fields are required for Provider1 provider")
         return self
 ```
 
 ### Step 2: Register Provider Settings
 
 ```python
-# src/providers/azure/__init__.py
+# src/providers/provider1/__init__.py
 from config.schemas.provider_settings_registry import ProviderSettingsRegistry
-from .configuration.config import AzureProviderConfig
+from .configuration.config import Provider1ProviderConfig
 
-# Register Azure provider settings for automatic environment variable support
-ProviderSettingsRegistry.register_provider_settings("azure", AzureProviderConfig)
+# Register Provider1 provider settings for automatic environment variable support
+ProviderSettingsRegistry.register_provider_settings("provider1", Provider1ProviderConfig)
 ```
 
 ### Step 3: Use in Provider Implementation
 
 ```python
-# src/providers/azure/azure_provider.py
+# src/providers/provider1/provider1_provider.py
 from typing import Dict, Any
 from infrastructure.interfaces.provider import ProviderInterface
-from .configuration.config import AzureProviderConfig
+from .configuration.config import Provider1ProviderConfig
 
-class AzureProvider(ProviderInterface):
-    """Azure cloud provider implementation."""
+class Provider1Provider(ProviderInterface):
+    """Provider1 cloud provider implementation."""
 
-    def __init__(self, config: AzureProviderConfig):
-        """Initialize Azure provider with BaseSettings configuration."""
+    def __init__(self, config: Provider1ProviderConfig):
+        """Initialize Provider1 provider with BaseSettings configuration."""
         self.config = config
         self.logger = get_logger(__name__)
         
         # Configuration is already validated and type-safe
-        self.subscription_id = config.subscription_id
+        self.account_id = config.account_id
         self.resource_group = config.resource_group
         self.location = config.location
 
     def initialize(self) -> bool:
-        """Initialize Azure provider using configuration."""
+        """Initialize Provider1 provider using configuration."""
         try:
             # Use validated configuration
-            self.azure_client = AzureClient(
-                subscription_id=self.config.subscription_id,
+            self.provider1_client = Provider1Client(
+                account_id=self.config.account_id,
                 tenant_id=self.config.tenant_id,
                 client_id=self.config.client_id,
                 client_secret=self.config.client_secret,
@@ -112,7 +112,7 @@ class AzureProvider(ProviderInterface):
             )
             return True
         except Exception as e:
-            self.logger.error(f"Failed to initialize Azure provider: {e}")
+            self.logger.error(f"Failed to initialize Provider1 provider: {e}")
             return False
 ```
 
@@ -120,18 +120,18 @@ class AzureProvider(ProviderInterface):
 
 ### Automatic Field Mapping
 
-With `env_prefix='ORB_AZURE_'`, fields automatically map to environment variables:
+With `env_prefix='ORB_PROVIDER1_'`, fields automatically map to environment variables:
 
 ```python
 # Configuration field -> Environment variable
-subscription_id     -> ORB_AZURE_SUBSCRIPTION_ID
-tenant_id          -> ORB_AZURE_TENANT_ID
-client_id          -> ORB_AZURE_CLIENT_ID
-client_secret      -> ORB_AZURE_CLIENT_SECRET
-resource_group     -> ORB_AZURE_RESOURCE_GROUP
-location           -> ORB_AZURE_LOCATION
-max_retries        -> ORB_AZURE_MAX_RETRIES
-timeout            -> ORB_AZURE_TIMEOUT
+account_id     -> ORB_PROVIDER1_SUBSCRIPTION_ID
+tenant_id          -> ORB_PROVIDER1_TENANT_ID
+client_id          -> ORB_PROVIDER1_CLIENT_ID
+client_secret      -> ORB_PROVIDER1_CLIENT_SECRET
+resource_group     -> ORB_PROVIDER1_RESOURCE_GROUP
+location           -> ORB_PROVIDER1_LOCATION
+max_retries        -> ORB_PROVIDER1_MAX_RETRIES
+timeout            -> ORB_PROVIDER1_TIMEOUT
 ```
 
 ### Usage Examples
@@ -140,10 +140,10 @@ timeout            -> ORB_AZURE_TIMEOUT
 ```json
 {
   "providers": [{
-    "name": "azure-east-us",
-    "type": "azure",
+    "name": "provider1-east-us",
+    "type": "provider1",
     "config": {
-      "subscription_id": "12345678-1234-1234-1234-123456789012",
+      "account_id": "12345678-1234-1234-1234-123456789012",
       "tenant_id": "87654321-4321-4321-4321-210987654321",
       "client_id": "app-client-id",
       "resource_group": "hostfactory-rg",
@@ -157,13 +157,13 @@ timeout            -> ORB_AZURE_TIMEOUT
 **Environment Variable Overrides:**
 ```bash
 # Override specific fields
-export ORB_AZURE_CLIENT_SECRET="secure-production-secret"
-export ORB_AZURE_LOCATION="West US 2"
-export ORB_AZURE_MAX_RETRIES=5
-export ORB_AZURE_TIMEOUT=60
+export ORB_PROVIDER1_CLIENT_SECRET="secure-production-secret"
+export ORB_PROVIDER1_LOCATION="West US 2"
+export ORB_PROVIDER1_MAX_RETRIES=5
+export ORB_PROVIDER1_TIMEOUT=60
 
 # Override complex fields with JSON
-export ORB_AZURE_VM_SIZES='["Standard_D8s_v3", "Standard_D16s_v3"]'
+export ORB_PROVIDER1_VM_SIZES='["Standard_D8s_v3", "Standard_D16s_v3"]'
 ```
 
 ## Advanced Configuration Patterns
@@ -172,12 +172,12 @@ export ORB_AZURE_VM_SIZES='["Standard_D8s_v3", "Standard_D16s_v3"]'
 
 ```python
 class NetworkConfig(BaseModel):
-    """Network configuration for Azure provider."""
+    """Network configuration for Provider1 provider."""
     virtual_network: str
     subnet: str
     security_group: str
 
-class AzureProviderConfig(BaseSettings, BaseProviderConfig):
+class Provider1ProviderConfig(BaseSettings, BaseProviderConfig):
     # ... other fields ...
     
     # Nested configuration object
@@ -187,37 +187,37 @@ class AzureProviderConfig(BaseSettings, BaseProviderConfig):
 **Environment Variable Usage:**
 ```bash
 # JSON format for complex objects
-export ORB_AZURE_NETWORK='{"virtual_network": "prod-vnet", "subnet": "prod-subnet", "security_group": "prod-sg"}'
+export ORB_PROVIDER1_NETWORK='{"virtual_network": "prod-vnet", "subnet": "prod-subnet", "security_group": "prod-sg"}'
 
 # Nested delimiter format (if supported)
-export ORB_AZURE_NETWORK__VIRTUAL_NETWORK="prod-vnet"
-export ORB_AZURE_NETWORK__SUBNET="prod-subnet"
-export ORB_AZURE_NETWORK__SECURITY_GROUP="prod-sg"
+export ORB_PROVIDER1_NETWORK__VIRTUAL_NETWORK="prod-vnet"
+export ORB_PROVIDER1_NETWORK__SUBNET="prod-subnet"
+export ORB_PROVIDER1_NETWORK__SECURITY_GROUP="prod-sg"
 ```
 
 ### Field Aliases and Validation
 
 ```python
-class AzureProviderConfig(BaseSettings, BaseProviderConfig):
+class Provider1ProviderConfig(BaseSettings, BaseProviderConfig):
     # Field with alias for backward compatibility
     max_retries: int = Field(
         3, 
-        alias="retries",  # Also accepts ORB_AZURE_RETRIES
-        description="Maximum retries for Azure API calls"
+        alias="retries",  # Also accepts ORB_PROVIDER1_RETRIES
+        description="Maximum retries for Provider1 API calls"
     )
     
     # Custom validation
     @field_validator('location')
     @classmethod
     def validate_location(cls, v: str) -> str:
-        """Validate Azure location format."""
+        """Validate Provider1 location format."""
         valid_locations = ["East US", "West US", "West US 2", "Central US"]
         if v not in valid_locations:
             raise ValueError(f"Invalid location: {v}. Must be one of {valid_locations}")
         return v
     
     @model_validator(mode="after")
-    def validate_resource_limits(self) -> "AzureProviderConfig":
+    def validate_resource_limits(self) -> "Provider1ProviderConfig":
         """Validate resource configuration limits."""
         if self.max_retries > 10:
             raise ValueError("max_retries cannot exceed 10")
@@ -231,19 +231,19 @@ class AzureProviderConfig(BaseSettings, BaseProviderConfig):
 BaseSettings automatically handles type conversion:
 
 ```python
-class AzureProviderConfig(BaseSettings, BaseProviderConfig):
+class Provider1ProviderConfig(BaseSettings, BaseProviderConfig):
     # Integer fields
-    max_retries: int = 3           # ORB_AZURE_MAX_RETRIES="5" -> int(5)
-    timeout: int = 30              # ORB_AZURE_TIMEOUT="60" -> int(60)
+    max_retries: int = 3           # ORB_PROVIDER1_MAX_RETRIES="5" -> int(5)
+    timeout: int = 30              # ORB_PROVIDER1_TIMEOUT="60" -> int(60)
     
     # Boolean fields  
-    enable_monitoring: bool = True  # ORB_AZURE_ENABLE_MONITORING="false" -> False
+    enable_monitoring: bool = True  # ORB_PROVIDER1_ENABLE_MONITORING="false" -> False
     
     # List fields
-    vm_sizes: List[str] = []       # ORB_AZURE_VM_SIZES='["size1", "size2"]' -> ["size1", "size2"]
+    vm_sizes: List[str] = []       # ORB_PROVIDER1_VM_SIZES='["size1", "size2"]' -> ["size1", "size2"]
     
     # Optional fields
-    endpoint_url: Optional[str] = None  # ORB_AZURE_ENDPOINT_URL="" -> None
+    endpoint_url: Optional[str] = None  # ORB_PROVIDER1_ENDPOINT_URL="" -> None
 ```
 
 ## Integration with Provider Factory
@@ -266,8 +266,8 @@ class ProviderStrategyFactory:
             instance_config.config
         )
         
-        if instance_config.type == "azure":
-            # typed_config is already an AzureProviderConfig instance
+        if instance_config.type == "provider1":
+            # typed_config is already an Provider1ProviderConfig instance
             return typed_config
         
         # Fallback for providers without BaseSettings
@@ -307,12 +307,12 @@ class ProviderStrategyFactory:
 4. **Logging**: Avoid logging sensitive configuration values
 
 ```python
-class AzureProviderConfig(BaseSettings, BaseProviderConfig):
+class Provider1ProviderConfig(BaseSettings, BaseProviderConfig):
     # Sensitive field - should come from environment variable
-    client_secret: str = Field(..., description="Azure client secret (use ORB_AZURE_CLIENT_SECRET)")
+    client_secret: str = Field(..., description="Provider1 client secret (use ORB_PROVIDER1_CLIENT_SECRET)")
     
     @model_validator(mode="after")
-    def mask_sensitive_fields(self) -> "AzureProviderConfig":
+    def mask_sensitive_fields(self) -> "Provider1ProviderConfig":
         """Ensure sensitive fields are not logged."""
         # Implementation to mask sensitive fields in logs
         return self
@@ -324,29 +324,29 @@ class AzureProviderConfig(BaseSettings, BaseProviderConfig):
 
 ```python
 import pytest
-from providers.azure.configuration.config import AzureProviderConfig
+from providers.provider1.configuration.config import Provider1ProviderConfig
 
-def test_azure_config_validation():
-    """Test Azure configuration validation."""
-    config = AzureProviderConfig(
-        subscription_id="test-subscription",
+def test_provider1_config_validation():
+    """Test Provider1 configuration validation."""
+    config = Provider1ProviderConfig(
+        account_id="test-subscription",
         tenant_id="test-tenant",
         client_id="test-client",
         client_secret="test-secret",
         resource_group="test-rg"
     )
     
-    assert config.subscription_id == "test-subscription"
+    assert config.account_id == "test-subscription"
     assert config.location == "East US"  # Default value
     assert config.max_retries == 3       # Default value
 
 def test_environment_variable_override(monkeypatch):
     """Test environment variable override."""
-    monkeypatch.setenv("ORB_AZURE_LOCATION", "West US 2")
-    monkeypatch.setenv("ORB_AZURE_MAX_RETRIES", "5")
+    monkeypatch.setenv("ORB_PROVIDER1_LOCATION", "West US 2")
+    monkeypatch.setenv("ORB_PROVIDER1_MAX_RETRIES", "5")
     
-    config = AzureProviderConfig(
-        subscription_id="test-subscription",
+    config = Provider1ProviderConfig(
+        account_id="test-subscription",
         tenant_id="test-tenant", 
         client_id="test-client",
         client_secret="test-secret",
@@ -359,8 +359,8 @@ def test_environment_variable_override(monkeypatch):
 def test_validation_errors():
     """Test configuration validation errors."""
     with pytest.raises(ValueError, match="All authentication fields are required"):
-        AzureProviderConfig(
-            subscription_id="test-subscription"
+        Provider1ProviderConfig(
+            account_id="test-subscription"
             # Missing required fields
         )
 ```
@@ -372,7 +372,7 @@ def test_validation_errors():
 When migrating from legacy configuration patterns:
 
 ```python
-class AzureProviderConfig(BaseSettings, BaseProviderConfig):
+class Provider1ProviderConfig(BaseSettings, BaseProviderConfig):
     # New field with legacy alias
     max_retries: int = Field(3, alias="retries")
     

@@ -499,13 +499,13 @@ class AWSOperations:
 ### Implement Provider Interface
 
 ```python
-# src/providers/provider1/azure_provider.py
+# src/providers/provider1/provider1_provider.py
 from src.infrastructure.interfaces.provider import ProviderInterface
 
-class AzureProvider(ProviderInterface):
+class Provider1Provider(ProviderInterface):
     """Provider1 cloud provider implementation."""
 
-    def __init__(self, config: AzureConfig):
+    def __init__(self, config: Provider1Config):
         self.config = config
         # Initialize Provider1 clients
 
@@ -528,32 +528,32 @@ from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from infrastructure.interfaces.provider import BaseProviderConfig
 
-class AzureProviderConfig(BaseSettings, BaseProviderConfig):
-    """Azure provider configuration with automatic environment variable support."""
+class Provider1ProviderConfig(BaseSettings, BaseProviderConfig):
+    """Provider1 provider configuration with automatic environment variable support."""
     
     model_config = SettingsConfigDict(
-        env_prefix='ORB_AZURE_',
+        env_prefix='ORB_PROVIDER1_',
         case_sensitive=False,
         populate_by_name=True,
         env_nested_delimiter='__'
     )
     
     # Provider identification
-    provider_type: str = "azure"
+    provider_type: str = "provider1"
     
-    # Azure Authentication - automatically mapped to ORB_AZURE_* env vars
-    subscription_id: str = Field(..., description="Azure subscription ID")
-    tenant_id: str = Field(..., description="Azure tenant ID")
-    client_id: str = Field(..., description="Azure client ID")
-    client_secret: str = Field(..., description="Azure client secret")
+    # Provider1 Authentication - automatically mapped to ORB_PROVIDER1_* env vars
+    account_id: str = Field(..., description="Provider1 account ID")
+    tenant_id: str = Field(..., description="Provider1 tenant ID")
+    client_id: str = Field(..., description="Provider1 client ID")
+    client_secret: str = Field(..., description="Provider1 client secret")
     
-    # Azure Settings
-    resource_group: str = Field(..., description="Azure resource group")
-    location: str = Field("East US", description="Azure location")
+    # Provider1 Settings
+    resource_group: str = Field(..., description="Provider1 resource group")
+    location: str = Field("Region A", description="Provider1 location")
     
     # Optional settings
-    endpoint_url: Optional[str] = Field(None, description="Azure endpoint URL")
-    max_retries: int = Field(3, description="Maximum retries for Azure API calls")
+    endpoint_url: Optional[str] = Field(None, description="Provider1 endpoint URL")
+    max_retries: int = Field(3, description="Maximum retries for Provider1 API calls")
     timeout: int = Field(30, description="Request timeout in seconds")
 ```
 
@@ -562,18 +562,18 @@ class AzureProviderConfig(BaseSettings, BaseProviderConfig):
 ```python
 # src/providers/provider1/__init__.py
 from config.schemas.provider_settings_registry import ProviderSettingsRegistry
-from .configuration.config import AzureProviderConfig
+from .configuration.config import Provider1ProviderConfig
 
-# Register Azure provider settings for automatic environment variable support
-ProviderSettingsRegistry.register_provider_settings("azure", AzureProviderConfig)
+# Register Provider1 provider settings for automatic environment variable support
+ProviderSettingsRegistry.register_provider_settings("provider1", Provider1ProviderConfig)
 ```
 
 ### Register Provider
 
 ```python
 # Register Provider1 provider
-from src.providers.provider1.azure_provider import AzureProvider
-ProviderFactory.register_provider("provider1", AzureProvider)
+from src.providers.provider1.provider1_provider import Provider1Provider
+ProviderFactory.register_provider("provider1", Provider1Provider)
 ```
 
 ### Configuration with Environment Variable Support
@@ -582,8 +582,8 @@ ProviderFactory.register_provider("provider1", AzureProvider)
 ```json
 {
   "providers": [{
-    "name": "azure-east-us",
-    "type": "azure",
+    "name": "provider1-region-a",
+    "type": "provider1",
     "config": {
       "subscription_id": "your-subscription-id",
       "tenant_id": "your-tenant-id",
@@ -597,12 +597,12 @@ ProviderFactory.register_provider("provider1", AzureProvider)
 
 **Environment Variables (Override Config File):**
 ```bash
-# All Azure fields support environment variable overrides
-export ORB_AZURE_SUBSCRIPTION_ID="prod-subscription-id"
-export ORB_AZURE_CLIENT_SECRET="secure-client-secret"
-export ORB_AZURE_RESOURCE_GROUP="production-rg"
-export ORB_AZURE_LOCATION="West US 2"
-export ORB_AZURE_MAX_RETRIES=5
+# All Provider1 fields support environment variable overrides
+export ORB_PROVIDER1_ACCOUNT_ID="prod-account-id"
+export ORB_PROVIDER1_CLIENT_SECRET="secure-client-secret"
+export ORB_PROVIDER1_RESOURCE_GROUP="production-rg"
+export ORB_PROVIDER1_LOCATION="Region B"
+export ORB_PROVIDER1_MAX_RETRIES=5
 ```
 
 ## Provider Configuration with BaseSettings

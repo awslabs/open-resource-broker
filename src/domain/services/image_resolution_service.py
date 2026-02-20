@@ -10,7 +10,7 @@ class ImageResolutionService(ABC):
     Resolves image specifications (parameters, aliases, IDs) to actual
     image identifiers that can be used for machine provisioning.
 
-    Provider-agnostic: Works with AWS AMIs, Azure VM images, GCP images, etc.
+    Provider-agnostic: Works with AWS AMIs, Provider1 VM images, Provider2 images, etc.
     """
 
     @abstractmethod

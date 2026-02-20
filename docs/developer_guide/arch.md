@@ -33,7 +33,7 @@ graph TD
         subgraph "Provider Strategies"
             AWS[AWS Provider<br/>EC2Fleet, RunInstances<br/>SpotFleet, ASG]
             K8S[Kubernetes Provider<br/>Pods, Deployments<br/>Jobs, StatefulSets]
-            OTHERPROV[Other Providers<br/>Azure, GCP, etc.]
+            OTHERPROV[Other Providers<br/>Provider1, Provider2, etc.]
         end
 
         subgraph "Scheduler Strategies"
@@ -54,7 +54,7 @@ graph TD
         subgraph "Cloud APIs"
             AWSAPI[AWS APIs<br/>EC2, AutoScaling, Spot]
             K8SAPI[Kubernetes APIs<br/>Pods, Deployments]
-            OTHERCLOUD[Other CSP APIs<br/>Azure, GCP, etc.]
+            OTHERCLOUD[Other CSP APIs<br/>Provider1, Provider2, etc.]
         end
 
         subgraph "Schedulers"

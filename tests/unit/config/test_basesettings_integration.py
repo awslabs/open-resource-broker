@@ -107,8 +107,8 @@ class TestBaseSettingsIntegrationConcepts:
         # Each provider should have its own prefix
         provider_prefixes = {
             "aws": "ORB_AWS_",
-            "azure": "ORB_AZURE_",  # Future
-            "gcp": "ORB_GCP_",  # Future
+            "provider1": "ORB_PROVIDER1_",  # Future
+            "provider2": "ORB_PROVIDER2_",  # Future
         }
 
         for provider, prefix in provider_prefixes.items():
@@ -279,8 +279,8 @@ class TestBaseSettingsArchitecturalConcepts:
 
         provider_configs = {
             "aws": "AWSProviderConfig",
-            "azure": "AzureProviderConfig",  # Future
-            "gcp": "GCPProviderConfig",  # Future
+            "provider1": "Provider1ProviderConfig",  # Future
+            "provider2": "Provider2ProviderConfig",  # Future
         }
 
         for provider, config_class in provider_configs.items():
@@ -294,8 +294,8 @@ class TestBaseSettingsArchitecturalConcepts:
         hierarchy = [
             "ORB_",  # Core application
             "ORB_AWS_",  # AWS provider
-            "ORB_AZURE_",  # Azure provider (future)
-            "ORB_GCP_",  # GCP provider (future)
+            "ORB_PROVIDER1_",  # Provider1 provider (future)
+            "ORB_PROVIDER2_",  # Provider2 provider (future)
         ]
 
         for prefix in hierarchy:

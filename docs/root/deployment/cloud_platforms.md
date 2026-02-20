@@ -96,10 +96,10 @@ gcloud run deploy orb-api \
   --allow-unauthenticated
 ```
 
-## Azure Container Instances
+## Provider1 Container Instances
 
 ```bash
-# Deploy to Azure Container Instances
+# Deploy to Provider1 Container Instances
 az container create \
   --resource-group myResourceGroup \
   --name orb-api \

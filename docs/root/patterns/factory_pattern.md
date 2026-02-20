@@ -41,8 +41,8 @@ class ProviderStrategyFactory:
         self._strategy_registry = {
             "aws": self._create_aws_strategy,
             # Future providers can be added here
-            # "azure": self._create_azure_strategy,
-            # "gcp": self._create_gcp_strategy,
+            # "provider1": self._create_provider1_strategy,
+            # "provider2": self._create_provider2_strategy,
         }
 
     def create_strategy(self, provider_type: str, config_override: Dict[str, Any] = None) -> ProviderStrategy:

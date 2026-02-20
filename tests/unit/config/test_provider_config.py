@@ -491,8 +491,8 @@ class TestProviderInstanceConfigBaseSettings:
         def mock_get_provider_config(provider_type, config_dict):
             if provider_type == "aws":
                 return {"aws_specific": True, **config_dict}
-            elif provider_type == "azure":
-                return {"azure_specific": True, **config_dict}
+            elif provider_type == "provider1":
+                return {"provider1_specific": True, **config_dict}
             else:
                 return None
 

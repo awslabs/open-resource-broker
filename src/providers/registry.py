@@ -151,7 +151,7 @@ class ProviderRegistry(BaseRegistry):
         Ensure provider type is registered by dynamically importing and registering if needed.
 
         Args:
-            provider_type: Type identifier for the provider (e.g., 'aws', 'azure')
+            provider_type: Type identifier for the provider (e.g., 'aws', 'provider1')
 
         Returns:
             True if provider is registered (was already or just registered), False if failed

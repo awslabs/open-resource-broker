@@ -81,7 +81,7 @@ Use these snake_case field names for filtering:
 - `provider_api` - Provider API (EC2Fleet, SpotFleet, ASG, RunInstances)
 - `status` - Status (running, pending, stopped, etc.)
 - `provider_name` - Provider instance name
-- `provider_type` - Provider type (aws, azure, gcp)
+- `provider_type` - Provider type (aws, provider1, provider2)
 
 ### Migration from Old Field Names
 

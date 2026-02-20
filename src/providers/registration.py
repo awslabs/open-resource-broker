@@ -13,5 +13,5 @@ def register_all_provider_types() -> None:
     register_aws_provider(registry)
 
     # Future providers would be added here
-    # register_azure_provider(registry)
-    # register_gcp_provider(registry)
+    # register_provider1_provider(registry)
+    # register_provider2_provider(registry)

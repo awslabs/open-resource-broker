@@ -426,7 +426,7 @@ POST /api/v1/templates/{template-id}/validate-multi
 **Request:**
 ```json
 {
-  "provider_instances": ["aws-us-east-1", "aws-us-west-2", "azure-east-us"],
+  "provider_instances": ["aws-us-east-1", "aws-us-west-2", "provider1-east-us"],
   "validation_level": "lenient"
 }
 ```
@@ -448,15 +448,15 @@ POST /api/v1/templates/{template-id}/validate-multi
       "warnings": [],
       "supported_features": ["Pricing: On-demand"]
     },
-    "azure-east-us": {
+    "provider1-east-us": {
       "valid": false,
-      "errors": ["Provider type mismatch: expected 'azure', got 'aws'"],
+      "errors": ["Provider type mismatch: expected 'provider1', got 'aws'"],
       "warnings": [],
       "supported_features": []
     }
   },
   "compatible_providers": ["aws-us-east-1"],
-  "incompatible_providers": ["aws-us-west-2", "azure-east-us"]
+  "incompatible_providers": ["aws-us-west-2", "provider1-east-us"]
 }
 ```
 
@@ -603,7 +603,7 @@ orb providers list --type aws
 NAME            TYPE    ENABLED  PRIORITY  WEIGHT  STATUS
 aws-us-east-1   aws     true     1         10      healthy
 aws-us-west-2   aws     true     2         5       healthy
-azure-east-us   azure   false    3         3       disabled
+provider1-east-us   provider1   false    3         3       disabled
 ```
 
 #### Show Provider Details

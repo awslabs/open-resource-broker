@@ -243,10 +243,10 @@ def priority_based_selection(providers: List[ProviderInstance]) -> str:
 config/
 - templates.json                    # Main templates
 - awsprov_templates.json           # AWS provider type templates
-- azureprov_templates.json         # Azure provider type templates
+- provider1prov_templates.json         # Provider1 provider type templates
 - aws-us-east-1_templates.json    # AWS US East instance templates
 - aws-us-west-2_templates.json    # AWS US West instance templates
-- azure-east-us_templates.json    # Azure East US instance templates
+- provider1-region-a_templates.json    # Provider1 Region A instance templates
 ```
 
 ### Template Inheritance
