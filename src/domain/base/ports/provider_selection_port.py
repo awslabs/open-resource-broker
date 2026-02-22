@@ -1,7 +1,7 @@
 """Domain port for provider selection operations."""
 
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, Optional
 
 from domain.base.results import ProviderSelectionResult, ValidationResult
 from domain.template.template_aggregate import Template
@@ -16,7 +16,7 @@ class ProviderSelectionPort(ABC):
 
     @abstractmethod
     def select_provider_for_template(
-        self, template: Template, provider_name: str = None
+        self, template: Template, provider_name: Optional[str] = None
     ) -> ProviderSelectionResult:
         """Select provider instance for template requirements.
 

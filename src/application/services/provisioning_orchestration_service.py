@@ -7,9 +7,9 @@ if TYPE_CHECKING:
     from domain.base.ports.provider_selection_port import ProviderSelectionPort
 
 from domain.base.ports import ContainerPort, LoggingPort
+from domain.base.results import ProviderSelectionResult
 from domain.request.aggregate import Request
 from domain.template.template_aggregate import Template
-from providers.results import ProviderSelectionResult
 
 
 @dataclass

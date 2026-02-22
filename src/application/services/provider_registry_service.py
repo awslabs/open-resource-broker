@@ -1,6 +1,6 @@
 """Application service interface for provider registry access."""
 
-from typing import Any
+from typing import Any, Optional
 
 from domain.base.ports.logging_port import LoggingPort
 from domain.base.results import ProviderSelectionResult, ValidationResult
@@ -23,7 +23,7 @@ class ProviderRegistryService:
         self._logger = logger
 
     def select_provider_for_template(
-        self, template: Template, provider_name: str = None
+        self, template: Template, provider_name: str | None = None
     ) -> ProviderSelectionResult:
         """Select provider instance for template requirements."""
         return self._registry.select_provider_for_template(template, provider_name, self._logger)
