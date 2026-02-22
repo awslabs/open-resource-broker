@@ -1,7 +1,7 @@
 """Domain port for storage operations."""
 
 from abc import ABC, abstractmethod
-from typing import Generic, Optional, TypeVar
+from typing import Any, Generic, Optional, TypeVar
 
 T = TypeVar("T")
 
@@ -36,3 +36,7 @@ class StoragePort(ABC, Generic[T]):
     @abstractmethod
     def cleanup(self) -> None:
         """Clean up storage resources."""
+
+    @abstractmethod
+    def find_by_criteria(self, criteria: dict[str, Any]) -> list[T]:
+        """Find entities by criteria."""
