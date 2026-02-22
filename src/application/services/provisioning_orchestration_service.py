@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from application.services.provider_registry_service import ProviderRegistryService
+    from domain.base.ports.provider_selection_port import ProviderSelectionPort
 
 from domain.base.ports import ContainerPort, LoggingPort
 from domain.request.aggregate import Request
@@ -31,11 +31,11 @@ class ProvisioningOrchestrationService:
         self,
         container: ContainerPort,
         logger: LoggingPort,
-        provider_registry_service: "ProviderRegistryService",
+        provider_selection_port: "ProviderSelectionPort",
     ):
         self._container = container
         self._logger = logger
-        self._provider_registry_service = provider_registry_service
+        self._provider_selection_port = provider_selection_port
 
     async def execute_provisioning(
         self, template: Template, request: Request, selection_result: ProviderSelectionResult
@@ -65,7 +65,7 @@ class ProvisioningOrchestrationService:
 
             config_manager.get_provider_instance_config(selection_result.provider_name)
 
-            result = await self._provider_registry_service.execute_operation(
+            result = await self._provider_selection_port.execute_operation(
                 selection_result.provider_name, operation
             )
 
