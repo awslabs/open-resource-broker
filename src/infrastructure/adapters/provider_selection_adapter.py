@@ -24,7 +24,7 @@ class ProviderSelectionAdapter(ProviderSelectionPort):
         self._service = provider_registry_service
 
     def select_provider_for_template(
-        self, template: Template, provider_name: Optional[str] = None
+        self, template: Template, provider_name: str | None = None
     ) -> ProviderSelectionResult:
         """Select provider instance for template requirements."""
         return self._service.select_provider_for_template(template, provider_name)

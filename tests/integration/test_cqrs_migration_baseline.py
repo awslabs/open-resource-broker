@@ -296,7 +296,7 @@ class TestCQRSArchitectureIntegration:
 
         # Verify result structure
         assert result.provider_type == "aws"
-        assert result.provider_instance == "aws-default"
+        assert result.provider_name == "aws-default"
         assert isinstance(result.selection_reason, str)
         assert isinstance(result.confidence, float)
 
