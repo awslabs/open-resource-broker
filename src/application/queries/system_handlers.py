@@ -33,6 +33,15 @@ class GetConfigurationSectionHandler(
 ):
     """Handler for getting configuration sections."""
 
+    def __init__(
+        self,
+        logger: LoggingPort,
+        error_handler: ErrorHandlingPort,
+        container: ContainerPort,
+    ):
+        super().__init__(logger, error_handler)
+        self._container = container
+
     async def execute_query(
         self, query: GetConfigurationSectionQuery
     ) -> ConfigurationSectionResponse:
@@ -46,11 +55,9 @@ class GetConfigurationSectionHandler(
             Configuration section response
         """
         # Access configuration through DI container
-        from config.managers.configuration_manager import ConfigurationManager
-        from infrastructure.di.container import get_container
+        from domain.base.ports import ConfigurationPort
 
-        container = get_container()
-        config_manager = container.get(ConfigurationManager)
+        config_manager = self._container.get(ConfigurationPort)
         section_config = config_manager.get(query.section, {})
 
         return ConfigurationSectionResponse(

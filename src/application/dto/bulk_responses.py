@@ -5,7 +5,7 @@ from typing import List
 from pydantic import BaseModel
 
 from application.dto.responses import MachineDTO, RequestDTO
-from infrastructure.template.dtos import TemplateDTO
+from application.ports.template_dto_port import TemplateDTOPort
 
 
 class BulkRequestResponse(BaseModel):
@@ -20,7 +20,7 @@ class BulkRequestResponse(BaseModel):
 class BulkTemplateResponse(BaseModel):
     """Response for bulk template operations."""
 
-    templates: List[TemplateDTO]
+    templates: List[TemplateDTOPort]
     found_count: int
     not_found_ids: List[str]
     total_requested: int

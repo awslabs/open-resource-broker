@@ -20,6 +20,8 @@ from application.decorators import (
     get_query_handler_for_type,
 )
 from application.interfaces.command_query import Command, Query
+from application.ports.command_bus_port import CommandBusPort
+from application.ports.query_bus_port import QueryBusPort
 from domain.base.ports.logging_port import LoggingPort
 from infrastructure.di.container import DIContainer
 
@@ -28,14 +30,16 @@ TCommand = TypeVar("TCommand", bound=Command)
 TResult = TypeVar("TResult")
 
 
-class QueryBus:
+class QueryBus(QueryBusPort):
     """
     Pure CQRS Query Bus - Thin routing layer only.
+
+    Implements QueryBusPort to satisfy Dependency Inversion Principle.
 
     Follows SOLID principles:
     - SRP: Only routes queries to handlers
     - OCP: Easy to add handlers without changing bus
-    - DIP: No concrete dependencies on middleware
+    - DIP: Implements port interface, no concrete dependencies on middleware
 
     Handlers own their cross-cutting concerns (logging, validation, caching).
     """
@@ -116,14 +120,16 @@ class QueryBus:
             self.logger.error("Failed to trigger lazy CQRS setup: %s", e)
 
 
-class CommandBus:
+class CommandBus(CommandBusPort):
     """
     Pure CQRS Command Bus - Thin routing layer only.
+
+    Implements CommandBusPort to satisfy Dependency Inversion Principle.
 
     Follows SOLID principles:
     - SRP: Only routes commands to handlers
     - OCP: Easy to add handlers without changing bus
-    - DIP: No concrete dependencies on middleware
+    - DIP: Implements port interface, no concrete dependencies on middleware
 
     Handlers own their cross-cutting concerns (logging, validation, events).
     """

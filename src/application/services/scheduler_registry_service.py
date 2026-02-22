@@ -2,14 +2,14 @@
 
 from typing import Any
 
+from application.ports.scheduler_registry_port import SchedulerRegistryPort
 from domain.base.ports.logging_port import LoggingPort
-from infrastructure.scheduler.registry import SchedulerRegistry
 
 
 class SchedulerRegistryService:
     """Application service interface for scheduler registry operations."""
 
-    def __init__(self, registry: SchedulerRegistry, logger: LoggingPort):
+    def __init__(self, registry: SchedulerRegistryPort, logger: LoggingPort):
         self._registry = registry
         self._logger = logger
 

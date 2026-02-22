@@ -13,7 +13,7 @@ from application.queries.storage import (
     ListStorageStrategiesQuery,
 )
 from application.services.storage_registry_service import StorageRegistryService
-from domain.base.ports import ErrorHandlingPort, LoggingPort
+from domain.base.ports import ContainerPort, ErrorHandlingPort, LoggingPort
 from domain.services.generic_filter_service import GenericFilterService
 
 
@@ -29,10 +29,12 @@ class ListStorageStrategiesHandler(
         error_handler: ErrorHandlingPort,
         storage_service: StorageRegistryService,
         generic_filter_service: GenericFilterService,
+        container: ContainerPort,
     ):
         super().__init__(logger, error_handler)
         self._storage_service = storage_service
         self._generic_filter_service = generic_filter_service
+        self._container = container
 
     async def execute_query(self, query: ListStorageStrategiesQuery) -> StorageStrategyListResponse:
         """
@@ -45,11 +47,9 @@ class ListStorageStrategiesHandler(
             Storage strategies list response
         """
         # Access infrastructure through DI container
-        from config.managers.configuration_manager import ConfigurationManager
-        from infrastructure.di.container import get_container
+        from domain.base.ports import ConfigurationPort, ContainerPort
 
-        container = get_container()
-        config_manager = container.get(ConfigurationManager)
+        config_manager = self._container.get(ConfigurationPort)
         storage_types = self._storage_service.get_available_storage_types()
 
         strategies = []

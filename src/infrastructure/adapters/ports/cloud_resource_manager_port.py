@@ -1,110 +1,34 @@
 """
 Cloud Resource Manager Port
 
-This module defines the interface for managing cloud resources.
+This module defines the composite interface for managing cloud resources.
 It follows the Port-Adapter pattern from Hexagonal Architecture (Ports and Adapters).
+
+This is a composite interface that combines focused cloud resource interfaces.
+Clients should depend on the specific focused interfaces they need rather than this fat interface.
 """
 
-from abc import ABC, abstractmethod
-from typing import Any, Optional
+from abc import ABC
+
+from .cloud_account_port import CloudAccountPort
+from .cloud_resource_catalog_port import CloudResourceCatalogPort
+from .cloud_resource_quota_port import CloudResourceQuotaPort
 
 
-class CloudResourceManagerPort(ABC):
+class CloudResourceManagerPort(
+    CloudResourceQuotaPort,
+    CloudResourceCatalogPort,
+    CloudAccountPort,
+    ABC
+):
+    """Composite interface for managing cloud resources.
+
+    This interface is provided for backward compatibility and for implementations
+    that need all cloud resource operations. New code should depend on the focused interfaces:
+    - CloudResourceQuotaPort: For quota and availability checks
+    - CloudResourceCatalogPort: For resource types and pricing
+    - CloudAccountPort: For account information and credential validation
+
+    This follows ISP by allowing clients to depend on minimal interfaces.
     """
-    Interface for managing cloud resources.
-
-    This port defines the operations needed to manage cloud resources
-    without exposing infrastructure-specific details to the domain layer.
-    """
-
-    @abstractmethod
-    def get_resource_quota(
-        self, resource_type: str, region: Optional[str] = None
-    ) -> dict[str, Any]:
-        """
-        Get quota information for a specific resource type.
-
-        Args:
-            resource_type: Type of resource (e.g., 'instances', 'volumes')
-            region: Optional region to check quotas for
-
-        Returns:
-            Dictionary containing quota information
-
-        Raises:
-            InfrastructureError: For infrastructure errors
-        """
-
-    @abstractmethod
-    def check_resource_availability(
-        self, resource_type: str, count: int, region: Optional[str] = None
-    ) -> bool:
-        """
-        Check if the requested number of resources are available.
-
-        Args:
-            resource_type: Type of resource (e.g., 'instances', 'volumes')
-            count: Number of resources to check
-            region: Optional region to check availability for
-
-        Returns:
-            True if resources are available, False otherwise
-
-        Raises:
-            InfrastructureError: For infrastructure errors
-        """
-
-    @abstractmethod
-    def get_resource_types(self) -> list[str]:
-        """
-        Get a list of available resource types.
-
-        Returns:
-            List of resource type identifiers
-
-        Raises:
-            InfrastructureError: For infrastructure errors
-        """
-
-    @abstractmethod
-    def get_resource_pricing(
-        self, resource_type: str, region: Optional[str] = None
-    ) -> dict[str, Any]:
-        """
-        Get pricing information for a specific resource type.
-
-        Args:
-            resource_type: Type of resource (e.g., 'instances', 'volumes')
-            region: Optional region to get pricing for
-
-        Returns:
-            Dictionary containing pricing information
-
-        Raises:
-            InfrastructureError: For infrastructure errors
-        """
-
-    @abstractmethod
-    def get_account_id(self) -> str:
-        """
-        Get the current account identifier.
-
-        Returns:
-            Account identifier
-
-        Raises:
-            AuthorizationError: If credentials are invalid
-            InfrastructureError: For other infrastructure errors
-        """
-
-    @abstractmethod
-    def validate_credentials(self) -> bool:
-        """
-        Validate the current credentials.
-
-        Returns:
-            True if credentials are valid, False otherwise
-
-        Raises:
-            InfrastructureError: For infrastructure errors
-        """
+    pass

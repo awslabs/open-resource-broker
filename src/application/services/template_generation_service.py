@@ -11,7 +11,7 @@ from application.dto.template_generation_dto import (
     TemplateGenerationRequest,
     TemplateGenerationResult,
 )
-from domain.base.ports import ConfigurationPort, LoggingPort, SchedulerPort
+from domain.base.ports import ConfigurationPort, ContainerPort, LoggingPort, SchedulerPort
 
 
 class TemplateGenerationService:
@@ -28,11 +28,13 @@ class TemplateGenerationService:
         scheduler_strategy: SchedulerPort,
         logger: LoggingPort,
         provider_registry_service: "ProviderRegistryService",
+        container: ContainerPort,
     ):
         self._config_manager = config_manager
         self._scheduler_strategy = scheduler_strategy
         self._logger = logger
         self._provider_registry_service = provider_registry_service
+        self._container = container
 
     async def generate_templates(
         self, request: TemplateGenerationRequest
@@ -159,9 +161,7 @@ class TemplateGenerationService:
         self, provider_type: str, provider_name: str, provider_api: Optional[str] = None
     ) -> List[Dict[str, Any]]:
         """Generate example templates using provider registry."""
-        from infrastructure.di.container import get_container
-
-        container = get_container()
+        # Use injected container instead of get_container()
 
         # Ensure provider type is registered via service
         if not self._provider_registry_service.register_provider_strategy(provider_type):
@@ -174,7 +174,7 @@ class TemplateGenerationService:
         if provider_type == "aws":
             from providers.aws.infrastructure.aws_handler_factory import AWSHandlerFactory
 
-            handler_factory = container.get(AWSHandlerFactory)
+            handler_factory = self._container.get(AWSHandlerFactory)
             if not handler_factory:
                 raise ValueError(f"AWSHandlerFactory not available for provider: {provider_name}")
 
