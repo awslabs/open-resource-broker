@@ -162,5 +162,5 @@ def register_dynamodb_storage(
 
     except Exception as e:
         if logger:
-            logger.error("Failed to register DynamoDB storage type: %s", e)
+            logger.error("Failed to register DynamoDB storage type: %s", e, exc_info=True)
         raise

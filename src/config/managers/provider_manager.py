@@ -61,7 +61,7 @@ class ProviderConfigManager:
 
             return ProviderConfig(**provider_data)
         except Exception as e:
-            logger.error("Failed to load provider config: %s", e)
+            logger.error("Failed to load provider config: %s", e, exc_info=True)
             return None
 
     def is_provider_strategy_enabled(self) -> bool:
@@ -120,7 +120,7 @@ class ProviderConfigManager:
 
             logger.info("Provider configuration saved")
         except Exception as e:
-            logger.error("Failed to save provider config: %s", e)
+            logger.error("Failed to save provider config: %s", e, exc_info=True)
             raise ConfigurationError(f"Failed to save provider configuration: {e}")
 
     def _get_nested_value(self, key: str, default: Any = None) -> Any:

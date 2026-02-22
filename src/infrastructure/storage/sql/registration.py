@@ -147,5 +147,5 @@ def register_sql_storage() -> None:
         logger.info("Successfully registered SQL storage type")
 
     except Exception as e:
-        logger.error("Failed to register SQL storage type: %s", e)
+        logger.error("Failed to register SQL storage type: %s", e, exc_info=True)
         raise

@@ -199,7 +199,7 @@ def register_aws_provider(
 
     except Exception as e:
         if logger:
-            logger.error("Failed to register AWS provider: %s", str(e))
+            logger.error("Failed to register AWS provider: %s", str(e, exc_info=True))
         raise
 
 
@@ -248,7 +248,7 @@ def _register_aws_template_adapter(logger: "LoggingPort" = None) -> None:
 
     except Exception as e:
         if logger:
-            logger.warning("Failed to register AWS template adapter: %s", e)
+            logger.warning("Failed to register AWS template adapter: %s", e, exc_info=True)
 
 
 def register_aws_provider_instance(provider_instance, logger=None) -> bool:
@@ -315,7 +315,7 @@ def register_aws_extensions(logger: Optional["LoggingPort"] = None) -> None:
     except Exception as e:
         error_msg = f"Failed to register AWS template extensions: {e}"
         if logger:
-            logger.error(error_msg)
+            logger.error(error_msg, exc_info=True)
         raise
 
 
@@ -346,7 +346,7 @@ def register_aws_template_factory(
     except Exception as e:
         error_msg = f"Failed to register AWS template factory: {e}"
         if logger:
-            logger.error(error_msg)
+            logger.error(error_msg, exc_info=True)
         # Don't raise here - factory registration is optional
 
 
@@ -390,7 +390,7 @@ def initialize_aws_provider(
     except Exception as e:
         error_msg = f"AWS provider initialization failed: {e}"
         if logger:
-            logger.error(error_msg)
+            logger.error(error_msg, exc_info=True)
         raise
 
 
@@ -474,7 +474,7 @@ def register_aws_services_with_di(container) -> None:
         logger.debug("AWS utility services registered with DI container")
 
     except Exception as e:
-        logger.warning("Failed to register AWS utility services with DI container: %s", e)
+        logger.warning("Failed to register AWS utility services with DI container: %s", e, exc_info=True)
 
 
 # Auto-register AWS extensions when module is imported

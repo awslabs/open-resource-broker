@@ -57,7 +57,7 @@ def secure_input(
             return sanitized
 
         except ValidationError as e:
-            logger.warning("Input validation failed (attempt %d/%d): %s", attempt + 1, max_attempts, e)
+            logger.warning("Input validation failed (attempt %d/%d, exc_info=True): %s", attempt + 1, max_attempts, e)
             if attempt < max_attempts - 1:
                 print(f"Invalid input: {e}. Please try again.")
             else:
@@ -65,7 +65,7 @@ def secure_input(
         except KeyboardInterrupt:
             raise
         except Exception as e:
-            logger.error("Unexpected error during input: %s", e)
+            logger.error("Unexpected error during input: %s", e, exc_info=True)
             raise ValidationError(f"Input error: {e}")
 
     raise ValidationError(f"Input validation failed after {max_attempts} attempts")

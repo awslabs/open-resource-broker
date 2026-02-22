@@ -168,7 +168,7 @@ class OpenResourceBrokerMCPServer:
             error_response = MCPMessage(error={"code": -32700, "message": "Parse error"})
             return json.dumps(error_response.__dict__)
         except Exception as e:
-            self.logger.error("Error handling MCP message: %s", e)
+            self.logger.error("Error handling MCP message: %s", e, exc_info=True)
             error_response = MCPMessage(
                 id=getattr(mcp_msg, "id", None) if "mcp_msg" in locals() else None,
                 error={"code": -32603, "message": f"Internal error: {e!s}"},
@@ -204,7 +204,7 @@ class OpenResourceBrokerMCPServer:
             return MCPMessage(id=message.id, result=result)
 
         except Exception as e:
-            self.logger.error("Error handling method %s: %s", method, e)
+            self.logger.error("Error handling method %s: %s", method, e, exc_info=True)
             return MCPMessage(
                 id=message.id,
                 error={"code": -32603, "message": f"Internal error: {e!s}"},

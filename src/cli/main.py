@@ -1166,7 +1166,7 @@ async def main() -> None:
                 scheduler_override_active = True
             except Exception as e:
                 logger = get_logger(__name__)
-                logger.warning("Failed to override scheduler strategy: %s", e)
+                logger.warning("Failed to override scheduler strategy: %s", e, exc_info=True)
 
         # Handle global provider override
         if hasattr(args, "provider") and args.provider:
@@ -1180,7 +1180,7 @@ async def main() -> None:
                 config.override_provider_instance(args.provider)
             except Exception as e:
                 logger = get_logger(__name__)
-                logger.warning("Failed to override provider instance: %s", e)
+                logger.warning("Failed to override provider instance: %s", e, exc_info=True)
 
         # Handle global AWS overrides
         if hasattr(args, "region") and args.region:
@@ -1193,7 +1193,7 @@ async def main() -> None:
                 config.override_aws_region(args.region)
             except Exception as e:
                 logger = get_logger(__name__)
-                logger.warning("Failed to override region: %s", e)
+                logger.warning("Failed to override region: %s", e, exc_info=True)
 
         if hasattr(args, "profile") and args.profile:
             try:
@@ -1205,7 +1205,7 @@ async def main() -> None:
                 config.override_aws_profile(args.profile)
             except Exception as e:
                 logger = get_logger(__name__)
-                logger.warning("Failed to override profile: %s", e)
+                logger.warning("Failed to override profile: %s", e, exc_info=True)
 
         # Skip application initialization for init and templates generate commands only
         if args.resource == "init":
@@ -1247,7 +1247,7 @@ async def main() -> None:
             if not await app.initialize(dry_run=dry_run):
                 raise RuntimeError("Failed to initialize application")
         except Exception as e:
-            logger.error("Failed to initialize application: %s", e)
+            logger.error("Failed to initialize application: %s", e, exc_info=True)
             if args.verbose:
                 import traceback
 
@@ -1290,7 +1290,7 @@ async def main() -> None:
                 sys.exit(exit_code)
 
         except DomainException as e:
-            logger.exception("Domain error: %s", e)
+            logger.exception("Domain error: %s", e, exc_info=True)
 
             # Use response formatter for consistent error formatting
             from cli.response_formatter import create_cli_formatter
@@ -1303,7 +1303,7 @@ async def main() -> None:
                 print(error_output)
             sys.exit(exit_code)
         except Exception as e:
-            logger.exception("Unexpected error: %s", e)
+            logger.exception("Unexpected error: %s", e, exc_info=True)
 
             # Use response formatter for consistent error formatting
             from cli.response_formatter import create_cli_formatter
@@ -1331,7 +1331,7 @@ async def main() -> None:
                     config.restore_scheduler_strategy()
                 except Exception as e:
                     logger = get_logger(__name__)
-                    logger.warning("Failed to restore scheduler strategy: %s", e)
+                    logger.warning("Failed to restore scheduler strategy: %s", e, exc_info=True)
 
     except KeyboardInterrupt:
         print("\nOperation cancelled by user.")

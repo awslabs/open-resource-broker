@@ -46,14 +46,14 @@ def injectable(cls: type[T]) -> type[T]:
     try:
         hints = get_type_hints(original_init)
     except Exception as e:
-        logger.warning("Could not get type hints for %s: %s", cls.__name__, e)
+        logger.warning("Could not get type hints for %s: %s", cls.__name__, e, exc_info=True)
         hints = {}
 
     # Get constructor signature
     try:
         sig = inspect.signature(original_init)
     except Exception as e:
-        logger.warning("Could not get signature for %s: %s", cls.__name__, e)
+        logger.warning("Could not get signature for %s: %s", cls.__name__, e, exc_info=True)
         return cls
 
     @wraps(original_init)
@@ -239,7 +239,7 @@ def _resolve_dependency(
             return None
 
     except Exception as e:
-        logger.warning("Failed to resolve dependency %s for %s: %s", param_name, class_name, e)
+        logger.warning("Failed to resolve dependency %s for %s: %s", param_name, class_name, e, exc_info=True)
         return None
 
 
@@ -295,5 +295,5 @@ def get_injectable_info(cls: type) -> dict[str, Any]:
             "total_dependencies": len(dependencies),
         }
     except Exception as e:
-        logger.warning("Could not get injectable info for %s: %s", cls.__name__, e)
+        logger.warning("Could not get injectable info for %s: %s", cls.__name__, e, exc_info=True)
         return {"class_name": cls.__name__, "error": str(e)}

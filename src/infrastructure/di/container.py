@@ -402,7 +402,7 @@ def _setup_cqrs_infrastructure(container: DIContainer) -> None:
         # Fallback if CQRS infrastructure is not available
         logger.debug("CQRS infrastructure not available: %s", e)
     except Exception as e:
-        logger.warning("Failed to setup CQRS infrastructure: %s", e)
+        logger.warning("Failed to setup CQRS infrastructure: %s", e, exc_info=True)
 
 
 def _ensure_infrastructure_services(container: DIContainer) -> None:
@@ -415,7 +415,7 @@ def _ensure_infrastructure_services(container: DIContainer) -> None:
         logger.debug("Registering infrastructure services for CQRS setup")
         register_infrastructure_services(container)
     except Exception as e:
-        logger.warning("Failed to ensure infrastructure services: %s", e)
+        logger.warning("Failed to ensure infrastructure services: %s", e, exc_info=True)
 
 
 def reset_container() -> None:

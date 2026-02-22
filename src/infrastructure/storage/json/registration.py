@@ -160,5 +160,5 @@ def register_json_storage() -> None:
         logger.info("Successfully registered JSON storage type")
 
     except Exception as e:
-        logger.error("Failed to register JSON storage type: %s", e)
+        logger.error("Failed to register JSON storage type: %s", e, exc_info=True)
         raise
