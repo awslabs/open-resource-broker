@@ -40,7 +40,7 @@ class RepositoryOperationCompletedEvent(StorageEvent, OperationEvent):
     records_affected: int = 1
 
 
-class RepositoryOperationFailedEvent(StorageEvent, ErrorEvent, TimedEvent):
+class RepositoryOperationFailedEvent(StorageEvent, ErrorEvent):
     """Event raised when a repository operation fails."""
 
     operation_type: str
@@ -103,7 +103,7 @@ class ConnectionPoolEvent(InfrastructureEvent):
     """Event raised for connection pool operations."""
 
     pool_type: str  # "SQL", "DynamoDB", "Redis"
-    event_type: str  # "connection_acquired", "connection_released", "pool_exhausted"
+    pool_event_type: str  # "connection_acquired", "connection_released", "pool_exhausted"
     active_connections: int
     pool_size: int
     wait_time_ms: Optional[float] = None
