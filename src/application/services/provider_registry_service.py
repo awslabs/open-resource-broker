@@ -1,6 +1,6 @@
 """Application service interface for provider registry access."""
 
-from typing import Any, Optional
+from typing import Any
 
 from domain.base.ports.logging_port import LoggingPort
 from domain.base.results import ProviderSelectionResult, ValidationResult

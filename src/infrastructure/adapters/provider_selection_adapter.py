@@ -1,6 +1,6 @@
 """Infrastructure adapter for provider selection operations."""
 
-from typing import Any, Optional
+from typing import Any
 
 from application.services.provider_registry_service import ProviderRegistryService
 from domain.base.ports.provider_selection_port import ProviderSelectionPort
