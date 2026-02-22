@@ -5,11 +5,11 @@ from typing import TYPE_CHECKING, Tuple
 if TYPE_CHECKING:
     pass
 
+from application.ports.command_bus_port import CommandBusPort
 from domain.base.ports.container_port import ContainerPort
 from domain.base.ports.logging_port import LoggingPort
 from domain.machine.aggregate import Machine
 from domain.request.aggregate import Request
-from infrastructure.di.buses import CommandBus
 
 
 class MachineSyncService:
@@ -17,7 +17,7 @@ class MachineSyncService:
 
     def __init__(
         self,
-        command_bus: CommandBus,
+        command_bus: CommandBusPort,
         container: ContainerPort,
         logger: LoggingPort,
     ) -> None:

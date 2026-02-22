@@ -110,12 +110,22 @@ class ProvisioningOrchestrationService:
                 )
 
         except Exception as e:
-            self._logger.error("Provisioning execution failed: %s", e)
+            self._logger.error(
+                "Provisioning execution failed for template %s: %s",
+                template.template_id if hasattr(template, "template_id") else "unknown",
+                e,
+                exc_info=True,
+                extra={
+                    "request_id": str(request.request_id) if hasattr(request, "request_id") else None,
+                    "provider_name": selection_result.provider_name if selection_result else None,
+                    "error_type": type(e).__name__,
+                },
+            )
             return ProvisioningResult(
                 success=False,
                 resource_ids=[],
                 instance_ids=[],
                 instances=[],
                 provider_data={},
-                error_message=str(e),
+                error_message=f"Provisioning failed: {e}",
             )

@@ -4,10 +4,7 @@ from typing import Any, Dict
 
 from providers.registry.provider_registry import ProviderRegistry
 
-from infrastructure.di.injectable import injectable
 
-
-@injectable
 class ProviderNameService:
     """Service for generating and parsing provider names."""
 

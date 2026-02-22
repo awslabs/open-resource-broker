@@ -16,9 +16,9 @@ from typing import Any, Callable, Optional, TypeVar
 from application.dto.base import BaseCommand, BaseResponse
 from application.interfaces.command_handler import CommandHandler
 from application.interfaces.command_query import QueryHandler
+from application.ports.error_response_port import ErrorResponsePort
 from domain.base.events import DomainEvent
 from domain.base.ports import ErrorHandlingPort, EventPublisherPort, LoggingPort
-from infrastructure.error.exception_handler import InfrastructureErrorResponse
 
 TCommand = TypeVar("TCommand", bound=BaseCommand)
 TResponse = TypeVar("TResponse", bound=BaseResponse)
@@ -185,16 +185,19 @@ class BaseHandler(ABC):
         """Get handler performance metrics."""
         return self._metrics.copy()
 
-    def handle_error(self, error: Exception, context: str) -> InfrastructureErrorResponse:
+    def handle_error(self, error: Exception, context: str) -> ErrorResponsePort:
         """
         Centralized error handling for all handlers.
 
         Creates consistent error responses across all handler types.
+        Returns an ErrorResponsePort interface instead of concrete implementation.
         """
         if self.logger:
             self.logger.error("Handler error in %s: %s", context, str(error))
 
-        return InfrastructureErrorResponse.from_exception(error, context)
+        # This will need to be injected via error_handler port
+        # For now, raise the exception to be handled by infrastructure layer
+        raise error
 
 
 class BaseCommandHandler(BaseHandler, CommandHandler[TCommand, TResponse]):

@@ -4,6 +4,7 @@ These ports define the contracts that infrastructure adapters must implement.
 This enforces the dependency inversion principle and maintains clean architecture.
 """
 
+from application.ports.cache_service_port import CacheServicePort
 from application.ports.command_bus_port import CommandBusPort
 from application.ports.error_response_port import ErrorResponsePort
 from application.ports.query_bus_port import QueryBusPort
@@ -13,6 +14,7 @@ from application.ports.storage_registry_port import StorageRegistryPort
 from application.ports.template_dto_port import TemplateDTOPort
 
 __all__ = [
+    "CacheServicePort",
     "CommandBusPort",
     "ErrorResponsePort",
     "QueryBusPort",

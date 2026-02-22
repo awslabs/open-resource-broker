@@ -161,8 +161,13 @@ class RequestStatusManagementService:
                         if instance.get("instance_id")
                     ]
             return []
-        except Exception as e:
-            self._logger.debug("Could not extract instance IDs: %s", e)
+        except (KeyError, TypeError, AttributeError) as e:
+            self._logger.warning(
+                "Failed to extract instance IDs from provider result: %s",
+                e,
+                exc_info=True,
+                extra={"result_keys": list(result.keys()) if isinstance(result, dict) else None},
+            )
             return []
 
     def _create_machine_aggregate(
