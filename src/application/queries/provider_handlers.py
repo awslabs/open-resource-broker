@@ -64,7 +64,7 @@ class GetProviderHealthHandler(BaseQueryHandler[GetProviderHealthQuery, Provider
                     provider_name = selection_result.provider_name
                     self.logger.debug("Using active provider: %s", provider_name)
                 except Exception as e:
-                    self.logger.warning("Failed to get active provider: %s", e)
+                    self.logger.warning("Failed to get active provider: %s", e, exc_info=True)
                     return {
                         "provider_name": None,
                         "status": "not_found",
@@ -101,7 +101,7 @@ class GetProviderHealthHandler(BaseQueryHandler[GetProviderHealthQuery, Provider
             return health_info
 
         except Exception as e:
-            self.logger.error("Failed to get provider health: %s", e)
+            self.logger.error("Failed to get provider health: %s", e, exc_info=True)
             return {
                 "provider_name": query.provider_name,
                 "status": "error",
@@ -195,7 +195,7 @@ class ListAvailableProvidersHandler(BaseQueryHandler[ListAvailableProvidersQuery
             }
 
         except Exception as e:
-            self.logger.error("Failed to list available providers: %s", e)
+            self.logger.error("Failed to list available providers: %s", e, exc_info=True)
             return {
                 "providers": [],
                 "count": 0,
@@ -249,7 +249,7 @@ class GetProviderCapabilitiesHandler(
             return capabilities
 
         except Exception as e:
-            self.logger.error("Failed to get provider capabilities: %s", e)
+            self.logger.error("Failed to get provider capabilities: %s", e, exc_info=True)
             raise
 
 
@@ -295,7 +295,7 @@ class GetProviderMetricsHandler(BaseQueryHandler[GetProviderMetricsQuery, dict[s
             return metrics
 
         except Exception as e:
-            self.logger.error("Failed to get provider metrics: %s", e)
+            self.logger.error("Failed to get provider metrics: %s", e, exc_info=True)
             raise
 
 
@@ -338,5 +338,5 @@ class GetProviderStrategyConfigHandler(
             return config
 
         except Exception as e:
-            self.logger.error("Failed to get provider strategy config: %s", e)
+            self.logger.error("Failed to get provider strategy config: %s", e, exc_info=True)
             raise

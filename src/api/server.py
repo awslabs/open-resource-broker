@@ -133,7 +133,7 @@ def create_fastapi_app(server_config):
             )
         except Exception as handler_error:
             # Fallback error response
-            logger.error("Exception handler failed: %s", handler_error)
+            logger.error("Exception handler failed: %s", handler_error, exc_info=True)
             return JSONResponse(
                 status_code=500,
                 content={
@@ -214,7 +214,7 @@ def _create_auth_strategy(auth_config):
 
                 auth_registry.register_strategy("iam", IAMAuthStrategy)
             except ImportError:
-                logger.warning("AWS IAM strategy not available")
+                logger.warning("AWS IAM strategy not available", exc_info=True)
                 return None
 
             return auth_registry.get_strategy(
@@ -233,7 +233,7 @@ def _create_auth_strategy(auth_config):
 
                 auth_registry.register_strategy("cognito", CognitoAuthStrategy)
             except ImportError:
-                logger.warning("AWS Cognito strategy not available")
+                logger.warning("AWS Cognito strategy not available", exc_info=True)
                 return None
 
             return auth_registry.get_strategy(
@@ -249,7 +249,7 @@ def _create_auth_strategy(auth_config):
             return None
 
     except Exception as e:
-        logger.error("Failed to create auth strategy: %s", e)
+        logger.error("Failed to create auth strategy: %s", e, exc_info=True)
         return None
 
 
@@ -269,5 +269,5 @@ def _register_routers(app: FastAPI) -> None:
 
     except ImportError as e:
         logger = get_logger(__name__)
-        logger.error("Failed to import routers: %s", e)
+        logger.error("Failed to import routers: %s", e, exc_info=True)
         # Continue without routers - they might not be fully implemented yet

@@ -93,7 +93,7 @@ class MachineGroupingService:
                     resource_groups[group_key].append(machine)
 
             except Exception as e:
-                self.logger.error("Failed to get machine context for %s: %s", machine_id, e)
+                self.logger.error("Failed to get machine context for %s: %s", machine_id, e, exc_info=True)
                 raise ValueError(f"Cannot determine context for machine {machine_id}: {e}")
 
         self.logger.info(

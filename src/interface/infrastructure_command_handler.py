@@ -132,7 +132,7 @@ def _show_provider_infrastructure(provider: Dict[str, Any]) -> None:
         print_info("  2. Or run: orb infra discover (to see available infrastructure)")
         print_info("  3. Then manually add template_defaults to your provider config")
 
-    print_separator(width=50, char="-")
+    print_separator(char="-")
 
 
 async def _validate_provider_infrastructure(provider: Dict[str, Any]) -> Dict[str, Any]:

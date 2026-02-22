@@ -84,7 +84,7 @@ class HostFactoryTransformations:
                     return value  # Return original value if file doesn't exist
             except Exception as e:
                 logger = get_logger(__name__)
-                logger.error("Failed to read user data file %s: %s", value, e)
+                logger.error("Failed to read user data file %s: %s", value, e, exc_info=True)
                 return value  # Return original value on error
 
         # Return as-is if it doesn't look like a file path

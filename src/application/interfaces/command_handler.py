@@ -7,7 +7,7 @@ from typing import Generic, TypeVar
 from application.dto.base import BaseCommand, BaseResponse
 
 TCommand = TypeVar("TCommand", bound=BaseCommand)
-TResponse = TypeVar("TResponse", bound=BaseResponse)
+TResponse = TypeVar("TResponse")  # Allow None for CQRS compliance
 
 
 class CommandHandler(Generic[TCommand, TResponse], ABC):

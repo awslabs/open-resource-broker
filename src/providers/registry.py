@@ -126,6 +126,7 @@ class ProviderRegistry(BaseRegistry):
                             "Failed to retrieve provider instance config for %s: %s",
                             provider_identifier,
                             e,
+                            exc_info=True,
                         )
 
             strategy = self.create_strategy_by_instance(provider_identifier, config)
@@ -138,7 +139,7 @@ class ProviderRegistry(BaseRegistry):
             if hasattr(strategy, "initialize") and not strategy.is_initialized:
                 if not strategy.initialize():
                     if self._logger:
-                        self._logger.error("Failed to initialize strategy: %s", provider_identifier)
+                        self._logger.error("Failed to initialize strategy: %s", provider_identifier, exc_info=True)
                     return None
 
             # Cache strategy
@@ -186,18 +187,19 @@ class ProviderRegistry(BaseRegistry):
                         "Provider registration function '%s' not found in module '%s'",
                         register_function_name,
                         module_name,
+                        exc_info=True,
                     )
                 return False
 
         except ImportError as e:
             if self._logger:
                 self._logger.warning(
-                    "Failed to import provider registration module '%s': %s", module_name, e
+                    "Failed to import provider registration module '%s': %s", module_name, e, exc_info=True
                 )
             return False
         except Exception as e:
             if self._logger:
-                self._logger.error("Error registering provider type '%s': %s", provider_type, e)
+                self._logger.error("Error registering provider type '%s': %s", provider_type, e, exc_info=True)
             return False
 
     def ensure_provider_instance_registered_from_config(self, provider_instance) -> bool:

@@ -82,7 +82,7 @@ async def handle_provider_add(args) -> int:
 
     except Exception as e:
         print_error(f"Failed to add provider: {e}")
-        logger.error("Failed to add provider: %s", e)
+        logger.error("Failed to add provider: %s", e, exc_info=True)
         return 1
 
 
@@ -121,7 +121,7 @@ async def handle_provider_remove(args) -> int:
 
     except Exception as e:
         print_error(f"Failed to remove provider: {e}")
-        logger.error("Failed to remove provider: %s", e)
+        logger.error("Failed to remove provider: %s", e, exc_info=True)
         return 1
 
 
@@ -185,7 +185,7 @@ async def handle_provider_update(args) -> int:
 
     except Exception as e:
         print_error(f"Failed to update provider: {e}")
-        logger.error("Failed to update provider: %s", e)
+        logger.error("Failed to update provider: %s", e, exc_info=True)
         return 1
 
 
@@ -219,7 +219,7 @@ async def handle_provider_set_default(args) -> int:
 
     except Exception as e:
         print_error(f"Failed to set default provider: {e}")
-        logger.error("Failed to set default provider: %s", e)
+        logger.error("Failed to set default provider: %s", e, exc_info=True)
         return 1
 
 
@@ -253,7 +253,7 @@ async def handle_provider_get_default(args) -> int:
 
     except Exception as e:
         print_error(f"Failed to get default provider: {e}")
-        logger.error("Failed to get default provider: %s", e)
+        logger.error("Failed to get default provider: %s", e, exc_info=True)
         return 1
 
 
@@ -323,7 +323,7 @@ async def handle_provider_show(args) -> int:
 
     except Exception as e:
         print_error(f"Failed to show provider: {e}")
-        logger.error("Failed to show provider: %s", e)
+        logger.error("Failed to show provider: %s", e, exc_info=True)
         return 1
 
 
@@ -356,7 +356,7 @@ def _discover_infrastructure(provider_type: str, region: str, profile: str) -> D
 
         # Ensure provider type is registered
         if not registry.ensure_provider_type_registered(provider_type):
-            logger.warning(f"Failed to register provider type: {provider_type}")
+            logger.warning(f"Failed to register provider type: {provider_type}", exc_info=True)
             return {}
 
         # Create provider config for discovery
@@ -376,7 +376,7 @@ def _discover_infrastructure(provider_type: str, region: str, profile: str) -> D
             return {}
 
     except Exception as e:
-        logger.error(f"Failed to discover infrastructure: {e}")
+        logger.error(f"Failed to discover infrastructure: {e}", exc_info=True)
         return {}
 
 

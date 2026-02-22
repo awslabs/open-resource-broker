@@ -9,6 +9,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+from infrastructure.constants import MAX_DESCRIPTION_LENGTH
 from infrastructure.error.decorators import handle_interface_exceptions
 from mcp.tools import OpenResourceBrokerMCPTools
 
@@ -248,8 +249,8 @@ def _format_tools_table(tools: list) -> dict[str, Any]:
         rows.append(
             [
                 tool["name"],
-                tool.get("description", "No description")[:60]
-                + ("..." if len(tool.get("description", "")) > 60 else ""),
+                tool.get("description", "No description")[:MAX_DESCRIPTION_LENGTH]
+                + ("..." if len(tool.get("description", "")) > MAX_DESCRIPTION_LENGTH else ""),
                 handler_type,
             ]
         )

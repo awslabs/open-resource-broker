@@ -41,7 +41,7 @@ def _register_configured_scheduler_strategy(container: DIContainer) -> None:
 
         except Exception as e:
             logger = get_logger(__name__)
-            logger.error("Failed to register configured scheduler strategy: %s", e)
+            logger.error("Failed to register configured scheduler strategy: %s", e, exc_info=True)
             # Fallback to default
             from infrastructure.scheduler.registry import get_scheduler_registry
 

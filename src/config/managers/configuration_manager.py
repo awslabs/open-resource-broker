@@ -85,7 +85,7 @@ class ConfigurationManager:
             raw_config = self.loader.load(self._config_file, config_manager=self)
             return self.loader.create_app_config(raw_config)
         except Exception as e:
-            logger.error("Failed to load app config: %s", e)
+            logger.error("Failed to load app config: %s", e, exc_info=True)
             raise
 
     def _ensure_raw_config(self) -> dict[str, Any]:
@@ -135,7 +135,7 @@ class ConfigurationManager:
         try:
             return self.get_typed(config_type)
         except (ConfigurationError, Exception) as e:
-            logger.warning(f"Configuration loading failed for {config_type.__name__}: {e}")
+            logger.warning(f"Configuration loading failed for {config_type.__name__}: {e}", exc_info=True)
             logger.info(f"Using default configuration for {config_type.__name__}")
             return config_type()  # Use Pydantic defaults
 
@@ -158,7 +158,7 @@ class ConfigurationManager:
 
             logger.info("Configuration reloaded successfully")
         except Exception as e:
-            logger.error("Failed to reload configuration: %s", e)
+            logger.error("Failed to reload configuration: %s", e, exc_info=True)
             raise ConfigurationError(f"Configuration reload failed: {e}")
 
     # Delegate type conversion methods
@@ -305,7 +305,7 @@ class ConfigurationManager:
                 json.dump(raw_config, f, indent=2)
             logger.info("Configuration saved to %s", config_path)
         except Exception as e:
-            logger.error("Failed to save configuration: %s", e)
+            logger.error("Failed to save configuration: %s", e, exc_info=True)
             raise ConfigurationError(f"Failed to save configuration: {e}")
 
     def get_raw_config(self) -> dict[str, Any]:

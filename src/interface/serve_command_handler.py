@@ -49,13 +49,13 @@ async def handle_serve_api(args) -> dict[str, Any]:
         try:
             server_config = config_manager.get_typed_with_defaults(ServerConfig)
         except Exception as e:
-            logger.warning(f"Configuration loading failed: {e}")
+            logger.warning(f"Configuration loading failed: {e}", exc_info=True)
             logger.info("Using default server configuration")
             server_config = ServerConfig()  # Use Pydantic defaults
 
         # Validate critical configuration
         if server_config is None:
-            logger.error("Server configuration is None, creating default")
+            logger.error("Server configuration is None, creating default", exc_info=True)
             server_config = ServerConfig()
 
         # Override with CLI arguments if provided
@@ -114,5 +114,5 @@ async def handle_serve_api(args) -> dict[str, Any]:
         }
 
     except Exception as e:
-        logger.error("Failed to start server: %s", e)
+        logger.error("Failed to start server: %s", e, exc_info=True)
         return {"error": str(e), "message": "Failed to start server"}

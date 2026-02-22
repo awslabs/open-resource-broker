@@ -71,9 +71,9 @@ async def handle_init(args) -> int:
         _copy_scripts(scripts_dir)
 
         # Success message with separator
-        print_separator(width=60, char="━", color="green")
+        print_separator(char="━", color="green")
         print_success("  ORB initialized successfully")
-        print_separator(width=60, char="━", color="green")
+        print_separator(char="━", color="green")
         print_info("")  # Empty line
         print_info("Created:")
         print_info(f"  Config:  {config_dir}")
@@ -98,7 +98,7 @@ async def handle_init(args) -> int:
         print_info("")
         print_info("To retry:")
         print_command("  orb init --force")
-        logger.error("Failed to initialize ORB: %s", e)
+        logger.error("Failed to initialize ORB: %s", e, exc_info=True)
         return 1
 
 
@@ -163,14 +163,14 @@ def _get_available_providers() -> list[dict[str, str]]:
 def _interactive_setup() -> Dict[str, Any]:
     """Interactive configuration setup."""
     try:
-        print_separator(width=60, char="=", color="cyan")
+        print_separator(char="=", color="cyan")
         print_info("  ORB Configuration Setup")
-        print_separator(width=60, char="=", color="cyan")
+        print_separator(char="=", color="cyan")
 
         # Scheduler type
         print_info("")
         print_info("[1/4] Scheduler Type")
-        print_separator(width=60, char="-", color="cyan")
+        print_separator(char="-", color="cyan")
 
         schedulers = _get_available_schedulers()
         for i, scheduler in enumerate(schedulers, 1):
@@ -184,12 +184,12 @@ def _interactive_setup() -> Dict[str, Any]:
             scheduler_type = "default"
 
         print_newline()
-        print_separator(width=60, char="-", color="cyan")
+        print_separator(char="-", color="cyan")
 
         # Provider type
         print_info("")
         print_info("[2/4] Cloud Provider")
-        print_separator(width=60, char="-", color="cyan")
+        print_separator(char="-", color="cyan")
 
         providers = _get_available_providers()
         for i, provider in enumerate(providers, 1):
@@ -205,12 +205,12 @@ def _interactive_setup() -> Dict[str, Any]:
             provider_type = providers[0]["type"] if providers else "aws"
 
         print_newline()
-        print_separator(width=60, char="-", color="cyan")
+        print_separator(char="-", color="cyan")
 
         # Provider configuration
         print_info("")
         print_info("[3/4] Provider Configuration")
-        print_separator(width=60, char="-", color="cyan")
+        print_separator(char="-", color="cyan")
 
         # Get credential requirements
         requirements = _get_credential_requirements(provider_type)
@@ -267,12 +267,12 @@ def _interactive_setup() -> Dict[str, Any]:
         profile = provider_config.get("profile", "default")
 
         print_newline()
-        print_separator(width=60, char="-", color="cyan")
+        print_separator(char="-", color="cyan")
 
         # Infrastructure discovery
         print_info("")
         print_info("[4/4] Infrastructure Discovery")
-        print_separator(width=60, char="-", color="cyan")
+        print_separator(char="-", color="cyan")
         print_info("  Discover AWS infrastructure for template defaults?")
         print_info("  This will help create generic templates that work across regions/accounts.")
         print_info("")
@@ -294,7 +294,7 @@ def _interactive_setup() -> Dict[str, Any]:
 
         # Multi-provider loop
         print_info("")
-        print_separator(width=60, char="-", color="cyan")
+        print_separator(char="-", color="cyan")
         while True:
             print_info("")
             add_another = input("  Add another provider? (y/N): ").strip().lower()
@@ -326,7 +326,7 @@ def _configure_additional_provider() -> Optional[Dict[str, Any]]:
     try:
         print_info("")
         print_info("Additional Provider Configuration")
-        print_separator(width=60, char="-", color="cyan")
+        print_separator(char="-", color="cyan")
 
         # Provider type
         providers = _get_available_providers()
@@ -343,7 +343,7 @@ def _configure_additional_provider() -> Optional[Dict[str, Any]]:
         # Provider configuration
         print_info("")
         print_info("Provider Configuration")
-        print_separator(width=60, char="-", color="cyan")
+        print_separator(char="-", color="cyan")
 
         # Get credential requirements
         requirements = _get_credential_requirements(provider_type)
@@ -396,7 +396,7 @@ def _configure_additional_provider() -> Optional[Dict[str, Any]]:
         # Infrastructure discovery
         print_info("")
         print_info("Infrastructure Discovery")
-        print_separator(width=60, char="-", color="cyan")
+        print_separator(char="-", color="cyan")
         discover_choice = input("  Discover infrastructure? (y/N): ").strip().lower()
 
         infrastructure_defaults = {}
@@ -627,7 +627,7 @@ def _copy_scripts(scripts_dir: Path):
             logger.info(f"Copied {copied} scripts to {scripts_dir}")
 
     except Exception as e:
-        logger.warning(f"Failed to copy scripts: {e}")
+        logger.warning(f"Failed to copy scripts: {e}", exc_info=True)
 
 
 def _get_installed_scripts_path():

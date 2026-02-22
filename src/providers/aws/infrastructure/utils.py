@@ -26,7 +26,7 @@ def paginate(client_method: Callable, result_key: str, **kwargs) -> list[dict[st
             results.extend(page.get(result_key, []))
     except ClientError as e:
         error_code = e.response["Error"]["Code"]
-        logger.error("Failed to paginate %s: %s", client_method.__name__, error_code)
+        logger.error("Failed to paginate %s: %s", client_method.__name__, error_code, exc_info=True)
         raise RuntimeError(f"Failed to paginate {client_method.__name__}: {error_code}")
 
     return results

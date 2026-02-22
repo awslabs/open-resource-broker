@@ -41,8 +41,9 @@ class RequestTimeout(ValueObject):
             raise ValueError("Timeout must be positive")
 
         # Reasonable upper limit (1 day)
-        if v > 86400:
-            raise ValueError("Timeout cannot exceed 86400 seconds (1 day)")
+        from domain.constants import MAX_REQUEST_TIMEOUT_SECONDS
+        if v > MAX_REQUEST_TIMEOUT_SECONDS:
+            raise ValueError(f"Timeout cannot exceed {MAX_REQUEST_TIMEOUT_SECONDS} seconds (1 day)")
 
         return v
 
@@ -76,10 +77,12 @@ class RequestTimeout(ValueObject):
                 timeout = config_service.get_default_timeout()
             else:
                 # Fallback if service not available
-                timeout = 300
+                from domain.constants import FALLBACK_REQUEST_TIMEOUT_SECONDS
+                timeout = FALLBACK_REQUEST_TIMEOUT_SECONDS
         except ImportError:
             # Fallback if service not available
-            timeout = 300
+            from domain.constants import FALLBACK_REQUEST_TIMEOUT_SECONDS
+            timeout = FALLBACK_REQUEST_TIMEOUT_SECONDS
 
         return cls(seconds=timeout)
 
@@ -252,7 +255,7 @@ class RequestConfiguration(ValueObject):
 
     template_id: str
     machine_count: int
-    timeout: int = 3600  # Default 1 hour
+    timeout: int = 3600  # Default 1 hour (from domain.constants.DEFAULT_REQUEST_TIMEOUT_SECONDS)
     tags: dict[str, str] = {}
     provider_config: dict[str, Any] = {}
     retry_config: dict[str, Any] = {}
@@ -294,8 +297,9 @@ class RequestConfiguration(ValueObject):
             raise ValueError("Machine count must be a positive integer")
 
         # Basic upper limit check
-        if v > 1000:
-            raise ValueError("Machine count cannot exceed 1000")
+        from domain.constants import MAX_INSTANCE_COUNT
+        if v > MAX_INSTANCE_COUNT:
+            raise ValueError(f"Machine count cannot exceed {MAX_INSTANCE_COUNT}")
 
         return v
 
@@ -317,8 +321,9 @@ class RequestConfiguration(ValueObject):
             raise ValueError("Timeout must be a positive integer")
 
         # Upper limit check (1 day)
-        if v > 86400:
-            raise ValueError("Timeout cannot exceed 86400 seconds (1 day)")
+        from domain.constants import MAX_REQUEST_TIMEOUT_SECONDS
+        if v > MAX_REQUEST_TIMEOUT_SECONDS:
+            raise ValueError(f"Timeout cannot exceed {MAX_REQUEST_TIMEOUT_SECONDS} seconds (1 day)")
 
         return v
 

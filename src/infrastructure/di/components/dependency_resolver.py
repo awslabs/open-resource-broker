@@ -177,7 +177,7 @@ class DependencyResolver:
                 self._service_registry.register_injectable_class(cls)
                 logger.debug("Auto-registered legacy injectable class: %s", cls.__name__)
         except Exception as e:
-            logger.warning("Failed to auto-register injectable class %s: %s", cls.__name__, e)
+            logger.warning("Failed to auto-register injectable class %s: %s", cls.__name__, e, exc_info=True)
 
     def _resolve_constructor_parameters(
         self, cls: type, dependency_chain: set[type]

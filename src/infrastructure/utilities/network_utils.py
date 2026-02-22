@@ -7,12 +7,18 @@ configuration and error handling.
 import logging
 from typing import Any, Optional
 
+from infrastructure.constants import (
+    DEFAULT_CONNECT_TIMEOUT_SECONDS,
+    DEFAULT_REQUEST_TIMEOUT_SECONDS,
+    MAX_REQUEST_TIMEOUT_SECONDS,
+)
+
 logger = logging.getLogger(__name__)
 
-# Default timeout values (in seconds)
-DEFAULT_CONNECT_TIMEOUT = 10
-DEFAULT_READ_TIMEOUT = 30
-DEFAULT_TOTAL_TIMEOUT = 60
+# Default timeout values (in seconds) - using constants
+DEFAULT_CONNECT_TIMEOUT = DEFAULT_CONNECT_TIMEOUT_SECONDS
+DEFAULT_READ_TIMEOUT = DEFAULT_REQUEST_TIMEOUT_SECONDS
+DEFAULT_TOTAL_TIMEOUT = MAX_REQUEST_TIMEOUT_SECONDS
 
 
 class TimeoutConfig:
@@ -50,8 +56,8 @@ class TimeoutConfig:
 
 # Predefined timeout configurations
 QUICK_TIMEOUT = TimeoutConfig(connect=5, read=10)
-STANDARD_TIMEOUT = TimeoutConfig(connect=10, read=30)
-LONG_TIMEOUT = TimeoutConfig(connect=15, read=60)
+STANDARD_TIMEOUT = TimeoutConfig(connect=DEFAULT_CONNECT_TIMEOUT, read=DEFAULT_READ_TIMEOUT)
+LONG_TIMEOUT = TimeoutConfig(connect=15, read=MAX_REQUEST_TIMEOUT_SECONDS)
 
 
 def get_boto3_config(
@@ -72,7 +78,7 @@ def get_boto3_config(
     try:
         from botocore.config import Config
     except ImportError:
-        logger.warning("botocore not available, returning None config")
+        logger.warning("botocore not available, returning None config", exc_info=True)
         return None
 
     timeout_config = timeout or STANDARD_TIMEOUT
