@@ -44,9 +44,16 @@ def create_fastapi_app(server_config):
 
         server_config = ServerConfig()
 
-    # Validate configuration object
+    # Validate configuration object has required attributes
     if not hasattr(server_config, "docs_enabled"):
-        logger.error("Invalid server configuration: missing docs_enabled")
+        logger.error("Invalid server configuration: missing docs_enabled attribute")
+        from config.schemas.server_schema import ServerConfig
+
+        server_config = ServerConfig()
+
+    # Final safety check - ensure server_config is not None
+    if server_config is None:
+        logger.error("Server configuration is None after validation, using defaults")
         from config.schemas.server_schema import ServerConfig
 
         server_config = ServerConfig()
