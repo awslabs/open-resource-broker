@@ -102,6 +102,7 @@ venv.bak/
 *.sublime-workspace
 *.sublime-project
 .kiro/
+.claude/
 
 # Testing
 .coverage
