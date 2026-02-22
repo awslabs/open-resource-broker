@@ -11,6 +11,9 @@ try:
     HAS_MOTO = True
 except ImportError:
     HAS_MOTO = False
+    # Create a dummy decorator when moto is not available
+    def mock_aws(func):
+        return func
 
 # Import AWS components
 try:
