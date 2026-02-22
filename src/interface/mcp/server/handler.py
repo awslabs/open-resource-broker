@@ -75,7 +75,7 @@ async def _run_stdio_server(mcp_server: OpenResourceBrokerMCPServer):
                 logger.info("MCP server interrupted by user")
                 break
             except Exception as e:
-                logger.error("Error in stdio server: %s", e)
+                logger.error("Error in stdio server: %s", e, exc_info=True)
                 # Send error response
                 error_response = {
                     "jsonrpc": "2.0",
@@ -84,7 +84,7 @@ async def _run_stdio_server(mcp_server: OpenResourceBrokerMCPServer):
                 print(error_response, flush=True)  # noqa: MCP protocol output
 
     except Exception as e:
-        logger.error("Fatal error in stdio server: %s", e)
+        logger.error("Fatal error in stdio server: %s", e, exc_info=True)
         raise
 
 
@@ -120,7 +120,7 @@ async def _run_tcp_server(mcp_server: OpenResourceBrokerMCPServer, host: str, po
                 logger.debug("Sent response: %s", response)
 
         except Exception as e:
-            logger.error("Error handling client %s: %s", client_addr, e)
+            logger.error("Error handling client %s: %s", client_addr, e, exc_info=True)
         finally:
             logger.info("Client disconnected: %s", client_addr)
             writer.close()

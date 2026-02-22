@@ -167,7 +167,7 @@ def _register_ami_resolver_if_enabled(container: DIContainer) -> None:
                 logger.debug("Image resolution disabled in default AWS configuration")
 
         except Exception as e:
-            logger.warning("Could not determine AMI resolution configuration: %s", e)
+            logger.warning("Could not determine AMI resolution configuration: %s", e, exc_info=True)
             # Register with default configuration as fallback
             # TODO: CachingAMIResolver not implemented yet
             # container.register_singleton(CachingAMIResolver)
@@ -179,7 +179,7 @@ def _register_ami_resolver_if_enabled(container: DIContainer) -> None:
 
     except Exception as e:
         logger = get_logger(__name__)
-        logger.error("Failed to register AMI resolver: %s", e)
+        logger.error("Failed to register AMI resolver: %s", e, exc_info=True)
 
 
 def _register_repository_services(container: DIContainer) -> None:

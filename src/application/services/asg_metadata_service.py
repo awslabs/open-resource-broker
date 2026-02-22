@@ -110,7 +110,7 @@ class ASGMetadataService:
                 )
 
         except Exception as e:
-            self.logger.warning("Failed to update ASG metadata: %s", e)
+            self.logger.warning("Failed to update ASG metadata: %s", e, exc_info=True)
 
     async def _get_current_asg_details(self, asg_name: str) -> dict[str, Any]:
         """Get current ASG details from AWS.
@@ -137,5 +137,5 @@ class ASGMetadataService:
                 return {}
 
         except Exception as e:
-            self.logger.warning("Failed to get ASG details for %s: %s", asg_name, e)
+            self.logger.warning("Failed to get ASG details for %s: %s", asg_name, e, exc_info=True)
             return {}

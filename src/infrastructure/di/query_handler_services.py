@@ -176,5 +176,5 @@ def register_query_handlers_with_bus(container: DIContainer) -> None:
 
     except Exception as e:
         logger = container.get(LoggingPort)
-        logger.error("Failed to register query handlers with bus: %s", e)
+        logger.error("Failed to register query handlers with bus: %s", e, exc_info=True)
         raise

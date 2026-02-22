@@ -118,7 +118,7 @@ class HealthCheck:
                     self.status_history[name].pop(0)
             return status
         except Exception as e:
-            logger.error("Health check %s failed: %s", name, e)
+            logger.error("Health check %s failed: %s", name, e, exc_info=True)
             return HealthStatus(
                 name=name,
                 status="unhealthy",
@@ -175,7 +175,7 @@ class HealthCheck:
                     time.sleep(interval)
 
                 except Exception as e:
-                    logger.error("Health checker error: %s", e)
+                    logger.error("Health checker error: %s", e, exc_info=True)
                     time.sleep(5)  # Shorter sleep on error
 
         thread = threading.Thread(target=check_health, daemon=True)

@@ -135,7 +135,7 @@ class ConfigLoaderService:
                 logger.warning(f"Default config not found: {default_config_path}")
                 return {}
         except Exception as e:
-            logger.warning(f"Failed to load default configuration: {e}")
+            logger.warning(f"Failed to load default configuration: {e}", exc_info=True)
             return {}
 
     def merge_configs(self, base: dict[str, Any], update: dict[str, Any]) -> None:

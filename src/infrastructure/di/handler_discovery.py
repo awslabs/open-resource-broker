@@ -64,7 +64,7 @@ class HandlerDiscoveryService:
             )
 
         except Exception as e:
-            logger.warning("Failed to get caching configuration: %s", e)
+            logger.warning("Failed to get caching configuration: %s", e, exc_info=True)
             # Fallback to default behavior
             self.cache_enabled = True
             self.cache_file = self._resolve_cache_path_fallback()
@@ -146,11 +146,11 @@ class HandlerDiscoveryService:
                     importlib.import_module(module_info.name)
                     logger.debug("Imported module: %s", module_info.name)
                 except Exception as e:
-                    logger.warning("Failed to import module %s: %s", module_info.name, e)
+                    logger.warning("Failed to import module %s: %s", module_info.name, e, exc_info=True)
                     continue
 
         except Exception as e:
-            logger.error("Handler discovery failed: %s", e)
+            logger.error("Handler discovery failed: %s", e, exc_info=True)
             raise
 
     def _register_handlers(self) -> None:
@@ -175,7 +175,7 @@ class HandlerDiscoveryService:
                     query_type.__name__,
                 )
             except Exception as e:
-                logger.error("Failed to register query handler %s: %s", handler_class.__name__, e)
+                logger.error("Failed to register query handler %s: %s", handler_class.__name__, e, exc_info=True)
 
         # Register command handlers
         command_handlers = get_registered_command_handlers()
@@ -327,7 +327,7 @@ class HandlerDiscoveryService:
             )
 
         except Exception as e:
-            logger.warning("Failed to register handlers from cache: %s", e)
+            logger.warning("Failed to register handlers from cache: %s", e, exc_info=True)
             self._fallback_to_full_discovery()
 
     def _fallback_to_full_discovery(self) -> None:

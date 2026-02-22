@@ -4,6 +4,8 @@ import os
 import sys
 from functools import wraps
 
+from infrastructure.constants import CONSOLE_SEPARATOR_WIDTH
+
 # Try to import Rich, fallback to plain print if not available
 try:
     from rich.console import Console
@@ -86,13 +88,13 @@ def print_command(message: str):
 
 
 @_console_output
-def print_separator(width: int = 60, char: str = "━", color: str = "green"):
+def print_separator(width: int = CONSOLE_SEPARATOR_WIDTH, char: str = "━", color: str = "green"):
     """Print separator line."""
     _console.print(f"[{color}]{char * width}[/{color}]")
 
 
 @_console_output
-def print_section(title: str, width: int = 60):
+def print_section(title: str, width: int = CONSOLE_SEPARATOR_WIDTH):
     """Print section header."""
     _console.print(f"\n[cyan]{title}[/cyan]")
     _console.print(f"[cyan]{'-' * width}[/cyan]")

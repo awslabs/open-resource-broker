@@ -172,11 +172,11 @@ def register_command_handlers_with_bus(container: "DIContainer") -> None:
                 logger.debug("CleanupOldRequestsHandler not available: %s", e)
 
         except Exception as e:
-            logger.warning("Failed to register request command handlers with bus: %s", e)
+            logger.warning("Failed to register request command handlers with bus: %s", e, exc_info=True)
 
     except Exception as e:
         logger = container.get(LoggingPort)
-        logger.warning("Failed to register some command handlers: %s", e)
+        logger.warning("Failed to register some command handlers: %s", e, exc_info=True)
 
 
 def _register_cli_command_handlers(container: "DIContainer") -> None:

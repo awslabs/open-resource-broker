@@ -41,7 +41,7 @@ class CleanupOldRequestsHandler(BaseCommandHandler[CleanupOldRequestsCommand, No
     async def validate_command(self, command: CleanupOldRequestsCommand) -> None:
         """Validate cleanup old requests command."""
         await super().validate_command(command)
-        if command.older_than_days <= 0:
+        if not hasattr(command, 'older_than_days') or command.older_than_days <= 0:
             raise ValueError("older_than_days must be positive")
 
     async def execute_command(self, command: CleanupOldRequestsCommand) -> None:

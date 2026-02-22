@@ -129,7 +129,7 @@ class Application:
             return True
 
         except Exception as e:
-            self.logger.error("Failed to initialize application: %s", e)
+            self.logger.error("Failed to initialize application: %s", e, exc_info=True)
             return False
 
     def _register_configured_providers(self) -> None:
@@ -145,7 +145,7 @@ class Application:
                             provider_instance
                         )
         except Exception as e:
-            self.logger.error("Failed to register configured providers: %s", e)
+            self.logger.error("Failed to register configured providers: %s", e, exc_info=True)
 
     def _log_provider_configuration(self, config_manager) -> None:
         """Log provider configuration information during initialization."""
@@ -254,7 +254,7 @@ class Application:
                     "initialized": False,
                 }
         except Exception as e:
-            self.logger.error("Failed to get provider info: %s", e)
+            self.logger.error("Failed to get provider info: %s", e, exc_info=True)
             return {"status": "error", "error": str(e), "initialized": False}
 
     def health_check(self) -> dict[str, Any]:
@@ -279,7 +279,7 @@ class Application:
                         if is_healthy:
                             healthy_providers += 1
                     except Exception as e:
-                        self.logger.warning("Health check failed for %s: %s", instance_name, e)
+                        self.logger.warning("Health check failed for %s: %s", instance_name, e, exc_info=True)
                         provider_health[instance_name] = False
 
                 total_providers = len(available_instances)
@@ -314,7 +314,7 @@ class Application:
                 }
 
         except Exception as e:
-            self.logger.error("Health check failed: %s", e)
+            self.logger.error("Health check failed: %s", e, exc_info=True)
             return {
                 "status": "error",
                 "message": f"Health check failed: {e!s}",

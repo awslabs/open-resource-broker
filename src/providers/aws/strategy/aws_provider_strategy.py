@@ -105,7 +105,7 @@ class AWSProviderStrategy(ProviderStrategy):
                     self._aws_client = self._aws_client_resolver()
                     self._logger.debug("AWS client created via resolver")
                 except Exception as exc:
-                    self._logger.warning("Failed to resolve AWSClient: %s", exc)
+                    self._logger.warning("Failed to resolve AWSClient: %s", exc, exc_info=True)
             else:
                 try:
                     # Need config_port to create AWS client
@@ -121,7 +121,7 @@ class AWSProviderStrategy(ProviderStrategy):
                     )
                     self._logger.debug("AWS client created directly")
                 except Exception as exc:
-                    self._logger.warning("Failed to create AWSClient: %s", exc)
+                    self._logger.warning("Failed to create AWSClient: %s", exc, exc_info=True)
         return self._aws_client
 
     def initialize(self) -> bool:
@@ -131,7 +131,7 @@ class AWSProviderStrategy(ProviderStrategy):
             self._initialized = True
             return True
         except Exception as e:
-            self._logger.error("Failed to initialize AWS provider strategy: %s", e)
+            self._logger.error("Failed to initialize AWS provider strategy: %s", e, exc_info=True)
             return False
 
     async def execute_operation(self, operation: ProviderOperation) -> ProviderResult:
@@ -169,7 +169,7 @@ class AWSProviderStrategy(ProviderStrategy):
 
         except Exception as e:
             execution_time_ms = int((time.time() - start_time) * 1000)
-            self._logger.error("AWS operation failed: %s", e)
+            self._logger.error("AWS operation failed: %s", e, exc_info=True)
             return ProviderResult.error_result(
                 f"AWS operation failed: {e}",
                 "OPERATION_FAILED",
@@ -262,7 +262,7 @@ class AWSProviderStrategy(ProviderStrategy):
             return provider_config_root.provider_defaults.get(self._provider_instance_config.type)
         except Exception as e:
             if self._logger:
-                self._logger.warning("Failed to get provider defaults: %s", e)
+                self._logger.warning("Failed to get provider defaults: %s", e, exc_info=True)
             return None
 
     def _get_handler_factory(self) -> Optional[AWSHandlerFactory]:
@@ -324,7 +324,7 @@ class AWSProviderStrategy(ProviderStrategy):
                 self._aws_provisioning_port = self._aws_provisioning_port_resolver()
                 self._logger.debug("Resolved AWS provisioning adapter via resolver")
             except Exception as exc:
-                self._logger.warning("Failed to resolve AWS provisioning adapter: %s", exc)
+                self._logger.warning("Failed to resolve AWS provisioning adapter: %s", exc, exc_info=True)
                 self._aws_provisioning_port_resolver = None
         return self._aws_provisioning_port
 
@@ -379,7 +379,7 @@ class AWSProviderStrategy(ProviderStrategy):
             self._aws_client = None
             self._initialized = False
         except Exception as e:
-            self._logger.warning("Failed during AWS provider cleanup: %s", e)
+            self._logger.warning("Failed during AWS provider cleanup: %s", e, exc_info=True)
 
     async def _handle_resolve_image(self, operation: ProviderOperation) -> ProviderResult:
         """Handle image resolution using registry-based service."""
