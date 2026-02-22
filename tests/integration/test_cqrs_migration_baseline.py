@@ -12,7 +12,7 @@ import pytest
 
 from application.commands.request_handlers import CreateMachineRequestHandler
 from application.dto.commands import CreateRequestCommand
-from application.services.provider_selection_service import ProviderSelectionService
+from application.services.provider_registry_service import ProviderRegistryService
 from domain.base import UnitOfWorkFactory
 from domain.base.ports import (
     ErrorHandlingPort,
@@ -21,7 +21,7 @@ from domain.base.ports import (
 )
 from infrastructure.di.buses import CommandBus, QueryBus
 from infrastructure.di.container import DIContainer
-from providers.base.strategy import ProviderContext
+
 
 
 @pytest.mark.integration
@@ -91,22 +91,21 @@ class TestCQRSArchitectureIntegration:
         return bus
 
     @pytest.fixture
-    def mock_provider_selection_service(self):
-        """Create mock provider selection service."""
-        service = Mock(spec=ProviderSelectionService)
+    def mock_provider_registry_service(self):
+        """Create mock provider registry service."""
+        service = Mock(spec=ProviderRegistryService)
 
         # Mock selection result
-        from application.services.provider_selection_service import (
-            ProviderSelectionResult,
-        )
+        from domain.base.results import ProviderSelectionResult
 
         selection_result = ProviderSelectionResult(
             provider_type="aws",
-            provider_instance="aws-default",
+            provider_name="aws-default",
             selection_reason="Best match for template requirements",
             confidence=0.95,
         )
         service.select_provider_for_template.return_value = selection_result
+        service.get_available_strategies.return_value = ["aws-aws-default"]
         return service
 
     @pytest.fixture
@@ -115,9 +114,7 @@ class TestCQRSArchitectureIntegration:
         service = Mock()  # Remove spec since ProviderCapabilityService was removed
 
         # Mock validation result
-        from application.services.provider_registry_service import (
-            ProviderRegistryService as ValidationResult,
-        )
+        from domain.base.results import ValidationResult
 
         validation_result = ValidationResult(
             is_valid=True,
@@ -130,24 +127,7 @@ class TestCQRSArchitectureIntegration:
         service.validate_template_requirements.return_value = validation_result
         return service
 
-    @pytest.fixture
-    def mock_provider_context(self):
-        """Create mock provider context."""
-        context = Mock(spec=ProviderContext)
-        context.available_strategies = ["aws-aws-default"]
-        context.current_strategy_type = "aws-aws-default"
 
-        # Mock execution result
-        from providers.base.strategy.provider_strategy import ProviderResult
-
-        result = ProviderResult(
-            success=True,
-            data={"instance_ids": ["i-1234567890abcdef0", "i-0987654321fedcba0"]},
-            metadata={"provider": "aws", "region": "us-east-1"},
-            error_message=None,
-        )
-        context.execute_with_strategy.return_value = result
-        return context
 
     @pytest.fixture
     def create_request_handler(
@@ -158,9 +138,7 @@ class TestCQRSArchitectureIntegration:
         mock_event_publisher,
         mock_error_handler,
         mock_query_bus,
-        mock_provider_selection_service,
-        mock_provider_capability_service,
-        mock_provider_context,
+        mock_provider_registry_service,
     ):
         """Create CreateMachineRequestHandler for testing."""
         return CreateMachineRequestHandler(
@@ -170,9 +148,7 @@ class TestCQRSArchitectureIntegration:
             event_publisher=mock_event_publisher,
             error_handler=mock_error_handler,
             query_bus=mock_query_bus,
-            provider_selection_service=mock_provider_selection_service,
-            provider_capability_service=mock_provider_capability_service,
-            provider_port=mock_provider_context,
+            provider_registry_service=mock_provider_registry_service,
         )
 
     @pytest.fixture
@@ -249,8 +225,8 @@ class TestCQRSArchitectureIntegration:
         assert isinstance(result.supported_features, list)
         assert isinstance(result.errors, list)
 
-    def test_provider_selection_service_integration(self, mock_provider_selection_service):
-        """Test provider selection service integration."""
+    def test_provider_registry_service_integration(self, mock_provider_registry_service):
+        """Test provider registry service integration."""
         from domain.template.template_aggregate import Template
 
         # Create test template
@@ -267,7 +243,7 @@ class TestCQRSArchitectureIntegration:
         )
 
         # Test selection
-        result = mock_provider_selection_service.select_provider_for_template(template)
+        result = mock_provider_registry_service.select_provider_for_template(template)
 
         # Verify result structure
         assert result.provider_type == "aws"

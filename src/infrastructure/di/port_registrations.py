@@ -6,6 +6,7 @@ from domain.base.ports import (
     ContainerPort,
     ErrorHandlingPort,
     EventPublisherPort,
+    ProviderSelectionPort,
     SchedulerPort,
     TemplateConfigurationPort,
 )
@@ -96,3 +97,14 @@ def register_port_adapters(container):
         return JinjaSpecRenderer(logger=c.get(LoggingPort))
 
     container.register_singleton(SpecRenderingPort, create_spec_renderer)
+
+    # Register provider selection port adapter
+    def create_provider_selection_adapter(c):
+        """Create provider selection adapter wrapping ProviderRegistryService."""
+        from application.services.provider_registry_service import ProviderRegistryService
+        from infrastructure.adapters.provider_selection_adapter import ProviderSelectionAdapter
+
+        provider_registry_service = c.get(ProviderRegistryService)
+        return ProviderSelectionAdapter(provider_registry_service)
+
+    container.register_singleton(ProviderSelectionPort, create_provider_selection_adapter)
