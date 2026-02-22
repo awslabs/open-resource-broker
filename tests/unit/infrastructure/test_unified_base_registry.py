@@ -26,7 +26,6 @@ try:
     HAS_REGISTRIES = True
 except ImportError:
     HAS_REGISTRIES = False
-)
 
 
 class TestIntegratedBaseRegistry:
