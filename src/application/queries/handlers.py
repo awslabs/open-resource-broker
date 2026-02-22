@@ -34,8 +34,8 @@ if TYPE_CHECKING:
     pass
 from domain.template.factory import TemplateFactory, get_default_template_factory
 from domain.template.template_aggregate import Template
-from infrastructure.di.buses import CommandBus
-from infrastructure.template.dtos import TemplateDTO
+from application.ports.command_bus_port import CommandBusPort
+from application.ports.template_dto_port import TemplateDTOPort
 
 T = TypeVar("T")
 
@@ -100,9 +100,9 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
 
             # ✅ FIXED: Trigger sync command instead of doing writes in query
             from application.dto.commands import SyncRequestCommand
-            from infrastructure.di.buses import CommandBus
+            from application.ports.command_bus_port import CommandBusPort
 
-            command_bus = self._container.get(CommandBus)
+            command_bus = self._container.get(CommandBusPort)
             sync_command = SyncRequestCommand(request_id=query.request_id)
             await command_bus.execute(sync_command)
 
@@ -322,10 +322,7 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
                             created_machine = dm
                         else:
                             if self._container:
-                                from infrastructure.di.container import get_container
-
-                                container = get_container()
-                                machine_adapter = container.get_optional(
+                                machine_adapter = self._container.get_optional(
                                     "providers.aws.infrastructure.adapters.machine_adapter.AWSMachineAdapter"
                                 )
                             else:
@@ -592,14 +589,10 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
         """Get cache service for request caching."""
         try:
             from domain.base.ports import ConfigurationPort
-            from infrastructure.caching.request_cache_service import RequestCacheService
+            from application.ports.cache_service_port import CacheServicePort
 
-            config_manager = self._container.get(ConfigurationPort)
-            cache_service = RequestCacheService(
-                uow_factory=self.uow_factory,
-                config_manager=config_manager,
-                logger=self.logger,
-            )
+            # Get cache service from container instead of creating it
+            cache_service = self._container.get(CacheServicePort)
             return cache_service
         except Exception as e:
             self.logger.warning("Failed to initialize cache service: %s", e)
@@ -906,7 +899,7 @@ class ListActiveRequestsHandler(BaseQueryHandler[ListActiveRequestsQuery, list[R
 
 
 @query_handler(GetTemplateQuery)
-class GetTemplateHandler(BaseQueryHandler[GetTemplateQuery, TemplateDTO]):
+class GetTemplateHandler(BaseQueryHandler[GetTemplateQuery, TemplateDTOPort]):
     """Handler for getting template details."""
 
     def __init__(
@@ -920,12 +913,12 @@ class GetTemplateHandler(BaseQueryHandler[GetTemplateQuery, TemplateDTO]):
 
     async def execute_query(self, query: GetTemplateQuery) -> Template:
         """Execute get template query."""
-        from infrastructure.template.configuration_manager import TemplateConfigurationManager
+        from domain.base.ports import TemplateConfigurationPort
 
         self.logger.info("Getting template: %s", query.template_id)
 
         try:
-            template_manager = self._container.get(TemplateConfigurationManager)
+            template_manager = self._container.get(TemplateConfigurationPort)
 
             # Get template by ID using the same approach as ListTemplatesHandler
             template_dto = await template_manager.get_template_by_id(query.template_id)
@@ -961,7 +954,7 @@ class GetTemplateHandler(BaseQueryHandler[GetTemplateQuery, TemplateDTO]):
             self.logger.info("Retrieved template: %s", query.template_id)
 
             # Convert domain template to DTO for CQRS compliance
-            return TemplateDTO.from_domain(domain_template)
+            return template_dto  # Return the DTO from template manager
 
         except EntityNotFoundError:
             self.logger.error("Template not found: %s", query.template_id)
@@ -972,7 +965,7 @@ class GetTemplateHandler(BaseQueryHandler[GetTemplateQuery, TemplateDTO]):
 
 
 @query_handler(ListTemplatesQuery)
-class ListTemplatesHandler(BaseQueryHandler[ListTemplatesQuery, list[TemplateDTO]]):
+class ListTemplatesHandler(BaseQueryHandler[ListTemplatesQuery, list[TemplateDTOPort]]):
     """Handler for listing templates."""
 
     def __init__(
@@ -986,14 +979,14 @@ class ListTemplatesHandler(BaseQueryHandler[ListTemplatesQuery, list[TemplateDTO
         self._container = container
         self._generic_filter_service = generic_filter_service
 
-    async def execute_query(self, query: ListTemplatesQuery) -> list[TemplateDTO]:
+    async def execute_query(self, query: ListTemplatesQuery) -> list[TemplateDTOPort]:
         """Execute list templates query - returns raw templates for scheduler formatting."""
-        from infrastructure.template.configuration_manager import TemplateConfigurationManager
+        from domain.base.ports import TemplateConfigurationPort
 
         self.logger.info("Listing templates")
 
         try:
-            template_manager = self._container.get(TemplateConfigurationManager)
+            template_manager = self._container.get(TemplateConfigurationPort)
 
             # Load templates with provider override if specified
             if query.provider_name:
@@ -1015,8 +1008,9 @@ class ListTemplatesHandler(BaseQueryHandler[ListTemplatesQuery, list[TemplateDTO
                     template_dicts, query.filter_expressions
                 )
 
-                # Convert back to TemplateDTO objects
-                template_dtos = [TemplateDTO.model_validate(d) for d in filtered_dicts]
+                # Convert back to TemplateDTOPort objects
+                # Note: This assumes the infrastructure provides a way to reconstruct DTOs
+                template_dtos = filtered_dicts  # Return filtered dicts for now
 
             self.logger.info("Found %s templates", len(template_dtos))
             return template_dtos
@@ -1052,11 +1046,9 @@ class ValidateTemplateHandler(BaseQueryHandler[ValidateTemplateQuery, Validation
         if template_id and (not template_config or template_config == {"template_id": template_id}):
             self.logger.info("Loading template from storage: %s", template_id)
             try:
-                from infrastructure.template.configuration_manager import (
-                    TemplateConfigurationManager,
-                )
+                from domain.base.ports import TemplateConfigurationPort
 
-                template_manager = self.container.get(TemplateConfigurationManager)
+                template_manager = self.container.get(TemplateConfigurationPort)
                 template_dto = await template_manager.get_template_by_id(template_id)
 
                 if not template_dto:

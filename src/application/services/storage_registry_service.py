@@ -1,13 +1,13 @@
 from typing import Any
 
+from application.ports.storage_registry_port import StorageRegistryPort
 from domain.base.ports.logging_port import LoggingPort
-from infrastructure.storage.registry import StorageRegistry
 
 
 class StorageRegistryService:
     """Application service interface for storage registry operations."""
 
-    def __init__(self, registry: StorageRegistry, logger: LoggingPort):
+    def __init__(self, registry: StorageRegistryPort, logger: LoggingPort):
         self._registry = registry
         self._logger = logger
 

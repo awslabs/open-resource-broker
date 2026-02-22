@@ -16,9 +16,7 @@ from domain.base.ports import ErrorHandlingPort, LoggingPort
 
 # Exception handling infrastructure
 from domain.machine.value_objects import MachineStatus
-from infrastructure.adapters.ports.resource_provisioning_port import (
-    ResourceProvisioningPort,
-)
+from domain.base.ports import ResourceProvisioningPort
 
 
 @query_handler(GetActiveMachineCountQuery)

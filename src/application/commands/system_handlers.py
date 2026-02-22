@@ -124,9 +124,9 @@ class RefreshTemplatesHandler(BaseCommandHandler[RefreshTemplatesCommand, dict[s
         self.logger.info("Refreshing templates from all sources")
 
         try:
-            from infrastructure.template.configuration_manager import TemplateConfigurationManager
+            from domain.base.ports import TemplateConfigurationPort
 
-            template_manager = self.container.get(TemplateConfigurationManager)
+            template_manager = self.container.get(TemplateConfigurationPort)
 
             # Refresh templates
             templates = await template_manager.load_templates(command.provider_name)
@@ -228,9 +228,9 @@ class TestStorageCommandHandler(BaseCommandHandler[TestStorageCommand, dict[str,
         self.logger.info("Testing storage connectivity")
 
         try:
-            from infrastructure.storage.registry import get_storage_registry
+            from application.ports.storage_registry_port import StorageRegistryPort
 
-            registry = get_storage_registry()
+            registry = self.container.get(StorageRegistryPort)
             storage_types = registry.get_registered_types()
 
             result = {
