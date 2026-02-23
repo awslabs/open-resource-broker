@@ -57,20 +57,6 @@ class DeleteTemplateCommand(BaseCommand):
     deleted: bool = False
 
 
-class ValidateTemplateCommand(BaseCommand):
-    """Command to validate a template configuration.
-
-    CQRS: Commands should not return data. Results are stored in mutable fields.
-    """
-
-    template_id: str
-    configuration: dict[str, Any]
-
-    # Mutable result fields for CQRS compliance
-    validation_errors: Optional[list[str]] = None
-    is_valid: bool = False
-
-
 class TemplateCommandResponse(BaseResponse):
     """Response for template commands."""
 

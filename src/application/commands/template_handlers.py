@@ -7,7 +7,6 @@ from application.template.commands import (
     DeleteTemplateCommand,
     TemplateCommandResponse,
     UpdateTemplateCommand,
-    ValidateTemplateCommand,
 )
 from domain.base import UnitOfWorkFactory
 from domain.base.exceptions import BusinessRuleError, EntityNotFoundError
@@ -298,72 +297,3 @@ class DeleteTemplateHandler(BaseCommandHandler[DeleteTemplateCommand, None]):  #
             raise
 
 
-@command_handler(ValidateTemplateCommand)
-class ValidateTemplateHandler(BaseCommandHandler[ValidateTemplateCommand, None]):  # type: ignore[type-var]
-    """
-    Handler for validating template configurations.
-
-    Responsibilities:
-    - Validate template configuration against schema
-    - Validate provider-specific rules
-    - Return detailed validation results
-    - Publish TemplateValidated domain event
-
-    CQRS Compliance: Returns None. Results stored in command.validation_errors and command.is_valid.
-    Note: This is a pure query operation and should be moved to queries/ in future refactoring.
-    """
-
-    def __init__(
-        self,
-        logger: LoggingPort,
-        container: ContainerPort,
-        event_publisher: EventPublisherPort,
-        error_handler: ErrorHandlingPort,
-    ) -> None:
-        super().__init__(logger, event_publisher, error_handler)
-        self._container = container
-
-    async def validate_command(self, command: ValidateTemplateCommand) -> None:
-        """Validate template validation command."""
-        await super().validate_command(command)
-        if not command.template_id:
-            raise ValueError("template_id is required")
-        if not command.configuration:
-            raise ValueError("configuration is required")
-
-    async def execute_command(self, command: ValidateTemplateCommand) -> None:
-        """Validate template configuration with detailed results."""
-        self.logger.info("Validating template configuration: %s", command.template_id)
-
-        try:
-            # Get template configuration port for validation
-            from domain.base.ports.template_configuration_port import (
-                TemplateConfigurationPort,
-            )
-
-            template_port = self._container.get(TemplateConfigurationPort)
-
-            # Validate template configuration
-            validation_errors = template_port.validate_template_config(command.configuration)
-
-            # Log validation results
-            if validation_errors:
-                self.logger.warning(
-                    "Template validation failed for %s: %s",
-                    command.template_id,
-                    validation_errors,
-                )
-                command.validation_errors = validation_errors
-                command.is_valid = False
-            else:
-                self.logger.info("Template validation passed for %s", command.template_id)
-                command.validation_errors = []
-                command.is_valid = True
-
-            # Publish validation event (could be useful for monitoring/auditing)
-            # This would be handled by the domain event system
-
-        except Exception as e:
-            self.logger.error("Template validation failed for %s: %s", command.template_id, e)
-            command.validation_errors = [f"Validation error: {e!s}"]
-            command.is_valid = False
