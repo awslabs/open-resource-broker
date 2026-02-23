@@ -46,7 +46,7 @@ def add_global_arguments(parser):
     - --filter "template_id~instant"        # Templates with "instant" in ID
     """
     # Provider and environment overrides
-    parser.add_argument("--provider", help="Override provider instance")
+    parser.add_argument("--provider", help="Override provider instance (per-command flag, e.g. orb templates list --provider aws-prod)")
     parser.add_argument("--region", help="AWS region override")
     parser.add_argument("--profile", help="AWS profile override")
     parser.add_argument(
