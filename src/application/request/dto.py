@@ -63,7 +63,13 @@ class MachineReferenceDTO(BaseDTO):
         Returns:
             Dictionary with snake_case field names
         """
-        return self.model_dump(exclude_none=True)
+        d = self.model_dump(exclude_none=True)
+        # launch_time and cloud_host_id must always be present (even if null)
+        if "launch_time" not in d:
+            d["launch_time"] = None
+        if "cloud_host_id" not in d:
+            d["cloud_host_id"] = None
+        return d
 
 
 class RequestDTO(BaseDTO):

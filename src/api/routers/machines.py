@@ -86,6 +86,13 @@ async def request_machines(
     else:
         response_content = result
 
+    # Ensure snake_case request_id and status fields are present (default scheduler schema)
+    if isinstance(response_content, dict):
+        if "requestId" in response_content and "request_id" not in response_content:
+            response_content["request_id"] = response_content["requestId"]
+        if "status" not in response_content:
+            response_content["status"] = "submitted"
+
     return JSONResponse(content=response_content)
 
 

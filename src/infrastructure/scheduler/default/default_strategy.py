@@ -225,8 +225,20 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
         return {
             "templates": [self.format_template_for_display(template) for template in templates],
             "message": "Templates retrieved successfully",
-            "count": len(templates),
+            "total_count": len(templates),
         }
+
+    def format_template_for_display(self, template: Any) -> dict[str, Any]:
+        """Format template for display, adding required schema fields."""
+        d = template.to_dict()
+        # Schema requires max_capacity (alias for max_instances)
+        if "max_capacity" not in d:
+            d["max_capacity"] = d.get("max_instances", 1)
+        # Schema requires instance_type - derive from machine_types if available
+        if "instance_type" not in d:
+            machine_types = d.get("machine_types", {})
+            d["instance_type"] = next(iter(machine_types), "") if machine_types else ""
+        return d
 
     def format_templates_for_generation(self, templates: list[dict]) -> list[dict]:
         """No conversion needed - use field mapper (identity mapping)."""
