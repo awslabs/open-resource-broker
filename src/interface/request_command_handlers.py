@@ -46,7 +46,7 @@ async def handle_get_request_status(args: "argparse.Namespace") -> dict[str, Any
         request_dtos = await query_bus.execute(query)
 
         # Format response using scheduler strategy
-        return scheduler_strategy.format_request_status_response(request_dtos)
+        return request_dtos
     else:
         # Existing specific ID logic
         # Pass raw input data to scheduler strategy (scheduler-agnostic)
@@ -114,8 +114,8 @@ async def handle_get_request_status(args: "argparse.Namespace") -> dict[str, Any
                     # Continue with other requests if one fails
                     continue
 
-        # Pass domain DTO to scheduler strategy - NO formatting logic here
-        return scheduler_strategy.format_request_status_response(request_dtos)
+        # Return raw DTOs - formatting is handled by the CLI response formatter
+        return request_dtos
 
 
 @handle_interface_exceptions(context="request_machines", interface_type="cli")

@@ -274,8 +274,11 @@ class CLIResponseFormatter:
             if context == "request_status" and hasattr(
                 self.scheduler_strategy, "format_request_status_response"
             ):
-                # For request status queries, pass RequestDTO directly to scheduler strategy
-                return self.scheduler_strategy.format_request_status_response([data])
+                # Handler returns raw DTOs (list) or a single DTO
+                if isinstance(data, list):
+                    return self.scheduler_strategy.format_request_status_response(data)
+                else:
+                    return self.scheduler_strategy.format_request_status_response([data])
 
             elif context == "templates":
                 # For templates list, use format_templates_response for the whole list
