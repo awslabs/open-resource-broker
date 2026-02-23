@@ -1,11 +1,11 @@
 #!/bin/sh
 # Install git hooks for this repository
-# Run this once after cloning: ./scripts/install-hooks.sh
+# Run this once after cloning: ./dev-tools/setup/install-hooks.sh
 
 set -e
 
 REPO_ROOT=$(git rev-parse --show-toplevel)
-HOOKS_DIR="$REPO_ROOT/scripts/hooks"
+HOOKS_DIR="$REPO_ROOT/dev-tools/scripts/hooks"
 
 echo "Installing git hooks..."
 
