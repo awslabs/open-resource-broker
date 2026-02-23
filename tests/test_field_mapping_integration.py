@@ -30,9 +30,7 @@ class TestFieldMappingIntegration:
         provider_config.active_provider = "aws-default"
         self.config_manager.get_provider_config.return_value = provider_config
 
-        self.scheduler_strategy = HostFactorySchedulerStrategy(
-            config_manager=self.config_manager, logger=self.logger
-        )
+        self.scheduler_strategy = HostFactorySchedulerStrategy()
 
     def test_field_mapping_registry_basic(self):
         """Test basic field mapping registry functionality."""

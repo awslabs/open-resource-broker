@@ -2,7 +2,6 @@
 
 from unittest.mock import Mock, patch
 
-from domain.request.aggregate import Request
 from providers.aws.domain.template.aws_template_aggregate import AWSTemplate
 from providers.aws.infrastructure.handlers.base_context_mixin import BaseContextMixin
 
@@ -30,17 +29,17 @@ class TestBaseContextMixin:
         self.template.instance_types = {"t3.medium": 1, "t3.large": 2}
         self.template.percent_on_demand = None
 
-        # Mock request
-        self.request = Mock(spec=Request)
-        self.request.request_id = "req-test-456"
-        self.request.requested_count = 5
+        self.request_id = "req-test-456"
+        self.requested_count = 5
 
     def test_prepare_base_context(self):
         """Test base context preparation."""
         with patch("providers.aws.infrastructure.handlers.base_context_mixin.datetime") as mock_dt:
             mock_dt.utcnow.return_value.isoformat.return_value = "2025-01-15T10:30:00Z"
 
-            context = self.mixin._prepare_base_context(self.template, self.request)
+            context = self.mixin._prepare_base_context(
+                self.template, self.request_id, self.requested_count
+            )
 
             assert context["request_id"] == "req-test-456"
             assert context["template_id"] == "test-template-123"
@@ -84,7 +83,7 @@ class TestBaseContextMixin:
         """Test capacity distribution for on-demand only."""
         self.template.price_type = "ondemand"
 
-        result = self.mixin._calculate_capacity_distribution(self.template, self.request)
+        result = self.mixin._calculate_capacity_distribution(self.template, self.requested_count)
 
         assert result["total_capacity"] == 5
         assert result["target_capacity"] == 5
@@ -99,7 +98,7 @@ class TestBaseContextMixin:
         """Test capacity distribution for spot only."""
         self.template.price_type = "spot"
 
-        result = self.mixin._calculate_capacity_distribution(self.template, self.request)
+        result = self.mixin._calculate_capacity_distribution(self.template, self.requested_count)
 
         assert result["total_capacity"] == 5
         assert result["on_demand_count"] == 0
@@ -112,7 +111,7 @@ class TestBaseContextMixin:
         self.template.price_type = "spot"
         self.template.percent_on_demand = 40
 
-        result = self.mixin._calculate_capacity_distribution(self.template, self.request)
+        result = self.mixin._calculate_capacity_distribution(self.template, self.requested_count)
 
         assert result["total_capacity"] == 5
         assert result["on_demand_count"] == 2  # 40% of 5
@@ -126,7 +125,7 @@ class TestBaseContextMixin:
         self.template.price_type = "heterogeneous"
         self.template.percent_on_demand = 40
 
-        result = self.mixin._calculate_capacity_distribution(self.template, self.request)
+        result = self.mixin._calculate_capacity_distribution(self.template, self.requested_count)
 
         assert result["total_capacity"] == 5
         assert result["on_demand_count"] == 2  # 40% of 5
@@ -138,7 +137,7 @@ class TestBaseContextMixin:
         self.template.price_type = "heterogeneous"
         self.template.percent_on_demand = None  # Should default to 0
 
-        result = self.mixin._calculate_capacity_distribution(self.template, self.request)
+        result = self.mixin._calculate_capacity_distribution(self.template, self.requested_count)
 
         assert result["on_demand_count"] == 0
         assert result["spot_count"] == 5
@@ -151,7 +150,7 @@ class TestBaseContextMixin:
             ) as mock_dt:
                 mock_dt.utcnow.return_value.isoformat.return_value = "2025-01-15T10:30:00Z"
 
-                result = self.mixin._prepare_standard_tags(self.template, self.request)
+                result = self.mixin._prepare_standard_tags(self.template, self.request_id)
 
                 # Check base tags
                 base_tags = result["base_tags"]
@@ -179,7 +178,7 @@ class TestBaseContextMixin:
         self.template.tags = None
 
         with patch.object(self.mixin, "_get_package_name", return_value="test-package"):
-            result = self.mixin._prepare_standard_tags(self.template, self.request)
+            result = self.mixin._prepare_standard_tags(self.template, self.request_id)
 
             assert len(result["base_tags"]) == 4
             assert len(result["custom_tags"]) == 0

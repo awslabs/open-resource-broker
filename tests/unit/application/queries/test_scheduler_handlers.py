@@ -27,7 +27,15 @@ class TestListSchedulerStrategiesHandler:
     @pytest.fixture
     def handler(self):
         """Create handler instance."""
-        return ListSchedulerStrategiesHandler()
+        from application.services.scheduler_registry_service import SchedulerRegistryService
+        from domain.services.generic_filter_service import GenericFilterService
+        mock_logger = Mock()
+        mock_error_handler = Mock()
+        mock_scheduler_service = Mock(spec=SchedulerRegistryService)
+        mock_scheduler_service.get_available_schedulers.return_value = ["default", "hostfactory", "hf"]
+        mock_filter_service = Mock(spec=GenericFilterService)
+        mock_filter_service.apply_filters.side_effect = lambda items, **kwargs: items
+        return ListSchedulerStrategiesHandler(mock_logger, mock_error_handler, mock_scheduler_service, mock_filter_service)
 
     @pytest.fixture
     def mock_registry(self):
@@ -50,7 +58,7 @@ class TestListSchedulerStrategiesHandler:
 
         with (
             patch(
-                "infrastructure.registry.scheduler_registry.get_scheduler_registry",
+                "infrastructure.scheduler.registry.get_scheduler_registry",
                 return_value=mock_registry,
             ),
             patch(
@@ -77,7 +85,7 @@ class TestListSchedulerStrategiesHandler:
 
         with (
             patch(
-                "infrastructure.registry.scheduler_registry.get_scheduler_registry",
+                "infrastructure.scheduler.registry.get_scheduler_registry",
                 return_value=mock_registry,
             ),
             patch(
@@ -99,7 +107,7 @@ class TestListSchedulerStrategiesHandler:
 
         with (
             patch(
-                "infrastructure.registry.scheduler_registry.get_scheduler_registry",
+                "infrastructure.scheduler.registry.get_scheduler_registry",
                 return_value=mock_registry,
             ),
             patch(
@@ -119,7 +127,13 @@ class TestGetSchedulerConfigurationHandler:
     @pytest.fixture
     def handler(self):
         """Create handler instance."""
-        return GetSchedulerConfigurationHandler()
+        from application.services.scheduler_registry_service import SchedulerRegistryService
+        mock_logger = Mock()
+        mock_error_handler = Mock()
+        mock_scheduler_service = Mock(spec=SchedulerRegistryService)
+        mock_scheduler_service.get_available_schedulers.return_value = ["default", "hostfactory", "hf"]
+        mock_scheduler_service.is_scheduler_registered.side_effect = lambda name: name in ["default", "hostfactory", "hf"]
+        return GetSchedulerConfigurationHandler(mock_logger, mock_error_handler, mock_scheduler_service)
 
     @pytest.fixture
     def mock_config_manager(self):
@@ -157,7 +171,7 @@ class TestGetSchedulerConfigurationHandler:
                 return_value=mock_config_manager,
             ),
             patch(
-                "infrastructure.registry.scheduler_registry.get_scheduler_registry",
+                "infrastructure.scheduler.registry.get_scheduler_registry",
                 return_value=mock_registry,
             ),
         ):
@@ -181,7 +195,7 @@ class TestGetSchedulerConfigurationHandler:
                 return_value=mock_config_manager,
             ),
             patch(
-                "infrastructure.registry.scheduler_registry.get_scheduler_registry",
+                "infrastructure.scheduler.registry.get_scheduler_registry",
                 return_value=mock_registry,
             ),
         ):
@@ -204,7 +218,7 @@ class TestGetSchedulerConfigurationHandler:
                 return_value=mock_config_manager,
             ),
             patch(
-                "infrastructure.registry.scheduler_registry.get_scheduler_registry",
+                "infrastructure.scheduler.registry.get_scheduler_registry",
                 return_value=mock_registry,
             ),
         ):
@@ -220,7 +234,14 @@ class TestValidateSchedulerConfigurationHandler:
     @pytest.fixture
     def handler(self):
         """Create handler instance."""
-        return ValidateSchedulerConfigurationHandler()
+        from unittest.mock import Mock
+        from application.services.scheduler_registry_service import SchedulerRegistryService
+        mock_logger = Mock()
+        mock_error_handler = Mock()
+        mock_scheduler_service = Mock(spec=SchedulerRegistryService)
+        mock_scheduler_service.get_available_schedulers.return_value = ["default", "hostfactory", "hf"]
+        mock_scheduler_service.create_scheduler_strategy.return_value = Mock()
+        return ValidateSchedulerConfigurationHandler(mock_logger, mock_error_handler, mock_scheduler_service)
 
     @pytest.fixture
     def mock_config_manager(self):
@@ -256,7 +277,7 @@ class TestValidateSchedulerConfigurationHandler:
                 return_value=mock_config_manager,
             ),
             patch(
-                "infrastructure.registry.scheduler_registry.get_scheduler_registry",
+                "infrastructure.scheduler.registry.get_scheduler_registry",
                 return_value=mock_registry,
             ),
         ):
@@ -279,7 +300,7 @@ class TestValidateSchedulerConfigurationHandler:
                 return_value=mock_config_manager,
             ),
             patch(
-                "infrastructure.registry.scheduler_registry.get_scheduler_registry",
+                "infrastructure.scheduler.registry.get_scheduler_registry",
                 return_value=mock_registry,
             ),
         ):
@@ -296,8 +317,8 @@ class TestValidateSchedulerConfigurationHandler:
         """Test validation when strategy creation fails."""
         query = ValidateSchedulerConfigurationQuery(scheduler_name="hostfactory")
 
-        # Mock registry to raise exception on strategy creation
-        mock_registry.create_strategy.side_effect = Exception("Creation failed")
+        # Make the handler's scheduler service raise on strategy creation
+        handler._scheduler_service.create_scheduler_strategy.side_effect = Exception("Creation failed")
 
         with (
             patch(
@@ -305,7 +326,7 @@ class TestValidateSchedulerConfigurationHandler:
                 return_value=mock_config_manager,
             ),
             patch(
-                "infrastructure.registry.scheduler_registry.get_scheduler_registry",
+                "infrastructure.scheduler.registry.get_scheduler_registry",
                 return_value=mock_registry,
             ),
         ):

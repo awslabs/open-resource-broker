@@ -57,15 +57,25 @@ class TestProviderInstanceConfig:
 
     def test_provider_type_validation(self):
         """Test provider type validation."""
-        # Valid types
-        valid_types = ["aws", "provider1", "provider2"]
-        for provider_type in valid_types:
-            config = ProviderInstanceConfig(name="test", type=provider_type)
-            assert config.type == provider_type
+        from providers.registry import get_provider_registry
 
-        # Invalid type
-        with pytest.raises(ValueError, match="Provider type must be one of"):
-            ProviderInstanceConfig(name="test", type="invalid")
+        registry = get_provider_registry()
+
+        # Register aws type so the validator has entries to check against
+        if "aws" not in registry.get_registered_providers():
+            registry.register_provider(
+                "aws",
+                strategy_factory=lambda cfg: None,
+                config_factory=lambda: None,
+            )
+
+        # Only registered provider types are valid; aws is the registered type
+        config = ProviderInstanceConfig(name="test", type="aws")
+        assert config.type == "aws"
+
+        # Unregistered types raise ValueError
+        with pytest.raises(ValueError, match="is not registered"):
+            ProviderInstanceConfig(name="test", type="invalid_unregistered_type")
 
     def test_weight_validation(self):
         """Test provider weight validation."""

@@ -241,12 +241,14 @@ class TestRequestStatusHandlerBehaviour:
         result = await handler.handle(api_request)
 
         scheduler.format_request_response.assert_awaited_once()
-        assert result["requests"][0]["requestId"] == "req-12345678-1234-1234-1234-123456789012"
-        assert result["requests"][0]["status"] == "complete"
+        # result is a RequestStatusResponse object; access via .requests or model_dump()
+        result_dict = result.model_dump() if hasattr(result, "model_dump") else result
+        assert result_dict["requests"][0]["requestId"] == "req-12345678-1234-1234-1234-123456789012"
+        assert result_dict["requests"][0]["status"] == "complete"
 
         # Ensure the correct query type was used
         query_bus.execute.assert_awaited_once()
-        assert isinstance(query_bus.execute.call_args.args[0], GetRequestStatusQuery)
+        assert isinstance(query_bus.execute.call_args.args[0], GetRequestQuery)
 
     @pytest.mark.asyncio
     async def test_all_flag_uses_list_active_requests(self):
@@ -276,7 +278,8 @@ class TestRequestStatusHandlerBehaviour:
 
         query_bus.execute.assert_awaited_once()
         assert isinstance(query_bus.execute.call_args.args[0], ListActiveRequestsQuery)
-        assert result["requests"][0]["requestId"] == "req-2"
+        result_dict = result.model_dump() if hasattr(result, "model_dump") else result
+        assert result_dict["requests"][0]["requestId"] == "req-2"
 
     @pytest.mark.asyncio
     async def test_long_requests_use_get_request_query(self):

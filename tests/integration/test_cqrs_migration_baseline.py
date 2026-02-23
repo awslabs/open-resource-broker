@@ -185,6 +185,7 @@ class TestCQRSArchitectureIntegration:
         mock_provider_selection_port,
     ):
         """Create CreateMachineRequestHandler for testing."""
+        mock_provider_config_port = Mock()
         return CreateMachineRequestHandler(
             uow_factory=mock_uow_factory,
             logger=mock_logger,
@@ -193,6 +194,7 @@ class TestCQRSArchitectureIntegration:
             error_handler=mock_error_handler,
             query_bus=mock_query_bus,
             provider_selection_port=mock_provider_selection_port,
+            provider_config_port=mock_provider_config_port,
         )
 
     @pytest.fixture
@@ -219,10 +221,8 @@ class TestCQRSArchitectureIntegration:
         # Execute command
         result = await create_request_handler.execute_command(command)
 
-        # Verify result is a Request aggregate
-        from domain.request.aggregate import Request
-        assert isinstance(result, Request)
-        assert result.request_id is not None
+        # Commands return None in CQRS pattern
+        assert result is None
 
         # Verify handler interactions
         create_request_handler._query_bus.execute.assert_called_once()
@@ -241,10 +241,8 @@ class TestCQRSArchitectureIntegration:
         # Execute via command bus
         result = await command_bus.execute(command)
 
-        # Verify result is a Request aggregate
-        from domain.request.aggregate import Request
-        assert isinstance(result, Request)
-        assert result.request_id is not None
+        # Commands return None in CQRS pattern
+        assert result is None
 
     def test_provider_capability_service_integration(self, mock_provider_capability_service):
         """Test provider capability service integration."""
@@ -380,10 +378,8 @@ class TestCQRSArchitectureIntegration:
         # Execute command - should handle failure gracefully
         result = await create_request_handler.execute_command(command)
 
-        # Should still return Request aggregate (request created but marked as failed)
-        from domain.request.aggregate import Request
-        assert isinstance(result, Request)
-        assert result.request_id is not None
+        # Commands return None in CQRS pattern
+        assert result is None
 
     def test_cqrs_separation_of_concerns(self, create_request_handler):
         """Test that CQRS properly separates command and query concerns."""
@@ -416,9 +412,8 @@ class TestCQRSArchitectureIntegration:
         # Verify UoW was used
         create_request_handler.uow_factory.create_unit_of_work.assert_called()
 
-        # Verify result is a Request aggregate
-        from domain.request.aggregate import Request
-        assert isinstance(result, Request)
+        # Commands return None in CQRS pattern
+        assert result is None
 
     @pytest.mark.asyncio
     async def test_event_publishing_integration(self, create_request_handler):
@@ -435,9 +430,8 @@ class TestCQRSArchitectureIntegration:
         # Verify event publisher was called (events from UoW save)
         # Note: In this mock setup, save returns empty list, so no events published
         # In real scenario, domain aggregates would generate events
-        from domain.request.aggregate import Request
-        assert isinstance(result, Request)
-        assert result.request_id is not None
+        # Commands return None in CQRS pattern
+        assert result is None
 
 
 # Removed TestMachineStatusConversionBaseline class as MachineStatusConversionService does not exist

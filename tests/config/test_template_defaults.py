@@ -297,12 +297,9 @@ class TestTemplateDefaultsIntegration:
             "provider_api": "SpotFleet",
         }
 
-        # Create scheduler strategy with template defaults service
-        scheduler = HostFactorySchedulerStrategy(
-            mock_config_manager,
-            mock_logger,
-            template_defaults_service=mock_template_defaults_service,
-        )
+        # Create scheduler strategy (no constructor args) and inject mock service
+        scheduler = HostFactorySchedulerStrategy()
+        scheduler._template_defaults_service = mock_template_defaults_service
 
         # Test template field mapping with defaults service
         template_dict = {

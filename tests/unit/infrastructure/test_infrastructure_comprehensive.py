@@ -183,7 +183,7 @@ class TestPersistenceLayerComprehensive:
         for repo_file in repo_files:
             try:
                 module = importlib.import_module(
-                    f"src.infrastructure.persistence.repositories.{repo_file}"
+                    f"infrastructure.storage.repositories.{repo_file}"
                 )
                 repo_modules.append((repo_file, module))
             except ImportError:
@@ -301,11 +301,11 @@ class TestPersistenceLayerComprehensive:
         """Test that persistence strategies exist."""
         strategy_modules = []
 
-        # Check for different persistence strategies
         strategy_paths = [
-            "src.infrastructure.persistence.json.strategy",
-            "src.infrastructure.persistence.sql.strategy",
-            "src.infrastructure.persistence.base.strategy",
+            "infrastructure.storage.json.strategy",
+            "infrastructure.storage.sql.strategy",
+            "infrastructure.storage.base.strategy",
+            "infrastructure.storage.dynamodb.strategy",
         ]
 
         for strategy_path in strategy_paths:
@@ -322,9 +322,10 @@ class TestPersistenceLayerComprehensive:
         uow_modules = []
 
         uow_paths = [
-            "src.infrastructure.persistence.json.unit_of_work",
-            "src.infrastructure.persistence.sql.unit_of_work",
-            "src.infrastructure.persistence.base.unit_of_work",
+            "infrastructure.storage.json.unit_of_work",
+            "infrastructure.storage.sql.unit_of_work",
+            "infrastructure.storage.base.unit_of_work",
+            "infrastructure.storage.dynamodb.unit_of_work",
         ]
 
         for uow_path in uow_paths:
@@ -380,9 +381,9 @@ class TestErrorHandlingComprehensive:
     def test_error_middleware_exists(self):
         """Test that error middleware exists."""
         try:
-            import src
+            from infrastructure.error import error_middleware
 
-            assert src.infrastructure.error.error_middleware is not None
+            assert error_middleware is not None
         except ImportError:
             pytest.skip("Error middleware not available")
 

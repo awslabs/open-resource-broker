@@ -266,7 +266,7 @@ class TestLazyLoadingPerformanceIntegration:
         import time
 
         start_time = time.time()
-        Application()
+        Application(skip_validation=True)
         creation_time = (time.time() - start_time) * 1000
 
         # Creation should be very fast (lazy loading)

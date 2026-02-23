@@ -1,7 +1,5 @@
 """Tests for Default scheduler strategy."""
 
-from unittest.mock import Mock
-
 from infrastructure.scheduler.default.default_strategy import DefaultSchedulerStrategy
 
 
@@ -10,21 +8,20 @@ class TestDefaultSchedulerStrategy:
 
     def setup_method(self):
         """Set up test fixtures."""
-        self.mock_config_manager = Mock()
-        self.mock_logger = Mock()
-        self.strategy = DefaultSchedulerStrategy(self.mock_config_manager, self.mock_logger)
+        self.strategy = DefaultSchedulerStrategy()
 
     def test_parse_request_data_requests_format(self):
         """Test request status parsing with requests format."""
-        raw_request = {"requests": [{"requestId": "req-123"}, {"requestId": "req-456"}]}
+        raw_request = {"requests": [{"request_id": "req-123"}, {"request_id": "req-456"}]}
 
         parsed_request = self.strategy.parse_request_data(raw_request)
 
         # Verify requests format parsing
-        assert isinstance(parsed_request, list)
-        assert len(parsed_request) == 2
-        assert parsed_request[0]["request_id"] == "req-123"
-        assert parsed_request[1]["request_id"] == "req-456"
+        assert isinstance(parsed_request, dict)
+        assert "requests" in parsed_request
+        assert len(parsed_request["requests"]) == 2
+        assert parsed_request["requests"][0]["request_id"] == "req-123"
+        assert parsed_request["requests"][1]["request_id"] == "req-456"
 
     def test_parse_request_data_domain_format(self):
         """Test request parsing with native domain format."""
