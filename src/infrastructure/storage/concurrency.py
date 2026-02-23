@@ -66,7 +66,7 @@ class OptimisticConcurrencyControl:
 
     def check_version(
         self,
-        entity: T,
+        entity: T,  # pyright: ignore[reportInvalidTypeVarUse]
         entity_id: str,
         version_map: dict[str, int],
         entity_class_name: str,
@@ -89,7 +89,7 @@ class OptimisticConcurrencyControl:
                 f"expected {version_map[entity_id]}, got {getattr(entity, 'version', None)}"
             )
 
-    def increment_version(self, entity: T, entity_id: str, version_map: dict[str, int]) -> None:
+    def increment_version(self, entity: T, entity_id: str, version_map: dict[str, int]) -> None:  # pyright: ignore[reportInvalidTypeVarUse]
         """
         Increment entity version.
 
