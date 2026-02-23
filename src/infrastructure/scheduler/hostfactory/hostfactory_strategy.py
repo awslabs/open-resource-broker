@@ -407,7 +407,7 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
                 resource_ids = []
 
             # Create message with resource ID information
-            base_message = "Request VM success from AWS."
+            base_message = "Request VM succeeded."
             if resource_ids:
                 # Include the first resource ID in the message for user visibility
                 # Show first for brevity
@@ -664,11 +664,41 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         for template in templates:
             # Use the new architecture-compliant method
             formatted_template = self.format_template_for_display(template)
+
+            # Ensure required HF fields are present
+            if "templateId" not in formatted_template and "template_id" in formatted_template:
+                formatted_template["templateId"] = formatted_template["template_id"]
+            if "maxNumber" not in formatted_template and "max_instances" in formatted_template:
+                formatted_template["maxNumber"] = formatted_template["max_instances"]
+
+            # Ensure attributes object is always present (required by IBM HF spec)
+            if "attributes" not in formatted_template:
+                instance_type = (
+                    formatted_template.get("vmType")
+                    or formatted_template.get("instance_type")
+                    or "t2.micro"
+                )
+                formatted_template["attributes"] = self._build_hf_attributes(instance_type)
+
             formatted_templates.append(formatted_template)
 
         return {
             "templates": formatted_templates,
             "message": f"Retrieved {len(formatted_templates)} templates successfully",
+            "success": True,
+            "total_count": len(formatted_templates),
+        }
+
+    def _build_hf_attributes(self, instance_type: str) -> dict[str, list[str]]:
+        """Build IBM HF attributes dict from an instance type string."""
+        from cli.field_mapping import derive_cpu_ram_from_instance_type
+
+        ncpus, nram = derive_cpu_ram_from_instance_type(instance_type)
+        return {
+            "type": ["String", "X86_64"],
+            "ncpus": ["Numeric", str(ncpus)],
+            "ncores": ["Numeric", str(ncpus)],
+            "nram": ["Numeric", str(nram)],
         }
 
     def format_templates_for_generation(self, templates: list[dict]) -> list[dict]:
@@ -703,14 +733,11 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
 
             # Create HostFactory-compliant request object (only HF spec fields)
             hf_request = {
-                "requestId": req_dict.get("request_id"),
+                "request_id": req_dict.get("request_id"),
                 "status": req_dict.get("status"),
+                "message": req_dict.get("message", ""),
                 "machines": machines,
             }
-
-            # Add optional message if present
-            if req_dict.get("message"):
-                hf_request["message"] = req_dict["message"]
 
             # Add provider information if present
             if req_dict.get("provider_name"):
@@ -919,6 +946,10 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
             # Per IBM HF spec, launchtime is mandatory - default to 0 if not available
             launchtime = int(machine.get("launch_time_timestamp", 0))
 
+            # Per IBM HF spec, privateIpAddress must be a valid IP or null (not empty string)
+            raw_ip = machine.get("private_ip_address", machine.get("private_ip"))
+            private_ip = raw_ip if raw_ip else None
+
             formatted_machine = {
                 "machineId": machine.get("machine_id", machine.get("instance_id")),
                 "name": machine.get(
@@ -926,9 +957,11 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
                 ),
                 "result": result,
                 "status": machine.get("status", "unknown"),
-                "privateIpAddress": machine.get("private_ip_address", machine.get("private_ip")),
+                "privateIpAddress": private_ip,
                 "launchtime": launchtime,
                 "message": message,
+                # Per IBM HF spec, cloudHostId must always be present, defaulting to null
+                "cloudHostId": machine.get("cloud_host_id") or None,
             }
 
             if machine.get("public_ip_address") or machine.get("public_ip"):
@@ -941,8 +974,6 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
                 formatted_machine["priceType"] = machine["price_type"]
             if machine.get("instance_tags"):
                 formatted_machine["instanceTags"] = machine["instance_tags"]
-            if machine.get("cloud_host_id"):
-                formatted_machine["cloudHostId"] = machine["cloud_host_id"]
 
             formatted_machines.append(formatted_machine)
 

@@ -130,7 +130,10 @@ async def list_templates(
             status_code=200,
             content={
                 "templates": serializable_templates,
-                "totalCount": len(templates),
+                "total_count": len(templates),
+                "count": len(templates),
+                "message": f"Retrieved {len(templates)} templates successfully",
+                "success": True,
                 "timestamp": datetime.now().isoformat(),
             },
         )
