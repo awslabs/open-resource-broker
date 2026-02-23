@@ -6,14 +6,14 @@ with a clean, maintainable architecture following DDD/SOLID/DRY principles.
 """
 
 # Import the new base classes and decorator
-from application.base.event_handlers import BaseLoggingEventHandler
+from application.events.base.logging_event_handler import LoggingEventHandler
 from application.events.decorators import event_handler
 from domain.base.events import DomainEvent
 from domain.base.ports import LoggingPort
 
 
-@event_handler("DatabaseConnectionEvent")
-class DatabaseConnectionHandler(BaseLoggingEventHandler):
+@event_handler("DatabaseConnectionEvent")  # type: ignore[arg-type]
+class DatabaseConnectionHandler(LoggingEventHandler):
     """Handle database connection events - DRY compliant."""
 
     def format_message(self, event: DomainEvent) -> str:
@@ -41,8 +41,8 @@ class DatabaseConnectionHandler(BaseLoggingEventHandler):
         return message
 
 
-@event_handler("CacheOperationEvent")
-class CacheOperationHandler(BaseLoggingEventHandler):
+@event_handler("CacheOperationEvent")  # type: ignore[arg-type]
+class CacheOperationHandler(LoggingEventHandler):
     """Handle cache operation events - DRY compliant."""
 
     def format_message(self, event: DomainEvent) -> str:

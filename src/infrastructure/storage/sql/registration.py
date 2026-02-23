@@ -33,7 +33,7 @@ def create_sql_strategy(config: Any) -> Any:
         connection_string = getattr(config, "connection_string", "sqlite:///data.db")
 
     return SQLStorageStrategy(
-        connection_string=connection_string,
+        config={"connection_string": connection_string},
         table_name="generic_storage",
         columns={"id": "TEXT PRIMARY KEY", "data": "TEXT"},
     )
@@ -110,17 +110,17 @@ def create_sql_unit_of_work(config: Any) -> Any:
             connection_string,
             pool_size=sql_config.pool_size,
             max_overflow=sql_config.max_overflow,
-            pool_timeout=sql_config.pool_timeout,
-            pool_recycle=sql_config.pool_recycle,
-            echo=sql_config.echo,
+            pool_timeout=getattr(sql_config, "pool_timeout", 30),
+            pool_recycle=getattr(sql_config, "pool_recycle", 3600),
+            echo=getattr(sql_config, "echo", False),
         )
 
-        return SQLUnitOfWork(engine)
+        return SQLUnitOfWork(engine)  # type: ignore[abstract]
     else:
         # For testing or other scenarios - assume it's a dict with connection info
         connection_string = config.get("connection_string", "sqlite:///data/test.db")
         engine = create_engine(connection_string)
-        return SQLUnitOfWork(engine)
+        return SQLUnitOfWork(engine)  # type: ignore[abstract]
 
 
 def register_sql_storage() -> None:

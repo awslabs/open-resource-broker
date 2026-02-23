@@ -58,7 +58,7 @@ class TemplateStorageService:
         """
         try:
             # Get template file paths from scheduler strategy
-            template_paths = self.scheduler_strategy.get_template_paths()
+            template_paths = self.scheduler_strategy.get_template_paths()  # type: ignore[attr-defined]
             if not template_paths:
                 raise ValueError("No template paths available from scheduler strategy")
 
@@ -86,6 +86,8 @@ class TemplateStorageService:
             if self.event_publisher:
                 if template_found:
                     event = TemplateUpdatedEvent(
+                        aggregate_id=template.template_id,
+                        aggregate_type="template",
                         template_id=template.template_id,
                         template_name=template.name or template.template_id,
                         changes=template.configuration,
@@ -93,9 +95,11 @@ class TemplateStorageService:
                     )
                 else:
                     event = TemplateCreatedEvent(
+                        aggregate_id=template.template_id,
+                        aggregate_type="template",
                         template_id=template.template_id,
                         template_name=template.name or template.template_id,
-                        template_type=template.provider_api,
+                        template_type=template.provider_api or "",
                         configuration=template.configuration,
                     )
                 self.event_publisher.publish(event)
@@ -121,7 +125,7 @@ class TemplateStorageService:
                 target_file = source_file
             else:
                 # Use first template path as default
-                template_paths = self.scheduler_strategy.get_template_paths()
+                template_paths = self.scheduler_strategy.get_template_paths()  # type: ignore[attr-defined]
                 if not template_paths:
                     raise ValueError("No template paths available from scheduler strategy")
                 target_file = Path(template_paths[0])
@@ -146,6 +150,8 @@ class TemplateStorageService:
             # Publish domain event
             if self.event_publisher:
                 event = TemplateDeletedEvent(
+                    aggregate_id=template_id,
+                    aggregate_type="template",
                     template_id=template_id,
                     template_name=template_id,  # We don't have the name at this point
                     deletion_reason="User requested deletion",
@@ -164,7 +170,7 @@ class TemplateStorageService:
         """Load raw template data from a file using scheduler strategy."""
         try:
             # Use scheduler strategy to load and parse templates
-            templates = self.scheduler_strategy.load_templates_from_path(str(file_path))
+            templates = self.scheduler_strategy.load_templates_from_path(str(file_path))  # type: ignore[attr-defined]
             return templates
         except Exception as e:
             self.logger.error("Failed to load templates from %s: %s", file_path, e)

@@ -38,8 +38,8 @@ class LaunchTemplateConfiguration(BaseModel):
 class HandlersConfig(BaseModel):
     """Handlers configuration."""
 
-    capabilities: HandlerCapabilityConfig = Field(default_factory=lambda: HandlerCapabilityConfig())
-    defaults: HandlerDefaultsConfig = Field(default_factory=lambda: HandlerDefaultsConfig())
+    capabilities: HandlerCapabilityConfig = Field(default_factory=lambda: HandlerCapabilityConfig())  # type: ignore[call-arg]
+    defaults: HandlerDefaultsConfig = Field(default_factory=lambda: HandlerDefaultsConfig())  # type: ignore[call-arg]
 
     # Legacy fields for backward compatibility
     ec2_fleet: bool = Field(True, description="Enable EC2 Fleet handler (legacy)")
@@ -65,7 +65,7 @@ class HandlersConfig(BaseModel):
         return self
 
 
-class AWSProviderConfig(BaseSettings, BaseProviderConfig):
+class AWSProviderConfig(BaseSettings, BaseProviderConfig):  # type: ignore[misc]
     """Complete AWS provider configuration - single source of truth.
 
     This class consolidates all AWS configuration needs:
@@ -75,7 +75,7 @@ class AWSProviderConfig(BaseSettings, BaseProviderConfig):
     - Environment variable support with ORB_AWS_ prefix
     """
 
-    model_config = SettingsConfigDict(
+    model_config = SettingsConfigDict(  # type: ignore[assignment]
         env_prefix="ORB_AWS_",
         case_sensitive=False,
         populate_by_name=True,
@@ -94,7 +94,7 @@ class AWSProviderConfig(BaseSettings, BaseProviderConfig):
     session_token: Optional[str] = Field(None, description="AWS session token")
 
     # AWS Settings
-    region: str = Field("us-east-1", description="AWS region")
+    region: str = Field("us-east-1", description="AWS region")  # type: ignore[assignment]
     endpoint_url: Optional[str] = Field(None, description="AWS endpoint URL")
     aws_max_retries: int = Field(
         3,
@@ -116,11 +116,11 @@ class AWSProviderConfig(BaseSettings, BaseProviderConfig):
     )
 
     # Handler configuration
-    handlers: HandlersConfig = Field(default_factory=lambda: HandlersConfig())
+    handlers: HandlersConfig = Field(default_factory=lambda: HandlersConfig())  # type: ignore[call-arg]
 
     # Launch template configuration
     launch_template: LaunchTemplateConfiguration = Field(
-        default_factory=lambda: LaunchTemplateConfiguration()
+        default_factory=lambda: LaunchTemplateConfiguration()  # type: ignore[call-arg]
     )
 
     # Symphony/Legacy configuration fields

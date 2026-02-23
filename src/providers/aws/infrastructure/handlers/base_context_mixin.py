@@ -30,9 +30,9 @@ class BaseContextMixin:
 
     def _get_package_name(self) -> str:
         """Integrated package name retrieval."""
-        if hasattr(self, "config_port") and self.config_port:
+        if hasattr(self, "config_port") and self.config_port:  # type: ignore[attr-defined]
             try:
-                package_info = self.config_port.get_package_info()
+                package_info = self.config_port.get_package_info()  # type: ignore[attr-defined]
                 return package_info.get("name", "open-resource-broker")
             except Exception:  # nosec B110
                 pass
@@ -106,7 +106,7 @@ class BaseContextMixin:
             "has_instance_profile": hasattr(template, "instance_profile")
             and bool(template.instance_profile),
             "has_ebs_optimized": hasattr(template, "ebs_optimized")
-            and template.ebs_optimized is not None,
+            and template.ebs_optimized is not None,  # type: ignore[attr-defined]
             "has_monitoring": hasattr(template, "monitoring_enabled")
             and template.monitoring_enabled is not None,
         }
@@ -115,20 +115,20 @@ class BaseContextMixin:
         self, resource_id: str, request: Request, template: AWSTemplate
     ):
         """Apply base tags after resource creation using AWSOperations."""
-        if hasattr(self, "aws_operations") and self.aws_operations:
-            self.aws_operations.apply_base_tags_to_resource(resource_id, request, template)
+        if hasattr(self, "aws_operations") and self.aws_operations:  # type: ignore[attr-defined]
+            self.aws_operations.apply_base_tags_to_resource(resource_id, request, template)  # type: ignore[attr-defined]
 
     def _tag_fleet_instances_if_needed(
         self, fleet_id: str, request: Request, template: AWSTemplate
     ):
         """Tag fleet instances based on provider_api using AWSOperations."""
-        if hasattr(self, "aws_operations") and self.aws_operations:
+        if hasattr(self, "aws_operations") and self.aws_operations:  # type: ignore[attr-defined]
             if hasattr(template, "provider_api") and template.provider_api:
                 provider_api_str = (
                     template.provider_api.value
                     if hasattr(template.provider_api, "value")
                     else str(template.provider_api)
                 )
-                self.aws_operations.discover_and_tag_fleet_instances(
+                self.aws_operations.discover_and_tag_fleet_instances(  # type: ignore[attr-defined]
                     fleet_id, request, template, provider_api_str
                 )

@@ -687,7 +687,7 @@ class ExceptionHandler:
         """Wrap JSON decode error into appropriate domain exception based on context."""
         # Handle both string context and ExceptionContext object
         if hasattr(context, "operation"):
-            context_str = context.operation
+            context_str = context.operation  # type: ignore[union-attr]
         else:
             context_str = context or ""
 
@@ -695,7 +695,7 @@ class ExceptionHandler:
 
         # Context-aware exception mapping
         if "config" in context_lower or "template" in context_lower:
-            return ConfigurationError(
+            return ConfigurationError(  # type: ignore[return-value]
                 message=f"Invalid JSON format in {context_str or 'configuration'}: {exc.msg}",
                 details={
                     "original_error": str(exc),
@@ -711,7 +711,7 @@ class ExceptionHandler:
                 error_code="INVALID_JSON",  # For backward compatibility
             )
         elif "request" in context_lower or "response" in context_lower:
-            return RequestValidationError(
+            return RequestValidationError(  # type: ignore[return-value]
                 message=f"Invalid JSON in request data: {exc.msg}",
                 details={
                     "original_error": str(exc),
@@ -761,7 +761,7 @@ class ExceptionHandler:
         context_lower = (context or "").lower()
 
         if "config" in context_lower or "template" in context_lower:
-            return ConfigurationError(
+            return ConfigurationError(  # type: ignore[return-value]
                 message=f"Required file not found: {exc.filename or 'unknown file'}",
                 details={
                     "original_error": str(exc),
@@ -857,7 +857,7 @@ class ExceptionHandler:
         """Handle any unrecognized exception by wrapping in InfrastructureError."""
         # Handle both string context and ExceptionContext object
         if hasattr(context, "operation"):
-            context_str = context.operation
+            context_str = context.operation  # type: ignore[union-attr]
         else:
             context_str = context or ""
 

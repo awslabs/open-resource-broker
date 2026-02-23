@@ -61,9 +61,9 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
         logger: LoggingPort,
         aws_ops: AWSOperations,
         launch_template_manager: AWSLaunchTemplateManager,
-        request_adapter: RequestAdapterPort = None,
+        request_adapter: RequestAdapterPort = None,  # type: ignore[assignment]
         machine_adapter: Optional[AWSMachineAdapter] = None,
-        error_handler: ErrorHandlingPort = None,
+        error_handler: ErrorHandlingPort = None,  # type: ignore[assignment]
     ) -> None:
         """
         Initialize RunInstances handler with integrated dependencies.
@@ -175,7 +175,7 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
 
         # Store launch template info in request (if request has this method)
         if hasattr(request, "set_launch_template_info"):
-            request.set_launch_template_info(
+            request.set_launch_template_info(  # type: ignore[attr-defined]
                 launch_template_result.template_id, launch_template_result.version
             )
 
@@ -468,7 +468,7 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
             params["InstanceMarketOptions"] = {"MarketType": "spot"}
 
             if aws_template.max_price is not None:
-                params["InstanceMarketOptions"]["SpotOptions"] = {
+                params["InstanceMarketOptions"]["SpotOptions"] = {  # type: ignore[index]
                     "MaxPrice": str(aws_template.max_price)
                 }
 
@@ -644,7 +644,7 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
             self._logger.error("FALLBACK: Fallback method failed to find instances: %s", e)
             return []
 
-    def release_hosts(
+    def release_hosts(  # type: ignore[override]
         self,
         machine_ids: list[str],
         resource_mapping: Optional[dict[str, tuple[Optional[str], int]]] = None,

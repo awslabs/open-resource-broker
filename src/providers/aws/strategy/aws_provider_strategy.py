@@ -245,7 +245,7 @@ class AWSProviderStrategy(ProviderStrategy):
                     provider_defaults=provider_defaults,
                     logger=self._logger,
                 )
-        return self._handler_registry
+        return self._handler_registry  # type: ignore[return-value]
 
     def _get_provider_defaults(self) -> Optional[Any]:
         """Get provider defaults from configuration."""
@@ -259,6 +259,8 @@ class AWSProviderStrategy(ProviderStrategy):
             container = get_container()
             config_port = container.get(ConfigurationPort)
             provider_config_root = config_port.get_provider_config()
+            if provider_config_root is None:
+                return None
             return provider_config_root.provider_defaults.get(self._provider_instance_config.type)
         except Exception as e:
             if self._logger:
@@ -277,7 +279,7 @@ class AWSProviderStrategy(ProviderStrategy):
         """Get instance operation service with lazy initialization."""
         if self._instance_service is None:
             self._instance_service = AWSInstanceOperationService(
-                aws_client=self.aws_client,
+                aws_client=self.aws_client,  # type: ignore[arg-type]
                 logger=self._logger,
                 provisioning_adapter=self._resolve_provisioning_port(),
                 provider_name=self._provider_name,
@@ -289,7 +291,8 @@ class AWSProviderStrategy(ProviderStrategy):
         """Get health check service with lazy initialization."""
         if self._health_service is None:
             self._health_service = AWSHealthCheckService(
-                aws_client=self.aws_client, config=self._aws_config, logger=self._logger
+                aws_client=self.aws_client,  # type: ignore[arg-type]
+                config=self._aws_config, logger=self._logger
             )
         return self._health_service
 
@@ -312,7 +315,7 @@ class AWSProviderStrategy(ProviderStrategy):
         if self._infrastructure_service is None:
             self._infrastructure_service = AWSInfrastructureDiscoveryService(
                 region=self._aws_config.region,
-                profile=self._aws_config.profile,
+                profile=self._aws_config.profile or "",
                 logger=self._logger,
             )
         return self._infrastructure_service
@@ -375,7 +378,7 @@ class AWSProviderStrategy(ProviderStrategy):
         """Clean up AWS provider resources."""
         try:
             if self.aws_client:
-                self.aws_client.cleanup()
+                self.aws_client.cleanup()  # type: ignore[attr-defined]
             self._aws_client = None
             self._initialized = False
         except Exception as e:
@@ -417,7 +420,7 @@ class AWSProviderStrategy(ProviderStrategy):
             from infrastructure.di.container import get_container
 
             container = get_container()
-            config = container.get("configuration_port")
+            config = container.get("configuration_port")  # type: ignore[call-overload]
             cache_dir = os.path.join(config.get_work_dir(), ".cache")
         except Exception:
             # Fallback to current directory
@@ -430,7 +433,7 @@ class AWSProviderStrategy(ProviderStrategy):
         )
 
         return AWSImageResolutionService(
-            aws_client=self.aws_client,
+            aws_client=self.aws_client,  # type: ignore[arg-type]
             cache=cache,
             logger=self._logger,
         )

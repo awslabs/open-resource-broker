@@ -68,7 +68,7 @@ def create_aws_strategy(provider_config: Any) -> Any:
 
         # Set provider name for identification
         if hasattr(strategy, "name") and provider_name:
-            strategy.name = provider_name
+            strategy.name = provider_name  # type: ignore[misc]
 
         return strategy
 
@@ -150,8 +150,8 @@ def create_aws_validator() -> Any:
 
 
 def register_aws_provider(
-    registry: "ProviderRegistry" = None,
-    logger: "LoggingPort" = None,
+    registry: "Optional[ProviderRegistry]" = None,
+    logger: "Optional[LoggingPort]" = None,
     instance_name: Optional[str] = None,
 ) -> None:
     """Register AWS provider with the provider registry.
@@ -199,11 +199,11 @@ def register_aws_provider(
 
     except Exception as e:
         if logger:
-            logger.error("Failed to register AWS provider: %s", str(e, exc_info=True))
+            logger.error("Failed to register AWS provider: %s", str(e))
         raise
 
 
-def _register_aws_template_store(logger: "LoggingPort" = None) -> None:
+def _register_aws_template_store(logger: "Optional[LoggingPort]" = None) -> None:
     """Register AWS template store - DISABLED: Template system consolidated.
 
     Template functionality has been consolidated into the integrated TemplateConfigurationManager.
@@ -214,7 +214,7 @@ def _register_aws_template_store(logger: "LoggingPort" = None) -> None:
     # No-op: Template system has been consolidated
 
 
-def _register_aws_template_adapter(logger: "LoggingPort" = None) -> None:
+def _register_aws_template_adapter(logger: "Optional[LoggingPort]" = None) -> None:
     """Register AWS template adapter with the DI container."""
     try:
         from domain.base.ports.template_adapter_port import TemplateAdapterPort
@@ -356,7 +356,7 @@ def get_aws_extension_defaults() -> dict:
     Returns:
         Dictionary of default AWS extension values
     """
-    default_config = AWSTemplateExtensionConfig()
+    default_config = AWSTemplateExtensionConfig()  # type: ignore[call-arg]
     return default_config.to_template_defaults()
 
 

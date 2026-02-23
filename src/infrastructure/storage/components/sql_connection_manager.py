@@ -1,7 +1,7 @@
 """SQL connection management components for SQL storage operations."""
 
 from contextlib import contextmanager
-from typing import Any, Optional
+from typing import Any, Generator, Optional
 
 from sqlalchemy import Engine, create_engine, text
 from sqlalchemy.orm import sessionmaker
@@ -146,7 +146,7 @@ class SQLConnectionManager(ResourceManager):
             raise
 
     @contextmanager
-    def get_session(self) -> None:
+    def get_session(self) -> Generator[Any, None, None]:
         """
         Get database session with automatic cleanup.
 
@@ -167,7 +167,7 @@ class SQLConnectionManager(ResourceManager):
             session.close()
 
     @contextmanager
-    def get_connection(self) -> None:
+    def get_connection(self) -> Generator[Any, None, None]:
         """
         Get raw database connection.
 
@@ -279,3 +279,11 @@ class SQLConnectionManager(ResourceManager):
     def close(self) -> None:
         """Close all connections and dispose engine (alias for cleanup)."""
         self.cleanup()
+
+    def get_resource(self, resource_name: str) -> Any:
+        """Get a managed resource by name."""
+        if resource_name == "engine":
+            return self.engine
+        if resource_name == "session_factory":
+            return self.session_factory
+        raise KeyError(f"Unknown resource: {resource_name}")
