@@ -46,10 +46,6 @@ class CLICommandFactoryOrchestrator:
         """Create command to delete template."""
         return self._template_factory.create_delete_template_command(**kwargs)
 
-    def create_validate_template_command(self, **kwargs: Any):
-        """Create command to validate template."""
-        return self._template_factory.create_validate_template_command(**kwargs)
-
     def create_validate_template_query(self, **kwargs: Any):
         """Create query to validate template configuration."""
         return self._template_factory.create_validate_template_query(**kwargs)
@@ -302,6 +298,8 @@ class CLICommandFactoryOrchestrator:
                     active_only=not args.get("all", False),
                     include_details=args.get("long", False),
                     filter_expressions=args.get("filter") or [],
+                    limit=args.get("limit"),
+                    offset=args.get("offset", 0),
                 )
             elif command_action == "show":
                 return self.create_get_template_query(
@@ -358,6 +356,7 @@ class CLICommandFactoryOrchestrator:
                     provider=args.get("provider"),
                     status=args.get("status"),
                     limit=args.get("limit"),
+                    offset=args.get("offset", 0),
                 )
             elif command_action == "cancel":
                 return self.create_cancel_request_command(request_id=args.get("request_id"))

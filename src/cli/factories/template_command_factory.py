@@ -8,7 +8,6 @@ from application.template.commands import (
     CreateTemplateCommand,
     DeleteTemplateCommand,
     UpdateTemplateCommand,
-    ValidateTemplateCommand,
 )
 
 
@@ -21,6 +20,8 @@ class TemplateCommandFactory:
         active_only: bool = True,
         include_details: bool = False,
         filter_expressions: Optional[list] = None,
+        limit: Optional[int] = 50,
+        offset: Optional[int] = 0,
         **kwargs: Any,
     ) -> ListTemplatesQuery:
         """Create query to list templates."""
@@ -29,6 +30,8 @@ class TemplateCommandFactory:
             active_only=active_only,
             include_details=include_details,
             filter_expressions=filter_expressions or [],
+            limit=min(limit or 50, 1000),
+            offset=offset or 0,
         )
 
     def create_get_template_query(
@@ -82,12 +85,6 @@ class TemplateCommandFactory:
     ) -> DeleteTemplateCommand:
         """Create command to delete template."""
         return DeleteTemplateCommand(template_id=template_id)
-
-    def create_validate_template_command(
-        self, template_id: str, **kwargs: Any
-    ) -> ValidateTemplateCommand:
-        """Create command to validate template."""
-        return ValidateTemplateCommand(template_id=template_id)
 
     def create_validate_template_query(
         self,
