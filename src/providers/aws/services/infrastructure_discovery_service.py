@@ -65,6 +65,7 @@ class AWSInfrastructureDiscoveryService:
         _config = Config(connect_timeout=10, read_timeout=30, retries={"max_attempts": 3})
         session = boto3.Session(profile_name=profile, region_name=region)
         self.ec2_client = session.client("ec2", config=_config)
+        self.iam_client = session.client("iam", config=_config)
 
     def discover_vpcs(self) -> list[VPCInfo]:
         """Discover VPCs with name tags and CIDR blocks."""
@@ -390,6 +391,19 @@ class AWSInfrastructureDiscoveryService:
                     except (ValueError, IndexError):
                         print_error("Invalid security group selection, skipping security groups")
 
+            # Discover fleet role (non-interactive — either exists or it doesn't)
+            try:
+                fleet_role_response = self.iam_client.get_role(
+                    RoleName="aws-ec2-spot-fleet-tagging-role"
+                )
+                fleet_role_arn = fleet_role_response["Role"]["Arn"]
+                discovered["fleet_role"] = fleet_role_arn
+                print_info(f"Fleet role found: {fleet_role_arn}")
+            except self.iam_client.exceptions.NoSuchEntityException:
+                print_info("Fleet role 'aws-ec2-spot-fleet-tagging-role' not found, skipping")
+            except Exception as e:
+                print_info(f"Could not check fleet role: {e}")
+
             if discovered:
                 print_info("")
                 print_success("Infrastructure discovered and configured!")
@@ -459,6 +473,22 @@ class AWSInfrastructureDiscoveryService:
                     validation_results["issues"].append(f"Invalid security groups: {e}")
                     print_error(
                         f"Provider {provider_config.get('name', 'unknown')}: Security group validation failed: {e}"
+                    )
+
+            # Validate fleet_role IAM role
+            if "fleet_role" in template_defaults:
+                try:
+                    fleet_role_arn = template_defaults["fleet_role"]
+                    role_name = fleet_role_arn.split("/")[-1]
+                    self.iam_client.get_role(RoleName=role_name)
+                    print_success(
+                        f"Provider {provider_config.get('name', 'unknown')}: Fleet role '{role_name}' is valid"
+                    )
+                except Exception as e:
+                    validation_results["valid"] = False
+                    validation_results["issues"].append(f"Invalid fleet_role: {e}")
+                    print_error(
+                        f"Provider {provider_config.get('name', 'unknown')}: Fleet role validation failed: {e}"
                     )
 
             return validation_results
