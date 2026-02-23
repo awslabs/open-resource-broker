@@ -2,6 +2,7 @@
 
 import os
 from pathlib import Path
+from typing import Any
 
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
@@ -62,7 +63,7 @@ class SQLEngineFactory:
         db_type = config.type
 
         # Create engine with appropriate settings
-        engine_kwargs = {
+        engine_kwargs: dict[str, Any] = {
             "echo": False,  # Default to no echo, can be overridden in config
         }
 

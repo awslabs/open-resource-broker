@@ -1,6 +1,6 @@
 """Request-related command handlers for the interface layer."""
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Union
 
 from domain.base.ports.scheduler_port import SchedulerPort
 from infrastructure.di.buses import CommandBus, QueryBus
@@ -12,7 +12,9 @@ if TYPE_CHECKING:
 
 
 @handle_interface_exceptions(context="get_request_status", interface_type="cli")
-async def handle_get_request_status(args: "argparse.Namespace") -> dict[str, Any]:
+async def handle_get_request_status(
+    args: "argparse.Namespace",
+) -> Union[dict[str, Any], tuple[dict[str, Any], int]]:
     """
     Handle get request status operations with --all support.
 
@@ -74,19 +76,23 @@ async def handle_get_request_status(args: "argparse.Namespace") -> dict[str, Any
             }
 
         # Let scheduler strategy parse the raw data (each scheduler handles its own format)
-        parsed_data_list = scheduler_strategy.parse_request_data(raw_request_data)
+        parsed_result = scheduler_strategy.parse_request_data(raw_request_data)
 
-        # Validate parsed data
-        if not isinstance(parsed_data_list, list) or len(parsed_data_list) == 0:
+        # Validate parsed data - runtime may return a list despite port typing dict
+        parsed_data_list: list[dict[str, Any]] = (
+            parsed_result if isinstance(parsed_result, list) else [parsed_result]
+        )
+
+        if not parsed_data_list:
             return {"error": "No request ID provided", "message": "Request ID is required"}
 
         request_dtos = []
 
         # Extract request IDs from parsed data
         request_ids = [
-            parsed_data.get("request_id")
-            for parsed_data in parsed_data_list
-            if parsed_data.get("request_id")
+            item.get("request_id")
+            for item in parsed_data_list
+            if isinstance(item, dict) and item.get("request_id")
         ]
 
         if not request_ids:
@@ -96,7 +102,7 @@ async def handle_get_request_status(args: "argparse.Namespace") -> dict[str, Any
         if len(request_ids) == 1:
             from application.dto.queries import GetRequestQuery
 
-            query = GetRequestQuery(request_id=request_ids[0])
+            query = GetRequestQuery(request_id=str(request_ids[0]))
             request_dto = await query_bus.execute(query)
             if request_dto:
                 request_dtos.append(request_dto)
@@ -106,7 +112,7 @@ async def handle_get_request_status(args: "argparse.Namespace") -> dict[str, Any
 
             for request_id in request_ids:
                 try:
-                    query = GetRequestQuery(request_id=request_id)
+                    query = GetRequestQuery(request_id=str(request_id))
                     request_dto = await query_bus.execute(query)
                     if request_dto:
                         request_dtos.append(request_dto)
@@ -119,7 +125,9 @@ async def handle_get_request_status(args: "argparse.Namespace") -> dict[str, Any
 
 
 @handle_interface_exceptions(context="request_machines", interface_type="cli")
-async def handle_request_machines(args: "argparse.Namespace") -> dict[str, Any]:
+async def handle_request_machines(
+    args: "argparse.Namespace",
+) -> Union[dict[str, Any], tuple[dict[str, Any], int]]:
     """
     Handle request machines operations.
 
@@ -179,7 +187,7 @@ async def handle_request_machines(args: "argparse.Namespace") -> dict[str, Any]:
     )
 
     # Execute command and get request ID - let exceptions bubble up
-    request_id = await command_bus.execute(command)
+    request_id = await command_bus.execute(command)  # type: ignore[arg-type]
 
     # Get the request details to include resource ID information
     try:
@@ -345,11 +353,10 @@ async def handle_request_return_machines(args: "argparse.Namespace") -> dict[str
         }
 
     command = CreateReturnRequestCommand(
-        request_id=getattr(args, "request_id", None),
         machine_ids=machine_ids,
     )
 
-    result = await command_bus.execute(command)
+    result = await command_bus.execute(command)  # type: ignore[arg-type]
 
     # Handle both old format (string) and new format (dict) for backward compatibility
     if isinstance(result, dict):

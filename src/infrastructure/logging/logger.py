@@ -78,14 +78,14 @@ class JsonFormatter(logging.Formatter):
             message["exception"] = self.formatException(record.exc_info)
 
         if hasattr(record, "request_id"):
-            message["request_id"] = record.request_id
+            message["request_id"] = record.request_id  # type: ignore[attr-defined]
 
         if hasattr(record, "correlation_id"):
-            message["correlation_id"] = record.correlation_id
+            message["correlation_id"] = record.correlation_id  # type: ignore[attr-defined]
 
         # Include any extra fields provided in the log call
         if hasattr(record, "extra"):
-            message.update(record.extra)
+            message.update(record.extra)  # type: ignore[attr-defined]
 
         return json.dumps(message)
 
@@ -107,7 +107,7 @@ class ContextLogger(logging.Logger):
         for key in keys:
             self._context.pop(key, None)
 
-    def _log(
+    def _log(  # type: ignore[override]
         self,
         level: int,
         msg: str,
@@ -235,17 +235,19 @@ def get_logger(name: str) -> ContextLogger:
     Returns:
         Logger instance
     """
-    return logging.getLogger(name)
+    return logging.getLogger(name)  # type: ignore[return-value]
 
 
 class LoggerAdapter(logging.LoggerAdapter):
     """Adapter that adds context to log records."""
 
-    def process(self, msg: str, kwargs: Dict[str, Any]) -> tuple[str, Dict[str, Any]]:
+    def process(self, msg: str, kwargs: Dict[str, Any]) -> tuple[str, Dict[str, Any]]:  # type: ignore[override]
         """Process log record to add context."""
         if "extra" not in kwargs:
             kwargs["extra"] = {}
-        kwargs["extra"].update(self.extra)
+        extra = kwargs["extra"]
+        if isinstance(extra, dict) and isinstance(self.extra, dict):
+            extra.update(self.extra)
         return msg, kwargs
 
 

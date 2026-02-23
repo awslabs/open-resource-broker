@@ -131,7 +131,7 @@ class AWSLaunchTemplateManager:
         launch_template_data = self._create_launch_template_data(aws_template, request)
 
         # Get the launch template name using the helper function
-        launch_template_name = get_launch_template_name(request.request_id)
+        launch_template_name = get_launch_template_name(str(request.request_id))
 
         # Generate a deterministic client token for idempotency
         client_token = self._generate_client_token(request, aws_template)
@@ -207,7 +207,7 @@ class AWSLaunchTemplateManager:
         Returns:
             LaunchTemplateResult with existing template details
         """
-        template_id = aws_template.launch_template_id
+        template_id = aws_template.launch_template_id or ""
         version = aws_template.launch_template_version or "$Latest"
 
         try:
@@ -301,7 +301,7 @@ class AWSLaunchTemplateManager:
             custom_tags = [{"key": k, "value": v} for k, v in template.tags.items()]
 
         # Get instance name
-        instance_name = get_instance_name(request.request_id)
+        instance_name = get_instance_name(str(request.request_id))
 
         return {
             # Basic values
@@ -337,9 +337,7 @@ class AWSLaunchTemplateManager:
                 else None
             ),
             "ebs_optimized": (
-                template.ebs_optimized
-                if hasattr(template, "ebs_optimized") and template.ebs_optimized is not None
-                else None
+                getattr(template, "ebs_optimized", None)
             ),
             "monitoring_enabled": (
                 template.monitoring_enabled
@@ -368,8 +366,7 @@ class AWSLaunchTemplateManager:
             "has_key_name": hasattr(template, "key_name") and bool(template.key_name),
             "has_user_data": hasattr(template, "user_data") and bool(template.user_data),
             "has_instance_profile": bool(template.instance_profile),
-            "has_ebs_optimized": hasattr(template, "ebs_optimized")
-            and template.ebs_optimized is not None,
+            "has_ebs_optimized": getattr(template, "ebs_optimized", None) is not None,
             "has_monitoring": hasattr(template, "monitoring_enabled")
             and template.monitoring_enabled is not None,
             "has_root_device_volume_size": hasattr(template, "root_device_volume_size")
@@ -494,8 +491,9 @@ class AWSLaunchTemplateManager:
             launch_template_data["IamInstanceProfile"] = {"Name": instance_profile_name}
 
         # Add EBS optimization if specified (check if attribute exists)
-        if hasattr(aws_template, "ebs_optimized") and aws_template.ebs_optimized is not None:
-            launch_template_data["EbsOptimized"] = aws_template.ebs_optimized
+        ebs_optimized = getattr(aws_template, "ebs_optimized", None)
+        if ebs_optimized is not None:
+            launch_template_data["EbsOptimized"] = ebs_optimized
 
         # Add monitoring if specified
         if (
@@ -550,7 +548,7 @@ class AWSLaunchTemplateManager:
             List of tag dictionaries
         """
         # Get instance name using the helper function
-        instance_name = get_instance_name(request.request_id)
+        instance_name = get_instance_name(str(request.request_id))
 
         # Get package name for CreatedBy tag
         created_by = "open-resource-broker"  # fallback
@@ -589,7 +587,7 @@ class AWSLaunchTemplateManager:
         Returns:
             List of tag dictionaries
         """
-        template_name = get_launch_template_name(request.request_id)
+        template_name = get_launch_template_name(str(request.request_id))
 
         # Get package name for CreatedBy tag
         created_by = "open-resource-broker"  # fallback

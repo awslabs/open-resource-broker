@@ -131,7 +131,7 @@ class TemplateConfigurationManager:
             self.cache_service.invalidate()
 
         return await self.cache_service.get_or_load(
-            lambda: self._load_templates_from_scheduler(provider_override)
+            lambda: self._load_templates_from_scheduler(provider_override)  # type: ignore[return-value]
         )
 
     async def _load_templates_from_scheduler(
@@ -140,7 +140,7 @@ class TemplateConfigurationManager:
         """Load templates using scheduler strategy with batch AMI resolution."""
         try:
             # Get template file paths from scheduler strategy
-            template_paths = self.scheduler_strategy.get_template_paths()
+            template_paths = self.scheduler_strategy.get_template_paths()  # type: ignore[attr-defined]
             if not template_paths:
                 self.logger.warning("No template paths available from scheduler strategy")
                 return []
@@ -151,7 +151,7 @@ class TemplateConfigurationManager:
             for template_path in template_paths:
                 try:
                     # Use scheduler strategy to load and parse templates
-                    template_dicts = self.scheduler_strategy.load_templates_from_path(
+                    template_dicts = self.scheduler_strategy.load_templates_from_path(  # type: ignore[attr-defined]
                         template_path, provider_override
                     )
                     all_template_dicts.extend(template_dicts)
@@ -308,7 +308,7 @@ class TemplateConfigurationManager:
         """Check if image resolution is enabled."""
         try:
             provider_config = self.config_manager.get_provider_config()
-            if (
+            if provider_config is not None and (
                 hasattr(provider_config, "provider_defaults")
                 and "aws" in provider_config.provider_defaults
             ):
@@ -392,119 +392,6 @@ class TemplateConfigurationManager:
             resolved_templates.append(resolved_template)
         return resolved_templates
 
-    async def _batch_resolve_images(
-        self, template_dicts: list[dict[str, Any]]
-    ) -> list[dict[str, Any]]:
-        """Batch resolve image IDs from specifications using provider registry."""
-        try:
-            if not self._is_image_resolution_enabled():
-                return template_dicts
-
-            # Group templates by provider instance
-            templates_by_provider = self._group_templates_by_provider(template_dicts)
-
-            resolved_templates = []
-            for provider_instance, templates in templates_by_provider.items():
-                # Collect image specifications for this provider
-                image_specifications = self._extract_image_specifications(templates)
-
-                if image_specifications:
-                    # Use provider registry to execute image resolution
-                    resolved_images = await self._resolve_images_via_provider(
-                        provider_instance, image_specifications
-                    )
-                    # Apply resolved images to templates
-                    templates = self._apply_resolved_images(templates, resolved_images)
-
-                resolved_templates.extend(templates)
-
-            return resolved_templates
-        except Exception as e:
-            self.logger.error("Batch image resolution failed: %s", str(e))
-            return template_dicts  # Return original templates on failure
-
-    def _group_templates_by_provider(
-        self, template_dicts: list[dict[str, Any]]
-    ) -> dict[str, list[dict[str, Any]]]:
-        """Group templates by provider instance."""
-        templates_by_provider = {}
-        for template_dict in template_dicts:
-            provider_instance = self._determine_provider_instance(template_dict)
-            if provider_instance not in templates_by_provider:
-                templates_by_provider[provider_instance] = []
-            templates_by_provider[provider_instance].append(template_dict)
-        return templates_by_provider
-
-    def _extract_image_specifications(self, templates: list[dict]) -> list[str]:
-        """Extract image specifications from templates."""
-        specifications = []
-        for template in templates:
-            # Look for image specifications in various template fields
-            if template.get("image_id"):
-                specifications.append(template["image_id"])
-            if template.get("ami_id"):  # Legacy support
-                specifications.append(template["ami_id"])
-        return list(set(specifications))  # Remove duplicates
-
-    def _is_image_resolution_enabled(self) -> bool:
-        """Check if image resolution is enabled via configuration."""
-        try:
-            # Check the AMI resolution config setting
-            from providers.aws.configuration.template_extension import AMIResolutionConfig
-
-            ami_config = self.config_manager.get_typed(AMIResolutionConfig)
-            return ami_config.enabled
-
-        except Exception as e:
-            self.logger.debug("Could not get image resolution config: %s", e)
-            # Default to enabled if config not available
-            return True
-
-    async def _resolve_images_via_provider(
-        self, provider_instance: str, image_specifications: list[str]
-    ) -> dict[str, str]:
-        """Resolve images using provider strategy."""
-        if not self.provider_registry_service:
-            self.logger.debug("Provider registry service not available, skipping image resolution")
-            return {}
-
-        try:
-            from providers.base.strategy import ProviderOperation, ProviderOperationType
-
-            operation = ProviderOperation(
-                operation_type=ProviderOperationType.RESOLVE_IMAGE,
-                parameters={"image_specifications": image_specifications},
-            )
-
-            result = await self.provider_registry_service.execute_operation(
-                provider_instance, operation
-            )
-
-            if result.success and result.data:
-                return result.data.get("resolved_images", {})
-            else:
-                self.logger.warning(
-                    "Image resolution failed for provider %s: %s",
-                    provider_instance,
-                    result.error_message,
-                )
-                return {}
-
-        except Exception as e:
-            self.logger.warning("Image resolution failed for provider %s: %s", provider_instance, e)
-            return {}
-
-    def _apply_resolved_images(
-        self, templates: list[dict], resolved_images: dict[str, str]
-    ) -> list[dict]:
-        """Apply resolved image IDs to templates."""
-        for template in templates:
-            if "image_id" in template and template["image_id"] in resolved_images:
-                template["image_id"] = resolved_images[template["image_id"]]
-            if "ami_id" in template and template["ami_id"] in resolved_images:  # Legacy support
-                template["ami_id"] = resolved_images[template["ami_id"]]
-        return templates
-
     async def get_template_by_id(self, template_id: str) -> Optional[TemplateDTO]:
         """
         Get a specific template by ID.
@@ -568,19 +455,45 @@ class TemplateConfigurationManager:
 
     def get_all_templates_sync(self) -> list[TemplateDTO]:
         """Get all templates synchronously for adapter compatibility."""
-
         try:
             # Try to get existing event loop
             loop = asyncio.get_event_loop()
             if loop.is_running():
                 # If loop is running, we can't use run_until_complete
                 # Fall back to direct template loading via scheduler strategy
-                return self._load_templates_from_scheduler()
+                return self._load_templates_sync()
             else:
                 return loop.run_until_complete(self.get_all_templates())
         except RuntimeError:
             # No event loop, create new one
             return asyncio.run(self.get_all_templates())
+
+    def _load_templates_sync(self) -> list[TemplateDTO]:
+        """Load templates synchronously as fallback when event loop is running."""
+        try:
+            template_paths = self.scheduler_strategy.get_template_paths()  # type: ignore[attr-defined]
+            if not template_paths:
+                return []
+            all_template_dicts: list[dict[str, Any]] = []
+            for template_path in template_paths:
+                try:
+                    template_dicts = self.scheduler_strategy.load_templates_from_path(  # type: ignore[attr-defined]
+                        template_path, None
+                    )
+                    all_template_dicts.extend(template_dicts)
+                except Exception as e:
+                    self.logger.error("Failed to load templates from %s: %s", template_path, e)
+            all_templates = []
+            for template_dict in all_template_dicts:
+                try:
+                    template_dto = self._convert_dict_to_template_dto(template_dict)
+                    all_templates.append(template_dto)
+                except Exception as e:
+                    self.logger.warning("Failed to convert template dict to DTO: %s", e)
+            return all_templates
+        except Exception as e:
+            self.logger.error("Failed to load templates synchronously: %s", e)
+            return []
 
     async def save_template(self, template: TemplateDTO) -> None:
         """
@@ -730,7 +643,10 @@ class TemplateConfigurationManager:
             from providers.registry import get_provider_registry
 
             registry = get_provider_registry()
-            capability_result = registry.validate_template_requirements(
+            if not hasattr(registry, "validate_template_requirements"):
+                result["warnings"].append("Provider registry does not support template validation")
+                return
+            capability_result = registry.validate_template_requirements(  # type: ignore[attr-defined]
                 domain_template, provider_instance, "strict"
             )
 

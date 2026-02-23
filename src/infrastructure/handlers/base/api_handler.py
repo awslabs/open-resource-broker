@@ -90,7 +90,7 @@ class BaseAPIHandler(BaseHandler, Generic[T, R]):
         # Apply circuit breaker middleware if service_name is provided
         if service_name:
             wrapped_func = self.with_retry_middleware(
-                service_name=service_name, failure_threshold=3, reset_timeout=30
+                service_name=service_name
             )(wrapped_func)
 
         # Apply error handling middleware
@@ -208,12 +208,12 @@ class BaseAPIHandler(BaseHandler, Generic[T, R]):
 
                 # Convert result to dictionary if needed
                 if hasattr(result, "to_dict") and callable(result.to_dict):
-                    return result.to_dict()
+                    return result.to_dict()  # type: ignore[union-attr]
                 elif isinstance(result, dict):
                     return result
                 else:
                     # Try to convert to JSON and back to ensure it's serializable
-                    return json.loads(json.dumps(result))
+                    return json.loads(json.dumps(result, default=str))
 
             except ValueError as e:
                 # Handle ValueError specifically for better error messages
@@ -233,13 +233,12 @@ class BaseAPIHandler(BaseHandler, Generic[T, R]):
                 }
 
             except DomainException as e:
-                # Handle all application-specific errors (DomainException and
-                # subclasses)
-                error_dict = (
-                    e.to_dict()
-                    if hasattr(e, "to_dict")
-                    else {"code": e.__class__.__name__, "message": str(e)}
-                )
+                # Handle all application-specific errors (DomainException and subclasses)
+                error_dict: dict[str, Any]
+                if hasattr(e, "to_dict") and callable(e.to_dict):
+                    error_dict = e.to_dict()  # type: ignore[attr-defined]
+                else:
+                    error_dict = {"code": e.__class__.__name__, "message": str(e)}
 
                 # Add correlation ID if available from the request context
                 correlation_id = getattr(request, "correlation_id", None)
@@ -357,13 +356,13 @@ class BaseAPIHandler(BaseHandler, Generic[T, R]):
                 from domain.base.exceptions import ValidationError
 
                 raise ValidationError(
-                    domain="API",
                     message="Invalid input data",
-                    field=".".join(str(p) for p in e.path) if e.path else None,
                     details={
                         "error": str(e),
                         "path": list(e.path),
                         "schema_path": list(e.schema_path),
+                        "domain": "API",
+                        "field": ".".join(str(p) for p in e.path) if e.path else None,
                     },
                 )
 

@@ -1,7 +1,7 @@
 """Configuration port for domain layer."""
 
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, Optional
 
 
 class ConfigurationPort(ABC):
@@ -20,7 +20,7 @@ class ConfigurationPort(ABC):
         """Get template configuration."""
 
     @abstractmethod
-    def get_provider_config(self) -> dict[str, Any]:
+    def get_provider_config(self) -> Optional[Any]:
         """Get provider configuration."""
 
     @abstractmethod

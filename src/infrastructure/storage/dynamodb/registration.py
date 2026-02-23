@@ -6,7 +6,7 @@ enabling the storage registry pattern for DynamoDB storage.
 CLEAN ARCHITECTURE: Only handles storage strategies, no repository knowledge.
 """
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Optional
 
 # Use TYPE_CHECKING to avoid direct infrastructure import
 if TYPE_CHECKING:
@@ -46,6 +46,7 @@ def create_dynamodb_strategy(config: Any) -> Any:
 
     # Create AWS client (this will be handled by the strategy)
     return DynamoDBStorageStrategy(
+        logger=None,  # type: ignore[arg-type]  # Strategy will use its own logger
         aws_client=None,  # Strategy will create its own client
         region=region,
         table_name=f"{table_prefix}-generic",
@@ -78,19 +79,20 @@ def create_dynamodb_unit_of_work(config: Any) -> Any:
     Returns:
         DynamoDBUnitOfWork instance with correctly configured AWS client
     """
+    from providers.aws.session_factory import AWSSessionFactory
 
     from config.manager import ConfigurationManager
     from config.schemas.storage_schema import StorageConfig
     from infrastructure.storage.dynamodb.unit_of_work import DynamoDBUnitOfWork
+    from infrastructure.logging.logger import get_logger
+
+    _logger = get_logger(__name__)
 
     # Handle different config types
     if isinstance(config, ConfigurationManager):
         # Extract DynamoDB-specific configuration through StorageConfig
         storage_config = config.get_typed(StorageConfig)
         dynamodb_config = storage_config.dynamodb_strategy
-
-        # Create AWS client with extracted configuration
-        from providers.aws.session_factory import AWSSessionFactory
 
         session = AWSSessionFactory.create_session(
             profile=dynamodb_config.profile if dynamodb_config.profile else None,
@@ -100,6 +102,7 @@ def create_dynamodb_unit_of_work(config: Any) -> Any:
 
         return DynamoDBUnitOfWork(
             aws_client=aws_client,
+            logger=_logger,  # type: ignore[arg-type]
             region=dynamodb_config.region,
             profile=dynamodb_config.profile,
             machine_table=f"{dynamodb_config.table_prefix}-machines",
@@ -119,6 +122,7 @@ def create_dynamodb_unit_of_work(config: Any) -> Any:
 
         return DynamoDBUnitOfWork(
             aws_client=aws_client,
+            logger=_logger,  # type: ignore[arg-type]
             region=region,
             profile=profile,
             machine_table=f"{table_prefix}-machines",
@@ -128,7 +132,7 @@ def create_dynamodb_unit_of_work(config: Any) -> Any:
 
 
 def register_dynamodb_storage(
-    registry: "StorageRegistry" = None, logger: "LoggingPort" = None
+    registry: "Optional[StorageRegistry]" = None, logger: "Optional[LoggingPort]" = None
 ) -> None:
     """
     Register DynamoDB storage type with the storage registry.
