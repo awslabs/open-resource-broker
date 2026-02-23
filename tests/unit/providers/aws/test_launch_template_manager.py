@@ -211,14 +211,14 @@ class TestAWSLaunchTemplateManager:
         assert data["Monitoring"]["Enabled"] is True
 
     def test_create_instance_tags_basic(self):
-        """Test instance tags always include RequestId and TemplateId."""
+        """Test instance tags always include orb: system tags."""
         tags = self.manager._create_instance_tags(self.aws_template, self.request)
 
         tag_dict = {tag["Key"]: tag["Value"] for tag in tags}
-        assert tag_dict["RequestId"] == REQUEST_ID
-        assert tag_dict["TemplateId"] == "test-template"
+        assert tag_dict["orb:request-id"] == REQUEST_ID
+        assert tag_dict["orb:template-id"] == "test-template"
+        assert tag_dict["orb:managed-by"] == "open-resource-broker"
         assert "Name" in tag_dict
-        assert "CreatedBy" in tag_dict
 
     def test_create_instance_tags_includes_template_tags(self):
         """Test instance tags include custom tags from the template."""
@@ -229,8 +229,8 @@ class TestAWSLaunchTemplateManager:
         tag_dict = {tag["Key"]: tag["Value"] for tag in tags}
         assert tag_dict["Environment"] == "test"
         assert tag_dict["Project"] == "hostfactory"
-        assert tag_dict["RequestId"] == REQUEST_ID
-        assert tag_dict["TemplateId"] == "test-template"
+        assert tag_dict["orb:request-id"] == REQUEST_ID
+        assert tag_dict["orb:template-id"] == "test-template"
 
     def test_use_existing_template_strategy_found(self):
         """Test using existing template when launch_template_id is set and exists."""
