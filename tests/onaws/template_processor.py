@@ -76,15 +76,16 @@ TEMPLATE_OVERRIDE_KEYS = {
 class TemplateProcessor:
     """Generates per-test config directories from the real project config files."""
 
-    def __init__(self, base_dir: str = None):
+    def __init__(self, base_dir: str | None = None):
+        resolved: Path
         if base_dir is None:
-            base_dir = Path(__file__).parent
+            resolved = Path(__file__).parent
         else:
-            base_dir = Path(base_dir)
+            resolved = Path(base_dir)
 
-        self.base_dir = base_dir
-        self.config_source_dir = base_dir.parent.parent / "config"
-        self.run_templates_dir = base_dir / "run_templates"
+        self.base_dir = resolved
+        self.config_source_dir = resolved.parent.parent / "config"
+        self.run_templates_dir = resolved / "run_templates"
 
     # ------------------------------------------------------------------
     # Public API
@@ -93,11 +94,11 @@ class TemplateProcessor:
     def generate_test_templates(
         self,
         test_name: str,
-        overrides: dict = None,
+        overrides: dict | None = None,
         metrics_config: dict | None = None,
         # Legacy parameters accepted but ignored
-        base_template: str = None,
-        awsprov_base_template: str = None,
+        base_template: str | None = None,
+        awsprov_base_template: str | None = None,
     ) -> None:
         """Generate a per-test config directory with overridden templates.
 

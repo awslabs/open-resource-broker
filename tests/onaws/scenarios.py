@@ -23,7 +23,7 @@ def _get_templates_for_resolution() -> List[Dict[str, Any]]:
                     fleet_type = (t.metadata or {}).get("fleet_type") or getattr(
                         t, "fleet_type", None
                     )
-                    if hasattr(fleet_type, "value"):
+                    if fleet_type is not None and hasattr(fleet_type, "value"):
                         fleet_type = fleet_type.value
                     templates.append(
                         {
@@ -337,8 +337,8 @@ VERIFY_ABIS = os.environ.get("VERIFY_ABIS", "1") in ("1", "true", "True")
 
 def generate_scenarios_from_attributes(
     attribute_combinations: Dict[str, List[Any]],
-    base_template: Dict[str, Any] = None,
-    naming_template: str = None,
+    base_template: Dict[str, Any] | None = None,
+    naming_template: str | None = None,
 ) -> List[Dict[str, Any]]:
     """
     Generate test scenarios from all combinations of provided attributes.
@@ -426,7 +426,7 @@ def generate_scenarios_from_attributes(
 
 
 def get_generated_test_cases(
-    attribute_combinations: Dict[str, List[Any]] = None, apply_filters: bool = True
+    attribute_combinations: Dict[str, List[Any]] | None = None, apply_filters: bool = True
 ) -> List[Dict[str, Any]]:
     """
     Generate test cases from attribute combinations.
@@ -439,10 +439,13 @@ def get_generated_test_cases(
     """
     # Use provided combinations or default
     if attribute_combinations is None:
-        attribute_combinations = DEFAULT_ATTRIBUTE_COMBINATIONS
-
-    # Generate scenarios
-    generated_scenarios = generate_scenarios_from_attributes(attribute_combinations)
+        # Default: generate from all combinations in DEFAULT_ATTRIBUTE_COMBINATIONS
+        all_scenarios: List[Dict[str, Any]] = []
+        for combo in DEFAULT_ATTRIBUTE_COMBINATIONS:
+            all_scenarios.extend(generate_scenarios_from_attributes(combo))
+        generated_scenarios = all_scenarios
+    else:
+        generated_scenarios = generate_scenarios_from_attributes(attribute_combinations)
 
     if not apply_filters:
         return generated_scenarios
@@ -487,7 +490,7 @@ def get_test_case_by_name(test_name: str) -> Dict[str, Any]:
 
 
 def add_custom_attribute_combinations(
-    additional_attributes: Dict[str, List[Any]], base_template: Dict[str, Any] = None
+    additional_attributes: Dict[str, List[Any]], base_template: Dict[str, Any] | None = None
 ) -> List[Dict[str, Any]]:
     """
     Generate additional scenarios with custom attribute combinations.
