@@ -29,7 +29,7 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
         self.field_mapper = DefaultFieldMapper()
 
     @property
-    def config_manager(self):
+    def config_manager(self) -> Any:
         if self._config_manager is None:
             from domain.base.ports.configuration_port import ConfigurationPort
             from infrastructure.di.container import get_container, is_container_ready
@@ -39,7 +39,7 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
         return self._config_manager
 
     @property
-    def logger(self):
+    def logger(self) -> Any:
         if self._logger is None:
             from infrastructure.di.container import get_container, is_container_ready
 

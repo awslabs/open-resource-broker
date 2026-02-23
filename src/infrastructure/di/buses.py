@@ -13,7 +13,7 @@ SOLID principles and CQRS best practices:
 No middleware complexity - handlers own their cross-cutting concerns.
 """
 
-from typing import TypeVar
+from typing import Any, TypeVar
 
 from application.decorators import (
     get_command_handler_for_type,
@@ -119,6 +119,10 @@ class QueryBus(QueryBusPort):
         except Exception as e:
             self.logger.error("Failed to trigger lazy CQRS setup: %s", e)
 
+    def register(self, query_type: type, handler: Any) -> None:
+        """Register a query handler for a specific query type."""
+        self.container.register_instance(type(handler), handler)
+
 
 class CommandBus(CommandBusPort):
     """
@@ -196,6 +200,10 @@ class CommandBus(CommandBusPort):
             _setup_cqrs_infrastructure(self.container)
         except Exception as e:
             self.logger.error("Failed to trigger lazy CQRS setup: %s", e)
+
+    def register(self, command_type: type, handler: Any) -> None:
+        """Register a command handler for a specific command type."""
+        self.container.register_instance(type(handler), handler)
 
 
 class BusFactory:

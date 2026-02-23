@@ -10,18 +10,10 @@ import asyncio
 import time
 from typing import Any, Optional
 
-# Import types - using string imports to avoid circular dependencies
-try:
-    from application.events.base.event_handler import EventHandler
-    from application.events.decorators import EventHandlerRegistry
-    from domain.base.events import DomainEvent
-    from domain.base.ports import LoggingPort
-except ImportError:
-    # Fallback for testing or when dependencies aren't available
-    DomainEvent = Any
-    LoggingPort = Any
-    EventHandler = Any
-    EventHandlerRegistry = Any
+from application.events.base.event_handler import EventHandler
+from application.events.decorators import EventHandlerRegistry
+from domain.base.events import DomainEvent
+from domain.base.ports import LoggingPort
 
 
 class EventBus:
