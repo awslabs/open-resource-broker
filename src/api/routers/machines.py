@@ -6,7 +6,8 @@ try:
     from fastapi import APIRouter, Depends, Query
     from fastapi.encoders import jsonable_encoder
     from fastapi.responses import JSONResponse
-    from pydantic import BaseModel
+    from pydantic import BaseModel, ConfigDict
+    from pydantic.alias_generators import to_camel
 except ImportError:
     raise ImportError("FastAPI routing requires: pip install orb-py[api]") from None
 
@@ -24,7 +25,12 @@ LIMIT_QUERY = Query(None, description="Limit number of results")
 
 
 class RequestMachinesRequest(BaseModel):
-    """Request for machine provisioning."""
+    """Request for machine provisioning.
+
+    Accepts both camelCase (templateId, machineCount) and snake_case field names.
+    """
+
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
 
     template_id: str
     machine_count: int
@@ -32,7 +38,12 @@ class RequestMachinesRequest(BaseModel):
 
 
 class ReturnMachinesRequest(BaseModel):
-    """Request for machine return."""
+    """Request for machine return.
+
+    Accepts both camelCase (machineIds) and snake_case field names.
+    """
+
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
 
     machine_ids: list[str]
 
@@ -112,17 +123,16 @@ async def list_machines(
     - **request_id**: Filter by request ID
     - **limit**: Limit number of results
     """
-    # This would need a dedicated handler for listing machines
-    # For now, return a placeholder response
     return JSONResponse(
+        status_code=501,
         content={
-            "success": True,
-            "message": "Machine listing not yet implemented",
-            "data": {
-                "machines": [],
-                "filters": {"status": status, "request_id": request_id, "limit": limit},
-            },
-        }
+            "error": "Not implemented",
+            "endpoint": "GET /api/v1/machines",
+            "message": (
+                "Machine listing is planned but not yet available. "
+                "Use GET /api/v1/requests/{request_id}/status to check provisioning status."
+            ),
+        },
     )
 
 
@@ -134,12 +144,14 @@ async def get_machine(machine_id: str) -> JSONResponse:
 
     - **machine_id**: Machine identifier
     """
-    # This would need a dedicated handler for getting machine details
-    # For now, return a placeholder response
     return JSONResponse(
+        status_code=501,
         content={
-            "success": True,
-            "message": "Machine details not yet implemented",
-            "data": {"machine_id": machine_id, "status": "unknown"},
-        }
+            "error": "Not implemented",
+            "endpoint": "GET /api/v1/machines/{machine_id}",
+            "message": (
+                "Individual machine detail lookup is planned but not yet available. "
+                "Use GET /api/v1/requests/{request_id}/status to check provisioning status."
+            ),
+        },
     )

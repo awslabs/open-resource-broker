@@ -4,6 +4,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any, Optional, Union
 
 from pydantic import BaseModel, ConfigDict
+from pydantic.alias_generators import to_camel
 
 if TYPE_CHECKING:
     pass
@@ -112,9 +113,17 @@ class BaseResponse(BaseDTO):
 
 
 class PaginationMetadata(BaseModel):
-    """Pagination metadata for list responses."""
+    """Pagination metadata for list responses.
 
-    model_config = ConfigDict(frozen=True)
+    JSON serialization uses camelCase via alias_generator.
+    Use .model_dump(by_alias=True) when serializing for API responses.
+    """
+
+    model_config = ConfigDict(
+        frozen=True,
+        alias_generator=to_camel,
+        populate_by_name=True,
+    )
 
     total_count: int
     limit: int
@@ -124,7 +133,11 @@ class PaginationMetadata(BaseModel):
 
 
 class PaginatedResponse(BaseResponse):
-    """Base class for paginated responses."""
+    """Base class for paginated responses.
+
+    JSON serialization uses camelCase via alias_generator inherited from BaseDTO.
+    Use .model_dump(by_alias=True) when serializing for API responses.
+    """
 
     total_count: int = 0
     page: int = 1
