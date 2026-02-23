@@ -133,7 +133,7 @@ class OpenResourceBroker:
 
         with suppress(Exception):
             if self._app and hasattr(self._app, "cleanup"):
-                await self._app.cleanup()
+                await self._app.cleanup()  # type: ignore[attr-defined]
 
         # Always clean up state
         self._initialized = False
@@ -294,7 +294,7 @@ class OpenResourceBroker:
                 "SDK not initialized. Call initialize() or use as async context manager."
             )
 
-        return await self.create_request(template_id=template_id, machine_count=count, **kwargs)
+        return await self.create_request(template_id=template_id, machine_count=count, **kwargs)  # type: ignore[attr-defined]
 
     async def show_template(self, template_id: str) -> Any:
         """Show template details (CLI-style convenience method).
@@ -307,7 +307,7 @@ class OpenResourceBroker:
                 "SDK not initialized. Call initialize() or use as async context manager."
             )
 
-        return await self.get_template(template_id=template_id)
+        return await self.get_template(template_id=template_id)  # type: ignore[attr-defined]
 
     async def health_check(self) -> Any:
         """Check provider health (CLI-style convenience method).
@@ -320,7 +320,7 @@ class OpenResourceBroker:
                 "SDK not initialized. Call initialize() or use as async context manager."
             )
 
-        return await self.get_provider_health()
+        return await self.get_provider_health()  # type: ignore[attr-defined]
 
     def __repr__(self) -> str:
         """Return string representation of SDK instance."""

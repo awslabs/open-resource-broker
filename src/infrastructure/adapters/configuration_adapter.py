@@ -219,15 +219,13 @@ class ConfigurationAdapter(ConfigurationPort):
         """Get scheduler strategy - delegate to ConfigurationManager."""
         return self._config_manager.get_scheduler_strategy()
 
-    def get_typed(self, config_type):
+    def get_typed(self, key, expected_type=None, default=None):  # type: ignore[override]
         """Get typed configuration for compatibility with ConfigurationManager."""
-        return self._config_manager.get_typed(config_type)
+        return self._config_manager.get_typed(key)  # type: ignore[arg-type]
 
-    def resolve_file(
-        self, file_type: str, filename: str, explicit_path: Optional[str] = None
-    ) -> str:
+    def resolve_file(self, path: str, filename: str = "", explicit_path: Optional[str] = None) -> str:  # type: ignore[override]
         """Resolve file path for compatibility with ConfigurationManager."""
-        return self._config_manager.resolve_file(file_type, filename, explicit_path)
+        return self._config_manager.resolve_file(path, filename, explicit_path)
 
     def get_provider_type(self) -> str:
         """Get provider type - delegate to ConfigurationManager."""
@@ -277,9 +275,9 @@ class ConfigurationAdapter(ConfigurationPort):
             # If _package.py itself fails, we have bigger problems - let it fail
             raise
 
-    def override_scheduler_strategy(self, scheduler_type: str) -> None:
+    def override_scheduler_strategy(self, strategy: str) -> None:  # type: ignore[override]
         """Override scheduler strategy - delegate to ConfigurationManager."""
-        self._config_manager.override_scheduler_strategy(scheduler_type)
+        self._config_manager.override_scheduler_strategy(strategy)
 
     def override_provider_instance(self, provider_name: str) -> None:
         """Override provider instance - delegate to ConfigurationManager."""

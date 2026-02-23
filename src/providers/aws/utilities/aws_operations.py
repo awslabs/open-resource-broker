@@ -442,12 +442,9 @@ class AWSOperations:
         error_code = error.response.get("Error", {}).get("Code", "Unknown")
         error_message = error.response.get("Error", {}).get("Message", str(error))
 
-        # Import here to avoid circular imports
-        from providers.aws.exceptions.aws_exceptions import (  # type: ignore[attr-defined]
+        from providers.aws.exceptions.aws_exceptions import (
             AWSEntityNotFoundError,
             AWSInfrastructureError,
-            AWSPermissionError,
-            AWSRateLimitError,
             AWSValidationError,
         )
 
@@ -469,9 +466,9 @@ class AWSOperations:
             "RequestLimitExceeded",
             "TooManyRequestsException",
         ]:
-            return AWSRateLimitError(f"{operation_name} failed: {error_message}")
+            return AWSInfrastructureError(f"{operation_name} failed: {error_message}")
         elif error_code in ["UnauthorizedOperation", "AccessDenied", "Forbidden"]:
-            return AWSPermissionError(f"{operation_name} failed: {error_message}")
+            return AWSInfrastructureError(f"{operation_name} failed: {error_message}")
         else:
             return AWSInfrastructureError(f"{operation_name} failed: {error_message}")
 

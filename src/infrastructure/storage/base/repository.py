@@ -141,10 +141,9 @@ class StrategyBasedRepository(Repository[T], Generic[T]):
                 if entity_version != self._version_map[entity_id]:
                     # Ensure entity_version is an int
                     raise ConcurrencyError(
-                        self.entity_class.__name__,
-                        entity_id,
-                        self._version_map[entity_id],
-                        int(entity_version) if entity_version is not None else 0,
+                        f"{self.entity_class.__name__} '{entity_id}' version conflict: "
+                        f"expected {self._version_map[entity_id]}, got "
+                        f"{int(entity_version) if entity_version is not None else 0}"
                     )
 
             # Convert entity to dictionary
@@ -154,7 +153,7 @@ class StrategyBasedRepository(Repository[T], Generic[T]):
             self.storage_strategy.save(entity_id, entity_data)
 
             # Update cache
-            self._cache[entity_id] = entity
+            self._cache[entity_id] = entity  # type: ignore[assignment]
             # Access version through getattr to avoid type checking errors
             entity_version = getattr(entity, "version", 0)
             self._version_map[entity_id] = entity_version + 1
@@ -184,7 +183,7 @@ class StrategyBasedRepository(Repository[T], Generic[T]):
                             loop = asyncio.get_event_loop()
                             if loop.is_running():
                                 # If we're already in an async context, create a task
-                                asyncio.create_task(event_bus.publish(event))
+                                _ = asyncio.create_task(event_bus.publish(event))
                             else:
                                 # If we're in sync context, run the coroutine
                                 loop.run_until_complete(event_bus.publish(event))
@@ -192,7 +191,8 @@ class StrategyBasedRepository(Repository[T], Generic[T]):
                             # Fallback to sync publish if available
                             if hasattr(event_bus, "publish"):
                                 try:
-                                    event_bus.publish(event)
+                                    result = event_bus.publish(event)  # type: ignore[assignment]
+                                    _ = result  # suppress unused coroutine warning
                                 except Exception as sync_error:
                                     self.logger.error(
                                         "Failed to publish event %s via sync fallback: %s",
@@ -214,7 +214,7 @@ class StrategyBasedRepository(Repository[T], Generic[T]):
                 elif hasattr(entity, "clear_events") and callable(entity.clear_events):
                     # Backward compatibility
                     updated_entity = entity.clear_events()
-                    self._cache[entity_id] = updated_entity
+                    self._cache[entity_id] = updated_entity  # type: ignore[assignment]
 
                 self.logger.debug(
                     "Published %s events for %s %s",
@@ -439,10 +439,9 @@ class StrategyBasedRepository(Repository[T], Generic[T]):
                     if entity_version != self._version_map[entity_id]:
                         # Ensure entity_version is an int
                         raise ConcurrencyError(
-                            self.entity_class.__name__,
-                            entity_id,
-                            self._version_map[entity_id],
-                            int(entity_version) if entity_version is not None else 0,
+                            f"{self.entity_class.__name__} '{entity_id}' version conflict: "
+                            f"expected {self._version_map[entity_id]}, got "
+                            f"{int(entity_version) if entity_version is not None else 0}"
                         )
 
                 # Convert entity to dictionary

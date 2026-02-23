@@ -22,7 +22,7 @@ import pkgutil
 import time
 from contextlib import suppress
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Optional, cast
 
 from application.decorators import (
     get_handler_registry_stats,
@@ -82,7 +82,7 @@ class HandlerDiscoveryService:
     def _resolve_cache_path_fallback(self) -> str:
         """Fallback cache path resolution."""
         try:
-            scheduler = self.container.get("scheduler_strategy")
+            scheduler = cast(Any, self.container).get("scheduler_strategy")
             workdir = scheduler.get_working_directory()
         except Exception:
             workdir = os.getcwd()
@@ -137,7 +137,7 @@ class HandlerDiscoveryService:
         try:
             # Import the base package
             package = importlib.import_module(base_package)
-            package_path = Path(package.__file__).parent
+            package_path = Path(package.__file__ or "").parent
 
             # Walk through all modules in the package
             for module_info in pkgutil.walk_packages([str(package_path)], f"{base_package}."):

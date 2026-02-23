@@ -2,6 +2,7 @@
 
 import os
 from pathlib import Path
+from typing import Any, cast
 
 from cli.console import print_error, print_info, print_success, print_warning
 from domain.base.ports.scheduler_port import SchedulerPort
@@ -33,7 +34,7 @@ def handle_health_check(args) -> int:
         # 2. Templates file check
         try:
             scheduler = container.get(SchedulerPort)
-            template_paths = scheduler.get_template_paths()
+            template_paths = cast(Any, scheduler).get_template_paths()
 
             # Check if any template file exists
             existing_paths = [path for path in template_paths if Path(path).exists()]
@@ -98,7 +99,7 @@ def handle_health_check(args) -> int:
 
                 for provider_name in all_providers:
                     try:
-                        health_status = registry.check_strategy_health(provider_name)
+                        health_status = cast(Any, registry).check_strategy_health(provider_name)
                         if health_status and health_status.is_healthy:
                             healthy_count += 1
                         elif health_status:
@@ -151,10 +152,10 @@ def handle_health_check(args) -> int:
             checks.append({"name": "logs_directory", "status": "fail", "error": str(e)})
 
         # Format response using scheduler strategy
-        response = scheduler_strategy.format_health_response(checks)
+        response = cast(Any, scheduler_strategy).format_health_response(checks)
 
         # Console output for interactive use (not controlled by logging setting)
-        if not scheduler_strategy.should_log_to_console():
+        if not cast(Any, scheduler_strategy).should_log_to_console():
             # HostFactory mode: only output JSON, no extra messages
             pass
         else:

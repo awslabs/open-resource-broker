@@ -27,13 +27,13 @@ class SQLSerializer(DataConverter):
         self.id_column = id_column
         self.logger = get_logger(__name__)
 
-    def to_storage_format(self, domain_data: dict[str, Any]) -> Any:
+    def to_storage_format(self, domain_data: dict[str, Any]) -> Any:  # type: ignore[override]
         """Convert domain data to SQL format (implements DataConverter interface)."""
         # Extract entity_id from domain_data if present
         entity_id = domain_data.get(self.id_column, domain_data.get("id", "unknown"))
         return self.serialize_for_insert(entity_id, domain_data)
 
-    def from_storage_format(self, storage_data: Any) -> dict[str, Any]:
+    def from_storage_format(self, storage_data: Any) -> dict[str, Any]:  # type: ignore[override]
         """Convert SQL data to domain format (implements DataConverter interface)."""
         return self.deserialize_from_row(storage_data)
 
@@ -64,8 +64,8 @@ class SQLSerializer(DataConverter):
             # Add timestamps
             now = datetime.utcnow()
             if "created_at" not in serialized:
-                serialized["created_at"] = now
-            serialized["updated_at"] = now
+                serialized["created_at"] = now  # type: ignore[assignment]
+            serialized["updated_at"] = now  # type: ignore[assignment]
 
             self.logger.debug("Serialized data for INSERT: %s", entity_id)
             return serialized

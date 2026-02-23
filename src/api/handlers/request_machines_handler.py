@@ -1,7 +1,7 @@
 """API handler for requesting machines."""
 
 import time
-from typing import Optional
+from typing import Optional, cast, Any
 
 from api.models import RequestMachinesModel
 from api.validation import ValidationException
@@ -106,7 +106,7 @@ class RequestMachinesRESTHandler(BaseAPIHandler[RequestMachinesModel, RequestMac
             )
 
             # Execute command through CQRS command bus
-            result_request_id = await self._command_bus.execute(command)
+            result_request_id = await self._command_bus.execute(cast(Any, command))
 
             # Create response
             response = RequestMachinesResponse(
@@ -123,7 +123,7 @@ class RequestMachinesRESTHandler(BaseAPIHandler[RequestMachinesModel, RequestMac
 
             # Record metrics if available
             if self._metrics_collector:
-                self._metrics_collector.record_api_success(
+                cast(Any, self._metrics_collector).record_api_success(
                     "request_machines", request.machine_count
                 )
 
@@ -139,7 +139,7 @@ class RequestMachinesRESTHandler(BaseAPIHandler[RequestMachinesModel, RequestMac
 
             # Record metrics if available
             if self._metrics_collector:
-                self._metrics_collector.record_api_failure("request_machines", str(e))
+                cast(Any, self._metrics_collector).record_api_failure("request_machines", str(e))
 
             raise
 

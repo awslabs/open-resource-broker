@@ -84,7 +84,7 @@ class RequestSerializer:
                 "error_details": request.error_details or {},
                 "provider_data": request.provider_data or {},
                 # Timestamps
-                "created_at": request.created_at.isoformat(),
+                "created_at": request.created_at.isoformat(),  # type: ignore[union-attr]
                 "started_at": (request.started_at.isoformat() if request.started_at else None),
                 "completed_at": (
                     request.completed_at.isoformat() if request.completed_at else None
@@ -208,7 +208,7 @@ class RequestRepositoryImpl(RequestRepositoryInterface):
         try:
             # Save the request
             request_data = self.serializer.to_dict(request)
-            self.storage_port.save(entity_id, request_data)
+            self.storage_port.save(entity_id, request_data)  # type: ignore[call-arg]
 
             # Calculate duration
             duration_ms = (time.time() - start_time) * 1000
@@ -400,7 +400,7 @@ class RequestRepositoryImpl(RequestRepositoryInterface):
         """Find all requests."""
         try:
             all_data = self.storage_port.find_all()
-            return [self.serializer.from_dict(data) for data in all_data.values()]
+            return [self.serializer.from_dict(data) for data in all_data.values()]  # type: ignore[union-attr]
         except Exception as e:
             self.logger.error("Failed to find all requests: %s", e)
             raise

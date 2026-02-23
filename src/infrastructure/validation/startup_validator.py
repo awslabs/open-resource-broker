@@ -4,7 +4,7 @@ import json
 import os
 import sys
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional, cast
 
 from botocore.exceptions import ClientError, NoCredentialsError
 from pydantic import ValidationError
@@ -43,7 +43,7 @@ class StartupValidator:
 
         # 2. Config is valid JSON
         try:
-            with open(self.config_path) as f:
+            with open(self.config_path or "") as f:  # type: ignore[arg-type]
                 self.config_data = json.load(f)
         except json.JSONDecodeError as e:
             print_error(f"Invalid JSON in config file: {self.config_path}")
@@ -64,7 +64,7 @@ class StartupValidator:
 
         # 3. Config validates against Pydantic schema
         try:
-            self.app_config = AppConfig(**self.config_data)
+            self.app_config = AppConfig(**(self.config_data or {}))
         except ValidationError as e:
             print_error(f"Invalid configuration in: {self.config_path}")
             for error in e.errors():
@@ -124,7 +124,7 @@ class StartupValidator:
         container = get_container()
         scheduler = container.get(SchedulerPort)
 
-        template_paths = scheduler.get_template_paths()
+        template_paths = cast(Any, scheduler).get_template_paths()
         return any(Path(path).exists() for path in template_paths)
 
     def _check_default_config(self) -> bool:

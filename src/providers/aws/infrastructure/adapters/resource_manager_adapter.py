@@ -51,7 +51,7 @@ class AWSResourceManagerAdapter(CloudResourceManagerPort):
         # Use the new resource manager internally
         from providers.aws.configuration.config import AWSProviderConfig
 
-        aws_config = AWSProviderConfig()  # This should be injected in real implementation
+        aws_config = AWSProviderConfig()  # type: ignore[call-arg]  # This should be injected in real implementation
         self._resource_manager = AWSResourceManagerImpl(self._aws_client, aws_config, self._logger)
 
     def get_resource_quota(
@@ -139,7 +139,7 @@ class AWSResourceManagerAdapter(CloudResourceManagerPort):
             import asyncio
 
             allocation = asyncio.run(
-                self._resource_manager.fetch_resource_status(ResourceId(resource_id))
+                self._resource_manager.fetch_resource_status(ResourceId(value=resource_id))
             )
 
             # Use the new method
@@ -162,7 +162,7 @@ class AWSResourceManagerAdapter(CloudResourceManagerPort):
             import asyncio
 
             allocation = asyncio.run(
-                self._resource_manager.fetch_resource_status(ResourceId(resource_id))
+                self._resource_manager.fetch_resource_status(ResourceId(value=resource_id))
             )
 
             # Convert to legacy format

@@ -107,7 +107,7 @@ class TemplateConfigurationAdapter(TemplateConfigurationPort):
 
     # Additional convenience methods for application layer
 
-    def get_template_by_id(self, template_id: str) -> Optional[TemplateDTO]:
+    async def get_template_by_id(self, template_id: str) -> Optional[TemplateDTO]:
         """
         Get template by ID as TemplateDTO.
 
@@ -119,7 +119,7 @@ class TemplateConfigurationAdapter(TemplateConfigurationPort):
         """
         return self._template_manager.get_template(template_id)
 
-    def get_templates_by_provider(self, provider_api: str) -> list[TemplateDTO]:
+    async def get_templates_by_provider(self, provider_api: str) -> list[TemplateDTO]:
         """
         Get templates by provider API as TemplateDTO objects.
 
@@ -158,7 +158,6 @@ def create_template_configuration_adapter(
         TemplateConfigurationAdapter instance
     """
     if logger is None:
-        from infrastructure.logging.logger import get_logger
         from infrastructure.adapters.logging_adapter import LoggingAdapter
-        logger = LoggingAdapter(get_logger(__name__))
+        logger = LoggingAdapter(__name__)
     return TemplateConfigurationAdapter(template_manager, logger)

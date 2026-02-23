@@ -83,9 +83,10 @@ class OptimisticConcurrencyControl:
         Raises:
             ConcurrencyError: If entity version conflict
         """
-        if entity_id in version_map and entity.version != version_map[entity_id]:
+        if entity_id in version_map and getattr(entity, "version", None) != version_map[entity_id]:
             raise ConcurrencyError(
-                entity_class_name, entity_id, version_map[entity_id], entity.version
+                f"{entity_class_name} '{entity_id}' version conflict: "
+                f"expected {version_map[entity_id]}, got {getattr(entity, 'version', None)}"
             )
 
     def increment_version(self, entity: T, entity_id: str, version_map: dict[str, int]) -> None:
@@ -97,7 +98,7 @@ class OptimisticConcurrencyControl:
             entity_id: Entity ID
             version_map: Version map
         """
-        version_map[entity_id] = entity.version + 1
+        version_map[entity_id] = getattr(entity, "version", 0) + 1
 
     def batch_check_versions(
         self,

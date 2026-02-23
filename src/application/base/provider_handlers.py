@@ -58,7 +58,7 @@ class BaseProviderHandler(Generic[TRequest, TResponse], ProviderHandler[TRequest
         self.error_handler = error_handler
         self._metrics: dict[str, Any] = {}
 
-    async def handle(self, request: TRequest, correlation_id: Optional[str] = None) -> TResponse:
+    async def handle(self, request: TRequest, context: Optional[object] = None) -> TResponse:  # type: ignore[override]
         """
         Handle provider request with monitoring and error management.
 
@@ -68,7 +68,7 @@ class BaseProviderHandler(Generic[TRequest, TResponse], ProviderHandler[TRequest
         """
         start_time = time.time()
         request_type = request.__class__.__name__
-        correlation_id = correlation_id or f"{self.provider_type}-{int(time.time())}"
+        correlation_id = f"{self.provider_type}-{int(time.time())}"
 
         try:
             # Log request processing start
@@ -305,7 +305,7 @@ class BaseAWSHandler(BaseProviderHandler[TRequest, TResponse]):
                     break
 
         # All retries exhausted, raise the last exception
-        raise last_exception
+        raise last_exception  # type: ignore[misc]
 
     @abstractmethod
     async def execute_aws_request(self, request: TRequest) -> TResponse:
@@ -333,7 +333,7 @@ class BaseAWSHandler(BaseProviderHandler[TRequest, TResponse]):
         """
         # AWS-specific retry logic
         if hasattr(exception, "response"):
-            error_code = exception.response.get("Error", {}).get("Code", "")
+            error_code = exception.response.get("Error", {}).get("Code", "")  # type: ignore[union-attr]
 
             # Retry on throttling and temporary errors
             retry_codes = [

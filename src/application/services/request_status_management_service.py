@@ -81,7 +81,7 @@ class RequestStatusManagementService:
         )
 
     def _handle_provisioning_failure(
-        self, request: Any, provisioning_result: Dict[str, Any]
+        self, request: Any, provisioning_result: Any
     ) -> Any:
         """Handle provisioning failure."""
         from domain.request.value_objects import RequestStatus
@@ -147,7 +147,7 @@ class RequestStatusManagementService:
 
         return request
 
-    def _extract_instance_ids(self, result: Dict[str, Any]) -> List[str]:
+    def _extract_instance_ids(self, result: Any) -> List[str]:
         """Extract instance IDs if available in provider result."""
         try:
             if result.get("instance_ids"):

@@ -64,7 +64,7 @@ class HealthCheck:
         self, config: ConfigurationManager, aws_client: Optional[AWSClient] = None
     ) -> None:
         """Initialize health check."""
-        self.config = config.get_config()
+        self.config = config.get_raw_config()
         self.aws_client = aws_client
         self.checks: dict[str, Callable[[], HealthStatus]] = {}
         self.status_history: dict[str, list[HealthStatus]] = {}
@@ -213,9 +213,9 @@ class HealthCheck:
             )
 
         try:
-            cpu_percent = psutil.cpu_percent()
-            memory = psutil.virtual_memory()
-            disk = psutil.disk_usage("/")
+            cpu_percent = psutil.cpu_percent()  # type: ignore[union-attr]
+            memory = psutil.virtual_memory()  # type: ignore[union-attr]
+            disk = psutil.disk_usage("/")  # type: ignore[union-attr]
 
             status = "healthy"
             if cpu_percent > 90 or memory.percent > 90 or disk.percent > 90:
