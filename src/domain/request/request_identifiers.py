@@ -221,9 +221,9 @@ class ResourceIdentifier(ValueObject):
     def __str__(self) -> str:
         return f"{self.resource_type}:{self.resource_id}"
 
-    def is_aws_resource(self) -> bool:
-        """Check if this is an AWS resource based on ARN."""
-        return self.resource_arn is not None and self.resource_arn.startswith("arn:aws:")
+    def is_arn_resource(self) -> bool:
+        """Check if this resource has an ARN identifier."""
+        return self.resource_arn is not None and len(self.resource_arn.strip()) > 0
 
     def get_resource_name(self) -> str:
         """Get a human-readable resource name."""

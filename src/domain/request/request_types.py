@@ -45,7 +45,7 @@ class RequestType(str, Enum):
         Map business request type to technical operation type.
 
         This provides the mapping between business concepts and technical operations
-        for AWS provider operations.
+        for provider operations.
 
         Returns:
             Technical operation type string

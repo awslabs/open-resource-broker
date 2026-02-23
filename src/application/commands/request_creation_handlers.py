@@ -17,6 +17,7 @@ from domain.base.ports import (
     ErrorHandlingPort,
     EventPublisherPort,
     LoggingPort,
+    ProviderConfigPort,
     ProviderSelectionPort,
 )
 from domain.request.repository import RequestRepository
@@ -40,6 +41,7 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, None]
         error_handler: ErrorHandlingPort,
         query_bus: QueryBusPort,  # QueryBus is required for template lookup
         provider_selection_port: ProviderSelectionPort,
+        provider_config_port: ProviderConfigPort,
     ) -> None:
         """Initialize the instance."""
         super().__init__(logger, event_publisher, error_handler)
@@ -60,7 +62,7 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, None]
 
         self._request_creation_service = RequestCreationService(logger)
         self._provisioning_service = ProvisioningOrchestrationService(
-            container, logger, provider_selection_port
+            container, logger, provider_selection_port, provider_config_port
         )
         self._status_service = RequestStatusManagementService(uow_factory, logger)
         self._provider_validation_service = ProviderValidationService(

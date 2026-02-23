@@ -1,10 +1,26 @@
 """Template validation domain service."""
 
+from dataclasses import dataclass, field
 from typing import Any
 
 from domain.base.ports.configuration_port import ConfigurationPort
 from domain.base.ports.logging_port import LoggingPort
 from domain.base.results import ValidationLevel, ValidationResult
+
+
+@dataclass
+class _ProviderCapabilities:
+    """Domain-local capabilities value object used only within this service.
+
+    Avoids importing infrastructure types (ProviderCapabilities) into the domain layer.
+    """
+
+    provider_type: str
+    supported_apis: list[str] = field(default_factory=list)
+    features: dict[str, Any] = field(default_factory=dict)
+
+    def get_feature(self, feature_name: str, default: Any = None) -> Any:
+        return self.features.get(feature_name, default)
 
 
 class TemplateValidationDomainService:
@@ -84,8 +100,12 @@ class TemplateValidationDomainService:
 
         return result
 
-    def _get_config_based_capabilities(self, provider_instance: str) -> Any:
-        """Get capabilities from merged provider configuration."""
+    def _get_config_based_capabilities(self, provider_instance: str) -> _ProviderCapabilities:
+        """Get capabilities from merged provider configuration.
+
+        Returns a domain-local capabilities object, avoiding any dependency on
+        infrastructure types (ProviderCapabilities from providers.base.strategy).
+        """
         self._ensure_initialized()
 
         if not self.config:
@@ -100,18 +120,8 @@ class TemplateValidationDomainService:
         effective_handlers = provider_config.get_effective_handlers(provider_defaults)
         supported_apis = list(effective_handlers.keys())
 
-        from providers.base.strategy.provider_strategy import (
-            ProviderCapabilities,
-            ProviderOperationType,
-        )
-
-        return ProviderCapabilities(
+        return _ProviderCapabilities(
             provider_type=provider_config.type,
-            supported_operations=[
-                ProviderOperationType.CREATE_INSTANCES,
-                ProviderOperationType.TERMINATE_INSTANCES,
-                ProviderOperationType.GET_INSTANCE_STATUS,
-            ],
             supported_apis=supported_apis,
             features={},
         )

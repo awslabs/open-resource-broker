@@ -1,9 +1,11 @@
 """Provider provisioning port - focused interface for resource provisioning."""
 
 from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING
 
-from domain.machine.aggregate import Machine
-from domain.request.aggregate import Request
+if TYPE_CHECKING:
+    from domain.machine.aggregate import Machine
+    from domain.request.aggregate import Request
 
 
 class ProviderProvisioningPort(ABC):
@@ -14,7 +16,7 @@ class ProviderProvisioningPort(ABC):
     """
 
     @abstractmethod
-    def provision_resources(self, request: Request) -> list[Machine]:
+    def provision_resources(self, request: "Request") -> "list[Machine]":
         """Provision resources based on request.
 
         Args:
