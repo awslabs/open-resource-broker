@@ -994,7 +994,9 @@ def test_rest_api_partial_return_reduces_capacity(
     log.debug("Return response: %s", json.dumps(return_response, indent=2))
     return_request_id = return_response.get("request_id")
     if return_request_id:
-        _wait_for_return_completion_rest(rest_api_client, return_request_id)
+        _wait_for_return_completion_rest(
+            rest_api_client, return_request_id, timeout=REST_TIMEOUTS["return_status_timeout"]
+        )
 
     # Wait for fleet/ASG to stabilize
     if (

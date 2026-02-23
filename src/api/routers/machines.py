@@ -78,20 +78,13 @@ async def request_machines(
 
     result = await handler.handle(request_model)
 
-    # Use to_dict() method for proper response formatting (requestId vs request_id)
+    # Let the scheduler strategy own the response format (requestId for HF, request_id for default)
     if hasattr(result, "to_dict"):
         response_content = result.to_dict()
     elif hasattr(result, "model_dump"):
         response_content = result.model_dump()
     else:
         response_content = result
-
-    # Ensure snake_case request_id and status fields are present (default scheduler schema)
-    if isinstance(response_content, dict):
-        if "requestId" in response_content and "request_id" not in response_content:
-            response_content["request_id"] = response_content["requestId"]
-        if "status" not in response_content:
-            response_content["status"] = "submitted"
 
     return JSONResponse(content=response_content)
 

@@ -43,6 +43,7 @@ console_handler = logging.StreamHandler()
 console_handler.setLevel(logging.DEBUG)
 console_handler.setFormatter(formatter)
 
+os.makedirs("logs", exist_ok=True)
 file_handler = logging.FileHandler("logs/multi_spot_fleet_test.log")
 file_handler.setLevel(logging.DEBUG)
 file_handler.setFormatter(formatter)
@@ -151,6 +152,7 @@ def setup_multi_spot_fleet_templates():
                 "fleetType": "request",
                 "allocationStrategy": "lowestPrice",
                 "priceType": "ondemand",
+                "targetCapacity": 2,
             },
         },
         {
@@ -160,6 +162,7 @@ def setup_multi_spot_fleet_templates():
                 "fleetType": "request",
                 "allocationStrategy": "lowestPrice",
                 "priceType": "ondemand",
+                "targetCapacity": 2,
             },
         },
     ]

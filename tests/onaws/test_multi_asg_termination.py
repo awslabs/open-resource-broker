@@ -137,12 +137,14 @@ def setup_multi_asg_templates():
             "template_name": "ASG_Template_1",
             "overrides": {
                 "providerApi": "ASG",
+                "desiredCapacity": 2,
             },
         },
         {
             "template_name": "ASG_Template_2",
             "overrides": {
                 "providerApi": "ASG",
+                "desiredCapacity": 2,
             },
         },
     ]
