@@ -196,7 +196,7 @@ include-package-data = true
 
 [tool.setuptools.data-files]
 "orb_config" = ["config/*.json"]
-"orb_scripts" = ["scripts/*.sh", "scripts/*.bat"]
+"orb_scripts" = ["src/infrastructure/scheduler/hostfactory/scripts/*.sh", "src/infrastructure/scheduler/hostfactory/scripts/*.bat"]
 
 
 
