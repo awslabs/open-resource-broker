@@ -20,7 +20,7 @@ class HostFactoryFieldMappings:
             "templateId": "template_id",
             "maxNumber": "max_instances",
             "imageId": "image_id",
-            "keyName": "key_name",
+            "keyName": "key_pair_name",
             "fleetType": "fleet_type",
             "providerApi": "provider_api",  # Provider API type
             # Machine fields
@@ -49,11 +49,14 @@ class HostFactoryFieldMappings:
             "maxSpotPrice": "max_price",
             "allocationStrategy": "allocation_strategy",
             # Storage configuration
-            "rootDeviceVolumeSize": "root_device_volume_size",
+            "rootDeviceVolumeSize": "root_volume_size",
             "volumeType": "volume_type",
             "iops": "iops",
             # Tags and metadata
             "instanceTags": "tags",  # Will be parsed from string format
+            # HF-native pass-through fields (identity mapping - same name in/out)
+            "pgrpName": "pgrpName",
+            "onDemandCapacity": "onDemandCapacity",
         },
         # AWS-specific fields (only mapped when AWS provider is active)
         "aws": {
