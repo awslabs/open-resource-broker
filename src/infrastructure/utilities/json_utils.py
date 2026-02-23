@@ -65,7 +65,7 @@ def safe_json_loads(
 
     except json.JSONDecodeError as e:
         # Sanitize input for logging (truncate long strings)
-        sample = data[:100] + "..." if len(data) > 100 else data
+        sample = data[:100] + "..." if len(data) > 100 else data  # type: ignore[operator]
         error_msg = f"JSON decode error at line {e.lineno}, col {e.colno}: {e.msg}"
         if context:
             error_msg = f"{context}: {error_msg}"

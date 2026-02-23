@@ -43,7 +43,7 @@ class SQLStorageStrategy(BaseStorageStrategy):
 
         # Initialize components
         self.connection_manager = SQLConnectionManager(config)
-        self.query_builder = SQLQueryBuilder(table_name, columns)
+        self.query_builder = SQLQueryBuilder(table_name, columns)  # type: ignore[abstract]
         self.serializer = SQLSerializer(id_column=self._get_id_column())
         self.lock_manager = LockManager("simple")  # Simple lock for SQL
 

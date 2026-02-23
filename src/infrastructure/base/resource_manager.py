@@ -320,7 +320,7 @@ class BaseResourceManager(ResourceManagerPort, ABC):
 
     async def _provision_with_retry(
         self, specification: ResourceSpecification
-    ) -> ResourceAllocation:
+    ) -> ResourceAllocation:  # type: ignore[return]
         """Provision resources with retry logic."""
         for attempt in range(self.max_retries + 1):
             try:

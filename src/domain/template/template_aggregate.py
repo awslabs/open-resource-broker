@@ -214,7 +214,7 @@ class Template(BaseModel):
     def set_provider_config(self, config: dict[str, Any]) -> "Template":
         """Set provider-specific configuration."""
         data = self.model_dump()
-        data["provider_config"] = {**self.provider_config, **config}
+        data["provider_config"] = {**self.provider_config, **config}  # type: ignore[attr-defined]
         data["updated_at"] = datetime.now()
         return Template.model_validate(data)
 

@@ -29,7 +29,7 @@ class MachineStorageFactory:
         from infrastructure.storage.registry import get_storage_registry
 
         registry = get_storage_registry()
-        return registry.create_strategy(storage_type, config, entity_type)
+        return registry.create_strategy(storage_type, config)  # type: ignore[arg-type]
 
     def clear_cache(self) -> None:
         """Clear strategy cache."""

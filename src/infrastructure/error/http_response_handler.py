@@ -40,7 +40,7 @@ class HTTPErrorResponseHandler:
 
     def __init__(self) -> None:
         """Initialize HTTP error response handler."""
-        self._http_handlers: dict[type[Exception], Callable[[Exception], ErrorResponse]] = {}
+        self._http_handlers: dict[type[Exception], Callable[[Exception], ErrorResponse]] = {}  # type: ignore[misc]
         self._register_http_handlers()
 
     def handle_error_for_http(self, exception: Exception) -> ErrorResponse:
@@ -66,7 +66,7 @@ class HTTPErrorResponseHandler:
 
     def _register_http_handlers(self) -> None:
         """Register HTTP error handlers."""
-        self._http_handlers = {
+        self._http_handlers = {  # type: ignore[misc]
             # Domain errors
             ValidationError: self._handle_validation_error_http,
             EntityNotFoundError: self._handle_not_found_error_http,

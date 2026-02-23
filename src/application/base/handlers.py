@@ -222,7 +222,7 @@ class BaseHandler(ABC):
         raise error
 
 
-class BaseCommandHandler(BaseHandler, CommandHandler[TCommand, TResponse]):
+class BaseCommandHandler(BaseHandler, CommandHandler[TCommand, TResponse]):  # type: ignore[type-var]
     """
     Base for all CQRS command handlers.
 

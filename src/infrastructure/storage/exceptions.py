@@ -26,7 +26,7 @@ class StorageError(InfrastructureError):
         Returns:
             Dictionary representation of exception
         """
-        result: dict[str, Any] = super().to_dict()
+        result: dict[str, Any] = super().to_dict()  # type: ignore[attr-defined]
         if self.cause:
             result["cause"] = str(self.cause)
         return result

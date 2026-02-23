@@ -68,11 +68,11 @@ class SQLQueryBuilder(QueryManager):
         """Build SELECT query (implements QueryManager interface)."""
         if entity_id:
             id_column = kwargs.get("id_column", "id")
-            return self.build_select_by_id(id_column)
+            return self.build_select_by_id(id_column)  # type: ignore[return-value]
         elif criteria:
             return self.build_select_by_criteria(criteria)
         else:
-            return self.build_select_all(), {}
+            return self.build_select_all(), {}  # type: ignore[return-value]
 
     def build_update_query(
         self, data: dict[str, Any], entity_id: str, id_column: str = "id", **kwargs

@@ -132,7 +132,7 @@ class RequestDTO(BaseDTO):
             status=cls.serialize_enum(request.status) or "",
             template_id=str(request.template_id) if request.template_id else None,
             requested_count=request.requested_count,
-            created_at=request.created_at,
+            created_at=request.created_at,  # type: ignore[arg-type]
             last_status_check=None,  # Not available in current domain model
             first_status_check=None,  # Not available in current domain model
             machine_references=machine_refs,

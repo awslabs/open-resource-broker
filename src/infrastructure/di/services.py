@@ -234,10 +234,10 @@ def create_handler(handler_class, config: Optional[dict[str, Any]] = None) -> An
         Created handler instance
     """
     # Ensure services are registered
-    container = register_all_services()
+    container = register_all_services()  # type: ignore[call-arg]
 
     # Register handler class if not already registered
-    if handler_class not in container._factories:
+    if handler_class not in container._factories:  # type: ignore[attr-defined]
         # Get logger
         from infrastructure.logging.logger import get_logger
 
@@ -249,7 +249,7 @@ def create_handler(handler_class, config: Optional[dict[str, Any]] = None) -> An
 
             if is_injectable(handler_class):
                 logger.info("Registering injectable handler class %s", handler_class.__name__)
-                container.register_singleton(handler_class)
+                container.register_singleton(handler_class)  # type: ignore[call-arg]
             else:
                 # Legacy handler registration
                 logger.info("Registering legacy handler class %s", handler_class.__name__)

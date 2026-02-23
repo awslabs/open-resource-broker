@@ -18,7 +18,7 @@ def paginate(client_method: Callable, result_key: str, **kwargs) -> list[dict[st
     :param kwargs: Arguments to pass to the client method.
     :return: A list of items from all pages of the response.
     """
-    paginator = client_method.__self__.get_paginator(client_method.__name__)
+    paginator = client_method.__self__.get_paginator(client_method.__name__)  # type: ignore[attr-defined]
     results = []
 
     try:

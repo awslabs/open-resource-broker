@@ -2,7 +2,7 @@
 
 from typing import Any, Dict
 
-from providers.registry.provider_registry import ProviderRegistry
+from providers.registry.provider_registry import ProviderRegistry  # type: ignore[import]
 
 
 class ProviderNameService:

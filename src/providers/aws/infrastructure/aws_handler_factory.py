@@ -124,7 +124,7 @@ class AWSHandlerFactory:
         handler_type = template.provider_api
 
         # Create the handler
-        return self.create_handler(handler_type)
+        return self.create_handler(handler_type or "")  # type: ignore[arg-type]
 
     def _register_handler_classes(self) -> None:
         """Register handler classes for different AWS resource types."""

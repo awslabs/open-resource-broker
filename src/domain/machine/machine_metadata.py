@@ -362,7 +362,7 @@ class ResourceTag(ValueObject):
             return cls(key=data["Key"], value=data["Value"])
         else:
             # Handle case where data is in key-value format
-            return [cls(key=k, value=v) for k, v in data.items()]
+            return [cls(key=k, value=v) for k, v in data.items()]  # type: ignore[return-value]
 
     @classmethod
     def get_default_tags(cls) -> list[ResourceTag]:

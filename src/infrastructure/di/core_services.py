@@ -70,10 +70,10 @@ def register_core_services(container: DIContainer) -> None:
     # If lazy loading is disabled, register them as factories immediately
     if not container.is_lazy_loading_enabled():
         container.register_factory(
-            CommandBus, lambda c: CommandBus(container=c, logger=c.get(LoggingPort))
+            CommandBus, lambda c: CommandBus(container=c, logger=c.get(LoggingPort))  # type: ignore[call-arg]
         )
         container.register_factory(
-            QueryBus, lambda c: QueryBus(container=c, logger=c.get(LoggingPort))
+            QueryBus, lambda c: QueryBus(container=c, logger=c.get(LoggingPort))  # type: ignore[call-arg]
         )
 
     # Register native spec service
@@ -82,7 +82,7 @@ def register_core_services(container: DIContainer) -> None:
         from application.services.native_spec_service import NativeSpecService
         from domain.base.ports.spec_rendering_port import SpecRenderingPort
 
-        return NativeSpecService(
+        return NativeSpecService(  # type: ignore[call-arg]
             config_port=c.get(ConfigurationPort), spec_renderer=c.get(SpecRenderingPort)
         )
 

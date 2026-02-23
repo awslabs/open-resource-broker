@@ -145,7 +145,7 @@ def _get_security_scheme_name(strategy: str) -> str:
         "iam": "AWSAuth",  # nosec B105
         "cognito": "CognitoAuth",  # nosec B105
     }
-    return scheme_mapping.get(strategy)
+    return scheme_mapping.get(strategy) or ""
 
 
 def _add_examples_to_schema(openapi_schema: dict[str, Any]) -> None:

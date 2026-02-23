@@ -965,7 +965,7 @@ class GetTemplateHandler(BaseQueryHandler[GetTemplateQuery, TemplateDTOPort]):
             if self._container.has(TemplateDefaultsService):
                 template_defaults_service = self._container.get(TemplateDefaultsService)
                 resolved_data = template_defaults_service.resolve_template_defaults(
-                    template_data, provider_name=query.provider_name
+                    template_data, provider_name=query.provider_name  # type: ignore[call-arg]
                 )
             else:
                 resolved_data = template_data

@@ -20,7 +20,7 @@ TCommand = TypeVar("TCommand", bound=BaseCommand)
 TResponse = TypeVar("TResponse")
 
 
-class ApplicationCommandHandler(CommandHandler[TCommand, TResponse]):
+class ApplicationCommandHandler(CommandHandler[TCommand, TResponse]):  # type: ignore[type-var]
     """
     Base class for application layer CQRS command handlers.
 
@@ -73,7 +73,7 @@ class ApplicationCommandHandler(CommandHandler[TCommand, TResponse]):
             self.metrics.record(metric_name, value, **tags)
 
 
-class CLICommandHandler(CommandHandler[TCommand, TResponse]):
+class CLICommandHandler(CommandHandler[TCommand, TResponse]):  # type: ignore[type-var]
     """
     Base class for CLI interface command handlers.
 

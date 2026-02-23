@@ -31,7 +31,7 @@ class AWSTemplateValidationService:
             from infrastructure.scheduler.registry import get_scheduler_registry
 
             scheduler_registry = get_scheduler_registry()
-            scheduler_strategy = scheduler_registry.get_active_strategy()
+            scheduler_strategy = scheduler_registry.get_active_strategy()  # type: ignore[attr-defined]
 
             if scheduler_strategy:
                 template_paths = scheduler_strategy.get_template_paths()
