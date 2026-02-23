@@ -81,19 +81,30 @@ class RequestCommandFactory:
     def create_list_return_requests_query(
         self,
         status: Optional[str] = None,
-        limit: Optional[int] = None,
+        limit: Optional[int] = 50,
+        offset: Optional[int] = 0,
         **kwargs: Any,
     ) -> ListReturnRequestsQuery:
         """Create query to list return requests."""
-        return ListReturnRequestsQuery(status=status, limit=limit)
+        return ListReturnRequestsQuery(
+            status=status,
+            limit=min(limit or 50, 1000),
+            offset=offset or 0,
+        )
 
     def create_list_active_requests_query(
         self,
         provider_name: Optional[str] = None,
+        limit: Optional[int] = 50,
+        offset: Optional[int] = 0,
         **kwargs: Any,
     ) -> ListActiveRequestsQuery:
         """Create query to list active requests."""
-        return ListActiveRequestsQuery(provider_name=provider_name)
+        return ListActiveRequestsQuery(
+            provider_name=provider_name,
+            limit=min(limit or 50, 1000),
+            offset=offset or 0,
+        )
 
     def create_get_multiple_requests_query(
         self,

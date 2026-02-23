@@ -15,6 +15,8 @@ class MachineCommandFactory:
         provider: Optional[str] = None,
         status: Optional[str] = None,
         request_id: Optional[str] = None,
+        limit: Optional[int] = 50,
+        offset: Optional[int] = 0,
         **kwargs: Any,
     ) -> ListMachinesQuery:
         """Create query to list machines."""
@@ -23,6 +25,8 @@ class MachineCommandFactory:
             provider_name=provider_name,
             status=status,
             request_id=request_id,
+            limit=min(limit or 50, 1000),
+            offset=offset or 0,
         )
 
     def create_get_machine_query(self, machine_id: str, **kwargs: Any) -> GetMachineQuery:
