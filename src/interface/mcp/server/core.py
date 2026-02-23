@@ -400,8 +400,14 @@ class OpenResourceBrokerMCPServer:
 
     async def _get_machines_resource(self, uri: str) -> dict[str, Any]:
         """Get machines resource data."""
-        # For now, return empty list - would need actual machine listing
-        return {"machines": [], "message": "Machine listing not yet implemented"}
+        return {
+            "error": "Not implemented",
+            "endpoint": "machines resource",
+            "message": (
+                "Machine listing is planned but not yet available. "
+                "Use the list_return_requests tool to check provisioning status."
+            ),
+        }
 
     async def _get_providers_resource(self, uri: str) -> dict[str, Any]:
         """Get providers resource data."""
