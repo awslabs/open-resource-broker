@@ -166,57 +166,57 @@ class Template(BaseModel):
 
     def update_image_id(self, new_image_id: str) -> "Template":
         """Update the image ID and return a new template instance."""
-        data = self.model_dump()
-        data["image_id"] = new_image_id
-        data["updated_at"] = datetime.now()
-        return Template.model_validate(data)
+        fields = self.model_dump()
+        fields["image_id"] = new_image_id
+        fields["updated_at"] = datetime.now()
+        return Template.model_validate(fields)
 
     def add_subnet(self, subnet_id: str) -> "Template":
         """Add a subnet ID."""
         if subnet_id not in self.subnet_ids:
             new_subnets = [*self.subnet_ids, subnet_id]
-            data = self.model_dump()
-            data["subnet_ids"] = new_subnets
-            data["updated_at"] = datetime.now()
-            return Template.model_validate(data)
+            fields = self.model_dump()
+            fields["subnet_ids"] = new_subnets
+            fields["updated_at"] = datetime.now()
+            return Template.model_validate(fields)
         return self
 
     def remove_subnet(self, subnet_id: str) -> "Template":
         """Remove a subnet ID."""
         if subnet_id in self.subnet_ids:
             new_subnets = [s for s in self.subnet_ids if s != subnet_id]
-            data = self.model_dump()
-            data["subnet_ids"] = new_subnets
-            data["updated_at"] = datetime.now()
-            return Template.model_validate(data)
+            fields = self.model_dump()
+            fields["subnet_ids"] = new_subnets
+            fields["updated_at"] = datetime.now()
+            return Template.model_validate(fields)
         return self
 
     def add_security_group(self, security_group_id: str) -> "Template":
         """Add a security group ID."""
         if security_group_id not in self.security_group_ids:
             new_sgs = [*self.security_group_ids, security_group_id]
-            data = self.model_dump()
-            data["security_group_ids"] = new_sgs
-            data["updated_at"] = datetime.now()
-            return Template.model_validate(data)
+            fields = self.model_dump()
+            fields["security_group_ids"] = new_sgs
+            fields["updated_at"] = datetime.now()
+            return Template.model_validate(fields)
         return self
 
     def remove_security_group(self, security_group_id: str) -> "Template":
         """Remove a security group ID."""
         if security_group_id in self.security_group_ids:
             new_sgs = [sg for sg in self.security_group_ids if sg != security_group_id]
-            data = self.model_dump()
-            data["security_group_ids"] = new_sgs
-            data["updated_at"] = datetime.now()
-            return Template.model_validate(data)
+            fields = self.model_dump()
+            fields["security_group_ids"] = new_sgs
+            fields["updated_at"] = datetime.now()
+            return Template.model_validate(fields)
         return self
 
     def set_provider_config(self, config: dict[str, Any]) -> "Template":
         """Set provider-specific configuration."""
-        data = self.model_dump()
-        data["provider_config"] = {**self.provider_config, **config}  # type: ignore[attr-defined]
-        data["updated_at"] = datetime.now()
-        return Template.model_validate(data)
+        fields = self.model_dump()
+        fields["provider_config"] = {**self.provider_config, **config}  # type: ignore[attr-defined]
+        fields["updated_at"] = datetime.now()
+        return Template.model_validate(fields)
 
     def __str__(self) -> str:
         """Return string representation of template."""

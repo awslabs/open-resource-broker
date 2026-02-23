@@ -15,7 +15,9 @@ from application.machine.commands import (
     UpdateMachineStatusCommand,
     ValidateProviderStateCommand,
 )
+from domain.base.exceptions import DuplicateError
 from domain.base.ports import ContainerPort, ErrorHandlingPort, EventPublisherPort, LoggingPort
+from domain.machine.exceptions import MachineNotFoundError
 
 if TYPE_CHECKING:
     from application.services.provider_registry_service import ProviderRegistryService
@@ -78,7 +80,7 @@ class UpdateMachineStatusHandler(BaseCommandHandler[UpdateMachineStatusCommand, 
         # Get machine
         machine = self._machine_repository.find_by_id(command.machine_id)
         if not machine:
-            raise ValueError(f"Machine not found: {command.machine_id}")
+            raise MachineNotFoundError(command.machine_id)
 
         # Update status
         machine.update_status(MachineStatus.from_str(command.status) if isinstance(command.status, str) else command.status)  # type: ignore[arg-type]
@@ -335,7 +337,7 @@ class RegisterMachineHandler(BaseCommandHandler[RegisterMachineCommand, None]):
         # Check if machine already exists
         existing_machine = self._machine_repository.find_by_id(command.machine_id)
         if existing_machine:
-            raise ValueError(f"Machine already registered: {command.machine_id}")
+            raise DuplicateError(f"Machine already registered: {command.machine_id}")
 
         # Create new machine
         from domain.machine.aggregate import Machine

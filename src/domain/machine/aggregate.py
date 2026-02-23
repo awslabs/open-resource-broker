@@ -7,6 +7,7 @@ from pydantic import ConfigDict, Field
 
 from domain.base.entity import AggregateRoot
 from domain.base.value_objects import InstanceType, IPAddress, Tags
+from domain.machine.exceptions import InvalidMachineStateError
 from domain.machine.machine_identifiers import MachineId
 
 from .machine_status import MachineStatus
@@ -92,14 +93,14 @@ class Machine(AggregateRoot):
     def start_launching(self) -> "Machine":
         """Transition machine from PENDING to LAUNCHING status."""
         if self.status != MachineStatus.PENDING:
-            raise ValueError(f"Cannot start launching from status {self.status}")
+            raise InvalidMachineStateError(self.status.value, MachineStatus.LAUNCHING.value)
 
-        data = self.model_dump()
-        data["status"] = MachineStatus.LAUNCHING
-        data["launched_at"] = datetime.utcnow()
-        data["version"] = self.version + 1
+        fields = self.model_dump()
+        fields["status"] = MachineStatus.LAUNCHING
+        fields["launched_at"] = datetime.utcnow()
+        fields["version"] = self.version + 1
 
-        updated_machine = Machine.model_validate(data)
+        updated_machine = Machine.model_validate(fields)
 
         # Generate domain event for status change
         from domain.base.events.domain_events import MachineStatusChangedEvent
@@ -113,7 +114,7 @@ class Machine(AggregateRoot):
             reason="Machine launching initiated",
             metadata={
                 "reason": "Machine launching initiated",
-                "timestamp": data["launched_at"].isoformat(),
+                "timestamp": fields["launched_at"].isoformat(),
                 "machine_type": str(self.instance_type),
                 "provider_type": self.provider_type,
             },
@@ -126,20 +127,20 @@ class Machine(AggregateRoot):
         """Update machine status and generate domain event."""
         old_status = self.status
 
-        data = self.model_dump()
-        data["status"] = new_status
-        data["status_reason"] = reason
-        data["version"] = self.version + 1
+        fields = self.model_dump()
+        fields["status"] = new_status
+        fields["status_reason"] = reason
+        fields["version"] = self.version + 1
 
         # Update timestamps based on status
         now = datetime.utcnow()
         if new_status == MachineStatus.RUNNING and not self.launch_time:
-            data["launch_time"] = now
+            fields["launch_time"] = now
         elif new_status in [MachineStatus.TERMINATED, MachineStatus.FAILED]:
-            data["termination_time"] = now
+            fields["termination_time"] = now
 
         # Create updated machine instance
-        updated_machine = Machine.model_validate(data)
+        updated_machine = Machine.model_validate(fields)
 
         # Generate domain event for status change (only if status actually changed)
         if old_status != new_status:
@@ -175,30 +176,30 @@ class Machine(AggregateRoot):
         self, private_ip: Optional[str] = None, public_ip: Optional[str] = None
     ) -> "Machine":
         """Update machine network information."""
-        data = self.model_dump()
+        fields = self.model_dump()
 
         if private_ip:
-            data["private_ip"] = IPAddress(value=private_ip)
+            fields["private_ip"] = IPAddress(value=private_ip)
         if public_ip:
-            data["public_ip"] = IPAddress(value=public_ip)
+            fields["public_ip"] = IPAddress(value=public_ip)
 
-        data["version"] = self.version + 1
-        return Machine.model_validate(data)
+        fields["version"] = self.version + 1
+        return Machine.model_validate(fields)
 
     def update_tags(self, new_tags: Tags) -> "Machine":
         """Update machine tags."""
         merged_tags = self.tags.merge(new_tags)
-        data = self.model_dump()
-        data["tags"] = merged_tags
-        data["version"] = self.version + 1
-        return Machine.model_validate(data)
+        fields = self.model_dump()
+        fields["tags"] = merged_tags
+        fields["version"] = self.version + 1
+        return Machine.model_validate(fields)
 
     def set_provider_data(self, provider_data: dict[str, Any]) -> "Machine":
         """Set provider-specific data."""
-        data = self.model_dump()
-        data["provider_data"] = provider_data
-        data["version"] = self.version + 1
-        return Machine.model_validate(data)
+        fields = self.model_dump()
+        fields["provider_data"] = provider_data
+        fields["version"] = self.version + 1
+        return Machine.model_validate(fields)
 
     def get_provider_data(self, key: str, default: Any = None) -> Any:
         """Get provider-specific data value."""

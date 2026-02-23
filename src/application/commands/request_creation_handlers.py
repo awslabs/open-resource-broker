@@ -11,7 +11,7 @@ from application.dto.commands import (
     CreateReturnRequestCommand,
 )
 from domain.base import UnitOfWorkFactory
-from domain.base.exceptions import EntityNotFoundError
+from domain.base.exceptions import ApplicationError, EntityNotFoundError
 from domain.base.ports import (
     ContainerPort,
     ErrorHandlingPort,
@@ -122,7 +122,7 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, None]
     async def _load_template(self, template_id: str) -> Any:
         """Load template using CQRS QueryBus."""
         if not self._query_bus:
-            raise ValueError("QueryBus is required for template lookup")
+            raise ApplicationError("QueryBus is required for template lookup")
 
         from application.dto.queries import GetTemplateQuery
 
@@ -204,8 +204,6 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
                 machine_id = command.machine_ids[0]
                 machine = uow.machines.get_by_id(machine_id)
                 if not machine:
-                    from domain.base.exceptions import EntityNotFoundError
-
                     raise EntityNotFoundError("Machine", machine_id)
 
                 if machine.return_request_id:
