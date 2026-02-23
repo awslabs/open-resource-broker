@@ -79,6 +79,55 @@ class MockConfigurationPort(ConfigurationPort):
         """Get provider configuration."""
         return self._config.get("provider", {})
 
+    def get_provider_instance_config(self, provider_name: str) -> Any:
+        """Get configuration for a specific provider instance."""
+        providers = self._config.get("providers", [])
+        for p in providers:
+            if p.get("name") == provider_name:
+                return p
+        return None
+
+    def get_validation_config(self) -> dict[str, Any]:
+        """Get validation configuration."""
+        return self._config.get("validation", {})
+
+    def get_metrics_config(self) -> dict[str, Any]:
+        """Get metrics configuration."""
+        return self._config.get("metrics", {})
+
+    def get_active_provider_override(self) -> str | None:
+        """Get current provider override from CLI."""
+        return None
+
+    def override_provider_instance(self, provider_name: str) -> None:
+        """Override the active provider instance."""
+
+    def override_provider_region(self, region: str) -> None:
+        """Override the provider region for this session."""
+
+    def override_provider_profile(self, profile: str) -> None:
+        """Override the provider credential profile for this session."""
+
+    def get_effective_region(self, default_region: str = "us-east-1") -> str:
+        """Get effective provider region."""
+        return default_region
+
+    def get_effective_profile(self, default_profile: str = "default") -> str:
+        """Get effective provider credential profile."""
+        return default_profile
+
+    def get_configuration_sources(self) -> dict[str, Any]:
+        """Get configuration source information."""
+        return {}
+
+    def set_configuration_value(self, key: str, value: Any) -> None:
+        """Set configuration value."""
+        self.set(key, value)
+
+    def get_configuration_value(self, key: str, default: Any = None) -> Any:
+        """Get configuration value."""
+        return self.get(key, default)
+
     def get_storage_config(self) -> dict[str, Any]:
         """Get storage configuration."""
         return self._config.get("storage", {})
