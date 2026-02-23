@@ -699,7 +699,7 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
             # Convert machines to camelCase using existing method
             machines = []
             if "machines" in req_dict:
-                machines = [self._convert_machine_to_camel(m) for m in req_dict["machines"]]
+                machines = self._format_machines_for_hostfactory(req_dict["machines"])
 
             # Create HostFactory-compliant request object (only HF spec fields)
             hf_request = {
@@ -721,30 +721,6 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
             formatted_requests.append(hf_request)
 
         return {"requests": formatted_requests}
-
-    def _convert_machine_to_camel(self, machine: dict[str, Any]) -> dict[str, Any]:
-        """Convert machine dict from snake_case to camelCase for HostFactory."""
-        result = {
-            "machineId": machine.get("machine_id"),
-            "name": machine.get("name"),
-            "result": machine.get("result"),
-            "status": machine.get("status"),
-            "privateIpAddress": machine.get("private_ip_address"),
-            "message": machine.get("message", ""),
-        }
-        if machine.get("public_ip_address"):
-            result["publicIpAddress"] = machine["public_ip_address"]
-        if machine.get("instance_type"):
-            result["instanceType"] = machine["instance_type"]
-        if machine.get("price_type"):
-            result["priceType"] = machine["price_type"]
-        if machine.get("instance_tags"):
-            result["instanceTags"] = machine["instance_tags"]
-        if machine.get("cloud_host_id"):
-            result["cloudHostId"] = machine["cloud_host_id"]
-        if machine.get("launch_time"):
-            result["launchtime"] = str(machine["launch_time"])
-        return result
 
     def format_machine_status_response(self, machines: list[MachineDTO]) -> dict[str, Any]:
         """
@@ -927,19 +903,47 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         formatted_machines = []
 
         for machine in machines:
-            # Follow exact HostFactory getRequestStatus output format
+            result = self._map_machine_status_to_result(machine.get("status"))
+
+            # Per IBM HF spec, message is mandatory when result=="fail"
+            if result == "fail":
+                message = (
+                    machine.get("status_reason")
+                    or machine.get("error")
+                    or machine.get("message")
+                    or ""
+                )
+            else:
+                message = machine.get("message", "")
+
+            # Per IBM HF spec, launchtime is mandatory - default to 0 if not available
+            launchtime = int(machine.get("launch_time_timestamp", 0))
+
             formatted_machine = {
-                "machineId": machine.get("instance_id"),
+                "machineId": machine.get("machine_id", machine.get("instance_id")),
                 "name": machine.get(
                     "name", machine.get("instance_id", machine.get("private_ip", ""))
                 ),
-                "result": self._map_machine_status_to_result(machine.get("status")),
+                "result": result,
                 "status": machine.get("status", "unknown"),
-                "privateIpAddress": machine.get("private_ip"),
-                "publicIpAddress": machine.get("public_ip"),
-                "launchtime": int(machine.get("launch_time_timestamp", 0)),
-                "message": "",
+                "privateIpAddress": machine.get("private_ip_address", machine.get("private_ip")),
+                "launchtime": launchtime,
+                "message": message,
             }
+
+            if machine.get("public_ip_address") or machine.get("public_ip"):
+                formatted_machine["publicIpAddress"] = machine.get(
+                    "public_ip_address", machine.get("public_ip")
+                )
+            if machine.get("instance_type"):
+                formatted_machine["instanceType"] = machine["instance_type"]
+            if machine.get("price_type"):
+                formatted_machine["priceType"] = machine["price_type"]
+            if machine.get("instance_tags"):
+                formatted_machine["instanceTags"] = machine["instance_tags"]
+            if machine.get("cloud_host_id"):
+                formatted_machine["cloudHostId"] = machine["cloud_host_id"]
+
             formatted_machines.append(formatted_machine)
 
         return formatted_machines
@@ -998,7 +1002,7 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
     def format_template_for_display(self, template: TemplateDTO) -> dict[str, Any]:
         """Format TemplateDTO for display using HostFactory field mapper."""
         internal_dict = template.to_dict()
-        return self.field_mapper.map_output_fields(internal_dict, copy_unmapped=False)
+        return self.field_mapper.map_output_fields(internal_dict, copy_unmapped=True)
 
     def format_template_for_provider(self, template: TemplateDTO) -> dict[str, Any]:
         """Format template for provider operations using internal format (no field mapping)."""
