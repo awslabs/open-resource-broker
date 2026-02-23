@@ -66,7 +66,5 @@ __all__: list[str] = [
     "Tags",
     # Template context
     "Template",
-    "TemplateId",
-    "TemplateRepository",
     "ValueObject",
 ]

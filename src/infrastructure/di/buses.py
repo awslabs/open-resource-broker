@@ -13,7 +13,7 @@ SOLID principles and CQRS best practices:
 No middleware complexity - handlers own their cross-cutting concerns.
 """
 
-from typing import Any, TypeVar
+from typing import Any
 
 from application.decorators import (
     get_command_handler_for_type,
@@ -24,10 +24,6 @@ from application.ports.command_bus_port import CommandBusPort
 from application.ports.query_bus_port import QueryBusPort
 from domain.base.ports.logging_port import LoggingPort
 from infrastructure.di.container import DIContainer
-
-TQuery = TypeVar("TQuery", bound=Query)
-TCommand = TypeVar("TCommand", bound=Command)
-TResult = TypeVar("TResult")
 
 
 class QueryBus(QueryBusPort):
@@ -49,7 +45,7 @@ class QueryBus(QueryBusPort):
         self.container = container
         self.logger = logger
 
-    async def execute(self, query: TQuery) -> TResult:
+    async def execute(self, query: Query) -> Any:
         """
         Execute a query through pure routing with lazy handler discovery.
 
@@ -98,7 +94,7 @@ class QueryBus(QueryBusPort):
             self.logger.error("Query execution failed: %s", str(e))
             raise
 
-    def execute_sync(self, query: TQuery) -> TResult:
+    def execute_sync(self, query: Query) -> Any:
         """Execute query synchronously for sync contexts.
 
         Uses asyncio.run() when no event loop is running. When called from
@@ -153,7 +149,7 @@ class CommandBus(CommandBusPort):
         self.container = container
         self.logger = logger
 
-    async def execute(self, command: TCommand) -> TResult:
+    async def execute(self, command: Command) -> Any:  # type: ignore[override]
         """
         Execute a command through pure routing with lazy handler discovery.
 

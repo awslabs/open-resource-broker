@@ -10,7 +10,7 @@ from typing import Any, Callable, Optional
 
 # Optional monitoring dependencies
 try:
-    import psutil
+    import psutil  # type: ignore[import-not-found]
 
     PSUTIL_AVAILABLE = True
 except ImportError:
