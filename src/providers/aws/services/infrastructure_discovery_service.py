@@ -392,18 +392,35 @@ class AWSInfrastructureDiscoveryService:
                     except (ValueError, IndexError):
                         print_error("Invalid security group selection, skipping security groups")
 
-            # Discover fleet role (non-interactive — either exists or it doesn't)
+            # Discover fleet role interactively
+            print_info("")
+            auto_fleet_role: Optional[str] = None
             try:
                 fleet_role_response = self.iam_client.get_role(
                     RoleName="aws-ec2-spot-fleet-tagging-role"
                 )
-                fleet_role_arn = fleet_role_response["Role"]["Arn"]
-                discovered["fleet_role"] = fleet_role_arn
-                print_info(f"Fleet role found: {fleet_role_arn}")
-            except self.iam_client.exceptions.NoSuchEntityException:
-                print_info("Fleet role 'aws-ec2-spot-fleet-tagging-role' not found, skipping")
-            except Exception as e:
-                print_info(f"Could not check fleet role: {e}")
+                auto_fleet_role = fleet_role_response["Role"]["Arn"]
+            except Exception:
+                pass
+
+            if auto_fleet_role:
+                print_info(f"  Found Spot Fleet IAM role: {auto_fleet_role}")
+                confirm = input("  Use this role? (Y/n): ").strip().lower()
+                if confirm in ("", "y", "yes"):
+                    discovered["fleet_role"] = auto_fleet_role
+                else:
+                    override = input(
+                        "  Enter Spot Fleet IAM role ARN (or press Enter to skip): "
+                    ).strip()
+                    if override:
+                        discovered["fleet_role"] = override
+            else:
+                print_info("  Spot Fleet IAM role 'aws-ec2-spot-fleet-tagging-role' not found.")
+                manual = input(
+                    "  Enter Spot Fleet IAM role ARN (optional, press Enter to skip): "
+                ).strip()
+                if manual:
+                    discovered["fleet_role"] = manual
 
             if discovered:
                 print_info("")

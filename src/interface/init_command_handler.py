@@ -219,19 +219,15 @@ def _interactive_setup() -> Dict[str, Any]:
         provider_config = {"type": provider_type}
         for param, info in requirements.items():
             if info.get("required"):
-                default_value = "us-east-1" if param == "region" else ""
-                prompt = (
-                    f"  {info['description']} ({default_value}): "
-                    if default_value
-                    else f"  {info['description']}: "
-                )
-                value = input(prompt).strip() or default_value
-                provider_config[param] = value
+                if param == "region":
+                    provider_config[param] = _pick_region()
+                else:
+                    prompt = f"  {info['description']}: "
+                    provider_config[param] = input(prompt).strip()
 
         # Fallback for AWS if no requirements defined
         if provider_type == "aws" and not requirements:
-            region = input("  Region (us-east-1): ").strip() or "us-east-1"
-            provider_config["region"] = region
+            provider_config["region"] = _pick_region()
 
         # Get available credential sources
         credential_sources = _get_available_credential_sources(provider_type)
@@ -308,6 +304,30 @@ def _interactive_setup() -> Dict[str, Any]:
 
         print_info("")
 
+        # Default provider selection (only when multiple providers configured)
+        default_provider_index = 0
+        if len(providers) > 1:
+            print_separator(char="-", color="cyan")
+            print_info("")
+            print_info("Default Provider Selection")
+            print_info("  Which provider should be used as the default?")
+            print_info("")
+            for i, p in enumerate(providers, 1):
+                print_info(f"  ({i}) {p['type']} - {p['region']} ({p['profile']})")
+            print_info("")
+            default_choice = input("  Select default provider (1): ").strip() or "1"
+            try:
+                default_provider_index = int(default_choice) - 1
+                if not (0 <= default_provider_index < len(providers)):
+                    default_provider_index = 0
+            except ValueError:
+                default_provider_index = 0
+            print_info("")
+
+        # Mark the default provider
+        for i, p in enumerate(providers):
+            p["is_default"] = i == default_provider_index
+
         return {
             "scheduler_type": scheduler_type,
             "providers": providers,
@@ -351,19 +371,15 @@ def _configure_additional_provider() -> Optional[Dict[str, Any]]:
         provider_config = {"type": provider_type}
         for param, info in requirements.items():
             if info.get("required"):
-                default_value = "us-east-1" if param == "region" else ""
-                prompt = (
-                    f"  {info['description']} ({default_value}): "
-                    if default_value
-                    else f"  {info['description']}: "
-                )
-                value = input(prompt).strip() or default_value
-                provider_config[param] = value
+                if param == "region":
+                    provider_config[param] = _pick_region()
+                else:
+                    prompt = f"  {info['description']}: "
+                    provider_config[param] = input(prompt).strip()
 
         # Fallback for AWS
         if provider_type == "aws" and not requirements:
-            region = input("  Region (us-east-1): ").strip() or "us-east-1"
-            provider_config["region"] = region
+            provider_config["region"] = _pick_region()
 
         # Get available credential sources
         credential_sources = _get_available_credential_sources(provider_type)
@@ -418,6 +434,46 @@ def _configure_additional_provider() -> Optional[Dict[str, Any]]:
     except Exception as e:
         print_error(f"Failed to configure provider: {e}")
         return None
+
+
+_COMMON_AWS_REGIONS = [
+    ("us-east-1", "N. Virginia"),
+    ("us-east-2", "Ohio"),
+    ("us-west-1", "N. California"),
+    ("us-west-2", "Oregon"),
+    ("eu-west-1", "Ireland"),
+    ("eu-west-2", "London"),
+    ("eu-central-1", "Frankfurt"),
+    ("ap-southeast-1", "Singapore"),
+    ("ap-southeast-2", "Sydney"),
+    ("ap-northeast-1", "Tokyo"),
+    ("ca-central-1", "Canada"),
+    ("sa-east-1", "São Paulo"),
+]
+
+
+def _pick_region() -> str:
+    """Prompt user to select a region from a numbered list or type a custom one."""
+    print_info("")
+    print_info("  Select AWS region:")
+    for i, (region_id, region_name) in enumerate(_COMMON_AWS_REGIONS, 1):
+        print_info(f"  ({i:2}) {region_id:<20} {region_name}")
+    other_num = len(_COMMON_AWS_REGIONS) + 1
+    print_info(f"  ({other_num:2}) Other (type custom)")
+    print_info("")
+
+    choice = input("  Select region (1): ").strip() or "1"
+    try:
+        idx = int(choice) - 1
+        if 0 <= idx < len(_COMMON_AWS_REGIONS):
+            return _COMMON_AWS_REGIONS[idx][0]
+        elif idx == len(_COMMON_AWS_REGIONS):
+            custom = input("  Enter custom region: ").strip()
+            return custom if custom else "us-east-1"
+        else:
+            return "us-east-1"
+    except ValueError:
+        return "us-east-1"
 
 
 def _get_available_credential_sources(provider_type: str) -> list[dict]:
@@ -589,6 +645,10 @@ def _write_config_file(config_file: Path, user_config: Dict[str, Any]):
             "enabled": True,
             "config": provider_config,
         }
+
+        # Mark as default if flagged
+        if provider_data.get("is_default", False):
+            provider_instance["default"] = True
 
         # Add template_defaults if infrastructure was discovered
         infrastructure_defaults = provider_data.get("infrastructure_defaults", {})
