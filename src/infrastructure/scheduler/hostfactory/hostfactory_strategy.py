@@ -193,6 +193,18 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
             mapped = self.template_defaults_service.resolve_template_defaults(
                 mapped, target_provider
             )
+
+            # Apply fleet_role from provider instance template_defaults for SpotFleet only
+            if mapped.get("provider_api") == "SpotFleet" and not mapped.get("fleet_role"):
+                try:
+                    instance_defaults = self.template_defaults_service.get_effective_template_defaults(
+                        target_provider
+                    )
+                    if "fleet_role" in instance_defaults:
+                        mapped["fleet_role"] = instance_defaults["fleet_role"]
+                except Exception as e:
+                    if self.logger:
+                        self.logger.debug("Could not apply fleet_role from template_defaults: %s", e)
         else:
             mapped["provider_api"] = template.get(
                 "providerApi", template.get("provider_api", "EC2Fleet")

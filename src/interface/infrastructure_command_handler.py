@@ -125,6 +125,10 @@ def _show_provider_infrastructure(provider: Dict[str, Any]) -> None:
             print_info(f"  Security Groups ({len(sgs)}):")
             for sg in sgs:
                 print_info(f"    - {sg}")
+
+        if "fleet_role" in template_defaults:
+            fleet_role = template_defaults["fleet_role"]
+            print_info(f"  Fleet Role: {fleet_role}")
     else:
         print_info("\nNo infrastructure defaults configured")
         print_info("To configure infrastructure defaults:")
