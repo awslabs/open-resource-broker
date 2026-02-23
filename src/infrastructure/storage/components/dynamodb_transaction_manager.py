@@ -253,7 +253,7 @@ class DynamoDBTransactionManager(TransactionManager):
             raise
 
     @contextmanager
-    def atomic_operation(self) -> None:
+    def atomic_operation(self):  # type: ignore[override]
         """
         Context manager for atomic DynamoDB operations.
 

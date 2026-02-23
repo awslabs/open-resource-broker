@@ -18,7 +18,7 @@ from domain.machine.repository import MachineRepository
 from domain.request.repository import RequestRepository
 
 
-@command_handler(CleanupOldRequestsCommand)
+@command_handler(CleanupOldRequestsCommand)  # type: ignore[arg-type]
 class CleanupOldRequestsHandler(BaseCommandHandler[CleanupOldRequestsCommand, None]):  # type: ignore[type-var]
     """Handler for cleaning up old requests using domain commands.
 
@@ -90,7 +90,8 @@ class CleanupOldRequestsHandler(BaseCommandHandler[CleanupOldRequestsCommand, No
                     resource_count=cleaned_count,
                     cleanup_reason=f"Cleanup requests older than {command.older_than_days} days",
                 )
-                self.event_publisher.publish(cleanup_event)
+                if self.event_publisher is not None:
+                    self.event_publisher.publish(cleanup_event)
 
                 # Store results in command
                 command.requests_cleaned = cleaned_count
@@ -103,7 +104,7 @@ class CleanupOldRequestsHandler(BaseCommandHandler[CleanupOldRequestsCommand, No
             raise
 
 
-@command_handler(CleanupAllResourcesCommand)
+@command_handler(CleanupAllResourcesCommand)  # type: ignore[arg-type]
 class CleanupAllResourcesHandler(BaseCommandHandler[CleanupAllResourcesCommand, None]):  # type: ignore[type-var]
     """Handler for cleaning up all resources (requests and machines).
 
@@ -198,7 +199,8 @@ class CleanupAllResourcesHandler(BaseCommandHandler[CleanupAllResourcesCommand, 
                     resource_count=requests_cleaned + machines_cleaned,
                     cleanup_reason=f"Cleanup all resources older than {command.older_than_days} days",
                 )
-                self.event_publisher.publish(cleanup_event)
+                if self.event_publisher is not None:
+                    self.event_publisher.publish(cleanup_event)
 
                 # Store results in command
                 command.requests_cleaned = requests_cleaned

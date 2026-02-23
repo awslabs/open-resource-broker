@@ -299,7 +299,7 @@ class AWSOperations:
             for path_part in status_path.split("."):
                 if isinstance(current_status, list) and current_status:
                     current_status = current_status[0]  # Take first item for lists
-                current_status = current_status.get(path_part, "unknown")
+                current_status = current_status.get(path_part, "unknown")  # type: ignore[union-attr]
 
             self._logger.debug("%s %s status: %s", resource_type, resource_id, current_status)
 
@@ -443,7 +443,7 @@ class AWSOperations:
         error_message = error.response.get("Error", {}).get("Message", str(error))
 
         # Import here to avoid circular imports
-        from providers.aws.exceptions.aws_exceptions import (
+        from providers.aws.exceptions.aws_exceptions import (  # type: ignore[attr-defined]
             AWSEntityNotFoundError,
             AWSInfrastructureError,
             AWSPermissionError,

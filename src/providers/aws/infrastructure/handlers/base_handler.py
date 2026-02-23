@@ -148,7 +148,7 @@ class AWSHandler(ABC):
             InfrastructureError: For other AWS API errors
         """
 
-    def _extract_instance_ids(self, api_response: dict[str, Any], extractor: callable) -> list[str]:
+    def _extract_instance_ids(self, api_response: dict[str, Any], extractor: Any) -> list[str]:
         """Extract instance IDs from API response if available."""
         return extractor(api_response)
 
@@ -305,7 +305,7 @@ class AWSHandler(ABC):
             and operation_name in critical_operations
         ):
             operation_type = "critical"
-            self.logger.debug("Auto-detected critical operation: %s", operation_name)
+            self._logger.debug("Auto-detected critical operation: %s", operation_name)
 
         if operation_type == "critical":
             # Use circuit breaker for critical operations
@@ -446,8 +446,8 @@ class AWSHandler(ABC):
     def _get_instance_details(
         self,
         instance_ids: list[str],
-        request_id: str = None,
-        resource_id: str = None,
+        request_id: Optional[str] = None,
+        resource_id: Optional[str] = None,
         provider_api: str = "EC2",
     ) -> list[dict[str, Any]]:
         """
