@@ -408,4 +408,3 @@ class TestHostFactoryFormatCompliance:
         output_data = {"requestId": "ret-12345-abcd", "message": "Delete VM success."}
 
         assert HostFactoryFormatValidator.validate_request_response(output_data)
-

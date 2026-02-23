@@ -1,7 +1,8 @@
 """HostFactory scheduler strategy for field mapping and response formatting."""
 
 import os
-from typing import TYPE_CHECKING, Any, Union, cast
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, cast
 
 # Normalize legacy/alias provider API names to canonical registry keys
 PROVIDER_API_ALIASES: dict[str, str] = {
@@ -21,7 +22,6 @@ from infrastructure.scheduler.base.strategy import BaseSchedulerStrategy
 from infrastructure.scheduler.hostfactory.field_mapper import HostFactoryFieldMapper
 from infrastructure.scheduler.hostfactory.transformations import HostFactoryTransformations
 from infrastructure.template.dtos import TemplateDTO
-from infrastructure.utilities.common.serialization import serialize_enum
 from infrastructure.utilities.common.string_utils import extract_provider_type
 
 
@@ -196,7 +196,9 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
             mapped["provider_api"] = self.template_defaults_service.resolve_provider_api_default(
                 template
             )
-            mapped["provider_api"] = PROVIDER_API_ALIASES.get(mapped["provider_api"], mapped["provider_api"])
+            mapped["provider_api"] = PROVIDER_API_ALIASES.get(
+                mapped["provider_api"], mapped["provider_api"]
+            )
             # Apply all template defaults using the service
             mapped = self.template_defaults_service.resolve_template_defaults(
                 mapped, target_provider
@@ -205,14 +207,18 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
             # Apply fleet_role from provider instance template_defaults for SpotFleet only
             if mapped.get("provider_api") == "SpotFleet" and not mapped.get("fleet_role"):
                 try:
-                    instance_defaults = self.template_defaults_service.get_effective_template_defaults(
-                        target_provider
+                    instance_defaults = (
+                        self.template_defaults_service.get_effective_template_defaults(
+                            target_provider
+                        )
                     )
                     if "fleet_role" in instance_defaults:
                         mapped["fleet_role"] = instance_defaults["fleet_role"]
                 except Exception as e:
                     if self.logger:
-                        self.logger.debug("Could not apply fleet_role from template_defaults: %s", e)
+                        self.logger.debug(
+                            "Could not apply fleet_role from template_defaults: %s", e
+                        )
         else:
             raw_api = template.get("providerApi", template.get("provider_api", "EC2Fleet"))
             mapped["provider_api"] = PROVIDER_API_ALIASES.get(raw_api, raw_api)
@@ -324,7 +330,11 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         # Handle UUID objects and nested value objects
         if isinstance(request_id, dict) and "value" in request_id:
             request_id = str(request_id["value"])
-        elif request_id is not None and not isinstance(request_id, dict) and hasattr(request_id, "value"):
+        elif (
+            request_id is not None
+            and not isinstance(request_id, dict)
+            and hasattr(request_id, "value")
+        ):
             request_id = str(request_id.value)
         elif request_id:
             request_id = str(request_id)
@@ -356,9 +366,7 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
                 "message": request_dict.get("message", "Request status unknown"),
             }
 
-    def convert_domain_to_hostfactory_output(
-        self, operation: str, data: Any
-    ) -> dict[str, Any]:
+    def convert_domain_to_hostfactory_output(self, operation: str, data: Any) -> dict[str, Any]:
         """Convert domain objects to HostFactory JSON output format.
 
         This method handles the conversion from internal domain objects to the expected
@@ -592,9 +600,7 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         # Create TemplateDTO object with validation
         return cast(TemplateDTO, TemplateDTO.from_dict(domain_data))
 
-    def parse_request_data(
-        self, raw_data: dict[str, Any]
-    ) -> dict[str, Any]:
+    def parse_request_data(self, raw_data: dict[str, Any]) -> dict[str, Any]:
         """
         Parse HostFactory request data to domain-compatible format.
 
@@ -805,6 +811,10 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
             return os.environ.get(env_var)
         return None
 
+    def get_scripts_directory(self) -> Path | None:
+        """Return the path to the HostFactory scripts directory."""
+        return Path("src/infrastructure/scheduler/hostfactory/scripts/")
+
     def get_storage_base_path(self) -> str:
         """Get storage base path within working directory."""
         workdir = self.get_working_directory()
@@ -934,7 +944,9 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
 
         return formatted_machines
 
-    def _map_machine_status_to_result(self, status: str | None, request_type: str | None = None) -> str:
+    def _map_machine_status_to_result(
+        self, status: str | None, request_type: str | None = None
+    ) -> str:
         """Map machine status to HostFactory result field per hf_docs/input-output.md."""
         # Per docs: "Possible values: 'executing', 'fail', 'succeed'"
         if request_type == "return":

@@ -1,5 +1,6 @@
 """Tests for base scheduler strategy."""
 
+from pathlib import Path
 from typing import Any
 from unittest.mock import Mock
 
@@ -76,6 +77,9 @@ class ConcreteSchedulerStrategy(BaseSchedulerStrategy):
 
     def get_logs_directory(self) -> str:
         return "/test/logsdir"
+
+    def get_scripts_directory(self) -> Path | None:
+        return None
 
 
 class TestBaseSchedulerStrategy:
