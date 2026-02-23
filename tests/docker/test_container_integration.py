@@ -306,8 +306,9 @@ class TestContainerIntegration:
                     "docker",
                     "run",
                     "--rm",
-                    built_image,
+                    "--entrypoint",
                     "bash",
+                    built_image,
                     "-c",
                     "echo 'Container bash access works'",
                 ],
@@ -334,8 +335,9 @@ class TestContainerIntegration:
                     "docker",
                     "run",
                     "--rm",
-                    built_image,
+                    "--entrypoint",
                     "bash",
+                    built_image,
                     "-c",
                     "ls -la /app/ | head -5",
                 ],
@@ -362,8 +364,9 @@ class TestContainerIntegration:
                     "docker",
                     "run",
                     "--rm",
-                    built_image,
+                    "--entrypoint",
                     "bash",
+                    built_image,
                     "-c",
                     "ls -la /app/ && echo '---' && ls -la /app/src/ | head -5",
                 ],
@@ -376,7 +379,7 @@ class TestContainerIntegration:
             assert result.returncode == 0, f"Directory check failed: {result.stderr}"
 
             # Check for required directories
-            required_dirs = ["src", "config", "logs", "data"]
+            required_dirs = ["config", "logs", "data", "scripts"]
             for dir_name in required_dirs:
                 assert dir_name in result.stdout, f"Should have {dir_name} directory"
 

@@ -305,7 +305,7 @@ class TestCleanArchitectureIntegration:
         assert hasattr(domain_template, "price_type")
 
         # Should be able to convert back to dict
-        template_dict = domain_template.to_dict()
+        template_dict = domain_template.model_dump()
         assert isinstance(template_dict, dict)
         assert template_dict["template_id"] == "e2e-test"
 

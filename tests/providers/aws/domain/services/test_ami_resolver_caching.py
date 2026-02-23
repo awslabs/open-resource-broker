@@ -354,4 +354,4 @@ class TestAWSAMIResolver:
 
         assert key1 == key2  # Same input, same key
         assert key1 != key3  # Different input, different key
-        assert len(key1) == 32  # MD5 hash length
+        assert len(key1) == 64  # SHA256 hash length

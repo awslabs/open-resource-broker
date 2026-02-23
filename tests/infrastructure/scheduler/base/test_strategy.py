@@ -68,6 +68,9 @@ class ConcreteSchedulerStrategy(BaseSchedulerStrategy):
     def get_working_directory(self) -> str:
         return "/test/workdir"
 
+    def format_machine_details_response(self, machine_data: dict) -> dict:
+        return {"machine": machine_data}
+
     def get_config_directory(self) -> str:
         return "/test/confdir"
 

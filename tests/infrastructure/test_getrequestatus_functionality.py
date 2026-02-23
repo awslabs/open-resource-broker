@@ -62,14 +62,12 @@ class TestGetRequestStatusFunctionality:
             mock_container = Mock()
             mock_provider_service = Mock()
             mock_provider_service.select_active_provider.return_value = ProviderSelectionResult(
-                provider_type="aws", provider_instance="aws-default", selection_reason="test"
+                provider_type="aws", provider_name="aws-default", selection_reason="test"
             )
             mock_container.get.return_value = mock_provider_service
             mock_get_container.return_value = mock_container
 
-            config_manager = MagicMock(spec=ConfigurationPort)
-            logger = MagicMock(spec=LoggingPort)
-            return HostFactorySchedulerStrategy(config_manager, logger)
+            return HostFactorySchedulerStrategy()
 
     def test_hostfactory_format_basic(self, scheduler_strategy):
         """Test basic HostFactory formatting for getRequestStatus."""
