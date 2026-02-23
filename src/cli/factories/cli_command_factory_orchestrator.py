@@ -436,6 +436,12 @@ class CLICommandFactoryOrchestrator:
                     include_details=args.get("detailed", False),
                     filter_expressions=args.get("filter") or [],
                 )
+            elif command_action == "show":
+                return self.create_list_storage_strategies_query(
+                    include_current=True,
+                    include_details=True,
+                    filter_expressions=[],
+                )
             elif command_action == "health":
                 return self.create_get_storage_health_query(
                     strategy_name=args.get("storage"), detailed=True
