@@ -39,7 +39,7 @@ class TransactionManager(ABC):
         """Rollback the current transaction."""
 
     @contextmanager
-    def transaction(self) -> None:
+    def transaction(self):  # type: ignore[override]
         """Context manager for transaction handling."""
         self.begin_transaction()
         try:

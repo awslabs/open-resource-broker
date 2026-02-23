@@ -21,7 +21,7 @@ from domain.base.ports import (
 # ============================================================================
 
 
-@command_handler(ReloadProviderConfigCommand)
+@command_handler(ReloadProviderConfigCommand)  # type: ignore[arg-type]
 class ReloadProviderConfigHandler(BaseCommandHandler[ReloadProviderConfigCommand, None]):  # type: ignore[type-var]
     """Handler for reloading provider configuration.
 
@@ -59,7 +59,7 @@ class ReloadProviderConfigHandler(BaseCommandHandler[ReloadProviderConfigCommand
             # Reload configuration (implementation depends on ConfigurationManager
             # capabilities)
             if hasattr(config_manager, "reload"):
-                config_manager.reload(command.config_path)
+                config_manager.reload(command.config_path)  # type: ignore[call-arg]
             else:
                 # Fallback: get configuration manager from DI container
                 # Note: ConfigurationManager doesn't support reload with different path
@@ -102,7 +102,7 @@ class ReloadProviderConfigHandler(BaseCommandHandler[ReloadProviderConfigCommand
             }
 
 
-@command_handler(RefreshTemplatesCommand)
+@command_handler(RefreshTemplatesCommand)  # type: ignore[arg-type]
 class RefreshTemplatesHandler(BaseCommandHandler[RefreshTemplatesCommand, None]):  # type: ignore[type-var]
     """Handler for refreshing templates from all sources.
 
@@ -158,7 +158,7 @@ class RefreshTemplatesHandler(BaseCommandHandler[RefreshTemplatesCommand, None])
             }
 
 
-@command_handler(SetConfigurationCommand)
+@command_handler(SetConfigurationCommand)  # type: ignore[arg-type]
 class SetConfigurationHandler(BaseCommandHandler[SetConfigurationCommand, None]):  # type: ignore[type-var]
     """Handler for setting configuration values.
 

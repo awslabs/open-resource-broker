@@ -310,7 +310,7 @@ class SQLStorageStrategy(BaseStorageStrategy):
         self.logger.debug("Transaction rollback (handled by session)")
 
     @contextmanager
-    def transaction(self) -> None:
+    def transaction(self):  # type: ignore[override]
         """Context manager for database transactions."""
         with self.connection_manager.get_session() as session:
             try:
