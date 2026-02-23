@@ -9,10 +9,11 @@ from typing import Generic, TypeVar
 T = TypeVar("T")
 R = TypeVar("R")
 __all__: list[str] = ...
+
 class Query(ABC):
     """Base interface for queries."""
-    ...
 
+    ...
 
 class QueryHandler(Generic[T, R], ABC):
     """Base interface for query handlers."""
@@ -31,11 +32,8 @@ class QueryHandler(Generic[T, R], ABC):
             ValidationError: If query is invalid
         """
         ...
-    
-
 
 class Command(ABC):
     """Base interface for commands."""
+
     ...
-
-

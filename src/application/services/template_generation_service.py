@@ -210,7 +210,8 @@ class TemplateGenerationService:
             # Provider-specific mode: use provider name pattern
             config_dict = self._get_config_dict()
             return self._scheduler_strategy.get_templates_filename(
-                provider_name, config_dict  # type: ignore[call-arg]
+                provider_name,
+                config_dict,  # type: ignore[call-arg]
             )
         elif request.provider_type_filter:
             # Provider-type mode: use specified provider type

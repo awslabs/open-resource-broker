@@ -5,9 +5,9 @@ import pytest
 from domain.base.value_objects_pure import (
     ARN,
     AllocationStrategy,
-    IPAddress,
     InstanceId,
     InstanceType,
+    IPAddress,
     PriceType,
     ResourceId,
     ResourceQuota,

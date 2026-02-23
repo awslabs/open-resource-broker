@@ -4,13 +4,16 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-pytestmark = pytest.mark.skip(reason="infrastructure.registry.storage_registry module removed - using application services")
+pytestmark = pytest.mark.skip(
+    reason="infrastructure.registry.storage_registry module removed - using application services"
+)
 
 try:
     from infrastructure.registry.storage_registry import (
         get_storage_registry,
         reset_storage_registry,
     )
+
     HAS_STORAGE_REGISTRY = True
 except ImportError:
     HAS_STORAGE_REGISTRY = False

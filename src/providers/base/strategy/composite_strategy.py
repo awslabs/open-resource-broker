@@ -342,9 +342,7 @@ class CompositeProviderStrategy(ProviderStrategy):
 
         except Exception as e:
             total_time_ms = (time.time() - start_time) * 1000
-            self._logger.error(
-                "Composite operation %s failed: %s", operation.operation_type, e
-            )
+            self._logger.error("Composite operation %s failed: %s", operation.operation_type, e)
             return ProviderResult.error_result(
                 f"Composite operation failed: {e!s}",
                 "COMPOSITE_EXECUTION_ERROR",
@@ -363,9 +361,7 @@ class CompositeProviderStrategy(ProviderStrategy):
                 if capabilities.supports_operation(operation.operation_type):
                     capable[strategy_type] = strategy
             except Exception as e:
-                self._logger.warning(
-                    "Error checking capabilities for %s: %s", strategy_type, e
-                )
+                self._logger.warning("Error checking capabilities for %s: %s", strategy_type, e)
 
         return capable
 
@@ -614,9 +610,7 @@ class CompositeProviderStrategy(ProviderStrategy):
                 combined_limitations.update(capabilities.limitations)
                 performance_metrics[strategy_type] = capabilities.performance_metrics
             except Exception as e:
-                self._logger.warning(
-                    "Error getting capabilities from %s: %s", strategy_type, e
-                )
+                self._logger.warning("Error getting capabilities from %s: %s", strategy_type, e)
 
         return ProviderCapabilities(
             provider_type=self.provider_type,
@@ -684,9 +678,7 @@ class CompositeProviderStrategy(ProviderStrategy):
                     strategy.cleanup()
                     self._logger.debug("Cleaned up strategy: %s", strategy_type)
                 except Exception as e:
-                    self._logger.warning(
-                        "Error cleaning up strategy %s: %s", strategy_type, e
-                    )
+                    self._logger.warning("Error cleaning up strategy %s: %s", strategy_type, e)
 
             self._strategies.clear()
             self._strategy_weights.clear()

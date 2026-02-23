@@ -7,7 +7,6 @@ import pytest
 from domain.template.exceptions import TemplateNotFoundError, TemplateValidationError
 from domain.template.template_aggregate import Template
 
-
 # Try to import optional value objects - create mocks if not available
 try:
     from domain.template.value_objects import TemplateId, TemplateName
@@ -38,6 +37,7 @@ except ImportError:
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _make_template(template_id="template-001", **kwargs):
     """Create a minimal valid Template instance."""
@@ -192,7 +192,7 @@ class TestTemplateAggregate:
 
         template2 = _make_template(
             template_id="template-001",  # Same ID
-            name="template-2",           # Different name
+            name="template-2",  # Different name
         )
 
         template3 = _make_template(template_id="template-002", name="template-1")

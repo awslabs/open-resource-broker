@@ -16,7 +16,7 @@ def register_registry_services(container: DIContainer) -> None:
         SchedulerRegistryService,
         lambda c: SchedulerRegistryService(
             registry=get_scheduler_registry(),  # type: ignore[arg-type]
-            logger=c.get(LoggingPort)
+            logger=c.get(LoggingPort),
         ),
     )
 
@@ -25,6 +25,6 @@ def register_registry_services(container: DIContainer) -> None:
         StorageRegistryService,
         lambda c: StorageRegistryService(
             registry=get_storage_registry(),  # type: ignore[arg-type]
-            logger=c.get(LoggingPort)
+            logger=c.get(LoggingPort),
         ),
     )

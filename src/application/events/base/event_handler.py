@@ -9,7 +9,7 @@ of concerns and DRY compliance.
 import asyncio
 import time
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Optional
+from typing import Any, Optional
 
 from domain.base.events import DomainEvent
 from domain.base.ports import LoggingPort
@@ -218,7 +218,7 @@ class EventHandler(ABC):
                 result[field_name] = getattr(event, field_name)
             # Then try event data if it exists
             elif hasattr(event, "data") and isinstance(getattr(event, "data", None), dict):
-                result[field_name] = getattr(event, "data").get(field_name, default_value)  # type: ignore[union-attr]
+                result[field_name] = event.data.get(field_name, default_value)  # type: ignore[union-attr]
             else:
                 result[field_name] = default_value
 

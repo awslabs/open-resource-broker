@@ -25,7 +25,7 @@ def format_error_message(error: Exception, include_traceback: bool = False) -> s
 
     # Include error code for domain exceptions
     if hasattr(error, "error_code") and getattr(error, "error_code", None):
-        base_msg = f"{getattr(error, 'error_code')}: {error_msg}"
+        base_msg = f"{error.error_code}: {error_msg}"
     else:
         base_msg = f"{error_type}: {error_msg}"
 
@@ -58,7 +58,7 @@ def build_error_context(error: Exception, **kwargs) -> dict[str, Any]:
 
     # Include error details for domain exceptions
     if hasattr(error, "details") and getattr(error, "details", None):
-        context["error_details"] = getattr(error, "details")
+        context["error_details"] = error.details
 
     return context
 
@@ -102,7 +102,7 @@ def generate_error_code(error: Exception, prefix: Optional[str] = None) -> str:
     """
     # Use existing error code if available
     if hasattr(error, "error_code") and getattr(error, "error_code", None):
-        base_code = getattr(error, "error_code")
+        base_code = error.error_code
     else:
         # Generate from exception type name
         error_type = type(error).__name__

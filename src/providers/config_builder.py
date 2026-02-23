@@ -80,8 +80,8 @@ class ProviderConfigBuilder:
             "profile": "ORB_AWS_PROFILE",
             "role_arn": "ORB_AWS_ROLE_ARN",
             "access_key_id": "ORB_AWS_ACCESS_KEY_ID",
-            "secret_access_key": "ORB_AWS_SECRET_ACCESS_KEY",  # nosec B105
-            "session_token": "ORB_AWS_SESSION_TOKEN",  # nosec B105
+            "secret_access_key": "ORB_AWS_SECRET_ACCESS_KEY",
+            "session_token": "ORB_AWS_SESSION_TOKEN",
             "endpoint_url": "ORB_AWS_ENDPOINT_URL",
             "aws_max_retries": "ORB_AWS_AWS_MAX_RETRIES",
             "aws_read_timeout": "ORB_AWS_AWS_READ_TIMEOUT",
@@ -142,6 +142,4 @@ class ProviderConfigBuilder:
                 try:
                     config_dict[field_name] = json.loads(os.environ[env_var_name])
                 except (json.JSONDecodeError, ValueError) as e:
-                    self._logger.warning(
-                        "Failed to parse JSON from %s: %s", env_var_name, e
-                    )
+                    self._logger.warning("Failed to parse JSON from %s: %s", env_var_name, e)

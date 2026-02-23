@@ -384,7 +384,11 @@ class CLICommandFactoryOrchestrator:
                         count = count or hf.get("machineCount") or hf.get("machine_count")
                     else:
                         template_id = input_data.get("templateId") or input_data.get("template_id")
-                        count = count or input_data.get("machineCount") or input_data.get("machine_count")
+                        count = (
+                            count
+                            or input_data.get("machineCount")
+                            or input_data.get("machine_count")
+                        )
                 return self.create_create_request_command(
                     template_id=template_id,
                     count=count or 1,

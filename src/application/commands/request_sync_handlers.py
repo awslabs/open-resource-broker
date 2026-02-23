@@ -96,8 +96,12 @@ class PopulateMachineIdsHandler(BaseCommandHandler[PopulateMachineIdsCommand, No
                 exc_info=True,
                 extra={
                     "request_id": str(request.request_id),
-                    "provider_name": request.provider_name if hasattr(request, "provider_name") else None,
-                    "resource_count": len(request.resource_ids) if hasattr(request, "resource_ids") and request.resource_ids else 0,
+                    "provider_name": request.provider_name
+                    if hasattr(request, "provider_name")
+                    else None,
+                    "resource_count": len(request.resource_ids)
+                    if hasattr(request, "resource_ids") and request.resource_ids
+                    else 0,
                     "error_type": type(e).__name__,
                 },
             )
@@ -162,7 +166,9 @@ class SyncRequestHandler(BaseCommandHandler[SyncRequestCommand, None]):  # type:
             )
 
             if new_status:
-                await status_service.update_request_status(request, new_status, status_message or "")
+                await status_service.update_request_status(
+                    request, new_status, status_message or ""
+                )
 
             if request.metadata.get("provider_api") == "ASG":
                 await self._asg_metadata_service.update_asg_metadata_if_needed(

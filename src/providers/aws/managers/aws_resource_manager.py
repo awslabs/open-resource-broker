@@ -53,7 +53,9 @@ class AWSResourceManagerImpl(CloudProviderResourceManager[AWSClient]):
         # This is a simplified version
         try:
             # Example: Get EC2 instance status
-            response = await self.provider_client.ec2_client.describe_instances(InstanceIds=[str(resource_id)])
+            response = await self.provider_client.ec2_client.describe_instances(
+                InstanceIds=[str(resource_id)]
+            )
 
             if not response.get("Reservations"):
                 raise ValueError(f"Resource not found: {resource_id}")

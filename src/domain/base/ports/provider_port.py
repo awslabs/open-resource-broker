@@ -7,18 +7,12 @@ Clients should depend on the specific focused interfaces they need rather than t
 from abc import ABC, abstractmethod
 from typing import Any
 
-from .provider_discovery_port import ProviderDiscoveryPort
 from .provider_monitoring_port import ProviderMonitoringPort
 from .provider_provisioning_port import ProviderProvisioningPort
 from .provider_template_port import ProviderTemplatePort
 
 
-class ProviderPort(
-    ProviderProvisioningPort,
-    ProviderTemplatePort,
-    ProviderMonitoringPort,
-    ABC
-):
+class ProviderPort(ProviderProvisioningPort, ProviderTemplatePort, ProviderMonitoringPort, ABC):
     """Composite provider port combining provisioning, template, and monitoring operations.
 
     This interface is provided for backward compatibility and for implementations

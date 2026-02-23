@@ -1,7 +1,7 @@
 """Configuration port for domain layer."""
 
 from abc import abstractmethod
-from typing import Any, Optional
+from typing import Any
 
 from .provider_config_port import ProviderConfigPort
 

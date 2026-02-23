@@ -79,15 +79,16 @@ def create_dynamodb_unit_of_work(config: Any) -> Any:
     Returns:
         DynamoDBUnitOfWork instance with correctly configured AWS client
     """
-    from providers.aws.session_factory import AWSSessionFactory
     from botocore.config import Config
+
+    from providers.aws.session_factory import AWSSessionFactory
 
     _BOTO_CONFIG = Config(connect_timeout=10, read_timeout=30, retries={"max_attempts": 3})
 
     from config.manager import ConfigurationManager
     from config.schemas.storage_schema import StorageConfig
-    from infrastructure.storage.dynamodb.unit_of_work import DynamoDBUnitOfWork
     from infrastructure.logging.logger import get_logger
+    from infrastructure.storage.dynamodb.unit_of_work import DynamoDBUnitOfWork
 
     _logger = get_logger(__name__)
 

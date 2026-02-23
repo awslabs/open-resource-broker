@@ -12,7 +12,6 @@ from infrastructure.storage.base.repository_mixin import StorageRepositoryMixin
 from infrastructure.storage.base.strategy import BaseStorageStrategy
 from infrastructure.storage.components import (
     EntityCache,
-    EntitySerializer,
     EventPublisher,
     MemoryEntityCache,
     NoOpEventPublisher,

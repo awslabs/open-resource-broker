@@ -4,7 +4,6 @@ import pytest
 
 from domain.base.exceptions import (
     ApplicationError,
-    DomainException,
     InfrastructureError,
     ValidationError,
 )
@@ -169,9 +168,7 @@ class TestHandleExceptionsDecorator:
     def test_decorator_translates_exception(self):
         """Test decorator translates non-domain exceptions."""
 
-        @handle_exceptions(
-            operation="test", layer="infrastructure", translate_to="infrastructure"
-        )
+        @handle_exceptions(operation="test", layer="infrastructure", translate_to="infrastructure")
         def raises_value_error():
             raise ValueError("Something went wrong")
 

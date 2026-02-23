@@ -158,7 +158,6 @@ def setup_multi_asg_templates():
 
     (test_config_dir / "logs").mkdir(parents=True, exist_ok=True)
     (test_config_dir / "work").mkdir(parents=True, exist_ok=True)
-    (combined_config_dir / "work").mkdir(parents=True, exist_ok=True)
 
     hfm = HostFactoryMock()
 

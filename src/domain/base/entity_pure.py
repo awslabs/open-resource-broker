@@ -15,7 +15,7 @@ class Entity(ABC):
         id: Optional[Any] = None,
         created_at: Optional[datetime] = None,
         updated_at: Optional[datetime] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         """Initialize entity with identity and timestamps.
 

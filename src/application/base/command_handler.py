@@ -12,7 +12,7 @@ Architecture:
 from typing import Any, Optional, TypeVar
 
 # Import the CQRS interface
-from application.dto.base import BaseCommand, BaseResponse
+from application.dto.base import BaseCommand
 from application.interfaces.command_handler import CommandHandler
 
 # Type variables for generic command handlers - bound to match CommandHandler constraints

@@ -1,11 +1,8 @@
 """Tests for fleet capacity metadata extraction."""
 
-import types
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 import pytest
-
-from providers.aws.domain.template.value_objects import ProviderApi
 
 
 class _NoopLogger:
@@ -30,7 +27,7 @@ def test_ec2_fleet_capacity_data_extraction():
         ]
     }
 
-    handler = EC2FleetHandler(
+    EC2FleetHandler(
         aws_client=mock_aws_client,
         logger=_NoopLogger(),
         aws_ops=Mock(),
@@ -62,7 +59,7 @@ def test_spot_fleet_capacity_data_extraction():
         ]
     }
 
-    handler = SpotFleetHandler(
+    SpotFleetHandler(
         aws_client=mock_aws_client,
         logger=_NoopLogger(),
         aws_ops=Mock(),
@@ -100,7 +97,7 @@ def test_asg_capacity_data_extraction():
         ]
     }
 
-    handler = ASGHandler(
+    ASGHandler(
         aws_client=mock_aws_client,
         logger=_NoopLogger(),
         aws_ops=Mock(),

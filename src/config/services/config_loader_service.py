@@ -65,19 +65,13 @@ class ConfigLoaderService:
         )
 
         # Resolve the file path
-        resolved_path = self.path_resolver.resolve_file_path(
-            file_type, filename, explicit_path
-        )
+        resolved_path = self.path_resolver.resolve_file_path(file_type, filename, explicit_path)
 
         if not resolved_path or not os.path.exists(resolved_path):
             if required:
-                logger.error(
-                    "Required %s configuration file not found: %s", file_type, filename
-                )
+                logger.error("Required %s configuration file not found: %s", file_type, filename)
             else:
-                logger.debug(
-                    "Optional %s configuration file not found: %s", file_type, filename
-                )
+                logger.debug("Optional %s configuration file not found: %s", file_type, filename)
             return None
 
         # Load the file
@@ -127,9 +121,7 @@ class ConfigLoaderService:
             if default_config_path.exists():
                 with open(default_config_path) as f:
                     config_data = json.load(f)
-                    logger.info(
-                        "Loaded default configuration from %s", default_config_path
-                    )
+                    logger.info("Loaded default configuration from %s", default_config_path)
                     return config_data
             else:
                 logger.warning(f"Default config not found: {default_config_path}")

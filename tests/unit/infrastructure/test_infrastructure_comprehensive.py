@@ -182,9 +182,7 @@ class TestPersistenceLayerComprehensive:
 
         for repo_file in repo_files:
             try:
-                module = importlib.import_module(
-                    f"infrastructure.storage.repositories.{repo_file}"
-                )
+                module = importlib.import_module(f"infrastructure.storage.repositories.{repo_file}")
                 repo_modules.append((repo_file, module))
             except ImportError:
                 continue

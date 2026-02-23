@@ -1,19 +1,18 @@
 """Integration tests for security features: JWT blacklist, input validation, auth middleware."""
 
 import time
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import jwt
 import pytest
 
-from infrastructure.auth.token_blacklist import InMemoryTokenBlacklist, RedisTokenBlacklist
+from infrastructure.adapters.ports.auth import AuthContext, AuthStatus
 from infrastructure.auth.strategy.bearer_token_strategy_enhanced import (
     EnhancedBearerTokenStrategy,
     RateLimiter,
 )
-from infrastructure.adapters.ports.auth import AuthContext, AuthResult, AuthStatus
+from infrastructure.auth.token_blacklist import InMemoryTokenBlacklist, RedisTokenBlacklist
 from infrastructure.validation.input_validator import InputValidator, ValidationError
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -652,8 +651,9 @@ class TestEnhancedAuthMiddlewareSecurityHeaders:
         """Build a minimal FastAPI app with EnhancedAuthMiddleware."""
         from fastapi import FastAPI
         from fastapi.testclient import TestClient
-        from infrastructure.auth.strategy.no_auth_strategy import NoAuthStrategy
+
         from api.middleware.auth_middleware_enhanced import EnhancedAuthMiddleware
+        from infrastructure.auth.strategy.no_auth_strategy import NoAuthStrategy
 
         app = FastAPI()
 
@@ -729,8 +729,9 @@ class TestEnhancedAuthMiddlewareSecurityHeaders:
 
     def test_path_normalization_prevents_traversal(self):
         """Normalized paths must not allow traversal to bypass excluded paths."""
-        from api.middleware.auth_middleware_enhanced import EnhancedAuthMiddleware
         from unittest.mock import MagicMock
+
+        from api.middleware.auth_middleware_enhanced import EnhancedAuthMiddleware
 
         middleware = EnhancedAuthMiddleware(
             app=MagicMock(),
@@ -752,8 +753,9 @@ class TestEnhancedAuthMiddlewareSecurityHeaders:
 
     def test_excluded_path_exact_match_only(self):
         """Prefix paths must not bypass auth via excluded path matching."""
-        from api.middleware.auth_middleware_enhanced import EnhancedAuthMiddleware
         from unittest.mock import MagicMock
+
+        from api.middleware.auth_middleware_enhanced import EnhancedAuthMiddleware
 
         middleware = EnhancedAuthMiddleware(
             app=MagicMock(),

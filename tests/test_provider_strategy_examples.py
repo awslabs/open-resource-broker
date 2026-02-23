@@ -1,3 +1,4 @@
+# ruff: noqa: F821
 """
 Comprehensive test examples for Provider Strategy Pattern.
 
@@ -9,7 +10,9 @@ import time
 
 import pytest
 
-pytestmark = pytest.mark.skip(reason="create_provider_context removed - using Provider Registry directly")
+pytestmark = pytest.mark.skip(
+    reason="create_provider_context removed - using Provider Registry directly"
+)
 
 from providers.base.strategy import (
     CompositeProviderStrategy,

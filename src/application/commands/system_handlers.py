@@ -1,7 +1,5 @@
 """System command handlers for administrative operations."""
 
-from typing import Any
-
 from application.base.handlers import BaseCommandHandler
 from application.commands.system import (
     RefreshTemplatesCommand,

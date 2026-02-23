@@ -102,11 +102,7 @@ class MachineDTO(BaseDTO):
                 {
                     "provider_api": (str(machine.provider_api) if machine.provider_api else None),
                     "resource_id": (str(machine.resource_id) if machine.resource_id else None),
-                    "price_type": (
-                        machine.price_type
-                        if machine.price_type
-                        else None
-                    ),
+                    "price_type": (machine.price_type if machine.price_type else None),
                     "cloud_host_id": machine.provider_data.get("cloud_host_id"),
                     "metadata": machine.metadata,
                     "health_checks": machine.provider_data.get("health_checks"),

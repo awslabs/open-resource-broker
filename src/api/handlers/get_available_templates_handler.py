@@ -105,7 +105,9 @@ class GetAvailableTemplatesRESTHandler(BaseAPIHandler[dict[str, Any], dict[str, 
 
             # Record metrics if available
             if self._metrics_collector:
-                cast(Any, self._metrics_collector).record_api_success("get_available_templates", len(templates))
+                cast(Any, self._metrics_collector).record_api_success(
+                    "get_available_templates", len(templates)
+                )
 
             return formatted_response
 
@@ -119,7 +121,9 @@ class GetAvailableTemplatesRESTHandler(BaseAPIHandler[dict[str, Any], dict[str, 
 
             # Record metrics if available
             if self._metrics_collector:
-                cast(Any, self._metrics_collector).record_api_failure("get_available_templates", str(e))
+                cast(Any, self._metrics_collector).record_api_failure(
+                    "get_available_templates", str(e)
+                )
 
             raise
 

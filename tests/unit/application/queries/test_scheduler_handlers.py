@@ -29,13 +29,20 @@ class TestListSchedulerStrategiesHandler:
         """Create handler instance."""
         from application.services.scheduler_registry_service import SchedulerRegistryService
         from domain.services.generic_filter_service import GenericFilterService
+
         mock_logger = Mock()
         mock_error_handler = Mock()
         mock_scheduler_service = Mock(spec=SchedulerRegistryService)
-        mock_scheduler_service.get_available_schedulers.return_value = ["default", "hostfactory", "hf"]
+        mock_scheduler_service.get_available_schedulers.return_value = [
+            "default",
+            "hostfactory",
+            "hf",
+        ]
         mock_filter_service = Mock(spec=GenericFilterService)
         mock_filter_service.apply_filters.side_effect = lambda items, **kwargs: items
-        return ListSchedulerStrategiesHandler(mock_logger, mock_error_handler, mock_scheduler_service, mock_filter_service)
+        return ListSchedulerStrategiesHandler(
+            mock_logger, mock_error_handler, mock_scheduler_service, mock_filter_service
+        )
 
     @pytest.fixture
     def mock_registry(self):
@@ -128,12 +135,23 @@ class TestGetSchedulerConfigurationHandler:
     def handler(self):
         """Create handler instance."""
         from application.services.scheduler_registry_service import SchedulerRegistryService
+
         mock_logger = Mock()
         mock_error_handler = Mock()
         mock_scheduler_service = Mock(spec=SchedulerRegistryService)
-        mock_scheduler_service.get_available_schedulers.return_value = ["default", "hostfactory", "hf"]
-        mock_scheduler_service.is_scheduler_registered.side_effect = lambda name: name in ["default", "hostfactory", "hf"]
-        return GetSchedulerConfigurationHandler(mock_logger, mock_error_handler, mock_scheduler_service)
+        mock_scheduler_service.get_available_schedulers.return_value = [
+            "default",
+            "hostfactory",
+            "hf",
+        ]
+        mock_scheduler_service.is_scheduler_registered.side_effect = lambda name: name in [
+            "default",
+            "hostfactory",
+            "hf",
+        ]
+        return GetSchedulerConfigurationHandler(
+            mock_logger, mock_error_handler, mock_scheduler_service
+        )
 
     @pytest.fixture
     def mock_config_manager(self):
@@ -235,13 +253,21 @@ class TestValidateSchedulerConfigurationHandler:
     def handler(self):
         """Create handler instance."""
         from unittest.mock import Mock
+
         from application.services.scheduler_registry_service import SchedulerRegistryService
+
         mock_logger = Mock()
         mock_error_handler = Mock()
         mock_scheduler_service = Mock(spec=SchedulerRegistryService)
-        mock_scheduler_service.get_available_schedulers.return_value = ["default", "hostfactory", "hf"]
+        mock_scheduler_service.get_available_schedulers.return_value = [
+            "default",
+            "hostfactory",
+            "hf",
+        ]
         mock_scheduler_service.create_scheduler_strategy.return_value = Mock()
-        return ValidateSchedulerConfigurationHandler(mock_logger, mock_error_handler, mock_scheduler_service)
+        return ValidateSchedulerConfigurationHandler(
+            mock_logger, mock_error_handler, mock_scheduler_service
+        )
 
     @pytest.fixture
     def mock_config_manager(self):
@@ -318,7 +344,9 @@ class TestValidateSchedulerConfigurationHandler:
         query = ValidateSchedulerConfigurationQuery(scheduler_name="hostfactory")
 
         # Make the handler's scheduler service raise on strategy creation
-        handler._scheduler_service.create_scheduler_strategy.side_effect = Exception("Creation failed")
+        handler._scheduler_service.create_scheduler_strategy.side_effect = Exception(
+            "Creation failed"
+        )
 
         with (
             patch(

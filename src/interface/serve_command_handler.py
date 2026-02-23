@@ -22,7 +22,7 @@ async def handle_serve_api(args) -> dict[str, Any]:
 
     # Extract parameters from args
     # Intentional binding for server deployment
-    host = getattr(args, "host", "0.0.0.0")  # nosec B104
+    host = getattr(args, "host", "0.0.0.0")
     port = getattr(args, "port", 8000)
     workers = getattr(args, "workers", 1)
     reload = getattr(args, "reload", False)

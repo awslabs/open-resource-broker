@@ -83,7 +83,11 @@ class UpdateMachineStatusHandler(BaseCommandHandler[UpdateMachineStatusCommand, 
             raise MachineNotFoundError(command.machine_id)
 
         # Update status
-        machine.update_status(MachineStatus.from_str(command.status) if isinstance(command.status, str) else command.status)  # type: ignore[arg-type]
+        machine.update_status(
+            MachineStatus.from_str(command.status)
+            if isinstance(command.status, str)
+            else command.status
+        )  # type: ignore[arg-type]
 
         # Save changes and get extracted events
         self._machine_repository.save(machine)
@@ -306,8 +310,6 @@ class CleanupMachineResourcesHandler(BaseCommandHandler[CleanupMachineResourcesC
 
             # Save changes
             self._machine_repository.save(machine)
-
-        return None
 
 
 @command_handler(RegisterMachineCommand)  # type: ignore[arg-type]

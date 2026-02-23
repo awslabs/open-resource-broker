@@ -13,7 +13,6 @@ from typing import Any, Callable, Optional, TypeVar
 
 from domain.base.exceptions import (
     ApplicationError,
-    ConfigurationError,
     DomainException,
     InfrastructureError,
     ValidationError,
@@ -91,7 +90,7 @@ class ExceptionTranslator:
         Returns:
             InfrastructureError with context
         """
-        message = f"{context.operation} failed: {str(exception)}"
+        message = f"{context.operation} failed: {exception!s}"
 
         details = context.to_dict()
         details["original_exception"] = type(exception).__name__
@@ -121,7 +120,7 @@ class ExceptionTranslator:
         Returns:
             ApplicationError with context
         """
-        message = f"{context.operation} failed: {str(exception)}"
+        message = f"{context.operation} failed: {exception!s}"
 
         details = context.to_dict()
         details["original_exception"] = type(exception).__name__
@@ -170,7 +169,7 @@ class ExceptionHandler:
             context: Exception context
             log_level: Logging level (debug/info/warning/error)
         """
-        log_message = f"{context.layer}.{context.operation} failed: {str(exception)}"
+        log_message = f"{context.layer}.{context.operation} failed: {exception!s}"
         log_extra = context.to_dict()
 
         if log_level == "debug":

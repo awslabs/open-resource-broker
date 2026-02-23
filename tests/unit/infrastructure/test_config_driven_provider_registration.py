@@ -1,8 +1,6 @@
 """Tests for config-driven provider registration."""
 
-from unittest.mock import MagicMock, Mock, patch
-
-import pytest
+from unittest.mock import MagicMock, patch
 
 from config.schemas.provider_strategy_schema import (
     ProviderConfig,
@@ -40,9 +38,7 @@ class TestConfigDrivenProviderRegistration:
 
         with (
             patch("importlib.util.find_spec", return_value=MagicMock()),
-            patch(
-                "providers.aws.registration.register_aws_services_with_di"
-            ) as mock_aws_register,
+            patch("providers.aws.registration.register_aws_services_with_di") as mock_aws_register,
         ):
             _register_provider_utility_services(container)
             mock_aws_register.assert_called_once_with(container)
@@ -155,9 +151,7 @@ class TestConfigDrivenProviderRegistration:
     def test_provider_config_default_values(self):
         """Test ProviderConfig has sensible defaults."""
         provider_config = ProviderConfig(
-            providers=[
-                ProviderInstanceConfig(name="aws-test", type="aws", enabled=True)
-            ]
+            providers=[ProviderInstanceConfig(name="aws-test", type="aws", enabled=True)]
         )
 
         assert provider_config.selection_policy == "FIRST_AVAILABLE"

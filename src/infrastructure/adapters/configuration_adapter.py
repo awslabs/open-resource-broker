@@ -230,7 +230,9 @@ class ConfigurationAdapter(ConfigurationPort):
         """Get typed configuration for compatibility with ConfigurationManager."""
         return self._config_manager.get_typed(key)  # type: ignore[arg-type]
 
-    def resolve_file(self, path: str, filename: str = "", explicit_path: Optional[str] = None) -> str:  # type: ignore[override]
+    def resolve_file(
+        self, path: str, filename: str = "", explicit_path: Optional[str] = None
+    ) -> str:  # type: ignore[override]
         """Resolve file path for compatibility with ConfigurationManager."""
         return self._config_manager.resolve_file(path, filename, explicit_path)
 

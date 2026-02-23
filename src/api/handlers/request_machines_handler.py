@@ -1,7 +1,7 @@
 """API handler for requesting machines."""
 
 import time
-from typing import Optional, cast, Any
+from typing import Any, Optional, cast
 
 from api.models import RequestMachinesModel
 from api.validation import ValidationException

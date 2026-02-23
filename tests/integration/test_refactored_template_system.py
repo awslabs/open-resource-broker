@@ -14,7 +14,6 @@ import pytest
 
 from config.manager import ConfigurationManager
 from domain.base.ports.logging_port import LoggingPort
-from domain.base.ports.scheduler_port import SchedulerPort
 from infrastructure.template.configuration_manager import TemplateConfigurationManager
 from infrastructure.template.dtos import TemplateDTO
 from infrastructure.template.services.template_storage_service import (

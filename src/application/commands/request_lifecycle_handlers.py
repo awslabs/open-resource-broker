@@ -17,6 +17,7 @@ from domain.base.ports import (
     LoggingPort,
 )
 from domain.request.repository import RequestRepository
+from domain.request.request_types import RequestStatus
 
 
 @command_handler(UpdateRequestStatusCommand)  # type: ignore[arg-type]
@@ -122,7 +123,7 @@ class CancelRequestHandler(BaseCommandHandler[CancelRequestCommand, None]):  # t
             cancelled_request = request.cancel(reason=command.reason)
 
             events = self._request_repository.save(cancelled_request)
-            for event in (events or []):
+            for event in events or []:
                 self.event_publisher.publish(event)  # type: ignore[union-attr]
 
             self.logger.info("Request canceled: %s", command.request_id)
@@ -181,7 +182,7 @@ class CompleteRequestHandler(BaseCommandHandler[CompleteRequestCommand, None]): 
             request = request.update_status(RequestStatus.COMPLETED, "Request completed")  # type: ignore[attr-defined]
 
             events = self._request_repository.save(request)
-            for event in (events or []):
+            for event in events or []:
                 self.event_publisher.publish(event)  # type: ignore[union-attr]
 
             self.logger.info("Request completed: %s", command.request_id)

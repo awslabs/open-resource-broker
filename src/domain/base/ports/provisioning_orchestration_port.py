@@ -5,9 +5,9 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
+    from domain.base.results import ProviderSelectionResult
     from domain.request.aggregate import Request
     from domain.template.template_aggregate import Template
-    from domain.base.results import ProviderSelectionResult
 
 
 @dataclass

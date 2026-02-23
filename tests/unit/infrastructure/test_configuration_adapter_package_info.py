@@ -51,7 +51,6 @@ class TestConfigurationAdapterPackageInfo:
 
     def test_get_package_info_import_error_fallback(self):
         """Test that ImportError is raised when _package module is not available."""
-        import sys
         from unittest.mock import patch
 
         # Setting sys.modules["_package"] = None forces ImportError on `from _package import ...`

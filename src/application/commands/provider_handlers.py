@@ -75,6 +75,7 @@ class SelectProviderStrategyHandler(
 
             # Select optimal strategy based on criteria
             from providers.base.strategy import ProviderOperation, SelectionCriteria
+
             operation = ProviderOperation(
                 operation_type=command.operation_type,
                 parameters={},
@@ -87,7 +88,10 @@ class SelectProviderStrategyHandler(
                 else {str(i): s for i, s in enumerate(available_strategies)}
             )
             selection_result = selector.select_strategy(
-                strategies_dict, {}, operation, criteria  # type: ignore[arg-type]
+                strategies_dict,
+                {},
+                operation,
+                criteria,  # type: ignore[arg-type]
             )
 
             if not selection_result.selected_strategy:

@@ -145,9 +145,6 @@ def hash_string(value: str, algorithm: str = "sha256") -> str:
     if algorithm == "md5":
         # Use usedforsecurity=False to indicate this is not for security purposes
         return hashlib.md5(value.encode(), usedforsecurity=False).hexdigest()
-    elif algorithm == "sha1":
-        # Use usedforsecurity=False to indicate this is not for security purposes
-        return hashlib.sha1(value.encode(), usedforsecurity=False).hexdigest()
     elif algorithm == "sha256":
         return hashlib.sha256(value.encode()).hexdigest()
     elif algorithm == "sha512":
@@ -240,6 +237,7 @@ def convert_dict_keys(data: dict[str, Any], case_type: str) -> dict[str, Any]:
             result[new_key] = value
 
     return result
+
 
 def extract_provider_type(provider_name: str) -> str:
     """Extract provider type from a provider name.

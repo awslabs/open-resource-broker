@@ -1,10 +1,8 @@
 """Unit tests for RequestStatusManagementService._update_request_status logic."""
 
-import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 from application.services.request_status_management_service import RequestStatusManagementService
-from application.services.provisioning_orchestration_service import ProvisioningResult
 from domain.request.request_types import RequestStatus
 
 
@@ -36,7 +34,7 @@ class TestUpdateRequestStatus:
 
     def test_full_success_sets_completed(self):
         req = _make_request(requested_count=2)
-        result = self.svc._update_request_status(
+        self.svc._update_request_status(
             request=req,
             instance_count=2,
             requested_count=2,
@@ -50,7 +48,7 @@ class TestUpdateRequestStatus:
     def test_full_count_with_errors_sets_partial(self):
         req = _make_request(requested_count=2)
         errors = [{"error_code": "InsufficientCapacity", "error_message": "No capacity"}]
-        result = self.svc._update_request_status(
+        self.svc._update_request_status(
             request=req,
             instance_count=2,
             requested_count=2,
@@ -62,7 +60,7 @@ class TestUpdateRequestStatus:
 
     def test_partial_count_no_errors_sets_partial(self):
         req = _make_request(requested_count=5)
-        result = self.svc._update_request_status(
+        self.svc._update_request_status(
             request=req,
             instance_count=3,
             requested_count=5,
@@ -75,7 +73,7 @@ class TestUpdateRequestStatus:
     def test_partial_count_with_errors_sets_partial(self):
         req = _make_request(requested_count=5)
         errors = [{"error_code": "Throttling", "error_message": "Rate exceeded"}]
-        result = self.svc._update_request_status(
+        self.svc._update_request_status(
             request=req,
             instance_count=2,
             requested_count=5,
@@ -87,7 +85,7 @@ class TestUpdateRequestStatus:
 
     def test_zero_instances_sets_in_progress(self):
         req = _make_request(requested_count=3)
-        result = self.svc._update_request_status(
+        self.svc._update_request_status(
             request=req,
             instance_count=0,
             requested_count=3,
@@ -119,7 +117,7 @@ class TestHandleProvisioningFailure:
         req = _make_request()
         prov_result = MagicMock()
         prov_result.error_message = "Provider timeout"
-        result = self.svc._handle_provisioning_failure(req, prov_result)
+        self.svc._handle_provisioning_failure(req, prov_result)
         req.update_status.assert_called_once()
         call_args = req.update_status.call_args[0]
         assert call_args[0] == RequestStatus.FAILED
@@ -180,6 +178,7 @@ class TestExtractInstanceIds:
         class BadResult:
             def get(self, *a):
                 raise AttributeError("no get")
+
         ids = self.svc._extract_instance_ids(BadResult())
         assert ids == []
 

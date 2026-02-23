@@ -346,4 +346,6 @@ class MetricsCollector:
                     try:
                         file.unlink()
                     except Exception as e:
-                        logger.warning("Failed to delete old metrics file %s: %s", file, e, exc_info=True)
+                        logger.warning(
+                            "Failed to delete old metrics file %s: %s", file, e, exc_info=True
+                        )

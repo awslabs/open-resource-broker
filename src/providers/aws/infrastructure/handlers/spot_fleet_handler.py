@@ -856,7 +856,9 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
             raise AWSInfrastructureError(f"Failed to check Spot Fleet status: {e!s}")
 
     def _get_spot_fleet_instances(
-        self, fleet_id: str, request_id: str = None  # type: ignore[assignment]
+        self,
+        fleet_id: str,
+        request_id: str = None,  # type: ignore[assignment]
     ) -> list[dict[str, Any]]:
         """Get instances for a specific spot fleet."""
         # Get fleet information

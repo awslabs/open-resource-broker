@@ -4,7 +4,9 @@ from unittest.mock import AsyncMock, Mock
 
 import pytest
 
-pytestmark = pytest.mark.skip(reason="application.services modules removed (provider_capability_service, provider_selection_service)")
+pytestmark = pytest.mark.skip(
+    reason="application.services modules removed (provider_capability_service, provider_selection_service)"
+)
 
 from application.commands.request_handlers import CreateMachineRequestHandler
 from application.dto.commands import CreateRequestCommand
@@ -12,6 +14,7 @@ from application.dto.commands import CreateRequestCommand
 try:
     from application.services.provider_capability_service import ProviderCapabilityService
     from application.services.provider_selection_service import ProviderSelectionService
+
     HAS_SERVICES = True
 except ImportError:
     HAS_SERVICES = False
@@ -21,6 +24,7 @@ from infrastructure.di.buses import QueryBus
 
 try:
     from providers.base.strategy import ProviderContext
+
     HAS_PROVIDER_CONTEXT = True
 except ImportError:
     HAS_PROVIDER_CONTEXT = False

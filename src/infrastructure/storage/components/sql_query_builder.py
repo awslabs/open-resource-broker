@@ -97,7 +97,7 @@ class SQLQueryBuilder(QueryManager):
         for column_name, column_type in self.columns.items():
             column_definitions.append(f"{column_name} {column_type}")
 
-        query = f"CREATE TABLE IF NOT EXISTS {self.table_name} (\n"  # nosec B608
+        query = f"CREATE TABLE IF NOT EXISTS {self.table_name} (\n"
         query += ",\n".join(f"    {col_def}" for col_def in column_definitions)
         query += "\n)"
 
@@ -130,10 +130,9 @@ class SQLQueryBuilder(QueryManager):
         # Build query using validated identifiers
         # 1. Validating table_name and column names against a whitelist pattern
         # 2. Using parameterized queries for all values with :param syntax
-        # nosec B608
         query = (
-            f"INSERT INTO {self.table_name} "  # nosec B608
-            f"({', '.join(columns)}) VALUES ({', '.join(placeholders)})"  # nosec B608
+            f"INSERT INTO {self.table_name} "
+            f"({', '.join(columns)}) VALUES ({', '.join(placeholders)})"
         )
 
         self.logger.debug("Built INSERT query for %s", self.table_name)
@@ -151,12 +150,7 @@ class SQLQueryBuilder(QueryManager):
         """
         # Validate identifier
         self._validate_identifier(id_column)
-
-        # nosec B608
-        query = (
-            f"SELECT * FROM {self.table_name} "  # nosec B608
-            f"WHERE {id_column} = :{id_column}"  # nosec B608
-        )
+        query = f"SELECT * FROM {self.table_name} WHERE {id_column} = :{id_column}"
 
         self.logger.debug("Built SELECT by ID query for %s", self.table_name)
         return query, id_column
@@ -169,7 +163,7 @@ class SQLQueryBuilder(QueryManager):
             SELECT all SQL statement
         """
         # Table name already validated in constructor
-        query = f"SELECT * FROM {self.table_name}  # nosec B608"  # nosec B608
+        query = f"SELECT * FROM {self.table_name}"
 
         self.logger.debug("Built SELECT all query for %s", self.table_name)
         return query
@@ -202,10 +196,8 @@ class SQLQueryBuilder(QueryManager):
             self._validate_identifier(column)
 
         set_clauses = [f"{col} = :{col}" for col in filtered_data.keys()]
-        # nosec B608
         query = (
-            f"UPDATE {self.table_name} SET {', '.join(set_clauses)} "  # nosec B608
-            f"WHERE {id_column} = :entity_id"  # nosec B608
+            f"UPDATE {self.table_name} SET {', '.join(set_clauses)} WHERE {id_column} = :entity_id"
         )
 
         # Add entity_id to parameters
@@ -227,12 +219,7 @@ class SQLQueryBuilder(QueryManager):
         """
         # Validate id_column
         self._validate_identifier(id_column)
-
-        # nosec B608
-        query = (
-            f"DELETE FROM {self.table_name} "  # nosec B608
-            f"WHERE {id_column} = :{id_column}"  # nosec B608
-        )
+        query = f"DELETE FROM {self.table_name} WHERE {id_column} = :{id_column}"
 
         self.logger.debug("Built DELETE query for %s", self.table_name)
         return query, id_column
@@ -247,7 +234,7 @@ class SQLQueryBuilder(QueryManager):
         Returns:
             Tuple of (query, parameter_name)
         """
-        query = f"SELECT 1 FROM {self.table_name} WHERE {id_column} = :{id_column} LIMIT 1"  # nosec B608
+        query = f"SELECT 1 FROM {self.table_name} WHERE {id_column} = :{id_column} LIMIT 1"
 
         self.logger.debug("Built EXISTS query for %s", self.table_name)
         return query, id_column
@@ -302,12 +289,7 @@ class SQLQueryBuilder(QueryManager):
                 param_name = f"{column}_eq"
                 where_clauses.append(f"{column} = :{param_name}")
                 parameters[param_name] = value
-
-        # nosec B608
-        query = (
-            f"SELECT * FROM {self.table_name} "  # nosec B608
-            f"WHERE {' AND '.join(where_clauses)}"  # nosec B608
-        )
+        query = f"SELECT * FROM {self.table_name} WHERE {' AND '.join(where_clauses)}"
 
         self.logger.debug("Built SELECT with criteria query for %s", self.table_name)
         return query, parameters
@@ -320,7 +302,7 @@ class SQLQueryBuilder(QueryManager):
             COUNT SQL statement
         """
         # Table name already validated in constructor
-        query = f"SELECT COUNT(*) FROM {self.table_name}"  # nosec B608
+        query = f"SELECT COUNT(*) FROM {self.table_name}"
 
         self.logger.debug("Built COUNT query for %s", self.table_name)
         return query
@@ -352,10 +334,9 @@ class SQLQueryBuilder(QueryManager):
             raise ValueError("No valid columns found in data")
 
         placeholders = [f":{col}" for col in filtered_columns]
-        # nosec B608
         query = (
-            f"INSERT INTO {self.table_name} "  # nosec B608
-            f"({', '.join(filtered_columns)}) VALUES ({', '.join(placeholders)})"  # nosec B608
+            f"INSERT INTO {self.table_name} "
+            f"({', '.join(filtered_columns)}) VALUES ({', '.join(placeholders)})"
         )
 
         # Filter all data items

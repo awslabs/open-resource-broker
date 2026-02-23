@@ -135,7 +135,9 @@ class ConfigurationManager:
         try:
             return self.get_typed(config_type)
         except (ConfigurationError, Exception) as e:
-            logger.warning(f"Configuration loading failed for {config_type.__name__}: {e}", exc_info=True)
+            logger.warning(
+                f"Configuration loading failed for {config_type.__name__}: {e}", exc_info=True
+            )
             logger.info(f"Using default configuration for {config_type.__name__}")
             return config_type()  # Use Pydantic defaults
 
@@ -433,7 +435,7 @@ class ConfigurationManager:
                 if os.path.exists(path):
                     logger.info("Using templates file: %s", filename)
                     return path
-            except Exception as e:  # nosec B112
+            except Exception as e:
                 logger.debug("Template file %s not found: %s", filename, e)
                 continue
 

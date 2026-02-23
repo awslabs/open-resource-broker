@@ -89,7 +89,9 @@ class TemplateDefaultsService(TemplateDefaultsPort):
                 )
 
                 # 3. Apply provider instance defaults
-                provider_instance_defaults = self._get_provider_instance_defaults(provider_instance_name)
+                provider_instance_defaults = self._get_provider_instance_defaults(
+                    provider_instance_name
+                )
                 resolved_defaults.update(provider_instance_defaults)
                 self.logger.debug(
                     "Applied %s provider instance defaults for %s",

@@ -10,6 +10,7 @@ from typing import ClassVar, Optional
 @dataclass(frozen=True)
 class ValueObject(ABC):
     """Base class for all value objects - immutable by design."""
+
     pass
 
 
@@ -25,7 +26,7 @@ class ResourceId(ValueObject):
         if not self.value or not self.value.strip():
             raise ValueError("Resource ID cannot be empty")
         # Use object.__setattr__ for frozen dataclass
-        object.__setattr__(self, 'value', self.value.strip())
+        object.__setattr__(self, "value", self.value.strip())
 
     def __str__(self) -> str:
         """Return string representation of resource ID."""
@@ -57,7 +58,7 @@ class ResourceQuota(ValueObject):
         # Ensure available = limit - used
         expected_available = self.limit - self.used
         if self.available != expected_available:
-            object.__setattr__(self, 'available', expected_available)
+            object.__setattr__(self, "available", expected_available)
 
     @property
     def utilization_percentage(self) -> float:
@@ -107,7 +108,7 @@ class InstanceType(ValueObject):
         stripped = self.value.strip()
         if not stripped:
             raise ValueError("Instance type must be a non-empty string")
-        object.__setattr__(self, 'value', stripped)
+        object.__setattr__(self, "value", stripped)
 
     def __str__(self) -> str:
         return self.value
@@ -126,7 +127,7 @@ class InstanceId(ValueObject):
         stripped = self.value.strip()
         if not stripped:
             raise ValueError("Instance ID must be a non-empty string")
-        object.__setattr__(self, 'value', stripped)
+        object.__setattr__(self, "value", stripped)
 
     def __str__(self) -> str:
         return self.value

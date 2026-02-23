@@ -9,9 +9,9 @@ from __future__ import annotations
 import asyncio
 from typing import Any
 
+from application.ports.query_bus_port import QueryBusPort
 from domain.base import UnitOfWorkFactory
 from domain.base.ports import ContainerPort, LoggingPort, ProviderSelectionPort
-from application.ports.query_bus_port import QueryBusPort
 
 
 class DeprovisioningOrchestrator:
@@ -179,9 +179,7 @@ class DeprovisioningOrchestrator:
             config_manager.get_provider_instance_config(provider_name)
 
             # Execute via provider selection port
-            result = await self._provider_selection_port.execute_operation(
-                provider_name, operation
-            )
+            result = await self._provider_selection_port.execute_operation(provider_name, operation)
 
             if result.success:
                 self.logger.info(

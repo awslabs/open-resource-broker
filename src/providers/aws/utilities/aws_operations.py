@@ -568,6 +568,6 @@ class AWSOperations:
             try:
                 package_info = self._config_port.get_package_info()
                 return package_info.get("name", "open-resource-broker")
-            except Exception:  # nosec B110 - Intentional fallback to default package name
+            except Exception:
                 pass
         return "open-resource-broker"

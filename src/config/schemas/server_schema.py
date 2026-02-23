@@ -57,7 +57,7 @@ class ServerConfig(BaseModel):
 
     enabled: bool = Field(False, description="Enable REST API server")
     # Intentional binding for server deployment
-    host: str = Field("0.0.0.0", description="Server host")  # nosec B104
+    host: str = Field("0.0.0.0", description="Server host")
     port: int = Field(8000, description="Server port")
     workers: int = Field(1, description="Number of worker processes")
     reload: bool = Field(False, description="Enable auto-reload for development")

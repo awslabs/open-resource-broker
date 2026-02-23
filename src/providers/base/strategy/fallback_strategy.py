@@ -283,9 +283,7 @@ class FallbackProviderStrategy(ProviderStrategy):
                 total_strategies,
             )
         else:
-            self._logger.error(
-                "Fallback strategy initialization failed: no strategies available"
-            )
+            self._logger.error("Fallback strategy initialization failed: no strategies available")
 
         return self._initialized
 
@@ -335,9 +333,7 @@ class FallbackProviderStrategy(ProviderStrategy):
 
         except Exception as e:
             total_time_ms = (time.time() - start_time) * 1000
-            self._logger.error(
-                "Fallback operation %s failed: %s", operation.operation_type, e
-            )
+            self._logger.error("Fallback operation %s failed: %s", operation.operation_type, e)
             return ProviderResult.error_result(
                 f"Fallback operation failed: {e!s}",
                 "FALLBACK_EXECUTION_ERROR",
@@ -372,9 +368,7 @@ class FallbackProviderStrategy(ProviderStrategy):
                     self._circuit_state.record_success()
                     if self._circuit_state.state == CircuitState.HALF_OPEN:
                         self._circuit_state.state = CircuitState.CLOSED
-                        self._logger.info(
-                            "Circuit breaker closed - primary strategy recovered"
-                        )
+                        self._logger.info("Circuit breaker closed - primary strategy recovered")
                     self._current_strategy = self._primary_strategy
                     return result
                 else:
@@ -551,9 +545,7 @@ class FallbackProviderStrategy(ProviderStrategy):
                 self._last_health_check = current_time
 
                 if not self._primary_healthy:
-                    self._logger.debug(
-                        "Primary strategy unhealthy: %s", health.status_message
-                    )
+                    self._logger.debug("Primary strategy unhealthy: %s", health.status_message)
 
             except Exception as e:
                 self._primary_healthy = False
@@ -698,9 +690,7 @@ class FallbackProviderStrategy(ProviderStrategy):
                         strategy.provider_type,
                     )
                 except Exception as e:
-                    self._logger.warning(
-                        "Error cleaning up fallback strategy %s: %s", i + 1, e
-                    )
+                    self._logger.warning("Error cleaning up fallback strategy %s: %s", i + 1, e)
 
             self._initialized = False
 

@@ -119,7 +119,7 @@ class MachineHistoryEvent(ValueObject):
     details: Optional[dict[str, Any]] = None
 
     @model_validator(mode="after")
-    def validate_event(self) -> "MachineHistoryEvent":
+    def validate_event(self) -> MachineHistoryEvent:
         """Validate machine history event."""
         if not self.event_type:
             raise ValueError("Event type is required")

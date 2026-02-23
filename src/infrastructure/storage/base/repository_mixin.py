@@ -1,6 +1,6 @@
 """Mixin providing common storage+deserialize patterns shared across repositories."""
 
-from typing import Any, Callable, Optional, Protocol, runtime_checkable
+from typing import Any, Optional, Protocol, runtime_checkable
 
 
 @runtime_checkable

@@ -294,7 +294,9 @@ class Request(AggregateRoot):
             "status_message": self.status_message,
             "successful_count": self.successful_count,
             "failed_count": self.failed_count,
-            "created_at": self.created_at.isoformat() if self.created_at else datetime.now(timezone.utc).isoformat(),
+            "created_at": self.created_at.isoformat()
+            if self.created_at
+            else datetime.now(timezone.utc).isoformat(),
             "metadata": self.metadata,
             "error_details": self.error_details,
             "provider_data": self.provider_data,

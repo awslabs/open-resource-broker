@@ -9,7 +9,6 @@ with a clean, maintainable architecture following DDD/SOLID/DRY principles.
 from application.events.base.logging_event_handler import LoggingEventHandler
 from application.events.decorators import event_handler
 from domain.base.events import DomainEvent
-from domain.base.ports import LoggingPort
 
 
 @event_handler("TemplateValidatedEvent")  # type: ignore[arg-type]

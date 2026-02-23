@@ -96,7 +96,11 @@ class TemplateProcessor:
         self._apply_template_overrides(templates_data, overrides)
         template_filename = "aws_templates.json"
         self._write_json(test_dir / template_filename, templates_data)
-        log.info("Generated %s with %d templates", template_filename, len(templates_data.get("templates", [])))
+        log.info(
+            "Generated %s with %d templates",
+            template_filename,
+            len(templates_data.get("templates", [])),
+        )
 
         # 2. Generate config.json (with scheduler/provider overrides)
         config_data = self._load_json(self.config_source_dir / "config.json")

@@ -39,9 +39,10 @@ class TestNativeSpecAllProviders:
             """Recursively render a value using Jinja2."""
             if isinstance(v, str):
                 try:
+                    import base64
+
                     from jinja2 import Environment, TemplateSyntaxError
                     from jinja2.exceptions import TemplateError
-                    import base64
 
                     env = Environment()
                     # Add b64encode filter so templates using it don't fail
@@ -54,6 +55,7 @@ class TestNativeSpecAllProviders:
                         tmpl = env.from_string(v)
                     except TemplateSyntaxError:
                         from domain.template.exceptions import InvalidTemplateConfigurationError
+
                         raise InvalidTemplateConfigurationError(f"Invalid template syntax: {v}")
                     try:
                         return tmpl.render(**ctx)
@@ -81,6 +83,7 @@ class TestNativeSpecAllProviders:
             # Load the file content via read_json_file then render
             try:
                 from infrastructure.utilities.file.json_utils import read_json_file
+
                 content = read_json_file(path)
                 return _render(content, ctx)
             except Exception:

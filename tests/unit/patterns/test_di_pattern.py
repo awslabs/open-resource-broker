@@ -24,7 +24,6 @@ from infrastructure.di.container import DIContainer
 from infrastructure.di.exceptions import (
     CircularDependencyError,
     InstantiationError,
-    UnregisteredDependencyError,
 )
 
 

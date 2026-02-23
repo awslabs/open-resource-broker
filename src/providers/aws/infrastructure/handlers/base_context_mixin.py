@@ -34,7 +34,7 @@ class BaseContextMixin:
             try:
                 package_info = self.config_port.get_package_info()  # type: ignore[attr-defined]
                 return package_info.get("name", "open-resource-broker")
-            except Exception:  # nosec B110
+            except Exception:
                 pass
         return "open-resource-broker"
 

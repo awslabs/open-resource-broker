@@ -5,7 +5,9 @@ from unittest.mock import Mock
 
 import pytest
 
-pytestmark = pytest.mark.skip(reason="infrastructure.registry.storage_registry module removed - using application services")
+pytestmark = pytest.mark.skip(
+    reason="infrastructure.registry.storage_registry module removed - using application services"
+)
 
 from domain.base.exceptions import ConfigurationError
 
@@ -17,6 +19,7 @@ try:
         get_storage_registry,
         reset_storage_registry,
     )
+
     HAS_STORAGE_REGISTRY = True
 except ImportError:
     HAS_STORAGE_REGISTRY = False

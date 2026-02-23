@@ -360,7 +360,6 @@ class TestDIContainer:
 
     def test_circular_dependency_detection(self):
         """Test circular dependency detection."""
-        from infrastructure.di.exceptions import CircularDependencyError
 
         # Use a class that requires itself indirectly via a registered singleton
         # that creates a real circular chain at resolution time

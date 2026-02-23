@@ -138,7 +138,9 @@ class ProviderExecutionService:
             self._metrics.increment_counter("provider_strategy_health_checks_total", 1.0)
             return health_status
         except Exception as e:
-            self._logger.error("Error checking health of strategy %s: %s", provider_identifier, e, exc_info=True)
+            self._logger.error(
+                "Error checking health of strategy %s: %s", provider_identifier, e, exc_info=True
+            )
             return ProviderHealthStatus.unhealthy(
                 f"Health check failed: {e!s}", {"exception": str(e)}
             )
@@ -158,7 +160,9 @@ class ProviderExecutionService:
 
             return None
         except Exception as e:
-            self._logger.error("Error creating strategy %s: %s", provider_identifier, e, exc_info=True)
+            self._logger.error(
+                "Error creating strategy %s: %s", provider_identifier, e, exc_info=True
+            )
             return None
 
     def _get_provider_config(self, provider_identifier: str) -> dict[str, Any]:
@@ -169,5 +173,7 @@ class ProviderExecutionService:
             )
             return provider_instance_config.config if provider_instance_config else {}
         except Exception as e:
-            self._logger.warning("Could not get config for %s: %s", provider_identifier, e, exc_info=True)
+            self._logger.warning(
+                "Could not get config for %s: %s", provider_identifier, e, exc_info=True
+            )
             return {}

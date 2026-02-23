@@ -43,17 +43,13 @@ class ConfigFileLoader:
                 return config_data
 
         except json.JSONDecodeError as e:
-            raise ConfigurationError(
-                f"Invalid JSON in configuration file {file_path}: {e!s}"
-            )
+            raise ConfigurationError(f"Invalid JSON in configuration file {file_path}: {e!s}")
         except PermissionError as e:
             raise ConfigurationError(
                 f"Permission denied reading configuration file {file_path}: {e!s}"
             )
         except Exception as e:
-            raise ConfigurationError(
-                f"Failed to load configuration file {file_path}: {e!s}"
-            )
+            raise ConfigurationError(f"Failed to load configuration file {file_path}: {e!s}")
 
     @staticmethod
     def merge_configs(base: dict[str, Any], update: dict[str, Any]) -> None:
@@ -129,16 +125,12 @@ class ConfigFileLoader:
 
         if not path.exists():
             if required:
-                raise ConfigurationError(
-                    f"Required configuration file not found: {config_path}"
-                )
+                raise ConfigurationError(f"Required configuration file not found: {config_path}")
             return False
 
         if not os.access(config_path, os.R_OK):
             if required:
-                raise ConfigurationError(
-                    f"Configuration file not readable: {config_path}"
-                )
+                raise ConfigurationError(f"Configuration file not readable: {config_path}")
             return False
 
         return True

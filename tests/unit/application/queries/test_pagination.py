@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
-
 from application.dto.queries import (
     ListActiveRequestsQuery,
     ListMachinesQuery,
@@ -11,7 +9,6 @@ from application.dto.queries import (
     ListTemplatesQuery,
 )
 from application.request.queries import ListRequestsQuery
-
 
 # ---------------------------------------------------------------------------
 # Query DTO defaults

@@ -116,7 +116,7 @@ async def handle_get_request_status(
                     request_dto = await query_bus.execute(query)
                     if request_dto:
                         request_dtos.append(request_dto)
-                except Exception:  # nosec B112
+                except Exception:
                     # Continue with other requests if one fails
                     continue
 

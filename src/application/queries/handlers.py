@@ -32,10 +32,10 @@ from domain.services.timestamp_service import TimestampService
 
 if TYPE_CHECKING:
     pass
-from domain.template.factory import TemplateFactory, get_default_template_factory
-from domain.template.template_aggregate import Template
 from application.ports.command_bus_port import CommandBusPort
 from application.ports.template_dto_port import TemplateDTOPort
+from domain.template.factory import TemplateFactory, get_default_template_factory
+from domain.template.template_aggregate import Template
 
 T = TypeVar("T")
 
@@ -463,7 +463,9 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
             # Create a simple AWS client call to get ASG details
             # This is a simplified approach - in production you might want to use
             # the provider context more directly
-            from providers.aws.infrastructure.adapters.aws_client import AWSClient  # type: ignore[import-untyped]
+            from providers.aws.infrastructure.adapters.aws_client import (
+                AWSClient,  # type: ignore[import-untyped]
+            )
 
             aws_client = self._container.get(AWSClient)
 
@@ -588,7 +590,6 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
     def _get_cache_service(self):
         """Get cache service for request caching."""
         try:
-            from domain.base.ports import ConfigurationPort
             from application.ports.cache_service_port import CacheServicePort
 
             # Get cache service from container instead of creating it
@@ -965,7 +966,8 @@ class GetTemplateHandler(BaseQueryHandler[GetTemplateQuery, TemplateDTOPort]):
             if self._container.has(TemplateDefaultsService):
                 template_defaults_service = self._container.get(TemplateDefaultsService)
                 resolved_data = template_defaults_service.resolve_template_defaults(
-                    template_data, provider_name=query.provider_name  # type: ignore[call-arg]
+                    template_data,
+                    provider_name=query.provider_name,  # type: ignore[call-arg]
                 )
             else:
                 resolved_data = template_data
@@ -975,7 +977,7 @@ class GetTemplateHandler(BaseQueryHandler[GetTemplateQuery, TemplateDTOPort]):
             else:
                 template_factory = get_default_template_factory()
 
-            domain_template = template_factory.create_template(resolved_data)
+            template_factory.create_template(resolved_data)
 
             self.logger.info("Retrieved template: %s", query.template_id)
 
@@ -1343,7 +1345,9 @@ class ListMachinesHandler(BaseQueryHandler[ListMachinesQuery, list[MachineDTO]])
                         template_id=machine.template_id,
                         image_id=machine.image_id,
                         status_reason=machine.status_reason,
-                        termination_time=str(machine.termination_time) if machine.termination_time is not None else None,
+                        termination_time=str(machine.termination_time)
+                        if machine.termination_time is not None
+                        else None,
                         tags=machine.tags,
                     )
                     machine_dtos.append(machine_dto.to_dict())

@@ -42,6 +42,7 @@ class RequestTimeout(ValueObject):
 
         # Reasonable upper limit (1 day)
         from domain.constants import MAX_REQUEST_TIMEOUT_SECONDS
+
         if v > MAX_REQUEST_TIMEOUT_SECONDS:
             raise ValueError(f"Timeout cannot exceed {MAX_REQUEST_TIMEOUT_SECONDS} seconds (1 day)")
 
@@ -78,10 +79,12 @@ class RequestTimeout(ValueObject):
             else:
                 # Fallback if service not available
                 from domain.constants import FALLBACK_REQUEST_TIMEOUT_SECONDS
+
                 timeout = FALLBACK_REQUEST_TIMEOUT_SECONDS
         except ImportError:
             # Fallback if service not available
             from domain.constants import FALLBACK_REQUEST_TIMEOUT_SECONDS
+
             timeout = FALLBACK_REQUEST_TIMEOUT_SECONDS
 
         return cls(seconds=timeout)
@@ -298,6 +301,7 @@ class RequestConfiguration(ValueObject):
 
         # Basic upper limit check
         from domain.constants import MAX_INSTANCE_COUNT
+
         if v > MAX_INSTANCE_COUNT:
             raise ValueError(f"Machine count cannot exceed {MAX_INSTANCE_COUNT}")
 
@@ -322,6 +326,7 @@ class RequestConfiguration(ValueObject):
 
         # Upper limit check (1 day)
         from domain.constants import MAX_REQUEST_TIMEOUT_SECONDS
+
         if v > MAX_REQUEST_TIMEOUT_SECONDS:
             raise ValueError(f"Timeout cannot exceed {MAX_REQUEST_TIMEOUT_SECONDS} seconds (1 day)")
 

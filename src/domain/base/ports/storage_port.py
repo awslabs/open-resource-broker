@@ -14,7 +14,9 @@ from .storage_writer_port import StorageWriterPort
 T = TypeVar("T")
 
 
-class StoragePort(StorageReaderPort[T], StorageWriterPort[T], StorageLifecyclePort, ABC, Generic[T]):
+class StoragePort(
+    StorageReaderPort[T], StorageWriterPort[T], StorageLifecyclePort, ABC, Generic[T]
+):
     """Composite storage port combining read, write, and lifecycle operations.
 
     This interface is provided for backward compatibility and for implementations
@@ -25,4 +27,5 @@ class StoragePort(StorageReaderPort[T], StorageWriterPort[T], StorageLifecyclePo
 
     This follows ISP by allowing clients to depend on minimal interfaces.
     """
+
     pass

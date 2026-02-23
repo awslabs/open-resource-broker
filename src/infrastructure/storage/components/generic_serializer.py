@@ -69,9 +69,7 @@ class GenericEntitySerializer(Generic[T]):
         try:
             return datetime.fromisoformat(dt_str)
         except (ValueError, TypeError) as e:
-            self.logger.warning(
-                "Failed to parse datetime '%s': %s", dt_str, e
-            )
+            self.logger.warning("Failed to parse datetime '%s': %s", dt_str, e)
             return None
 
     def serialize_value_object(self, value_obj: Any) -> Any:
@@ -180,11 +178,11 @@ class GenericEntitySerializer(Generic[T]):
 
             # Use Pydantic's model_validate if available
             if hasattr(self.entity_class, "model_validate"):
-                model_validate = getattr(self.entity_class, "model_validate")
+                model_validate = self.entity_class.model_validate
                 return model_validate(processed_data)  # type: ignore
             # Fallback to from_dict if available
             elif hasattr(self.entity_class, "from_dict"):
-                from_dict = getattr(self.entity_class, "from_dict")
+                from_dict = self.entity_class.from_dict
                 return from_dict(processed_data)  # type: ignore
             # Last resort: direct instantiation
             else:

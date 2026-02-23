@@ -48,11 +48,13 @@ class TestProviderStrategyDryRun:
             ) or handlers.get("RunInstances")
             if handler is None:
                 from providers.base.strategy import ProviderResult
+
                 return ProviderResult.error_result("No handler found", "HANDLER_NOT_FOUND")
             result = handler.acquire_hosts(None, None)
             if isinstance(result, Exception):
                 raise result
             from providers.base.strategy import ProviderResult
+
             return ProviderResult.success_result(
                 {"resource_ids": result.get("resource_ids", []), "instances": []},
                 {"method": "handler"},
@@ -62,6 +64,7 @@ class TestProviderStrategyDryRun:
 
         def _mock_terminate(operation):
             from providers.base.strategy import ProviderResult
+
             instance_ids = operation.parameters.get("instance_ids", [])
             return ProviderResult.success_result(
                 {"terminated": instance_ids}, {"method": "terminate"}

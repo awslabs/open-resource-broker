@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Optional
+from typing import Any, Optional
 
 # Import configuration
 from config import AppConfig
@@ -271,15 +271,21 @@ class Application:
 
                 for instance_name in available_instances:
                     try:
-                        health_status = self._provider_registry.get_or_create_strategy(instance_name)
+                        health_status = self._provider_registry.get_or_create_strategy(
+                            instance_name
+                        )
                         is_healthy = (
-                            health_status.check_health().is_healthy if health_status and hasattr(health_status, "check_health") else False
+                            health_status.check_health().is_healthy
+                            if health_status and hasattr(health_status, "check_health")
+                            else False
                         )
                         provider_health[instance_name] = is_healthy
                         if is_healthy:
                             healthy_providers += 1
                     except Exception as e:
-                        self.logger.warning("Health check failed for %s: %s", instance_name, e, exc_info=True)
+                        self.logger.warning(
+                            "Health check failed for %s: %s", instance_name, e, exc_info=True
+                        )
                         provider_health[instance_name] = False
 
                 total_providers = len(available_instances)

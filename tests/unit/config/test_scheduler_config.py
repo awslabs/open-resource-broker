@@ -96,7 +96,9 @@ class TestAppConfigWithScheduler:
         }
         mock_registry = patch(
             "providers.registry.get_provider_registry",
-            return_value=type("R", (), {"get_registered_providers": lambda self: ["aws", "provider1"]})(),
+            return_value=type(
+                "R", (), {"get_registered_providers": lambda self: ["aws", "provider1"]}
+            )(),
         )
         with mock_registry:
             app_config = AppConfig(**config_data)

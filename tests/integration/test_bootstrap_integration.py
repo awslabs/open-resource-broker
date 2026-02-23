@@ -46,15 +46,17 @@ class TestBootstrapIntegration:
 
     @pytest.mark.asyncio
     @patch("infrastructure.logging.logger.setup_logging")
-    async def test_application_initialization_with_provider_config(
-        self, mock_setup_logging
-    ):
+    async def test_application_initialization_with_provider_config(self, mock_setup_logging):
         """Test application initialization with integrated provider configuration."""
         mock_config_manager = self._make_mock_config_manager()
 
         with (
             patch("infrastructure.di.container.get_container") as mock_get_container,
-            patch.object(Application, "_preload_templates", new_callable=lambda: lambda self: AsyncMock(return_value=None)()),
+            patch.object(
+                Application,
+                "_preload_templates",
+                new_callable=lambda: lambda self: AsyncMock(return_value=None)(),
+            ),
             patch("providers.registry.get_provider_registry") as mock_get_registry,
         ):
             mock_container = self._make_mock_container(mock_config_manager)
@@ -75,9 +77,7 @@ class TestBootstrapIntegration:
 
     @pytest.mark.asyncio
     @patch("infrastructure.logging.logger.setup_logging")
-    async def test_application_initialization_with_legacy_config(
-        self, mock_setup_logging
-    ):
+    async def test_application_initialization_with_legacy_config(self, mock_setup_logging):
         """Test application initialization with legacy provider configuration."""
         mock_config_manager = self._make_mock_config_manager()
         mock_config_manager.get_provider_config.side_effect = AttributeError("Method not available")
@@ -120,9 +120,7 @@ class TestBootstrapIntegration:
 
     @pytest.mark.asyncio
     @patch("infrastructure.logging.logger.setup_logging")
-    async def test_get_provider_info_integration(
-        self, mock_setup_logging
-    ):
+    async def test_get_provider_info_integration(self, mock_setup_logging):
         """Test provider info retrieval integration."""
         mock_config_manager = self._make_mock_config_manager()
 
@@ -136,7 +134,8 @@ class TestBootstrapIntegration:
             mock_registry = Mock()
             mock_registry.get_registered_providers.return_value = ["aws"]
             mock_registry.get_registered_provider_instances.return_value = [
-                "aws-primary", "aws-backup"
+                "aws-primary",
+                "aws-backup",
             ]
             mock_registry.is_provider_instance_registered.return_value = True
             mock_get_registry.return_value = mock_registry
@@ -161,9 +160,7 @@ class TestBootstrapIntegration:
 
     @pytest.mark.asyncio
     @patch("infrastructure.logging.logger.setup_logging")
-    async def test_context_manager_integration(
-        self, mock_setup_logging
-    ):
+    async def test_context_manager_integration(self, mock_setup_logging):
         """Test application context manager integration."""
         mock_config_manager = self._make_mock_config_manager()
 

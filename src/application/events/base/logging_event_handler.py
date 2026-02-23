@@ -9,9 +9,10 @@ Template Method pattern and provides consistent message formatting.
 from abc import abstractmethod
 from typing import Optional
 
-from .event_handler import EventHandler
 from domain.base.events import DomainEvent
 from domain.base.ports import LoggingPort
+
+from .event_handler import EventHandler
 
 
 class LoggingEventHandler(EventHandler):

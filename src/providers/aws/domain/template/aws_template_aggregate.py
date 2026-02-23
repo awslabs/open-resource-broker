@@ -304,13 +304,17 @@ class AWSTemplate(Template):
         """Get allocation strategy in EC2 Fleet API format."""
         if isinstance(self.allocation_strategy, AWSAllocationStrategy):
             return self.allocation_strategy.to_ec2_fleet_format()
-        return AWSAllocationStrategy.from_core(AllocationStrategy.LOWEST_PRICE).to_ec2_fleet_format()
+        return AWSAllocationStrategy.from_core(
+            AllocationStrategy.LOWEST_PRICE
+        ).to_ec2_fleet_format()
 
     def get_spot_fleet_allocation_strategy(self) -> str:
         """Get allocation strategy in Spot Fleet API format."""
         if isinstance(self.allocation_strategy, AWSAllocationStrategy):
             return self.allocation_strategy.to_spot_fleet_format()
-        return AWSAllocationStrategy.from_core(AllocationStrategy.LOWEST_PRICE).to_spot_fleet_format()
+        return AWSAllocationStrategy.from_core(
+            AllocationStrategy.LOWEST_PRICE
+        ).to_spot_fleet_format()
 
     def get_asg_allocation_strategy(self) -> str:
         """Get allocation strategy in Auto Scaling Group API format."""
@@ -360,7 +364,9 @@ class AWSTemplate(Template):
         core_data = {
             "template_id": data.get("template_id"),
             "name": data.get("name", data.get("template_id")),
-            "instance_type": AWSInstanceType(value=str(data.get("vm_type", data.get("instance_type", "")))),
+            "instance_type": AWSInstanceType(
+                value=str(data.get("vm_type", data.get("instance_type", "")))
+            ),
             "image_id": data.get("image_id"),
             "max_instances": data.get("max_number", data.get("max_instances", 1)),
             "subnet_ids": data.get(

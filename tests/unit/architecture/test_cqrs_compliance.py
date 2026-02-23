@@ -80,8 +80,9 @@ class TestCQRSCompliance:
     def test_command_immutability(self):
         """Test that commands are immutable after creation."""
         # UpdateRequestStatusCommand uses frozen=True, so assignment raises ValidationError
-        from domain.request.value_objects import RequestStatus
         from pydantic_core import ValidationError
+
+        from domain.request.value_objects import RequestStatus
 
         command = UpdateRequestStatusCommand(
             request_id="test-request", status=RequestStatus.COMPLETED

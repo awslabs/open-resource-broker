@@ -58,9 +58,7 @@ class MachineGroupingService:
 
         return dict(provider_groups)
 
-    def group_by_resource(
-        self, machine_ids: list[str]
-    ) -> dict[tuple[str, str, str], list[Any]]:
+    def group_by_resource(self, machine_ids: list[str]) -> dict[tuple[str, str, str], list[Any]]:
         """Group machines by (provider_name, provider_api, resource_id).
 
         This grouping is used for parallel deprovisioning operations where
@@ -93,7 +91,9 @@ class MachineGroupingService:
                     resource_groups[group_key].append(machine)
 
             except Exception as e:
-                self.logger.error("Failed to get machine context for %s: %s", machine_id, e, exc_info=True)
+                self.logger.error(
+                    "Failed to get machine context for %s: %s", machine_id, e, exc_info=True
+                )
                 raise ValueError(f"Cannot determine context for machine {machine_id}: {e}")
 
         self.logger.info(

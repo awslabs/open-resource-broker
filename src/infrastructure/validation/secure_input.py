@@ -57,7 +57,12 @@ def secure_input(
             return sanitized
 
         except ValidationError as e:
-            logger.warning("Input validation failed (attempt %d/%d, exc_info=True): %s", attempt + 1, max_attempts, e)
+            logger.warning(
+                "Input validation failed (attempt %d/%d, exc_info=True): %s",
+                attempt + 1,
+                max_attempts,
+                e,
+            )
             if attempt < max_attempts - 1:
                 logger.warning("Invalid input: %s. Please try again.", e)
             else:

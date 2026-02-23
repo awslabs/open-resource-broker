@@ -164,7 +164,12 @@ class RepositoryMigrator:
                 from sqlalchemy import create_engine
                 from sqlalchemy.orm import sessionmaker
 
-                from infrastructure.storage.sql import MachineModel, RequestModel, SQLMachineRepository, SQLRequestRepository  # type: ignore
+                from infrastructure.storage.sql import (  # type: ignore
+                    MachineModel,
+                    RequestModel,
+                    SQLMachineRepository,
+                    SQLRequestRepository,
+                )
 
                 # Get SQL config
                 sql_config = self.config_manager.get("sql", {})
@@ -188,7 +193,10 @@ class RepositoryMigrator:
                 )
 
             else:  # Default to JSON
-                from infrastructure.storage.json import JSONMachineRepository, JSONRequestRepository  # type: ignore
+                from infrastructure.storage.json import (  # type: ignore
+                    JSONMachineRepository,
+                    JSONRequestRepository,
+                )
 
                 # Get JSON config
                 json_config = self.config_manager.get("json", {})

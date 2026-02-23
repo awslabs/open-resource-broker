@@ -362,7 +362,8 @@ class LoadBalancingProviderStrategy(ProviderStrategy):
         if self._initialized:
             return True
         success_count = sum(
-            1 for strategy in self._strategies.values()
+            1
+            for strategy in self._strategies.values()
             if strategy.is_initialized or strategy.initialize()
         )
         self._initialized = success_count > 0

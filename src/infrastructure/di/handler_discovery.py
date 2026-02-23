@@ -146,7 +146,9 @@ class HandlerDiscoveryService:
                     importlib.import_module(module_info.name)
                     logger.debug("Imported module: %s", module_info.name)
                 except Exception as e:
-                    logger.warning("Failed to import module %s: %s", module_info.name, e, exc_info=True)
+                    logger.warning(
+                        "Failed to import module %s: %s", module_info.name, e, exc_info=True
+                    )
                     continue
 
         except Exception as e:
@@ -175,7 +177,12 @@ class HandlerDiscoveryService:
                     query_type.__name__,
                 )
             except Exception as e:
-                logger.error("Failed to register query handler %s: %s", handler_class.__name__, e, exc_info=True)
+                logger.error(
+                    "Failed to register query handler %s: %s",
+                    handler_class.__name__,
+                    e,
+                    exc_info=True,
+                )
 
         # Register command handlers
         command_handlers = get_registered_command_handlers()

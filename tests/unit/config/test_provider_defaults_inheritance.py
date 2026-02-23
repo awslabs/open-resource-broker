@@ -1,6 +1,6 @@
 """Unit tests for provider defaults inheritance system."""
 
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 from config.schemas.provider_strategy_schema import (
     HandlerConfig,
@@ -182,7 +182,9 @@ class TestProviderDefaultsInheritance:
         """Test inheritance works independently for different provider types."""
         mock_registry = patch(
             "providers.registry.get_provider_registry",
-            return_value=type("R", (), {"get_registered_providers": lambda self: ["aws", "provider1"]})(),
+            return_value=type(
+                "R", (), {"get_registered_providers": lambda self: ["aws", "provider1"]}
+            )(),
         )
         with mock_registry:
             config_data = {
@@ -367,7 +369,9 @@ class TestProviderDefaultsInheritance:
         """Test behavior when provider type has no defaults defined."""
         mock_registry = patch(
             "providers.registry.get_provider_registry",
-            return_value=type("R", (), {"get_registered_providers": lambda self: ["aws", "provider2"]})(),
+            return_value=type(
+                "R", (), {"get_registered_providers": lambda self: ["aws", "provider2"]}
+            )(),
         )
         with mock_registry:
             provider = ProviderInstanceConfig(

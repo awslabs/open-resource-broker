@@ -1,7 +1,7 @@
 """Input validation utilities for CLI and API inputs."""
 
 import re
-from typing import Any, Optional
+from typing import Optional
 
 
 class ValidationError(Exception):
@@ -94,13 +94,19 @@ class InputValidator:
         pattern = InputValidator.ALPHANUMERIC_DASH if allow_dash else InputValidator.ALPHANUMERIC
 
         if not pattern.match(value):
-            allowed = "alphanumeric characters, dashes, and underscores" if allow_dash else "alphanumeric characters"
+            allowed = (
+                "alphanumeric characters, dashes, and underscores"
+                if allow_dash
+                else "alphanumeric characters"
+            )
             raise ValidationError(f"Input must contain only {allowed}")
 
         return value
 
     @staticmethod
-    def validate_integer(value: str, min_value: Optional[int] = None, max_value: Optional[int] = None) -> int:
+    def validate_integer(
+        value: str, min_value: Optional[int] = None, max_value: Optional[int] = None
+    ) -> int:
         """
         Validate and convert input to integer.
 
@@ -174,7 +180,9 @@ class InputValidator:
             ValidationError: If region format is invalid
         """
         if not InputValidator.AWS_REGION.match(value):
-            raise ValidationError("Invalid AWS region format (expected: us-east-1, eu-west-1, etc.)")
+            raise ValidationError(
+                "Invalid AWS region format (expected: us-east-1, eu-west-1, etc.)"
+            )
 
         return value
 
@@ -195,7 +203,9 @@ def validate_alphanumeric(value: str, allow_dash: bool = False) -> str:
     return InputValidator.validate_alphanumeric(value, allow_dash)
 
 
-def validate_integer(value: str, min_value: Optional[int] = None, max_value: Optional[int] = None) -> int:
+def validate_integer(
+    value: str, min_value: Optional[int] = None, max_value: Optional[int] = None
+) -> int:
     """Validate integer input."""
     return InputValidator.validate_integer(value, min_value, max_value)
 

@@ -28,7 +28,7 @@ class TimeoutConfig:
         self,
         connect: float = DEFAULT_CONNECT_TIMEOUT,
         read: float = DEFAULT_READ_TIMEOUT,
-        total: Optional[float] = None
+        total: Optional[float] = None,
     ):
         """Initialize timeout configuration.
 
@@ -47,11 +47,7 @@ class TimeoutConfig:
 
     def as_dict(self) -> dict[str, float]:
         """Return timeout as dictionary."""
-        return {
-            "connect": self.connect,
-            "read": self.read,
-            "total": self.total
-        }
+        return {"connect": self.connect, "read": self.read, "total": self.total}
 
 
 # Predefined timeout configurations
@@ -61,9 +57,7 @@ LONG_TIMEOUT = TimeoutConfig(connect=15, read=MAX_REQUEST_TIMEOUT_SECONDS)
 
 
 def get_boto3_config(
-    timeout: Optional[TimeoutConfig] = None,
-    max_retries: int = 3,
-    **kwargs: Any
+    timeout: Optional[TimeoutConfig] = None, max_retries: int = 3, **kwargs: Any
 ) -> Any:
     """Get boto3 Config object with timeout settings.
 
@@ -86,11 +80,8 @@ def get_boto3_config(
     config_params = {
         "connect_timeout": timeout_config.connect,
         "read_timeout": timeout_config.read,
-        "retries": {
-            "max_attempts": max_retries,
-            "mode": "adaptive"
-        },
-        **kwargs
+        "retries": {"max_attempts": max_retries, "mode": "adaptive"},
+        **kwargs,
     }
 
     return Config(**config_params)

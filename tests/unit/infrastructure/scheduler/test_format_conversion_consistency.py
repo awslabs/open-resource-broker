@@ -157,6 +157,7 @@ class TestFormatConversionInHandlers:
             scheduler_strategy = MagicMock(spec=SchedulerPort)
 
             from unittest.mock import AsyncMock
+
             query_bus.execute = AsyncMock(return_value=[])
 
             container.get.side_effect = lambda x: {

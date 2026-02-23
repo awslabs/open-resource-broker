@@ -1,6 +1,5 @@
 """Tests for token blacklist implementations."""
 
-import asyncio
 import time
 
 import pytest

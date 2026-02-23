@@ -12,7 +12,10 @@ class RegistryFactory:
         self._dependencies: Dict[str, Dict[str, Any]] = {}
 
     def register_constructor(
-        self, name: str, constructor: Callable, dependencies: Dict[str, Any] = None  # type: ignore[assignment]
+        self,
+        name: str,
+        constructor: Callable,
+        dependencies: Dict[str, Any] = None,  # type: ignore[assignment]
     ) -> None:
         """Register a constructor with its dependencies.
 

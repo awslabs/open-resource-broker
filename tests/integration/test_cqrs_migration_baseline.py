@@ -23,7 +23,6 @@ from infrastructure.di.buses import CommandBus, QueryBus
 from infrastructure.di.container import DIContainer
 
 
-
 @pytest.mark.integration
 class TestCQRSArchitectureIntegration:
     """Integration tests for CQRS architecture with command and query handlers."""
@@ -170,8 +169,6 @@ class TestCQRSArchitectureIntegration:
         )
         service.validate_template_requirements.return_value = validation_result
         return service
-
-
 
     @pytest.fixture
     def create_request_handler(
@@ -356,6 +353,7 @@ class TestCQRSArchitectureIntegration:
         """Test error handling for provider failures."""
         # Mock provider selection port to return failure
         from unittest.mock import AsyncMock
+
         from providers.base.strategy.provider_strategy import ProviderResult
 
         failure_result = ProviderResult(

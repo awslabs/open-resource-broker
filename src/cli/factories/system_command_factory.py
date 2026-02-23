@@ -7,9 +7,11 @@ from application.commands.system import (
     ReloadProviderConfigCommand,
     SetConfigurationCommand,
 )
-from application.dto.queries import GetConfigurationQuery
-from application.dto.queries import ValidateMCPQuery  # type: ignore[attr-defined]
-from application.dto.queries import ValidateStorageQuery  # type: ignore[attr-defined]
+from application.dto.queries import (
+    GetConfigurationQuery,
+    ValidateMCPQuery,  # type: ignore[attr-defined]
+    ValidateStorageQuery,  # type: ignore[attr-defined]
+)
 from application.queries.system import (
     GetProviderConfigQuery,
     GetProviderMetricsQuery,

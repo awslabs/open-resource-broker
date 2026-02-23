@@ -1,11 +1,7 @@
 """Tests for scheduler strategy initialization."""
 
-from unittest.mock import MagicMock, patch
-
 import pytest
 
-from domain.base.ports import LoggingPort, SchedulerPort
-from domain.base.ports.configuration_port import ConfigurationPort
 from infrastructure.scheduler.default.default_strategy import DefaultSchedulerStrategy
 from infrastructure.scheduler.hostfactory.hostfactory_strategy import HostFactorySchedulerStrategy
 from infrastructure.scheduler.registration import create_default_strategy

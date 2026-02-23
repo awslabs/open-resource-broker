@@ -2,6 +2,7 @@
 
 from typing import Any, Optional
 
+from botocore.config import Config
 from botocore.exceptions import ClientError, NoCredentialsError
 
 from domain.base.dependency_injection import injectable
@@ -12,8 +13,6 @@ from infrastructure.adapters.ports.auth import (
     AuthResult,
     AuthStatus,
 )
-from botocore.config import Config
-
 from providers.aws.session_factory import AWSSessionFactory
 
 _DEFAULT_CONFIG = Config(

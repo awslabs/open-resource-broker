@@ -23,8 +23,6 @@ from application.queries.system import (
     GetSystemStatusQuery,
     ValidateProviderConfigQuery,
 )
-
-
 from domain.base import UnitOfWorkFactory
 from domain.base.ports import ContainerPort, ErrorHandlingPort, LoggingPort
 from domain.services.timestamp_service import TimestampService
@@ -145,9 +143,15 @@ class GetProviderConfigHandler(BaseQueryHandler[GetProviderConfigQuery, Provider
                     active_providers=([p.name for p in active_providers]),  # type: ignore[union-attr]
                     provider_count=len(active_providers),
                     default_provider=default_provider,
-                    configuration_source=config_sources["primary_source"] if isinstance(config_sources, dict) else "unknown",
-                    config_file=config_sources.get("config_file") if isinstance(config_sources, dict) else None,
-                    template_file=config_sources.get("template_file") if isinstance(config_sources, dict) else None,
+                    configuration_source=config_sources["primary_source"]
+                    if isinstance(config_sources, dict)
+                    else "unknown",
+                    config_file=config_sources.get("config_file")
+                    if isinstance(config_sources, dict)
+                    else None,
+                    template_file=config_sources.get("template_file")
+                    if isinstance(config_sources, dict)
+                    else None,
                     last_updated=last_updated,
                 )
             else:
@@ -462,7 +466,8 @@ class GetProviderMetricsHandler(BaseQueryHandler[GetProviderMetricsQuery, Provid
                 average_response_time_ms=summary["average_response_time"],
                 error_rate_percent=(
                     summary["failed_requests"] / summary["total_requests"] * 100
-                    if summary["total_requests"] > 0 else 0.0
+                    if summary["total_requests"] > 0
+                    else 0.0
                 ),
                 throughput_per_minute=0.0,
                 last_request_time=None,
@@ -638,7 +643,9 @@ class ValidateMCPHandler(BaseQueryHandler[ValidateMCPQuery, dict[str, Any]]):
                 "is_valid": is_valid,
                 "validation_errors": validation_errors,
                 "warnings": warnings,
-                "mcp_enabled": mcp_config.get("enabled", False) if isinstance(mcp_config, dict) else False,
+                "mcp_enabled": mcp_config.get("enabled", False)
+                if isinstance(mcp_config, dict)
+                else False,
             }
 
         except Exception as e:

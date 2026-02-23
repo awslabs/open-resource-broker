@@ -4,10 +4,13 @@ from unittest.mock import Mock
 
 import pytest
 
-pytestmark = pytest.mark.skip(reason="ProviderContext module removed - using Provider Registry directly")
+pytestmark = pytest.mark.skip(
+    reason="ProviderContext module removed - using Provider Registry directly"
+)
 
 try:
     from providers.base.strategy.provider_context import ProviderContext
+
     HAS_PROVIDER_CONTEXT = True
 except ImportError:
     HAS_PROVIDER_CONTEXT = False

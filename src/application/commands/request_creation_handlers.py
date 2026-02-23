@@ -10,6 +10,7 @@ from application.dto.commands import (
     CreateRequestCommand,
     CreateReturnRequestCommand,
 )
+from application.ports.query_bus_port import QueryBusPort
 from domain.base import UnitOfWorkFactory
 from domain.base.exceptions import ApplicationError, EntityNotFoundError
 from domain.base.ports import (
@@ -20,8 +21,6 @@ from domain.base.ports import (
     ProviderConfigPort,
     ProviderSelectionPort,
 )
-from domain.request.repository import RequestRepository
-from application.ports.query_bus_port import QueryBusPort
 
 
 @command_handler(CreateRequestCommand)  # type: ignore[arg-type]
@@ -51,10 +50,10 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, None]
         self._provider_selection_port = provider_selection_port
 
         # Initialize services
+        from application.services.provider_validation_service import ProviderValidationService
         from application.services.provisioning_orchestration_service import (
             ProvisioningOrchestrationService,
         )
-        from application.services.provider_validation_service import ProviderValidationService
         from application.services.request_creation_service import RequestCreationService
         from application.services.request_status_management_service import (
             RequestStatusManagementService,
@@ -152,7 +151,7 @@ class CreateMachineRequestHandler(BaseCommandHandler[CreateRequestCommand, None]
         with self.uow_factory.create_unit_of_work() as uow:
             events = uow.requests.save(request)
 
-        for event in (events or []):
+        for event in events or []:
             self.event_publisher.publish(event)  # type: ignore[union-attr]
 
 
@@ -332,7 +331,7 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
                     )
                     uow.machines.save(updated_machine)
 
-            for event in (events or []):
+            for event in events or []:
                 self.event_publisher.publish(event)  # type: ignore[union-attr]
 
     async def _execute_deprovisioning_for_request(
@@ -348,9 +347,7 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
                 resource_groups, request
             )
 
-            self.logger.info(
-                f"Deprovisioning results for {provider_name}: {provisioning_result}"
-            )
+            self.logger.info(f"Deprovisioning results for {provider_name}: {provisioning_result}")
 
             # Update request status based on result
             if provisioning_result.get("success", False):

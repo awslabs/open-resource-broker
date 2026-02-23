@@ -39,13 +39,16 @@ class EnhancedAuthMiddleware(BaseHTTPMiddleware):
         # Normalize excluded paths (remove trailing slashes, convert to lowercase)
         self.excluded_paths = [
             self._normalize_path(p)
-            for p in (excluded_paths or [
-                "/health",
-                "/docs",
-                "/redoc",
-                "/openapi.json",
-                "/favicon.ico",
-            ])
+            for p in (
+                excluded_paths
+                or [
+                    "/health",
+                    "/docs",
+                    "/redoc",
+                    "/openapi.json",
+                    "/favicon.ico",
+                ]
+            )
         ]
         self.require_auth = require_auth
         self.logger = get_logger(__name__)

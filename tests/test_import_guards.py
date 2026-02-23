@@ -315,6 +315,7 @@ console.print("test message")
             def api_function():
                 try:
                     from fastapi import FastAPI  # noqa: F401
+
                     return "FASTAPI_AVAILABLE"
                 except ImportError:
                     raise ImportError("API functionality requires: pip install orb-py[api]")

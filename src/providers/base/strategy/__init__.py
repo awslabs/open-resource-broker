@@ -151,7 +151,9 @@ def create_selector(policy: SelectionPolicy, logger=None) -> ProviderSelector:
 
 
 def create_composite_strategy(
-    strategies: list, config: Optional[CompositionConfig] = None, logger: Optional[LoggingPort] = None
+    strategies: list,
+    config: Optional[CompositionConfig] = None,
+    logger: Optional[LoggingPort] = None,
 ) -> CompositeProviderStrategy:
     """
     Create a composite provider strategy.

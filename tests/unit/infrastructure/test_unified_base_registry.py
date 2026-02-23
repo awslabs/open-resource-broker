@@ -4,7 +4,9 @@ from unittest.mock import Mock
 
 import pytest
 
-pytestmark = pytest.mark.skip(reason="infrastructure.registry modules removed - using application services")
+pytestmark = pytest.mark.skip(
+    reason="infrastructure.registry modules removed - using application services"
+)
 
 from infrastructure.registry.base_registry import RegistryMode
 
@@ -23,6 +25,7 @@ try:
         UnsupportedStorageError,
         get_storage_registry,
     )
+
     HAS_REGISTRIES = True
 except ImportError:
     HAS_REGISTRIES = False

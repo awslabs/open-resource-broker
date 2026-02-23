@@ -474,7 +474,9 @@ def register_aws_services_with_di(container) -> None:
         logger.debug("AWS utility services registered with DI container")
 
     except Exception as e:
-        logger.warning("Failed to register AWS utility services with DI container: %s", e, exc_info=True)
+        logger.warning(
+            "Failed to register AWS utility services with DI container: %s", e, exc_info=True
+        )
 
 
 # Auto-register AWS extensions when module is imported

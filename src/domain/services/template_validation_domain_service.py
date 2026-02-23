@@ -117,7 +117,11 @@ class TemplateValidationDomainService:
             raise EntityNotFoundError("ProviderInstance", provider_instance)
 
         provider_config_root = self.config.get_provider_config()
-        provider_defaults = provider_config_root.provider_defaults.get(provider_config.type) if provider_config_root is not None else None  # type: ignore[union-attr]
+        provider_defaults = (
+            provider_config_root.provider_defaults.get(provider_config.type)
+            if provider_config_root is not None
+            else None
+        )  # type: ignore[union-attr]
         effective_handlers = provider_config.get_effective_handlers(provider_defaults)
         supported_apis = list(effective_handlers.keys())
 

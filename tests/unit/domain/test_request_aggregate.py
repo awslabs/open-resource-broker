@@ -50,6 +50,7 @@ except ImportError:
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _make_request(machine_count=2, template_id="template-001"):
     """Create a minimal valid new request."""
     return Request.create_new_request(
@@ -241,6 +242,7 @@ class TestRequestAggregate:
     def test_request_deserialization(self):
         """Test request deserialization from dict."""
         import uuid
+
         req_id = f"req-{uuid.uuid4()}"
         request_dict = {
             "request_id": RequestId(value=req_id),
@@ -297,6 +299,7 @@ class TestRequestValueObjects:
     def test_request_id_creation(self):
         """Test RequestId creation."""
         import uuid
+
         valid_id = f"req-{uuid.uuid4()}"
         request_id = RequestId(value=valid_id)
         assert str(request_id) == valid_id

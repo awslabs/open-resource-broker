@@ -1,6 +1,5 @@
 """Template configuration adapter implementing TemplateConfigurationPort."""
 
-import asyncio
 from typing import TYPE_CHECKING, Any, Optional
 
 from domain.base.ports.logging_port import LoggingPort
@@ -10,7 +9,7 @@ from infrastructure.template.dtos import TemplateDTO
 
 # Use TYPE_CHECKING to avoid direct domain import
 if TYPE_CHECKING:
-    from domain.template.template_aggregate import Template
+    pass
 
 
 class TemplateConfigurationAdapter(TemplateConfigurationPort):
@@ -159,5 +158,6 @@ def create_template_configuration_adapter(
     """
     if logger is None:
         from infrastructure.adapters.logging_adapter import LoggingAdapter
+
         logger = LoggingAdapter(__name__)
     return TemplateConfigurationAdapter(template_manager, logger)

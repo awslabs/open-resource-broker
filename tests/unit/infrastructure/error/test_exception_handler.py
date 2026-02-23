@@ -6,7 +6,7 @@ with all types of exceptions while preserving domain semantics.
 """
 
 import json
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 import pytest
 
@@ -31,7 +31,7 @@ from infrastructure.error.exception_handler import (
     get_exception_handler,
     reset_exception_handler,
 )
-from src.providers.aws.exceptions.aws_exceptions import LaunchError, NetworkError
+from src.providers.aws.exceptions.aws_exceptions import LaunchError
 
 
 class TestExceptionContext:

@@ -59,7 +59,6 @@ class DependencyResolver:
 
         # Check for circular dependencies
         if cls in dependency_chain:
-            chain_str = " -> ".join([c.__name__ for c in dependency_chain]) + f" -> {cls.__name__}"
             raise CircularDependencyError(list(dependency_chain) + [cls])  # type: ignore[arg-type]
 
         # Add current class to dependency chain
@@ -177,7 +176,9 @@ class DependencyResolver:
                 self._service_registry.register_injectable_class(cls)
                 logger.debug("Auto-registered legacy injectable class: %s", cls.__name__)
         except Exception as e:
-            logger.warning("Failed to auto-register injectable class %s: %s", cls.__name__, e, exc_info=True)
+            logger.warning(
+                "Failed to auto-register injectable class %s: %s", cls.__name__, e, exc_info=True
+            )
 
     def _resolve_constructor_parameters(
         self, cls: type, dependency_chain: set[type]

@@ -79,9 +79,7 @@ class DynamoDBStorageStrategy(BaseStorageStrategy):
                 if success:
                     self._logger.info("Created DynamoDB table: %s", self.table_name)
                 else:
-                    self._logger.warning(
-                        "Failed to create DynamoDB table: %s", self.table_name
-                    )
+                    self._logger.warning("Failed to create DynamoDB table: %s", self.table_name)
 
         except Exception as e:
             self._logger.error("Failed to initialize table %s: %s", self.table_name, e)

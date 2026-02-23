@@ -7,8 +7,8 @@ from domain.request.aggregate import Request
 
 if TYPE_CHECKING:
     from application.dto.commands import CreateRequestCommand
-    from domain.template.template_aggregate import Template
     from domain.base.results import ProviderSelectionResult
+    from domain.template.template_aggregate import Template
 
 
 class RequestCreationPort(ABC):

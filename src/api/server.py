@@ -1,6 +1,6 @@
 """FastAPI server factory and application setup."""
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 try:
     from fastapi import FastAPI, Request
@@ -18,7 +18,7 @@ except ImportError:
     JSONResponse = None  # type: ignore[assignment,misc]
 
 if TYPE_CHECKING:
-    from fastapi import FastAPI, Request
+    from fastapi import FastAPI
     from fastapi.middleware.cors import CORSMiddleware
     from fastapi.middleware.trustedhost import TrustedHostMiddleware
     from fastapi.responses import JSONResponse
@@ -46,11 +46,6 @@ def create_fastapi_app(server_config: Any) -> Any:
             "FastAPI not installed. API mode requires FastAPI.\n"
             "Install with: pip install orb-py[api]"
         )
-
-    assert FastAPI is not None
-    assert JSONResponse is not None
-    assert TrustedHostMiddleware is not None
-    assert CORSMiddleware is not None
 
     logger = get_logger(__name__)
 
@@ -80,7 +75,7 @@ def create_fastapi_app(server_config: Any) -> Any:
     from infrastructure.error.exception_handler import get_exception_handler
 
     # Create FastAPI app with configuration
-    app = FastAPI(
+    app = FastAPI(  # type: ignore[operator]
         title="Open Resource Broker API",
         description="REST API for Open Resource Broker - Dynamic cloud resource provisioning",
         version=__version__,
@@ -93,12 +88,12 @@ def create_fastapi_app(server_config: Any) -> Any:
 
     # Add trusted host middleware if configured
     if server_config.trusted_hosts and server_config.trusted_hosts != ["*"]:
-        app.add_middleware(TrustedHostMiddleware, allowed_hosts=server_config.trusted_hosts)
+        app.add_middleware(TrustedHostMiddleware, allowed_hosts=server_config.trusted_hosts)  # type: ignore[arg-type]
 
     # Add CORS middleware
     if server_config.cors.enabled:
-        app.add_middleware(
-            CORSMiddleware,
+        app.add_middleware(  # type: ignore[arg-type]
+            cast(Any, CORSMiddleware),
             allow_origins=server_config.cors.origins,
             allow_credentials=server_config.cors.credentials,
             allow_methods=server_config.cors.methods,
@@ -144,7 +139,9 @@ def create_fastapi_app(server_config: Any) -> Any:
                         "message": error_response.message,
                         "details": error_response.details,
                     },
-                    "timestamp": error_response.timestamp.isoformat() if hasattr(error_response.timestamp, "isoformat") else error_response.timestamp,
+                    "timestamp": error_response.timestamp.isoformat()
+                    if hasattr(error_response.timestamp, "isoformat")
+                    else error_response.timestamp,
                     "request_id": getattr(request.state, "request_id", "unknown"),
                 },
             )

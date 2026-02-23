@@ -5,7 +5,6 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Any, Optional, cast
 
 from application.base.infrastructure_handlers import BaseAPIHandler, RequestContext
-from application.dto.base import BaseDTO
 from application.dto.responses import ReturnRequestResponse
 from application.request.queries import ListRequestsQuery
 from config import RequestConfig

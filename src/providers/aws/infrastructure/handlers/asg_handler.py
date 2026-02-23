@@ -378,7 +378,8 @@ class ASGHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
         launch_template_version: str,
     ) -> dict[str, Any]:
         """Create Auto Scaling Group configuration using legacy logic."""
-        asg_config: dict[str, Any] = {            "AutoScalingGroupName": asg_name,
+        asg_config: dict[str, Any] = {
+            "AutoScalingGroupName": asg_name,
             "MinSize": 0,
             "MaxSize": request.requested_count * 2,  # Allow some buffer
             "DesiredCapacity": request.requested_count,

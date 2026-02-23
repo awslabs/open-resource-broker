@@ -239,7 +239,9 @@ def _resolve_dependency(
             return None
 
     except Exception as e:
-        logger.warning("Failed to resolve dependency %s for %s: %s", param_name, class_name, e, exc_info=True)
+        logger.warning(
+            "Failed to resolve dependency %s for %s: %s", param_name, class_name, e, exc_info=True
+        )
         return None
 
 

@@ -1,7 +1,8 @@
 """Unit tests for request metadata value objects."""
 
-import pytest
 from datetime import datetime, timedelta
+
+import pytest
 
 from domain.request.request_metadata import (
     LaunchTemplateInfo,
@@ -181,9 +182,7 @@ class TestRequestConfiguration:
         assert mc.value == 3
 
     def test_get_tags_list(self):
-        cfg = RequestConfiguration(
-            template_id="tmpl-1", machine_count=1, tags={"a": "1", "b": "2"}
-        )
+        cfg = RequestConfiguration(template_id="tmpl-1", machine_count=1, tags={"a": "1", "b": "2"})
         tags = cfg.get_tags_list()
         assert len(tags) == 2
         keys = {t.key for t in tags}

@@ -292,7 +292,8 @@ class AWSProviderStrategy(ProviderStrategy):
         if self._health_service is None:
             self._health_service = AWSHealthCheckService(
                 aws_client=self.aws_client,  # type: ignore[arg-type]
-                config=self._aws_config, logger=self._logger
+                config=self._aws_config,
+                logger=self._logger,
             )
         return self._health_service
 
@@ -327,7 +328,9 @@ class AWSProviderStrategy(ProviderStrategy):
                 self._aws_provisioning_port = self._aws_provisioning_port_resolver()
                 self._logger.debug("Resolved AWS provisioning adapter via resolver")
             except Exception as exc:
-                self._logger.warning("Failed to resolve AWS provisioning adapter: %s", exc, exc_info=True)
+                self._logger.warning(
+                    "Failed to resolve AWS provisioning adapter: %s", exc, exc_info=True
+                )
                 self._aws_provisioning_port_resolver = None
         return self._aws_provisioning_port
 

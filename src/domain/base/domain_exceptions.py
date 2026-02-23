@@ -2,7 +2,6 @@
 
 from typing import Any, Optional
 
-
 # =============================================================================
 # BASE DOMAIN EXCEPTIONS
 # =============================================================================
@@ -49,7 +48,11 @@ class AggregateInvariantViolation(DomainException):
     """Exception raised when an aggregate invariant is violated."""
 
     def __init__(
-        self, aggregate_type: str, invariant: str, message: str, details: Optional[dict[str, Any]] = None
+        self,
+        aggregate_type: str,
+        invariant: str,
+        message: str,
+        details: Optional[dict[str, Any]] = None,
     ) -> None:
         """Initialize aggregate invariant violation.
 
@@ -67,9 +70,7 @@ class AggregateInvariantViolation(DomainException):
 class ValueObjectValidationError(DomainException):
     """Exception raised when value object validation fails."""
 
-    def __init__(
-        self, value_object_type: str, field: str, value: Any, reason: str
-    ) -> None:
+    def __init__(self, value_object_type: str, field: str, value: Any, reason: str) -> None:
         """Initialize value object validation error.
 
         Args:
@@ -94,6 +95,7 @@ class ValueObjectValidationError(DomainException):
 
 class TemplateException(DomainException):
     """Base exception for template-related errors."""
+
     pass
 
 
@@ -106,17 +108,16 @@ class TemplateNotFoundError(TemplateException):
         Args:
             template_id: ID of the template that was not found
         """
-        super().__init__(
-            f"Template not found: {template_id}",
-            {"template_id": template_id}
-        )
+        super().__init__(f"Template not found: {template_id}", {"template_id": template_id})
         self.template_id = template_id
 
 
 class TemplateValidationError(TemplateException):
     """Exception raised when template validation fails."""
 
-    def __init__(self, template_id: str, reason: str, details: Optional[dict[str, Any]] = None) -> None:
+    def __init__(
+        self, template_id: str, reason: str, details: Optional[dict[str, Any]] = None
+    ) -> None:
         """Initialize template validation error.
 
         Args:
@@ -126,7 +127,7 @@ class TemplateValidationError(TemplateException):
         """
         super().__init__(
             f"Template validation failed for {template_id}: {reason}",
-            {"template_id": template_id, "reason": reason, **(details or {})}
+            {"template_id": template_id, "reason": reason, **(details or {})},
         )
         self.template_id = template_id
         self.reason = reason
@@ -145,7 +146,7 @@ class TemplateConfigurationError(TemplateException):
         """
         super().__init__(
             f"Invalid template configuration for {template_id}.{field}: {reason}",
-            {"template_id": template_id, "field": field, "reason": reason}
+            {"template_id": template_id, "field": field, "reason": reason},
         )
         self.template_id = template_id
         self.field = field
@@ -159,6 +160,7 @@ class TemplateConfigurationError(TemplateException):
 
 class RequestException(DomainException):
     """Base exception for request-related errors."""
+
     pass
 
 
@@ -171,10 +173,7 @@ class RequestNotFoundError(RequestException):
         Args:
             request_id: ID of the request that was not found
         """
-        super().__init__(
-            f"Request not found: {request_id}",
-            {"request_id": request_id}
-        )
+        super().__init__(f"Request not found: {request_id}", {"request_id": request_id})
         self.request_id = request_id
 
 
@@ -196,8 +195,8 @@ class InvalidRequestStateTransition(RequestException):
                 "request_id": request_id,
                 "from_status": from_status,
                 "to_status": to_status,
-                "reason": reason
-            }
+                "reason": reason,
+            },
         )
         self.request_id = request_id
         self.from_status = from_status
@@ -207,7 +206,9 @@ class InvalidRequestStateTransition(RequestException):
 class RequestValidationError(RequestException):
     """Exception raised when request validation fails."""
 
-    def __init__(self, request_id: str, reason: str, details: Optional[dict[str, Any]] = None) -> None:
+    def __init__(
+        self, request_id: str, reason: str, details: Optional[dict[str, Any]] = None
+    ) -> None:
         """Initialize request validation error.
 
         Args:
@@ -217,7 +218,7 @@ class RequestValidationError(RequestException):
         """
         super().__init__(
             f"Request validation failed for {request_id}: {reason}",
-            {"request_id": request_id, "reason": reason, **(details or {})}
+            {"request_id": request_id, "reason": reason, **(details or {})},
         )
         self.request_id = request_id
         self.reason = reason
@@ -236,7 +237,7 @@ class RequestCapacityExceeded(RequestException):
         """
         super().__init__(
             f"Request {request_id} exceeds capacity: requested {requested}, available {available}",
-            {"request_id": request_id, "requested": requested, "available": available}
+            {"request_id": request_id, "requested": requested, "available": available},
         )
         self.request_id = request_id
         self.requested = requested
@@ -250,6 +251,7 @@ class RequestCapacityExceeded(RequestException):
 
 class MachineException(DomainException):
     """Base exception for machine-related errors."""
+
     pass
 
 
@@ -262,10 +264,7 @@ class MachineNotFoundError(MachineException):
         Args:
             machine_id: ID of the machine that was not found
         """
-        super().__init__(
-            f"Machine not found: {machine_id}",
-            {"machine_id": machine_id}
-        )
+        super().__init__(f"Machine not found: {machine_id}", {"machine_id": machine_id})
         self.machine_id = machine_id
 
 
@@ -287,8 +286,8 @@ class InvalidMachineStateTransition(MachineException):
                 "machine_id": machine_id,
                 "from_status": from_status,
                 "to_status": to_status,
-                "reason": reason
-            }
+                "reason": reason,
+            },
         )
         self.machine_id = machine_id
         self.from_status = from_status
@@ -298,7 +297,9 @@ class InvalidMachineStateTransition(MachineException):
 class MachineValidationError(MachineException):
     """Exception raised when machine validation fails."""
 
-    def __init__(self, machine_id: str, reason: str, details: Optional[dict[str, Any]] = None) -> None:
+    def __init__(
+        self, machine_id: str, reason: str, details: Optional[dict[str, Any]] = None
+    ) -> None:
         """Initialize machine validation error.
 
         Args:
@@ -308,7 +309,7 @@ class MachineValidationError(MachineException):
         """
         super().__init__(
             f"Machine validation failed for {machine_id}: {reason}",
-            {"machine_id": machine_id, "reason": reason, **(details or {})}
+            {"machine_id": machine_id, "reason": reason, **(details or {})},
         )
         self.machine_id = machine_id
         self.reason = reason
@@ -321,6 +322,7 @@ class MachineValidationError(MachineException):
 
 class ProviderException(DomainException):
     """Base exception for provider-related errors."""
+
     pass
 
 
@@ -354,7 +356,7 @@ class ProviderNotAvailableError(ProviderException):
         """
         super().__init__(
             f"Provider {provider_name} is not available: {reason}",
-            {"provider_name": provider_name, "reason": reason}
+            {"provider_name": provider_name, "reason": reason},
         )
         self.provider_name = provider_name
         self.reason = reason
@@ -363,7 +365,9 @@ class ProviderNotAvailableError(ProviderException):
 class ProviderValidationError(ProviderException):
     """Exception raised when provider validation fails."""
 
-    def __init__(self, provider_name: str, reason: str, details: Optional[dict[str, Any]] = None) -> None:
+    def __init__(
+        self, provider_name: str, reason: str, details: Optional[dict[str, Any]] = None
+    ) -> None:
         """Initialize provider validation error.
 
         Args:
@@ -373,7 +377,7 @@ class ProviderValidationError(ProviderException):
         """
         super().__init__(
             f"Provider validation failed for {provider_name}: {reason}",
-            {"provider_name": provider_name, "reason": reason, **(details or {})}
+            {"provider_name": provider_name, "reason": reason, **(details or {})},
         )
         self.provider_name = provider_name
         self.reason = reason
@@ -386,6 +390,7 @@ class ProviderValidationError(ProviderException):
 
 class ResourceException(DomainException):
     """Base exception for resource-related errors."""
+
     pass
 
 
@@ -409,8 +414,8 @@ class ResourceQuotaExceeded(ResourceException):
                 "requested": requested,
                 "limit": limit,
                 "used": used,
-                "available": available
-            }
+                "available": available,
+            },
         )
         self.resource_type = resource_type
         self.requested = requested
@@ -431,7 +436,7 @@ class ResourceNotFoundError(ResourceException):
         """
         super().__init__(
             f"{resource_type} not found: {resource_id}",
-            {"resource_type": resource_type, "resource_id": resource_id}
+            {"resource_type": resource_type, "resource_id": resource_id},
         )
         self.resource_type = resource_type
         self.resource_id = resource_id
@@ -450,7 +455,7 @@ class ResourceConflictError(ResourceException):
         """
         super().__init__(
             f"Resource conflict for {resource_type} {resource_id}: {reason}",
-            {"resource_type": resource_type, "resource_id": resource_id, "reason": reason}
+            {"resource_type": resource_type, "resource_id": resource_id, "reason": reason},
         )
         self.resource_type = resource_type
         self.resource_id = resource_id

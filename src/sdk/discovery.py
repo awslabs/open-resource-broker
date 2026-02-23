@@ -291,7 +291,7 @@ class SDKMethodDiscovery:
         # Add metadata to the method
         sdk_method.__name__ = method_info.name
         sdk_method.__doc__ = method_info.description
-        setattr(sdk_method, "_method_info", method_info)
+        sdk_method._method_info = method_info
 
         return sdk_method
 
@@ -328,7 +328,7 @@ class SDKMethodDiscovery:
         # Add metadata to the method
         sdk_method.__name__ = method_info.name
         sdk_method.__doc__ = method_info.description
-        setattr(sdk_method, "_method_info", method_info)
+        sdk_method._method_info = method_info
 
         return sdk_method
 

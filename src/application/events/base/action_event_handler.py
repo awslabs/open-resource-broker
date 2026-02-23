@@ -9,9 +9,10 @@ sending notifications, updating caches, triggering workflows, etc.
 from abc import abstractmethod
 from typing import Any, Optional
 
-from .event_handler import EventHandler
 from domain.base.events import DomainEvent
 from domain.base.ports import LoggingPort
+
+from .event_handler import EventHandler
 
 
 class ActionEventHandler(EventHandler):

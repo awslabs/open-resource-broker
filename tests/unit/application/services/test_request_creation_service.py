@@ -1,6 +1,5 @@
 """Unit tests for RequestCreationService."""
 
-import pytest
 from unittest.mock import MagicMock, patch
 
 from application.services.request_creation_service import RequestCreationService

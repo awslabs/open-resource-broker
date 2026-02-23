@@ -94,9 +94,8 @@ class TestAdditionalEndToEnd:
 
         # Patch template_repository.save to avoid get_domain_events call
         from unittest.mock import patch as _patch
-        self._save_patch = _patch.object(
-            self.template_repository, "save", return_value=None
-        )
+
+        self._save_patch = _patch.object(self.template_repository, "save", return_value=None)
         self._save_patch.start()
 
         # Sample request
@@ -401,6 +400,7 @@ class TestAdditionalEndToEnd:
 
         # Patch template repo save to avoid get_domain_events call on Pydantic model
         from unittest.mock import patch as _patch
+
         with _patch.object(json_template_repo, "save", return_value=None):
             json_template_repo.save(self.aws_template)
 

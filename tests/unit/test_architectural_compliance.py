@@ -162,6 +162,7 @@ class TestDDDCompliance:
         # Try to modify the event (should fail if immutable)
         # Pydantic frozen models raise ValidationError, not AttributeError/TypeError
         import pydantic
+
         with pytest.raises((AttributeError, TypeError, pydantic.ValidationError)):
             event.request_id = "modified-request"
 
@@ -231,7 +232,6 @@ class TestSOLIDCompliance:
         methods that ProviderPort requires at the abstract level.
         """
         try:
-            from infrastructure.interfaces.provider import ProviderPort
             from providers.aws.strategy.aws_provider_strategy import (
                 AWSProviderStrategy as AWSProvider,
             )
@@ -242,9 +242,7 @@ class TestSOLIDCompliance:
         # Verify AWSProvider has the core methods ProviderPort requires.
         # AWSProviderStrategy implements the provider contract via initialize,
         # get_capabilities, check_health and execute_operation.
-        assert hasattr(AWSProvider, "initialize"), (
-            "AWSProvider should implement initialize (LSP)"
-        )
+        assert hasattr(AWSProvider, "initialize"), "AWSProvider should implement initialize (LSP)"
         assert hasattr(AWSProvider, "get_capabilities") or hasattr(
             AWSProvider, "get_supported_apis"
         ), "AWSProvider should implement capability discovery (LSP)"
@@ -303,7 +301,6 @@ class TestCleanArchitectureCompliance:
         """Ensure dependencies point inward toward domain."""
         # Test that application layer imports domain, not vice versa
         app_imports_domain = False
-        domain_imports_app = False
 
         # Check application layer imports
         app_path = Path(__file__).parent.parent.parent / "src" / "application"
@@ -329,7 +326,6 @@ class TestCleanArchitectureCompliance:
                 content = f.read()
                 if "from application" in content or "import application" in content:
                     app_importing_files.append(py_file.name)
-                    domain_imports_app = True
 
         assert app_imports_domain, "Application layer should import domain layer"
         # Allow the known violation in request_creation_port.py only
@@ -352,31 +348,31 @@ class TestCleanArchitectureCompliance:
             "enum",
             "abc",
             "dataclasses",
-            "pydantic",       # Explicitly allowed by ADR-003
-            "domain",         # Intra-domain imports
-            "__future__",     # Python future imports
-            "functools",      # stdlib
-            "fnmatch",        # stdlib
-            "collections",    # stdlib
-            "re",             # stdlib
-            "os",             # stdlib
-            "sys",            # stdlib
-            "json",           # stdlib
-            "logging",        # stdlib
-            "pathlib",        # stdlib
-            "copy",           # stdlib
-            "math",           # stdlib
-            "time",           # stdlib
-            "hashlib",        # stdlib
-            "hmac",           # stdlib
-            "base64",         # stdlib
-            "contextlib",     # stdlib
-            "weakref",        # stdlib
-            "threading",      # stdlib
-            "asyncio",        # stdlib
-            "traceback",      # stdlib
-            "inspect",        # stdlib
-            "warnings",       # stdlib
+            "pydantic",  # Explicitly allowed by ADR-003
+            "domain",  # Intra-domain imports
+            "__future__",  # Python future imports
+            "functools",  # stdlib
+            "fnmatch",  # stdlib
+            "collections",  # stdlib
+            "re",  # stdlib
+            "os",  # stdlib
+            "sys",  # stdlib
+            "json",  # stdlib
+            "logging",  # stdlib
+            "pathlib",  # stdlib
+            "copy",  # stdlib
+            "math",  # stdlib
+            "time",  # stdlib
+            "hashlib",  # stdlib
+            "hmac",  # stdlib
+            "base64",  # stdlib
+            "contextlib",  # stdlib
+            "weakref",  # stdlib
+            "threading",  # stdlib
+            "asyncio",  # stdlib
+            "traceback",  # stdlib
+            "inspect",  # stdlib
+            "warnings",  # stdlib
         ]
 
         for py_file in domain_path.rglob("*.py"):
@@ -389,8 +385,7 @@ class TestCleanArchitectureCompliance:
                     for node in ast.walk(tree):
                         if isinstance(node, ast.ImportFrom):
                             if node.module and not any(
-                                node.module.startswith(allowed)
-                                for allowed in allowed_prefixes
+                                node.module.startswith(allowed) for allowed in allowed_prefixes
                             ):
                                 external_deps.append(f"{py_file.name}: {node.module}")
                 except SyntaxError:
@@ -399,7 +394,7 @@ class TestCleanArchitectureCompliance:
         # Filter out known acceptable cross-domain references (ports referencing aggregates,
         # application.dto in request_creation_port per tracked violation)
         known_acceptable = {
-            "application.dto.commands",   # tracked violation in request_creation_port.py
+            "application.dto.commands",  # tracked violation in request_creation_port.py
         }
         unexpected = [d for d in external_deps if not any(k in d for k in known_acceptable)]
 

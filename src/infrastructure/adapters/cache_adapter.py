@@ -18,13 +18,13 @@ class CacheServiceAdapter(CacheServicePort):
 
     async def get(self, key: str) -> Optional[Any]:
         """Get value from cache."""
-        if hasattr(self._cache, 'get'):
+        if hasattr(self._cache, "get"):
             return self._cache.get(key)
         return None
 
     async def set(self, key: str, value: Any, ttl: Optional[int] = None) -> None:
         """Set value in cache."""
-        if hasattr(self._cache, 'set'):
+        if hasattr(self._cache, "set"):
             if ttl is not None:
                 self._cache.set(key, value, ttl)
             else:
@@ -32,16 +32,16 @@ class CacheServiceAdapter(CacheServicePort):
 
     async def delete(self, key: str) -> None:
         """Delete value from cache."""
-        if hasattr(self._cache, 'delete'):
+        if hasattr(self._cache, "delete"):
             self._cache.delete(key)
 
     async def clear(self) -> None:
         """Clear all cache entries."""
-        if hasattr(self._cache, 'clear'):
+        if hasattr(self._cache, "clear"):
             self._cache.clear()
 
     async def exists(self, key: str) -> bool:
         """Check if key exists in cache."""
-        if hasattr(self._cache, 'exists'):
+        if hasattr(self._cache, "exists"):
             return self._cache.exists(key)
         return await self.get(key) is not None

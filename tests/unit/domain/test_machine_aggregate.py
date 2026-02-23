@@ -1,10 +1,8 @@
 """Unit tests for Machine aggregate."""
 
-from datetime import datetime, timezone
-
 import pytest
 
-from domain.base.value_objects import InstanceId, InstanceType, Tags
+from domain.base.value_objects import InstanceType
 from domain.machine.aggregate import Machine
 from domain.machine.exceptions import (
     InvalidMachineStateError,
@@ -14,10 +12,10 @@ from domain.machine.exceptions import (
 from domain.machine.machine_identifiers import MachineId
 from domain.machine.machine_status import MachineStatus
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _make_machine(
     machine_id="i-1234567890abcdef0",
@@ -104,7 +102,9 @@ class TestMachineAggregate:
         machine = _make_machine(status=MachineStatus.RUNNING)
 
         # RUNNING -> SHUTTING_DOWN
-        machine = machine.update_status(MachineStatus.SHUTTING_DOWN, reason="User requested termination")
+        machine = machine.update_status(
+            MachineStatus.SHUTTING_DOWN, reason="User requested termination"
+        )
         assert machine.status == MachineStatus.SHUTTING_DOWN
 
         # SHUTTING_DOWN -> TERMINATED

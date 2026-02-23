@@ -156,11 +156,15 @@ class StartupValidator:
             profile = aws_provider.config.get("profile", "default")
             region = aws_provider.config.get("region", "us-east-1")
 
+            from botocore.config import Config
+
             from providers.aws.session_factory import AWSSessionFactory
 
-            from botocore.config import Config
             session = AWSSessionFactory.create_session(profile, region)
-            session.client("sts", config=Config(connect_timeout=10, read_timeout=30, retries={"max_attempts": 3})).get_caller_identity()
+            session.client(
+                "sts",
+                config=Config(connect_timeout=10, read_timeout=30, retries={"max_attempts": 3}),
+            ).get_caller_identity()
             return True
 
         except (NoCredentialsError, ClientError):

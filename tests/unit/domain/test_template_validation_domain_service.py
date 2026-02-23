@@ -1,7 +1,8 @@
 """Unit tests for TemplateValidationDomainService."""
 
-import pytest
 from unittest.mock import MagicMock, patch
+
+import pytest
 
 from domain.base.results import ValidationLevel, ValidationResult
 from domain.services.template_validation_domain_service import (
@@ -137,9 +138,7 @@ class TestTemplateValidationDomainService:
         assert any("RunInstances" in f for f in result.supported_features)
 
     def test_exception_during_validation_returns_invalid(self):
-        self.config.get_provider_instance_config = MagicMock(
-            side_effect=RuntimeError("unexpected")
-        )
+        self.config.get_provider_instance_config = MagicMock(side_effect=RuntimeError("unexpected"))
         template = _make_template()
         result = self._run(template)
         assert result.is_valid is False

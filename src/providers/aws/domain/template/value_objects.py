@@ -214,7 +214,7 @@ class ProviderApi(str, Enum):
                 return new_member
         except Exception:
             # Fall through to hardcoded fallback
-            pass  # nosec B110
+            pass
 
         # Fallback to hardcoded values for safety
         fallback_values = {
@@ -278,7 +278,7 @@ class AWSFleetType(str, Enum):
                 return new_member
         except Exception:
             # Fall through to hardcoded fallback
-            pass  # nosec B110
+            pass
 
         # Fallback to hardcoded values for safety
         fallback_values = {

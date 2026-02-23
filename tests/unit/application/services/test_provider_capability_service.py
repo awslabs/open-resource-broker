@@ -4,7 +4,9 @@ from unittest.mock import Mock
 
 import pytest
 
-pytestmark = pytest.mark.skip(reason="application.services.provider_capability_service module removed")
+pytestmark = pytest.mark.skip(
+    reason="application.services.provider_capability_service module removed"
+)
 
 try:
     from application.services.provider_capability_service import (
@@ -12,6 +14,7 @@ try:
         ValidationLevel,
         ValidationResult,
     )
+
     HAS_CAPABILITY_SERVICE = True
 except ImportError:
     HAS_CAPABILITY_SERVICE = False

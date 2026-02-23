@@ -126,7 +126,10 @@ class RequestReturnMachinesRESTHandler(
                     )
 
                 # Create response DTO
-                return cast(RequestReturnMachinesResponse, CleanupResourcesResponse(metadata={"correlation_id": correlation_id}))
+                return cast(
+                    RequestReturnMachinesResponse,
+                    CleanupResourcesResponse(metadata={"correlation_id": correlation_id}),
+                )
 
             if all_flag:
                 # Create metadata for request

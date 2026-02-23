@@ -8,6 +8,7 @@ pytestmark = pytest.mark.skip(reason="infrastructure.persistence module path cha
 
 try:
     from infrastructure.persistence.json.strategy import JSONStorageStrategy
+
     HAS_JSON_STRATEGY = True
 except ImportError:
     HAS_JSON_STRATEGY = False

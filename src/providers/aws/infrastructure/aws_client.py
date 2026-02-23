@@ -407,6 +407,8 @@ class AWSClient:
             return stats
         return {"metrics_enabled": False}
 
-    def execute_with_circuit_breaker(self, service: str, operation: str, func: Any, *args: Any, **kwargs: Any) -> Any:
+    def execute_with_circuit_breaker(
+        self, service: str, operation: str, func: Any, *args: Any, **kwargs: Any
+    ) -> Any:
         """Execute an AWS operation with circuit breaker protection."""
         return func(*args, **kwargs)

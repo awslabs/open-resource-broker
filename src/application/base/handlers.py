@@ -13,7 +13,7 @@ from datetime import datetime
 from functools import wraps
 from typing import Any, Callable, Optional, TypeVar
 
-from application.dto.base import BaseCommand, BaseResponse
+from application.dto.base import BaseCommand
 from application.interfaces.command_handler import CommandHandler
 from application.interfaces.command_query import QueryHandler
 from application.ports.error_response_port import ErrorResponsePort

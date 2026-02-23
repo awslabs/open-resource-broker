@@ -5,15 +5,14 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 from typing import Any
 
-from application.base.handlers import BaseQueryHandler
-from application.decorators import query_handler
-from domain.base import UnitOfWorkFactory
-from domain.base.ports import ErrorHandlingPort, LoggingPort
-
-
 # Define query classes inline since they're not in dto/queries.py yet
 from pydantic import BaseModel, ConfigDict
+
+from application.base.handlers import BaseQueryHandler
+from application.decorators import query_handler
 from application.interfaces.command_query import Query
+from domain.base import UnitOfWorkFactory
+from domain.base.ports import ErrorHandlingPort, LoggingPort
 
 
 class ListCleanableRequestsQuery(Query, BaseModel):
@@ -31,9 +30,7 @@ class ListCleanableResourcesQuery(Query, BaseModel):
 
 
 @query_handler(ListCleanableRequestsQuery)
-class ListCleanableRequestsHandler(
-    BaseQueryHandler[ListCleanableRequestsQuery, dict[str, Any]]
-):
+class ListCleanableRequestsHandler(BaseQueryHandler[ListCleanableRequestsQuery, dict[str, Any]]):
     """Handler for listing requests eligible for cleanup."""
 
     def __init__(
@@ -48,7 +45,9 @@ class ListCleanableRequestsHandler(
 
     async def execute_query(self, query: ListCleanableRequestsQuery) -> dict[str, Any]:
         """Execute list cleanable requests query."""
-        self.logger.info("Listing requests eligible for cleanup (older than %d days)", query.older_than_days)
+        self.logger.info(
+            "Listing requests eligible for cleanup (older than %d days)", query.older_than_days
+        )
 
         cutoff_date = datetime.utcnow() - timedelta(days=query.older_than_days)
 
@@ -60,37 +59,37 @@ class ListCleanableRequestsHandler(
                 # Filter requests older than cutoff date
                 cleanable_requests = []
                 for request in all_requests:
-                    if hasattr(request, 'created_at') and request.created_at:
+                    if hasattr(request, "created_at") and request.created_at:
                         if request.created_at < cutoff_date:
-                            cleanable_requests.append({
-                                'request_id': str(request.request_id),
-                                'status': str(request.status),
-                                'created_at': request.created_at.isoformat(),
-                                'age_days': (datetime.utcnow() - request.created_at).days,
-                            })
+                            cleanable_requests.append(
+                                {
+                                    "request_id": str(request.request_id),
+                                    "status": str(request.status),
+                                    "created_at": request.created_at.isoformat(),
+                                    "age_days": (datetime.utcnow() - request.created_at).days,
+                                }
+                            )
 
                 return {
-                    'status': 'success',
-                    'cleanable_requests': cleanable_requests,
-                    'total_count': len(cleanable_requests),
-                    'cutoff_date': cutoff_date.isoformat(),
-                    'older_than_days': query.older_than_days,
+                    "status": "success",
+                    "cleanable_requests": cleanable_requests,
+                    "total_count": len(cleanable_requests),
+                    "cutoff_date": cutoff_date.isoformat(),
+                    "older_than_days": query.older_than_days,
                 }
 
         except Exception as e:
             self.logger.error("Failed to list cleanable requests: %s", e, exc_info=True)
             return {
-                'status': 'error',
-                'error': str(e),
-                'cleanable_requests': [],
-                'total_count': 0,
+                "status": "error",
+                "error": str(e),
+                "cleanable_requests": [],
+                "total_count": 0,
             }
 
 
 @query_handler(ListCleanableResourcesQuery)
-class ListCleanableResourcesHandler(
-    BaseQueryHandler[ListCleanableResourcesQuery, dict[str, Any]]
-):
+class ListCleanableResourcesHandler(BaseQueryHandler[ListCleanableResourcesQuery, dict[str, Any]]):
     """Handler for listing resources eligible for cleanup."""
 
     def __init__(
@@ -120,27 +119,29 @@ class ListCleanableResourcesHandler(
                 orphaned_machines = []
 
                 for machine in all_machines:
-                    if hasattr(machine, 'request_id') and machine.request_id:
+                    if hasattr(machine, "request_id") and machine.request_id:
                         if str(machine.request_id) not in request_ids:
-                            orphaned_machines.append({
-                                'machine_id': str(machine.machine_id),
-                                'request_id': str(machine.request_id),
-                                'status': str(machine.status),
-                            })
+                            orphaned_machines.append(
+                                {
+                                    "machine_id": str(machine.machine_id),
+                                    "request_id": str(machine.request_id),
+                                    "status": str(machine.status),
+                                }
+                            )
 
                 return {
-                    'status': 'success',
-                    'orphaned_machines': orphaned_machines,
-                    'total_machines': len(all_machines),
-                    'total_requests': len(all_requests),
-                    'orphaned_count': len(orphaned_machines),
+                    "status": "success",
+                    "orphaned_machines": orphaned_machines,
+                    "total_machines": len(all_machines),
+                    "total_requests": len(all_requests),
+                    "orphaned_count": len(orphaned_machines),
                 }
 
         except Exception as e:
             self.logger.error("Failed to list cleanable resources: %s", e, exc_info=True)
             return {
-                'status': 'error',
-                'error': str(e),
-                'orphaned_machines': [],
-                'orphaned_count': 0,
+                "status": "error",
+                "error": str(e),
+                "orphaned_machines": [],
+                "orphaned_count": 0,
             }

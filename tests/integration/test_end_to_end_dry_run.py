@@ -72,9 +72,15 @@ class TestEndToEndDryRun:
         template = self._make_template()
 
         mock_handler = Mock()
-        mock_handler.acquire_hosts.return_value = {"success": True, "resource_ids": ["fleet-123"], "instances": []}
+        mock_handler.acquire_hosts.return_value = {
+            "success": True,
+            "resource_ids": ["fleet-123"],
+            "instances": [],
+        }
 
-        with patch.object(self.provisioning_adapter, "_get_handler_for_template", return_value=mock_handler):
+        with patch.object(
+            self.provisioning_adapter, "_get_handler_for_template", return_value=mock_handler
+        ):
             result = asyncio.run(self.provisioning_adapter.provision_resources(request, template))
 
         assert result == {"success": True, "resource_ids": ["fleet-123"], "instances": []}
@@ -92,7 +98,9 @@ class TestEndToEndDryRun:
         mock_result.error_message = "simulated failure"
 
         self.aws_strategy.execute_operation = AsyncMock(return_value=mock_result)
-        with patch.object(self.aws_strategy, "execute_operation", new=AsyncMock(return_value=mock_result)):
+        with patch.object(
+            self.aws_strategy, "execute_operation", new=AsyncMock(return_value=mock_result)
+        ):
             try:
                 asyncio.run(self.provisioning_adapter.provision_resources(request, template))
                 assert False, "Expected InfrastructureError"
@@ -103,9 +111,11 @@ class TestEndToEndDryRun:
         """dry_run_context sets and clears the global dry-run flag."""
         with dry_run_context(True):
             from infrastructure.mocking.dry_run_context import is_dry_run_active
+
             assert is_dry_run_active()
 
         from infrastructure.mocking.dry_run_context import is_dry_run_active
+
         assert not is_dry_run_active()
 
     def test_no_strategy_falls_back_to_handlers(self):
@@ -119,7 +129,11 @@ class TestEndToEndDryRun:
         template = self._make_template()
 
         mock_handler = Mock()
-        mock_handler.acquire_hosts.return_value = {"success": True, "resource_ids": ["fleet-fallback"], "instances": []}
+        mock_handler.acquire_hosts.return_value = {
+            "success": True,
+            "resource_ids": ["fleet-fallback"],
+            "instances": [],
+        }
 
         with patch.object(adapter, "_get_handler_for_template", return_value=mock_handler):
             result = asyncio.run(adapter.provision_resources(request, template))

@@ -125,7 +125,7 @@ def get_scripts_location() -> Path:
         return get_config_location().parent / "scripts"
 
     elif mode == "editable":
-        return (base_path or Path.cwd()) / "scripts"
+        return (base_path or Path.cwd()) / "src/infrastructure/scheduler/hostfactory/scripts"
 
     elif mode == "user":
         try:

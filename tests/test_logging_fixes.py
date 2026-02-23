@@ -16,16 +16,20 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-pytestmark = pytest.mark.skip(reason="ProviderContext and ProviderCapabilityService modules removed")
+pytestmark = pytest.mark.skip(
+    reason="ProviderContext and ProviderCapabilityService modules removed"
+)
 
 try:
     from providers.base.strategy.provider_context import ProviderContext
+
     HAS_PROVIDER_CONTEXT = True
 except ImportError:
     HAS_PROVIDER_CONTEXT = False
 
 try:
     from application.services.provider_capability_service import ProviderCapabilityService
+
     HAS_CAPABILITY_SERVICE = True
 except ImportError:
     HAS_CAPABILITY_SERVICE = False

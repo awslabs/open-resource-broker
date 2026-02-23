@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
-from typing import Any
 
 from application.base.handlers import BaseCommandHandler
 from application.decorators import command_handler
@@ -41,7 +40,7 @@ class CleanupOldRequestsHandler(BaseCommandHandler[CleanupOldRequestsCommand, No
     async def validate_command(self, command: CleanupOldRequestsCommand) -> None:
         """Validate cleanup old requests command."""
         await super().validate_command(command)
-        if not hasattr(command, 'older_than_days') or command.older_than_days <= 0:
+        if not hasattr(command, "older_than_days") or command.older_than_days <= 0:
             raise ValueError("older_than_days must be positive")
 
     async def execute_command(self, command: CleanupOldRequestsCommand) -> None:

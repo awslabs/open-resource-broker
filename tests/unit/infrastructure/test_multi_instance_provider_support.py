@@ -4,10 +4,13 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-pytestmark = pytest.mark.skip(reason="src.infrastructure.registry.provider_registry module removed - using application services")
+pytestmark = pytest.mark.skip(
+    reason="src.infrastructure.registry.provider_registry module removed - using application services"
+)
 
 try:
     from src.infrastructure.registry.provider_registry import ProviderRegistry
+
     HAS_PROVIDER_REGISTRY = True
 except ImportError:
     HAS_PROVIDER_REGISTRY = False
@@ -17,6 +20,7 @@ try:
         ProviderConfig,
         ProviderInstanceConfig,
     )
+
     HAS_PROVIDER_CONFIG = True
 except ImportError:
     HAS_PROVIDER_CONFIG = False

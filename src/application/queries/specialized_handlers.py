@@ -209,6 +209,7 @@ class GetMachineHealthHandler(BaseQueryHandler[GetMachineHealthQuery, MachineHea
 
                 # Create health DTO
                 from datetime import datetime
+
                 health_dto = MachineHealthDTO(
                     machine_id=str(machine.machine_id),
                     overall_status=health_status,

@@ -8,8 +8,7 @@ from domain.base.exceptions import ConfigurationError
 from domain.base.results import ProviderSelectionResult
 from infrastructure.registry.base_registry import BaseRegistration, BaseRegistry, RegistryMode
 from infrastructure.utilities.common.string_utils import extract_provider_type
-
-from providers.registry.types import ProviderFactoryInterface, ProviderRegistration, UnsupportedProviderError
+from providers.registry.types import ProviderRegistration, UnsupportedProviderError
 
 
 class ProviderRegistry(BaseRegistry):
@@ -99,7 +98,9 @@ class ProviderRegistry(BaseRegistry):
             if hasattr(strategy, "initialize") and not strategy.is_initialized:
                 if not strategy.initialize():
                     if self._logger:
-                        self._logger.error("Failed to initialize strategy: %s", provider_identifier, exc_info=True)
+                        self._logger.error(
+                            "Failed to initialize strategy: %s", provider_identifier, exc_info=True
+                        )
                     return None
 
             # Cache strategy
@@ -154,12 +155,17 @@ class ProviderRegistry(BaseRegistry):
         except ImportError as e:
             if self._logger:
                 self._logger.warning(
-                    "Failed to import provider registration module '%s': %s", module_name, e, exc_info=True
+                    "Failed to import provider registration module '%s': %s",
+                    module_name,
+                    e,
+                    exc_info=True,
                 )
             return False
         except Exception as e:
             if self._logger:
-                self._logger.error("Error registering provider type '%s': %s", provider_type, e, exc_info=True)
+                self._logger.error(
+                    "Error registering provider type '%s': %s", provider_type, e, exc_info=True
+                )
             return False
 
     def ensure_provider_instance_registered_from_config(self, provider_instance: Any) -> bool:
@@ -632,8 +638,12 @@ class ProviderRegistry(BaseRegistry):
         if not provider_config:
             raise ValueError("No provider configuration available")
 
-        default_provider_type: Optional[str] = getattr(provider_config, "default_provider_type", None)
-        default_provider_instance: Optional[str] = getattr(provider_config, "default_provider_instance", None)
+        default_provider_type: Optional[str] = getattr(
+            provider_config, "default_provider_type", None
+        )
+        default_provider_instance: Optional[str] = getattr(
+            provider_config, "default_provider_instance", None
+        )
 
         if not default_provider_instance:
             enabled_instances = [p for p in provider_config.providers if p.enabled]
@@ -826,5 +836,6 @@ def get_provider_registry() -> ProviderRegistry:
             if _provider_registry_instance is None:
                 _provider_registry_instance = ProviderRegistry()  # type: ignore[assignment]
 
-    assert _provider_registry_instance is not None
-    return _provider_registry_instance
+    if _provider_registry_instance is None:
+        raise RuntimeError("Provider registry not initialized")
+    return _provider_registry_instance  # type: ignore[return-value]

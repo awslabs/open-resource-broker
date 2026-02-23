@@ -3,7 +3,7 @@
 import pytest
 
 from domain.request.request_identifiers import MachineReference, RequestId, ResourceIdentifier
-from domain.request.request_types import MachineResult, RequestType
+from domain.request.request_types import RequestType
 
 
 class TestRequestId:
@@ -69,27 +69,19 @@ class TestMachineReference:
             MachineReference(machine_id="", status="running", result="success")
 
     def test_is_successful_true(self):
-        ref = MachineReference(
-            machine_id="i-abc123def456", status="running", result="success"
-        )
+        ref = MachineReference(machine_id="i-abc123def456", status="running", result="success")
         assert ref.is_successful() is True
 
     def test_is_successful_false(self):
-        ref = MachineReference(
-            machine_id="i-abc123def456", status="failed", result="failed"
-        )
+        ref = MachineReference(machine_id="i-abc123def456", status="failed", result="failed")
         assert ref.is_successful() is False
 
     def test_is_failed_true(self):
-        ref = MachineReference(
-            machine_id="i-abc123def456", status="failed", result="failed"
-        )
+        ref = MachineReference(machine_id="i-abc123def456", status="failed", result="failed")
         assert ref.is_failed() is True
 
     def test_is_failed_false(self):
-        ref = MachineReference(
-            machine_id="i-abc123def456", status="running", result="success"
-        )
+        ref = MachineReference(machine_id="i-abc123def456", status="running", result="success")
         assert ref.is_failed() is False
 
     def test_has_error_with_message(self):
@@ -102,9 +94,7 @@ class TestMachineReference:
         assert ref.has_error() is True
 
     def test_has_error_without_message(self):
-        ref = MachineReference(
-            machine_id="i-abc123def456", status="running", result="success"
-        )
+        ref = MachineReference(machine_id="i-abc123def456", status="running", result="success")
         assert ref.has_error() is False
 
     def test_has_error_empty_message(self):
@@ -117,9 +107,7 @@ class TestMachineReference:
         assert ref.has_error() is False
 
     def test_update_status_returns_new_instance(self):
-        ref = MachineReference(
-            machine_id="i-abc123def456", status="pending", result="pending"
-        )
+        ref = MachineReference(machine_id="i-abc123def456", status="pending", result="pending")
         updated = ref.update_status("running", "success")
         assert updated.status == "running"
         assert updated.result == "success"
@@ -128,16 +116,12 @@ class TestMachineReference:
         assert ref.status == "pending"
 
     def test_update_status_with_error(self):
-        ref = MachineReference(
-            machine_id="i-abc123def456", status="pending", result="pending"
-        )
+        ref = MachineReference(machine_id="i-abc123def456", status="pending", result="pending")
         updated = ref.update_status("failed", "failed", error_message="Capacity error")
         assert updated.error_message == "Capacity error"
 
     def test_str_representation(self):
-        ref = MachineReference(
-            machine_id="i-abc123def456", status="running", result="success"
-        )
+        ref = MachineReference(machine_id="i-abc123def456", status="running", result="success")
         s = str(ref)
         assert "i-abc123def456" in s
         assert "running" in s

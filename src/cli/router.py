@@ -179,14 +179,18 @@ async def execute_command(args, app, resource_parsers) -> Union[str, tuple[str, 
 
             resource_name = args.resource
             if resource_name in ["templates", "template"]:
-                template_id = getattr(args, "template_id", None) or getattr(args, "flag_template_id", None)
+                template_id = getattr(args, "template_id", None) or getattr(
+                    args, "flag_template_id", None
+                )
                 if not template_id:
                     raise DomainException(
                         "Template ID is required for 'show' command. "
                         "Usage: orb templates show <template-id> or orb templates show --template-id <template-id>"
                     )
             elif resource_name in ["machines", "machine"]:
-                machine_id = getattr(args, "machine_id", None) or getattr(args, "flag_machine_id", None)
+                machine_id = getattr(args, "machine_id", None) or getattr(
+                    args, "flag_machine_id", None
+                )
                 if not machine_id:
                     raise DomainException(
                         "Machine ID is required for 'show' command. "

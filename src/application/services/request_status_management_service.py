@@ -80,9 +80,7 @@ class RequestStatusManagementService:
             request, len(instances), request.requested_count, has_api_errors, provider_errors
         )
 
-    def _handle_provisioning_failure(
-        self, request: Any, provisioning_result: Any
-    ) -> Any:
+    def _handle_provisioning_failure(self, request: Any, provisioning_result: Any) -> Any:
         """Handle provisioning failure."""
         from domain.request.value_objects import RequestStatus
 

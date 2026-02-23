@@ -224,6 +224,7 @@ async def handle_create_template(args: argparse.Namespace) -> dict[str, Any]:
             return {"success": False, "error": "Template file is required"}
 
         import json
+
         try:
             with open(args.file) as f:
                 template_config = json.load(f)
@@ -548,7 +549,9 @@ async def handle_refresh_templates(args: argparse.Namespace) -> dict[str, Any]:
 
         # Force refresh by listing templates with force_refresh parameter
         # This will trigger cache refresh in the query handler
-        query = ListTemplatesQuery(provider_api=None, active_only=True, include_detailed_fields=False)
+        query = ListTemplatesQuery(
+            provider_api=None, active_only=True, include_detailed_fields=False
+        )
 
         templates = await query_bus.execute(query)
         template_count = len(templates) if templates else 0

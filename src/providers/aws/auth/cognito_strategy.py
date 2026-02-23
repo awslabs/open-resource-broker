@@ -62,7 +62,9 @@ class CognitoAuthStrategy(AuthPort):
 
         # Initialize Cognito client
         try:
-            self.cognito_client = boto3.client("cognito-idp", region_name=region, config=_DEFAULT_CONFIG)
+            self.cognito_client = boto3.client(
+                "cognito-idp", region_name=region, config=_DEFAULT_CONFIG
+            )
         except Exception as e:
             self._logger.error("Failed to initialize Cognito client: %s", e)
             self.enabled = False

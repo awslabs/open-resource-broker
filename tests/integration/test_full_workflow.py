@@ -116,6 +116,7 @@ class TestFullWorkflow:
         # Mock query execution to return empty template list
         with patch.object(query_bus, "execute_sync", return_value=[]) as mock_exec:
             from application.dto.queries import ListTemplatesQuery
+
             result = query_bus.execute_sync(ListTemplatesQuery())
             assert isinstance(result, list)
             mock_exec.assert_called_once()
@@ -128,21 +129,30 @@ class TestFullWorkflow:
         command_bus = app.get_command_bus()
         query_bus = app.get_query_bus()
 
-        with patch.object(command_bus, "execute", new=AsyncMock(return_value={
-            "request_id": "req-12345678",
-            "status": "pending",
-            "machine_count": 2,
-        })):
-            import asyncio
+        with patch.object(
+            command_bus,
+            "execute",
+            new=AsyncMock(
+                return_value={
+                    "request_id": "req-12345678",
+                    "status": "pending",
+                    "machine_count": 2,
+                }
+            ),
+        ):
             cmd_result = await command_bus.execute(Mock())
             assert cmd_result["request_id"] == "req-12345678"
             assert cmd_result["status"] == "pending"
 
-        with patch.object(query_bus, "execute_sync", return_value={
-            "request_id": "req-12345678",
-            "status": "processing",
-            "progress": 50.0,
-        }):
+        with patch.object(
+            query_bus,
+            "execute_sync",
+            return_value={
+                "request_id": "req-12345678",
+                "status": "processing",
+                "progress": 50.0,
+            },
+        ):
             qry_result = query_bus.execute_sync(Mock())
             assert qry_result["status"] == "processing"
             assert qry_result["progress"] == 50.0
@@ -154,11 +164,17 @@ class TestFullWorkflow:
 
         command_bus = app.get_command_bus()
 
-        with patch.object(command_bus, "execute", new=AsyncMock(return_value={
-            "request_id": "req-return-123",
-            "status": "pending",
-            "machine_count": 2,
-        })):
+        with patch.object(
+            command_bus,
+            "execute",
+            new=AsyncMock(
+                return_value={
+                    "request_id": "req-return-123",
+                    "status": "pending",
+                    "machine_count": 2,
+                }
+            ),
+        ):
             result = await command_bus.execute(Mock())
             assert result["request_id"] == "req-return-123"
             assert result["status"] == "pending"
@@ -170,11 +186,15 @@ class TestFullWorkflow:
 
         query_bus = app.get_query_bus()
 
-        with patch.object(query_bus, "execute_sync", return_value={
-            "machine_id": "machine-001",
-            "instance_id": "i-1234567890abcdef0",
-            "status": "running",
-        }):
+        with patch.object(
+            query_bus,
+            "execute_sync",
+            return_value={
+                "machine_id": "machine-001",
+                "instance_id": "i-1234567890abcdef0",
+                "status": "running",
+            },
+        ):
             result = query_bus.execute_sync(Mock())
             assert result["machine_id"] == "machine-001"
             assert result["status"] == "running"
@@ -260,26 +280,42 @@ class TestEndToEndScenarios:
         command_bus = app.get_command_bus()
         query_bus = app.get_query_bus()
 
-        with patch.object(command_bus, "execute", new=AsyncMock(return_value={
-            "request_id": "req-12345678",
-            "status": "pending",
-            "machine_count": 2,
-        })):
+        with patch.object(
+            command_bus,
+            "execute",
+            new=AsyncMock(
+                return_value={
+                    "request_id": "req-12345678",
+                    "status": "pending",
+                    "machine_count": 2,
+                }
+            ),
+        ):
             result = await command_bus.execute(Mock())
             assert result["request_id"] == "req-12345678"
 
-        with patch.object(query_bus, "execute_sync", return_value={
-            "request_id": "req-12345678",
-            "status": "completed",
-            "progress": 100.0,
-        }):
+        with patch.object(
+            query_bus,
+            "execute_sync",
+            return_value={
+                "request_id": "req-12345678",
+                "status": "completed",
+                "progress": 100.0,
+            },
+        ):
             status = query_bus.execute_sync(Mock())
             assert status["status"] == "completed"
 
-        with patch.object(command_bus, "execute", new=AsyncMock(return_value={
-            "request_id": "req-return-123",
-            "status": "pending",
-        })):
+        with patch.object(
+            command_bus,
+            "execute",
+            new=AsyncMock(
+                return_value={
+                    "request_id": "req-return-123",
+                    "status": "pending",
+                }
+            ),
+        ):
             return_result = await command_bus.execute(Mock())
             assert return_result["request_id"] == "req-return-123"
 
@@ -316,11 +352,18 @@ class TestEndToEndScenarios:
 
         def worker(worker_id):
             import asyncio
+
             try:
-                with patch.object(command_bus, "execute", new=AsyncMock(return_value={
-                    "request_id": f"req-worker-{worker_id}",
-                    "status": "pending",
-                })):
+                with patch.object(
+                    command_bus,
+                    "execute",
+                    new=AsyncMock(
+                        return_value={
+                            "request_id": f"req-worker-{worker_id}",
+                            "status": "pending",
+                        }
+                    ),
+                ):
                     loop = asyncio.new_event_loop()
                     result = loop.run_until_complete(command_bus.execute(Mock()))
                     loop.close()
@@ -412,10 +455,14 @@ class TestPerformanceIntegration:
         results = []
 
         def worker(worker_id):
-            with patch.object(query_bus, "execute_sync", return_value={
-                "request_id": f"req-{worker_id}",
-                "status": "completed",
-            }):
+            with patch.object(
+                query_bus,
+                "execute_sync",
+                return_value={
+                    "request_id": f"req-{worker_id}",
+                    "status": "completed",
+                },
+            ):
                 result = query_bus.execute_sync(Mock())
                 results.append(result)
 

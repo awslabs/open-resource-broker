@@ -2,7 +2,6 @@
 
 import pytest
 
-from domain.base.value_objects import InstanceId
 from domain.machine.machine_identifiers import MachineId
 from infrastructure.interfaces.provider import ProviderConfig
 from tests.fixtures.mock_provider import MockProvider, create_mock_provider

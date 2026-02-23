@@ -27,7 +27,6 @@ from api.server import create_fastapi_app
 from config.schemas.server_schema import AuthConfig, ServerConfig
 from infrastructure.di.buses import CommandBus, QueryBus
 
-
 # ---------------------------------------------------------------------------
 # Shared helpers and fixtures
 # ---------------------------------------------------------------------------
@@ -726,6 +725,4 @@ class TestConfigurationManagement:
         """All API responses include an X-Request-ID header."""
         for endpoint in ["/health", "/info"]:
             response = client.get(endpoint)
-            assert "X-Request-ID" in response.headers, (
-                f"X-Request-ID header missing on {endpoint}"
-            )
+            assert "X-Request-ID" in response.headers, f"X-Request-ID header missing on {endpoint}"

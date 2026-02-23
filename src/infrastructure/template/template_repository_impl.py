@@ -26,6 +26,7 @@ def _run_async(coro):
         loop = asyncio.get_event_loop()
         if loop.is_running():
             import concurrent.futures
+
             with concurrent.futures.ThreadPoolExecutor() as pool:
                 future = pool.submit(asyncio.run, coro)
                 return future.result()
@@ -69,7 +70,9 @@ class TemplateRepositoryImpl(TemplateRepository):
         """Find templates by provider API type."""
         self._logger.debug("Finding templates by provider API: %s", provider_api)
         dtos = self._template_manager.get_all_templates_sync()
-        return [_dto_to_template(d) for d in dtos if getattr(d, "provider_api", None) == provider_api]
+        return [
+            _dto_to_template(d) for d in dtos if getattr(d, "provider_api", None) == provider_api
+        ]
 
     def find_active_templates(self) -> list[Template]:
         """Find all active templates."""

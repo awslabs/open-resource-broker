@@ -63,9 +63,7 @@ class ProvisioningOrchestrationService:
                 },
             )
 
-            self._provider_config_port.get_provider_instance_config(
-                selection_result.provider_name
-            )
+            self._provider_config_port.get_provider_instance_config(selection_result.provider_name)
 
             result = await self._provider_selection_port.execute_operation(
                 selection_result.provider_name, operation
@@ -118,7 +116,9 @@ class ProvisioningOrchestrationService:
                 e,
                 exc_info=True,
                 extra={
-                    "request_id": str(request.request_id) if hasattr(request, "request_id") else None,
+                    "request_id": str(request.request_id)
+                    if hasattr(request, "request_id")
+                    else None,
                     "provider_name": selection_result.provider_name if selection_result else None,
                     "error_type": type(e).__name__,
                 },

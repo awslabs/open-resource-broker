@@ -136,7 +136,6 @@ class TestOCPComplianceIntegration:
         """Test command handler integration with registry."""
         from application.commands.provider_handlers import RegisterProviderStrategyHandler
         from application.provider.commands import RegisterProviderStrategyCommand
-        from application.services.provider_registry_service import ProviderRegistryService
 
         registry = get_provider_registry()
         mock_strategy = Mock()
@@ -170,6 +169,7 @@ class TestOCPComplianceIntegration:
         )
 
         import asyncio
+
         result = asyncio.run(handler.handle(command))
 
         mock_registry_service.register_provider_strategy.assert_called_once_with(
@@ -184,9 +184,7 @@ class TestOCPComplianceIntegration:
         ]
 
         for file_path in files_to_check:
-            full_path = os.path.join(
-                os.path.dirname(__file__), "../..", file_path
-            )
+            full_path = os.path.join(os.path.dirname(__file__), "../..", file_path)
             if os.path.exists(full_path):
                 with open(full_path) as f:
                     content = f.read()

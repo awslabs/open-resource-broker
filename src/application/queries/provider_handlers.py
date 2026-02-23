@@ -9,11 +9,6 @@ from typing import Any, cast
 
 from application.base.handlers import BaseQueryHandler
 from application.decorators import query_handler
-from application.dto.system import (
-    ProviderCapabilitiesDTO,
-    ProviderHealthDTO,
-    ProviderStrategyConfigDTO,
-)
 from application.provider.queries import (
     GetProviderCapabilitiesQuery,
     GetProviderHealthQuery,

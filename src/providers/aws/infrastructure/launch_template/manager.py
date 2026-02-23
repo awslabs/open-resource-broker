@@ -292,7 +292,7 @@ class AWSLaunchTemplateManager:
             try:
                 package_info = self.config_port.get_package_info()
                 created_by = package_info.get("name", "open-resource-broker")
-            except Exception:  # nosec B110
+            except Exception:
                 pass
 
         # Process custom tags
@@ -336,9 +336,7 @@ class AWSLaunchTemplateManager:
                 if hasattr(template, "instance_profile") and template.instance_profile
                 else None
             ),
-            "ebs_optimized": (
-                getattr(template, "ebs_optimized", None)
-            ),
+            "ebs_optimized": (getattr(template, "ebs_optimized", None)),
             "monitoring_enabled": (
                 template.monitoring_enabled
                 if hasattr(template, "monitoring_enabled")
@@ -556,7 +554,7 @@ class AWSLaunchTemplateManager:
             try:
                 package_info = self.config_port.get_package_info()
                 created_by = package_info.get("name", "open-resource-broker")
-            except Exception:  # nosec B110
+            except Exception:
                 # Intentionally silent fallback for package info retrieval
                 pass
 
@@ -595,7 +593,7 @@ class AWSLaunchTemplateManager:
             try:
                 package_info = self.config_port.get_package_info()
                 created_by = package_info.get("name", "open-resource-broker")
-            except Exception:  # nosec B110
+            except Exception:
                 # Intentionally silent fallback for package info retrieval
                 pass
 

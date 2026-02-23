@@ -383,8 +383,8 @@ class AWSHandler(ABC):
         self,
         client_method: Callable,
         result_key: str,
-        request_token_param: str = "NextToken",  # nosec B107 - AWS API parameter name, not a password
-        response_token_key: str = "NextToken",  # nosec B107 - AWS API parameter name, not a password
+        request_token_param: str = "NextToken",  # nosec B107
+        response_token_key: str = "NextToken",  # nosec B107
         **kwargs,
     ) -> list[dict[str, Any]]:
         """

@@ -48,7 +48,7 @@ class ListStorageStrategiesHandler(
             Storage strategies list response
         """
         # Access infrastructure through DI container
-        from domain.base.ports import ConfigurationPort, ContainerPort
+        from domain.base.ports import ConfigurationPort
 
         config_manager = self._container.get(ConfigurationPort)
         storage_types = self._storage_service.get_available_storage_types()

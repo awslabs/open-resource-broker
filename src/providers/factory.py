@@ -55,6 +55,7 @@ class ProviderStrategyFactory:
         effective_logger: Any = logger
         if effective_logger is None:
             from infrastructure.logging.logger import get_logger
+
             effective_logger = get_logger(__name__)
 
         self._config_builder = ProviderConfigBuilder(effective_logger)
@@ -150,7 +151,9 @@ class ProviderStrategyFactory:
                 # Fallback to provider type (backward compatibility)
                 strategy = registry.get_or_create_strategy(provider_config.type, config)
                 if self._logger:
-                    self._logger.debug("Created provider strategy from type: %s", provider_config.type)
+                    self._logger.debug(
+                        "Created provider strategy from type: %s", provider_config.type
+                    )
 
             # Set provider name for identification
             if strategy is not None and hasattr(strategy, "name"):

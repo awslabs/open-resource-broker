@@ -227,7 +227,9 @@ class TestAWSValidationAdapterErrorHandling:
         """Test provider API validation when config access fails."""
         adapter = AWSValidationAdapter(broken_aws_config, mock_logger)
 
-        with patch("infrastructure.di.container.get_container", side_effect=Exception("Config error")):
+        with patch(
+            "infrastructure.di.container.get_container", side_effect=Exception("Config error")
+        ):
             result = adapter.validate_provider_api("EC2Fleet")
 
         assert result is False
@@ -237,7 +239,9 @@ class TestAWSValidationAdapterErrorHandling:
         """Test getting supported APIs when config access fails."""
         adapter = AWSValidationAdapter(broken_aws_config, mock_logger)
 
-        with patch("infrastructure.di.container.get_container", side_effect=Exception("Config error")):
+        with patch(
+            "infrastructure.di.container.get_container", side_effect=Exception("Config error")
+        ):
             result = adapter.get_supported_provider_apis()
 
         assert result == []

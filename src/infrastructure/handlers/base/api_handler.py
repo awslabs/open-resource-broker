@@ -89,9 +89,7 @@ class BaseAPIHandler(BaseHandler, Generic[T, R]):
 
         # Apply circuit breaker middleware if service_name is provided
         if service_name:
-            wrapped_func = self.with_retry_middleware(
-                service_name=service_name
-            )(wrapped_func)
+            wrapped_func = self.with_retry_middleware(service_name=service_name)(wrapped_func)
 
         # Apply error handling middleware
         wrapped_func = self.with_error_handling_middleware(wrapped_func)
@@ -207,8 +205,8 @@ class BaseAPIHandler(BaseHandler, Generic[T, R]):
                 result = func(request)
 
                 # Convert result to dictionary if needed
-                if hasattr(result, "to_dict") and callable(getattr(result, "to_dict")):
-                    return getattr(result, "to_dict")()
+                if hasattr(result, "to_dict") and callable(result.to_dict):
+                    return result.to_dict()
                 elif isinstance(result, dict):
                     return result
                 else:
@@ -235,8 +233,8 @@ class BaseAPIHandler(BaseHandler, Generic[T, R]):
             except DomainException as e:
                 # Handle all application-specific errors (DomainException and subclasses)
                 error_dict: dict[str, Any]
-                if hasattr(e, "to_dict") and callable(getattr(e, "to_dict")):
-                    error_dict = getattr(e, "to_dict")()
+                if hasattr(e, "to_dict") and callable(e.to_dict):
+                    error_dict = e.to_dict()
                 else:
                     error_dict = {"code": e.__class__.__name__, "message": str(e)}
 

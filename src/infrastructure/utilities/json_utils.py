@@ -24,7 +24,7 @@ def safe_json_loads(
     data: Union[str, bytes],
     default: Any = None,
     raise_on_error: bool = False,
-    context: Optional[str] = None
+    context: Optional[str] = None,
 ) -> Any:
     """Safely parse JSON string with comprehensive error handling.
 
@@ -70,12 +70,7 @@ def safe_json_loads(
         if context:
             error_msg = f"{context}: {error_msg}"
 
-        logger.error(
-            "%s. Sample: %s",
-            error_msg,
-            sample,
-            exc_info=True
-        )
+        logger.error("%s. Sample: %s", error_msg, sample, exc_info=True)
 
         if raise_on_error:
             raise JSONParseError(error_msg, original_error=e) from e
@@ -109,7 +104,7 @@ def safe_json_dumps(
     default: str = "{}",
     raise_on_error: bool = False,
     context: Optional[str] = None,
-    **kwargs: Any
+    **kwargs: Any,
 ) -> str:
     """Safely serialize object to JSON string with error handling.
 

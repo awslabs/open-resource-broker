@@ -6,17 +6,17 @@ from typing import Any, Optional
 from uuid import uuid4
 
 from domain.base.events import DomainEvent
+from domain.base.ports.storage_port import StoragePort
+from domain.request.aggregate import Request
+from domain.request.repository import RequestRepository as RequestRepositoryInterface
+from domain.request.value_objects import RequestId, RequestStatus, RequestType
+from infrastructure.error.decorators import handle_infrastructure_exceptions
 from infrastructure.events import (
     RepositoryOperationCompletedEvent,
     RepositoryOperationFailedEvent,
     RepositoryOperationStartedEvent,
     SlowQueryDetectedEvent,
 )
-from domain.base.ports.storage_port import StoragePort
-from domain.request.aggregate import Request
-from domain.request.repository import RequestRepository as RequestRepositoryInterface
-from domain.request.value_objects import RequestId, RequestStatus, RequestType
-from infrastructure.error.decorators import handle_infrastructure_exceptions
 from infrastructure.logging.logger import get_logger
 from infrastructure.storage.base.repository_mixin import StorageRepositoryMixin
 from infrastructure.storage.components.entity_serializer import BaseEntitySerializer
@@ -347,9 +347,11 @@ class RequestRepositoryImpl(StorageRepositoryMixin, RequestRepositoryInterface):
 
                 if request_date.tzinfo is None and start_date.tzinfo is not None:
                     from datetime import timezone
+
                     request_date = request_date.replace(tzinfo=timezone.utc)
                 elif request_date.tzinfo is not None and start_date.tzinfo is None:
                     from datetime import timezone
+
                     start_date = start_date.replace(tzinfo=timezone.utc)
                     end_date = end_date.replace(tzinfo=timezone.utc)
 

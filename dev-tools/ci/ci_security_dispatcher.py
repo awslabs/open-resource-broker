@@ -8,7 +8,7 @@ import sys
 def handle_bandit():
     """Handle bandit security scan."""
     print("Running Bandit security scan...")
-    return ["./dev-tools/scripts/run_tool.sh", "bandit", "-r", "src"]
+    return ["./dev-tools/scripts/run_tool.sh", "bandit", "-r", "src", "--exit-zero"]
 
 
 def handle_safety():

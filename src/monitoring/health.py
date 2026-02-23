@@ -446,7 +446,11 @@ class HealthCheck:
 
             # List tables
             from botocore.config import Config
-            tables = self.aws_client.session.client("dynamodb", config=Config(connect_timeout=10, read_timeout=30, retries={"max_attempts": 3})).list_tables()
+
+            tables = self.aws_client.session.client(
+                "dynamodb",
+                config=Config(connect_timeout=10, read_timeout=30, retries={"max_attempts": 3}),
+            ).list_tables()
             project_tables = [t for t in tables["TableNames"] if t.startswith(table_prefix)]
 
             return HealthStatus(

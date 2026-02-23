@@ -12,11 +12,10 @@ import asyncio
 import logging
 import sys
 
-from infrastructure.logging.logger import get_logger
-
 # Re-export for backward compatibility
 from cli.args import parse_args
 from cli.router import execute_command
+from infrastructure.logging.logger import get_logger
 
 __all__ = ["main", "parse_args", "execute_command"]
 
@@ -50,8 +49,14 @@ async def main() -> None:
             if e.code == 2 and len(sys.argv) >= 2 and "required: action" in error_output:
                 resource_name = sys.argv[1]
                 if resource_name in [
-                    "templates", "machines", "requests", "system",
-                    "config", "providers", "storage", "scheduler",
+                    "templates",
+                    "machines",
+                    "requests",
+                    "system",
+                    "config",
+                    "providers",
+                    "storage",
+                    "scheduler",
                 ]:
                     original_argv = sys.argv[:]
                     sys.argv = [sys.argv[0], resource_name, "--help"]
@@ -84,10 +89,18 @@ async def main() -> None:
         if (
             hasattr(args, "action")
             and args.action is None
-            and args.resource in [
-                "templates", "template", "machines", "machine",
-                "requests", "request", "providers", "provider",
-                "infrastructure", "infra",
+            and args.resource
+            in [
+                "templates",
+                "template",
+                "machines",
+                "machine",
+                "requests",
+                "request",
+                "providers",
+                "provider",
+                "infrastructure",
+                "infra",
             ]
         ):
             resource_map = {
@@ -216,8 +229,8 @@ async def main() -> None:
                 sys.exit(exit_code)
 
         except Exception as e:
-            from domain.base.exceptions import DomainException
             from cli.response_formatter import create_cli_formatter
+            from domain.base.exceptions import DomainException
 
             if isinstance(e, DomainException):
                 logger.exception("Domain error: %s", e, exc_info=True)

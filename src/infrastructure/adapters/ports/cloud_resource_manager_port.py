@@ -16,10 +16,7 @@ from .cloud_resource_quota_port import CloudResourceQuotaPort
 
 
 class CloudResourceManagerPort(
-    CloudResourceQuotaPort,
-    CloudResourceCatalogPort,
-    CloudAccountPort,
-    ABC
+    CloudResourceQuotaPort, CloudResourceCatalogPort, CloudAccountPort, ABC
 ):
     """Composite interface for managing cloud resources.
 
@@ -31,4 +28,5 @@ class CloudResourceManagerPort(
 
     This follows ISP by allowing clients to depend on minimal interfaces.
     """
+
     pass

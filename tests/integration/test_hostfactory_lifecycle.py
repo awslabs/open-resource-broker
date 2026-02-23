@@ -31,23 +31,23 @@ class MockAppService:
 
         req_id = f"req-{uuid.uuid4().hex[:8]}"
         try:
-            instance_ids = self._provider.create_instances(
-                {"templateId": template_id}, count
-            )
+            instance_ids = self._provider.create_instances({"templateId": template_id}, count)
             if isinstance(instance_ids, Exception):
                 raise instance_ids
             machines = []
             for mid in instance_ids:
-                machines.append({
-                    "machineId": str(mid.value),
-                    "name": str(mid.value),
-                    "result": "succeed",
-                    "status": "running",
-                    "privateIpAddress": "10.0.1.1",
-                    "publicIpAddress": "",
-                    "launchtime": 1640995200,
-                    "message": "",
-                })
+                machines.append(
+                    {
+                        "machineId": str(mid.value),
+                        "name": str(mid.value),
+                        "result": "succeed",
+                        "status": "running",
+                        "privateIpAddress": "10.0.1.1",
+                        "publicIpAddress": "",
+                        "launchtime": 1640995200,
+                        "message": "",
+                    }
+                )
             self._requests[req_id] = {
                 "requestId": req_id,
                 "status": "complete",
@@ -71,6 +71,7 @@ class MockAppService:
     def request_return_machines(self, machine_ids):
         req_id = f"ret-{uuid.uuid4().hex[:8]}"
         from domain.machine.machine_identifiers import MachineId
+
         ids = [MachineId(value=m["machineId"]) for m in machine_ids]
         success = self._provider.terminate_instances(ids)
         result = "succeed" if success else "fail"

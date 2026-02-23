@@ -588,7 +588,9 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                 else None
             ),
             "allocation_strategy_on_demand": (
-                self._get_allocation_strategy_on_demand(template.allocation_strategy_on_demand.value)
+                self._get_allocation_strategy_on_demand(
+                    template.allocation_strategy_on_demand.value
+                )
                 if template.allocation_strategy_on_demand
                 else None
             ),
@@ -673,7 +675,9 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
             "TargetCapacitySpecification": {"TotalTargetCapacity": request.requested_count},
             "Type": template.fleet_type.value
             if template.fleet_type and hasattr(template.fleet_type, "value")
-            else str(template.fleet_type) if template.fleet_type else "request",
+            else str(template.fleet_type)
+            if template.fleet_type
+            else "request",
             "TagSpecifications": [
                 {
                     "ResourceType": "fleet",

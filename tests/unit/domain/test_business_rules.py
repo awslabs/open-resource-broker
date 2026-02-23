@@ -2,21 +2,21 @@
 
 import pytest
 
+from domain.base.value_objects import InstanceType
 from domain.machine.aggregate import Machine
 from domain.machine.exceptions import InvalidMachineStateError, MachineValidationError
-from domain.machine.machine_status import MachineStatus
-from domain.base.value_objects import InstanceType, Tags
 from domain.machine.machine_identifiers import MachineId
+from domain.machine.machine_status import MachineStatus
 from domain.request.aggregate import Request
-from domain.request.exceptions import InvalidRequestStateError, RequestValidationError
+from domain.request.exceptions import InvalidRequestStateError
 from domain.request.request_types import RequestStatus, RequestType
 from domain.template.exceptions import TemplateValidationError
 from domain.template.template_aggregate import Template
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _new_request(machine_count=1, template_id="test-template"):
     """Create a minimal valid ACQUIRE request."""

@@ -5,7 +5,6 @@ from application.decorators import command_handler
 from application.template.commands import (
     CreateTemplateCommand,
     DeleteTemplateCommand,
-    TemplateCommandResponse,
     UpdateTemplateCommand,
 )
 from domain.base import UnitOfWorkFactory

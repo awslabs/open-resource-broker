@@ -24,7 +24,9 @@ class TestDependencyResolver:
         """Set up test fixtures."""
         self.service_registry = ServiceRegistry()
         self.cqrs_registry = CQRSHandlerRegistry()
-        self.resolver = DependencyResolver(self.service_registry, self.cqrs_registry, container=None)
+        self.resolver = DependencyResolver(
+            self.service_registry, self.cqrs_registry, container=None
+        )
 
     def test_initialization(self):
         """Test resolver initialization."""
@@ -133,7 +135,7 @@ class TestDependencyResolver:
         """Test circular dependency detection."""
 
         class ClassA:
-            def __init__(self, b: "ClassB"):  # noqa: F821
+            def __init__(self, b: "ClassB"):
                 self.b = b
 
         class ClassB:
@@ -372,7 +374,9 @@ class TestDependencyResolverEdgeCases:
         """Set up test fixtures."""
         self.service_registry = ServiceRegistry()
         self.cqrs_registry = CQRSHandlerRegistry()
-        self.resolver = DependencyResolver(self.service_registry, self.cqrs_registry, container=None)
+        self.resolver = DependencyResolver(
+            self.service_registry, self.cqrs_registry, container=None
+        )
 
     def test_resolve_with_none_type(self):
         """Test behavior when trying to resolve None type."""
@@ -481,7 +485,9 @@ class TestDependencyResolverIntegration:
         """Set up test fixtures."""
         self.service_registry = ServiceRegistry()
         self.cqrs_registry = CQRSHandlerRegistry()
-        self.resolver = DependencyResolver(self.service_registry, self.cqrs_registry, container=None)
+        self.resolver = DependencyResolver(
+            self.service_registry, self.cqrs_registry, container=None
+        )
 
     def test_integration_with_service_registry(self):
         """Test integration with ServiceRegistry."""

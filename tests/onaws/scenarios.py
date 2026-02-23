@@ -33,13 +33,19 @@ def resolve_template_id(overrides: Dict[str, Any]) -> str:
         price_label = price_map.get(price_type, "")
         for t in templates:
             t_id = t.get("templateId", "")
-            if t.get("providerApi") == search_api and fleet_type.capitalize() in t_id and price_label in t_id:
+            if (
+                t.get("providerApi") == search_api
+                and fleet_type.capitalize() in t_id
+                and price_label in t_id
+            ):
                 return t_id
 
     # 2. Try providerApi + fleetType only
     if fleet_type:
         for t in templates:
-            if t.get("providerApi") == search_api and fleet_type.capitalize() in t.get("templateId", ""):
+            if t.get("providerApi") == search_api and fleet_type.capitalize() in t.get(
+                "templateId", ""
+            ):
                 return t["templateId"]
 
     # 3. Try providerApi + priceType only
@@ -55,6 +61,7 @@ def resolve_template_id(overrides: Dict[str, Any]) -> str:
             return t["templateId"]
 
     return templates[0]["templateId"] if templates else "BASE"
+
 
 # Global default attribute combinations
 DEFAULT_ATTRIBUTE_COMBINATIONS = [

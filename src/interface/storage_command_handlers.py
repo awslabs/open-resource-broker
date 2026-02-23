@@ -44,7 +44,9 @@ async def handle_show_storage_config(args) -> dict[str, Any]:
     container = get_container()
     query_bus = container.get(QueryBus)
 
-    from application.queries.system import GetConfigurationSectionQuery as GetStorageConfigQuery  # type: ignore[attr-defined]
+    from application.queries.system import (
+        GetConfigurationSectionQuery as GetStorageConfigQuery,  # type: ignore[attr-defined]
+    )
 
     query = GetStorageConfigQuery(section="storage")
     config = await query_bus.execute(query)
@@ -66,7 +68,9 @@ async def handle_validate_storage_config(args) -> dict[str, Any]:
     container = get_container()
     query_bus = container.get(QueryBus)
 
-    from application.queries.system import ValidateProviderConfigQuery as ValidateStorageConfigQuery  # type: ignore[attr-defined]
+    from application.queries.system import (
+        ValidateProviderConfigQuery as ValidateStorageConfigQuery,  # type: ignore[attr-defined]
+    )
 
     query = ValidateStorageConfigQuery()
     validation = await query_bus.execute(query)

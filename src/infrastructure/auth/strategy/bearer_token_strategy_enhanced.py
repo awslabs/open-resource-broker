@@ -1,8 +1,9 @@
 """Enhanced bearer token authentication strategy with blacklist and rate limiting."""
 
+import base64
+import json
 import time
 from collections import defaultdict
-from typing import Optional
 
 import jwt
 
@@ -46,9 +47,7 @@ class RateLimiter:
         cutoff_time = current_time - self._window_seconds
 
         # Clean old attempts
-        self._attempts[identifier] = [
-            t for t in self._attempts[identifier] if t > cutoff_time
-        ]
+        self._attempts[identifier] = [t for t in self._attempts[identifier] if t > cutoff_time]
 
         # Check if rate limited
         if len(self._attempts[identifier]) >= self._max_attempts:
@@ -161,7 +160,7 @@ class EnhancedBearerTokenStrategy(AuthPort):
         try:
             # Check blacklist first (fail fast)
             if await self.blacklist.is_blacklisted(token):
-                self.logger.warning("Attempted use of blacklisted token")
+                self.logger.warning("Attempted use of revoked JWT")
                 return AuthResult(
                     status=AuthStatus.INVALID,
                     error_message="Token has been revoked",
@@ -189,7 +188,7 @@ class EnhancedBearerTokenStrategy(AuthPort):
             if not user_id:
                 return AuthResult(status=AuthStatus.INVALID, error_message="Token missing user ID")
 
-            self.logger.debug("Token validated for user: %s", user_id)
+            self.logger.debug("Auth validated for user: %s", user_id)
 
             return AuthResult(
                 status=AuthStatus.SUCCESS,
@@ -209,10 +208,10 @@ class EnhancedBearerTokenStrategy(AuthPort):
         except jwt.ExpiredSignatureError:
             return AuthResult(status=AuthStatus.EXPIRED, error_message="Token has expired")
         except jwt.InvalidTokenError as e:
-            self.logger.warning("Invalid token: %s", str(e))
+            self.logger.warning("JWT validation failed: %s", str(e))
             return AuthResult(status=AuthStatus.INVALID, error_message="Invalid token")
         except Exception as e:
-            self.logger.error("Token validation error: %s", e)
+            self.logger.error("Auth validation error: %s", e)
             return AuthResult(status=AuthStatus.FAILED, error_message="Token validation failed")
 
     async def refresh_token(self, refresh_token: str) -> AuthResult:
@@ -266,10 +265,10 @@ class EnhancedBearerTokenStrategy(AuthPort):
         except jwt.InvalidTokenError as e:
             return AuthResult(
                 status=AuthStatus.INVALID,
-                error_message=f"Invalid refresh token: {str(e)}",
+                error_message=f"Invalid refresh token: {e!s}",
             )
         except Exception as e:
-            self.logger.error("Token refresh error: %s", e)
+            self.logger.error("Auth refresh error: %s", e)
             return AuthResult(status=AuthStatus.FAILED, error_message="Token refresh failed")
 
     async def revoke_token(self, token: str) -> bool:
@@ -283,25 +282,31 @@ class EnhancedBearerTokenStrategy(AuthPort):
             True if token was revoked
         """
         try:
-            # Decode token to get expiration (don't verify, just extract)
-            payload = jwt.decode(
-                token,
-                options={"verify_signature": False},
-            )
-            expires_at = payload.get("exp")
+            # Extract expiration from JWT payload without verification
+            # (token is being revoked, we only need exp for blacklist TTL)
+            try:
+                payload_part = token.split(".")[1]
+                # Add padding if needed
+                padding = 4 - len(payload_part) % 4
+                if padding != 4:
+                    payload_part += "=" * padding
+                decoded = json.loads(base64.urlsafe_b64decode(payload_part))
+                expires_at = decoded.get("exp")
+            except Exception:
+                expires_at = None
 
             # Add to blacklist
             success = await self.blacklist.add_token(token, expires_at)
 
             if success:
-                self.logger.info("Token revoked and added to blacklist")
+                self.logger.info("JWT revoked and added to blacklist")
             else:
-                self.logger.error("Failed to add token to blacklist")
+                self.logger.error("Failed to add JWT to blacklist")
 
             return success
 
         except Exception as e:
-            self.logger.error("Token revocation error: %s", e)
+            self.logger.error("Auth revocation error: %s", e)
             return False
 
     def get_strategy_name(self) -> str:

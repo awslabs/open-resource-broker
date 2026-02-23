@@ -36,9 +36,7 @@ def register_port_adapters(container):
 
     # Register focused ProviderConfigPort - reuse the same ConfigurationAdapter
     # since ConfigurationPort extends ProviderConfigPort (DIP: depend on abstraction)
-    container.register_singleton(
-        ProviderConfigPort, lambda c: c.get(ConfigurationPort)
-    )
+    container.register_singleton(ProviderConfigPort, lambda c: c.get(ConfigurationPort))
 
     # Register UnitOfWorkFactory (abstract -> concrete mapping)
     # This was previously in _setup_core_dependencies but got lost during DI cleanup

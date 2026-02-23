@@ -284,8 +284,8 @@ class TestTemplateDefaultsIntegration:
         )
 
         # Create mock dependencies
-        mock_config_manager = Mock()
-        mock_logger = Mock()
+        Mock()
+        Mock()
         mock_template_defaults_service = Mock()
 
         # Setup mock template defaults service

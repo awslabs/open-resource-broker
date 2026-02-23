@@ -93,7 +93,9 @@ def _register_critical_storage_types(container: "DIContainer", critical_types: l
             registry.ensure_type_registered(storage_type)
             logger.info("Preloaded critical storage type: %s", storage_type)
         except Exception as e:
-            logger.warning("Failed to preload critical storage type %s: %s", storage_type, e, exc_info=True)
+            logger.warning(
+                "Failed to preload critical storage type %s: %s", storage_type, e, exc_info=True
+            )
 
 
 def _register_configured_storage_strategy(container: "DIContainer") -> None:
