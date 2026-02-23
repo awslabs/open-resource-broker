@@ -22,10 +22,6 @@ def resolve_template_id(overrides: Dict[str, Any]) -> str:
     fleet_type = overrides.get("fleetType", "")
     price_type = overrides.get("priceType", "")
 
-    # Normalize provider API names to match template file conventions
-    provider_api_map = {"ASG": "AutoScalingGroup"}
-    search_api = provider_api_map.get(provider_api, provider_api)
-
     price_map = {"ondemand": "OnDemand", "spot": "Spot", "heterogeneous": "Mixed"}
 
     # 1. Try exact match: providerApi + fleetType + priceType
@@ -34,7 +30,7 @@ def resolve_template_id(overrides: Dict[str, Any]) -> str:
         for t in templates:
             t_id = t.get("templateId", "")
             if (
-                t.get("providerApi") == search_api
+                t.get("providerApi") == provider_api
                 and fleet_type.capitalize() in t_id
                 and price_label in t_id
             ):
@@ -43,7 +39,7 @@ def resolve_template_id(overrides: Dict[str, Any]) -> str:
     # 2. Try providerApi + fleetType only
     if fleet_type:
         for t in templates:
-            if t.get("providerApi") == search_api and fleet_type.capitalize() in t.get(
+            if t.get("providerApi") == provider_api and fleet_type.capitalize() in t.get(
                 "templateId", ""
             ):
                 return t["templateId"]
@@ -52,12 +48,12 @@ def resolve_template_id(overrides: Dict[str, Any]) -> str:
     if price_type:
         price_label = price_map.get(price_type, "")
         for t in templates:
-            if t.get("providerApi") == search_api and price_label in t.get("templateId", ""):
+            if t.get("providerApi") == provider_api and price_label in t.get("templateId", ""):
                 return t["templateId"]
 
     # 4. Fallback: first template matching provider API
     for t in templates:
-        if t.get("providerApi") == search_api:
+        if t.get("providerApi") == provider_api:
             return t["templateId"]
 
     return templates[0]["templateId"] if templates else "BASE"
