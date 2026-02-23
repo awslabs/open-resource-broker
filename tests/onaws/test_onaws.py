@@ -803,6 +803,7 @@ def setup_host_factory_mock(request):
 
     # Set environment variables
     test_config_dir = processor.run_templates_dir / test_name
+    os.environ["ORB_CONFIG_DIR"] = str(test_config_dir)
     os.environ["HF_PROVIDER_CONFDIR"] = str(test_config_dir)
     os.environ["HF_PROVIDER_LOGDIR"] = str(test_config_dir / "logs")
     os.environ["HF_PROVIDER_WORKDIR"] = str(test_config_dir / "work")
@@ -851,6 +852,7 @@ def setup_host_factory_mock_with_scenario(request):
 
     # Set environment variables
     test_config_dir = processor.run_templates_dir / test_name
+    os.environ["ORB_CONFIG_DIR"] = str(test_config_dir)
     os.environ["HF_PROVIDER_CONFDIR"] = str(test_config_dir)
     os.environ["HF_PROVIDER_LOGDIR"] = str(test_config_dir / "logs")
     os.environ["HF_PROVIDER_WORKDIR"] = str(test_config_dir / "work")
