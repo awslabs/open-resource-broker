@@ -74,7 +74,7 @@ class MachineConfiguration(ValueObject):
 
     def to_dict(self) -> dict[str, Any]:
         """Convert configuration to dictionary."""
-        result = {
+        config_dict = {
             "instanceType": self.instance_type,
             "privateIpAddress": str(self.private_ip),
             "providerApi": self.provider_api,
@@ -83,11 +83,11 @@ class MachineConfiguration(ValueObject):
         }
 
         if self.public_ip:
-            result["publicIpAddress"] = str(self.public_ip)
+            config_dict["publicIpAddress"] = str(self.public_ip)
         if self.cloud_host_id:
-            result["cloudHostId"] = self.cloud_host_id
+            config_dict["cloudHostId"] = self.cloud_host_id
 
-        return result
+        return config_dict
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> MachineConfiguration:

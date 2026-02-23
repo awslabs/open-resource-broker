@@ -70,12 +70,12 @@ class MachineFilter:
         """Get field value from machine object."""
         # Handle nested fields (e.g., metadata.key)
         if "." in self.field:
-            obj = machine
+            current_attr = machine
             for part in self.field.split("."):
-                obj = getattr(obj, part, None)
-                if obj is None:
+                current_attr = getattr(current_attr, part, None)
+                if current_attr is None:
                     break
-            return obj
+            return current_attr
 
         return getattr(machine, self.field, None)
 

@@ -3,6 +3,7 @@
 from dataclasses import dataclass, field
 from typing import Any
 
+from domain.base.exceptions import ConfigurationError, EntityNotFoundError
 from domain.base.ports.configuration_port import ConfigurationPort
 from domain.base.ports.logging_port import LoggingPort
 from domain.base.results import ValidationLevel, ValidationResult
@@ -109,11 +110,11 @@ class TemplateValidationDomainService:
         self._ensure_initialized()
 
         if not self.config:
-            raise ValueError("No configuration manager available")
+            raise ConfigurationError("No configuration manager available")
 
         provider_config = self.config.get_provider_instance_config(provider_instance)
         if not provider_config:
-            raise ValueError(f"Provider instance {provider_instance} not found in configuration")
+            raise EntityNotFoundError("ProviderInstance", provider_instance)
 
         provider_config_root = self.config.get_provider_config()
         provider_defaults = provider_config_root.provider_defaults.get(provider_config.type) if provider_config_root is not None else None  # type: ignore[union-attr]

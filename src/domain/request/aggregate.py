@@ -7,6 +7,7 @@ from pydantic import ConfigDict, Field
 
 from domain.base.entity import AggregateRoot
 from domain.base.events import RequestCompletedEvent, RequestCreatedEvent, RequestStatusChangedEvent
+from domain.request.exceptions import InvalidRequestStateError, RequestValidationError
 from domain.request.request_types import RequestStatus
 from domain.request.value_objects import RequestId, RequestType
 
@@ -90,15 +91,15 @@ class Request(AggregateRoot):
     def start_processing(self) -> "Request":
         """Mark request as started processing."""
         if self.status != RequestStatus.PENDING:
-            raise ValueError(f"Cannot start processing request in status: {self.status}")
+            raise InvalidRequestStateError(self.status.value, RequestStatus.IN_PROGRESS.value)
 
         old_status = self.status
-        data = self.model_dump()
-        data["status"] = RequestStatus.IN_PROGRESS
-        data["started_at"] = datetime.utcnow()
-        data["version"] = self.version + 1
+        fields = self.model_dump()
+        fields["status"] = RequestStatus.IN_PROGRESS
+        fields["started_at"] = datetime.utcnow()
+        fields["version"] = self.version + 1
 
-        updated_request = Request.model_validate(data)
+        updated_request = Request.model_validate(fields)
 
         # Add domain event for status change
         status_event = RequestStatusChangedEvent(
@@ -117,9 +118,9 @@ class Request(AggregateRoot):
         self, error_message: str, error_details: Optional[dict[str, Any]] = None
     ) -> "Request":
         """Add a failed instance creation."""
-        data = self.model_dump()
-        data["failed_count"] = self.failed_count + 1
-        data["version"] = self.version + 1
+        fields = self.model_dump()
+        fields["failed_count"] = self.failed_count + 1
+        fields["version"] = self.version + 1
 
         # Update error details
         if error_details:
@@ -129,17 +130,17 @@ class Request(AggregateRoot):
                 "details": error_details,
                 "timestamp": datetime.utcnow().isoformat(),
             }
-            data["error_details"] = current_errors
+            fields["error_details"] = current_errors
 
         # Check if request is complete
-        if self.successful_count + data["failed_count"] >= self.requested_count:
-            data["status"] = (
+        if self.successful_count + fields["failed_count"] >= self.requested_count:
+            fields["status"] = (
                 RequestStatus.PARTIAL if self.successful_count > 0 else RequestStatus.FAILED
             )
-            data["completed_at"] = datetime.utcnow()
-            data["status_message"] = f"Request completed with {data['failed_count']} failures"
+            fields["completed_at"] = datetime.utcnow()
+            fields["status_message"] = f"Request completed with {fields['failed_count']} failures"
 
-        return Request.model_validate(data)
+        return Request.model_validate(fields)
 
     def cancel(self, reason: str) -> "Request":
         """Cancel the request."""
@@ -148,26 +149,26 @@ class Request(AggregateRoot):
             RequestStatus.FAILED,
             RequestStatus.CANCELLED,
         ]:
-            raise ValueError(f"Cannot cancel request in status: {self.status}")
+            raise InvalidRequestStateError(self.status.value, RequestStatus.CANCELLED.value)
 
-        data = self.model_dump()
-        data["status"] = RequestStatus.CANCELLED
-        data["status_message"] = reason
-        data["completed_at"] = datetime.utcnow()
-        data["version"] = self.version + 1
+        fields = self.model_dump()
+        fields["status"] = RequestStatus.CANCELLED
+        fields["status_message"] = reason
+        fields["completed_at"] = datetime.utcnow()
+        fields["version"] = self.version + 1
 
-        return Request.model_validate(data)
+        return Request.model_validate(fields)
 
     def complete(self, message: Optional[str] = None) -> "Request":
         """Mark request as completed."""
         old_status = self.status
-        data = self.model_dump()
-        data["status"] = RequestStatus.COMPLETED
-        data["status_message"] = message or "Request completed successfully"
-        data["completed_at"] = datetime.utcnow()
-        data["version"] = self.version + 1
+        fields = self.model_dump()
+        fields["status"] = RequestStatus.COMPLETED
+        fields["status_message"] = message or "Request completed successfully"
+        fields["completed_at"] = datetime.utcnow()
+        fields["version"] = self.version + 1
 
-        updated_request = Request.model_validate(data)
+        updated_request = Request.model_validate(fields)
 
         # Add domain events
         status_event = RequestStatusChangedEvent(
@@ -194,23 +195,23 @@ class Request(AggregateRoot):
 
     def fail(self, error_message: str, error_details: Optional[dict[str, Any]] = None) -> "Request":
         """Mark request as failed."""
-        data = self.model_dump()
-        data["status"] = RequestStatus.FAILED
-        data["status_message"] = error_message
-        data["completed_at"] = datetime.utcnow()
-        data["version"] = self.version + 1
+        fields = self.model_dump()
+        fields["status"] = RequestStatus.FAILED
+        fields["status_message"] = error_message
+        fields["completed_at"] = datetime.utcnow()
+        fields["version"] = self.version + 1
 
         if error_details:
-            data["error_details"] = error_details
+            fields["error_details"] = error_details
 
-        return Request.model_validate(data)
+        return Request.model_validate(fields)
 
     def set_provider_data(self, provider_data: dict[str, Any]) -> "Request":
         """Set provider-specific data."""
-        data = self.model_dump()
-        data["provider_data"] = provider_data
-        data["version"] = self.version + 1
-        return Request.model_validate(data)
+        fields = self.model_dump()
+        fields["provider_data"] = provider_data
+        fields["version"] = self.version + 1
+        return Request.model_validate(fields)
 
     def get_provider_data(self, key: str, default: Any = None) -> Any:
         """Get provider-specific data value."""
@@ -219,19 +220,19 @@ class Request(AggregateRoot):
     def add_resource_id(self, resource_id: str) -> "Request":
         """Add a provider resource ID"""
         if resource_id not in self.resource_ids:
-            data = self.model_dump()
-            data["resource_ids"] = [*self.resource_ids, resource_id]
-            data["version"] = self.version + 1
-            return Request.model_validate(data)
+            fields = self.model_dump()
+            fields["resource_ids"] = [*self.resource_ids, resource_id]
+            fields["version"] = self.version + 1
+            return Request.model_validate(fields)
         return self
 
     def remove_resource_id(self, resource_id: str) -> "Request":
         """Remove a resource ID"""
         if resource_id in self.resource_ids:
-            data = self.model_dump()
-            data["resource_ids"] = [rid for rid in self.resource_ids if rid != resource_id]
-            data["version"] = self.version + 1
-            return Request.model_validate(data)
+            fields = self.model_dump()
+            fields["resource_ids"] = [rid for rid in self.resource_ids if rid != resource_id]
+            fields["version"] = self.version + 1
+            return Request.model_validate(fields)
         return self
 
     def add_machine_ids(self, machine_ids: list[str]) -> "Request":
@@ -344,7 +345,7 @@ class Request(AggregateRoot):
                 # Validate that existing prefix matches request_type
                 expected_prefix = "req-" if request_type == RequestType.ACQUIRE else "ret-"
                 if not request_id.startswith(expected_prefix):
-                    raise ValueError(
+                    raise RequestValidationError(
                         f"Request ID prefix mismatch: ID '{request_id}' has wrong prefix for "
                         f"request_type '{request_type.value}'. Expected prefix: '{expected_prefix}'"
                     )
@@ -467,11 +468,11 @@ class Request(AggregateRoot):
         Returns:
             Updated Request instance
         """
-        data = self.model_dump()
+        fields = self.model_dump()
 
         # Update successful count from provisioning result
         if "instance_ids" in provisioning_result:
-            data["successful_count"] = self.successful_count + len(
+            fields["successful_count"] = self.successful_count + len(
                 provisioning_result["instance_ids"]
             )
 
@@ -479,17 +480,17 @@ class Request(AggregateRoot):
         if "provider_data" in provisioning_result:
             current_provider_data = dict(self.provider_data)
             current_provider_data.update(provisioning_result["provider_data"])
-            data["provider_data"] = current_provider_data
+            fields["provider_data"] = current_provider_data
 
         # Update status if provisioning was successful
         if provisioning_result.get("success", False):
-            data["status"] = RequestStatus.IN_PROGRESS
+            fields["status"] = RequestStatus.IN_PROGRESS
             if not self.started_at:
-                data["started_at"] = datetime.utcnow()
+                fields["started_at"] = datetime.utcnow()
 
-        data["version"] = self.version + 1
+        fields["version"] = self.version + 1
 
-        return Request.model_validate(data)
+        return Request.model_validate(fields)
 
     def update_status(self, status: RequestStatus, message: Optional[str] = None) -> "Request":
         """
@@ -502,16 +503,16 @@ class Request(AggregateRoot):
         Returns:
             Updated Request instance
         """
-        data = self.model_dump()
-        data["status"] = status
-        data["status_message"] = message
-        data["version"] = self.version + 1
+        fields = self.model_dump()
+        fields["status"] = status
+        fields["status_message"] = message
+        fields["version"] = self.version + 1
 
         if status in [
             RequestStatus.COMPLETED,
             RequestStatus.FAILED,
             RequestStatus.CANCELLED,
         ]:
-            data["completed_at"] = datetime.now(timezone.utc)
+            fields["completed_at"] = datetime.now(timezone.utc)
 
-        return Request.model_validate(data)
+        return Request.model_validate(fields)
