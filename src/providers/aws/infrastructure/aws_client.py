@@ -277,7 +277,7 @@ class AWSClient:
 
         # Fallback: try legacy AWSProviderConfig approach
         try:
-            aws_provider_config = self._config_manager.get_typed(AWSProviderConfig)
+            aws_provider_config = self._config_manager.get_typed(AWSProviderConfig)  # type: ignore[call-arg]
             self._aws_config = aws_provider_config
             return aws_provider_config
         except Exception as e:
@@ -296,7 +296,7 @@ class AWSClient:
             # Try to get performance config from ConfigurationManager
             from config import PerformanceConfig
 
-            perf_config = self._config_manager.get_typed(PerformanceConfig)
+            perf_config = self._config_manager.get_typed(PerformanceConfig)  # type: ignore[call-arg]
             if perf_config:
                 self._logger.debug("Loaded performance configuration from ConfigurationManager")
                 return {

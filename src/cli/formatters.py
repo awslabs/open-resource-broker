@@ -89,8 +89,8 @@ def format_generic_table(items: list[dict], title: str = "Items") -> str:
 
         # Capture output using shared console
         console = get_console()
-        with console.capture() as capture:
-            console.print(table)
+        with console.capture() as capture:  # type: ignore[union-attr]
+            console.print(table)  # type: ignore[arg-type]
         return capture.get()
 
     except ImportError:

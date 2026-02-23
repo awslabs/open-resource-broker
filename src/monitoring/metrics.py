@@ -136,16 +136,18 @@ class MetricsCollector:
         with self._lock:
             if name not in self.metrics:
                 self.register_counter(name)
-            if isinstance(self.metrics[name], Counter):
-                self.metrics[name].increment(value)
+            metric = self.metrics[name]
+            if isinstance(metric, Counter):
+                metric.increment(value)
 
     def set_gauge(self, name: str, value: float) -> None:
         """Set a gauge metric value."""
         with self._lock:
             if name not in self.metrics:
                 self.register_gauge(name)
-            if isinstance(self.metrics[name], Gauge):
-                self.metrics[name].set(value)
+            metric = self.metrics[name]
+            if isinstance(metric, Gauge):
+                metric.set(value)
 
     def start_timer(self, name: str = "", labels: Optional[dict[str, str]] = None) -> Timer:
         """Start a new timer."""

@@ -4,9 +4,12 @@ This service handles configuration and context preparation for EC2 Fleet operati
 extracted from EC2FleetHandler to follow Single Responsibility Principle.
 """
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from domain.base.dependency_injection import injectable
+
+if TYPE_CHECKING:
+    from providers.aws.domain.template.value_objects import AWSAllocationStrategy
 from domain.base.ports import LoggingPort
 from domain.request.aggregate import Request
 from infrastructure.utilities.common.resource_naming import get_resource_prefix
@@ -91,7 +94,7 @@ class EC2FleetConfigurationService:
 
         return {
             # Fleet-specific values
-            "fleet_type": template.fleet_type.value,
+            "fleet_type": template.fleet_type.value if template.fleet_type is not None else None,
             "fleet_name": f"{get_resource_prefix('fleet')}-{request.request_id}",
             # Computed overrides
             "instance_overrides": instance_overrides,
@@ -150,7 +153,7 @@ class EC2FleetConfigurationService:
         }
         return strategy_mapping.get(strategy, "lowestPrice")
 
-    def _get_allocation_strategy_on_demand(self, strategy: str) -> str:
+    def _get_allocation_strategy_on_demand(self, strategy: "AWSAllocationStrategy | str") -> str:  # type: ignore[override]
         """Get allocation strategy for on-demand instances.
 
         Args:

@@ -110,9 +110,9 @@ def injectable(cls: type[T]) -> type[T]:
             raise
 
     # Replace constructor
-    cls.__init__ = dependency_init
-    cls._injectable = True
-    cls._original_init = original_init
+    cls.__init__ = dependency_init  # type: ignore[method-assign]
+    cls._injectable = True  # type: ignore[attr-defined]
+    cls._original_init = original_init  # type: ignore[attr-defined]
 
     logger.debug("Made %s injectable", cls.__name__)
     return cls

@@ -67,7 +67,7 @@ class ProviderConfigManager:
     def is_provider_strategy_enabled(self) -> bool:
         """Check if provider strategy mode is enabled."""
         provider_mode = self.get_provider_mode()
-        return provider_mode == ProviderMode.STRATEGY.value
+        return provider_mode == ProviderMode.MULTI.value
 
     def is_multi_provider_mode(self) -> bool:
         """Check if multi-provider mode is enabled."""
@@ -79,7 +79,7 @@ class ProviderConfigManager:
 
     def get_provider_mode(self) -> str:
         """Get current provider mode."""
-        return self._get_nested_value("provider.mode", ProviderMode.LEGACY.value)
+        return self._get_nested_value("provider.mode", ProviderMode.SINGLE.value)
 
     def get_active_provider_names(self) -> list[str]:
         """Get list of active provider names."""

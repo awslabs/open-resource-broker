@@ -58,7 +58,7 @@ def get_event_bus():
         container = get_container()
 
         # Try to get EventBus from container
-        event_bus = container.get_optional(EventBus)
+        event_bus = container.get_optional(EventBus)  # type: ignore[arg-type]
         if event_bus is not None:
             return event_bus
 
@@ -66,7 +66,7 @@ def get_event_bus():
         from infrastructure.logging.logger import get_logger
 
         logger = get_logger(__name__)
-        return create_event_bus(logger)
+        return create_event_bus(logger)  # type: ignore[misc]
     except Exception:
         # Final fallback to legacy system
         return get_event_publisher()

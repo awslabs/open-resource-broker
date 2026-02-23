@@ -57,11 +57,11 @@ def _register_provider_utility_services(container: DIContainer) -> None:
                 register_aws_services_with_di(container)
                 logger.debug("AWS utility services registered with DI")
             except Exception as e:
-                logger.warning("Failed to register AWS utility services: %s", str(e, exc_info=True))
+                logger.warning("Failed to register AWS utility services: %s", str(e))
 
         else:
             logger.debug("AWS provider not available, skipping AWS utility service registration")
     except ImportError:
         logger.debug("AWS provider not available, skipping AWS utility service registration")
     except Exception as e:
-        logger.warning("Failed to register AWS utility services: %s", str(e, exc_info=True))
+        logger.warning("Failed to register AWS utility services: %s", str(e))

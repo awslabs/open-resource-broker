@@ -368,7 +368,7 @@ def _discover_infrastructure(provider_type: str, region: str, profile: str) -> D
         # Check if provider strategy supports infrastructure discovery
         if hasattr(strategy, "discover_infrastructure_interactive"):
             full_config = {"type": provider_type, "config": provider_config}
-            return strategy.discover_infrastructure_interactive(full_config)
+            return strategy.discover_infrastructure_interactive(full_config)  # type: ignore[union-attr]
         else:
             logger.info(
                 f"Infrastructure discovery not supported for provider type: {provider_type}"
@@ -390,7 +390,7 @@ def _generate_provider_name(provider_type: str, profile: str, region: str) -> st
         factory = container.get(ProviderStrategyFactory)
 
         temp_config = {"type": provider_type, "profile": profile, "region": region}
-        strategy = factory.create_strategy(provider_type, temp_config)
+        strategy = factory.create_strategy(provider_type, temp_config)  # type: ignore[attr-defined]
         return strategy.generate_provider_name({"profile": profile, "region": region})
     except Exception:
         # Fallback to simple name generation

@@ -85,7 +85,7 @@ class CLIResponseFormatter:
                 data = self._extract_response_data(response)
 
             # Format using existing CLI formatters
-            formatted_output = format_output(data, output_format)
+            formatted_output = format_output(data, output_format)  # type: ignore[possibly-undefined]
 
             # Return with exit code if response indicates one
             exit_code = self._extract_exit_code(response)
@@ -134,7 +134,7 @@ class CLIResponseFormatter:
             "provider": "providers",
         }
 
-        return resource_context_map.get(resource)
+        return resource_context_map.get(resource or "")
 
     def _is_error_response(self, response: Any) -> bool:
         """Check if response represents an error."""

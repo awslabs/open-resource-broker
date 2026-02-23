@@ -151,7 +151,7 @@ class ConfigurationManager:
 
             # Force reload of loader
             if self._loader:
-                self._loader.reload()
+                self._loader.reload()  # type: ignore[attr-defined]
 
             # Mark reload time
             self._cache_manager.mark_reload(time.time())
@@ -344,6 +344,7 @@ class ConfigurationManager:
             filename = explicit_path
 
         # 2. Try scheduler-provided directory + filename
+        scheduler_dir: Optional[str] = None
         try:
             scheduler_dir = self._get_scheduler_directory(file_type)
             if scheduler_dir:

@@ -124,7 +124,8 @@ class ProviderInstanceConfig(BaseModel):
     )
 
     health_check: HealthCheckConfig = Field(
-        default_factory=HealthCheckConfig, description="Health check configuration"
+        default_factory=lambda: HealthCheckConfig(enabled=True, interval=300, timeout=30, retry_count=3),  # type: ignore[call-arg]
+        description="Health check configuration"
     )
 
     def get_effective_handlers(
@@ -219,7 +220,7 @@ class ProviderConfig(BaseModel):
     )
     health_check_interval: int = Field(300, description="Global health check interval in seconds")
     circuit_breaker: CircuitBreakerConfig = Field(
-        default_factory=CircuitBreakerConfig,
+        default_factory=lambda: CircuitBreakerConfig(enabled=True, failure_threshold=5, recovery_timeout=60, half_open_max_calls=3),  # type: ignore[call-arg]
         description="Circuit breaker configuration",
     )
 

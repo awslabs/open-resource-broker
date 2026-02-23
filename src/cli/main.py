@@ -22,7 +22,7 @@ from infrastructure.logging.logger import get_logger
 
 # Optional: Rich formatting for help text
 try:
-    from rich_argparse import RichHelpFormatter
+    from rich_argparse import RichHelpFormatter  # type: ignore[import-untyped]
 
     HELP_FORMATTER = RichHelpFormatter
 except ImportError:
@@ -1044,7 +1044,7 @@ async def execute_command(args, app, resource_parsers) -> Union[str, tuple[str, 
             from application.dto.base import BaseCommand
 
             if isinstance(command_or_query, (Command, BaseCommand)):
-                result = await command_bus.execute(command_or_query)
+                result = await command_bus.execute(command_or_query)  # type: ignore[arg-type]
             else:
                 result = await query_bus.execute(command_or_query)
 

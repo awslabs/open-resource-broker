@@ -81,11 +81,14 @@ class DeprovisioningOrchestrator:
                     error_count += 1
                     errors.append(str(result))
                     self.logger.error("Task %s failed: %s", tasks[i].get_name(), result)
-                elif result.get("success", False):
+                elif isinstance(result, dict) and result.get("success", False):
                     success_count += 1
                 else:
                     error_count += 1
-                    errors.append(result.get("error_message", "Unknown error"))
+                    if isinstance(result, dict):
+                        errors.append(result.get("error_message", "Unknown error"))
+                    else:
+                        errors.append("Unknown error")
 
             self.logger.info(
                 "Deprovisioning completed: %d successful, %d failed", success_count, error_count

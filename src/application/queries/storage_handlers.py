@@ -5,6 +5,7 @@ from application.decorators import query_handler
 from application.dto.system import (
     StorageHealthResponse,
     StorageMetricsResponse,
+    StorageStrategyDTO,
     StorageStrategyListResponse,
 )
 from application.queries.storage import (
@@ -83,7 +84,7 @@ class ListStorageStrategiesHandler(
             )
 
         return StorageStrategyListResponse(
-            strategies=strategies,
+            strategies=[StorageStrategyDTO(**s) if isinstance(s, dict) else s for s in strategies],
             current_strategy=current_strategy,
             total_count=len(strategies),
         )
@@ -155,7 +156,7 @@ class GetStorageMetricsHandler(BaseQueryHandler[GetStorageMetricsQuery, StorageM
         """
         return StorageMetricsResponse(
             strategy_name=query.strategy_name or "current",
-            time_range=query.time_range,
+            time_range=query.time_range or "",
             operations_count=0,
             average_latency=0.0,
             error_rate=0.0,

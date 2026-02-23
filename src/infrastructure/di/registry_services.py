@@ -15,7 +15,8 @@ def register_registry_services(container: DIContainer) -> None:
     container.register_singleton(
         SchedulerRegistryService,
         lambda c: SchedulerRegistryService(
-            registry=get_scheduler_registry(), logger=c.get(LoggingPort)
+            registry=get_scheduler_registry(),  # type: ignore[arg-type]
+            logger=c.get(LoggingPort)
         ),
     )
 
@@ -23,6 +24,7 @@ def register_registry_services(container: DIContainer) -> None:
     container.register_singleton(
         StorageRegistryService,
         lambda c: StorageRegistryService(
-            registry=get_storage_registry(), logger=c.get(LoggingPort)
+            registry=get_storage_registry(),  # type: ignore[arg-type]
+            logger=c.get(LoggingPort)
         ),
     )
