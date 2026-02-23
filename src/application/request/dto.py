@@ -255,7 +255,7 @@ class RequestMachinesResponse(BaseDTO):
             Dictionary with requestId and message fields (camelCase for API consumers)
         """
         # Clients must use the full prefixed ID for subsequent requests
-        return {"request_id": self.request_id, "message": self.message}
+        return {"requestId": self.request_id, "message": self.message}
 
 
 class RequestReturnMachinesResponse(BaseDTO):
