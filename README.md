@@ -517,7 +517,7 @@ ORB_CIRCUIT_BREAKER__HALF_OPEN_MAX_CALLS=3
 
 # Retry configuration
 ORB_RETRY__MAX_ATTEMPTS=5
-ORB_RETRY__BACKOFF_MULTIPLIER=2.0
+ORB_RETRY__BASE_DELAY=2.0
 ORB_RETRY__MAX_DELAY=60
 ```
 
@@ -555,23 +555,36 @@ orb system serve --port 8000
 
 ### Provider Configuration
 
-```yaml
-# config/providers.yml
-providers:
-  - name: aws-primary
-    type: aws
-    config:
-      region: us-east-1
-      profile: default
-      handlers:
-        default: ec2_fleet
-        spot_fleet:
-          enabled: true
-        auto_scaling_group:
-          enabled: true
-    template_defaults:
-      subnet_ids: []
-      security_group_ids: []
+```json
+// config/config.json
+{
+  "provider": {
+    "providers": [
+      {
+        "name": "aws_default_us-east-1",
+        "type": "aws",
+        "enabled": true,
+        "config": {
+          "region": "us-east-1",
+          "profile": "default"
+        },
+        "template_defaults": {
+          "subnet_ids": [],
+          "security_group_ids": []
+        }
+      }
+    ],
+    "provider_defaults": {
+      "aws": {
+        "handlers": {
+          "EC2Fleet": {"handler_class": "EC2FleetHandler"},
+          "SpotFleet": {"handler_class": "SpotFleetHandler"},
+          "ASG": {"handler_class": "ASGHandler"}
+        }
+      }
+    }
+  }
+}
 ```
 
 #### Provider Naming Convention
@@ -629,11 +642,8 @@ cd open-resource-broker
 python -m venv .venv
 source .venv/bin/activate
 
-# Install development dependencies
-pip install -r requirements-dev.txt
-
-# Install in development mode
-pip install -e .
+# Install in development mode with all dev dependencies
+pip install -e ".[dev]"
 
 # Run tests
 make test
