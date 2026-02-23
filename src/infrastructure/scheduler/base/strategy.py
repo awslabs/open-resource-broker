@@ -4,7 +4,8 @@ This module provides the base abstract class for all scheduler strategies,
 ensuring consistent interface implementation across different scheduler types.
 """
 
-from abc import ABC
+from abc import ABC, abstractmethod
+from pathlib import Path
 from typing import Any, Callable
 
 from application.request.dto import RequestDTO
@@ -124,6 +125,11 @@ class BaseSchedulerStrategy(SchedulerPort, ABC):
         from config.platform_dirs import get_logs_location
 
         return str(get_logs_location())
+
+    @abstractmethod
+    def get_scripts_directory(self) -> Path | None:
+        """Return the path to the scheduler's scripts directory, or None if not applicable."""
+        ...
 
     def format_template_for_display(self, template: TemplateDTO) -> dict[str, Any]:
         """Default implementation - clean to_dict without scheduler-specific formatting."""

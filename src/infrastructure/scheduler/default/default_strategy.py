@@ -1,6 +1,7 @@
 """Default scheduler strategy using native domain fields - no conversion needed."""
 
 import os
+from pathlib import Path
 from typing import Any
 
 from domain.base.ports.logging_port import LoggingPort
@@ -47,6 +48,10 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
                 self._logger = get_container().get(LoggingPort)
         return self._logger
 
+    def get_scripts_directory(self) -> Path | None:
+        """Default strategy has no scripts directory."""
+        return None
+
     def get_template_paths(self) -> list[str]:
         """Get template file paths with fallback hierarchy."""
         paths = []
@@ -90,7 +95,9 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
 
         return paths
 
-    def load_templates_from_path(self, template_path: str, provider_override: Any = None) -> list[dict[str, Any]]:
+    def load_templates_from_path(
+        self, template_path: str, provider_override: Any = None
+    ) -> list[dict[str, Any]]:
         """Load templates from a specific path."""
         if not os.path.exists(template_path):
             self.logger.debug("Template file not found: %s", template_path)
@@ -172,9 +179,7 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
             # Provide helpful error message for debugging
             raise ValueError(f"Failed to create Template from data: {e}. Data: {raw_data}")
 
-    def parse_request_data(
-        self, raw_data: dict[str, Any]
-    ) -> dict[str, Any]:
+    def parse_request_data(self, raw_data: dict[str, Any]) -> dict[str, Any]:
         """
         Parse request data using native domain format - no conversion needed.
 
@@ -183,7 +188,9 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
 
         # Request Status
         if "requests" in raw_data:
-            return {"requests": [{"request_id": req.get("request_id")} for req in raw_data["requests"]]}
+            return {
+                "requests": [{"request_id": req.get("request_id")} for req in raw_data["requests"]]
+            }
 
         # Request Machines - handle nested format (both snake_case and HF camelCase):
         # {"template": {"template_id": ..., "machine_count": ...}}
@@ -192,8 +199,10 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
             template_data = raw_data["template"]
             return {
                 "template_id": template_data.get("template_id") or template_data.get("templateId"),
-                "requested_count": template_data.get("machine_count") or template_data.get("machineCount", 1),
-                "request_type": template_data.get("request_type") or template_data.get("requestType", "provision"),
+                "requested_count": template_data.get("machine_count")
+                or template_data.get("machineCount", 1),
+                "request_type": template_data.get("request_type")
+                or template_data.get("requestType", "provision"),
                 "metadata": raw_data.get("metadata", {}),
             }
 

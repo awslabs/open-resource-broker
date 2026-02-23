@@ -108,6 +108,18 @@ def get_scripts_location() -> Path:
     mode, base_path = detect_installation_mode()
 
     if mode == "development":
+        try:
+            from domain.base.ports.scheduler_port import SchedulerPort
+            from infrastructure.di.container import get_container, is_container_ready
+
+            if is_container_ready():
+                strategy = get_container().get(SchedulerPort)
+                scripts_dir = strategy.get_scripts_directory()
+                if scripts_dir is not None:
+                    return scripts_dir
+        except Exception:
+            pass
+
         from config.platform_dirs import get_config_location
 
         return get_config_location().parent / "scripts"

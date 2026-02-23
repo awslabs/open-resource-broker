@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -93,3 +94,7 @@ class SchedulerPort(ABC):
     @abstractmethod
     def get_templates_filename(self, provider_name: str, provider_type: str) -> str:
         """Get templates filename for the given provider."""
+
+    @abstractmethod
+    def get_scripts_directory(self) -> Path | None:
+        """Return the path to the scheduler's scripts directory, or None if not applicable."""

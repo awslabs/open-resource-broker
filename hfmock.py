@@ -159,7 +159,7 @@ class HostFactoryMock:
             # os.environ["AWS_PROVIDER_LOG_DIR"] = "./logs"
             os.environ["LOG_DESTINATION"] = "file"
 
-            hf_scripts_location = Path("./scripts/")
+            hf_scripts_location = Path("./src/infrastructure/scheduler/hostfactory/scripts/")
 
         self.get_available_templates_script = os.path.join(
             hf_scripts_location, "getAvailableTemplates.sh"
