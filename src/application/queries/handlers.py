@@ -754,7 +754,19 @@ class ListReturnRequestsHandler(BaseQueryHandler[ListReturnRequestsQuery, list[R
                     # Convert back to RequestDTO objects
                     request_dtos = [RequestDTO.model_validate(d) for d in filtered_dicts]
 
-                self.logger.info("Found %s return requests", len(request_dtos))
+                # Apply pagination
+                total_count = len(request_dtos)
+                limit = min(query.limit or 50, 1000)  # Max 1000
+                offset = query.offset or 0
+                request_dtos = request_dtos[offset : offset + limit]
+
+                self.logger.info(
+                    "Found %s return requests (total: %s, limit: %s, offset: %s)",
+                    len(request_dtos),
+                    total_count,
+                    limit,
+                    offset,
+                )
                 return request_dtos
 
         except Exception as e:
@@ -807,10 +819,13 @@ class ListActiveRequestsHandler(BaseQueryHandler[ListActiveRequestsQuery, list[R
                     if hasattr(query, "template_id") and query.template_id:
                         requests = [r for r in requests if r.template_id == query.template_id]
 
-                    # Apply pagination
-                    start_idx = 0
-                    end_idx = getattr(query, "limit", None) or 100
-                    requests = requests[start_idx:end_idx]
+                # Store total count before pagination
+                total_count = len(requests)
+
+                # Apply pagination
+                limit = min(query.limit or 50, 1000)  # Max 1000
+                offset = query.offset or 0
+                requests = requests[offset : offset + limit]
 
                 # Sync each request with provider (like GetRequestHandler does)
                 from application.dto.commands import SyncRequestCommand
@@ -857,6 +872,14 @@ class ListActiveRequestsHandler(BaseQueryHandler[ListActiveRequestsQuery, list[R
                     end_idx = getattr(query, "limit", None) or 100
                     requests = requests[start_idx:end_idx]
 
+                # Store total count before pagination
+                total_count = len(requests)
+
+                # Apply pagination
+                limit = min(query.limit or 50, 1000)  # Max 1000
+                offset = query.offset or 0
+                requests = requests[offset : offset + limit]
+
                 # Convert to DTOs
                 request_dtos = []
                 for request in requests:
@@ -890,7 +913,13 @@ class ListActiveRequestsHandler(BaseQueryHandler[ListActiveRequestsQuery, list[R
                     # Convert back to RequestDTO objects
                     request_dtos = [RequestDTO.model_validate(d) for d in filtered_dicts]
 
-                self.logger.info("Found %s active requests", len(request_dtos))
+                self.logger.info(
+                    "Found %s active requests (total: %s, limit: %s, offset: %s)",
+                    len(request_dtos),
+                    total_count,
+                    limit,
+                    offset,
+                )
                 return request_dtos
 
         except Exception as e:
@@ -1012,7 +1041,19 @@ class ListTemplatesHandler(BaseQueryHandler[ListTemplatesQuery, list[TemplateDTO
                 # Note: This assumes the infrastructure provides a way to reconstruct DTOs
                 template_dtos = filtered_dicts  # Return filtered dicts for now
 
-            self.logger.info("Found %s templates", len(template_dtos))
+            # Apply pagination
+            total_count = len(template_dtos)
+            limit = min(query.limit or 50, 1000)  # Max 1000
+            offset = query.offset or 0
+            template_dtos = template_dtos[offset : offset + limit]
+
+            self.logger.info(
+                "Found %s templates (total: %s, limit: %s, offset: %s)",
+                len(template_dtos),
+                total_count,
+                limit,
+                offset,
+            )
             return template_dtos
 
         except Exception as e:
@@ -1244,6 +1285,14 @@ class ListMachinesHandler(BaseQueryHandler[ListMachinesQuery, list[MachineDTO]])
                         if m.provider_name and query.provider_name in m.provider_name
                     ]
 
+                # Store total count before pagination
+                total_count = len(machines)
+
+                # Apply pagination
+                limit = min(query.limit or 50, 1000)  # Max 1000
+                offset = query.offset or 0
+                machines = machines[offset : offset + limit]
+
                 # Convert to DTOs (with sync for running machines)
                 machine_dtos = []
                 for machine in machines:
@@ -1303,12 +1352,6 @@ class ListMachinesHandler(BaseQueryHandler[ListMachinesQuery, list[MachineDTO]])
                     )
                     machine_dtos.append(machine_dto.to_dict())
 
-                # Apply pagination (skip for --all to show everything)
-                if not query.all_resources:
-                    start_idx = query.offset or 0
-                    end_idx = start_idx + (query.limit or 50)
-                    machine_dtos = machine_dtos[start_idx:end_idx]
-
                 # Apply generic filters if provided
                 if query.filter_expressions:
                     # Apply filters using GenericFilterService (machine_dtos are already dicts)
@@ -1316,7 +1359,13 @@ class ListMachinesHandler(BaseQueryHandler[ListMachinesQuery, list[MachineDTO]])
                         machine_dtos, query.filter_expressions
                     )
 
-                self.logger.info("Found %s machines", len(machine_dtos))
+                self.logger.info(
+                    "Found %s machines (total: %s, limit: %s, offset: %s)",
+                    len(machine_dtos),
+                    total_count,
+                    limit,
+                    offset,
+                )
                 return machine_dtos
 
         except Exception as e:

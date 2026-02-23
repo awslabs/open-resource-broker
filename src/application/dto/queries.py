@@ -28,6 +28,8 @@ class ListActiveRequestsQuery(Query, BaseModel):
     provider_name: Optional[str] = None
     filter_expressions: list[str] = []
     all_resources: bool = False
+    limit: Optional[int] = 50  # Default: 50, Max: 1000
+    offset: Optional[int] = 0
 
 
 class ListReturnRequestsQuery(Query, BaseModel):
@@ -39,6 +41,8 @@ class ListReturnRequestsQuery(Query, BaseModel):
     status: Optional[str] = None
     requester_id: Optional[str] = None
     filter_expressions: list[str] = []
+    limit: Optional[int] = 50  # Default: 50, Max: 1000
+    offset: Optional[int] = 0
 
 
 class GetTemplateQuery(Query, BaseModel):
@@ -60,6 +64,8 @@ class ListTemplatesQuery(Query, BaseModel):
     active_only: bool = True
     filter_expressions: list[str] = []
     include_detailed_fields: bool = False
+    limit: Optional[int] = 50  # Default: 50, Max: 1000
+    offset: Optional[int] = 0
 
 
 class ValidateTemplateQuery(Query, BaseModel):
@@ -92,8 +98,8 @@ class ListMachinesQuery(Query, BaseModel):
     filter_expressions: list[str] = []  # Generic filters
     all_resources: bool = False
     timestamp_format: Optional[str] = None
-    limit: Optional[int] = None
-    offset: Optional[int] = None
+    limit: Optional[int] = 50  # Default: 50, Max: 1000
+    offset: Optional[int] = 0
 
 
 class GetActiveMachineCountQuery(Query, BaseModel):

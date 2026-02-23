@@ -111,6 +111,18 @@ class BaseResponse(BaseDTO):
     metadata: dict[str, Any] = {}
 
 
+class PaginationMetadata(BaseModel):
+    """Pagination metadata for list responses."""
+
+    model_config = ConfigDict(frozen=True)
+
+    total_count: int
+    limit: int
+    offset: int
+    has_more: bool
+    returned_count: int
+
+
 class PaginatedResponse(BaseResponse):
     """Base class for paginated responses."""
 
@@ -119,3 +131,4 @@ class PaginatedResponse(BaseResponse):
     page_size: int = 50
     has_next: bool = False
     has_previous: bool = False
+    pagination: Optional[PaginationMetadata] = None
