@@ -118,8 +118,9 @@ async def handle_provider_config(args) -> dict[str, Any]:
 async def handle_validate_provider_config(args) -> dict[str, Any]:
     """Handle validate provider config operations."""
     return {
-        "validation": {"status": "valid", "errors": []},
-        "message": "Provider configuration validated successfully",
+        "error": "Not implemented",
+        "endpoint": "validate_provider_config",
+        "message": "Provider configuration validation is planned but not yet available.",
     }
 
 
@@ -127,8 +128,9 @@ async def handle_validate_provider_config(args) -> dict[str, Any]:
 async def handle_reload_provider_config(args) -> dict[str, Any]:
     """Handle reload provider config operations."""
     return {
-        "result": {"status": "reloaded"},
-        "message": "Provider configuration reloaded successfully",
+        "error": "Not implemented",
+        "endpoint": "reload_provider_config",
+        "message": "Provider configuration reload is planned but not yet available.",
     }
 
 
@@ -160,10 +162,10 @@ async def handle_select_provider_strategy(args) -> dict[str, Any]:
 @handle_interface_exceptions(context="execute_provider_operation", interface_type="cli")
 async def handle_execute_provider_operation(args) -> dict[str, Any]:
     """Handle execute provider operation operations."""
-    operation = getattr(args, "operation", "status")
     return {
-        "result": {"operation": operation, "status": "completed"},
-        "message": "Provider operation executed successfully",
+        "error": "Not implemented",
+        "endpoint": "execute_provider_operation",
+        "message": "Generic provider operation execution is planned but not yet available.",
     }
 
 

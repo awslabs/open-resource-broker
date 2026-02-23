@@ -246,10 +246,10 @@ class RequestMachinesResponse(BaseDTO):
         Convert to dictionary format matching the expected API format.
 
         Returns:
-            Dictionary with requestId and message fields
+            Dictionary with requestId and message fields (camelCase for API consumers)
         """
         # Clients must use the full prefixed ID for subsequent requests
-        return {"request_id": self.request_id, "message": self.message}
+        return {"requestId": self.request_id, "message": self.message}
 
 
 class RequestReturnMachinesResponse(BaseDTO):
@@ -267,7 +267,7 @@ class RequestReturnMachinesResponse(BaseDTO):
             Dictionary with requestId and message fields
         """
         return {
-            "request_id": self.request_id if self.request_id else "",
+            "requestId": self.request_id if self.request_id else "",
             "message": self.message,
         }
 

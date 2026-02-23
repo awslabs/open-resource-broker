@@ -6,7 +6,8 @@ from typing import Any, Optional, cast
 try:
     from fastapi import APIRouter, Body, HTTPException, Query
     from fastapi.responses import JSONResponse
-    from pydantic import BaseModel
+    from pydantic import BaseModel, ConfigDict
+    from pydantic.alias_generators import to_camel
 except ImportError:
     raise ImportError("FastAPI routing requires: pip install orb-py[api]") from None
 
@@ -49,7 +50,12 @@ def _serialize_datetime_fields(data: Any) -> Any:
 
 
 class TemplateCreateRequest(BaseModel):
-    """Request model for creating templates."""
+    """Request model for creating templates.
+
+    Accepts both camelCase and snake_case field names.
+    """
+
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
 
     template_id: str
     name: Optional[str] = None
@@ -65,7 +71,12 @@ class TemplateCreateRequest(BaseModel):
 
 
 class TemplateUpdateRequest(BaseModel):
-    """Request model for updating templates."""
+    """Request model for updating templates.
+
+    Accepts both camelCase and snake_case field names.
+    """
+
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
 
     name: Optional[str] = None
     provider_api: Optional[str] = None
@@ -119,7 +130,7 @@ async def list_templates(
             status_code=200,
             content={
                 "templates": serializable_templates,
-                "total_count": len(templates),
+                "totalCount": len(templates),
                 "timestamp": datetime.now().isoformat(),
             },
         )
@@ -221,7 +232,7 @@ async def create_template(template_data: TemplateCreateRequest) -> JSONResponse:
             status_code=201,
             content={
                 "message": f"Template {template_dict['template_id']} created successfully",
-                "template_id": template_dict["template_id"],
+                "templateId": template_dict["template_id"],
                 "timestamp": datetime.now().isoformat(),
             },
         )
@@ -275,7 +286,7 @@ async def update_template(template_id: str, template_data: TemplateUpdateRequest
             status_code=200,
             content={
                 "message": f"Template {template_id} updated successfully",
-                "template_id": template_id,
+                "templateId": template_id,
                 "timestamp": datetime.now().isoformat(),
             },
         )
@@ -315,7 +326,7 @@ async def delete_template(template_id: str) -> JSONResponse:
             status_code=200,
             content={
                 "message": f"Template {template_id} deleted successfully",
-                "template_id": template_id,
+                "templateId": template_id,
                 "timestamp": datetime.now().isoformat(),
             },
         )
@@ -358,11 +369,11 @@ async def validate_template(
             status_code=200,
             content={
                 "valid": is_valid,
-                "template_id": template_data.get("template_id", "validation-template"),
-                "validation_errors": (
+                "templateId": template_data.get("template_id", "validation-template"),
+                "validationErrors": (
                     validation_result.errors if hasattr(validation_result, "errors") else []
                 ),
-                "validation_warnings": (
+                "validationWarnings": (
                     validation_result.warnings if hasattr(validation_result, "warnings") else []
                 ),
                 "timestamp": datetime.now().isoformat(),
@@ -399,8 +410,8 @@ async def refresh_templates() -> JSONResponse:
             status_code=200,
             content={
                 "message": f"Templates refreshed successfully. Found {template_count} templates.",
-                "template_count": template_count,
-                "cache_stats": {"refreshed": True},
+                "templateCount": template_count,
+                "cacheStats": {"refreshed": True},
                 "timestamp": datetime.now().isoformat(),
             },
         )
