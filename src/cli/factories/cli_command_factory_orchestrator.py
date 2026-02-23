@@ -286,7 +286,7 @@ class CLICommandFactoryOrchestrator:
         command_action = getattr(args, "action", None)
 
         # Route to appropriate factory based on command group
-        return self._route_command(command_group, command_action, args_dict)
+        return self._route_command(command_group or "", command_action or "", args_dict)
 
     def _route_command(self, command_group: str, command_action: str, args: dict):
         """Route command to appropriate factory method."""
@@ -487,7 +487,7 @@ class CLICommandFactoryOrchestrator:
                 filtered_args = {
                     k: v for k, v in args.items() if k not in ["action", "tools_action"]
                 }
-                return self.create_mcp_tools_command_data(tools_action, **filtered_args)
+                return self.create_mcp_tools_command_data(tools_action or "", **filtered_args)
             elif command_action == "validate":
                 return self.create_mcp_validate_query()
 

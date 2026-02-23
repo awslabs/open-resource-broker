@@ -102,7 +102,7 @@ def create_json_unit_of_work(config: Any) -> Any:
         if json_config.storage_type == "single_file":
             # For single file, use the same file for all entities
             single_file = filenames.get("single_file", "request_database.json")
-            return JSONUnitOfWork(
+            return JSONUnitOfWork(  # type: ignore[abstract]
                 data_dir=base_path,
                 machine_file=single_file,
                 request_file=single_file,
@@ -112,7 +112,7 @@ def create_json_unit_of_work(config: Any) -> Any:
         else:
             # For split files, use individual file names
             split_files = filenames.get("split_files", {})
-            return JSONUnitOfWork(
+            return JSONUnitOfWork(  # type: ignore[abstract]
                 data_dir=base_path,
                 machine_file=split_files.get("machines", "machines.json"),
                 request_file=split_files.get("requests", "requests.json"),
@@ -121,7 +121,7 @@ def create_json_unit_of_work(config: Any) -> Any:
             )
     else:
         # For testing or other scenarios - assume it's a dict with file paths
-        return JSONUnitOfWork(
+        return JSONUnitOfWork(  # type: ignore[abstract]
             data_dir=config.get("data_dir", "data"),
             machine_file=config.get("machine_file", "machines.json"),
             request_file=config.get("request_file", "requests.json"),

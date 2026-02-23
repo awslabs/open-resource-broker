@@ -27,7 +27,7 @@ class JsonSerializableMixin:
     def to_dict(self):
         """Convert model to dictionary."""
         result = {}
-        for column in self.__table__.columns:
+        for column in self.__table__.columns:  # type: ignore[attr-defined]
             value = getattr(self, column.name)
             if isinstance(value, datetime):
                 value = value.isoformat()
@@ -40,10 +40,10 @@ class JsonSerializableMixin:
     def from_dict(cls, data):
         """Create model from dictionary."""
         # Handle enum fields
-        for column in cls.__table__.columns:
+        for column in cls.__table__.columns:  # type: ignore[attr-defined]
             if isinstance(column.type, Enum) and column.name in data:
                 enum_class = column.type.enum_class
-                data[column.name] = enum_class(data[column.name])
+                data[column.name] = enum_class(data[column.name])  # type: ignore[misc]
         return cls(**data)
 
     def to_json(self):

@@ -237,7 +237,7 @@ class TemplateRepositoryImpl(TemplateRepositoryInterface):
         try:
             # Increment version - handle both string and TemplateId types
             template_id_str = (
-                str(template.template_id.value)
+                str(template.template_id.value)  # type: ignore[union-attr]
                 if hasattr(template.template_id, "value")
                 else str(template.template_id)
             )
@@ -252,8 +252,8 @@ class TemplateRepositoryImpl(TemplateRepositoryInterface):
             self.cache.put(template_id_str, template)
 
             # Extract and publish events
-            events = template.get_domain_events()
-            template.clear_domain_events()
+            events = template.get_domain_events()  # type: ignore[attr-defined]
+            template.clear_domain_events()  # type: ignore[attr-defined]
 
             if events:
                 self.event_publisher.publish_events(events)
@@ -348,7 +348,7 @@ class TemplateRepositoryImpl(TemplateRepositoryInterface):
         """Find all templates."""
         try:
             all_data = self.storage_strategy.find_all()
-            return [self.serializer.from_dict(data) for data in all_data.values()]
+            return [self.serializer.from_dict(data) for data in all_data.values()]  # type: ignore[union-attr]
         except Exception as e:
             self.logger.error("Failed to find all templates: %s", e)
             raise

@@ -70,7 +70,8 @@ class AWSResourceManagerImpl(CloudProviderResourceManager[AWSClient]):
             )
 
         except Exception as e:
-            self._logger.error("Failed to fetch resource status: %s", str(e))
+            if self.logger:
+                self.logger.error("Failed to fetch resource status: %s", str(e))
             raise
 
     async def fetch_resource_list(
@@ -91,7 +92,8 @@ class AWSResourceManagerImpl(CloudProviderResourceManager[AWSClient]):
             return resources
 
         except Exception as e:
-            self.logger.error("Failed to list resources: %s", str(e))
+            if self.logger:
+                self.logger.error("Failed to list resources: %s", str(e))
             raise
 
     async def fetch_resource_quota(
@@ -107,7 +109,8 @@ class AWSResourceManagerImpl(CloudProviderResourceManager[AWSClient]):
                 return {"used": 0, "limit": 1000, "available": 1000}  # Default quota
 
         except Exception as e:
-            self.logger.error("Failed to fetch quota: %s", str(e))
+            if self.logger:
+                self.logger.error("Failed to fetch quota: %s", str(e))
             raise
 
     # Private implementation methods
@@ -155,12 +158,14 @@ class AWSResourceManagerImpl(CloudProviderResourceManager[AWSClient]):
     async def _deprovision_compute_instance(self, allocation: ResourceAllocation) -> None:
         """Deprovision EC2 compute instance."""
         # Implementation would call AWS EC2 terminate APIs
-        self.logger.info("Terminating EC2 instance: %s", allocation.resource_id)
+        if self.logger:
+            self.logger.info("Terminating EC2 instance: %s", allocation.resource_id)
 
     async def _deprovision_storage_volume(self, allocation: ResourceAllocation) -> None:
         """Deprovision EBS storage volume."""
         # Implementation would call AWS EBS delete APIs
-        self.logger.info("Deleting EBS volume: %s", allocation.resource_id)
+        if self.logger:
+            self.logger.info("Deleting EBS volume: %s", allocation.resource_id)
 
     async def _list_compute_instances(self) -> list[ResourceAllocation]:
         """List EC2 compute instances."""

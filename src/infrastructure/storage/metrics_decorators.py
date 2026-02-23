@@ -2,7 +2,7 @@
 
 import time
 from functools import wraps
-from typing import Callable, Optional
+from typing import Any, Callable, Optional
 
 
 def instrument_storage(get_metrics: Callable[[object], Optional[object]], op_name: str):
@@ -38,11 +38,12 @@ def instrument_storage(get_metrics: Callable[[object], Optional[object]], op_nam
                 # Always record duration, even on error
                 duration = time.time() - start
                 if metrics:
+                    m: Any = metrics
                     if error_occurred:
-                        metrics.increment_counter(f"storage.json.{op_name}_errors_total")
+                        m.increment_counter(f"storage.json.{op_name}_errors_total")
                     else:
-                        metrics.increment_counter(f"storage.json.{op_name}_total")
-                    metrics.record_time(f"storage.json.{op_name}_duration", duration)
+                        m.increment_counter(f"storage.json.{op_name}_total")
+                    m.record_time(f"storage.json.{op_name}_duration", duration)
 
         return wrapper
 

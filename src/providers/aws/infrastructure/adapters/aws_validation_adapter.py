@@ -149,7 +149,7 @@ class AWSValidationAdapter(BaseProviderValidationAdapter):
 
         try:
             # Get handler capabilities from configuration
-            handler_capabilities = self._config.handlers.capabilities.get(api, {})
+            handler_capabilities = self._config.handlers.capabilities.get(api, {})  # type: ignore[attr-defined]
 
             if handler_capabilities and hasattr(handler_capabilities, "default_fleet_type"):
                 return handler_capabilities.default_fleet_type
@@ -428,6 +428,6 @@ def create_aws_validation_adapter(logger: LoggingPort) -> AWSValidationAdapter:
     except Exception as e:
         logger.debug("Could not load full AWS config for validation: %s", e)
         # Create a minimal config with dummy auth for validation only
-        aws_config = AWSProviderConfigBase(profile="validation-only")
+        aws_config = AWSProviderConfigBase()  # type: ignore[call-arg]
 
-    return AWSValidationAdapter(aws_config, logger)
+    return AWSValidationAdapter(aws_config, logger)  # type: ignore[arg-type]

@@ -82,10 +82,9 @@ class RequestCacheService:
                     request_dto = RequestDTO(
                         request_id=str(request.request_id),
                         template_id=request.template_id,
-                        machine_count=request.requested_count,
+                        requested_count=request.requested_count,
                         status=request.status.value,
                         created_at=request.created_at,
-                        machines=machines_data,
                         metadata=request.metadata or {},
                     )
 

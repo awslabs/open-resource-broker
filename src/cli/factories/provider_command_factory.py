@@ -29,10 +29,6 @@ class ProviderCommandFactory:
         return GetProviderHealthQuery(
             provider_name=provider_name,
             include_details=include_details,
-            include_metrics=include_metrics,
-            filter_healthy_only=filter_healthy_only,
-            provider_type=provider_type,
-            filter_expressions=filter_expressions or [],
         )
 
     def create_list_available_providers_query(

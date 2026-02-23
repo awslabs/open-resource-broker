@@ -145,7 +145,7 @@ class MachineRepositoryImpl(MachineRepositoryInterface):
     def __init__(self, storage_port: StoragePort) -> None:
         """Initialize repository with storage port."""
         if hasattr(storage_port, "entity_type"):
-            storage_port.entity_type = "machines"
+            storage_port.entity_type = "machines"  # type: ignore[attr-defined]
 
         self.storage_port = storage_port
         self.serializer = MachineSerializer()
@@ -157,7 +157,7 @@ class MachineRepositoryImpl(MachineRepositoryInterface):
         try:
             # Save the machine using machine_id as the key
             machine_data = self.serializer.to_dict(machine)
-            self.storage_port.save(str(machine.machine_id.value), machine_data)
+            self.storage_port.save(str(machine.machine_id.value), machine_data)  # type: ignore[call-arg]
 
             # Extract events from the aggregate
             events = machine.get_domain_events()
@@ -190,11 +190,11 @@ class MachineRepositoryImpl(MachineRepositoryInterface):
                 events.extend(machine.get_domain_events())
 
             if hasattr(self.storage_port, "save_batch"):
-                self.storage_port.save_batch(entity_batch)
+                self.storage_port.save_batch(entity_batch)  # type: ignore[attr-defined]
             else:
                 # Fallback for storage ports without batch support.
                 for entity_id, machine_data in entity_batch.items():
-                    self.storage_port.save(entity_id, machine_data)
+                    self.storage_port.save(entity_id, machine_data)  # type: ignore[call-arg]
 
             # Clear domain events only after a successful storage call.
             for machine in machines:
@@ -365,7 +365,7 @@ class MachineRepositoryImpl(MachineRepositoryInterface):
         """Find all machines."""
         try:
             all_data = self.storage_port.find_all()
-            return [self.serializer.from_dict(data) for data in all_data.values()]
+            return [self.serializer.from_dict(data) for data in all_data.values()]  # type: ignore[union-attr]
         except Exception as e:
             self.logger.error("Failed to find all machines: %s", e)
             raise

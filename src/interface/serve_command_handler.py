@@ -1,7 +1,7 @@
 """CLI command handler for REST API server."""
 
 import signal
-from typing import Any
+from typing import Any, cast
 
 from infrastructure.error.decorators import handle_interface_exceptions
 from infrastructure.logging.logger import get_logger
@@ -47,16 +47,16 @@ async def handle_serve_api(args) -> dict[str, Any]:
 
         # Use defensive configuration loading
         try:
-            server_config = config_manager.get_typed_with_defaults(ServerConfig)
+            server_config = cast(Any, config_manager).get_typed_with_defaults(ServerConfig)
         except Exception as e:
             logger.warning(f"Configuration loading failed: {e}", exc_info=True)
             logger.info("Using default server configuration")
-            server_config = ServerConfig()  # Use Pydantic defaults
+            server_config = ServerConfig()  # type: ignore[call-arg]
 
         # Validate critical configuration
         if server_config is None:
             logger.error("Server configuration is None, creating default", exc_info=True)
-            server_config = ServerConfig()
+            server_config = ServerConfig()  # type: ignore[call-arg]
 
         # Override with CLI arguments if provided
         if host:

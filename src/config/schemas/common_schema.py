@@ -20,7 +20,7 @@ class ResourceConfig(BaseModel):
     """Resource configuration."""
 
     default_prefix: str = Field("", description="Default prefix for all resources")
-    prefixes: ResourcePrefixConfig = Field(default_factory=lambda: ResourcePrefixConfig())
+    prefixes: ResourcePrefixConfig = Field(default_factory=lambda: ResourcePrefixConfig())  # type: ignore[call-arg]
 
     @model_validator(mode="after")
     def set_default_prefix(self) -> "ResourceConfig":
@@ -172,8 +172,8 @@ class NamingConfig(BaseModel):
         },
         description="Validation patterns for various resources",
     )
-    prefixes: PrefixConfig = Field(default_factory=lambda: PrefixConfig())
-    limits: LimitsConfig = Field(default_factory=lambda: LimitsConfig())
+    prefixes: PrefixConfig = Field(default_factory=lambda: PrefixConfig())  # type: ignore[call-arg]
+    limits: LimitsConfig = Field(default_factory=lambda: LimitsConfig())  # type: ignore[call-arg]
 
 
 class RequestConfig(BaseModel):

@@ -55,7 +55,7 @@ class StorageStrategy(StoragePort[T], ABC, Generic[T]):
         """
 
     @abstractmethod
-    def save(self, entity_id: str, data: dict[str, Any]) -> None:
+    def save(self, entity_id: str, data: dict[str, Any]) -> None:  # type: ignore[override]
         """
         Save entity data.
 
@@ -68,7 +68,7 @@ class StorageStrategy(StoragePort[T], ABC, Generic[T]):
         """
 
     @abstractmethod
-    def find_by_id(self, entity_id: str) -> Optional[dict[str, Any]]:
+    def find_by_id(self, entity_id: str) -> Optional[dict[str, Any]]:  # type: ignore[override]
         """
         Find entity by ID.
 
@@ -80,7 +80,7 @@ class StorageStrategy(StoragePort[T], ABC, Generic[T]):
         """
 
     @abstractmethod
-    def find_all(self) -> Union[list[dict[str, Any]], dict[str, dict[str, Any]]]:
+    def find_all(self) -> Union[list[dict[str, Any]], dict[str, dict[str, Any]]]:  # type: ignore[override]
         """
         Find all entities.
 
@@ -113,7 +113,7 @@ class StorageStrategy(StoragePort[T], ABC, Generic[T]):
         """
 
     @abstractmethod
-    def find_by_criteria(self, criteria: dict[str, Any]) -> list[dict[str, Any]]:
+    def find_by_criteria(self, criteria: dict[str, Any]) -> list[dict[str, Any]]:  # type: ignore[override]
         """
         Find entities by criteria.
 
