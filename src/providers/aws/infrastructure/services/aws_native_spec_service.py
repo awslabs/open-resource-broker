@@ -43,7 +43,7 @@ class AWSNativeSpecService:
             )
 
             # Use spec renderer to render from file
-            return self.spec_renderer.render_spec_from_file(spec_file_path, context)
+            return self.spec_renderer.render_spec_from_file(spec_file_path, context)  # type: ignore[attr-defined]
 
         except Exception as e:
             self.native_spec_service.logger.error(
@@ -130,7 +130,7 @@ class AWSNativeSpecService:
     def _load_spec_file(self, file_path: str) -> dict[str, Any]:
         """Load AWS spec file."""
         provider_config = self.config_port.get_provider_config()
-        provider_defaults = provider_config.get("provider_defaults", {}).get("aws", {})
+        provider_defaults = (provider_config.get("provider_defaults", {}) if provider_config is not None else {}).get("aws", {})
         base_path = (
             provider_defaults.get("extensions", {})
             .get("native_spec", {})

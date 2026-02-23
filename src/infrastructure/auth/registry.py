@@ -80,11 +80,11 @@ def get_auth_registry() -> AuthRegistry:
     """
     registry = AuthRegistry()
     # Ensure default strategies are registered
-    _register_default_strategies(registry)
-    return registry
+    _register_default_strategies(registry)  # type: ignore[arg-type]
+    return registry  # type: ignore[return-value]
 
 
-def _register_default_strategies(registry: AuthRegistry) -> None:
+def _register_default_strategies(registry: AuthRegistry) -> None:  # type: ignore[misc]
     """Register default authentication strategies."""
     # Only register if not already registered (idempotent)
     if not registry.get_registered_types():

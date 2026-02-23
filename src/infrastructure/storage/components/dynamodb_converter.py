@@ -30,13 +30,13 @@ class DynamoDBConverter(DataConverter):
         self.sort_key = sort_key
         self.logger = get_logger(__name__)
 
-    def to_storage_format(self, domain_data: dict[str, Any]) -> Any:
+    def to_storage_format(self, domain_data: dict[str, Any]) -> Any:  # type: ignore[override]
         """Convert domain data to DynamoDB format (implements DataConverter interface)."""
         # Extract entity_id from domain_data if present
         entity_id = domain_data.get(self.partition_key, domain_data.get("id", "unknown"))
         return self.to_dynamodb_item(entity_id, domain_data)
 
-    def from_storage_format(self, storage_data: Any) -> dict[str, Any]:
+    def from_storage_format(self, storage_data: Any) -> dict[str, Any]:  # type: ignore[override]
         """Convert DynamoDB data to domain format (implements DataConverter interface)."""
         return self.from_dynamodb_item(storage_data)
 

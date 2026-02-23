@@ -197,7 +197,7 @@ async def handle_stop_machines(args: "argparse.Namespace") -> dict[str, Any]:
         if success:
             # Update status to stopping
             command = UpdateMachineStatusCommand(machine_id=machine_id, status="stopping")
-            await command_bus.execute(command)
+            await command_bus.execute(command)  # type: ignore[arg-type]
             stopped_machines.append(machine_id)
         else:
             failed_machines.append(machine_id)
@@ -278,7 +278,7 @@ async def handle_start_machines(args: "argparse.Namespace") -> dict[str, Any]:
         if success:
             # Update status to pending (starting)
             command = UpdateMachineStatusCommand(machine_id=machine_id, status="pending")
-            await command_bus.execute(command)
+            await command_bus.execute(command)  # type: ignore[arg-type]
             started_machines.append(machine_id)
         else:
             failed_machines.append(machine_id)

@@ -96,11 +96,11 @@ class MachineSyncService:
 
             # Get provider configuration
             config_port = self.container.get(ConfigurationPort)
-            config_port.get_provider_instance_config(request.provider_name)
+            config_port.get_provider_instance_config(request.provider_name or "")
 
             # Execute operation using Provider Registry Service
             result = await self.provider_registry_service.execute_operation(
-                request.provider_name, operation
+                request.provider_name or "", operation
             )
 
             if result.success and result.data:

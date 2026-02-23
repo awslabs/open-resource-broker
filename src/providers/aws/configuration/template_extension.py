@@ -1,6 +1,6 @@
 """AWS-specific template extension configuration."""
 
-from typing import Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -25,7 +25,7 @@ class AWSTemplateExtensionConfig(BaseModel):
 
     # AMI resolution configuration
     ami_resolution: AMIResolutionConfig = Field(
-        default_factory=AMIResolutionConfig, description="AMI resolution configuration"
+        default_factory=AMIResolutionConfig, description="AMI resolution configuration"  # type: ignore[arg-type]
     )
 
     # AWS instance configuration defaults
@@ -111,7 +111,7 @@ class AWSTemplateExtensionConfig(BaseModel):
             raise ValueError("Percent on demand must be between 0 and 100")
         return v
 
-    def to_template_defaults(self) -> dict[str, any]:
+    def to_template_defaults(self) -> dict[str, Any]:
         """Convert extension config to template defaults format.
 
         This method converts the extension configuration to the format
