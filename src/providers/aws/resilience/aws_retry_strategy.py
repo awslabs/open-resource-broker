@@ -27,6 +27,7 @@ class AWSRetryStrategy(RetryStrategy):
             **kwargs: Additional configuration parameters
         """
         self.service = service
+        self._logger = logger
 
         # Get AWS service-specific configuration
         service_config = DEFAULT_AWS_RETRY_CONFIG.get_service_config(service)

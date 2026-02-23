@@ -100,13 +100,10 @@ class BaseHandler(ABC):
                 return await operation()
             except Exception as e:
                 if self.logger:
-                    self.logger.log_domain_event(
-                        "error",
-                        {
-                            "context": context,
-                            "error": str(e),
-                            "handler": self.__class__.__name__,
-                        },
+                    self.logger.error(
+                        "Handler error in %s: %s",
+                        context,
+                        str(e),
                     )
                 raise
 
@@ -274,8 +271,8 @@ class BaseCommandHandler(BaseHandler, CommandHandler[TCommand, TResponse]):
         result = await self.execute_command(command)
 
         # Publish events if any
-        if hasattr(result, "events") and result.events:
-            await self.publish_events(result.events)
+        if result is not None and hasattr(result, "events") and result.events:  # type: ignore[union-attr]
+            await self.publish_events(result.events)  # type: ignore[union-attr]
 
         # Log completion
         duration = time.time() - start_time
@@ -305,7 +302,7 @@ class BaseCommandHandler(BaseHandler, CommandHandler[TCommand, TResponse]):
         """Publish domain events after successful command execution."""
         if self.event_publisher:
             for event in events:
-                await self.event_publisher.publish(event)
+                self.event_publisher.publish(event)
 
 
 class BaseQueryHandler(BaseHandler, QueryHandler[TQuery, TResult]):

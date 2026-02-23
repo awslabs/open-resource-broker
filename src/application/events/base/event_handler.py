@@ -9,16 +9,10 @@ of concerns and DRY compliance.
 import asyncio
 import time
 from abc import ABC, abstractmethod
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
-# Import types - using string imports to avoid circular dependencies
-try:
-    from domain.base.events import DomainEvent
-    from domain.base.ports import LoggingPort
-except ImportError:
-    # Fallback for testing or when dependencies aren't available
-    DomainEvent = Any
-    LoggingPort = Any
+from domain.base.events import DomainEvent
+from domain.base.ports import LoggingPort
 
 
 class EventHandler(ABC):

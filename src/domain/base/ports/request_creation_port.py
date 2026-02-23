@@ -1,8 +1,14 @@
 """Port for request creation operations."""
 
 from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING
 
 from domain.request.aggregate import Request
+
+if TYPE_CHECKING:
+    from application.dto.commands import CreateRequestCommand
+    from domain.template.template_aggregate import Template
+    from domain.base.results import ProviderSelectionResult
 
 
 class RequestCreationPort(ABC):

@@ -86,3 +86,49 @@ class ConfigurationPort(ABC):
     @abstractmethod
     def get_configuration_value(self, key: str, default: Any = None) -> Any:
         """Get configuration value."""
+
+    def get(self, key: str, default: Any = None) -> Any:
+        """Get configuration value by key."""
+        return self.get_configuration_value(key, default)
+
+    def get_typed(self, key: str, expected_type: type, default: Any = None) -> Any:
+        """Get typed configuration value."""
+        return self.get_configuration_value(key, default)
+
+    def get_typed_with_defaults(self, key: str, expected_type: type, default: Any = None) -> Any:
+        """Get typed configuration value with defaults."""
+        return self.get_configuration_value(key, default)
+
+    def resolve_file(self, path: str) -> str:
+        """Resolve a file path relative to configuration."""
+        return path
+
+    def get_scheduler_strategy(self) -> str:
+        """Get the configured scheduler strategy."""
+        return "default"
+
+    def get_storage_strategy(self) -> str:
+        """Get the configured storage strategy."""
+        return "default"
+
+    def override_scheduler_strategy(self, strategy: str) -> None:
+        """Override the scheduler strategy."""
+
+    def restore_scheduler_strategy(self) -> None:
+        """Restore the original scheduler strategy."""
+
+    def reload(self) -> None:
+        """Reload configuration from sources."""
+
+    def validate_configuration(self) -> list[Any]:
+        """Validate configuration and return list of errors."""
+        return []
+
+    def get_active_providers(self) -> list[Any]:
+        """Get list of active providers."""
+        return []
+
+    @property
+    def app_config(self) -> Any:
+        """Get the full application configuration."""
+        return None

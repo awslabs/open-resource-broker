@@ -83,6 +83,11 @@ class Request(AggregateRoot):
         """Get the request ID."""
         return str(self.request_id)
 
+    @property
+    def resource_id(self) -> Optional[str]:
+        """Get the primary resource ID (first in list), or None if no resources."""
+        return self.resource_ids[0] if self.resource_ids else None
+
     def start_processing(self) -> "Request":
         """Mark request as started processing."""
         if self.status != RequestStatus.PENDING:

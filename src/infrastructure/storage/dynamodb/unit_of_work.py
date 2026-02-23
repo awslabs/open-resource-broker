@@ -79,7 +79,7 @@ class DynamoDBUnitOfWork(BaseUnitOfWork):
         self.request_repository = RequestRepository(request_strategy)
         self.template_repository = TemplateRepository(template_strategy)
 
-        self._self._logger.debug(
+        self._logger.debug(
             "Initialized DynamoDBUnitOfWork with simplified repositories in region: %s",
             region,
         )
@@ -108,9 +108,9 @@ class DynamoDBUnitOfWork(BaseUnitOfWork):
             self.request_repository.storage_strategy.begin_transaction()
             self.template_repository.storage_strategy.begin_transaction()
 
-            self._self._logger.debug("DynamoDB transaction begun on all repositories")
+            self._logger.debug("DynamoDB transaction begun on all repositories")
         except Exception as e:
-            self._self._logger.error("Failed to begin DynamoDB transaction: %s", e)
+            self._logger.error("Failed to begin DynamoDB transaction: %s", e)
             raise
 
     def _commit_transaction(self) -> None:
@@ -121,9 +121,9 @@ class DynamoDBUnitOfWork(BaseUnitOfWork):
             self.request_repository.storage_strategy.commit_transaction()
             self.template_repository.storage_strategy.commit_transaction()
 
-            self._self._logger.debug("DynamoDB transaction committed on all repositories")
+            self._logger.debug("DynamoDB transaction committed on all repositories")
         except Exception as e:
-            self._self._logger.error("Failed to commit DynamoDB transaction: %s", e)
+            self._logger.error("Failed to commit DynamoDB transaction: %s", e)
             raise
 
     def _rollback_transaction(self) -> None:
@@ -134,7 +134,7 @@ class DynamoDBUnitOfWork(BaseUnitOfWork):
             self.request_repository.storage_strategy.rollback_transaction()
             self.template_repository.storage_strategy.rollback_transaction()
 
-            self._self._logger.debug("DynamoDB transaction rolled back on all repositories")
+            self._logger.debug("DynamoDB transaction rolled back on all repositories")
         except Exception as e:
-            self._self._logger.error("Failed to rollback DynamoDB transaction: %s", e)
+            self._logger.error("Failed to rollback DynamoDB transaction: %s", e)
             raise

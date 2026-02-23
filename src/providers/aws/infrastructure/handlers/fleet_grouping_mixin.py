@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Any, Optional
 
 
@@ -14,6 +15,7 @@ class FleetGroupingMixin:
     """
 
     grouping_chunk_size = 50
+    _logger: Any = logging.getLogger(__name__)
 
     def _group_instances_from_mapping(
         self,

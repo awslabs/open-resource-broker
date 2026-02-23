@@ -29,7 +29,7 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         self._field_mapper = None
 
     @property
-    def config_manager(self):
+    def config_manager(self) -> Any:
         if self._config_manager is None:
             from infrastructure.di.container import get_container, is_container_ready
 
@@ -38,7 +38,7 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         return self._config_manager
 
     @property
-    def logger(self):
+    def logger(self) -> Any:
         if self._logger is None:
             from infrastructure.di.container import get_container, is_container_ready
 
