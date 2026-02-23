@@ -142,11 +142,16 @@ class RequestReturnMachinesRESTHandler(
                 }
 
                 # Create return request for all machines using CQRS command
+                from api.utils.request_id_generator import generate_request_id
+                from domain.request.request_types import RequestType
+
+                request_id = generate_request_id(RequestType.RETURN)
                 command = CreateReturnRequestCommand(
                     machine_ids=[],
                     metadata=metadata,  # Empty list indicates all machines
                 )
-                request_id = await self._command_bus.execute(cast(Any, command))
+                # Execute command — CQRS commands return None; use pre-generated request_id
+                await self._command_bus.execute(cast(Any, command))
 
                 if self.logger:
                     self.logger.info(
@@ -202,8 +207,13 @@ class RequestReturnMachinesRESTHandler(
                 }
 
                 # Create return request using CQRS command
+                from api.utils.request_id_generator import generate_request_id
+                from domain.request.request_types import RequestType
+
+                request_id = generate_request_id(RequestType.RETURN)
                 command = CreateReturnRequestCommand(machine_ids=machine_ids, metadata=metadata)
-                request_id = await self._command_bus.execute(cast(Any, command))
+                # Execute command — CQRS commands return None; use pre-generated request_id
+                await self._command_bus.execute(cast(Any, command))
 
                 # Record metrics if available
                 if self._metrics_collector:

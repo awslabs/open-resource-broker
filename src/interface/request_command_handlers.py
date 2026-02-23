@@ -189,12 +189,20 @@ async def handle_request_machines(
     metadata = getattr(args, "metadata", {})
     metadata["dry_run"] = is_dry_run_active()
 
+    from api.utils.request_id_generator import generate_request_id
+    from domain.request.request_types import RequestType
+
+    request_id = generate_request_id(RequestType.ACQUIRE)
+
     command = CreateRequestCommand(
-        template_id=template_id, requested_count=int(machine_count), metadata=metadata
+        request_id=request_id,
+        template_id=template_id,
+        requested_count=int(machine_count),
+        metadata=metadata,
     )
 
-    # Execute command and get request ID - let exceptions bubble up
-    request_id = await command_bus.execute(command)  # type: ignore[arg-type]
+    # Execute command — CQRS commands return None; use pre-generated request_id
+    await command_bus.execute(command)  # type: ignore[arg-type]
 
     # Get the request details to include resource ID information
     try:
@@ -359,35 +367,16 @@ async def handle_request_return_machines(args: "argparse.Namespace") -> dict[str
             "message": "Machine IDs must be provided either as arguments or in JSON file",
         }
 
+    from api.utils.request_id_generator import generate_request_id
+    from domain.request.request_types import RequestType
+
+    request_id = generate_request_id(RequestType.RETURN)
+
     command = CreateReturnRequestCommand(
         machine_ids=machine_ids,
     )
 
-    result = await command_bus.execute(command)  # type: ignore[arg-type]
+    # Execute command — CQRS commands return None; use pre-generated request_id
+    await command_bus.execute(command)  # type: ignore[arg-type]
 
-    # Handle both old format (string) and new format (dict) for backward compatibility
-    if isinstance(result, dict):
-        # New detailed format
-        request_id = result.get("request_id")
-        summary = result.get("summary", "")
-        skipped_machines = result.get("skipped_machines", [])
-        processed_machines = result.get("processed_machines", [])
-
-        message = f"Return request created successfully. {summary}"
-
-        # Add details about skipped machines if any
-        if skipped_machines:
-            skipped_details = []
-            for skipped in skipped_machines:
-                skipped_details.append(f"{skipped['machine_id']}: {skipped['reason']}")
-            message += f"\nSkipped machines: {'; '.join(skipped_details)}"
-
-        return {
-            "result": request_id,
-            "message": message,
-            "processed_count": len(processed_machines),
-            "skipped_count": len(skipped_machines),
-        }
-    else:
-        # Old format (string) - maintain backward compatibility
-        return {"result": result, "message": "Return request created successfully"}
+    return {"result": request_id, "message": "Return request created successfully"}
