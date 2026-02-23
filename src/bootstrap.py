@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 # Import configuration
 from config import AppConfig
@@ -29,8 +29,8 @@ class Application:
             validator.validate_startup()
 
         # Defer heavy initialization until first use
-        self._container = None
-        self._config_manager = None
+        self._container: Any = None
+        self._config_manager: Any = None
         self._domain_container_set = False
         self.provider_type = None
         self._dry_run_context = None
@@ -271,9 +271,9 @@ class Application:
 
                 for instance_name in available_instances:
                     try:
-                        health_status = self._provider_registry.check_strategy_health(instance_name)
+                        health_status = self._provider_registry.get_or_create_strategy(instance_name)
                         is_healthy = (
-                            health_status and health_status.is_healthy if health_status else False
+                            health_status.check_health().is_healthy if health_status and hasattr(health_status, "check_health") else False
                         )
                         provider_health[instance_name] = is_healthy
                         if is_healthy:
@@ -361,7 +361,7 @@ async def main() -> None:
             # Use existing app.logger - no need to create new logger
             app.logger.info(
                 "Application started successfully with %s provider",
-                app.provider_type.upper(),
+                (app.provider_type or "unknown").upper(),
             )
 
             # Get provider info

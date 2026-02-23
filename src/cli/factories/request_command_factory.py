@@ -27,11 +27,9 @@ class RequestCommandFactory:
         **kwargs: Any,
     ) -> CreateRequestCommand:
         """Create command to create machine request."""
-        provider_name = kwargs.get("provider_name") or provider
         return CreateRequestCommand(
             template_id=template_id,
             requested_count=count,
-            provider_name=provider_name,
         )
 
     def create_get_request_status_query(
@@ -47,7 +45,6 @@ class RequestCommandFactory:
             request_id=request_id,
             provider_name=provider_name,
             lightweight=lightweight,
-            include_machines=True,
         )
 
     def create_list_requests_query(
@@ -67,7 +64,8 @@ class RequestCommandFactory:
 
     def create_cancel_request_command(self, request_id: str, **kwargs: Any) -> CancelRequestCommand:
         """Create command to cancel request."""
-        return CancelRequestCommand(request_id=request_id)
+        reason = kwargs.get("reason") or "Cancelled by user"
+        return CancelRequestCommand(request_id=request_id, reason=reason)
 
     def create_return_request_command(
         self,
@@ -76,7 +74,7 @@ class RequestCommandFactory:
         **kwargs: Any,
     ) -> CreateReturnRequestCommand:
         """Create command to return machines."""
-        return CreateReturnRequestCommand(machine_ids=machine_ids, reason=reason)
+        return CreateReturnRequestCommand(machine_ids=machine_ids)
 
     def create_list_return_requests_query(
         self,
@@ -86,10 +84,12 @@ class RequestCommandFactory:
         **kwargs: Any,
     ) -> ListReturnRequestsQuery:
         """Create query to list return requests."""
-        return ListReturnRequestsQuery(
-            status=status,
-            limit=min(limit or 50, 1000),
-            offset=offset or 0,
+        return ListReturnRequestsQuery.model_validate(  # type: ignore[attr-defined]
+            {
+                "status": status,
+                "limit": min(limit or 50, 1000),
+                "offset": offset or 0,
+            }
         )
 
     def create_list_active_requests_query(
@@ -100,10 +100,12 @@ class RequestCommandFactory:
         **kwargs: Any,
     ) -> ListActiveRequestsQuery:
         """Create query to list active requests."""
-        return ListActiveRequestsQuery(
-            provider_name=provider_name,
-            limit=min(limit or 50, 1000),
-            offset=offset or 0,
+        return ListActiveRequestsQuery.model_validate(  # type: ignore[attr-defined]
+            {
+                "provider_name": provider_name,
+                "limit": min(limit or 50, 1000),
+                "offset": offset or 0,
+            }
         )
 
     def create_get_multiple_requests_query(

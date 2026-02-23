@@ -1,10 +1,12 @@
 """Template configuration adapter implementing TemplateConfigurationPort."""
 
+import asyncio
 from typing import TYPE_CHECKING, Any, Optional
 
 from domain.base.ports.logging_port import LoggingPort
 from domain.base.ports.template_configuration_port import TemplateConfigurationPort
 from infrastructure.template.configuration_manager import TemplateConfigurationManager
+from infrastructure.template.dtos import TemplateDTO
 
 # Use TYPE_CHECKING to avoid direct domain import
 if TYPE_CHECKING:
@@ -29,9 +31,9 @@ class TemplateConfigurationAdapter(TemplateConfigurationPort):
         """Get template configuration manager."""
         return self._template_manager
 
-    def load_templates(self) -> list["Template"]:
+    async def load_templates(self, provider_override: Optional[str] = None) -> list[Any]:
         """Load all templates from configuration."""
-        return self._template_manager.get_all_templates_sync()
+        return await self._template_manager.load_templates(provider_override=provider_override)
 
     def get_template_config(self, template_id: str) -> Optional[dict[str, Any]]:
         """Get configuration for specific template."""
@@ -74,14 +76,7 @@ class TemplateConfigurationAdapter(TemplateConfigurationPort):
                 metadata=config.get("metadata", {}),
             )
 
-            # Skip async validation for now - template manager validation is async
-            # TODO: Make this method async or use sync validation
-            # validation_result = self._template_manager.validate_template(temp_template)
-            # if not validation_result.is_valid:
-            #     errors.extend(validation_result.errors)
-
         except Exception as e:
-            # Don't fail validation if template validation fails
             self._logger.warning("Template validation failed: %s", e)
             errors.append(f"Template validation error: {e!s}")
 
@@ -91,7 +86,6 @@ class TemplateConfigurationAdapter(TemplateConfigurationPort):
         """Determine provider type from configuration."""
         provider_api = config.get("provider_api", "")
 
-        # Map provider APIs to provider types
         if provider_api in [
             "EC2Fleet",
             "SpotFleet",
@@ -100,7 +94,6 @@ class TemplateConfigurationAdapter(TemplateConfigurationPort):
         ]:
             return "aws"
 
-        # Check for AWS-specific fields
         aws_fields = [
             "fleet_type",
             "allocation_strategy",
@@ -114,49 +107,46 @@ class TemplateConfigurationAdapter(TemplateConfigurationPort):
 
     # Additional convenience methods for application layer
 
-    def get_template_by_id(self, template_id: str) -> Optional["Template"]:
+    def get_template_by_id(self, template_id: str) -> Optional[TemplateDTO]:
         """
-        Get template by ID as domain object.
+        Get template by ID as TemplateDTO.
 
         Args:
             template_id: Template identifier
 
         Returns:
-            Template domain object or None
+            TemplateDTO or None
         """
         return self._template_manager.get_template(template_id)
 
-    def get_templates_by_provider(self, provider_api: str) -> list["Template"]:
+    def get_templates_by_provider(self, provider_api: str) -> list[TemplateDTO]:
         """
-        Get templates by provider API as domain objects.
+        Get templates by provider API as TemplateDTO objects.
 
         Args:
             provider_api: Provider API identifier
 
         Returns:
-            List of Template domain objects
+            List of TemplateDTO objects
         """
-        all_templates = self._template_manager.get_all_templates()
+        all_templates = self._template_manager.get_all_templates_sync()
         return [t for t in all_templates if getattr(t, "provider_api", None) == provider_api]
 
     def clear_cache(self) -> None:
         """Clear template cache."""
         if hasattr(self._template_manager, "clear_cache"):
             self._template_manager.clear_cache()
-            if self._logger:
-                self._logger.debug("Cleared template cache via adapter")
+            self._logger.debug("Cleared template cache via adapter")
 
     def get_cache_stats(self) -> dict[str, Any]:
         """Get cache statistics."""
-        if hasattr(self._template_manager, "get_cache_stats"):
-            return self._template_manager.get_cache_stats()
         return {"cache_type": "unknown", "cache_size": 0}
 
 
 # Factory function for dependency injection
 def create_template_configuration_adapter(
     template_manager: TemplateConfigurationManager, logger: Optional[LoggingPort] = None
-) -> TemplateConfigurationAdapter:
+) -> "TemplateConfigurationAdapter":
     """
     Create TemplateConfigurationAdapter.
 
@@ -167,4 +157,8 @@ def create_template_configuration_adapter(
     Returns:
         TemplateConfigurationAdapter instance
     """
+    if logger is None:
+        from infrastructure.logging.logger import get_logger
+        from infrastructure.adapters.logging_adapter import LoggingAdapter
+        logger = LoggingAdapter(get_logger(__name__))
     return TemplateConfigurationAdapter(template_manager, logger)

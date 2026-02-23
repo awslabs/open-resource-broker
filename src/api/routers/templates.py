@@ -1,7 +1,7 @@
 """Template management API routes."""
 
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any, Optional, cast
 
 try:
     from fastapi import APIRouter, Body, HTTPException, Query
@@ -202,14 +202,14 @@ async def create_template(template_data: TemplateCreateRequest) -> JSONResponse:
             description=template_dict.get("description"),
             provider_api=template_dict.get("provider_api", "aws"),
             instance_type=template_dict.get("instance_type"),
-            image_id=template_dict.get("image_id"),
+            image_id=template_dict.get("image_id") or "",
             subnet_ids=template_dict.get("subnet_ids", []),
             security_group_ids=template_dict.get("security_group_ids", []),
             tags=template_dict.get("tags", {}),
             configuration=template_dict,
         )
 
-        response = command_bus.execute(command)
+        response = await command_bus.execute(cast(Any, command))
 
         if response and response.validation_errors:
             raise HTTPException(
@@ -263,7 +263,7 @@ async def update_template(template_id: str, template_data: TemplateUpdateRequest
             configuration=template_dict,
         )
 
-        response = command_bus.execute(command)
+        response = await command_bus.execute(cast(Any, command))
 
         if response and response.validation_errors:
             raise HTTPException(
@@ -303,7 +303,7 @@ async def delete_template(template_id: str) -> JSONResponse:
 
         # Create command and execute through CQRS bus
         command = DeleteTemplateCommand(template_id=template_id)
-        response = command_bus.execute(command)
+        response = await command_bus.execute(cast(Any, command))
 
         if response and response.validation_errors:
             raise HTTPException(

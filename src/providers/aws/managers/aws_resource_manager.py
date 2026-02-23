@@ -53,7 +53,7 @@ class AWSResourceManagerImpl(CloudProviderResourceManager[AWSClient]):
         # This is a simplified version
         try:
             # Example: Get EC2 instance status
-            response = await self.provider_client.describe_instances(InstanceIds=[str(resource_id)])
+            response = await self.provider_client.ec2_client.describe_instances(InstanceIds=[str(resource_id)])
 
             if not response.get("Reservations"):
                 raise ValueError(f"Resource not found: {resource_id}")
@@ -91,7 +91,7 @@ class AWSResourceManagerImpl(CloudProviderResourceManager[AWSClient]):
             return resources
 
         except Exception as e:
-            self.logger.error("Failed to list resources: %s", str(e))
+            self._logger.error("Failed to list resources: %s", str(e))
             raise
 
     async def fetch_resource_quota(
@@ -107,7 +107,7 @@ class AWSResourceManagerImpl(CloudProviderResourceManager[AWSClient]):
                 return {"used": 0, "limit": 1000, "available": 1000}  # Default quota
 
         except Exception as e:
-            self.logger.error("Failed to fetch quota: %s", str(e))
+            self._logger.error("Failed to fetch quota: %s", str(e))
             raise
 
     # Private implementation methods
@@ -122,7 +122,7 @@ class AWSResourceManagerImpl(CloudProviderResourceManager[AWSClient]):
             instance_config = specification.configuration
 
             # Simulate instance creation
-            resource_id = ResourceId(f"i-{hash(specification.name) % 1000000:06d}")
+            resource_id = ResourceId(value=f"i-{hash(specification.name) % 1000000:06d}")
 
             return ResourceAllocation(
                 resource_id=resource_id,
@@ -141,7 +141,7 @@ class AWSResourceManagerImpl(CloudProviderResourceManager[AWSClient]):
         volume_config = specification.configuration
 
         # Simulate volume creation
-        resource_id = ResourceId(f"vol-{hash(specification.name) % 1000000:06d}")
+        resource_id = ResourceId(value=f"vol-{hash(specification.name) % 1000000:06d}")
 
         return ResourceAllocation(
             resource_id=resource_id,
@@ -155,12 +155,12 @@ class AWSResourceManagerImpl(CloudProviderResourceManager[AWSClient]):
     async def _deprovision_compute_instance(self, allocation: ResourceAllocation) -> None:
         """Deprovision EC2 compute instance."""
         # Implementation would call AWS EC2 terminate APIs
-        self.logger.info("Terminating EC2 instance: %s", allocation.resource_id)
+        self._logger.info("Terminating EC2 instance: %s", allocation.resource_id)
 
     async def _deprovision_storage_volume(self, allocation: ResourceAllocation) -> None:
         """Deprovision EBS storage volume."""
         # Implementation would call AWS EBS delete APIs
-        self.logger.info("Deleting EBS volume: %s", allocation.resource_id)
+        self._logger.info("Deleting EBS volume: %s", allocation.resource_id)
 
     async def _list_compute_instances(self) -> list[ResourceAllocation]:
         """List EC2 compute instances."""

@@ -52,7 +52,7 @@ class ProviderStrategyFactory:
 
         # Delegate configuration building and validation
         # Use a default logger if none provided
-        effective_logger = logger
+        effective_logger: Any = logger
         if effective_logger is None:
             from infrastructure.logging.logger import get_logger
             effective_logger = get_logger(__name__)
@@ -153,11 +153,12 @@ class ProviderStrategyFactory:
                     self._logger.debug("Created provider strategy from type: %s", provider_config.type)
 
             # Set provider name for identification
-            if hasattr(strategy, "name"):
+            if strategy is not None and hasattr(strategy, "name"):
                 strategy.name = provider_config.name
 
             # Cache the strategy
-            self._provider_cache[cache_key] = strategy
+            if strategy is not None:
+                self._provider_cache[cache_key] = strategy
 
             if self._logger:
                 self._logger.debug(

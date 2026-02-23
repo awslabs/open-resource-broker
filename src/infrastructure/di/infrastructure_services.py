@@ -53,6 +53,7 @@ def _register_template_services(container: DIContainer):
             scheduler_strategy=c.get(SchedulerPort),
             logger=c.get(LoggingPort),
             provider_registry_service=c.get(ProviderRegistryService),
+            container=c,
         )
 
     from application.services.template_generation_service import TemplateGenerationService
@@ -61,19 +62,21 @@ def _register_template_services(container: DIContainer):
 
     # Register template configuration manager with factory function
     def create_template_configuration_manager(
-        container: DIContainer,
+        c: DIContainer,
     ) -> TemplateConfigurationManager:
         """Create TemplateConfigurationManager."""
         from application.services.provider_registry_service import ProviderRegistryService
+        from config.managers.configuration_manager import ConfigurationManager
         from domain.base.ports.scheduler_port import SchedulerPort
+        from domain.template.ports.template_defaults_port import TemplateDefaultsPort as TDP
 
         return TemplateConfigurationManager(
-            config_manager=container.get(ConfigurationPort),
-            scheduler_strategy=container.get(SchedulerPort),
-            logger=container.get(LoggingPort),
+            config_manager=c.get(ConfigurationManager),
+            scheduler_strategy=c.get(SchedulerPort),
+            logger=c.get(LoggingPort),
             event_publisher=None,
-            template_defaults_service=container.get(TemplateDefaultsPort),
-            provider_registry_service=container.get(ProviderRegistryService),
+            template_defaults_service=c.get(TDP),  # type: ignore[arg-type]
+            provider_registry_service=c.get(ProviderRegistryService),
         )
 
     container.register_singleton(
@@ -104,7 +107,8 @@ def _register_ami_resolver_if_enabled(container: DIContainer) -> None:
 
             # Look for AWS provider defaults
             if (
-                hasattr(provider_config, "provider_defaults")
+                provider_config is not None
+                and hasattr(provider_config, "provider_defaults")
                 and "aws" in provider_config.provider_defaults
             ):
                 aws_defaults = provider_config.provider_defaults["aws"]
@@ -115,16 +119,14 @@ def _register_ami_resolver_if_enabled(container: DIContainer) -> None:
                     )
 
                     # Check if AMI resolution is enabled
-                    if aws_extension_config and aws_extension_config.ami_resolution.enabled:
-                        # AMI resolution now handled by generic image resolution service
-                        # No need for separate template resolver registration
+                    if aws_extension_config and hasattr(aws_extension_config, "ami_resolution") and aws_extension_config.ami_resolution.enabled:  # type: ignore[attr-defined]
                         logger.info(
                             "Image resolution enabled in AWS extensions - using generic service"
                         )
                         return
 
             # Fallback: check if any AWS provider instances have AMI resolution enabled
-            if hasattr(provider_config, "providers"):
+            if provider_config is not None and hasattr(provider_config, "providers"):
                 for provider in provider_config.providers:
                     if provider.type == "aws" and hasattr(provider, "extensions"):
                         try:
@@ -135,17 +137,9 @@ def _register_ami_resolver_if_enabled(container: DIContainer) -> None:
                             )
                             if (
                                 instance_extension_config
-                                and instance_extension_config.ami_resolution.enabled
+                                and hasattr(instance_extension_config, "ami_resolution")
+                                and instance_extension_config.ami_resolution.enabled  # type: ignore[attr-defined]
                             ):
-                                # TODO: CachingAMIResolver not implemented yet
-                                # container.register_singleton(CachingAMIResolver)
-                                # Register interface to resolve to concrete
-                                # implementation
-                                # from domain.base.ports.template_resolver_port import (
-                                #     TemplateResolverPort,
-                                # )
-
-                                # Image resolution now handled by generic service
                                 logger.info(
                                     "Image resolution enabled in AWS provider instance: %s",
                                     provider.name,
@@ -160,8 +154,7 @@ def _register_ami_resolver_if_enabled(container: DIContainer) -> None:
 
             # Default: use generic image resolution service
             default_aws_config = TemplateExtensionRegistry.create_extension_config("aws", {})
-            if default_aws_config and default_aws_config.ami_resolution.enabled:
-                # Image resolution now handled by generic service
+            if default_aws_config and hasattr(default_aws_config, "ami_resolution") and default_aws_config.ami_resolution.enabled:  # type: ignore[attr-defined]
                 logger.info("Image resolution enabled with default AWS extension configuration")
             else:
                 logger.debug("Image resolution disabled in default AWS configuration")

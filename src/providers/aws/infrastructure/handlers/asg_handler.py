@@ -59,7 +59,7 @@ class ASGHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
         logger: LoggingPort,
         aws_ops: AWSOperations,
         launch_template_manager: AWSLaunchTemplateManager,
-        request_adapter: RequestAdapterPort = None,
+        request_adapter: Optional[RequestAdapterPort] = None,
         machine_adapter: Optional[AWSMachineAdapter] = None,
     ) -> None:
         """
@@ -163,7 +163,7 @@ class ASGHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
 
         # Store launch template info in request (if request has this method)
         if hasattr(request, "set_launch_template_info"):
-            request.set_launch_template_info(
+            request.set_launch_template_info(  # type: ignore[attr-defined]
                 launch_template_result.template_id, launch_template_result.version
             )
 
@@ -192,12 +192,14 @@ class ASGHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
         self._tag_asg(asg_name, aws_template, str(request.request_id))
 
         # Enable instance protection if specified
-        if hasattr(aws_template, "instance_protection") and aws_template.instance_protection:
-            self._enable_instance_protection(asg_name)
+        if getattr(aws_template, "instance_protection", None):
+            if hasattr(self, "_enable_instance_protection"):
+                self._enable_instance_protection(asg_name)  # type: ignore[attr-defined]
 
         # Set instance lifecycle hooks if needed
-        if hasattr(aws_template, "lifecycle_hooks") and aws_template.lifecycle_hooks:
-            self._set_lifecycle_hooks(asg_name, aws_template.lifecycle_hooks)
+        if getattr(aws_template, "lifecycle_hooks", None):
+            if hasattr(self, "_set_lifecycle_hooks"):
+                self._set_lifecycle_hooks(asg_name, aws_template.lifecycle_hooks)  # type: ignore[attr-defined]
 
         return asg_name
 
@@ -317,10 +319,8 @@ class ASGHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
             ),
             # ASG-specific flags
             "has_context": hasattr(template, "context") and bool(template.context),
-            "has_instance_protection": hasattr(template, "instance_protection")
-            and template.instance_protection,
-            "has_lifecycle_hooks": hasattr(template, "lifecycle_hooks")
-            and bool(template.lifecycle_hooks),
+            "has_instance_protection": bool(getattr(template, "instance_protection", False)),
+            "has_lifecycle_hooks": bool(getattr(template, "lifecycle_hooks", None)),
         }
 
     def _create_asg_config(
@@ -378,8 +378,7 @@ class ASGHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
         launch_template_version: str,
     ) -> dict[str, Any]:
         """Create Auto Scaling Group configuration using legacy logic."""
-        asg_config: dict[str, Any] = {
-            "AutoScalingGroupName": asg_name,
+        asg_config: dict[str, Any] = {            "AutoScalingGroupName": asg_name,
             "MinSize": 0,
             "MaxSize": request.requested_count * 2,  # Allow some buffer
             "DesiredCapacity": request.requested_count,
@@ -450,13 +449,13 @@ class ASGHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                 }
 
             ondemand_pct = int(percent_on_demand) if percent_on_demand is not None else 0
-            asg_config["MixedInstancesPolicy"]["InstancesDistribution"] = {
+            asg_config["MixedInstancesPolicy"]["InstancesDistribution"] = {  # type: ignore[index]
                 "OnDemandBaseCapacity": 0,
                 "OnDemandPercentageAboveBaseCapacity": ondemand_pct,
             }
 
             if getattr(aws_template, "allocation_strategy", None):
-                asg_config["MixedInstancesPolicy"]["InstancesDistribution"][
+                asg_config["MixedInstancesPolicy"]["InstancesDistribution"][  # type: ignore[index]
                     "SpotAllocationStrategy"
                 ] = aws_template.get_asg_allocation_strategy()
 
@@ -486,8 +485,8 @@ class ASGHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
             )
         )
 
-        instance_ids = [
-            entry.get("InstanceId")
+        instance_ids: list[str] = [
+            entry.get("InstanceId", "")
             for entry in asg_instances
             if entry.get("AutoScalingGroupName") == asg_name and entry.get("InstanceId")
         ]
@@ -653,7 +652,7 @@ class ASGHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                     exc,
                 )
 
-    def release_hosts(
+    def release_hosts(  # type: ignore[override]
         self,
         machine_ids: list[str],
         resource_mapping: Optional[dict[str, tuple[Optional[str], int]]] = None,
@@ -914,12 +913,6 @@ class ASGHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
 
     def _grouping_label(self) -> str:
         return "ASG"
-
-    @staticmethod
-    def _chunk_list(items: list[str], chunk_size: int):
-        """Yield successive chunk-sized lists from items."""
-        for index in range(0, len(items), chunk_size):
-            yield items[index : index + chunk_size]
 
     def check_hosts_status(self, request: Request) -> list[dict[str, Any]]:
         """Check the status of instances across all ASGs in the request."""

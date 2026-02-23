@@ -11,26 +11,28 @@ class EventPublishingService:
     def __init__(self, event_publisher: EventPublisherPort):
         self._event_publisher = event_publisher
 
-    async def publish_request_created(self, request: Request) -> None:
+    def publish_request_created(self, request: Request) -> None:
         """Publish request created event."""
+        request_id_str = str(request.request_id)
         event = RequestCreatedEvent(
-            request_id=request.request_id,
+            aggregate_id=request_id_str,
+            aggregate_type="Request",
+            request_id=request_id_str,
+            request_type=request.request_type.value,
             template_id=request.template_id,
-            machine_count=request.machine_count,
-            provider_api=request.provider_api,
-            status=request.status,
+            machine_count=request.requested_count,
         )
-        await self._event_publisher.publish(event)
+        self._event_publisher.publish(event)
 
-    async def publish_request_completed(self, request: Request) -> None:
+    def publish_request_completed(self, request: Request) -> None:
         """Publish request completed event."""
+        request_id_str = str(request.request_id)
         event = RequestCompletedEvent(
-            request_id=request.request_id,
-            template_id=request.template_id,
-            machine_count=request.machine_count,
-            provider_api=request.provider_api,
-            status=request.status,
+            aggregate_id=request_id_str,
+            aggregate_type="Request",
+            request_id=request_id_str,
+            request_type=request.request_type.value,
+            completion_status=request.status.value,
             machine_ids=request.machine_ids,
-            resource_ids=request.resource_ids,
         )
-        await self._event_publisher.publish(event)
+        self._event_publisher.publish(event)

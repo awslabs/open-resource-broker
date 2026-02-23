@@ -68,7 +68,7 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
         logger: LoggingPort,
         aws_ops: AWSOperations,
         launch_template_manager: AWSLaunchTemplateManager,
-        request_adapter: RequestAdapterPort = None,
+        request_adapter: Optional[RequestAdapterPort] = None,
         machine_adapter: Optional[AWSMachineAdapter] = None,
     ) -> None:
         """
@@ -209,7 +209,7 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
 
         # Store launch template info in request (if request has this method)
         if hasattr(request, "set_launch_template_info"):
-            request.set_launch_template_info(
+            request.set_launch_template_info(  # type: ignore[attr-defined]
                 launch_template_result.template_id, launch_template_result.version
             )
 
@@ -310,7 +310,7 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
 
         # Store launch template info in request (if request has this method)
         if hasattr(request, "set_launch_template_info"):
-            request.set_launch_template_info(
+            request.set_launch_template_info(  # type: ignore[attr-defined]
                 launch_template_result.template_id, launch_template_result.version
             )
 
@@ -570,7 +570,7 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
 
         return {
             # Fleet-specific values
-            "fleet_type": template.fleet_type.value,
+            "fleet_type": template.fleet_type.value if template.fleet_type else "request",
             "fleet_name": f"{get_resource_prefix('fleet')}{request.request_id}",
             # Computed overrides
             "instance_overrides": instance_overrides,
@@ -588,7 +588,7 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                 else None
             ),
             "allocation_strategy_on_demand": (
-                self._get_allocation_strategy_on_demand(template.allocation_strategy_on_demand)
+                self._get_allocation_strategy_on_demand(template.allocation_strategy_on_demand.value)
                 if template.allocation_strategy_on_demand
                 else None
             ),
@@ -672,8 +672,8 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
             ],
             "TargetCapacitySpecification": {"TotalTargetCapacity": request.requested_count},
             "Type": template.fleet_type.value
-            if hasattr(template.fleet_type, "value")
-            else str(template.fleet_type),
+            if template.fleet_type and hasattr(template.fleet_type, "value")
+            else str(template.fleet_type) if template.fleet_type else "request",
             "TagSpecifications": [
                 {
                     "ResourceType": "fleet",
@@ -744,7 +744,9 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
             if template.allocation_strategy_on_demand:
                 fleet_config["OnDemandOptions"] = {
                     "AllocationStrategy": self._get_allocation_strategy_on_demand(
-                        template.allocation_strategy_on_demand
+                        template.allocation_strategy_on_demand.value
+                        if hasattr(template.allocation_strategy_on_demand, "value")
+                        else str(template.allocation_strategy_on_demand)
                     )
                 }
 
@@ -975,7 +977,7 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
             self._logger.error("Unexpected error checking EC2 Fleet status: %s", str(e))
             raise AWSInfrastructureError(f"Failed to check EC2 Fleet status: {e!s}")
 
-    def release_hosts(
+    def release_hosts(  # type: ignore[override]
         self,
         machine_ids: list[str],
         resource_mapping: Optional[dict[str, tuple[Optional[str], int]]] = None,
@@ -1223,6 +1225,7 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                 fleet_details = fleet_list[0]
 
             fleet_type = fleet_details.get("Type", "maintain")
+            new_capacity = 0
 
             if fleet_instance_ids:
                 if fleet_type == "maintain":

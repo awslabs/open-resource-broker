@@ -12,7 +12,7 @@ from domain.base.value_objects import (
     AllocationStrategy,
     InstanceType,
     PriceType,
-    ResourceId,
+    ResourceId as _BaseResourceId,
     Tags,
     ValueObject,
 )
@@ -20,7 +20,7 @@ from domain.base.value_objects import (
 # Import domain protocols
 
 
-class ResourceId(ResourceId):
+class ResourceId(_BaseResourceId):
     """Base class for AWS resource IDs with AWS-specific validation."""
 
     pattern_key: ClassVar[str] = ""
@@ -30,8 +30,7 @@ class ResourceId(ResourceId):
     def validate_format(cls, v: str) -> str:
         """Validate AWS resource ID format."""
         # Get pattern from AWS configuration
-        from providers.aws.configuration.config import get_aws_config_manager
-        from providers.aws.configuration.validator import AWSNamingConfig
+        from providers.aws.configuration.validator import AWSNamingConfig, get_aws_config_manager
 
         config = get_aws_config_manager().get_typed(AWSNamingConfig)
         pattern = config.patterns.get(cls.pattern_key)
@@ -92,8 +91,7 @@ class AWSInstanceType(InstanceType):
     def validate_instance_type(cls, v: str) -> str:
         """Validate AWS instance type format."""
         # Get pattern from AWS configuration
-        from providers.aws.configuration.config import get_aws_config_manager
-        from providers.aws.configuration.validator import AWSNamingConfig
+        from providers.aws.configuration.validator import AWSNamingConfig, get_aws_config_manager
 
         config = get_aws_config_manager().get_typed(AWSNamingConfig)
         pattern = config.patterns["instance_type"]
@@ -121,8 +119,7 @@ class AWSTags(Tags):
     def validate_aws_tags(cls, v: dict[str, str]) -> dict[str, str]:
         """Validate AWS tags format and constraints."""
         # Get AWS tag validation rules from configuration
-        from providers.aws.configuration.config import get_aws_config_manager
-        from providers.aws.configuration.validator import AWSNamingConfig
+        from providers.aws.configuration.validator import AWSNamingConfig, get_aws_config_manager
 
         config = get_aws_config_manager().get_typed(AWSNamingConfig)
 
@@ -147,7 +144,7 @@ class AWSTags(Tags):
 
     def to_aws_format(self) -> list[dict[str, str]]:
         """Convert to AWS API format."""
-        return [{"Key": k, "Value": v} for k, v in self.values.items()]
+        return [{"Key": k, "Value": v} for k, v in self.tags.items()]
 
 
 class AWSARN(ARN):
@@ -164,8 +161,7 @@ class AWSARN(ARN):
     def validate_arn(cls, v: str) -> str:
         """Validate AWS ARN format."""
         # Get pattern from AWS configuration
-        from providers.aws.configuration.config import get_aws_config_manager
-        from providers.aws.configuration.validator import AWSNamingConfig
+        from providers.aws.configuration.validator import AWSNamingConfig, get_aws_config_manager
 
         config = get_aws_config_manager().get_typed(AWSNamingConfig)
         pattern = config.patterns["arn"]
@@ -189,8 +185,10 @@ class ProviderApi(str, Enum):
     """AWS-specific provider API types - dynamically loaded from configuration."""
 
     @classmethod
-    def _missing_(cls, value) -> None:
+    def _missing_(cls, value: object) -> Optional["ProviderApi"]:
         """Handle missing enum values by checking configuration."""
+        if not isinstance(value, str):
+            return None
         # Get valid APIs from configuration
         try:
             from config.managers.configuration_manager import ConfigurationManager
@@ -210,8 +208,8 @@ class ProviderApi(str, Enum):
 
             if value in aws_handlers:
                 # Dynamically create enum member
-                new_member = object.__new__(cls)
-                new_member._name_ = value
+                new_member = str.__new__(cls, value)
+                new_member._name_ = value  # type: ignore[misc]
                 new_member._value_ = value
                 return new_member
         except Exception:
@@ -227,8 +225,8 @@ class ProviderApi(str, Enum):
         }
 
         if value in fallback_values:
-            new_member = object.__new__(cls)
-            new_member._name_ = value
+            new_member = str.__new__(cls, value)
+            new_member._name_ = value  # type: ignore[misc]
             new_member._value_ = value
             return new_member
 
@@ -245,8 +243,10 @@ class AWSFleetType(str, Enum):
     """AWS Fleet type - dynamically loaded from configuration."""
 
     @classmethod
-    def _missing_(cls, value) -> None:
+    def _missing_(cls, value: object) -> Optional["AWSFleetType"]:
         """Handle missing enum values by checking configuration."""
+        if not isinstance(value, str):
+            return None
         # Get valid fleet types from configuration
         try:
             from config.managers.configuration_manager import ConfigurationManager
@@ -272,8 +272,8 @@ class AWSFleetType(str, Enum):
 
             if value in all_fleet_types:
                 # Dynamically create enum member
-                new_member = object.__new__(cls)
-                new_member._name_ = value.upper()
+                new_member = str.__new__(cls, value)
+                new_member._name_ = value.upper()  # type: ignore[misc]
                 new_member._value_ = value
                 return new_member
         except Exception:
@@ -288,8 +288,8 @@ class AWSFleetType(str, Enum):
         }
 
         if value in fallback_values:
-            new_member = object.__new__(cls)
-            new_member._name_ = value.upper()
+            new_member = str.__new__(cls, value)
+            new_member._name_ = value.upper()  # type: ignore[misc]
             new_member._value_ = value
             return new_member
 
