@@ -1,6 +1,6 @@
 """SQL Unit of Work implementation using simplified repositories."""
 
-from typing import Optional
+from typing import Any, Optional
 
 from sqlalchemy import Engine
 from sqlalchemy.orm import Session
@@ -39,32 +39,38 @@ class SQLUnitOfWork(BaseUnitOfWork):
         self.engine = engine
         self.session: Optional[Session] = None
 
+        # Derive config from engine URL so SQLConnectionManager can initialise
+        db_type = engine.url.get_dialect().name  # e.g. "sqlite", "postgresql"
+        db_config: dict[str, Any] = {"type": db_type, "url": str(engine.url)}
+
         # Create storage strategies for each repository
         machine_strategy = SQLStorageStrategy(
-            config=None,  # Will be set from engine
+            config=db_config,
             table_name="machines",
             columns=self._get_machine_columns(),
         )
-        machine_strategy.engine = engine
 
         request_strategy = SQLStorageStrategy(
-            config=None,  # Will be set from engine
+            config=db_config,
             table_name="requests",
             columns=self._get_request_columns(),
         )
-        request_strategy.engine = engine
 
         template_strategy = SQLStorageStrategy(
-            config=None,  # Will be set from engine
+            config=db_config,
             table_name="templates",
             columns=self._get_template_columns(),
         )
-        template_strategy.engine = engine
 
         # Create repositories using simplified implementations
         self.machine_repository = MachineRepository(machine_strategy)
         self.request_repository = RequestRepository(request_strategy)
         self.template_repository = TemplateRepository(template_strategy)
+
+        # Keep typed references for transaction management
+        self._machine_strategy = machine_strategy
+        self._request_strategy = request_strategy
+        self._template_strategy = template_strategy
 
         self.logger.debug("Initialized SQLUnitOfWork with simplified repositories")
 
@@ -146,15 +152,10 @@ class SQLUnitOfWork(BaseUnitOfWork):
         try:
             self.session = Session(self.engine)
 
-            # Set session on all storage strategies
-            self.machine_repository.storage_strategy.session = self.session
-            self.request_repository.storage_strategy.session = self.session
-            self.template_repository.storage_strategy.session = self.session
-
             # Begin transaction on storage strategies
-            self.machine_repository.storage_strategy.begin_transaction()
-            self.request_repository.storage_strategy.begin_transaction()
-            self.template_repository.storage_strategy.begin_transaction()
+            self._machine_strategy.begin_transaction()
+            self._request_strategy.begin_transaction()
+            self._template_strategy.begin_transaction()
 
             self.logger.debug("SQL transaction begun on all repositories")
         except Exception as e:
@@ -169,9 +170,9 @@ class SQLUnitOfWork(BaseUnitOfWork):
         try:
             if self.session:
                 # Commit transaction on storage strategies
-                self.machine_repository.storage_strategy.commit_transaction()
-                self.request_repository.storage_strategy.commit_transaction()
-                self.template_repository.storage_strategy.commit_transaction()
+                self._machine_strategy.commit_transaction()
+                self._request_strategy.commit_transaction()
+                self._template_strategy.commit_transaction()
 
                 self.session.commit()
                 self.logger.debug("SQL transaction committed on all repositories")
@@ -188,9 +189,9 @@ class SQLUnitOfWork(BaseUnitOfWork):
         try:
             if self.session:
                 # Rollback transaction on storage strategies
-                self.machine_repository.storage_strategy.rollback_transaction()
-                self.request_repository.storage_strategy.rollback_transaction()
-                self.template_repository.storage_strategy.rollback_transaction()
+                self._machine_strategy.rollback_transaction()
+                self._request_strategy.rollback_transaction()
+                self._template_strategy.rollback_transaction()
 
                 self.session.rollback()
                 self.logger.debug("SQL transaction rolled back on all repositories")

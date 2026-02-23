@@ -39,6 +39,7 @@ class DynamoDBUnitOfWork(BaseUnitOfWork):
 
         Args:
             aws_client: AWS client instance
+            logger: Logger instance
             region: AWS region
             profile: AWS profile name (optional)
             machine_table: DynamoDB table name for machines
@@ -54,6 +55,7 @@ class DynamoDBUnitOfWork(BaseUnitOfWork):
 
         # Create storage strategies for each repository
         machine_strategy = DynamoDBStorageStrategy(
+            logger=logger,
             aws_client=aws_client,
             region=region,
             table_name=machine_table,
@@ -61,6 +63,7 @@ class DynamoDBUnitOfWork(BaseUnitOfWork):
         )
 
         request_strategy = DynamoDBStorageStrategy(
+            logger=logger,
             aws_client=aws_client,
             region=region,
             table_name=request_table,
@@ -68,6 +71,7 @@ class DynamoDBUnitOfWork(BaseUnitOfWork):
         )
 
         template_strategy = DynamoDBStorageStrategy(
+            logger=logger,
             aws_client=aws_client,
             region=region,
             table_name=template_table,
@@ -78,6 +82,11 @@ class DynamoDBUnitOfWork(BaseUnitOfWork):
         self.machine_repository = MachineRepository(machine_strategy)
         self.request_repository = RequestRepository(request_strategy)
         self.template_repository = TemplateRepository(template_strategy)
+
+        # Keep typed strategy references for transaction management
+        self._machine_strategy = machine_strategy
+        self._request_strategy = request_strategy
+        self._template_strategy = template_strategy
 
         self._logger.debug(
             "Initialized DynamoDBUnitOfWork with simplified repositories in region: %s",
@@ -102,11 +111,9 @@ class DynamoDBUnitOfWork(BaseUnitOfWork):
     def _begin_transaction(self) -> None:
         """Begin DynamoDB transaction."""
         try:
-            # DynamoDB transactions are handled at the operation level
-            # Begin transaction on storage strategies
-            self.machine_repository.storage_strategy.begin_transaction()
-            self.request_repository.storage_strategy.begin_transaction()
-            self.template_repository.storage_strategy.begin_transaction()
+            self._machine_strategy.begin_transaction()
+            self._request_strategy.begin_transaction()
+            self._template_strategy.begin_transaction()
 
             self._logger.debug("DynamoDB transaction begun on all repositories")
         except Exception as e:
@@ -116,10 +123,9 @@ class DynamoDBUnitOfWork(BaseUnitOfWork):
     def _commit_transaction(self) -> None:
         """Commit DynamoDB transaction."""
         try:
-            # Commit transaction on storage strategies
-            self.machine_repository.storage_strategy.commit_transaction()
-            self.request_repository.storage_strategy.commit_transaction()
-            self.template_repository.storage_strategy.commit_transaction()
+            self._machine_strategy.commit_transaction()
+            self._request_strategy.commit_transaction()
+            self._template_strategy.commit_transaction()
 
             self._logger.debug("DynamoDB transaction committed on all repositories")
         except Exception as e:
@@ -129,10 +135,9 @@ class DynamoDBUnitOfWork(BaseUnitOfWork):
     def _rollback_transaction(self) -> None:
         """Rollback DynamoDB transaction."""
         try:
-            # Rollback transaction on storage strategies
-            self.machine_repository.storage_strategy.rollback_transaction()
-            self.request_repository.storage_strategy.rollback_transaction()
-            self.template_repository.storage_strategy.rollback_transaction()
+            self._machine_strategy.rollback_transaction()
+            self._request_strategy.rollback_transaction()
+            self._template_strategy.rollback_transaction()
 
             self._logger.debug("DynamoDB transaction rolled back on all repositories")
         except Exception as e:

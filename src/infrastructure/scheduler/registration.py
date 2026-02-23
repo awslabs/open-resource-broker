@@ -38,7 +38,7 @@ def create_hostfactory_config(data: dict[str, Any]) -> Any:
 
 
 def register_symphony_hostfactory_scheduler(
-    registry: "SchedulerRegistry" = None,
+    registry: "SchedulerRegistry | None" = None,
 ) -> None:
     """Register Symphony HostFactory scheduler (idempotent)."""
     if registry is None:
@@ -48,14 +48,14 @@ def register_symphony_hostfactory_scheduler(
 
     # Registry handles idempotent registration
     registry.register(
-        scheduler_type="hostfactory",
+        type_name="hostfactory",
         strategy_factory=create_symphony_hostfactory_strategy,
         config_factory=create_hostfactory_config,
     )
 
     # Also register with 'hf' alias
     registry.register(
-        scheduler_type="hf",
+        type_name="hf",
         strategy_factory=create_symphony_hostfactory_strategy,
         config_factory=create_hostfactory_config,
     )
@@ -82,7 +82,7 @@ def create_default_config(data: dict[str, Any]) -> Any:
     return data
 
 
-def register_default_scheduler(registry: "SchedulerRegistry" = None) -> None:
+def register_default_scheduler(registry: "SchedulerRegistry | None" = None) -> None:
     """Register default scheduler (idempotent)."""
     if registry is None:
         from infrastructure.scheduler.registry import get_scheduler_registry
@@ -91,7 +91,7 @@ def register_default_scheduler(registry: "SchedulerRegistry" = None) -> None:
 
     # Registry handles idempotent registration
     registry.register(
-        scheduler_type="default",
+        type_name="default",
         strategy_factory=create_default_strategy,
         config_factory=create_default_config,
     )

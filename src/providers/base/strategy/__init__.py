@@ -44,6 +44,8 @@ Usage Example:
 # Advanced strategy patterns
 from typing import Optional
 
+from domain.base.ports import LoggingPort
+
 from .base_provider_strategy import BaseProviderStrategy
 from .composite_strategy import (
     AggregationPolicy,
@@ -149,7 +151,7 @@ def create_selector(policy: SelectionPolicy, logger=None) -> ProviderSelector:
 
 
 def create_composite_strategy(
-    strategies: list, config: CompositionConfig = None, logger=None
+    strategies: list, config: Optional[CompositionConfig] = None, logger: Optional[LoggingPort] = None
 ) -> CompositeProviderStrategy:
     """
     Create a composite provider strategy.
@@ -157,19 +159,21 @@ def create_composite_strategy(
     Args:
         strategies: List of provider strategies to compose
         config: Optional composition configuration
-        logger: Optional logger instance
+        logger: Logger instance
 
     Returns:
         CompositeProviderStrategy instance
     """
-    return CompositeProviderStrategy(strategies, config, logger)
+    if logger is None:
+        raise ValueError("logger is required")
+    return CompositeProviderStrategy(logger, strategies, config)
 
 
 def create_fallback_strategy(
     primary: ProviderStrategy,
     fallbacks: list,
-    config: FallbackConfig = None,
-    logger=None,
+    config: Optional[FallbackConfig] = None,
+    logger: Optional[LoggingPort] = None,
 ) -> FallbackProviderStrategy:
     """
     Create a fallback provider strategy.
@@ -178,19 +182,21 @@ def create_fallback_strategy(
         primary: Primary provider strategy
         fallbacks: List of fallback strategies
         config: Optional fallback configuration
-        logger: Optional logger instance
+        logger: Logger instance
 
     Returns:
         FallbackProviderStrategy instance
     """
-    return FallbackProviderStrategy(primary, fallbacks, config, logger)
+    if logger is None:
+        raise ValueError("logger is required")
+    return FallbackProviderStrategy(logger, primary, fallbacks, config)
 
 
 def create_load_balancing_strategy(
     strategies: list,
     weights: Optional[dict] = None,
-    config: LoadBalancingConfig = None,
-    logger=None,
+    config: Optional[LoadBalancingConfig] = None,
+    logger: Optional[LoggingPort] = None,
 ) -> LoadBalancingProviderStrategy:
     """
     Create a load balancing provider strategy.
@@ -199,9 +205,11 @@ def create_load_balancing_strategy(
         strategies: List of provider strategies to load balance
         weights: Optional weights for each strategy
         config: Optional load balancing configuration
-        logger: Optional logger instance
+        logger: Logger instance
 
     Returns:
         LoadBalancingProviderStrategy instance
     """
-    return LoadBalancingProviderStrategy(strategies, weights, config, logger)
+    if logger is None:
+        raise ValueError("logger is required")
+    return LoadBalancingProviderStrategy(logger, strategies, weights, config)

@@ -107,7 +107,7 @@ class CompositeProviderStrategy(ProviderStrategy):
         self,
         logger: LoggingPort,
         strategies: list[ProviderStrategy],
-        config: CompositionConfig = None,
+        config: Optional[CompositionConfig] = None,
     ) -> None:
         """
         Initialize composite provider strategy.
@@ -694,6 +694,18 @@ class CompositeProviderStrategy(ProviderStrategy):
 
         except Exception as e:
             self._logger.warning("Exception during composite strategy cleanup: %s", e)
+
+    def generate_provider_name(self, config: dict) -> str:
+        """Generate provider name - not applicable for composite strategy."""
+        return self.provider_type
+
+    def parse_provider_name(self, provider_name: str) -> dict[str, str]:
+        """Parse provider name - not applicable for composite strategy."""
+        return {"provider_type": provider_name}
+
+    def get_provider_name_pattern(self) -> str:
+        """Get naming pattern - not applicable for composite strategy."""
+        return "composite"
 
     def __str__(self) -> str:
         """Return string representation for debugging."""

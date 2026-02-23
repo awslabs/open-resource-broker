@@ -35,21 +35,21 @@ class SchedulerRegistry(BaseRegistry):
 
     def register(
         self,
-        scheduler_type: str,
+        type_name: str,
         strategy_factory: Callable,
         config_factory: Callable,
         **kwargs,
     ) -> None:
         """Register scheduler strategy factory - implements abstract method."""
         try:
-            self.register_type(scheduler_type, strategy_factory, config_factory, **kwargs)
+            self.register_type(type_name, strategy_factory, config_factory, **kwargs)
         except ValueError as e:
             raise ConfigurationError(str(e))
 
-    def create_strategy(self, scheduler_type: str, config: Any) -> Any:
+    def create_strategy(self, type_name: str, config: Any) -> Any:
         """Create scheduler strategy - implements abstract method."""
         try:
-            return self.create_strategy_by_type(scheduler_type, config)
+            return self.create_strategy_by_type(type_name, config)
         except ValueError as e:
             raise UnsupportedSchedulerError(str(e))
 
@@ -93,12 +93,12 @@ class SchedulerRegistry(BaseRegistry):
 
 
 # Global singleton instance
-_scheduler_registry_instance = None
+_scheduler_registry_instance: SchedulerRegistry | None = None
 
 
 def get_scheduler_registry() -> SchedulerRegistry:
     """Get the singleton scheduler registry instance."""
     global _scheduler_registry_instance
     if _scheduler_registry_instance is None:
-        _scheduler_registry_instance = SchedulerRegistry()
-    return _scheduler_registry_instance
+        _scheduler_registry_instance = SchedulerRegistry()  # type: ignore[assignment]
+    return _scheduler_registry_instance  # type: ignore[return-value]

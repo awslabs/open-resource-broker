@@ -1,7 +1,7 @@
 """Default scheduler strategy using native domain fields - no conversion needed."""
 
 import os
-from typing import Any, Union
+from typing import Any
 
 from domain.base.ports.logging_port import LoggingPort
 from domain.machine.aggregate import Machine
@@ -174,7 +174,7 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
 
     def parse_request_data(
         self, raw_data: dict[str, Any]
-    ) -> Union[dict[str, Any], list[dict[str, Any]]]:
+    ) -> dict[str, Any]:
         """
         Parse request data using native domain format - no conversion needed.
 
@@ -183,7 +183,7 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
 
         # Request Status
         if "requests" in raw_data:
-            return [{"request_id": req.get("request_id")} for req in raw_data["requests"]]
+            return {"requests": [{"request_id": req.get("request_id")} for req in raw_data["requests"]]}
 
         # Request Machines - handle nested format: {"template": {"template_id": ..., "machine_count": ...}}
         if "template" in raw_data:
@@ -205,7 +205,7 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
             "metadata": raw_data.get("metadata", {}),
         }
 
-    def format_templates_response(self, templates: list[Template]) -> dict[str, Any]:
+    def format_templates_response(self, templates: list[Any]) -> dict[str, Any]:
         """
         Format domain Templates to native domain response format.
 
@@ -260,9 +260,8 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
         workdir = self.get_working_directory()
         return os.path.join(workdir, "data")
 
-    @classmethod
     def get_templates_filename(
-        cls, provider_name: str, provider_type: str, config: dict = None
+        self, provider_name: str, provider_type: str, config: dict | None = None
     ) -> str:
         """Get templates filename with config override support."""
         if config:

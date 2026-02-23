@@ -29,20 +29,20 @@ class AppConfig(BaseModel):
 
     version: str = Field("2.0.0", description="Configuration version")
     provider: ProviderConfig
-    scheduler: SchedulerConfig = Field(default_factory=SchedulerConfig)
-    naming: NamingConfig = Field(default_factory=lambda: NamingConfig())
-    logging: LoggingConfig = Field(default_factory=lambda: LoggingConfig())
-    metrics: MetricsConfig = Field(default_factory=lambda: MetricsConfig())
+    scheduler: SchedulerConfig = Field(default_factory=lambda: SchedulerConfig())  # type: ignore[call-arg]
+    naming: NamingConfig = Field(default_factory=lambda: NamingConfig())  # type: ignore[call-arg]
+    logging: LoggingConfig = Field(default_factory=lambda: LoggingConfig())  # type: ignore[call-arg]
+    metrics: MetricsConfig = Field(default_factory=lambda: MetricsConfig())  # type: ignore[call-arg]
     template: Optional[TemplateConfig] = None
-    events: EventsConfig = Field(default_factory=lambda: EventsConfig())
-    storage: StorageConfig = Field(default_factory=lambda: StorageConfig())
-    resource: ResourceConfig = Field(default_factory=lambda: ResourceConfig())
-    request: RequestConfig = Field(default_factory=lambda: RequestConfig())
-    database: DatabaseConfig = Field(default_factory=lambda: DatabaseConfig())
-    circuit_breaker: CircuitBreakerConfig = Field(default_factory=lambda: CircuitBreakerConfig())
-    performance: PerformanceConfig = Field(default_factory=lambda: PerformanceConfig())
-    server: ServerConfig = Field(default_factory=lambda: ServerConfig())
-    native_spec: NativeSpecConfig = Field(default_factory=NativeSpecConfig)
+    events: EventsConfig = Field(default_factory=lambda: EventsConfig())  # type: ignore[call-arg]
+    storage: StorageConfig = Field(default_factory=lambda: StorageConfig())  # type: ignore[call-arg]
+    resource: ResourceConfig = Field(default_factory=lambda: ResourceConfig())  # type: ignore[call-arg]
+    request: RequestConfig = Field(default_factory=lambda: RequestConfig())  # type: ignore[call-arg]
+    database: DatabaseConfig = Field(default_factory=lambda: DatabaseConfig())  # type: ignore[call-arg]
+    circuit_breaker: CircuitBreakerConfig = Field(default_factory=lambda: CircuitBreakerConfig())  # type: ignore[call-arg]
+    performance: PerformanceConfig = Field(default_factory=lambda: PerformanceConfig())  # type: ignore[call-arg]
+    server: ServerConfig = Field(default_factory=lambda: ServerConfig())  # type: ignore[call-arg]
+    native_spec: NativeSpecConfig = Field(default_factory=lambda: NativeSpecConfig())  # type: ignore[call-arg]
     environment: str = Field("development", description="Environment")
     debug: bool = Field(False, description="Debug mode")
     request_timeout: int = Field(300, description="Request timeout in seconds")
@@ -72,12 +72,7 @@ class AppConfig(BaseModel):
             object.__setattr__(
                 self,
                 "template",
-                TemplateConfig(
-                    default_image_id="ami-12345678",
-                    default_instance_type="t2.micro",
-                    subnet_ids=["subnet-12345678"],
-                    security_group_ids=["sg-12345678"],
-                ),
+                TemplateConfig(),  # type: ignore[call-arg]
             )
         return self
 

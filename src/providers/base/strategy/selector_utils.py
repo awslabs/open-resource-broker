@@ -31,7 +31,7 @@ def is_strategy_suitable(
         True if strategy meets all criteria, False otherwise
     """
     # Check exclusions
-    if strategy.provider_type in criteria.exclude_strategies:
+    if criteria.exclude_strategies and strategy.provider_type in criteria.exclude_strategies:
         return False
 
     # Check health if required

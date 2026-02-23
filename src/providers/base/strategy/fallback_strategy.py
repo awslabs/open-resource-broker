@@ -127,7 +127,7 @@ class FallbackProviderStrategy(ProviderStrategy):
         logger: LoggingPort,
         primary_strategy: ProviderStrategy,
         fallback_strategies: list[ProviderStrategy],
-        config: FallbackConfig = None,
+        config: Optional[FallbackConfig] = None,
     ) -> None:
         """
         Initialize fallback provider strategy.
@@ -504,7 +504,7 @@ class FallbackProviderStrategy(ProviderStrategy):
 
         # All strategies failed
         if self._config.enable_graceful_degradation:
-            return self._graceful_degradation(operation, last_error)
+            return self._graceful_degradation(operation, last_error or "Unknown error")
         else:
             return ProviderResult.error_result(
                 f"All fallback strategies failed. Last error: {last_error}",
@@ -706,6 +706,18 @@ class FallbackProviderStrategy(ProviderStrategy):
 
         except Exception as e:
             self._logger.warning("Failed during fallback strategy cleanup: %s", e)
+
+    def generate_provider_name(self, config: dict) -> str:
+        """Generate provider name - not applicable for fallback strategy."""
+        return self.provider_type
+
+    def parse_provider_name(self, provider_name: str) -> dict[str, str]:
+        """Parse provider name - not applicable for fallback strategy."""
+        return {"provider_type": provider_name}
+
+    def get_provider_name_pattern(self) -> str:
+        """Get naming pattern - not applicable for fallback strategy."""
+        return "fallback"
 
     def __str__(self) -> str:
         """Return string representation for debugging."""
