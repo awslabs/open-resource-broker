@@ -9,16 +9,24 @@ Available for all commands:
 | Flag | Description | Example |
 |------|-------------|---------|
 | `--config` | Configuration file path | `--config /path/to/config.json` |
-| `--log-level` | Set logging level | `--log-level DEBUG` |
-| `--format` | Output format | `--format table` |
-| `--output` | Output file | `--output results.json` |
+| `--log-level` | Set logging level (`DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`) | `--log-level DEBUG` |
+| `--format` | Output format (`json`, `yaml`, `table`, `list`) | `--format table` |
+| `--output` | Write output to file instead of stdout | `--output results.json` |
 | `--quiet` | Suppress non-essential output | `--quiet` |
 | `--verbose` | Enable verbose output | `--verbose` |
-| `--dry-run` | Show what would be done | `--dry-run` |
-| `--scheduler` | Override scheduler strategy | `--scheduler hostfactory` |
+| `--no-color` | Disable colored output | `--no-color` |
+| `--dry-run` | Show what would be done without executing | `--dry-run` |
+| `--yes, -y` | Assume yes to all prompts | `--yes` |
+| `--all` | Apply operation to all resources | `--all` |
+| `--limit` | Maximum number of results to return | `--limit 50` |
+| `--offset` | Number of results to skip (for pagination) | `--offset 100` |
+| `--filter` | Filter using `field=value`, `field~value`, or `field=~regex`. Repeatable (AND logic). | `--filter "status=running"` |
+| `--region` | AWS region override | `--region us-west-2` |
+| `--profile` | AWS profile override | `--profile production` |
+| `--scheduler` | Override scheduler strategy (`default`, `hostfactory`, `hf`) | `--scheduler hostfactory` |
 | `--provider` | Override provider instance | `--provider aws_prod_us-east-1` |
-| `--completion` | Generate shell completion | `--completion bash` |
-| `--version` | Show version | `--version` |
+| `--completion` | Generate shell completion script (`bash`, `zsh`) | `--completion bash` |
+| `--version` | Show version and exit | `--version` |
 
 ### HostFactory Compatibility
 
