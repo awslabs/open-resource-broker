@@ -6,7 +6,7 @@ from typing import Any
 
 class ErrorResponsePort(ABC):
     """Port interface for error response handling.
-    
+
     This port defines the contract for error response structures.
     Infrastructure adapters provide concrete implementations.
     """
@@ -14,7 +14,7 @@ class ErrorResponsePort(ABC):
     @abstractmethod
     def to_dict(self) -> dict[str, Any]:
         """Convert error response to dictionary.
-        
+
         Returns:
             Dictionary representation of error response
         """

@@ -10,7 +10,7 @@ class CacheServiceAdapter(CacheServicePort):
 
     def __init__(self, cache_service: Any) -> None:
         """Initialize with cache service.
-        
+
         Args:
             cache_service: Underlying cache implementation
         """

@@ -9,7 +9,7 @@ from uuid import uuid4
 @dataclass(frozen=True)
 class DomainEvent:
     """Base class for all domain events - pure Python implementation."""
-    
+
     aggregate_id: str
     aggregate_type: str
     event_id: str = field(default_factory=lambda: str(uuid4()))
@@ -27,7 +27,7 @@ class DomainEvent:
 @dataclass(frozen=True)
 class InfrastructureEvent(DomainEvent):
     """Base class for infrastructure-level events."""
-    
+
     resource_type: str = ""
     resource_id: str = ""
 
@@ -35,7 +35,7 @@ class InfrastructureEvent(DomainEvent):
 @dataclass(frozen=True)
 class TimedEvent(DomainEvent):
     """Base class for events that track duration and timing."""
-    
+
     duration_ms: float = 0.0
     start_time: Optional[datetime] = None
 
@@ -43,7 +43,7 @@ class TimedEvent(DomainEvent):
 @dataclass(frozen=True)
 class ErrorEvent(DomainEvent):
     """Base class for events that track errors and failures."""
-    
+
     error_message: str = ""
     error_code: Optional[str] = None
     retry_count: int = 0
@@ -52,7 +52,7 @@ class ErrorEvent(DomainEvent):
 @dataclass(frozen=True)
 class OperationEvent(TimedEvent):
     """Base class for operation events that track success/failure and timing."""
-    
+
     operation_type: str = ""
     success: bool = True
 
@@ -60,7 +60,7 @@ class OperationEvent(TimedEvent):
 @dataclass(frozen=True)
 class PerformanceEvent(TimedEvent):
     """Base class for performance-related events with thresholds."""
-    
+
     threshold_ms: Optional[float] = None
     threshold_exceeded: bool = False
 
@@ -68,7 +68,7 @@ class PerformanceEvent(TimedEvent):
 @dataclass(frozen=True)
 class StatusChangeEvent(DomainEvent):
     """Base class for events that track status transitions."""
-    
+
     old_status: str = ""
     new_status: str = ""
     reason: Optional[str] = None

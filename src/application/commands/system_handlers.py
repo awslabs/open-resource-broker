@@ -213,4 +213,3 @@ class SetConfigurationHandler(BaseCommandHandler[SetConfigurationCommand, None])
                 "key": command.key,
             }
 
-

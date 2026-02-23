@@ -409,4 +409,3 @@ class TestHostFactoryFormatCompliance:
 
         assert HostFactoryFormatValidator.validate_request_response(output_data)
 
-

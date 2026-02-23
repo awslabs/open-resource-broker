@@ -296,4 +296,3 @@ class DeleteTemplateHandler(BaseCommandHandler[DeleteTemplateCommand, None]):  #
             self.logger.error("Failed to delete template %s: %s", command.template_id, e)
             raise
 
-
