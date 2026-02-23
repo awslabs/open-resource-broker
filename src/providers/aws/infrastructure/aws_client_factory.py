@@ -26,7 +26,7 @@ class AWSClientFactory:
         """Clean up all cached clients."""
         for client in self._clients.values():
             try:
-                client.cleanup()
+                client.cleanup()  # type: ignore[attr-defined]
             except Exception as e:
                 self._logger.warning("Failed to cleanup client: %s", e)
         self._clients.clear()

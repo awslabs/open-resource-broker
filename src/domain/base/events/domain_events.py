@@ -135,7 +135,7 @@ class TemplateUpdatedEvent(TemplateEvent):
     """Event raised when a template is updated."""
 
     changes: dict[str, Any] = Field(default_factory=dict)
-    version: int
+    version: int = 0  # type: ignore[assignment]
 
 
 class TemplateDeletedEvent(TemplateEvent):

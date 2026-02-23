@@ -55,7 +55,7 @@ class RequestMachinesResponse(APIResponse):
     """Request machines response model."""
 
     request_id: str = Field(description="Unique ID to identify this request in the cloud provider")
-    message: str = Field(
+    message: str = Field(  # type: ignore[assignment]
         default="Request VM success from provider.",
         description="Any additional message the caller should know",
     )

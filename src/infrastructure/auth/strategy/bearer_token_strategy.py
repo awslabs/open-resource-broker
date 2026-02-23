@@ -154,7 +154,7 @@ class BearerTokenStrategy(AuthPort):
             user_roles = payload.get("roles", [])
             permissions = payload.get("permissions", [])
 
-            new_token = self._create_access_token(user_id, user_roles, permissions)
+            new_token = self._create_access_token(user_id or "", user_roles, permissions)
 
             return AuthResult(
                 status=AuthStatus.SUCCESS,

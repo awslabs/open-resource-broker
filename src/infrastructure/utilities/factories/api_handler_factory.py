@@ -21,7 +21,7 @@ from domain.base.dependency_injection import injectable
 from infrastructure.logging.logger import get_logger
 
 if TYPE_CHECKING:
-    from application.service import ApplicationService
+    from application.service import ApplicationService  # type: ignore[import]
 
 logger = get_logger(__name__)
 

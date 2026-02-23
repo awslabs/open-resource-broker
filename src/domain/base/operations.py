@@ -53,7 +53,7 @@ class OperationResult:
     data: Any = None
     error_message: Optional[str] = None
     error_code: Optional[str] = None
-    metadata: dict[str, Any] = None
+    metadata: dict[str, Any] = None  # type: ignore[assignment]
 
     def __post_init__(self) -> None:
         """Initialize metadata if not provided."""

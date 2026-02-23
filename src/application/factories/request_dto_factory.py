@@ -9,7 +9,7 @@ from domain.request.request_types import RequestType
 class RequestDTOFactory:
     """Factory for creating RequestDTOs from domain objects."""
 
-    def create_from_domain(self, request: Request, machines: list[Machine] = None) -> RequestDTO:
+    def create_from_domain(self, request: Request, machines: list[Machine] = None) -> RequestDTO:  # type: ignore[assignment]
         """Create RequestDTO from domain objects."""
         if machines is None:
             machines = []

@@ -102,7 +102,7 @@ def create_error_response(
     response = {"status": "error", "message": message}
 
     if errors:
-        response["errors"] = errors
+        response["errors"] = errors  # type: ignore[assignment]
 
     return response
 

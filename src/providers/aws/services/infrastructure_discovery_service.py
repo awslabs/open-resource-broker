@@ -400,7 +400,7 @@ class AWSInfrastructureDiscoveryService:
             from cli.console import print_error
 
             print_error(f"Failed to discover infrastructure: {e}")
-            print_info("Continuing without infrastructure discovery...")
+            print_info("Continuing without infrastructure discovery...")  # type: ignore[possibly-undefined]
             return {}
 
     def validate_infrastructure(self, provider_config: dict[str, Any]) -> dict[str, Any]:

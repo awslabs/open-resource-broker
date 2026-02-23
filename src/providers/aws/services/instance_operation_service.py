@@ -95,12 +95,12 @@ class AWSInstanceOperationService:
                 provider_type=self._provider_type,
                 provider_name=self._provider_name,
                 metadata=operation.parameters.get("request_metadata", {}),
-                request_id=operation.parameters.get("request_id"),
+                request_id=operation.parameters.get("request_id"),  # type: ignore[arg-type]
             )
             request.provider_api = provider_api
 
             # Try provisioning adapter first
-            if self._provisioning_adapter and not operation.context.get("skip_provisioning_port"):
+            if self._provisioning_adapter and not operation.context.get("skip_provisioning_port"):  # type: ignore[union-attr]
                 try:
                     adapter_result = await self._provisioning_adapter.provision_resources(
                         request, aws_template

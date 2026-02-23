@@ -26,7 +26,7 @@ class AWSError(InfrastructureError):
 
     def to_dict(self) -> dict[str, Any]:
         """Convert error to dictionary."""
-        result: dict[str, Any] = super().to_dict()
+        result: dict[str, Any] = super().to_dict()  # type: ignore[attr-defined]
         if self.error_code and self.error_code != self.__class__.__name__:
             result["error_code"] = self.error_code
         return result

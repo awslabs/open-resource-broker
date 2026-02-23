@@ -56,7 +56,7 @@ class ResourceProvisioningPort(ABC):
 
     @abstractmethod
     def release_resources(
-        self, machine_ids: list[str], template_id: str, provider_api: str, context: dict = None
+        self, machine_ids: list[str], template_id: str, provider_api: str, context: dict = None  # type: ignore[assignment]
     ) -> None:
         """
         Release provisioned resources.

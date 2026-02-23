@@ -12,7 +12,7 @@ class ProviderSelectionResult:
     provider_name: str
     selection_reason: str
     confidence: float = 1.0
-    alternatives: list[str] = None
+    alternatives: list[str] = None  # type: ignore[assignment]
 
     def __post_init__(self) -> None:
         if self.alternatives is None:

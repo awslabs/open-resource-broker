@@ -75,7 +75,7 @@ class CommandHandler(Generic[TCommand, TResponse], ABC):
         """
         # Get the command type from the generic type annotation
         try:
-            command_type = self.__class__.__orig_bases__[0].__args__[0]
+            command_type = self.__class__.__orig_bases__[0].__args__[0]  # type: ignore[attr-defined]
             return isinstance(command, command_type)
         except (AttributeError, IndexError):
             # Fallback for cases where generic type info is not available

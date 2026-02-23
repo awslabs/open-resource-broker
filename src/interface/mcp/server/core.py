@@ -170,7 +170,7 @@ class OpenResourceBrokerMCPServer:
         except Exception as e:
             self.logger.error("Error handling MCP message: %s", e, exc_info=True)
             error_response = MCPMessage(
-                id=getattr(mcp_msg, "id", None) if "mcp_msg" in locals() else None,
+                id=getattr(mcp_msg, "id", None) if "mcp_msg" in dir() else None,  # type: ignore[possibly-undefined]
                 error={"code": -32603, "message": f"Internal error: {e!s}"},
             )
             return json.dumps(error_response.__dict__)

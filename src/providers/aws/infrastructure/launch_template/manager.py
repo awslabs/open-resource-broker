@@ -442,7 +442,7 @@ class AWSLaunchTemplateManager:
         )
 
         # Get instance name using the helper function
-        get_instance_name(request.request_id)
+        get_instance_name(str(request.request_id))  # type: ignore[arg-type]
 
         launch_template_data = {
             "ImageId": image_id,

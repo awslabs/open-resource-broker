@@ -218,8 +218,8 @@ class EventHandler(ABC):
             if hasattr(event, field_name):
                 result[field_name] = getattr(event, field_name)
             # Then try event data if it exists
-            elif hasattr(event, "data") and isinstance(event.data, dict):
-                result[field_name] = event.data.get(field_name, default_value)
+            elif hasattr(event, "data") and isinstance(getattr(event, "data", None), dict):
+                result[field_name] = getattr(event, "data").get(field_name, default_value)  # type: ignore[union-attr]
             else:
                 result[field_name] = default_value
 
