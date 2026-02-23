@@ -1,7 +1,7 @@
 """HostFactory scheduler strategy for field mapping and response formatting."""
 
 import os
-from typing import TYPE_CHECKING, Any, Union
+from typing import TYPE_CHECKING, Any, Union, cast
 
 if TYPE_CHECKING:
     pass
@@ -227,10 +227,6 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
             self.logger.warning("Failed to get provider instance name: %s", e)
             return "default"
 
-    def _map_hostfactory_to_internal_field(self, hf_field: str) -> str:
-        """Map HostFactory field names to internal field names."""
-        return self.field_mapper.field_mappings.get(hf_field, hf_field)
-
     def _get_active_provider_type(self) -> str:
         """Get the active provider type from configuration."""
         try:
@@ -308,7 +304,7 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         # Handle UUID objects and nested value objects
         if isinstance(request_id, dict) and "value" in request_id:
             request_id = str(request_id["value"])
-        elif hasattr(request_id, "value"):
+        elif request_id is not None and not isinstance(request_id, dict) and hasattr(request_id, "value"):
             request_id = str(request_id.value)
         elif request_id:
             request_id = str(request_id)
@@ -341,7 +337,7 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
             }
 
     def convert_domain_to_hostfactory_output(
-        self, operation: str, data: dict[str, Any]
+        self, operation: str, data: Any
     ) -> dict[str, Any]:
         """Convert domain objects to HostFactory JSON output format.
 
@@ -441,7 +437,7 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         else:
             raise ValueError(f"Unsupported HostFactory operation: {operation}")
 
-    def _convert_template_to_hostfactory(self, template: TemplateDTO) -> dict[str, Any]:
+    def _convert_template_to_hostfactory(self, template: Any) -> dict[str, Any]:
         """Convert internal template to HostFactory format."""
         # Handle TemplateDTO objects
         template_dict = self.format_template_for_display(template)
@@ -576,11 +572,11 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         }
 
         # Create TemplateDTO object with validation
-        return TemplateDTO.from_dict(domain_data)
+        return cast(TemplateDTO, TemplateDTO.from_dict(domain_data))
 
     def parse_request_data(
         self, raw_data: dict[str, Any]
-    ) -> Union[dict[str, Any], list[dict[str, Any]]]:
+    ) -> dict[str, Any]:
         """
         Parse HostFactory request data to domain-compatible format.
 
@@ -603,7 +599,7 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
                 {"request_id": req.get("requestId", req.get("request_id"))} for req in requests_list
             ]
             self.logger.debug("parse_request_data output (requests): %s", result)
-            return result
+            return {"requests": result}
 
         # Request Machines
         # Handle nested HostFactory format: {"template": {"templateId": "...", "machineCount": ...}}
@@ -736,20 +732,20 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
             "machines": [
                 {
                     # Domain -> HostFactory field mapping using consistent serialization
-                    "instanceId": serialize_enum(machine.machine_id) or str(machine.machine_id),
+                    "instanceId": str(machine.machine_id),
                     "templateId": str(machine.template_id),
                     "requestId": str(machine.request_id),
-                    "vmType": serialize_enum(machine.instance_type) or str(machine.instance_type),
+                    "vmType": str(machine.instance_type),
                     "imageId": str(machine.image_id),
                     "privateIp": machine.private_ip,
                     "publicIp": machine.public_ip,
                     "subnetId": machine.subnet_id,
                     "securityGroupIds": machine.security_group_ids,
-                    "status": serialize_enum(machine.status) or str(machine.status),
+                    "status": str(machine.status),
                     "statusReason": machine.status_reason,
                     "launchTime": machine.launch_time,
                     "terminationTime": machine.termination_time,
-                    "tags": serialize_enum(machine.tags) or machine.tags,
+                    "tags": machine.tags,
                 }
                 for machine in machines
             ]
@@ -796,9 +792,8 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         workdir = self.get_working_directory()
         return os.path.join(workdir, "data")
 
-    @classmethod
     def get_templates_filename(
-        cls, provider_name: str, provider_type: str, config: dict = None
+        self, provider_name: str, provider_type: str, config: dict | None = None
     ) -> str:
         """Get templates filename with config override support."""
         if config:
@@ -921,7 +916,7 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
 
         return formatted_machines
 
-    def _map_machine_status_to_result(self, status: str, request_type: str = None) -> str:
+    def _map_machine_status_to_result(self, status: str | None, request_type: str | None = None) -> str:
         """Map machine status to HostFactory result field per hf_docs/input-output.md."""
         # Per docs: "Possible values: 'executing', 'fail', 'succeed'"
         if request_type == "return":

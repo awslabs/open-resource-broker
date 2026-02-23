@@ -147,9 +147,9 @@ class AWSRequestAdapter(RequestAdapterPort):
         Returns:
             Dictionary with status information
         """
-        if "EC2Fleet" in request.provider_api:
+        if request.provider_api and "EC2Fleet" in request.provider_api:
             return self._get_ec2_fleet_status(request)
-        elif "SpotFleet" in request.provider_api:
+        elif request.provider_api and "SpotFleet" in request.provider_api:
             return self._get_spot_fleet_status(request)
         elif request.provider_api == "ASG":
             return self._get_asg_status(request)
@@ -439,7 +439,7 @@ class AWSRequestAdapter(RequestAdapterPort):
             Dictionary with cancellation results
         """
         try:
-            if "EC2Fleet" in request.provider_api:
+            if request.provider_api and "EC2Fleet" in request.provider_api:
                 response = self._aws_client.ec2_client.delete_fleets(
                     FleetIds=[request.resource_id], TerminateInstances=True
                 )
@@ -458,7 +458,7 @@ class AWSRequestAdapter(RequestAdapterPort):
                     ],
                 }
 
-            elif "SpotFleet" in request.provider_api:
+            elif request.provider_api and "SpotFleet" in request.provider_api:
                 response = self._aws_client.ec2_client.cancel_spot_fleet_requests(
                     SpotFleetRequestIds=[request.resource_id], TerminateInstances=True
                 )

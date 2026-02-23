@@ -1,6 +1,7 @@
 """Locking components for thread-safe storage operations."""
 
 import threading
+from collections.abc import Generator
 from contextlib import contextmanager
 
 from infrastructure.logging.logger import get_logger
@@ -56,7 +57,7 @@ class ReaderWriterLock:
                 self._read_ready.notifyAll()
 
     @contextmanager
-    def read_lock(self) -> None:
+    def read_lock(self) -> Generator[None, None, None]:
         """Context manager for read lock."""
         self.acquire_read()
         try:
@@ -65,7 +66,7 @@ class ReaderWriterLock:
             self.release_read()
 
     @contextmanager
-    def write_lock(self) -> None:
+    def write_lock(self) -> Generator[None, None, None]:
         """Context manager for write lock."""
         self.acquire_write()
         try:
@@ -91,41 +92,44 @@ class LockManager:
         self.lock_type = lock_type
         self.logger = get_logger(__name__)
 
+        self._rw_lock: ReaderWriterLock | None = None
+        self._simple_lock: threading.RLock | None = None
+
         if lock_type == "reader_writer":
-            self._lock = ReaderWriterLock()
+            self._rw_lock = ReaderWriterLock()
         elif lock_type == "simple":
-            self._lock = threading.RLock()
+            self._simple_lock = threading.RLock()
         elif lock_type == "none":
-            self._lock = None
+            pass
         else:
             raise ValueError(f"Unknown lock type: {lock_type}")
 
     @contextmanager
-    def read_lock(self) -> None:
+    def read_lock(self) -> Generator[None, None, None]:
         """Acquire read lock for read operations."""
-        if self.lock_type == "reader_writer":
-            with self._lock.read_lock():
+        if self.lock_type == "reader_writer" and self._rw_lock is not None:
+            with self._rw_lock.read_lock():
                 yield
-        elif self.lock_type == "simple":
-            with self._lock:
+        elif self.lock_type == "simple" and self._simple_lock is not None:
+            with self._simple_lock:
                 yield
         else:  # none
             yield
 
     @contextmanager
-    def write_lock(self) -> None:
+    def write_lock(self) -> Generator[None, None, None]:
         """Acquire write lock for write operations."""
-        if self.lock_type == "reader_writer":
-            with self._lock.write_lock():
+        if self.lock_type == "reader_writer" and self._rw_lock is not None:
+            with self._rw_lock.write_lock():
                 yield
-        elif self.lock_type == "simple":
-            with self._lock:
+        elif self.lock_type == "simple" and self._simple_lock is not None:
+            with self._simple_lock:
                 yield
         else:  # none
             yield
 
     @contextmanager
-    def exclusive_lock(self) -> None:
+    def exclusive_lock(self) -> Generator[None, None, None]:
         """Acquire exclusive lock (alias for write_lock)."""
         with self.write_lock():
             yield

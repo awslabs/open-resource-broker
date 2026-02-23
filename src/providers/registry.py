@@ -6,6 +6,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Callable, List, Optional
 
 from domain.base.exceptions import ConfigurationError
+from domain.base.results import ProviderSelectionResult
 from infrastructure.registry.base_registry import BaseRegistration, BaseRegistry, RegistryMode
 
 
@@ -116,7 +117,7 @@ class ProviderRegistry(BaseRegistry):
                     provider_config = config_port.get_provider_config()
 
                     if provider_config:
-                        for instance in provider_config.get_active_providers():
+                        for instance in provider_config.get_active_providers():  # type: ignore[union-attr]
                             if instance.name == provider_identifier:
                                 config = instance
                                 break
@@ -164,12 +165,12 @@ class ProviderRegistry(BaseRegistry):
             return True
 
         # Try to dynamically import and register
+        module_name = f"providers.{provider_type}.registration"
         try:
             if self._logger:
                 self._logger.debug("Attempting to register provider type: %s", provider_type)
 
             # Import the provider's registration module
-            module_name = f"providers.{provider_type}.registration"
             registration_module = importlib.import_module(module_name)
 
             # Call the provider's registration function
@@ -248,13 +249,14 @@ class ProviderRegistry(BaseRegistry):
                 )
             return False
 
-    def register(
+    def register(  # type: ignore[override]
         self,
         provider_type: str,
         strategy_factory: Callable,
         config_factory: Callable,
         resolver_factory: Optional[Callable] = None,
         validator_factory: Optional[Callable] = None,
+        **kwargs: Any,
     ) -> None:
         """Register provider type - implements abstract method."""
         try:
@@ -332,7 +334,7 @@ class ProviderRegistry(BaseRegistry):
         except ValueError:
             raise ValueError(f"Provider instance '{instance_name}' is already registered")
 
-    def create_strategy(self, provider_type: str, config: Any) -> Any:
+    def create_strategy(self, provider_type: str, config: Any = None) -> Any:  # type: ignore[override]
         """Create strategy - implements abstract method by delegating to cached method."""
         return self.get_or_create_strategy(provider_type, config)
 
@@ -470,7 +472,8 @@ class ProviderRegistry(BaseRegistry):
             ProviderRegistration if found, None otherwise
         """
         try:
-            return self._get_instance_registration(instance_name)
+            reg = self._get_instance_registration(instance_name)
+            return reg if isinstance(reg, ProviderRegistration) else None
         except ValueError:
             return None
 
@@ -528,10 +531,9 @@ class ProviderRegistry(BaseRegistry):
             )
 
         # Strategy 1: CLI override (highest precedence)
-        if provider_name or self._get_cli_override():
-            return self._select_by_cli_override(
-                template, provider_name or self._get_cli_override(), logger
-            )
+        effective_provider = provider_name or self._get_cli_override()
+        if effective_provider:
+            return self._select_by_cli_override(template, effective_provider, logger)
 
         # Strategy 2: Explicit provider instance selection
         if hasattr(template, "provider_name") and template.provider_name:
@@ -550,12 +552,6 @@ class ProviderRegistry(BaseRegistry):
 
     def select_active_provider(self, logger: Optional[Any] = None) -> Any:
         """Select active provider instance from configuration."""
-        try:
-            from domain.base.results import ProviderSelectionResult
-        except ImportError:
-            # Fallback if import fails
-            pass
-
         if logger:
             logger.debug("Selecting active provider using selection policy")
 
@@ -593,11 +589,6 @@ class ProviderRegistry(BaseRegistry):
         self, template: Any, provider_name: str, logger: Optional[Any]
     ) -> Any:
         """Select CLI-overridden provider with validation."""
-        try:
-            from domain.base.results import ProviderSelectionResult
-        except ImportError:
-            pass
-
         provider_instance = self._get_provider_instance_config(provider_name)
         if not provider_instance:
             raise ValueError(f"Provider instance '{provider_name}' not found")
@@ -613,11 +604,6 @@ class ProviderRegistry(BaseRegistry):
 
     def _select_by_explicit_provider(self, template: Any, logger: Optional[Any]) -> Any:
         """Select explicitly specified provider instance."""
-        try:
-            from domain.base.results import ProviderSelectionResult
-        except ImportError:
-            pass
-
         provider_name = template.provider_name
         provider_instance = self._get_provider_instance_config(provider_name)
         if not provider_instance:
@@ -637,11 +623,6 @@ class ProviderRegistry(BaseRegistry):
 
     def _select_by_provider_type(self, template: Any, logger: Optional[Any]) -> Any:
         """Select provider instance using load balancing within provider type."""
-        try:
-            from domain.base.results import ProviderSelectionResult
-        except ImportError:
-            pass
-
         provider_type = template.provider_type
         instances = self._get_enabled_instances_by_type(provider_type)
         if not instances:
@@ -666,11 +647,6 @@ class ProviderRegistry(BaseRegistry):
 
     def _select_by_api_capability(self, template: Any, logger: Optional[Any]) -> Any:
         """Select provider based on API capability support."""
-        try:
-            from domain.base.results import ProviderSelectionResult
-        except ImportError:
-            pass
-
         provider_api = template.provider_api
         compatible_instances = self._find_compatible_providers(provider_api)
         if not compatible_instances:
@@ -697,15 +673,12 @@ class ProviderRegistry(BaseRegistry):
 
     def _select_default_provider(self, template: Any, logger: Optional[Any]) -> Any:
         """Select default provider from configuration."""
-        try:
-            from domain.base.results import ProviderSelectionResult
-        except ImportError:
-            pass
-
         provider_config = self._get_provider_config()
+        if not provider_config:
+            raise ValueError("No provider configuration available")
 
-        default_provider_type = getattr(provider_config, "default_provider_type", None)
-        default_provider_instance = getattr(provider_config, "default_provider_instance", None)
+        default_provider_type: Optional[str] = getattr(provider_config, "default_provider_type", None)
+        default_provider_instance: Optional[str] = getattr(provider_config, "default_provider_instance", None)
 
         if not default_provider_instance:
             enabled_instances = [p for p in provider_config.providers if p.enabled]
@@ -720,8 +693,8 @@ class ProviderRegistry(BaseRegistry):
             logger.info("Selected default provider: %s", default_provider_instance)
 
         return ProviderSelectionResult(
-            provider_type=default_provider_type,
-            provider_name=default_provider_instance,
+            provider_type=default_provider_type or "",
+            provider_name=default_provider_instance or "",
             selection_reason="Configuration default (no provider specified in template)",
             confidence=0.7,
         )
@@ -776,7 +749,7 @@ class ProviderRegistry(BaseRegistry):
         ]
 
     def _apply_load_balancing_strategy(
-        self, instances: list[Any], selection_policy: str = None
+        self, instances: list[Any], selection_policy: Optional[str] = None
     ) -> Any:
         """Apply load balancing strategy to select instance."""
         provider_config = self._get_provider_config()
@@ -843,6 +816,8 @@ class ProviderRegistry(BaseRegistry):
     def _provider_supports_api(self, provider: Any, api: str) -> bool:
         """Check if provider instance supports the specified API."""
         provider_config = self._get_provider_config()
+        if not provider_config:
+            return False
         provider_defaults = provider_config.provider_defaults.get(provider.type)
         effective_handlers = provider.get_effective_handlers(provider_defaults)
 
@@ -894,7 +869,7 @@ def get_provider_registry() -> ProviderRegistry:
     if _provider_registry_instance is None:
         with _registry_lock:
             if _provider_registry_instance is None:
-                # Use basic logger - no DI container dependency
-                _provider_registry_instance = ProviderRegistry()
+                _provider_registry_instance = ProviderRegistry()  # type: ignore[assignment]
 
+    assert _provider_registry_instance is not None
     return _provider_registry_instance

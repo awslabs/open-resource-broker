@@ -5,7 +5,7 @@ ensuring consistent interface implementation across different scheduler types.
 """
 
 from abc import ABC
-from typing import Any
+from typing import Any, Callable
 
 from application.request.dto import RequestDTO
 
@@ -83,7 +83,7 @@ class BaseSchedulerStrategy(SchedulerPort, ABC):
         return os.environ.get("ORB_LOG_LEVEL", "INFO")
 
     def _coalesce_directory(
-        self, config_override: str | None, env_var_name: str, default_factory: callable
+        self, config_override: str | None, env_var_name: str, default_factory: "Callable[[], str]"
     ) -> str:
         """Coalesce directory from multiple sources."""
         import os

@@ -38,8 +38,8 @@ class AWSOptionalIntegerRange(BaseModel):
 class AWSRequiredIntegerRange(AWSOptionalIntegerRange):
     """Required integer range used by AWS instance requirements."""
 
-    min: int = Field(alias="Min", validation_alias=AliasChoices("Min", "min"))
-    max: int = Field(alias="Max", validation_alias=AliasChoices("Max", "max"))
+    min: int = Field(default=..., alias="Min", validation_alias=AliasChoices("Min", "min"))  # type: ignore[override]
+    max: int = Field(default=..., alias="Max", validation_alias=AliasChoices("Max", "max"))  # type: ignore[override]
 
 
 class AWSOptionalFloatRange(BaseModel):
@@ -196,7 +196,7 @@ class AWSTemplate(Template):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     # AWS-specific fields
-    provider_api: ProviderApi
+    provider_api: ProviderApi = ProviderApi.EC2_FLEET  # type: ignore[assignment]
     fleet_type: Optional[AWSFleetType] = None
     fleet_role: Optional[str] = None
     key_name: Optional[str] = None
@@ -304,13 +304,13 @@ class AWSTemplate(Template):
         """Get allocation strategy in EC2 Fleet API format."""
         if isinstance(self.allocation_strategy, AWSAllocationStrategy):
             return self.allocation_strategy.to_ec2_fleet_format()
-        return AWSAllocationStrategy.LOWEST_PRICE.to_ec2_fleet_format()
+        return AWSAllocationStrategy.from_core(AllocationStrategy.LOWEST_PRICE).to_ec2_fleet_format()
 
     def get_spot_fleet_allocation_strategy(self) -> str:
         """Get allocation strategy in Spot Fleet API format."""
         if isinstance(self.allocation_strategy, AWSAllocationStrategy):
             return self.allocation_strategy.to_spot_fleet_format()
-        return AWSAllocationStrategy.LOWEST_PRICE.to_spot_fleet_format()
+        return AWSAllocationStrategy.from_core(AllocationStrategy.LOWEST_PRICE).to_spot_fleet_format()
 
     def get_asg_allocation_strategy(self) -> str:
         """Get allocation strategy in Auto Scaling Group API format."""
@@ -326,7 +326,7 @@ class AWSTemplate(Template):
 
     def to_aws_api_format(self) -> dict[str, Any]:
         """Convert template to AWS API format."""
-        base_format = self.to_provider_format("aws")
+        base_format = self.model_dump()
 
         # Add AWS-specific fields
         aws_format = {
@@ -360,7 +360,7 @@ class AWSTemplate(Template):
         core_data = {
             "template_id": data.get("template_id"),
             "name": data.get("name", data.get("template_id")),
-            "instance_type": AWSInstanceType(value=data.get("vm_type", data.get("instance_type"))),
+            "instance_type": AWSInstanceType(value=str(data.get("vm_type", data.get("instance_type", "")))),
             "image_id": data.get("image_id"),
             "max_instances": data.get("max_number", data.get("max_instances", 1)),
             "subnet_ids": data.get(
@@ -401,19 +401,19 @@ class AWSTemplate(Template):
 
         # Handle optional AWS-specific fields
         if "allocation_strategy" in data:
-            aws_data["allocation_strategy"] = AWSAllocationStrategy.from_string(
-                data["allocation_strategy"]
+            aws_data["allocation_strategy"] = AWSAllocationStrategy.from_core(
+                AllocationStrategy(data["allocation_strategy"])
             )
 
         if "allocation_strategy_on_demand" in data:
-            aws_data["allocation_strategy_on_demand"] = AWSAllocationStrategy.from_string(
-                data["allocation_strategy_on_demand"]
+            aws_data["allocation_strategy_on_demand"] = AWSAllocationStrategy.from_core(
+                AllocationStrategy(data["allocation_strategy_on_demand"])
             )
 
         if "price_type" in data:
             from domain.base.value_objects import PriceType
 
-            aws_data["price_type"] = PriceType.from_string(data["price_type"])
+            aws_data["price_type"] = PriceType(data["price_type"])
 
         if "max_spot_price" in data:
             aws_data["max_price"] = data["max_spot_price"]
@@ -439,15 +439,28 @@ class AWSTemplate(Template):
 
     def get_aws_configuration(self) -> AWSConfiguration:
         """Get AWS configuration object."""
+        from domain.base.value_objects import PriceType
+
+        allocation_strategy: AllocationStrategy | None = None
+        if isinstance(self.allocation_strategy, AWSAllocationStrategy):
+            allocation_strategy = AllocationStrategy(self.allocation_strategy.value)
+        elif isinstance(self.allocation_strategy, AllocationStrategy):
+            allocation_strategy = self.allocation_strategy
+
+        price_type: PriceType | None = None
+        if isinstance(self.price_type, PriceType):
+            price_type = self.price_type
+        elif isinstance(self.price_type, str):
+            try:
+                price_type = PriceType(self.price_type)
+            except ValueError:
+                price_type = None
+
         return AWSConfiguration(
             handler_type=self.provider_api,
             fleet_type=self.fleet_type,
-            allocation_strategy=(
-                self.allocation_strategy
-                if isinstance(self.allocation_strategy, AWSAllocationStrategy)
-                else None
-            ),
-            price_type=self.price_type,
+            allocation_strategy=allocation_strategy,
+            price_type=price_type,
             subnet_ids=[AWSSubnetId(value=sid) for sid in self.subnet_ids],
             security_group_ids=[AWSSecurityGroupId(value=sgid) for sgid in self.security_group_ids],
         )

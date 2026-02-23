@@ -321,6 +321,18 @@ class SQLStorageStrategy(BaseStorageStrategy):
                 self.logger.error("Transaction failed: %s", e)
                 raise
 
+    def count(self) -> int:
+        """Count total entities in the table."""
+        try:
+            query = self.query_builder.build_count()
+            with self.connection_manager.get_session() as session:
+                result = session.execute(text(query))
+                row = result.fetchone()
+                return int(row[0]) if row else 0
+        except Exception as e:
+            self.logger.error("Failed to count entities: %s", e)
+            return 0
+
     def cleanup(self) -> None:
         """Clean up resources."""
         self.connection_manager.close()

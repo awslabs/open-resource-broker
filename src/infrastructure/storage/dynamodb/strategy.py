@@ -327,6 +327,15 @@ class DynamoDBStorageStrategy(BaseStorageStrategy):
         """Rollback transaction."""
         self.transaction_manager.rollback_transaction()
 
+    def count(self) -> int:
+        """Count total entities in the table."""
+        try:
+            items = self.client_manager.scan_table(self.table_name)
+            return len(items)
+        except Exception as e:
+            self._logger.error("Failed to count entities: %s", e)
+            return 0
+
     def cleanup(self) -> None:
         """Clean up resources."""
         # DynamoDB doesn't require explicit cleanup like file handles or connections

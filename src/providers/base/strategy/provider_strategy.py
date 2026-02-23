@@ -221,7 +221,7 @@ class ProviderStrategy(ABC):
         # Run sync version in thread pool to avoid blocking event loop
         loop = asyncio.get_event_loop()
         with concurrent.futures.ThreadPoolExecutor() as executor:
-            return await loop.run_in_executor(executor, self.execute_operation, operation)
+            return await loop.run_in_executor(executor, self.execute_operation, operation)  # type: ignore[arg-type]
 
     @abstractmethod
     def get_capabilities(self) -> ProviderCapabilities:
