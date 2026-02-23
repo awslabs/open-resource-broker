@@ -1,11 +1,17 @@
 """Configuration port for domain layer."""
 
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from typing import Any, Optional
 
+from .provider_config_port import ProviderConfigPort
 
-class ConfigurationPort(ABC):
-    """Port for configuration operations in domain layer."""
+
+class ConfigurationPort(ProviderConfigPort):
+    """Port for configuration operations in domain layer.
+
+    Extends ProviderConfigPort so all existing code continues to work.
+    New code that only needs provider config should depend on ProviderConfigPort.
+    """
 
     @abstractmethod
     def get_naming_config(self) -> dict[str, Any]:
@@ -19,9 +25,7 @@ class ConfigurationPort(ABC):
     def get_template_config(self) -> dict[str, Any]:
         """Get template configuration."""
 
-    @abstractmethod
-    def get_provider_config(self) -> Optional[Any]:
-        """Get provider configuration."""
+    # get_provider_config inherited from ProviderConfigPort
 
     @abstractmethod
     def get_storage_config(self) -> dict[str, Any]:
@@ -71,9 +75,7 @@ class ConfigurationPort(ABC):
     def get_effective_profile(self, default_profile: str = "default") -> str:
         """Get effective provider credential profile (override or configured)."""
 
-    @abstractmethod
-    def get_provider_instance_config(self, provider_name: str) -> Any:
-        """Get configuration for a specific provider instance."""
+    # get_provider_instance_config inherited from ProviderConfigPort
 
     @abstractmethod
     def get_configuration_sources(self) -> dict[str, Any]:

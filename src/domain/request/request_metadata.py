@@ -189,7 +189,7 @@ class RequestTag(ValueObject):
         if not v or not isinstance(v, str):
             raise ValueError("Tag key must be a non-empty string")
 
-        # AWS tag key restrictions
+        # Tag key restrictions
         if len(v) > 128:
             raise ValueError("Tag key cannot exceed 128 characters")
 
@@ -212,7 +212,7 @@ class RequestTag(ValueObject):
         if not isinstance(v, str):
             raise ValueError("Tag value must be a string")
 
-        # AWS tag value restrictions
+        # Tag value restrictions
         if len(v) > 256:
             raise ValueError("Tag value cannot exceed 256 characters")
 

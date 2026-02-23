@@ -18,6 +18,7 @@ from domain.request.repository import RequestRepository as RequestRepositoryInte
 from domain.request.value_objects import RequestId, RequestStatus, RequestType
 from infrastructure.error.decorators import handle_infrastructure_exceptions
 from infrastructure.logging.logger import get_logger
+from infrastructure.storage.base.repository_mixin import StorageRepositoryMixin
 
 
 class RequestSerializer:
@@ -162,7 +163,7 @@ class RequestSerializer:
             raise
 
 
-class RequestRepositoryImpl(RequestRepositoryInterface):
+class RequestRepositoryImpl(StorageRepositoryMixin, RequestRepositoryInterface):
     """Single request repository implementation using storage strategy composition."""
 
     def __init__(self, storage_port: StoragePort, event_publisher=None) -> None:
@@ -192,7 +193,6 @@ class RequestRepositoryImpl(RequestRepositoryInterface):
             else str(request.request_id)
         )
 
-        # Publish operation started event
         self._publish_storage_event(
             RepositoryOperationStartedEvent(
                 aggregate_id=operation_id,
@@ -206,18 +206,14 @@ class RequestRepositoryImpl(RequestRepositoryInterface):
         )
 
         try:
-            # Save the request
             request_data = self.serializer.to_dict(request)
             self.storage_port.save(entity_id, request_data)  # type: ignore[call-arg]
 
-            # Calculate duration
             duration_ms = (time.time() - start_time) * 1000
 
-            # Extract events from the aggregate
             events = request.get_domain_events()
             request.clear_domain_events()
 
-            # Publish operation completed event
             self._publish_storage_event(
                 RepositoryOperationCompletedEvent(
                     aggregate_id=operation_id,
@@ -233,7 +229,6 @@ class RequestRepositoryImpl(RequestRepositoryInterface):
                 )
             )
 
-            # Check for slow operations
             if duration_ms > self.slow_query_threshold_ms:
                 self._publish_storage_event(
                     SlowQueryDetectedEvent(
@@ -260,7 +255,6 @@ class RequestRepositoryImpl(RequestRepositoryInterface):
         except Exception as e:
             duration_ms = (time.time() - start_time) * 1000
 
-            # Publish operation failed event
             self._publish_storage_event(
                 RepositoryOperationFailedEvent(
                     aggregate_id=operation_id,
@@ -284,12 +278,8 @@ class RequestRepositoryImpl(RequestRepositoryInterface):
     def get_by_id(self, request_id: RequestId) -> Optional[Request]:
         """Get request by ID using storage strategy."""
         try:
-            data = self.storage_port.find_by_id(
-                str(request_id.value) if hasattr(request_id, "value") else str(request_id)
-            )
-            if data:
-                return self.serializer.from_dict(data)
-            return None
+            key = str(request_id.value) if hasattr(request_id, "value") else str(request_id)
+            return self._load_by_id(key)  # type: ignore[return-value]
         except Exception as e:
             self.logger.error("Failed to get request %s: %s", request_id, e)
             raise
@@ -297,7 +287,6 @@ class RequestRepositoryImpl(RequestRepositoryInterface):
     @handle_infrastructure_exceptions(context="request_repository_find_by_id")
     def find_by_id(self, request_id: RequestId | str) -> Optional[Request]:
         """Find request by ID (alias for get_by_id)."""
-        # Convert string to RequestId if needed
         if isinstance(request_id, str):
             request_id = RequestId(value=request_id)
         return self.get_by_id(request_id)
@@ -316,8 +305,7 @@ class RequestRepositoryImpl(RequestRepositoryInterface):
         """Find requests by status."""
         try:
             criteria = {"status": status.value if hasattr(status, "value") else str(status)}
-            data_list = self.storage_port.find_by_criteria(criteria)
-            return [self.serializer.from_dict(data) for data in data_list]
+            return self._load_by_criteria(criteria)  # type: ignore[return-value]
         except Exception as e:
             self.logger.error("Failed to find requests by status %s: %s", status, e)
             raise
@@ -326,9 +314,7 @@ class RequestRepositoryImpl(RequestRepositoryInterface):
     def find_by_template_id(self, template_id: str) -> list[Request]:
         """Find requests by template ID."""
         try:
-            criteria = {"template_id": template_id}
-            data_list = self.storage_port.find_by_criteria(criteria)
-            return [self.serializer.from_dict(data) for data in data_list]
+            return self._load_by_criteria({"template_id": template_id})  # type: ignore[return-value]
         except Exception as e:
             self.logger.error("Failed to find requests by template_id %s: %s", template_id, e)
             raise
@@ -342,8 +328,7 @@ class RequestRepositoryImpl(RequestRepositoryInterface):
                 if hasattr(request_type, "value")
                 else str(request_type)
             }
-            data_list = self.storage_port.find_by_criteria(criteria)
-            return [self.serializer.from_dict(data) for data in data_list]
+            return self._load_by_criteria(criteria)  # type: ignore[return-value]
         except Exception as e:
             self.logger.error("Failed to find requests by type %s: %s", request_type, e)
             raise
@@ -372,18 +357,13 @@ class RequestRepositoryImpl(RequestRepositoryInterface):
             filtered_requests = []
 
             for request in all_requests:
-                # Handle timezone-aware vs naive datetime comparison
                 request_date = request.created_at
 
-                # If request date is naive but comparison dates are aware, make request date aware
                 if request_date.tzinfo is None and start_date.tzinfo is not None:
                     from datetime import timezone
-
                     request_date = request_date.replace(tzinfo=timezone.utc)
-                # If request date is aware but comparison dates are naive, make comparison dates aware
                 elif request_date.tzinfo is not None and start_date.tzinfo is None:
                     from datetime import timezone
-
                     start_date = start_date.replace(tzinfo=timezone.utc)
                     end_date = end_date.replace(tzinfo=timezone.utc)
 
@@ -399,8 +379,7 @@ class RequestRepositoryImpl(RequestRepositoryInterface):
     def find_all(self) -> list[Request]:
         """Find all requests."""
         try:
-            all_data = self.storage_port.find_all()
-            return [self.serializer.from_dict(data) for data in all_data.values()]  # type: ignore[union-attr]
+            return self._load_all()  # type: ignore[return-value]
         except Exception as e:
             self.logger.error("Failed to find all requests: %s", e)
             raise
@@ -409,7 +388,7 @@ class RequestRepositoryImpl(RequestRepositoryInterface):
     def delete(self, request_id: RequestId) -> None:
         """Delete request by ID."""
         try:
-            self.storage_port.delete(
+            self._delete_by_id(
                 str(request_id.value) if hasattr(request_id, "value") else str(request_id)
             )
             self.logger.debug("Deleted request %s", request_id)
@@ -435,7 +414,7 @@ class RequestRepositoryImpl(RequestRepositoryInterface):
     def exists(self, request_id: RequestId) -> bool:
         """Check if request exists."""
         try:
-            return self.storage_port.exists(
+            return self._check_exists(
                 str(request_id.value) if hasattr(request_id, "value") else str(request_id)
             )
         except Exception as e:
@@ -444,8 +423,7 @@ class RequestRepositoryImpl(RequestRepositoryInterface):
 
     def count_by_date_range(self, start_date: datetime, end_date: datetime) -> int:
         """Count requests within date range."""
-        requests = self.find_by_date_range(start_date, end_date)
-        return len(requests)
+        return len(self.find_by_date_range(start_date, end_date))
 
     def count_by_status_and_date_range(
         self, status: RequestStatus, start_date: datetime, end_date: datetime

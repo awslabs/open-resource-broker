@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from domain.base.ports.provider_selection_port import ProviderSelectionPort
 
-from domain.base.ports import ContainerPort, LoggingPort
+from domain.base.ports import ContainerPort, LoggingPort, ProviderConfigPort
 from domain.base.results import ProviderSelectionResult
 from domain.request.aggregate import Request
 from domain.template.template_aggregate import Template
@@ -32,22 +32,22 @@ class ProvisioningOrchestrationService:
         container: ContainerPort,
         logger: LoggingPort,
         provider_selection_port: "ProviderSelectionPort",
+        provider_config_port: ProviderConfigPort,
     ):
         self._container = container
         self._logger = logger
         self._provider_selection_port = provider_selection_port
+        self._provider_config_port = provider_config_port
 
     async def execute_provisioning(
         self, template: Template, request: Request, selection_result: ProviderSelectionResult
     ) -> ProvisioningResult:
         """Execute provisioning via selected provider using registry execution."""
         try:
-            from domain.base.ports.configuration_port import ConfigurationPort
             from domain.base.ports.scheduler_port import SchedulerPort
             from providers.base.strategy import ProviderOperation, ProviderOperationType
 
             scheduler = self._container.get(SchedulerPort)
-            config_manager = self._container.get(ConfigurationPort)
 
             operation = ProviderOperation(
                 operation_type=ProviderOperationType.CREATE_INSTANCES,
@@ -63,7 +63,9 @@ class ProvisioningOrchestrationService:
                 },
             )
 
-            config_manager.get_provider_instance_config(selection_result.provider_name)
+            self._provider_config_port.get_provider_instance_config(
+                selection_result.provider_name
+            )
 
             result = await self._provider_selection_port.execute_operation(
                 selection_result.provider_name, operation

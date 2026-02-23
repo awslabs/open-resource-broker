@@ -177,7 +177,7 @@ class Tags(ValueObject):
 
 @dataclass(frozen=True)
 class ARN(ValueObject):
-    """Amazon Resource Name value object."""
+    """Cloud provider resource name value object (e.g., ARN format)."""
     
     value: str
 

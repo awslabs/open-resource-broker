@@ -6,6 +6,7 @@ from domain.base.ports import (
     ContainerPort,
     ErrorHandlingPort,
     EventPublisherPort,
+    ProviderConfigPort,
     ProviderSelectionPort,
     SchedulerPort,
     TemplateConfigurationPort,
@@ -32,6 +33,12 @@ def register_port_adapters(container):
         return ConfigurationAdapter(config_manager)
 
     container.register_singleton(ConfigurationPort, create_configuration_adapter)
+
+    # Register focused ProviderConfigPort - reuse the same ConfigurationAdapter
+    # since ConfigurationPort extends ProviderConfigPort (DIP: depend on abstraction)
+    container.register_singleton(
+        ProviderConfigPort, lambda c: c.get(ConfigurationPort)
+    )
 
     # Register UnitOfWorkFactory (abstract -> concrete mapping)
     # This was previously in _setup_core_dependencies but got lost during DI cleanup

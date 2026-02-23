@@ -5,6 +5,7 @@ from .container_port import ContainerPort
 from .error_handling_port import ErrorHandlingPort
 from .event_publisher_port import EventPublisherPort
 from .logging_port import LoggingPort
+from .provider_config_port import ProviderConfigPort
 from .provider_port import ProviderPort
 from .provider_selection_port import ProviderSelectionPort
 from .scheduler_port import SchedulerPort
@@ -17,6 +18,7 @@ __all__: list[str] = [
     "ErrorHandlingPort",
     "EventPublisherPort",
     "LoggingPort",
+    "ProviderConfigPort",
     "ProviderPort",
     "ProviderSelectionPort",
     "SchedulerPort",
