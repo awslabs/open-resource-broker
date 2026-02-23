@@ -145,15 +145,9 @@ async def handle_request_machines(
     from infrastructure.mocking.dry_run_context import is_dry_run_active
 
     # Pass raw input data to scheduler strategy (scheduler-agnostic)
+    # Each strategy's parse_request_data() owns envelope unwrapping for its own format
     if hasattr(args, "input_data") and args.input_data:
         raw_request_data = args.input_data
-        # Unwrap HostFactory envelope: {"template": {"templateId": ..., "machineCount": ...}}
-        if "template" in raw_request_data and isinstance(raw_request_data["template"], dict):
-            hf_template = raw_request_data["template"]
-            raw_request_data = {
-                "template_id": hf_template.get("templateId"),
-                "requested_count": hf_template.get("machineCount"),
-            }
     else:
         # Merge positional and flag arguments
         template_id = getattr(args, "template_id", None) or getattr(args, "flag_template_id", None)
