@@ -34,7 +34,7 @@ fi
 
 # Get script directory and project root
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
-PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+PROJECT_ROOT="$(dirname "$(dirname "$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")")")"
 
 # Prefer project virtualenv if present, otherwise fall back to system python
 if [ -x "${PROJECT_ROOT}/.venv/bin/python" ]; then
