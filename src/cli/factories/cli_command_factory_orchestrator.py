@@ -373,9 +373,21 @@ class CLICommandFactoryOrchestrator:
             elif command_action == "show":
                 return self.create_get_machine_query(machine_id=args.get("machine_id"))
             elif command_action == "request":
+                template_id = args.get("template_id") or args.get("flag_template_id")
+                count = args.get("machine_count") or args.get("flag_machine_count")
+                # Unwrap HF envelope from input_data if template_id not set directly
+                input_data = args.get("input_data")
+                if not template_id and input_data:
+                    if "template" in input_data and isinstance(input_data["template"], dict):
+                        hf = input_data["template"]
+                        template_id = hf.get("templateId") or hf.get("template_id")
+                        count = count or hf.get("machineCount") or hf.get("machine_count")
+                    else:
+                        template_id = input_data.get("templateId") or input_data.get("template_id")
+                        count = count or input_data.get("machineCount") or input_data.get("machine_count")
                 return self.create_create_request_command(
-                    template_id=args.get("template_id"),
-                    count=args.get("machine_count") or args.get("flag_machine_count", 1),
+                    template_id=template_id,
+                    count=count or 1,
                     provider=args.get("provider"),
                 )
 
@@ -526,6 +538,22 @@ class CLICommandFactoryOrchestrator:
 
     def _process_input_data(self, args):
         """Process input data from -f/--file or -d/--data flags."""
-        # This method would handle file/data processing
-        # For now, return None as placeholder
+        import json
+
+        if hasattr(args, "input_data") and args.input_data is not None:
+            return args.input_data
+        # Check both root parser dest (file/data) and subcommand dest (hf_file/hf_data)
+        file_path = getattr(args, "file", None) or getattr(args, "hf_file", None)
+        data_str = getattr(args, "data", None) or getattr(args, "hf_data", None)
+        if file_path:
+            try:
+                with open(file_path) as f:
+                    return json.load(f)
+            except Exception:
+                pass
+        if data_str:
+            try:
+                return json.loads(data_str)
+            except Exception:
+                pass
         return None

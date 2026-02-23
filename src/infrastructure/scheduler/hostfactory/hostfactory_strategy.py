@@ -3,6 +3,13 @@
 import os
 from typing import TYPE_CHECKING, Any, Union, cast
 
+# Normalize legacy/alias provider API names to canonical registry keys
+PROVIDER_API_ALIASES: dict[str, str] = {
+    "AutoScalingGroup": "ASG",
+    "autoscalinggroup": "ASG",
+    "asg": "ASG",
+}
+
 if TYPE_CHECKING:
     pass
 
@@ -189,6 +196,7 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
             mapped["provider_api"] = self.template_defaults_service.resolve_provider_api_default(
                 template
             )
+            mapped["provider_api"] = PROVIDER_API_ALIASES.get(mapped["provider_api"], mapped["provider_api"])
             # Apply all template defaults using the service
             mapped = self.template_defaults_service.resolve_template_defaults(
                 mapped, target_provider
@@ -206,9 +214,8 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
                     if self.logger:
                         self.logger.debug("Could not apply fleet_role from template_defaults: %s", e)
         else:
-            mapped["provider_api"] = template.get(
-                "providerApi", template.get("provider_api", "EC2Fleet")
-            )
+            raw_api = template.get("providerApi", template.get("provider_api", "EC2Fleet"))
+            mapped["provider_api"] = PROVIDER_API_ALIASES.get(raw_api, raw_api)
 
         if "template_id" in mapped:
             mapped["name"] = template.get("name", mapped["template_id"])
@@ -563,7 +570,9 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
             "tags": raw_data.get("tags", {}),
             "metadata": raw_data.get("metadata", {}),
             # Provider API
-            "provider_api": raw_data.get("providerApi"),
+            "provider_api": PROVIDER_API_ALIASES.get(
+                raw_data.get("providerApi", ""), raw_data.get("providerApi")
+            ),
             # Timestamps
             "created_at": raw_data.get("createdAt"),
             "updated_at": raw_data.get("updatedAt"),

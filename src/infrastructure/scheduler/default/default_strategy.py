@@ -185,13 +185,15 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
         if "requests" in raw_data:
             return {"requests": [{"request_id": req.get("request_id")} for req in raw_data["requests"]]}
 
-        # Request Machines - handle nested format: {"template": {"template_id": ..., "machine_count": ...}}
+        # Request Machines - handle nested format (both snake_case and HF camelCase):
+        # {"template": {"template_id": ..., "machine_count": ...}}
+        # {"template": {"templateId": ..., "machineCount": ...}}
         if "template" in raw_data:
             template_data = raw_data["template"]
             return {
-                "template_id": template_data.get("template_id"),
-                "requested_count": template_data.get("machine_count", 1),
-                "request_type": template_data.get("request_type", "provision"),
+                "template_id": template_data.get("template_id") or template_data.get("templateId"),
+                "requested_count": template_data.get("machine_count") or template_data.get("machineCount", 1),
+                "request_type": template_data.get("request_type") or template_data.get("requestType", "provision"),
                 "metadata": raw_data.get("metadata", {}),
             }
 

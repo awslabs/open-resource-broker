@@ -4,6 +4,7 @@ from typing import Optional
 
 from fastapi import HTTPException, Request, Response, status
 from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import JSONResponse
 
 from infrastructure.adapters.ports.auth import (
     AuthContext,
@@ -96,9 +97,9 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
         except Exception as e:
             self.logger.error("Authentication middleware error: %s", e)
-            raise HTTPException(
+            return JSONResponse(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Authentication service error",
+                content={"detail": "Authentication service error"},
             )
 
     def _is_excluded_path(self, path: str) -> bool:
@@ -147,19 +148,20 @@ class AuthMiddleware(BaseHTTPMiddleware):
             HTTP error response
         """
         if auth_result.status == AuthStatus.EXPIRED:
-            raise HTTPException(
+            return JSONResponse(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Token expired",
+                content={"detail": "Token expired"},
                 headers={"WWW-Authenticate": "Bearer"},
             )
         elif auth_result.status == AuthStatus.INSUFFICIENT_PERMISSIONS:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient permissions"
+            return JSONResponse(
+                status_code=status.HTTP_403_FORBIDDEN,
+                content={"detail": "Insufficient permissions"},
             )
         else:
-            raise HTTPException(
+            return JSONResponse(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail=auth_result.error_message or "Authentication failed",
+                content={"detail": auth_result.error_message or "Authentication failed"},
                 headers={"WWW-Authenticate": "Bearer"},
             )
 

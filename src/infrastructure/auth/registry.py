@@ -58,7 +58,8 @@ class AuthRegistry(BaseRegistry):
         Raises:
             ValueError: If strategy is not registered
         """
-        return self.create_strategy_by_type(strategy_name, kwargs)
+        registration = self._get_type_registration(strategy_name)
+        return registration.strategy_factory(**kwargs)
 
     def list_strategies(self) -> list[str]:
         """

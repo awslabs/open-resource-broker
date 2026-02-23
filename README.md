@@ -69,7 +69,7 @@ orb templates generate
 orb templates list
 
 # Request machines
-orb requests create --template-id EC2FleetInstant --count 3
+orb machines request --template-id EC2FleetInstant --count 3
 ```
 
 ### Docker Deployment
@@ -174,7 +174,6 @@ make uv-lock
 
 # Sync with lock files (fastest)
 make uv-sync-dev
-```
 
 # Or manually
 pip install -e ".[dev]"
@@ -312,11 +311,8 @@ orb --provider aws_prod_us-east-1 machines request template-id 3
 #### Initial Setup
 
 ```bash
-# Initialize ORB configuration (required after pip install)
+# Initialize ORB configuration (interactive by default)
 orb init
-
-# Interactive setup with prompts
-orb init --interactive
 
 # Non-interactive with defaults
 orb init --non-interactive --scheduler default --provider aws --region us-east-1
@@ -374,7 +370,6 @@ orb templates refresh --force               # Force complete refresh
 
 ```bash
 # Request machines (supports both positional and flag arguments)
-orb requests create --template-id my-template --count 5
 orb machines request TEMPLATE_ID COUNT       # Positional arguments
 orb machines request --template-id TEMPLATE_ID --count COUNT  # Flag arguments
 
@@ -400,7 +395,7 @@ orb machines show MACHINE_ID                 # Positional argument
 orb machines show --machine-id MACHINE_ID    # Flag argument
 
 # Return machines
-orb requests return --request-id req-12345
+orb machines return --request-id req-12345
 ```
 
 #### Storage Management
@@ -555,7 +550,7 @@ export ORB_MAX_MACHINES_PER_REQUEST=50
 export ORB_AWS_MAX_RETRIES=3
 
 # Start the application
-orb serve --port 8000
+orb system serve --port 8000
 ```
 
 ### Provider Configuration
@@ -575,6 +570,8 @@ providers:
         auto_scaling_group:
           enabled: true
     template_defaults:
+      subnet_ids: []
+      security_group_ids: []
 ```
 
 #### Provider Naming Convention
