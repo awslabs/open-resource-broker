@@ -672,6 +672,14 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
             if "maxNumber" not in formatted_template and "max_instances" in formatted_template:
                 formatted_template["maxNumber"] = formatted_template["max_instances"]
 
+            # Per HF schema, instanceTags must be a string not a dict
+            if "instanceTags" in formatted_template:
+                tags = formatted_template["instanceTags"]
+                if isinstance(tags, dict):
+                    formatted_template["instanceTags"] = json.dumps(tags)
+                elif tags is None:
+                    del formatted_template["instanceTags"]
+
             # Ensure attributes object is always present (required by IBM HF spec)
             if "attributes" not in formatted_template:
                 instance_type = (
