@@ -102,8 +102,6 @@ __all__: list[str] = [
     "EntityNotFoundError",
     "EventPublisher",
     "IPAddress",
-    "IRepository",
-    "IUnitOfWork",
     "InfrastructureError",
     "InfrastructureEvent",
     "InstanceType",

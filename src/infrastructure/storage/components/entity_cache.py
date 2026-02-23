@@ -3,22 +3,20 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Optional, TypeVar
+from typing import Any, Optional
 
 from infrastructure.logging.logger import get_logger
-
-T = TypeVar("T")
 
 
 class EntityCache(ABC):
     """Base interface for entity caching."""
 
     @abstractmethod
-    def get(self, key: str) -> Optional[T]:
+    def get(self, key: str) -> Optional[Any]:
         """Get cached entity by key."""
 
     @abstractmethod
-    def put(self, key: str, entity: T) -> None:
+    def put(self, key: str, entity: Any) -> None:
         """Cache entity with key."""
 
     @abstractmethod
