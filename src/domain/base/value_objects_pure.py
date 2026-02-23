@@ -16,7 +16,7 @@ class ValueObject(ABC):
 @dataclass(frozen=True)
 class ResourceId(ValueObject):
     """Base class for resource identifiers."""
-    
+
     value: str
     resource_type: ClassVar[str] = "Resource"
 
@@ -39,7 +39,7 @@ class ResourceId(ValueObject):
 @dataclass(frozen=True)
 class ResourceQuota(ValueObject):
     """Resource quota information - tracks limits and usage."""
-    
+
     resource_type: str
     limit: int
     used: int
@@ -53,7 +53,7 @@ class ResourceQuota(ValueObject):
             raise ValueError("Used must be non-negative")
         if self.available < 0:
             raise ValueError("Available must be non-negative")
-        
+
         # Ensure available = limit - used
         expected_available = self.limit - self.used
         if self.available != expected_available:
@@ -80,7 +80,7 @@ class ResourceQuota(ValueObject):
 @dataclass(frozen=True)
 class IPAddress(ValueObject):
     """IP address value object."""
-    
+
     value: str
 
     def __post_init__(self) -> None:
@@ -97,7 +97,7 @@ class IPAddress(ValueObject):
 @dataclass(frozen=True)
 class InstanceType(ValueObject):
     """Instance type value object."""
-    
+
     value: str
 
     def __post_init__(self) -> None:
@@ -116,7 +116,7 @@ class InstanceType(ValueObject):
 @dataclass(frozen=True)
 class InstanceId(ValueObject):
     """Instance identifier value object."""
-    
+
     value: str
 
     def __post_init__(self) -> None:
@@ -135,7 +135,7 @@ class InstanceId(ValueObject):
 @dataclass(frozen=True)
 class Tags(ValueObject):
     """Tags value object for resource tagging."""
-    
+
     tags: dict[str, str] = field(default_factory=dict)
 
     def __str__(self) -> str:
@@ -178,7 +178,7 @@ class Tags(ValueObject):
 @dataclass(frozen=True)
 class ARN(ValueObject):
     """Cloud provider resource name value object (e.g., ARN format)."""
-    
+
     value: str
 
     def __post_init__(self) -> None:
@@ -192,7 +192,7 @@ class ARN(ValueObject):
 
 class PriceType(str, Enum):
     """Price type enumeration."""
-    
+
     ONDEMAND = "ondemand"
     SPOT = "spot"
     RESERVED = "reserved"
@@ -201,7 +201,7 @@ class PriceType(str, Enum):
 
 class AllocationStrategy(str, Enum):
     """Allocation strategy enumeration."""
-    
+
     LOWEST_PRICE = "lowestPrice"
     DIVERSIFIED = "diversified"
     CAPACITY_OPTIMIZED = "capacityOptimized"

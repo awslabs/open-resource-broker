@@ -3,6 +3,7 @@
 export USE_LOCAL_DEV="true"
 export LOG_CONSOLE_ENABLED=false
 export LOG_SCRIPTS="true"
+export HF_LOGDIR=${HF_LOGDIR:-./}
 
 SCRIPTS_LOG_FILE="${HF_LOGDIR}/scripts.log"
 

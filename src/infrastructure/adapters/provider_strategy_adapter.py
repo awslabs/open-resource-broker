@@ -11,7 +11,7 @@ class ProviderStrategyResolverAdapter(ProviderStrategyResolverPort):
 
     def __init__(self, resolver: ProviderStrategyResolver) -> None:
         """Initialize with strategy resolver.
-        
+
         Args:
             resolver: Underlying strategy resolver implementation
         """

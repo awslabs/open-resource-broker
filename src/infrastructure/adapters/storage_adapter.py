@@ -12,7 +12,7 @@ class StorageReaderAdapter(StorageReaderPort[dict[str, Any]]):
 
     def __init__(self, storage_strategy: StorageStrategy) -> None:
         """Initialize with storage strategy.
-        
+
         Args:
             storage_strategy: Underlying storage implementation
         """
@@ -39,7 +39,7 @@ class StorageWriterAdapter(StorageWriterPort[dict[str, Any]]):
 
     def __init__(self, storage_strategy: StorageStrategy) -> None:
         """Initialize with storage strategy.
-        
+
         Args:
             storage_strategy: Underlying storage implementation
         """

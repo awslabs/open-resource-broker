@@ -44,6 +44,14 @@ def add_global_arguments(parser):
         action="append",
         help='Generic filter using snake_case field names: field=value, field~value, field=~regex. Can be combined with specific filters. Use multiple times for AND logic.',
     )
+def add_hf_input_arguments(parser):
+    """Add HostFactory-compatible input flags (-f and -d) to subcommand parsers.
+
+    Uses dest='hf_file'/'hf_data' to avoid conflicting with the root parser's
+    --file/--data long-form options. The router reconciles both into input_data.
+    """
+    parser.add_argument("-f", dest="hf_file", metavar="FILE", help="Input JSON file path (HostFactory compatibility)")
+    parser.add_argument("-d", dest="hf_data", metavar="DATA", help="Input JSON data string (HostFactory compatibility)")
 
 
 def add_force_argument(parser):
@@ -82,6 +90,7 @@ def add_machine_actions(subparsers):
 
     machines_request = subparsers.add_parser("request", help="Request machines")
     add_global_arguments(machines_request)
+    add_hf_input_arguments(machines_request)
     machines_request.add_argument("template_id", nargs="?", help="Template ID to use")
     machines_request.add_argument("machine_count", nargs="?", type=int, help="Number of machines to request")
     machines_request.add_argument("--template-id", "-t", dest="flag_template_id", help="Template ID to use")
@@ -91,16 +100,19 @@ def add_machine_actions(subparsers):
 
     machines_return = subparsers.add_parser("return", help="Return machines")
     add_global_arguments(machines_return)
+    add_hf_input_arguments(machines_return)
     add_force_argument(machines_return)
     machines_return.add_argument("machine_ids", nargs="*", help="Machine IDs to return")
 
     machines_terminate = subparsers.add_parser("terminate", help="Terminate (return) machines")
     add_global_arguments(machines_terminate)
+    add_hf_input_arguments(machines_terminate)
     add_force_argument(machines_terminate)
     machines_terminate.add_argument("machine_ids", nargs="*", help="Machine IDs to terminate")
 
     machines_status = subparsers.add_parser("status", help="Check machine status")
     add_global_arguments(machines_status)
+    add_hf_input_arguments(machines_status)
     machines_status.add_argument("machine_ids", nargs="*", help="Machine IDs to check")
     machines_status.add_argument(
         "--machine-id", "-m", action="append", dest="flag_machine_ids", help="Machine ID to check"
@@ -142,6 +154,7 @@ def add_request_actions(subparsers):
 
     requests_status = subparsers.add_parser("status", help="Check request status")
     add_global_arguments(requests_status)
+    add_hf_input_arguments(requests_status)
     requests_status.add_argument("request_ids", nargs="*", help="Request IDs to check")
     requests_status.add_argument(
         "--request-id", "-r", action="append", dest="flag_request_ids", help="Request ID to check"

@@ -13,7 +13,7 @@ class DomainException(Exception):
 
     def __init__(self, message: str, details: Optional[dict[str, Any]] = None) -> None:
         """Initialize domain exception.
-        
+
         Args:
             message: Human-readable error message
             details: Additional context about the error
@@ -35,7 +35,7 @@ class BusinessRuleViolation(DomainException):
 
     def __init__(self, rule: str, message: str, details: Optional[dict[str, Any]] = None) -> None:
         """Initialize business rule violation.
-        
+
         Args:
             rule: Name of the violated business rule
             message: Description of the violation
@@ -52,7 +52,7 @@ class AggregateInvariantViolation(DomainException):
         self, aggregate_type: str, invariant: str, message: str, details: Optional[dict[str, Any]] = None
     ) -> None:
         """Initialize aggregate invariant violation.
-        
+
         Args:
             aggregate_type: Type of aggregate (e.g., 'Request', 'Machine')
             invariant: Name of the violated invariant
@@ -71,7 +71,7 @@ class ValueObjectValidationError(DomainException):
         self, value_object_type: str, field: str, value: Any, reason: str
     ) -> None:
         """Initialize value object validation error.
-        
+
         Args:
             value_object_type: Type of value object
             field: Field that failed validation
@@ -102,7 +102,7 @@ class TemplateNotFoundError(TemplateException):
 
     def __init__(self, template_id: str) -> None:
         """Initialize template not found error.
-        
+
         Args:
             template_id: ID of the template that was not found
         """
@@ -118,7 +118,7 @@ class TemplateValidationError(TemplateException):
 
     def __init__(self, template_id: str, reason: str, details: Optional[dict[str, Any]] = None) -> None:
         """Initialize template validation error.
-        
+
         Args:
             template_id: ID of the invalid template
             reason: Why validation failed
@@ -137,7 +137,7 @@ class TemplateConfigurationError(TemplateException):
 
     def __init__(self, template_id: str, field: str, reason: str) -> None:
         """Initialize template configuration error.
-        
+
         Args:
             template_id: ID of the template
             field: Configuration field that is invalid
@@ -167,7 +167,7 @@ class RequestNotFoundError(RequestException):
 
     def __init__(self, request_id: str) -> None:
         """Initialize request not found error.
-        
+
         Args:
             request_id: ID of the request that was not found
         """
@@ -183,7 +183,7 @@ class InvalidRequestStateTransition(RequestException):
 
     def __init__(self, request_id: str, from_status: str, to_status: str, reason: str) -> None:
         """Initialize invalid state transition error.
-        
+
         Args:
             request_id: ID of the request
             from_status: Current status
@@ -209,7 +209,7 @@ class RequestValidationError(RequestException):
 
     def __init__(self, request_id: str, reason: str, details: Optional[dict[str, Any]] = None) -> None:
         """Initialize request validation error.
-        
+
         Args:
             request_id: ID of the invalid request
             reason: Why validation failed
@@ -228,7 +228,7 @@ class RequestCapacityExceeded(RequestException):
 
     def __init__(self, request_id: str, requested: int, available: int) -> None:
         """Initialize capacity exceeded error.
-        
+
         Args:
             request_id: ID of the request
             requested: Number of instances requested
@@ -258,7 +258,7 @@ class MachineNotFoundError(MachineException):
 
     def __init__(self, machine_id: str) -> None:
         """Initialize machine not found error.
-        
+
         Args:
             machine_id: ID of the machine that was not found
         """
@@ -274,7 +274,7 @@ class InvalidMachineStateTransition(MachineException):
 
     def __init__(self, machine_id: str, from_status: str, to_status: str, reason: str) -> None:
         """Initialize invalid state transition error.
-        
+
         Args:
             machine_id: ID of the machine
             from_status: Current status
@@ -300,7 +300,7 @@ class MachineValidationError(MachineException):
 
     def __init__(self, machine_id: str, reason: str, details: Optional[dict[str, Any]] = None) -> None:
         """Initialize machine validation error.
-        
+
         Args:
             machine_id: ID of the invalid machine
             reason: Why validation failed
@@ -329,7 +329,7 @@ class ProviderNotFoundError(ProviderException):
 
     def __init__(self, provider_name: str, provider_type: Optional[str] = None) -> None:
         """Initialize provider not found error.
-        
+
         Args:
             provider_name: Name of the provider
             provider_type: Type of provider (optional)
@@ -347,7 +347,7 @@ class ProviderNotAvailableError(ProviderException):
 
     def __init__(self, provider_name: str, reason: str) -> None:
         """Initialize provider not available error.
-        
+
         Args:
             provider_name: Name of the provider
             reason: Why the provider is not available
@@ -365,7 +365,7 @@ class ProviderValidationError(ProviderException):
 
     def __init__(self, provider_name: str, reason: str, details: Optional[dict[str, Any]] = None) -> None:
         """Initialize provider validation error.
-        
+
         Args:
             provider_name: Name of the provider
             reason: Why validation failed
@@ -394,7 +394,7 @@ class ResourceQuotaExceeded(ResourceException):
 
     def __init__(self, resource_type: str, requested: int, limit: int, used: int) -> None:
         """Initialize quota exceeded error.
-        
+
         Args:
             resource_type: Type of resource
             requested: Amount requested
@@ -424,7 +424,7 @@ class ResourceNotFoundError(ResourceException):
 
     def __init__(self, resource_type: str, resource_id: str) -> None:
         """Initialize resource not found error.
-        
+
         Args:
             resource_type: Type of resource
             resource_id: ID of the resource
@@ -442,7 +442,7 @@ class ResourceConflictError(ResourceException):
 
     def __init__(self, resource_type: str, resource_id: str, reason: str) -> None:
         """Initialize resource conflict error.
-        
+
         Args:
             resource_type: Type of resource
             resource_id: ID of the resource

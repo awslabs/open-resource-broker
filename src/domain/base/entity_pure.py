@@ -18,7 +18,7 @@ class Entity(ABC):
         **kwargs: Any
     ) -> None:
         """Initialize entity with identity and timestamps.
-        
+
         Args:
             id: Entity identifier (can be any type)
             created_at: Creation timestamp
@@ -28,7 +28,7 @@ class Entity(ABC):
         self.id = id
         self.created_at = created_at or datetime.utcnow()
         self.updated_at = updated_at or datetime.utcnow()
-        
+
         # Store additional attributes for subclasses
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -54,7 +54,7 @@ class AggregateRoot(Entity):
 
     def add_domain_event(self, event: Any) -> None:
         """Add a domain event to be published.
-        
+
         Args:
             event: Domain event to add
         """
@@ -66,7 +66,7 @@ class AggregateRoot(Entity):
 
     def get_domain_events(self) -> list[Any]:
         """Get all domain events.
-        
+
         Returns:
             Copy of domain events list
         """
@@ -75,7 +75,7 @@ class AggregateRoot(Entity):
     @abstractmethod
     def get_id(self) -> Any:
         """Get the aggregate root identifier.
-        
+
         Returns:
             Aggregate identifier
         """
