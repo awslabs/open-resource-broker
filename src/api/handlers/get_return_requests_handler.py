@@ -2,9 +2,10 @@
 
 import time
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, Optional, cast
 
 from application.base.infrastructure_handlers import BaseAPIHandler, RequestContext
+from application.dto.base import BaseDTO
 from application.dto.responses import ReturnRequestResponse
 from application.request.queries import ListRequestsQuery
 from config import RequestConfig
@@ -53,7 +54,7 @@ class GetReturnRequestsRESTHandler(BaseAPIHandler[dict[str, Any], ReturnRequestR
         self._query_bus = query_bus
         self._command_bus = command_bus
         self._scheduler_strategy = scheduler_strategy
-        self._metrics = metrics
+        self._metrics_collector = metrics
         self._cache_duration = cache_duration
         self._cache = {}
 
@@ -102,7 +103,7 @@ class GetReturnRequestsRESTHandler(BaseAPIHandler[dict[str, Any], ReturnRequestR
         input_data = request.get("input_data")
         long = request.get("long", False)
         correlation_id = context.correlation_id
-        start_time = time.time() if self._metrics else None
+        start_time = time.time() if self._metrics_collector else None
 
         if self.logger:
             self.logger.info(
@@ -125,13 +126,13 @@ class GetReturnRequestsRESTHandler(BaseAPIHandler[dict[str, Any], ReturnRequestR
                         "Returning cached result",
                         extra={"correlation_id": correlation_id},
                     )
-                return ReturnRequestResponse.from_dict(cached_result)
+                return cast(ReturnRequestResponse, ReturnRequestResponse.from_dict(cached_result))
 
             # Get return requests using CQRS query
             query = ListRequestsQuery(
                 status="return_requested", limit=100
             )  # Filter for return requests
-            return_requests = await self._query_bus.execute(query)
+            return_requests = await self._query_bus.execute(cast(Any, query))
 
             # Apply filters if provided
             if input_data and "filters" in input_data:
@@ -188,10 +189,10 @@ class GetReturnRequestsRESTHandler(BaseAPIHandler[dict[str, Any], ReturnRequestR
             self._add_to_cache(cache_key, response.to_dict())
 
             # Record metrics if available
-            if self._metrics:
-                self._metrics.record_success(
+            if self._metrics_collector:
+                self._metrics_collector.record_success(
                     "get_return_requests",
-                    start_time,
+                    start_time or time.time(),
                     {
                         "request_count": len(formatted_requests),
                         "correlation_id": correlation_id,
@@ -202,10 +203,10 @@ class GetReturnRequestsRESTHandler(BaseAPIHandler[dict[str, Any], ReturnRequestR
 
         except Exception as e:
             # Record metrics if available
-            if self._metrics:
-                self._metrics.record_failure(
+            if self._metrics_collector:
+                self._metrics_collector.record_error(
                     "get_return_requests",
-                    start_time,
+                    start_time or time.time(),
                     {"error": str(e), "correlation_id": correlation_id},
                 )
 
@@ -234,7 +235,7 @@ class GetReturnRequestsRESTHandler(BaseAPIHandler[dict[str, Any], ReturnRequestR
         if self._scheduler_strategy and hasattr(
             self._scheduler_strategy, "format_return_requests_response"
         ):
-            formatted_response = await self._scheduler_strategy.format_return_requests_response(
+            formatted_response = await self._scheduler_strategy.format_return_requests_response(  # type: ignore[attr-defined]
                 response
             )
             return formatted_response
@@ -355,7 +356,7 @@ class GetReturnRequestsRESTHandler(BaseAPIHandler[dict[str, Any], ReturnRequestR
         container = get_container()
         config_manager = container.get(ConfigurationManager)
         config = config_manager.get_typed(RequestConfig)
-        default_grace_period = config.default_grace_period
+        default_grace_period = getattr(config, "default_grace_period", 0)
 
         # Check if machine is spot instance
         if hasattr(request, "machines") and any(

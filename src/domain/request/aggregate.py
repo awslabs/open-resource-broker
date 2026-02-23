@@ -53,7 +53,6 @@ class Request(AggregateRoot):
     failed_count: int = 0
 
     # Lifecycle timestamps
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     started_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
 
@@ -102,11 +101,13 @@ class Request(AggregateRoot):
         updated_request = Request.model_validate(data)
 
         # Add domain event for status change
-        status_event = RequestStatusChangedEvent.create(
+        status_event = RequestStatusChangedEvent(
+            aggregate_id=str(self.request_id),
+            aggregate_type="Request",
             request_id=str(self.request_id),
+            request_type=self.request_type.value,
             old_status=old_status.value,
             new_status=RequestStatus.IN_PROGRESS.value,
-            message="Request processing started",
         )
         updated_request.add_domain_event(status_event)
 
@@ -169,19 +170,23 @@ class Request(AggregateRoot):
         updated_request = Request.model_validate(data)
 
         # Add domain events
-        status_event = RequestStatusChangedEvent.create(
+        status_event = RequestStatusChangedEvent(
+            aggregate_id=str(self.request_id),
+            aggregate_type="Request",
             request_id=str(self.request_id),
+            request_type=self.request_type.value,
             old_status=old_status.value,
             new_status=RequestStatus.COMPLETED.value,
-            message=message or "Request completed successfully",
         )
         updated_request.add_domain_event(status_event)
 
-        completion_event = RequestCompletedEvent.create(
+        completion_event = RequestCompletedEvent(
+            aggregate_id=str(self.request_id),
+            aggregate_type="Request",
             request_id=str(self.request_id),
-            successful_count=self.successful_count,
-            failed_count=self.failed_count,
-            total_requested=self.requested_count,
+            request_type=self.request_type.value,
+            completion_status=RequestStatus.COMPLETED.value,
+            machine_ids=self.machine_ids,
         )
         updated_request.add_domain_event(completion_event)
 
@@ -240,7 +245,7 @@ class Request(AggregateRoot):
 
     def needs_machine_id_population(self) -> bool:
         """Check if request needs machine ID population."""
-        return (
+        return bool(
             not self.machine_ids and self.resource_ids and self.request_type != RequestType.RETURN
         )
 
@@ -288,7 +293,7 @@ class Request(AggregateRoot):
             "status_message": self.status_message,
             "successful_count": self.successful_count,
             "failed_count": self.failed_count,
-            "created_at": self.created_at.isoformat(),
+            "created_at": self.created_at.isoformat() if self.created_at else datetime.now(timezone.utc).isoformat(),
             "metadata": self.metadata,
             "error_details": self.error_details,
             "provider_data": self.provider_data,
@@ -426,7 +431,7 @@ class Request(AggregateRoot):
         """Create request from provider-specific format."""
         core_data = {
             "request_id": data.get("request_id"),
-            "request_type": RequestType(data.get("request_type", RequestType.CREATE.value)),
+            "request_type": RequestType(data.get("request_type", RequestType.ACQUIRE.value)),
             "provider_type": provider_type,
             "template_id": data.get("template_id"),
             "requested_count": data.get("requested_count", 1),
@@ -436,7 +441,7 @@ class Request(AggregateRoot):
             "successful_count": data.get("successful_count", 0),
             "failed_count": data.get("failed_count", 0),
             "created_at": datetime.fromisoformat(
-                data.get("created_at", datetime.utcnow().isoformat())
+                data.get("created_at") or datetime.utcnow().isoformat()
             ),
             "metadata": data.get("metadata", {}),
             "error_details": data.get("error_details", {}),

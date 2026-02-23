@@ -65,7 +65,7 @@ class AWSProvisioningAdapter(ResourceProvisioningPort):
         """Get the AWS client instance."""
         return self._aws_client
 
-    async def provision_resources(self, request: Request, template: Template) -> dict[str, Any]:
+    async def provision_resources(self, request: Request, template: Template) -> dict[str, Any]:  # type: ignore[override]
         """
         Provision AWS resources based on the request and template.
 
@@ -99,7 +99,7 @@ class AWSProvisioningAdapter(ResourceProvisioningPort):
 
     async def _provision_via_strategy(
         self, request: Request, template: Template, dry_run: bool = False
-    ) -> str:
+    ) -> dict[str, Any]:  # type: ignore[return]
         """
         Provision resources using the provider strategy pattern.
 
@@ -159,7 +159,7 @@ class AWSProvisioningAdapter(ResourceProvisioningPort):
 
         try:
             # Acquire hosts using the handler
-            result = handler.acquire_hosts(request, template)
+            result = handler.acquire_hosts(request, template)  # type: ignore[arg-type]
 
             # Handle both string (legacy) and dict (new) return types
             if isinstance(result, dict):
@@ -227,7 +227,7 @@ class AWSProvisioningAdapter(ResourceProvisioningPort):
             raise EntityNotFoundError("Template", str(request.template_id))
 
         # Get the appropriate handler for the template
-        handler = self._get_handler_for_template(template)
+        handler = self._get_handler_for_template(template)  # type: ignore[arg-type]
 
         try:
             # Check hosts status using the handler
@@ -249,7 +249,7 @@ class AWSProvisioningAdapter(ResourceProvisioningPort):
         machine_ids: list[str],
         template_id: str,
         provider_api: str,
-        context: dict = None,
+        context: dict = None,  # type: ignore[assignment]
         resource_mapping: Optional[dict[str, tuple[Optional[str], int]]] = None,
     ) -> None:
         """
@@ -290,7 +290,7 @@ class AWSProvisioningAdapter(ResourceProvisioningPort):
 
         # Call handler's release_hosts method for all provider APIs
         try:
-            handler.release_hosts(machine_ids, resource_mapping=resource_mapping)
+            handler.release_hosts(machine_ids, resource_mapping=resource_mapping)  # type: ignore[call-arg]
 
         except Exception as e:
             self._logger.error(

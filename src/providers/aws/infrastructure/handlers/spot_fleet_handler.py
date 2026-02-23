@@ -65,7 +65,7 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
         logger: LoggingPort,
         aws_ops: AWSOperations,
         launch_template_manager: AWSLaunchTemplateManager,
-        request_adapter: RequestAdapterPort = None,
+        request_adapter: RequestAdapterPort = None,  # type: ignore[assignment]
         machine_adapter: Optional[AWSMachineAdapter] = None,
     ) -> None:
         """
@@ -158,7 +158,7 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
 
         # Store launch template info in request (if request has this method)
         if hasattr(request, "set_launch_template_info"):
-            request.set_launch_template_info(
+            request.set_launch_template_info(  # type: ignore[attr-defined]
                 launch_template_result.template_id, launch_template_result.version
             )
 
@@ -181,7 +181,7 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
         self._logger.info("Successfully created Spot Fleet request: %s", fleet_id)
 
         # Apply post-creation tagging for spot fleet instances as fallback
-        self._tag_spot_fleet_instances_if_needed(fleet_id, request, aws_template)
+        self._tag_spot_fleet_instances_if_needed(fleet_id, request, aws_template)  # type: ignore[attr-defined]
 
         return response
         """Create Spot Fleet with pure business logic."""
@@ -215,7 +215,7 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
 
         # Store launch template info in request (if request has this method)
         if hasattr(request, "set_launch_template_info"):
-            request.set_launch_template_info(
+            request.set_launch_template_info(  # type: ignore[attr-defined]
                 launch_template_result.template_id, launch_template_result.version
             )
 
@@ -573,7 +573,7 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
         ]
 
         fleet_type_value = (
-            template.fleet_type.value
+            template.fleet_type.value  # type: ignore[union-attr]
             if hasattr(template.fleet_type, "value")
             else template.fleet_type
         )
@@ -588,7 +588,7 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
             ],
             "TargetCapacity": target_capacity,
             "IamFleetRole": fleet_role,
-            "AllocationStrategy": self._get_allocation_strategy(template.allocation_strategy),
+            "AllocationStrategy": self._get_allocation_strategy(template.allocation_strategy or ""),
             "Type": fleet_type_value,
             "TagSpecifications": [{"ResourceType": "spot-fleet-request", "Tags": common_tags}],
         }
@@ -856,7 +856,7 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
             raise AWSInfrastructureError(f"Failed to check Spot Fleet status: {e!s}")
 
     def _get_spot_fleet_instances(
-        self, fleet_id: str, request_id: str = None
+        self, fleet_id: str, request_id: str = None  # type: ignore[assignment]
     ) -> list[dict[str, Any]]:
         """Get instances for a specific spot fleet."""
         # Get fleet information
@@ -920,7 +920,7 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
             self._build_fallback_machine_payload(inst, resource_id) for inst in instance_details
         ]
 
-    def release_hosts(
+    def release_hosts(  # type: ignore[override]
         self,
         machine_ids: list[str],
         resource_mapping: Optional[dict[str, tuple[Optional[str], int]]] = None,

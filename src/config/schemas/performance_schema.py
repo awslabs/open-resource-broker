@@ -129,13 +129,13 @@ class CachingConfig(BaseModel):
     """Caching configuration for performance optimization."""
 
     ami_resolution: AMIResolutionCacheConfig = Field(
-        default_factory=lambda: AMIResolutionCacheConfig()
+        default_factory=lambda: AMIResolutionCacheConfig()  # type: ignore[call-arg]
     )
     handler_discovery: HandlerDiscoveryCacheConfig = Field(
-        default_factory=lambda: HandlerDiscoveryCacheConfig()
+        default_factory=lambda: HandlerDiscoveryCacheConfig()  # type: ignore[call-arg]
     )
     request_status: RequestStatusCacheConfig = Field(
-        default_factory=lambda: RequestStatusCacheConfig()
+        default_factory=lambda: RequestStatusCacheConfig()  # type: ignore[call-arg]
     )
 
 
@@ -143,7 +143,7 @@ class PerformanceConfig(BaseModel):
     """Performance optimization configuration."""
 
     enable_batching: bool = Field(True, description="Whether to enable batching of API calls")
-    batch_sizes: BatchSizesConfig = Field(default_factory=lambda: BatchSizesConfig())
+    batch_sizes: BatchSizesConfig = Field(default_factory=lambda: BatchSizesConfig())  # type: ignore[call-arg]
     enable_parallel: bool = Field(True, description="Whether to enable parallel processing")
     max_workers: int = Field(
         10, description="Maximum number of worker threads for parallel processing"
@@ -154,9 +154,9 @@ class PerformanceConfig(BaseModel):
         True, description="Whether to enable adaptive batch sizing"
     )
     adaptive_batch_sizing: AdaptiveBatchSizingConfig = Field(
-        default_factory=lambda: AdaptiveBatchSizingConfig()
+        default_factory=lambda: AdaptiveBatchSizingConfig()  # type: ignore[call-arg]
     )
-    caching: CachingConfig = Field(default_factory=lambda: CachingConfig())
+    caching: CachingConfig = Field(default_factory=lambda: CachingConfig())  # type: ignore[call-arg]
 
     @field_validator("max_workers")
     @classmethod

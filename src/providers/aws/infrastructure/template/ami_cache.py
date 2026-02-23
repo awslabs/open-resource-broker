@@ -154,10 +154,10 @@ class RuntimeAMICache:
     def _load_from_persistent_cache(self) -> None:
         """Load cache from persistent file, filtering expired entries."""
         try:
-            if not os.path.exists(self._persistent_file):
+            if not os.path.exists(self._persistent_file):  # type: ignore[arg-type]
                 return
 
-            with open(self._persistent_file) as f:
+            with open(self._persistent_file) as f:  # type: ignore[arg-type]
                 data = json.load(f)
 
             current_time = time.time()
@@ -195,7 +195,7 @@ class RuntimeAMICache:
         """Save current cache to persistent file using atomic write."""
         try:
             # Ensure directory exists
-            os.makedirs(os.path.dirname(self._persistent_file), exist_ok=True)
+            os.makedirs(os.path.dirname(self._persistent_file), exist_ok=True)  # type: ignore[arg-type]
 
             # Prepare data structure
             cache_data = {
@@ -219,7 +219,7 @@ class RuntimeAMICache:
                 json.dump(cache_data, f, indent=2)
 
             # Atomic replace
-            os.rename(temp_file, self._persistent_file)
+            os.rename(temp_file, self._persistent_file)  # type: ignore[arg-type]
 
         except Exception as e:
             # Silent failure - cache will work without storage

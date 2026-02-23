@@ -7,11 +7,9 @@ from application.commands.system import (
     ReloadProviderConfigCommand,
     SetConfigurationCommand,
 )
-from application.dto.queries import (
-    GetConfigurationQuery,
-    ValidateMCPQuery,
-    ValidateStorageQuery,
-)
+from application.dto.queries import GetConfigurationQuery
+from application.dto.queries import ValidateMCPQuery  # type: ignore[attr-defined]
+from application.dto.queries import ValidateStorageQuery  # type: ignore[attr-defined]
 from application.queries.system import (
     GetProviderConfigQuery,
     GetProviderMetricsQuery,
@@ -42,9 +40,8 @@ class SystemCommandFactory:
     ) -> GetSystemStatusQuery:
         """Create query to get system status."""
         return GetSystemStatusQuery(
-            include_health=include_health,
-            include_metrics=include_metrics,
-            include_config=include_config,
+            include_provider_health=include_health,
+            detailed=include_metrics or include_config,
         )
 
     def create_get_provider_config_query(

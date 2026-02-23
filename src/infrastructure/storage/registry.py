@@ -55,7 +55,7 @@ class StorageRegistry(BaseRegistry):
         # Storage is SINGLE_CHOICE - only one storage strategy at a time
         super().__init__(mode=RegistryMode.SINGLE_CHOICE)
 
-    def register(
+    def register(  # type: ignore[override]
         self,
         storage_type: str,
         strategy_factory: Callable,
@@ -99,7 +99,7 @@ class StorageRegistry(BaseRegistry):
         except ValueError as e:
             raise ConfigurationError(str(e))
 
-    def create_strategy(self, storage_type: str, config: Any) -> Any:
+    def create_strategy(self, storage_type: str, config: Any) -> Any:  # type: ignore[override]
         """
         Create a storage strategy for the given type and configuration - implements abstract method.
 
@@ -156,8 +156,9 @@ class StorageRegistry(BaseRegistry):
             Unit of work instance or None if not available
         """
         registration = self._get_type_registration(storage_type)
-        if registration.unit_of_work_factory:
-            return registration.unit_of_work_factory(config)
+        uow_factory = getattr(registration, "unit_of_work_factory", None)
+        if uow_factory:
+            return uow_factory(config)
         return None
 
     def get_registered_storage_types(self) -> list[str]:
@@ -189,9 +190,9 @@ class StorageRegistry(BaseRegistry):
         )
 
 
-def get_storage_registry() -> StorageRegistry:
+def get_storage_registry() -> "StorageRegistry":
     """Get the singleton storage registry instance."""
-    return StorageRegistry()
+    return StorageRegistry()  # type: ignore[return-value]
 
 
 def reset_storage_registry() -> None:

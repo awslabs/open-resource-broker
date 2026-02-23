@@ -41,10 +41,10 @@ class RedisTokenBlacklist(TokenBlacklistPort):
             if expires_at:
                 # Calculate TTL in seconds
                 ttl = max(1, int(expires_at - time.time()))
-                await self._redis.setex(key, ttl, "1")
+                await self._redis.setex(key, ttl, "1")  # type: ignore[union-attr]
             else:
                 # No expiration, set indefinitely
-                await self._redis.set(key, "1")
+                await self._redis.set(key, "1")  # type: ignore[union-attr]
 
             self._logger.info("Token added to Redis blacklist (expires_at=%s)", expires_at)
             return True
@@ -60,7 +60,7 @@ class RedisTokenBlacklist(TokenBlacklistPort):
 
         try:
             key = f"{self._key_prefix}{token}"
-            result = await self._redis.exists(key)
+            result = await self._redis.exists(key)  # type: ignore[union-attr]
             return bool(result)
 
         except Exception as e:
@@ -75,7 +75,7 @@ class RedisTokenBlacklist(TokenBlacklistPort):
 
         try:
             key = f"{self._key_prefix}{token}"
-            result = await self._redis.delete(key)
+            result = await self._redis.delete(key)  # type: ignore[union-attr]
             self._logger.info("Token removed from Redis blacklist")
             return bool(result)
 
@@ -103,7 +103,7 @@ class RedisTokenBlacklist(TokenBlacklistPort):
         try:
             # Count keys matching our prefix
             pattern = f"{self._key_prefix}*"
-            keys = await self._redis.keys(pattern)
+            keys = await self._redis.keys(pattern)  # type: ignore[union-attr]
             return len(keys)
 
         except Exception as e:

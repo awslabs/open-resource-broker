@@ -1,6 +1,6 @@
 """JSON storage strategy implementation using componentized architecture."""
 
-from typing import Any, Optional
+from typing import Any, Optional, cast
 
 from infrastructure.logging.logger import get_logger
 from infrastructure.storage.base.strategy import BaseStorageStrategy
@@ -58,7 +58,7 @@ class JSONStorageStrategy(BaseStorageStrategy):
 
         self.logger.debug("Initialized JSON storage strategy for %s at %s", entity_type, file_path)
 
-    @instrument_storage(lambda self: self._metrics, "save")
+    @instrument_storage(lambda self: cast("JSONStorageStrategy", self)._metrics, "save")
     def save(self, entity_id: str, data: dict[str, Any]) -> None:
         """
         Save entity data to JSON file.
@@ -87,7 +87,7 @@ class JSONStorageStrategy(BaseStorageStrategy):
                 self.logger.error("Failed to save %s entity %s: %s", self.entity_type, entity_id, e)
                 raise StorageError(f"Failed to save entity {entity_id}: {e}")
 
-    @instrument_storage(lambda self: self._metrics, "find_by_id")
+    @instrument_storage(lambda self: cast("JSONStorageStrategy", self)._metrics, "find_by_id")
     def find_by_id(self, entity_id: str) -> Optional[dict[str, Any]]:
         """
         Find entity by ID.
@@ -114,7 +114,7 @@ class JSONStorageStrategy(BaseStorageStrategy):
                 self.logger.error("Failed to find %s entity %s: %s", self.entity_type, entity_id, e)
                 raise StorageError(f"Failed to find entity {entity_id}: {e}")
 
-    @instrument_storage(lambda self: self._metrics, "find_all")
+    @instrument_storage(lambda self: cast("JSONStorageStrategy", self)._metrics, "find_all")
     def find_all(self) -> dict[str, dict[str, Any]]:
         """
         Find all entities.
@@ -132,7 +132,7 @@ class JSONStorageStrategy(BaseStorageStrategy):
                 self.logger.error("Failed to load all %s entities: %s", self.entity_type, e)
                 raise StorageError(f"Failed to load all entities: {e}")
 
-    @instrument_storage(lambda self: self._metrics, "delete")
+    @instrument_storage(lambda self: cast("JSONStorageStrategy", self)._metrics, "delete")
     def delete(self, entity_id: str) -> None:
         """
         Delete entity by ID.
@@ -169,7 +169,7 @@ class JSONStorageStrategy(BaseStorageStrategy):
                 )
                 raise StorageError(f"Failed to delete entity {entity_id}: {e}")
 
-    @instrument_storage(lambda self: self._metrics, "exists")
+    @instrument_storage(lambda self: cast("JSONStorageStrategy", self)._metrics, "exists")
     def exists(self, entity_id: str) -> bool:
         """
         Check if entity exists.
@@ -196,7 +196,7 @@ class JSONStorageStrategy(BaseStorageStrategy):
                 )
                 return False
 
-    @instrument_storage(lambda self: self._metrics, "find_by_criteria")
+    @instrument_storage(lambda self: cast("JSONStorageStrategy", self)._metrics, "find_by_criteria")
     def find_by_criteria(self, criteria: dict[str, Any]) -> list[dict[str, Any]]:
         """
         Find entities matching criteria.
@@ -227,7 +227,7 @@ class JSONStorageStrategy(BaseStorageStrategy):
                 self.logger.error("Failed to search %s entities: %s", self.entity_type, e)
                 raise StorageError(f"Failed to search entities: {e}")
 
-    @instrument_storage(lambda self: self._metrics, "save_batch")
+    @instrument_storage(lambda self: cast("JSONStorageStrategy", self)._metrics, "save_batch")
     def save_batch(self, entities: dict[str, dict[str, Any]]) -> None:
         """
         Save multiple entities in batch.
@@ -248,7 +248,7 @@ class JSONStorageStrategy(BaseStorageStrategy):
                 self.logger.error("Failed to save batch of %s entities: %s", self.entity_type, e)
                 raise StorageError(f"Failed to save batch: {e}")
 
-    @instrument_storage(lambda self: self._metrics, "delete_batch")
+    @instrument_storage(lambda self: cast("JSONStorageStrategy", self)._metrics, "delete_batch")
     def delete_batch(self, entity_ids: list[str]) -> None:
         """
         Delete multiple entities in batch.
@@ -292,7 +292,7 @@ class JSONStorageStrategy(BaseStorageStrategy):
         self._cache_valid = False
         self.logger.debug("Cleaned up JSON storage strategy for %s", self.entity_type)
 
-    @instrument_storage(lambda self: self._metrics, "count")
+    @instrument_storage(lambda self: cast("JSONStorageStrategy", self)._metrics, "count")
     def count(self) -> int:
         """
         Count total number of entities.

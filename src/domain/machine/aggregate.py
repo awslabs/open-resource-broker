@@ -108,7 +108,6 @@ class Machine(AggregateRoot):
             aggregate_id=str(self.machine_id),
             aggregate_type="Machine",
             machine_id=str(self.machine_id),
-            request_id=str(self.request_id) if self.request_id else "unknown",
             old_status=self.status.value,
             new_status=MachineStatus.LAUNCHING.value,
             reason="Machine launching initiated",
@@ -152,7 +151,6 @@ class Machine(AggregateRoot):
                 aggregate_type="Machine",
                 # MachineEvent required fields
                 machine_id=str(self.machine_id),
-                request_id=str(self.request_id) if self.request_id else "unknown",
                 # StatusChangeEvent required fields
                 old_status=old_status.value,
                 new_status=new_status.value,
@@ -249,9 +247,9 @@ class Machine(AggregateRoot):
 
         # Add optional fields
         if self.private_ip:
-            base_format["private_ip"] = self.private_ip.value
+            base_format["private_ip"] = str(self.private_ip)
         if self.public_ip:
-            base_format["public_ip"] = self.public_ip.value
+            base_format["public_ip"] = str(self.public_ip)
         if self.launch_time:
             base_format["launch_time"] = self.launch_time.isoformat()
         if self.termination_time:
@@ -263,10 +261,10 @@ class Machine(AggregateRoot):
     def from_provider_format(cls, data: dict[str, Any], provider_type: str) -> "Machine":
         """Create machine from provider-specific format."""
         core_data = {
-            "machine_id": MachineId(value=data.get("instance_id")),
+            "machine_id": MachineId(value=data.get("instance_id") or ""),
             "template_id": data.get("template_id"),
             "provider_type": provider_type,
-            "instance_type": InstanceType(value=data.get("instance_type")),
+            "instance_type": InstanceType(value=data.get("instance_type") or ""),
             "image_id": data.get("image_id"),
             "status": MachineStatus(data.get("status", MachineStatus.UNKNOWN.value)),
             "status_reason": data.get("status_reason"),

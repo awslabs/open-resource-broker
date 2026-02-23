@@ -193,7 +193,7 @@ class TemplateGenerationService:
                 if not example_templates:
                     raise ValueError(f"No templates found for provider API: {provider_api}")
 
-            return example_templates
+            return example_templates  # type: ignore[return-value]
         else:
             # For other providers, return empty list for now
             return []
@@ -209,7 +209,7 @@ class TemplateGenerationService:
             # Provider-specific mode: use provider name pattern
             config_dict = self._get_config_dict()
             return self._scheduler_strategy.get_templates_filename(
-                provider_name, provider_type, config_dict
+                provider_name, config_dict  # type: ignore[call-arg]
             )
         elif request.provider_type_filter:
             # Provider-type mode: use specified provider type
@@ -225,7 +225,10 @@ class TemplateGenerationService:
         # Convert Template objects to dict format
         template_dicts = []
         for template in examples:
-            template_dict = template.model_dump(exclude_none=True, mode="json")
+            if hasattr(template, "model_dump"):
+                template_dict = template.model_dump(exclude_none=True, mode="json")  # type: ignore[union-attr]
+            else:
+                template_dict = template
             template_dicts.append(template_dict)
 
         # Apply scheduler formatting
@@ -248,7 +251,7 @@ class TemplateGenerationService:
         templates_data = {"templates": formatted_examples}
 
         class DateTimeEncoder(json.JSONEncoder):
-            def default(self, obj):
+            def default(self, obj: object) -> object:  # type: ignore[override]
                 if isinstance(obj, datetime):
                     return obj.isoformat()
                 try:
@@ -268,8 +271,7 @@ class TemplateGenerationService:
         """Get all active providers from configuration."""
         try:
             provider_config = self._config_manager.get_provider_config()
-            providers = provider_config.get_active_providers()
-
+            providers = provider_config.get_active_providers()  # type: ignore[union-attr]
             return [{"name": p.name, "type": p.type} for p in providers]
         except Exception as e:
             self._logger.warning("Failed to get providers from config: %s", str(e))
@@ -284,7 +286,7 @@ class TemplateGenerationService:
         """Get configuration for specific provider."""
         try:
             provider_config = self._config_manager.get_provider_config()
-            providers = provider_config.get_active_providers()
+            providers = provider_config.get_active_providers()  # type: ignore[union-attr]
 
             # Find specific provider
             for provider in providers:

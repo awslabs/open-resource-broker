@@ -32,7 +32,7 @@ class ResourceId(_BaseResourceId):
         # Get pattern from AWS configuration
         from providers.aws.configuration.validator import AWSNamingConfig, get_aws_config_manager
 
-        config = get_aws_config_manager().get_typed(AWSNamingConfig)
+        config: AWSNamingConfig = get_aws_config_manager().get_typed(AWSNamingConfig)  # type: ignore[assignment]
         pattern = config.patterns.get(cls.pattern_key)
 
         # Fall back to class pattern if not in config
@@ -93,7 +93,7 @@ class AWSInstanceType(InstanceType):
         # Get pattern from AWS configuration
         from providers.aws.configuration.validator import AWSNamingConfig, get_aws_config_manager
 
-        config = get_aws_config_manager().get_typed(AWSNamingConfig)
+        config: AWSNamingConfig = get_aws_config_manager().get_typed(AWSNamingConfig)  # type: ignore[assignment]
         pattern = config.patterns["instance_type"]
 
         if not re.match(pattern, v):
@@ -121,7 +121,7 @@ class AWSTags(Tags):
         # Get AWS tag validation rules from configuration
         from providers.aws.configuration.validator import AWSNamingConfig, get_aws_config_manager
 
-        config = get_aws_config_manager().get_typed(AWSNamingConfig)
+        config: AWSNamingConfig = get_aws_config_manager().get_typed(AWSNamingConfig)  # type: ignore[assignment]
 
         for key, value in v.items():
             if not isinstance(key, str) or not isinstance(value, str):
@@ -163,7 +163,7 @@ class AWSARN(ARN):
         # Get pattern from AWS configuration
         from providers.aws.configuration.validator import AWSNamingConfig, get_aws_config_manager
 
-        config = get_aws_config_manager().get_typed(AWSNamingConfig)
+        config: AWSNamingConfig = get_aws_config_manager().get_typed(AWSNamingConfig)  # type: ignore[assignment]
         pattern = config.patterns["arn"]
 
         if not re.match(pattern, v):

@@ -50,7 +50,7 @@ class TemplateDefaultsService(TemplateDefaultsPort):
     def resolve_template_defaults(
         self,
         template_dict: dict[str, Any],
-        provider_name: Optional[str] = None,
+        provider_instance_name: Optional[str] = None,
     ) -> dict[str, Any]:
         """
         Apply hierarchical defaults to a template dictionary.
@@ -76,8 +76,8 @@ class TemplateDefaultsService(TemplateDefaultsPort):
         self.logger.debug("Applied %s global defaults", len(global_defaults))
 
         # 2. Apply provider type defaults
-        if provider_name:
-            provider_type = self._get_provider_type(provider_name)
+        if provider_instance_name:
+            provider_type = self._get_provider_type(provider_instance_name)
             if provider_type:
                 provider_type_defaults = self._get_provider_type_defaults(provider_type)
                 resolved_defaults.update(provider_type_defaults)
@@ -88,12 +88,12 @@ class TemplateDefaultsService(TemplateDefaultsPort):
                 )
 
                 # 3. Apply provider instance defaults
-                provider_instance_defaults = self._get_provider_instance_defaults(provider_name)
+                provider_instance_defaults = self._get_provider_instance_defaults(provider_instance_name)
                 resolved_defaults.update(provider_instance_defaults)
                 self.logger.debug(
                     "Applied %s provider instance defaults for %s",
                     len(provider_instance_defaults),
-                    provider_name,
+                    provider_instance_name,
                 )
 
         # 4. Apply template values (highest priority - only for missing fields)
@@ -135,7 +135,7 @@ class TemplateDefaultsService(TemplateDefaultsPort):
     def resolve_provider_api_default(
         self,
         template_dict: dict[str, Any],
-        provider_name: Optional[str] = None,
+        provider_instance_name: Optional[str] = None,
     ) -> str:
         """
         Resolve provider_api default using hierarchical configuration.
@@ -157,15 +157,15 @@ class TemplateDefaultsService(TemplateDefaultsPort):
             return provider_api
 
         # 2. Check provider instance defaults
-        if provider_name:
-            instance_defaults = self._get_provider_instance_defaults(provider_name)
+        if provider_instance_name:
+            instance_defaults = self._get_provider_instance_defaults(provider_instance_name)
             if instance_defaults.get("provider_api"):
                 provider_api = instance_defaults["provider_api"]
                 self.logger.debug("Using provider_api from instance defaults: %s", provider_api)
                 return provider_api
 
             # 3. Check provider type defaults
-            provider_type = self._get_provider_type(provider_name)
+            provider_type = self._get_provider_type(provider_instance_name)
             if provider_type:
                 type_defaults = self._get_provider_type_defaults(provider_type)
                 if type_defaults.get("provider_api"):
@@ -220,9 +220,11 @@ class TemplateDefaultsService(TemplateDefaultsPort):
         try:
             template_config = self.config_manager.get_template_config()
             if hasattr(template_config, "model_dump"):
-                config_dict = template_config.model_dump(exclude_none=True)
-            else:
+                config_dict = template_config.model_dump(exclude_none=True)  # type: ignore[union-attr]
+            elif isinstance(template_config, dict):
                 config_dict = template_config
+            else:
+                config_dict = {}
 
             # Extract only default-like fields from cleaned schema
             global_defaults = {}
@@ -252,7 +254,7 @@ class TemplateDefaultsService(TemplateDefaultsPort):
             provider_config = self.config_manager.get_provider_config()
 
             if hasattr(provider_config, "provider_defaults"):
-                provider_defaults = provider_config.provider_defaults.get(provider_type)
+                provider_defaults = provider_config.provider_defaults.get(provider_type)  # type: ignore[union-attr]
                 if provider_defaults and hasattr(provider_defaults, "template_defaults"):
                     return provider_defaults.template_defaults or {}
 
@@ -268,7 +270,7 @@ class TemplateDefaultsService(TemplateDefaultsPort):
             provider_config = self.config_manager.get_provider_config()
 
             if hasattr(provider_config, "providers"):
-                for provider in provider_config.providers:
+                for provider in provider_config.providers:  # type: ignore[union-attr]
                     if provider.name == provider_instance_name:
                         return provider.template_defaults or {}
 
@@ -288,7 +290,7 @@ class TemplateDefaultsService(TemplateDefaultsPort):
             provider_config = self.config_manager.get_provider_config()
 
             if hasattr(provider_config, "providers"):
-                for provider in provider_config.providers:
+                for provider in provider_config.providers:  # type: ignore[union-attr]
                     if provider.name == provider_instance_name:
                         return provider.type
 
@@ -481,7 +483,7 @@ class TemplateDefaultsService(TemplateDefaultsPort):
             provider_config = self.config_manager.get_provider_config()
 
             if hasattr(provider_config, "providers"):
-                for provider in provider_config.providers:
+                for provider in provider_config.providers:  # type: ignore[union-attr]
                     if (
                         provider.name == provider_instance_name
                         and hasattr(provider, "extensions")
@@ -561,7 +563,7 @@ class TemplateDefaultsService(TemplateDefaultsPort):
             # Additional validation for domain template
             if hasattr(template, "validate"):
                 try:
-                    template.validate()
+                    template.validate()  # type: ignore[call-arg]
                     validation_result["domain_validation"] = "passed"
                 except Exception as e:
                     validation_result["warnings"].append(f"Domain validation failed: {e}")

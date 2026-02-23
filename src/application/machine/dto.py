@@ -80,7 +80,7 @@ class MachineDTO(BaseDTO):
             "public_ip": str(machine.public_ip) if machine.public_ip else None,
             "result": cls._get_result_status(status),
             "launch_time": int(machine.launch_time.timestamp()) if machine.launch_time else None,
-            "message": machine.message,
+            "message": machine.metadata.get("message", "") if machine.metadata else "",
             "request_id": str(machine.request_id) if machine.request_id else None,
             "return_request_id": str(machine.return_request_id)
             if machine.return_request_id
@@ -103,13 +103,13 @@ class MachineDTO(BaseDTO):
                     "provider_api": (str(machine.provider_api) if machine.provider_api else None),
                     "resource_id": (str(machine.resource_id) if machine.resource_id else None),
                     "price_type": (
-                        machine.price_type.value
-                        if hasattr(machine.price_type, "value")
-                        else str(machine.price_type)
+                        machine.price_type
+                        if machine.price_type
+                        else None
                     ),
-                    "cloud_host_id": machine.cloud_host_id,
+                    "cloud_host_id": machine.provider_data.get("cloud_host_id"),
                     "metadata": machine.metadata,
-                    "health_checks": machine.health_checks,
+                    "health_checks": machine.provider_data.get("health_checks"),
                 }
             )
 

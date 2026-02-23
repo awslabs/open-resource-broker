@@ -10,7 +10,7 @@ following the same pattern as other entities in the system.
 from __future__ import annotations
 
 import argparse
-from typing import Any
+from typing import Any, cast
 
 from application.dto.queries import (
     GetTemplateQuery,
@@ -75,8 +75,7 @@ async def handle_list_templates(args: argparse.Namespace) -> dict[str, Any]:
         query = ListTemplatesQuery(
             provider_api=provider_api,
             active_only=active_only,
-            include_configuration=include_config,
-            include_detailed_fields=include_detailed_fields,
+            include_detailed_fields=include_config or include_detailed_fields,
         )
 
         templates = await query_bus.execute(query)
@@ -224,9 +223,8 @@ async def handle_create_template(args: argparse.Namespace) -> dict[str, Any]:
         if not hasattr(args, "file") or not args.file:
             return {"success": False, "error": "Template file is required"}
 
+        import json
         try:
-            import json
-
             with open(args.file) as f:
                 template_config = json.load(f)
         except FileNotFoundError:
@@ -262,7 +260,7 @@ async def handle_create_template(args: argparse.Namespace) -> dict[str, Any]:
         )
 
         # Execute command through CQRS bus
-        response = await command_bus.execute(command)
+        response = await command_bus.execute(cast(Any, command))
 
         if response and response.validation_errors:
             return {
@@ -331,7 +329,7 @@ async def handle_update_template(args: argparse.Namespace) -> dict[str, Any]:
         )
 
         # Execute command through CQRS bus
-        response = await command_bus.execute(command)
+        response = await command_bus.execute(cast(Any, command))
 
         if response and response.validation_errors:
             return {
@@ -388,7 +386,7 @@ async def handle_delete_template(args: argparse.Namespace) -> dict[str, Any]:
 
         # Create and execute command through CQRS bus
         command = DeleteTemplateCommand(template_id=template_id)
-        response = await command_bus.execute(command)
+        response = await command_bus.execute(cast(Any, command))
 
         if response and response.validation_errors:
             return {
@@ -550,7 +548,7 @@ async def handle_refresh_templates(args: argparse.Namespace) -> dict[str, Any]:
 
         # Force refresh by listing templates with force_refresh parameter
         # This will trigger cache refresh in the query handler
-        query = ListTemplatesQuery(provider_api=None, active_only=True, include_configuration=False)
+        query = ListTemplatesQuery(provider_api=None, active_only=True, include_detailed_fields=False)
 
         templates = await query_bus.execute(query)
         template_count = len(templates) if templates else 0

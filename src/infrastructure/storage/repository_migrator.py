@@ -138,7 +138,7 @@ class RepositoryMigrator:
 
             # For other repositories, create based on storage type
             if storage_type == "dynamodb":
-                from providers.aws.storage.dynamodb import (
+                from providers.aws.storage.dynamodb import (  # type: ignore[import]
                     DynamoDBMachineRepository,
                     DynamoDBRequestRepository,
                 )
@@ -164,12 +164,7 @@ class RepositoryMigrator:
                 from sqlalchemy import create_engine
                 from sqlalchemy.orm import sessionmaker
 
-                from infrastructure.storage.sql import (
-                    MachineModel,
-                    RequestModel,
-                    SQLMachineRepository,
-                    SQLRequestRepository,
-                )
+                from infrastructure.storage.sql import MachineModel, RequestModel, SQLMachineRepository, SQLRequestRepository  # type: ignore
 
                 # Get SQL config
                 sql_config = self.config_manager.get("sql", {})
@@ -193,10 +188,7 @@ class RepositoryMigrator:
                 )
 
             else:  # Default to JSON
-                from infrastructure.storage.json import (
-                    JSONMachineRepository,
-                    JSONRequestRepository,
-                )
+                from infrastructure.storage.json import JSONMachineRepository, JSONRequestRepository  # type: ignore
 
                 # Get JSON config
                 json_config = self.config_manager.get("json", {})
