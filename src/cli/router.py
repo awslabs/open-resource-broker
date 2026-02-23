@@ -12,21 +12,22 @@ from domain.base.exceptions import DomainException
 
 async def execute_command(args, app, resource_parsers) -> Union[str, tuple[str, int]]:
     """Execute command using pure CQRS pattern."""
-    # Process input data from -f/--file or -d/--data flags
-    input_data = None
-    if hasattr(args, "file") and args.file:
-        try:
-            import json
+    # Process input data from -f/--file or -d/--data flags (root parser)
+    # or -f/-d subcommand flags (stored as hf_file/hf_data to avoid conflict)
+    import json
 
-            with open(args.file) as f:
+    input_data = None
+    file_path = getattr(args, "file", None) or getattr(args, "hf_file", None)
+    data_str = getattr(args, "data", None) or getattr(args, "hf_data", None)
+    if file_path:
+        try:
+            with open(file_path) as f:
                 input_data = json.load(f)
         except Exception as e:
             raise DomainException(f"Failed to load input file: {e}")
-    elif hasattr(args, "data") and args.data:
+    elif data_str:
         try:
-            import json
-
-            input_data = json.loads(args.data)
+            input_data = json.loads(data_str)
         except Exception as e:
             raise DomainException(f"Failed to parse input data: {e}")
 

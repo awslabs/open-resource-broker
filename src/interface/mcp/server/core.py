@@ -375,13 +375,13 @@ class OpenResourceBrokerMCPServer:
 
         if "template" in tool_name:
             return {"template_id": common_props["template_id"]}
-        elif "request" in tool_name:
-            return {"request_id": common_props["request_id"]}
         elif "machine" in tool_name:
             return {
                 "template_id": common_props["template_id"],
                 "count": common_props["count"],
             }
+        elif "request" in tool_name:
+            return {"request_id": common_props["request_id"]}
         else:
             return {"provider": common_props["provider"]}
 
