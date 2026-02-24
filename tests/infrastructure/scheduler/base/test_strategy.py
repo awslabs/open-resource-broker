@@ -24,7 +24,7 @@ class ConcreteSchedulerStrategy(BaseSchedulerStrategy):
     def parse_request_data(self, raw_data: dict[str, Any]) -> dict[str, Any]:
         return {"parsed": True}
 
-    def format_templates_response(self, templates: list[Template]) -> dict[str, Any]:
+    def format_templates_response(self, templates: list[Template], include_detailed_fields: bool = False) -> dict[str, Any]:
         return {"templates": []}
 
     def format_templates_for_generation(self, templates: list[dict]) -> list[dict]:

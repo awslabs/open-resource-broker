@@ -80,28 +80,14 @@ async def handle_list_templates(args: argparse.Namespace) -> dict[str, Any]:
 
         templates = await query_bus.execute(query)
 
-        # Filter template fields based on include_detailed_fields flag
-        if not include_detailed_fields:
-            # Show only core fields when --long is not used
-            core_fields = {"template_id", "name", "description", "provider_api", "max_instances"}
-            filtered_templates = []
-            for template in templates:
-                template_dict = (
-                    template.model_dump() if hasattr(template, "model_dump") else template
-                )
-                filtered_dict = {k: v for k, v in template_dict.items() if k in core_fields}
-                filtered_templates.append(filtered_dict)
-            templates = filtered_templates
-
         # Get scheduler strategy from DI container
         scheduler_strategy = container.get(SchedulerPort)
 
-        # Use scheduler strategy for format conversion
+        # Use scheduler strategy for format conversion — always pass domain DTOs
+        # Field filtering (--long flag) is handled inside the strategy (presentation concern)
         if scheduler_strategy:
-            # Use scheduler's complete response format (HostFactory, etc.)
-            result = scheduler_strategy.format_templates_response(templates)
+            result = scheduler_strategy.format_templates_response(templates, include_detailed_fields)
         else:
-            # Use default CLI format
             templates_data = [
                 template.model_dump() if hasattr(template, "model_dump") else template
                 for template in templates

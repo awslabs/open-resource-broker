@@ -615,7 +615,7 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         self.logger.debug("parse_request_data output (flat): %s", result)
         return result
 
-    def format_templates_response(self, templates: list[TemplateDTO]) -> dict[str, Any]:
+    def format_templates_response(self, templates: list[TemplateDTO], include_detailed_fields: bool = False) -> dict[str, Any]:
         """
         Format TemplateDTOs to HostFactory response.
 

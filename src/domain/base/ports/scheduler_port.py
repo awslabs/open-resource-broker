@@ -44,7 +44,7 @@ class SchedulerPort(ABC):
         """Parse scheduler request data to domain-compatible format."""
 
     @abstractmethod
-    def format_templates_response(self, templates: list[Any]) -> dict[str, Any]:
+    def format_templates_response(self, templates: list[Any], include_detailed_fields: bool = False) -> dict[str, Any]:
         """Format template DTOs to scheduler response."""
 
     @abstractmethod

@@ -223,19 +223,19 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
             "metadata": raw_data.get("metadata", {}),
         }
 
-    def format_templates_response(self, templates: list[Any]) -> dict[str, Any]:
+    def format_templates_response(self, templates: list[Any], include_detailed_fields: bool = False) -> dict[str, Any]:
         """
         Format domain Templates to native domain response format.
 
         Uses the new architecture-compliant method for consistency.
         """
         return {
-            "templates": [self.format_template_for_display(template) for template in templates],
+            "templates": [self.format_template_for_display(template, include_detailed_fields) for template in templates],
             "message": "Templates retrieved successfully",
             "total_count": len(templates),
         }
 
-    def format_template_for_display(self, template: Any) -> dict[str, Any]:
+    def format_template_for_display(self, template: Any, include_detailed_fields: bool = False) -> dict[str, Any]:
         """Format template for display, adding required schema fields."""
         d = template.to_dict()
         # Schema requires max_capacity (alias for max_instances)
@@ -245,6 +245,11 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
         if "instance_type" not in d:
             machine_types = d.get("machine_types", {})
             d["instance_type"] = next(iter(machine_types), "") if machine_types else ""
+        # Apply field filtering here (presentation concern belongs in strategy, not interface layer)
+        if not include_detailed_fields:
+            core_fields = {"template_id", "name", "description", "provider_api", "max_instances",
+                           "max_capacity", "instance_type"}
+            d = {k: v for k, v in d.items() if k in core_fields}
         return d
 
     def format_templates_for_generation(self, templates: list[dict]) -> list[dict]:
