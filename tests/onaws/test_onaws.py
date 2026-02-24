@@ -439,7 +439,7 @@ def _wait_for_fleet_stable(resource_id: str, timeout: int = 300) -> None:
         if time.time() - start > timeout:
             log.warning("Timed out waiting for %s %s to stabilize", fleet_type, resource_id)
             return
-        time.sleep(5)
+        time.sleep(1)
 
 
 def _wait_for_capacity_change(
@@ -947,32 +947,7 @@ def _force_terminate_asg_instances(asg_name: str) -> None:
             AutoScalingGroupName=asg_name, DesiredCapacity=0, MinSize=0
         )
 
-        # Wait for instances to terminate
-        log.info("Waiting for ASG %s instances to terminate", asg_name)
-        start_time = time.time()
-        while time.time() - start_time < 300:  # 5 minute timeout
-            try:
-                response = asg_client.describe_auto_scaling_groups(AutoScalingGroupNames=[asg_name])
-                asgs = response.get("AutoScalingGroups", [])
-                if not asgs:
-                    log.info("ASG %s no longer exists", asg_name)
-                    return
-
-                asg = asgs[0]
-                instances = asg.get("Instances", [])
-                if not instances:
-                    log.info("All instances terminated in ASG %s", asg_name)
-                    break
-
-                log.debug("ASG %s still has %d instances", asg_name, len(instances))
-                time.sleep(10)
-            except ClientError as e:
-                if e.response["Error"]["Code"] == "ValidationError":
-                    log.info("ASG %s no longer exists", asg_name)
-                    return
-                raise
-
-        # Delete the ASG
+        # Delete the ASG (ForceDelete=True handles instance termination)
         log.info("Deleting ASG: %s", asg_name)
         asg_client.delete_auto_scaling_group(AutoScalingGroupName=asg_name, ForceDelete=True)
 
@@ -1171,7 +1146,7 @@ def _wait_for_request_completion(hfm, request_id: str, scheduler_type: str):
         if time.time() - start_time > MAX_TIME_WAIT_FOR_CAPACITY_PROVISIONING_SEC:
             pytest.fail("Timed out waiting for request to complete")
 
-        time.sleep(5)
+        time.sleep(1)
 
 
 def _wait_for_return_completion(hfm, machine_ids: list[str], return_request_id: str):
@@ -1191,7 +1166,7 @@ def _wait_for_return_completion(hfm, machine_ids: list[str], return_request_id: 
         if time.time() - start_time > MAX_TIME_WAIT_FOR_CAPACITY_PROVISIONING_SEC:
             pytest.fail("Timed out waiting for return request to complete")
 
-        time.sleep(5)
+        time.sleep(1)
 
 
 def _resolve_request_machines_schema(response: dict, scheduler_type: str):
@@ -1277,8 +1252,12 @@ def provide_release_control_loop(hfm, template_json, capacity_to_request, test_c
     # Handle different response formats or error responses
     if "requestId" in res:
         request_id = res["requestId"]
+        if "error" in res:
+            pytest.fail(f"request_machines returned an error: {res['error']}. Full response: {res}")
     elif "request_id" in res:
         request_id = res["request_id"]
+        if "error" in res:
+            pytest.fail(f"request_machines returned an error: {res['error']}. Full response: {res}")
     else:
         # This might be an error response - log more details
         log.error("AWS provider response missing requestId field.")
@@ -1345,7 +1324,7 @@ def provide_release_control_loop(hfm, template_json, capacity_to_request, test_c
         if request_status in terminal_statuses:
             break
 
-        time.sleep(5)
+        time.sleep(1)
 
     _check_request_machines_response_status(status_response)
 
@@ -1446,9 +1425,6 @@ def provide_release_control_loop(hfm, template_json, capacity_to_request, test_c
             log.debug(json.dumps(status_response, indent=4))
             if status_response.get("error"):
                 pytest.fail(f"Return request failed: {status_response.get('message', status_response.get('error'))}")
-
-            res = get_instance_state(ec2_instance_ids[0])
-            log.debug(json.dumps(res, indent=4))
 
             time.sleep(10)
 
@@ -1618,6 +1594,8 @@ def test_partial_return_reduces_capacity(setup_host_factory_mock_with_scenario, 
         )
 
     request_id = request_response.get("requestId") or request_response.get("request_id")
+    if "error" in request_response:
+        pytest.fail(f"request_machines returned an error: {request_response['error']}. Full response: {request_response}")
     if not request_id:
         pytest.fail(f"Request ID missing in response: {json.dumps(request_response, indent=2)}")
 
@@ -1710,7 +1688,7 @@ def test_partial_return_reduces_capacity(setup_host_factory_mock_with_scenario, 
             break
         if time.time() - terminate_start > MAX_TIME_WAIT_FOR_CAPACITY_PROVISIONING_SEC:
             pytest.fail(f"Instance {first_instance} failed to terminate in time")
-        time.sleep(5)
+        time.sleep(1)
 
     # === STEP 3: CLEANUP REMAINING INSTANCES ===
     log.info("=== STEP 3: Cleanup Remaining Instances ===")
