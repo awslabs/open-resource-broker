@@ -18,7 +18,6 @@ class TemplateCommandFactory:
         self,
         provider_name: Optional[str] = None,
         active_only: bool = True,
-        include_details: bool = False,
         filter_expressions: Optional[list] = None,
         limit: Optional[int] = 50,
         offset: Optional[int] = 0,
@@ -28,7 +27,6 @@ class TemplateCommandFactory:
         return ListTemplatesQuery(
             provider_name=provider_name,
             active_only=active_only,
-            include_detailed_fields=include_details,
             filter_expressions=filter_expressions or [],
             limit=min(limit or 50, 1000),  # type: ignore[arg-type]
             offset=offset or 0,  # type: ignore[arg-type]

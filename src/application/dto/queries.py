@@ -63,7 +63,6 @@ class ListTemplatesQuery(Query, BaseModel):
     provider_api: Optional[str] = None
     active_only: bool = True
     filter_expressions: list[str] = []
-    include_detailed_fields: bool = False
     limit: Optional[int] = 50  # Default: 50, Max: 1000
     offset: Optional[int] = 0
 
