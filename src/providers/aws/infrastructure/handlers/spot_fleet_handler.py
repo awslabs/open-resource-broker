@@ -184,65 +184,6 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
         self._tag_spot_fleet_instances_if_needed(fleet_id, request, aws_template)  # type: ignore[attr-defined]
 
         return response
-        """Create Spot Fleet with pure business logic."""
-        # Validate Spot Fleet specific prerequisites
-        self._validate_spot_prerequisites(aws_template)
-
-        # Validate fleet type
-        if not aws_template.fleet_type:
-            raise AWSValidationError("Fleet type is required for SpotFleet")
-
-        # Validate fleet type - SpotFleet supports REQUEST and MAINTAIN types
-        valid_types = ["request", "maintain"]
-        try:
-            fleet_type_value = (
-                aws_template.fleet_type.value
-                if hasattr(aws_template.fleet_type, "value")
-                else str(aws_template.fleet_type)
-            )
-            if fleet_type_value.lower() not in valid_types:
-                raise ValueError  # Will be caught by the except block below
-        except (ValueError, AttributeError):
-            raise AWSValidationError(
-                f"Invalid Spot fleet type: {aws_template.fleet_type}. "
-                f"Must be one of: {', '.join(valid_types)}"
-            )
-
-        # Create launch template using the new manager
-        launch_template_result = self.launch_template_manager.create_or_update_launch_template(
-            aws_template, request
-        )
-
-        # Store launch template info in request (if request has this method)
-        if hasattr(request, "set_launch_template_info"):
-            request.set_launch_template_info(  # type: ignore[attr-defined]
-                launch_template_result.template_id, launch_template_result.version
-            )
-
-        # Create spot fleet configuration
-        fleet_config = self._create_spot_fleet_config(
-            template=aws_template,
-            request=request,
-            launch_template_id=launch_template_result.template_id,
-            launch_template_version=launch_template_result.version,
-        )
-
-        # Request spot fleet with circuit breaker for critical operation
-        response = self._retry_with_backoff(
-            self.aws_client.ec2_client.request_spot_fleet,
-            operation_type="critical",
-            SpotFleetRequestConfig=fleet_config,
-        )
-
-        fleet_id = response["SpotFleetRequestId"]
-        self._logger.info("Successfully created Spot Fleet request: %s", fleet_id)
-
-        # Apply post-creation tagging for spot fleet instances as fallback
-        # SpotFleet instances should be tagged via LaunchSpecifications in template
-        # But add fallback post-creation tagging to ensure RequestId tracking
-        self._tag_fleet_instances_if_needed(fleet_id, request, aws_template)
-
-        return fleet_id
 
     def _validate_spot_prerequisites(self, aws_template: AWSTemplate) -> None:
         """Validate Spot Fleet specific prerequisites."""

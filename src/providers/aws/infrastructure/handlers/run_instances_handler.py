@@ -212,68 +212,6 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
         )
 
         return response
-        """Create RunInstances with pure business logic."""
-        # Validate prerequisites
-        self._validate_prerequisites(aws_template)
-
-        # Create launch template using the new manager
-        launch_template_result = self.launch_template_manager.create_or_update_launch_template(
-            aws_template, request
-        )
-
-        # Store launch template info in request (if request has this method)
-        if hasattr(request, "set_launch_template_info"):
-            request.set_launch_template_info(
-                launch_template_result.template_id, launch_template_result.version
-            )
-
-        # Create RunInstances parameters
-        run_params = self._create_run_instances_params(
-            aws_template=aws_template,
-            request=request,
-            launch_template_id=launch_template_result.template_id,
-            launch_template_version=launch_template_result.version,
-        )
-
-        # Execute RunInstances API call with circuit breaker for critical operation
-        response = self._retry_with_backoff(
-            self.aws_client.ec2_client.run_instances,
-            operation_type="critical",
-            **run_params,
-        )
-
-        # Extract reservation ID and instance IDs from response
-        reservation_id = response.get("ReservationId")
-        instance_ids = [instance["InstanceId"] for instance in response.get("Instances", [])]
-
-        if not instance_ids:
-            raise AWSInfrastructureError("No instances were created by RunInstances")
-
-        if not reservation_id:
-            raise AWSInfrastructureError("No reservation ID returned by RunInstances")
-
-        # Use the actual AWS reservation ID as the resource ID
-        resource_id = reservation_id
-
-        # Store AWS-specific data in provider_data instead of metadata
-        if not hasattr(request, "provider_data"):
-            request.provider_data = {}
-        request.provider_data.update(
-            {
-                "reservation_id": reservation_id,
-                "instance_ids": instance_ids,
-                "run_instances_resource_id": resource_id,
-            }
-        )
-
-        self._logger.info(
-            "Successfully created %s instances via RunInstances with reservation ID %s: %s",
-            len(instance_ids),
-            reservation_id,
-            instance_ids,
-        )
-
-        return resource_id
 
     def _format_instance_data(
         self,
