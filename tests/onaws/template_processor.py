@@ -114,6 +114,8 @@ class TemplateProcessor:
         )
 
         # 2. Generate config.json (with scheduler/provider overrides)
+        config_dir = test_dir / "config"
+        config_dir.mkdir(parents=True, exist_ok=True)
         config_data = self._load_json(self.config_source_dir / "config.json")
         self._apply_config_overrides(config_data, overrides, scheduler_type)
         self._set_storage_paths(config_data, test_dir)
@@ -124,12 +126,12 @@ class TemplateProcessor:
             if not mc.get("metrics_dir"):
                 mc["metrics_dir"] = str(metrics_dir)
             config_data["metrics"] = mc
-        self._write_json(test_dir / "config.json", config_data)
+        self._write_json(config_dir / "config.json", config_data)
 
         # 3. Copy default_config.json as-is
         default_config_src = self.config_source_dir / "default_config.json"
         if default_config_src.exists():
-            shutil.copy2(default_config_src, test_dir / "default_config.json")
+            shutil.copy2(default_config_src, config_dir / "default_config.json")
 
         print(f"Generated test config in {test_dir}")
 
@@ -184,12 +186,14 @@ class TemplateProcessor:
             combined.append(entry)
 
         self._write_json(test_dir / "aws_templates.json", {"templates": combined})
+        config_dir = test_dir / "config"
+        config_dir.mkdir(parents=True, exist_ok=True)
         self._set_storage_paths(config_data, test_dir)
-        self._write_json(test_dir / "config.json", config_data)
+        self._write_json(config_dir / "config.json", config_data)
 
         default_config_src = self.config_source_dir / "default_config.json"
         if default_config_src.exists():
-            shutil.copy2(default_config_src, test_dir / "default_config.json")
+            shutil.copy2(default_config_src, config_dir / "default_config.json")
 
         print(f"Generated combined config with {len(combined)} templates in {test_dir}")
 

@@ -428,6 +428,9 @@ def _wait_for_fleet_stable(resource_id: str, timeout: int = 300) -> None:
                 fleets = resp.get("Fleets") or []
                 state = (fleets[0].get("FleetState") or "").lower() if fleets else ""
 
+            error_states = {"failed", "failed_running", "failed_terminating", "deleted", "deleted_running", "deleted_terminating"}
+            if state in error_states:
+                pytest.fail(f"Fleet {resource_id} entered error state: {state}")
             if state != "modifying":
                 return
         except Exception as exc:
@@ -448,7 +451,10 @@ def _wait_for_capacity_change(
     last_log_time = start
 
     while time.time() - start < timeout:
-        capacity = _get_capacity(provider_api, resource_id)
+        try:
+            capacity = _get_capacity(provider_api, resource_id)
+        except Exception as e:
+            pytest.fail(f"Failed to get capacity for {resource_id}: {e}")
         elapsed = time.time() - start
 
         if capacity == expected_capacity:
@@ -824,7 +830,7 @@ def setup_host_factory_mock(request):
 
     # Set environment variables
     test_config_dir = processor.run_templates_dir / test_name
-    os.environ["ORB_CONFIG_DIR"] = str(test_config_dir)
+    os.environ["ORB_CONFIG_DIR"] = str(test_config_dir / "config")
     os.environ["HF_PROVIDER_CONFDIR"] = str(test_config_dir)
     os.environ["HF_PROVIDER_LOGDIR"] = str(test_config_dir / "logs")
     os.environ["HF_PROVIDER_WORKDIR"] = str(test_config_dir / "work")
@@ -873,7 +879,7 @@ def setup_host_factory_mock_with_scenario(request):
 
     # Set environment variables
     test_config_dir = processor.run_templates_dir / test_name
-    os.environ["ORB_CONFIG_DIR"] = str(test_config_dir)
+    os.environ["ORB_CONFIG_DIR"] = str(test_config_dir / "config")
     os.environ["HF_PROVIDER_CONFDIR"] = str(test_config_dir)
     os.environ["HF_PROVIDER_LOGDIR"] = str(test_config_dir / "logs")
     os.environ["HF_PROVIDER_WORKDIR"] = str(test_config_dir / "work")
@@ -1323,7 +1329,12 @@ def provide_release_control_loop(hfm, template_json, capacity_to_request, test_c
             )
 
         if time.time() - start_time > MAX_TIME_WAIT_FOR_CAPACITY_PROVISIONING_SEC:
-            break
+            request_status = (
+                status_response.get("requests", [{}])[0].get("status", "unknown")
+                if status_response and status_response.get("requests")
+                else "unknown"
+            )
+            pytest.fail(f"Timed out waiting for request {request_id} to reach terminal status, last status: {request_status}")
 
         request_status = (
             status_response.get("requests", [{}])[0].get("status", "")
@@ -1433,6 +1444,8 @@ def provide_release_control_loop(hfm, template_json, capacity_to_request, test_c
 
             status_response = hfm.get_return_requests(return_request_id)
             log.debug(json.dumps(status_response, indent=4))
+            if status_response.get("error"):
+                pytest.fail(f"Return request failed: {status_response.get('message', status_response.get('error'))}")
 
             res = get_instance_state(ec2_instance_ids[0])
             log.debug(json.dumps(res, indent=4))

@@ -158,6 +158,8 @@ terraform.rc
 
 # Application specific
 config/config.json
+# Runtime-generated script copies (orb init)
+scripts/
 data/
 monitoring/grafana/data/
 monitoring/prometheus/data/
