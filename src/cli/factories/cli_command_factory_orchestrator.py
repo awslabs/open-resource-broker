@@ -305,24 +305,10 @@ class CLICommandFactoryOrchestrator:
                 return self.create_get_template_query(
                     template_id=args.get("template_id"), provider=args.get("provider")
                 )
-            elif command_action == "create":
-                return self.create_create_template_command(
-                    template_id=args.get("template_id"),
-                    provider_name=args.get("provider"),
-                    handler_type=args.get("handler_type"),
-                    configuration=args.get("configuration", {}),
-                    description=args.get("description"),
-                    tags=args.get("tags", {}),
-                )
-            elif command_action == "update":
-                return self.create_update_template_command(
-                    template_id=args.get("template_id"),
-                    configuration=args.get("configuration"),
-                    description=args.get("description"),
-                    tags=args.get("tags"),
-                )
-            elif command_action == "delete":
-                return self.create_delete_template_command(template_id=args.get("template_id"))
+            elif command_action in ("create", "update", "delete"):
+                # Return None to route through dedicated handlers in template_command_handlers.py
+                # which build proper success/error responses (command_bus returns None per CQRS).
+                return None
             elif command_action == "validate":
                 return self.create_validate_template_query(
                     template_config=args.get("template_config", {}),
@@ -337,11 +323,15 @@ class CLICommandFactoryOrchestrator:
         # Request operations
         elif command_group in ["requests", "request"]:
             if command_action == "create":
-                return self.create_create_request_command(
-                    template_id=args.get("template_id"),
-                    count=args.get("count", 1),
-                    provider=args.get("provider"),
-                )
+                # Return None to route through handle_request_machines (pre-generates request_id,
+                # fires command, queries result — command_bus returns None per CQRS).
+                return None
+            elif command_action == "cancel":
+                # Return None to route through handle_cancel_request
+                return None
+            elif command_action == "return":
+                # Return None to route through handle_request_return_machines
+                return None
             elif command_action == "show":
                 return self.create_get_request_status_query(
                     request_id=args.get("request_id"),
@@ -357,12 +347,6 @@ class CLICommandFactoryOrchestrator:
                     status=args.get("status"),
                     limit=args.get("limit"),
                     offset=args.get("offset", 0),
-                )
-            elif command_action == "cancel":
-                return self.create_cancel_request_command(request_id=args.get("request_id"))
-            elif command_action == "return":
-                return self.create_return_request_command(
-                    machine_ids=args.get("machine_ids", []), reason=args.get("reason")
                 )
 
         # Machine operations

@@ -272,6 +272,54 @@ async def execute_command(args, app, resource_parsers) -> Union[str, tuple[str, 
                 from interface.request_command_handlers import handle_request_machines
 
                 result = await handle_request_machines(args)
+            elif (
+                hasattr(args, "resource")
+                and args.resource in ["requests", "request"]
+                and args.action == "create"
+            ):
+                from interface.request_command_handlers import handle_request_machines
+
+                result = await handle_request_machines(args)
+            elif (
+                hasattr(args, "resource")
+                and args.resource in ["requests", "request"]
+                and args.action == "cancel"
+            ):
+                from interface.request_command_handlers import handle_cancel_request
+
+                result = await handle_cancel_request(args)
+            elif (
+                hasattr(args, "resource")
+                and args.resource in ["requests", "request"]
+                and args.action == "return"
+            ):
+                from interface.request_command_handlers import handle_request_return_machines
+
+                result = await handle_request_return_machines(args)
+            elif (
+                hasattr(args, "resource")
+                and args.resource in ["templates", "template"]
+                and args.action == "create"
+            ):
+                from interface.template_command_handlers import handle_create_template
+
+                result = await handle_create_template(args)
+            elif (
+                hasattr(args, "resource")
+                and args.resource in ["templates", "template"]
+                and args.action == "update"
+            ):
+                from interface.template_command_handlers import handle_update_template
+
+                result = await handle_update_template(args)
+            elif (
+                hasattr(args, "resource")
+                and args.resource in ["templates", "template"]
+                and args.action == "delete"
+            ):
+                from interface.template_command_handlers import handle_delete_template
+
+                result = await handle_delete_template(args)
             else:
                 raise ValueError(f"Unknown command: {args.resource} {args.action}")
         else:
