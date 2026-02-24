@@ -81,6 +81,15 @@ class ConcreteSchedulerStrategy(BaseSchedulerStrategy):
     def get_scripts_directory(self) -> Path | None:
         return None
 
+    def get_scheduler_type(self) -> str:
+        return "test"
+
+    def _get_provider_name(self) -> str:
+        return "test_provider"
+
+    def _get_active_provider_type(self) -> str:
+        return "aws"
+
 
 class TestBaseSchedulerStrategy:
     """Test cases for BaseSchedulerStrategy."""

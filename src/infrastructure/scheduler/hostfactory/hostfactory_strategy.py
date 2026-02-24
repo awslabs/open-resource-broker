@@ -784,6 +784,10 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
             return os.environ.get(env_var)
         return None
 
+    def get_scheduler_type(self) -> str:
+        """Return the scheduler type identifier."""
+        return "hostfactory"
+
     def get_scripts_directory(self) -> Path | None:
         """Return the path to the HostFactory scripts directory."""
         return Path("src/infrastructure/scheduler/hostfactory/scripts/")

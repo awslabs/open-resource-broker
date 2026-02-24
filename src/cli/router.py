@@ -264,6 +264,14 @@ async def execute_command(args, app, resource_parsers) -> Union[str, tuple[str, 
                 from interface.machine_command_handlers import handle_list_machines
 
                 result = await handle_list_machines(args)
+            elif (
+                hasattr(args, "resource")
+                and args.resource in ["machines", "machine"]
+                and args.action == "request"
+            ):
+                from interface.request_command_handlers import handle_request_machines
+
+                result = await handle_request_machines(args)
             else:
                 raise ValueError(f"Unknown command: {args.resource} {args.action}")
         else:
