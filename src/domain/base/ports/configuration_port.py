@@ -32,6 +32,10 @@ class ConfigurationPort(ProviderConfigPort):
         """Get storage configuration."""
 
     @abstractmethod
+    def get_cache_dir(self) -> str:
+        """Get cache directory path."""
+
+    @abstractmethod
     def get_package_info(self) -> dict[str, Any]:
         """Get package metadata information."""
 

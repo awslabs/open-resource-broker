@@ -196,21 +196,22 @@ class AWSProvisioningAdapter(ResourceProvisioningPort):
             return template
 
         try:
-            import os
-
             from providers.aws.infrastructure.caching.aws_image_cache import AWSImageCache
             from providers.aws.infrastructure.services.aws_image_resolution_service import (
                 AWSImageResolutionService,
             )
 
-            try:
-                from infrastructure.di.container import get_container
+            from config.platform_dirs import get_config_location
+            from config.constants import CACHE_DIR_NAME
+            from domain.base.ports.configuration_port import ConfigurationPort
+            from infrastructure.di.container import get_container
 
+            try:
                 container = get_container()
-                config = container.get("configuration_port")  # type: ignore[call-overload]
-                cache_dir = os.path.join(config.get_work_dir(), ".cache")
+                config = container.get(ConfigurationPort)
+                cache_dir = config.get_cache_dir()
             except Exception:
-                cache_dir = os.path.join(os.getcwd(), ".cache")
+                cache_dir = str(get_config_location().parent / CACHE_DIR_NAME)
 
             cache = AWSImageCache(
                 provider_name="aws",
@@ -228,7 +229,11 @@ class AWSProvisioningAdapter(ResourceProvisioningPort):
                 self._logger.info("Resolved image_id %s -> %s", image_id, resolved)
                 return template.update_image_id(resolved)
         except Exception as e:
-            self._logger.warning("Failed to resolve image_id '%s': %s", image_id, e)
+            self._logger.error("Failed to resolve image_id '%s': %s", image_id, e)
+            raise InfrastructureError(
+                f"Failed to resolve AMI ID for image_id '{image_id}': {e}. "
+                "Ensure the SSM parameter path is valid and the IAM role has ssm:GetParameter permission."
+            )
 
         return template
 

@@ -115,6 +115,13 @@ class ConfigPathResolver:
         default = default_path or "events"
         return self.resolve_path("events", default, config_path)
 
+    def get_cache_dir(
+        self, default_path: Optional[str] = None, config_path: Optional[str] = None
+    ) -> str:
+        """Get cache directory path."""
+        default = default_path or "cache"
+        return self.resolve_path("cache", default, config_path)
+
     def get_snapshots_dir(
         self, default_path: Optional[str] = None, config_path: Optional[str] = None
     ) -> str:

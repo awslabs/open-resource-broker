@@ -132,6 +132,10 @@ class MockConfigurationPort(ConfigurationPort):
         """Get storage configuration."""
         return self._config.get("storage", {})
 
+    def get_cache_dir(self) -> str:
+        """Get cache directory."""
+        return "/tmp/orb-test/cache"
+
     def get_events_config(self) -> dict[str, Any]:
         """Get events configuration."""
         return self._config.get("events", {})

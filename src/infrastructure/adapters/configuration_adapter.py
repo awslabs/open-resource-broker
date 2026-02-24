@@ -258,6 +258,10 @@ class ConfigurationAdapter(ConfigurationPort):
         """Get log directory - delegate to ConfigurationManager."""
         return self._config_manager.get_log_dir(default_path, config_path)
 
+    def get_cache_dir(self) -> str:
+        """Get cache directory - delegate to ConfigurationManager."""
+        return self._config_manager.get_cache_dir()
+
     def get_native_spec_config(self) -> dict[str, Any]:
         """Get native spec configuration."""
         try:

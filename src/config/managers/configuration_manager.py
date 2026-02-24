@@ -209,6 +209,12 @@ class ConfigurationManager:
         """Get work directory path."""
         return self._ensure_path_resolver().get_work_dir(default_path, config_path)
 
+    def get_cache_dir(
+        self, default_path: Optional[str] = None, config_path: Optional[str] = None
+    ) -> str:
+        """Get cache directory path."""
+        return self._ensure_path_resolver().get_cache_dir(default_path, config_path)
+
     def get_conf_dir(
         self, default_path: Optional[str] = None, config_path: Optional[str] = None
     ) -> str:

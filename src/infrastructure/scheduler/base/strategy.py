@@ -34,14 +34,32 @@ class BaseSchedulerStrategy(SchedulerPort, ABC):
         self.config_manager = config_manager
         self.logger = logger
 
+    # Maps internal domain statuses to IBM HF spec statuses
+    _STATUS_MAP = {
+        "pending": "running",
+        "in_progress": "running",
+        "complete": "complete",
+        "failed": "complete_with_error",
+        "partial": "complete_with_error",
+        "cancelled": "complete_with_error",
+        "timeout": "complete_with_error",
+    }
+
     def format_request_status_response(self, requests: list[RequestDTO]) -> dict[str, Any]:
         """
         Format RequestDTOs to native domain response format.
 
         Uses the RequestDTO's to_dict() method to serialize to native format.
+        Maps internal domain statuses to IBM HF spec statuses before returning.
         """
+        request_dicts = []
+        for request in requests:
+            d = request.to_dict()
+            if "status" in d:
+                d["status"] = self._STATUS_MAP.get(d["status"], d["status"])
+            request_dicts.append(d)
         return {
-            "requests": [request.to_dict() for request in requests],
+            "requests": request_dicts,
             "message": "Request status retrieved successfully",
             "count": len(requests),
         }

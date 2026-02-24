@@ -58,6 +58,7 @@ class TestDefaultSchedulerStrategy:
         parsed_request = self.strategy.parse_request_data(raw_request)
 
         # Verify defaults
+        assert isinstance(parsed_request, dict)
         assert parsed_request["template_id"] == "minimal-template"
         assert parsed_request["requested_count"] == 1  # Default
         assert parsed_request["request_type"] == "provision"  # Default
