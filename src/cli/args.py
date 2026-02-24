@@ -277,7 +277,7 @@ def add_template_actions(subparsers):
     )
     add_global_arguments(templates_list)
     templates_list.add_argument("--provider-api", help="Filter by provider API type")
-    templates_list.add_argument("--long", action="store_true", help="Include detailed fields")
+
 
     templates_show = subparsers.add_parser("show", help="Show template details")
     add_global_arguments(templates_show)

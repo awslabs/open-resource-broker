@@ -50,8 +50,6 @@ class TestCLIHandlerExecution:
         args = argparse.Namespace(
             provider_api=None,
             active_only=True,
-            include_config=False,
-            long=False,
         )
 
         result = await handle_list_templates(args)
@@ -193,13 +191,9 @@ class TestFormatConversionConsistency:
 
         mock_get_container.return_value = container
 
-        # Use long=True so handle_list_templates skips field filtering
-        # (filtering is controlled by include_detailed_fields = getattr(args, "long", False))
         args = argparse.Namespace(
             provider_api=None,
             active_only=True,
-            include_config=False,
-            long=True,
         )
 
         result = await handle_list_templates(args)

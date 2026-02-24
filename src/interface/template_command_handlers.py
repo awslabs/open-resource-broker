@@ -55,27 +55,21 @@ async def handle_list_templates(args: argparse.Namespace) -> dict[str, Any]:
         # Extract parameters from args or input_data (HostFactory compatibility)
         provider_api = None
         active_only = True
-        include_config = False
 
         # Check for input data from -f/--data flags first (HostFactory style)
         if hasattr(args, "input_data") and args.input_data:
             input_data = args.input_data
             provider_api = input_data.get("provider_api")
             active_only = input_data.get("active_only", True)
-            include_config = input_data.get("include_config", False)
-            include_detailed_fields = input_data.get("include_detailed_fields", False)
         else:
             # Use command line arguments
             provider_api = getattr(args, "provider_api", None)
             active_only = getattr(args, "active_only", True)
-            include_config = getattr(args, "include_config", False)
-            include_detailed_fields = getattr(args, "long", False)
 
         # Create and execute query through CQRS bus
         query = ListTemplatesQuery(
             provider_api=provider_api,
             active_only=active_only,
-            include_detailed_fields=include_config or include_detailed_fields,
         )
 
         templates = await query_bus.execute(query)
@@ -84,9 +78,8 @@ async def handle_list_templates(args: argparse.Namespace) -> dict[str, Any]:
         scheduler_strategy = container.get(SchedulerPort)
 
         # Use scheduler strategy for format conversion — always pass domain DTOs
-        # Field filtering (--long flag) is handled inside the strategy (presentation concern)
         if scheduler_strategy:
-            result = scheduler_strategy.format_templates_response(templates, include_detailed_fields)
+            result = scheduler_strategy.format_templates_response(templates)
         else:
             templates_data = [
                 template.model_dump() if hasattr(template, "model_dump") else template
@@ -536,7 +529,7 @@ async def handle_refresh_templates(args: argparse.Namespace) -> dict[str, Any]:
         # Force refresh by listing templates with force_refresh parameter
         # This will trigger cache refresh in the query handler
         query = ListTemplatesQuery(
-            provider_api=None, active_only=True, include_detailed_fields=False
+            provider_api=None, active_only=True
         )
 
         templates = await query_bus.execute(query)
