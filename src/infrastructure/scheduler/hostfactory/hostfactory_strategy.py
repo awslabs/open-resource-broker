@@ -977,7 +977,8 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
             "pending": "running",
             "in_progress": "running",
             "provisioning": "running",
-            "completed": "complete",
+            "complete": "complete",    # RequestStatus.COMPLETED.value == "complete"
+            "completed": "complete",   # defensive alias
             "partial": "complete_with_error",
             "failed": "complete_with_error",
             "cancelled": "complete_with_error",
