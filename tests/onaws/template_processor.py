@@ -54,6 +54,77 @@ TEMPLATE_OVERRIDE_KEYS = {
     "fleet_role",
 }
 
+# Canonical camelCase → snake_case key mappings for template override keys
+_CAMEL_TO_SNAKE: dict[str, str] = {
+    "providerApi": "provider_api",
+    "priceType": "price_type",
+    "fleetType": "fleet_type",
+    "percentOnDemand": "percent_on_demand",
+    "vmTypes": "vm_types",
+    "vmType": "vm_type",
+    "allocationStrategy": "allocation_strategy",
+    "allocationStrategyOnDemand": "allocation_strategy_on_demand",
+    "abisInstanceRequirements": "abis_instance_requirements",
+    "maxSpotPrice": "max_spot_price",
+    "instanceTags": "instance_tags",
+    "maxNumber": "max_number",
+    "fleetRole": "fleet_role",
+}
+_SNAKE_TO_CAMEL: dict[str, str] = {v: k for k, v in _CAMEL_TO_SNAKE.items()}
+
+
+def _detect_template_format(tmpl: dict) -> str:
+    """Return 'camel' if template uses camelCase keys, 'snake' if snake_case."""
+    if "provider_api" in tmpl:
+        return "snake"
+    if "providerApi" in tmpl:
+        return "camel"
+    if "template_id" in tmpl:
+        return "snake"
+    return "camel"
+
+
+def _normalize_key(key: str, target_fmt: str) -> str:
+    """Return key normalized to target_fmt ('camel' or 'snake'), unchanged if no mapping."""
+    if target_fmt == "snake":
+        return _CAMEL_TO_SNAKE.get(key, key)
+    return _SNAKE_TO_CAMEL.get(key, key)
+
+
+def _resolve_fleet_role(config_data: dict, profile: str | None = None) -> str | None:
+    """Return fleet_role from config template_defaults, or construct via STS fallback.
+
+    Resolution order:
+    1. First provider in config.json that has template_defaults.fleet_role
+    2. STS GetCallerIdentity to construct the service-linked role ARN
+    3. None — caller skips injection silently
+    """
+    providers = config_data.get("provider", {}).get("providers", [])
+
+    for p in providers:
+        role = p.get("template_defaults", {}).get("fleet_role")
+        if role:
+            return role
+
+    resolved_profile = profile
+    if not resolved_profile:
+        for p in providers:
+            resolved_profile = p.get("config", {}).get("profile")
+            if resolved_profile:
+                break
+
+    try:
+        import boto3
+        session = boto3.Session(profile_name=resolved_profile)
+        sts = session.client("sts")
+        account_id = sts.get_caller_identity()["Account"]
+        return (
+            f"arn:aws:iam::{account_id}:role/aws-service-role"
+            f"/spotfleet.amazonaws.com/AWSServiceRoleForEC2SpotFleet"
+        )
+    except Exception:
+        return None
+
 
 class TemplateProcessor:
     """Generates per-test config directories from the real project config files."""
@@ -189,26 +260,22 @@ class TemplateProcessor:
                     entry[k] = v
             combined.append(entry)
 
-        # Inject fleet_role for SpotFleet templates (runtime does this via template_defaults_service,
-        # which requires DI container — not available here)
         try:
             config_data_raw = json.loads((self.config_source_dir / "config.json").read_text())
-            providers = config_data_raw.get("provider", {}).get("providers", [])
-            fleet_role = None
-            for p in providers:
-                fleet_role = p.get("template_defaults", {}).get("fleet_role")
-                if fleet_role:
-                    break
+            fleet_role = _resolve_fleet_role(config_data_raw)
             if fleet_role:
                 for tmpl in combined:
-                    if tmpl.get("providerApi") == "SpotFleet" and not tmpl.get("fleetRole"):
-                        tmpl["fleetRole"] = fleet_role
+                    fmt = _detect_template_format(tmpl)
+                    api_key = "providerApi" if fmt == "camel" else "provider_api"
+                    role_key = "fleetRole" if fmt == "camel" else "fleet_role"
+                    if tmpl.get(api_key) == "SpotFleet" and not tmpl.get(role_key):
+                        tmpl[role_key] = fleet_role
         except Exception:
             pass  # fleet_role not configured — SpotFleet tests will need it via overrides
 
-        self._write_json(test_dir / "aws_templates.json", {"scheduler_type": scheduler_type, "templates": combined})
         config_dir = test_dir / "config"
         config_dir.mkdir(parents=True, exist_ok=True)
+        self._write_json(config_dir / "aws_templates.json", {"scheduler_type": scheduler_type, "templates": combined})
         self._set_storage_paths(config_data, test_dir)
         self._write_json(config_dir / "config.json", config_data)
 
@@ -252,22 +319,18 @@ class TemplateProcessor:
         raw_dicts = strategy.load_templates_from_path(str(templates_file))
         formatted = strategy.format_templates_for_generation(raw_dicts)
 
-        # Inject fleet_role for SpotFleet templates (runtime does this via template_defaults_service,
-        # which requires DI container — not available here)
         try:
             config_data = json.loads((config_dir / "config.json").read_text())
-            providers = config_data.get("provider", {}).get("providers", [])
-            fleet_role = None
-            for p in providers:
-                fleet_role = p.get("template_defaults", {}).get("fleet_role")
-                if fleet_role:
-                    break
+            fleet_role = _resolve_fleet_role(config_data)
             if fleet_role:
                 for tmpl in formatted:
-                    if tmpl.get("providerApi") == "SpotFleet" and not tmpl.get("fleetRole"):
-                        tmpl["fleetRole"] = fleet_role
+                    fmt = _detect_template_format(tmpl)
+                    api_key = "providerApi" if fmt == "camel" else "provider_api"
+                    role_key = "fleetRole" if fmt == "camel" else "fleet_role"
+                    if tmpl.get(api_key) == "SpotFleet" and not tmpl.get(role_key):
+                        tmpl[role_key] = fleet_role
         except Exception:
-            pass  # fleet_role not configured — SpotFleet tests will need it via overrides
+            pass
 
         return {"scheduler_type": scheduler_type, "templates": formatted}
 
@@ -301,13 +364,19 @@ class TemplateProcessor:
         )
 
     def _apply_template_overrides(self, templates_data: Dict[str, Any], overrides: dict) -> None:
-        """Apply scenario overrides to every template in the list."""
+        """Apply scenario overrides to every template, normalizing key case to match template format."""
         template_overrides = {k: v for k, v in overrides.items() if k in TEMPLATE_OVERRIDE_KEYS}
         if not template_overrides:
             return
 
         for tmpl in templates_data.get("templates", []):
-            tmpl.update(template_overrides)
+            fmt = _detect_template_format(tmpl)
+            for k, v in template_overrides.items():
+                normalized_key = _normalize_key(k, fmt)
+                opposite_key = _normalize_key(k, "snake" if fmt == "camel" else "camel")
+                if opposite_key != normalized_key and opposite_key in tmpl:
+                    del tmpl[opposite_key]
+                tmpl[normalized_key] = v
 
     def _apply_config_overrides(
         self, config_data: Dict[str, Any], overrides: dict, scheduler_type: str
