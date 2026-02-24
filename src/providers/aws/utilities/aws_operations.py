@@ -96,6 +96,16 @@ class AWSOperations:
                 self._logger.info("Successfully terminated %s: %s", operation_context, instance_ids)
                 return result
 
+        except ClientError as e:
+            if e.response["Error"]["Code"] == "InvalidInstanceID.NotFound":
+                self._logger.info(
+                    "Instances already gone during %s termination (InvalidInstanceID.NotFound) — treating as success",
+                    operation_context,
+                )
+                return {"terminated_instances": []}
+            self._logger.error("Failed to terminate %s: %s", operation_context, str(e))
+            raise
+
         except Exception as e:
             self._logger.error("Failed to terminate %s: %s", operation_context, str(e))
             raise

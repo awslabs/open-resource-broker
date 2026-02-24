@@ -8,6 +8,8 @@ It extracts AWS-specific logic from the domain layer.
 import base64
 from typing import Any
 
+from botocore.exceptions import ClientError
+
 from domain.base.dependency_injection import injectable
 from domain.base.ports import LoggingPort
 from domain.request.aggregate import Request
@@ -419,6 +421,22 @@ class AWSRequestAdapter(RequestAdapterPort):
                     }
                     for instance in response["TerminatingInstances"]
                 ],
+            }
+
+        except ClientError as e:
+            if e.response["Error"]["Code"] == "InvalidInstanceID.NotFound":
+                self._logger.info(
+                    "Instances already terminated (InvalidInstanceID.NotFound) — treating as success"
+                )
+                return {
+                    "status": "success",
+                    "terminated_instances": [],
+                    "message": "Instances already terminated",
+                }
+            self._logger.error("Failed to terminate instances: %s", str(e))
+            return {
+                "status": "error",
+                "message": f"Failed to terminate instances: {e!s}",
             }
 
         except Exception as e:
