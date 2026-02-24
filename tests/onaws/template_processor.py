@@ -50,6 +50,8 @@ TEMPLATE_OVERRIDE_KEYS = {
     "instance_tags",
     "maxNumber",
     "max_number",
+    "fleetRole",
+    "fleet_role",
 }
 
 
@@ -187,7 +189,24 @@ class TemplateProcessor:
                     entry[k] = v
             combined.append(entry)
 
-        self._write_json(test_dir / "aws_templates.json", {"templates": combined})
+        # Inject fleet_role for SpotFleet templates (runtime does this via template_defaults_service,
+        # which requires DI container — not available here)
+        try:
+            config_data_raw = json.loads((self.config_source_dir / "config.json").read_text())
+            providers = config_data_raw.get("provider", {}).get("providers", [])
+            fleet_role = None
+            for p in providers:
+                fleet_role = p.get("template_defaults", {}).get("fleet_role")
+                if fleet_role:
+                    break
+            if fleet_role:
+                for tmpl in combined:
+                    if tmpl.get("providerApi") == "SpotFleet" and not tmpl.get("fleetRole"):
+                        tmpl["fleetRole"] = fleet_role
+        except Exception:
+            pass  # fleet_role not configured — SpotFleet tests will need it via overrides
+
+        self._write_json(test_dir / "aws_templates.json", {"scheduler_type": scheduler_type, "templates": combined})
         config_dir = test_dir / "config"
         config_dir.mkdir(parents=True, exist_ok=True)
         self._set_storage_paths(config_data, test_dir)
@@ -232,7 +251,25 @@ class TemplateProcessor:
         # Load via production path — preserves image_id, subnet_ids, etc.
         raw_dicts = strategy.load_templates_from_path(str(templates_file))
         formatted = strategy.format_templates_for_generation(raw_dicts)
-        return {"templates": formatted}
+
+        # Inject fleet_role for SpotFleet templates (runtime does this via template_defaults_service,
+        # which requires DI container — not available here)
+        try:
+            config_data = json.loads((config_dir / "config.json").read_text())
+            providers = config_data.get("provider", {}).get("providers", [])
+            fleet_role = None
+            for p in providers:
+                fleet_role = p.get("template_defaults", {}).get("fleet_role")
+                if fleet_role:
+                    break
+            if fleet_role:
+                for tmpl in formatted:
+                    if tmpl.get("providerApi") == "SpotFleet" and not tmpl.get("fleetRole"):
+                        tmpl["fleetRole"] = fleet_role
+        except Exception:
+            pass  # fleet_role not configured — SpotFleet tests will need it via overrides
+
+        return {"scheduler_type": scheduler_type, "templates": formatted}
 
     @staticmethod
     def _make_strategy(scheduler_type: str):

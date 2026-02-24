@@ -22,7 +22,7 @@ import pkgutil
 import time
 from contextlib import suppress
 from pathlib import Path
-from typing import Any, Optional, cast
+from typing import Any, Optional
 
 from application.decorators import (
     get_handler_registry_stats,
@@ -59,33 +59,17 @@ class HandlerDiscoveryService:
             perf_config = config_manager.get_typed(PerformanceConfig)
 
             self.cache_enabled = perf_config.caching.handler_discovery.enabled
-            self.cache_file = (
-                self._resolve_cache_path(config_manager) if self.cache_enabled else None
-            )
+            self.cache_file = self._resolve_cache_path(config_manager) if self.cache_enabled else None
 
         except Exception as e:
             logger.warning("Failed to get caching configuration: %s", e, exc_info=True)
-            # Fallback to default behavior
-            self.cache_enabled = True
-            self.cache_file = self._resolve_cache_path_fallback()
+            # Caching unavailable — disable rather than guess a wrong path
+            self.cache_enabled = False
+            self.cache_file = None
 
-    def _resolve_cache_path(self, config_manager) -> str:
-        """Resolve cache file path using configuration system."""
-        try:
-            cache_dir = config_manager.get_cache_dir()
-            os.makedirs(cache_dir, exist_ok=True)
-            return os.path.join(cache_dir, "handler_discovery.json")
-        except Exception:
-            return self._resolve_cache_path_fallback()
-
-    def _resolve_cache_path_fallback(self) -> str:
-        """Fallback cache path resolution."""
-        try:
-            from domain.base.ports.configuration_port import ConfigurationPort
-            config = cast(Any, self.container).get(ConfigurationPort)
-            cache_dir = config.get_cache_dir()
-        except Exception:
-            cache_dir = os.path.join(os.getcwd(), ".cache")
+    def _resolve_cache_path(self, config_manager: Any) -> str:
+        """Resolve cache file path from configuration."""
+        cache_dir = config_manager.get_cache_dir()
         os.makedirs(cache_dir, exist_ok=True)
         return os.path.join(cache_dir, "handler_discovery.json")
 
