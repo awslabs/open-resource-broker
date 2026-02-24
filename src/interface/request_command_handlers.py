@@ -370,11 +370,13 @@ async def handle_request_return_machines(args: "argparse.Namespace") -> dict[str
     await command_bus.execute(command)  # type: ignore[arg-type]
 
     created_ids = getattr(command, "created_request_ids", None) or []
-    return {
-        "result": created_ids[0] if created_ids else None,
-        "request_ids": created_ids,
-        "message": "Return request created successfully",
-    }
+    request_id = created_ids[0] if created_ids else None
+
+    scheduler_strategy = container.get(SchedulerPort)
+    request_data = {"request_id": request_id, "status": "pending"}
+    if scheduler_strategy:
+        return scheduler_strategy.format_request_response(request_data)
+    return {"requestId": request_id, "message": "Return request created successfully"}
 
 
 @handle_interface_exceptions(context="cancel_request", interface_type="cli")
