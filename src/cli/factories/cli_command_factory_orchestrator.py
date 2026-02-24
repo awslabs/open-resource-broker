@@ -238,4 +238,3 @@ class CLICommandFactoryOrchestrator:
     def create_system_serve_command_data(self, **kwargs: Any):
         """Create system serve command data structure."""
         return self._utility_factory.create_system_serve_command_data(**kwargs)
-
