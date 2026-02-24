@@ -206,6 +206,12 @@ python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 addopts = "-v --cov=orb --cov-report=term-missing --cov-report=html"
+markers = [
+    "aws: marks tests that require real AWS credentials",
+    "manual_aws: marks tests that must be run manually against AWS",
+    "rest_api: marks REST API integration tests",
+    "sdk: marks SDK-based integration tests",
+]
 env = [
     "AWS_DEFAULT_REGION=us-east-1",
     "AWS_ACCESS_KEY_ID=testing",
