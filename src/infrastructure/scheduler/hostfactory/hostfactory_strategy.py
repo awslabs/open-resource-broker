@@ -512,7 +512,6 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         config_file = f"{provider_type}prov_config.json"
         return os.path.join(config_root, config_file)
 
-    # KBG TODO: function is not used
     def parse_template_config(self, raw_data: dict[str, Any]) -> TemplateDTO:
         """
         Parse HostFactory template to TemplateDTO.
@@ -977,8 +976,7 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
             "pending": "running",
             "in_progress": "running",
             "provisioning": "running",
-            "complete": "complete",    # RequestStatus.COMPLETED.value == "complete"
-            "completed": "complete",   # defensive alias
+            "complete": "complete",
             "partial": "complete_with_error",
             "failed": "complete_with_error",
             "cancelled": "complete_with_error",
