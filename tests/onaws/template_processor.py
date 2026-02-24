@@ -106,7 +106,9 @@ class TemplateProcessor:
             templates_data = self._load_json(self._find_templates_source())
         self._apply_template_overrides(templates_data, overrides)
         template_filename = "aws_templates.json"
-        self._write_json(test_dir / template_filename, templates_data)
+        config_dir = test_dir / "config"
+        config_dir.mkdir(parents=True, exist_ok=True)
+        self._write_json(config_dir / template_filename, templates_data)
         log.info(
             "Generated %s with %d templates",
             template_filename,
