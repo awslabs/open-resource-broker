@@ -67,44 +67,30 @@ if [ "$USE_LOCAL_DEV" = "true" ] || [ "$USE_LOCAL_DEV" = "1" ]; then
         exit 1
     fi
 
-    # Parse arguments to separate global flags from command
-    global_args=()
-    command_args=()
+    # Extract -f <file> from args — the only global flag run.py needs before the subcommand.
+    # Everything else passes through verbatim so subcommand flags (--force, --all, etc.)
+    # always reach the right handler without this script needing to know about them.
+    file_args=()
+    pass_args=()
 
-    # First, collect all arguments
-    all_args=("$@")
-
-    # Separate global flags from command arguments
     i=0
+    all_args=("$@")
     while [ $i -lt ${#all_args[@]} ]; do
         arg="${all_args[$i]}"
-        case "$arg" in
-            -f|--file|-d|--data|--config|--log-level|--format|--output|--scheduler)
-                # These flags need a value
-                global_args+=("$arg")
-                i=$((i + 1))
-                if [ $i -lt ${#all_args[@]} ]; then
-                    global_args+=("${all_args[$i]}")
-                fi
-                ;;
-            --quiet|--verbose|--dry-run)
-                # These are boolean flags
-                global_args+=("$arg")
-                ;;
-            -*)
-                # Unknown flags — treat as command-level args (e.g. --force, --all)
-                command_args+=("$arg")
-                ;;
-            *)
-                # Non-flag arguments go to command
-                command_args+=("$arg")
-                ;;
-        esac
+        if [ "$arg" = "-f" ] || [ "$arg" = "--file" ]; then
+            file_args+=("$arg")
+            i=$((i + 1))
+            if [ $i -lt ${#all_args[@]} ]; then
+                file_args+=("${all_args[$i]}")
+            fi
+        else
+            pass_args+=("$arg")
+        fi
         i=$((i + 1))
     done
 
-    # Execute the Python script with global args first, then command args
-	    "$PYTHON_CMD" "${PROJECT_ROOT}/src/run.py" "${global_args[@]}" "${command_args[@]}" 2>&1 | tee -a "$SCRIPTS_LOG_FILE"
+    # Execute: run.py [-f <file>] <everything else verbatim>
+	    "$PYTHON_CMD" "${PROJECT_ROOT}/src/run.py" "${file_args[@]}" "${pass_args[@]}" 2>&1 | tee -a "$SCRIPTS_LOG_FILE"
 	    exit "${PIPESTATUS[0]}"
 
 else
