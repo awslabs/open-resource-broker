@@ -206,10 +206,15 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
             errors.append("Fleet role ARN is required for Spot Fleet")
         # For service-linked roles, we only validate the format
         elif "AWSServiceRoleForEC2SpotFleet" in aws_template.fleet_role:
-            if aws_template.fleet_role != "AWSServiceRoleForEC2SpotFleet":
+            if not self._is_valid_spot_fleet_service_role(aws_template.fleet_role):
                 errors.append(
-                    f"Invalid Spot Fleet service-linked role format: {aws_template.fleet_role}"
+                    f"Invalid Spot Fleet service-linked role format: {aws_template.fleet_role}. "
+                    f"Expected full ARN: arn:aws:iam::<account_id>:role/aws-service-role/"
+                    f"spotfleet.amazonaws.com/AWSServiceRoleForEC2SpotFleet"
                 )
+        elif self._is_valid_spot_fleet_tagging_role(aws_template.fleet_role):
+            # Well-known tagging role ARN — format already validated, no IAM call needed
+            self._logger.debug("Valid Spot Fleet tagging role: %s", aws_template.fleet_role)
         else:
             # For custom roles, validate with IAM
             try:
@@ -295,6 +300,15 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
 
         if re.match(pattern, role_arn):
             self._logger.debug("Valid Spot Fleet service-linked role: %s", role_arn)
+            return True
+        return False
+
+    def _is_valid_spot_fleet_tagging_role(self, role_arn: str) -> bool:
+        """Validate if the provided ARN matches the EC2 Spot Fleet tagging role pattern."""
+        import re
+        pattern = r"^arn:aws:iam::\d{12}:role/aws-ec2-spot-fleet-tagging-role$"
+        if re.match(pattern, role_arn):
+            self._logger.debug("Valid Spot Fleet tagging role: %s", role_arn)
             return True
         return False
 

@@ -67,6 +67,7 @@ class AWSInfrastructureDiscoveryService:
         session = boto3.Session(profile_name=profile, region_name=region)
         self.ec2_client = session.client("ec2", config=_config)
         self.iam_client = session.client("iam", config=_config)
+        self.sts_client = session.client("sts", config=_config)
 
     def discover_vpcs(self) -> list[VPCInfo]:
         """Discover VPCs with name tags and CIDR blocks."""
@@ -200,6 +201,27 @@ class AWSInfrastructureDiscoveryService:
                 rule_types.add(protocol.upper())
 
         return ", ".join(sorted(rule_types)) if rule_types else "Custom rules"
+
+    def _discover_spotfleet_role(self) -> Optional[str]:
+        """Construct the SpotFleet service-linked role ARN via STS.
+
+        Uses sts:GetCallerIdentity to get the account ID, then constructs
+        the deterministic ARN for the AWS-managed service-linked role.
+        """
+        try:
+            account_id = self.sts_client.get_caller_identity()["Account"]
+            arn = (
+                f"arn:aws:iam::{account_id}:role/aws-service-role"
+                f"/spotfleet.amazonaws.com/AWSServiceRoleForEC2SpotFleet"
+            )
+            # Best-effort verification — failure is silently ignored
+            try:
+                self.iam_client.get_role(RoleName="AWSServiceRoleForEC2SpotFleet")
+            except Exception:
+                pass
+            return arn
+        except Exception:
+            return None
 
     def discover_infrastructure(self, provider_config: dict[str, Any]) -> dict[str, Any]:
         """Discover AWS infrastructure for provider."""
@@ -394,17 +416,10 @@ class AWSInfrastructureDiscoveryService:
 
             # Discover fleet role interactively
             print_info("")
-            auto_fleet_role: Optional[str] = None
-            try:
-                fleet_role_response = self.iam_client.get_role(
-                    RoleName="aws-ec2-spot-fleet-tagging-role"
-                )
-                auto_fleet_role = fleet_role_response["Role"]["Arn"]
-            except Exception:
-                pass
+            auto_fleet_role: Optional[str] = self._discover_spotfleet_role()
 
             if auto_fleet_role:
-                print_info(f"  Found Spot Fleet IAM role: {auto_fleet_role}")
+                print_info(f"  Found Spot Fleet service-linked role: {auto_fleet_role}")
                 confirm = input("  Use this role? (Y/n): ").strip().lower()
                 if confirm in ("", "y", "yes"):
                     discovered["fleet_role"] = auto_fleet_role
@@ -415,7 +430,7 @@ class AWSInfrastructureDiscoveryService:
                     if override:
                         discovered["fleet_role"] = override
             else:
-                print_info("  Spot Fleet IAM role 'aws-ec2-spot-fleet-tagging-role' not found.")
+                print_info("  Could not determine Spot Fleet service-linked role automatically.")
                 manual = input(
                     "  Enter Spot Fleet IAM role ARN (optional, press Enter to skip): "
                 ).strip()
