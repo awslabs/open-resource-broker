@@ -19,7 +19,7 @@ class AWSInstanceOperationService:
         self,
         aws_client: "AWSClient",
         logger: LoggingPort,
-        provisioning_adapter: Optional["AWSProvisioningAdapter"] = None,
+        provisioning_adapter: "AWSProvisioningAdapter",
         provider_name: Optional[str] = None,
         provider_type: str = "aws",
     ):
@@ -99,53 +99,27 @@ class AWSInstanceOperationService:
             )
             request.provider_api = provider_api
 
-            # Try provisioning adapter first
-            if self._provisioning_adapter and not operation.context.get("skip_provisioning_port"):  # type: ignore[union-attr]
-                try:
-                    adapter_result = await self._provisioning_adapter.provision_resources(
-                        request, aws_template
-                    )
-                    if isinstance(adapter_result, dict) and adapter_result.get("success", True):
-                        return ProviderResult.success_result(
-                            {
-                                "resource_ids": adapter_result.get("resource_ids", []),
-                                "instances": adapter_result.get("instances", []),
-                                "provider_api": provider_api,
-                                "count": count,
-                                "template_id": aws_template.template_id,
-                            },
-                            {
-                                "method": "provisioning_adapter",
-                                "provider_data": adapter_result.get("provider_data", {}),
-                            },
-                        )
-                except Exception as e:
-                    self._logger.error("Provisioning adapter failed: %s", e)
-
-            # Fallback to handler
-            handler_result = handler.acquire_hosts(request, aws_template)
-
-            if isinstance(handler_result, dict):
-                resource_ids = handler_result.get("resource_ids", [])
-                instances = handler_result.get("instances", [])
-                success = handler_result.get("success", True)
-                if not success:
-                    return ProviderResult.error_result(
-                        handler_result.get("error_message", "Handler failed"), "HANDLER_ERROR"
-                    )
-            else:
-                resource_ids = [handler_result] if handler_result else []
-                instances = []
-
-            return ProviderResult.success_result(
-                {
-                    "resource_ids": resource_ids,
-                    "instances": instances,
-                    "provider_api": provider_api,
-                    "count": count,
-                    "template_id": aws_template.template_id,
-                },
-                {"method": "handler"},
+            # Provision via adapter (includes SSM image resolution)
+            adapter_result = await self._provisioning_adapter.provision_resources(
+                request, aws_template
+            )
+            if isinstance(adapter_result, dict) and adapter_result.get("success", True):
+                return ProviderResult.success_result(
+                    {
+                        "resource_ids": adapter_result.get("resource_ids", []),
+                        "instances": adapter_result.get("instances", []),
+                        "provider_api": provider_api,
+                        "count": count,
+                        "template_id": aws_template.template_id,
+                    },
+                    {
+                        "method": "provisioning_adapter",
+                        "provider_data": adapter_result.get("provider_data", {}),
+                    },
+                )
+            return ProviderResult.error_result(
+                adapter_result.get("error_message", "Provisioning failed"),
+                "PROVISIONING_ERROR",
             )
 
         except Exception as e:

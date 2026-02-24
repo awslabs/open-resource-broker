@@ -278,10 +278,19 @@ class AWSProviderStrategy(ProviderStrategy):
     def _get_instance_service(self) -> AWSInstanceOperationService:
         """Get instance operation service with lazy initialization."""
         if self._instance_service is None:
+            from providers.aws.infrastructure.adapters.aws_provisioning_adapter import (
+                AWSProvisioningAdapter,
+            )
+
+            provisioning_adapter = AWSProvisioningAdapter(
+                aws_client=self.aws_client,  # type: ignore[arg-type]
+                logger=self._logger,
+                provider_strategy=self,
+            )
             self._instance_service = AWSInstanceOperationService(
                 aws_client=self.aws_client,  # type: ignore[arg-type]
                 logger=self._logger,
-                provisioning_adapter=self._resolve_provisioning_port(),
+                provisioning_adapter=provisioning_adapter,
                 provider_name=self._provider_name,
                 provider_type=self.provider_type,
             )

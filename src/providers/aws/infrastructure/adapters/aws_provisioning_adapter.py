@@ -90,12 +90,7 @@ class AWSProvisioningAdapter(ResourceProvisioningPort):
         # Check if dry-run mode is requested
         is_dry_run = request.metadata.get("dry_run", False)
 
-        if is_dry_run and self._provider_strategy:
-            # Use provider strategy for dry-run operations
-            return await self._provision_via_strategy(request, template, dry_run=True)
-        else:
-            # Use legacy handler approach for normal operations
-            return self._provision_via_handlers(request, template)
+        return self._provision_via_handlers(request, template, dry_run=is_dry_run)
 
     async def _provision_via_strategy(
         self, request: Request, template: Template, dry_run: bool = False
@@ -143,7 +138,7 @@ class AWSProvisioningAdapter(ResourceProvisioningPort):
             self._logger.error("Provider strategy operation failed: %s", result.error_message)
             raise InfrastructureError(f"Failed to provision resources: {result.error_message}")
 
-    def _provision_via_handlers(self, request: Request, template: Template) -> dict[str, Any]:
+    def _provision_via_handlers(self, request: Request, template: Template, dry_run: bool = False) -> dict[str, Any]:
         """
         Provision resources using the legacy handler approach.
 
@@ -156,6 +151,10 @@ class AWSProvisioningAdapter(ResourceProvisioningPort):
         """
         # Get the appropriate handler for the template
         handler = self._get_handler_for_template(template)
+
+        if dry_run:
+            self._logger.info("Dry-run mode: skipping actual provisioning for template %s", template.template_id)
+            return {"success": True, "resource_ids": [], "instances": [], "dry_run": True}
 
         # Resolve SSM parameter paths to real AMI IDs before calling the handler
         template = self._resolve_template_image(template)
