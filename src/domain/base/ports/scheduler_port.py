@@ -96,5 +96,9 @@ class SchedulerPort(ABC):
         """Get templates filename for the given provider."""
 
     @abstractmethod
+    def get_scheduler_type(self) -> str:
+        """Return the scheduler type identifier (e.g. 'hostfactory', 'default')."""
+
+    @abstractmethod
     def get_scripts_directory(self) -> Path | None:
         """Return the path to the scheduler's scripts directory, or None if not applicable."""

@@ -373,27 +373,10 @@ class CLICommandFactoryOrchestrator:
             elif command_action == "show":
                 return self.create_get_machine_query(machine_id=args.get("machine_id"))
             elif command_action == "request":
-                template_id = args.get("template_id") or args.get("flag_template_id")
-                count = args.get("machine_count") or args.get("flag_machine_count")
-                # Unwrap HF envelope from input_data if template_id not set directly
-                input_data = args.get("input_data")
-                if not template_id and input_data:
-                    if "template" in input_data and isinstance(input_data["template"], dict):
-                        hf = input_data["template"]
-                        template_id = hf.get("templateId") or hf.get("template_id")
-                        count = count or hf.get("machineCount") or hf.get("machine_count")
-                    else:
-                        template_id = input_data.get("templateId") or input_data.get("template_id")
-                        count = (
-                            count
-                            or input_data.get("machineCount")
-                            or input_data.get("machine_count")
-                        )
-                return self.create_create_request_command(
-                    template_id=template_id,
-                    count=count or 1,
-                    provider=args.get("provider"),
-                )
+                # Return None to route through handle_request_machines, which pre-generates
+                # a request_id and queries for the result after command execution.
+                # Going through command_bus.execute() directly returns None (CQRS void).
+                return None
 
         # System operations
         elif command_group == "system":

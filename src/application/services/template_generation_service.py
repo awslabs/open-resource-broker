@@ -250,7 +250,10 @@ class TemplateGenerationService:
         import json
         from datetime import datetime
 
-        templates_data = {"templates": formatted_examples}
+        templates_data = {
+            "scheduler_type": self._scheduler_strategy.get_scheduler_type(),
+            "templates": formatted_examples,
+        }
 
         class DateTimeEncoder(json.JSONEncoder):
             def default(self, obj: object) -> object:  # type: ignore[override]

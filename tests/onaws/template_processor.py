@@ -6,10 +6,11 @@ list.  This replaces the old placeholder-based approach and keeps test configs
 aligned with the actual runtime format.
 
 Flow:
-    AWSHandlerFactory.get_example_templates()  ──programmatic──►  in-memory templates
-    (fallback: config/aws_templates.json)      ──copy + override──►  run_templates/<test>/aws_templates.json
-    config/config.json                         ──merge overrides──►  run_templates/<test>/config.json
-    config/default_config.json                 ──copy──────────────►  run_templates/<test>/default_config.json
+    config/aws_templates.json  ──load_templates_from_path──►  raw dicts (with real image_id)
+                               ──format_templates_for_generation──►  scheduler wire format
+                               ──copy + override──►  run_templates/<test>/aws_templates.json
+    config/config.json         ──merge overrides──►  run_templates/<test>/config.json
+    config/default_config.json ──copy──────────────►  run_templates/<test>/default_config.json
 """
 
 import json
@@ -194,11 +195,11 @@ class TemplateProcessor:
 
     @staticmethod
     def generate_templates_programmatically(scheduler_type: str = "hostfactory") -> Dict[str, Any]:
-        """Generate templates from handler classmethods without touching the filesystem.
+        """Load templates from the real config file using the production scheduler path.
 
-        Calls each AWS handler's get_example_templates() classmethod directly,
-        then converts the resulting Template domain objects to the format expected
-        by the given scheduler type using the production format_templates_for_generation.
+        Uses load_templates_from_path (same as runtime) so templates have real image_id,
+        subnet_ids, security_group_ids etc from the generated config/aws_templates.json.
+        Then formats via format_templates_for_generation for the correct scheduler wire format.
 
         Returns:
             {"templates": [...]} dict in the format expected by the scheduler
@@ -207,44 +208,35 @@ class TemplateProcessor:
 
         sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
-        from providers.aws.infrastructure.handlers.asg_handler import ASGHandler
-        from providers.aws.infrastructure.handlers.ec2_fleet_handler import EC2FleetHandler
-        from providers.aws.infrastructure.handlers.run_instances_handler import RunInstancesHandler
-        from providers.aws.infrastructure.handlers.spot_fleet_handler import SpotFleetHandler
+        strategy = TemplateProcessor._make_strategy(scheduler_type)
 
-        all_templates = []
-        for handler_class in [EC2FleetHandler, SpotFleetHandler, ASGHandler, RunInstancesHandler]:
-            if hasattr(handler_class, "get_example_templates"):
-                try:
-                    all_templates.extend(handler_class.get_example_templates())
-                except Exception as exc:
-                    log.warning(
-                        "Failed to get example templates from %s: %s", handler_class.__name__, exc
-                    )
+        # Find the real generated templates file in config/
+        config_dir = Path(__file__).parent.parent.parent / "config"
+        templates_file = config_dir / "aws_templates.json"
+        if not templates_file.exists():
+            raise FileNotFoundError(
+                f"No generated templates found at {templates_file}. "
+                "Run 'orb templates generate' first."
+            )
 
-        # Use production format_templates_for_generation per scheduler type
-        # so the file format always matches what the scheduler expects
-        raw_dicts = [t.model_dump(mode="json") for t in all_templates]
-        formatted = TemplateProcessor._format_templates_for_scheduler(raw_dicts, scheduler_type)
+        # Load via production path — preserves image_id, subnet_ids, etc.
+        raw_dicts = strategy.load_templates_from_path(str(templates_file))
+        formatted = strategy.format_templates_for_generation(raw_dicts)
         return {"templates": formatted}
 
     @staticmethod
-    def _format_templates_for_scheduler(
-        template_dicts: list[Dict[str, Any]], scheduler_type: str
-    ) -> list[Dict[str, Any]]:
-        """Format template dicts using the production scheduler strategy's format_templates_for_generation."""
+    def _make_strategy(scheduler_type: str):
+        """Return the production scheduler strategy instance for the given type."""
         if scheduler_type == "hostfactory":
             from infrastructure.scheduler.hostfactory.hostfactory_strategy import (
                 HostFactorySchedulerStrategy,
             )
 
-            strategy = HostFactorySchedulerStrategy()
-            return strategy.format_templates_for_generation(template_dicts)
+            return HostFactorySchedulerStrategy()
         else:
             from infrastructure.scheduler.default.default_strategy import DefaultSchedulerStrategy
 
-            strategy = DefaultSchedulerStrategy()
-            return strategy.format_templates_for_generation(template_dicts)
+            return DefaultSchedulerStrategy()
 
     # ------------------------------------------------------------------
     # Internal helpers
