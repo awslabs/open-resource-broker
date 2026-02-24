@@ -361,16 +361,39 @@ async def handle_request_return_machines(args: "argparse.Namespace") -> dict[str
             "message": "Machine IDs must be provided either as arguments or in JSON file",
         }
 
-    from api.utils.request_id_generator import generate_request_id
-    from domain.request.request_types import RequestType
-
-    request_id = generate_request_id(RequestType.RETURN)
-
     command = CreateReturnRequestCommand(
         machine_ids=machine_ids,
     )
 
-    # Execute command — CQRS commands return None; use pre-generated request_id
+    # Execute command — CQRS commands return None; read results from command fields
     await command_bus.execute(command)  # type: ignore[arg-type]
 
-    return {"result": request_id, "message": "Return request created successfully"}
+    created_ids = getattr(command, "created_request_ids", None) or []
+    return {
+        "result": created_ids[0] if created_ids else None,
+        "request_ids": created_ids,
+        "message": "Return request created successfully",
+    }
+
+
+@handle_interface_exceptions(context="cancel_request", interface_type="cli")
+async def handle_cancel_request(args: "argparse.Namespace") -> dict[str, Any]:
+    """Handle cancel request operations."""
+    container = get_container()
+    command_bus = container.get(CommandBus)
+    scheduler_strategy = container.get(SchedulerPort)
+
+    from application.dto.commands import CancelRequestCommand
+
+    request_id = getattr(args, "request_id", None) or getattr(args, "flag_request_id", None)
+    if not request_id:
+        return {"error": "Request ID is required", "message": "Request ID must be provided"}
+
+    reason = getattr(args, "reason", None) or ""
+    command = CancelRequestCommand(request_id=request_id, reason=reason)
+    await command_bus.execute(command)  # type: ignore[arg-type]
+
+    request_data = {"request_id": request_id, "status": "cancelled"}
+    if scheduler_strategy:
+        return scheduler_strategy.format_request_response(request_data)
+    return {"request_id": request_id, "message": "Request cancelled successfully"}
