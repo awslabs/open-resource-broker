@@ -535,12 +535,15 @@ class TemplateConfigurationManager:
 
     def get_template(self, template_id: str) -> Optional[TemplateDTO]:
         """Get template by ID synchronously for compatibility."""
-
         try:
             loop = asyncio.get_event_loop()
-            return loop.run_until_complete(self.get_template_by_id(template_id))
+            if loop.is_running():
+                # Loop already running — use sync fallback to avoid nested asyncio.run()
+                templates = self._load_templates_sync()
+                return next((t for t in templates if t.template_id == template_id), None)
+            else:
+                return loop.run_until_complete(self.get_template_by_id(template_id))
         except RuntimeError:
-            # No event loop running, create new one
             return asyncio.run(self.get_template_by_id(template_id))
 
     async def validate_template(

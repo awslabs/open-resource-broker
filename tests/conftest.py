@@ -47,8 +47,8 @@ try:
     from domain.template.template_aggregate import Template
     from infrastructure.di.buses import CommandBus, QueryBus
     from infrastructure.di.container import DIContainer
-    from infrastructure.template.services.template_persistence_service import (
-        TemplatePersistenceService,
+    from infrastructure.template.services.template_storage_service import (
+        TemplateStorageService as TemplatePersistenceService,
     )
     from providers.aws.configuration.config import AWSProviderConfig as AWSConfig
 
