@@ -389,7 +389,7 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
                 dto_dict = data.to_dict()
                 machines_data = dto_dict.get("machines", [])
 
-                machines = self._format_machines_for_hostfactory(machines_data)
+                machines = self._format_machines_for_hostfactory(machines_data, request_type=dto_dict.get("request_type"))
                 status = self._map_domain_status_to_hostfactory(data.status)
                 message = self._generate_status_message(data.status, len(machines))
 
@@ -405,7 +405,7 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
                 }
             elif isinstance(data, dict):
                 # Handle dict format (fallback)
-                machines = self._format_machines_for_hostfactory(data.get("machines", []))
+                machines = self._format_machines_for_hostfactory(data.get("machines", []), request_type=data.get("request_type"))
                 status = self._map_domain_status_to_hostfactory(data.get("status", "unknown"))
                 message = self._generate_status_message(
                     data.get("status", "unknown"), len(machines)
@@ -699,7 +699,7 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
             # Convert machines to camelCase using existing method
             machines = []
             if "machines" in req_dict:
-                machines = self._format_machines_for_hostfactory(req_dict["machines"])
+                machines = self._format_machines_for_hostfactory(req_dict["machines"], request_type=req_dict.get("request_type"))
 
             # Create HostFactory-compliant request object (only HF spec fields)
             hf_request = {
@@ -889,13 +889,13 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
             return result
 
     def _format_machines_for_hostfactory(
-        self, machines: list[dict[str, Any]]
+        self, machines: list[dict[str, Any]], request_type: str | None = None
     ) -> list[dict[str, Any]]:
         """Format machine data to exact HostFactory format per hf_docs/input-output.md."""
         formatted_machines = []
 
         for machine in machines:
-            result = self._map_machine_status_to_result(machine.get("status"))
+            result = self._map_machine_status_to_result(machine.get("status"), request_type=request_type)
 
             # Per IBM HF spec, message is mandatory when result=="fail"
             if result == "fail":
