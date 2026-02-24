@@ -146,8 +146,7 @@ class ConfigTypeConverter:
             if aws_provider_config:
                 return config_class(**aws_provider_config)
             else:
-                logger.warning("No enabled AWS provider found in configuration")
-                return config_class()
+                raise ValueError("No enabled AWS provider found in configuration")
 
         except Exception as e:
             logger.error("Failed to resolve AWS provider config: %s", e, exc_info=True)

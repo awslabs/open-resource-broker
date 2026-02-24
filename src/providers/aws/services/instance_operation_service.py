@@ -123,9 +123,8 @@ class AWSInstanceOperationService:
             )
 
         except Exception as e:
-            return ProviderResult.error_result(
-                f"Failed to create instances: {e}", "CREATE_INSTANCES_ERROR"
-            )
+            self._logger.error("Failed to create instances: %s", e, exc_info=True)
+            return ProviderResult.error_result(str(e), "CREATE_INSTANCES_ERROR")
 
     def terminate_instances(self, operation: ProviderOperation) -> ProviderResult:
         """Handle instance termination operation."""

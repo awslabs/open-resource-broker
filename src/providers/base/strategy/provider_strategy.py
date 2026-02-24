@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Optional
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, model_validator
 
 from infrastructure.interfaces.provider import BaseProviderConfig
 
@@ -55,6 +55,12 @@ class ProviderResult(BaseModel):
     error_message: Optional[str] = None
     error_code: Optional[str] = None
     metadata: dict[str, Any] = {}
+
+    @model_validator(mode="after")
+    def error_message_required_on_failure(self) -> "ProviderResult":
+        if not self.success and not self.error_message:
+            raise ValueError("error_message is required when success=False")
+        return self
 
     @classmethod
     def success_result(

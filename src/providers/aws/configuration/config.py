@@ -191,31 +191,6 @@ class AWSProviderConfig(BaseSettings, BaseProviderConfig):  # type: ignore[misc]
         return updated
 
     @model_validator(mode="after")
-    def check_auth_method(self) -> "AWSProviderConfig":
-        """
-        Validate that at least one authentication method is provided.
-
-        Returns:
-            Validated model
-
-        Raises:
-            ValueError: If no authentication method is provided
-        """
-        profile = self.profile
-        role_arn = self.role_arn
-        access_key = self.access_key_id
-        secret_key = self.secret_access_key
-        credential_file = self.credential_file
-
-        if profile or role_arn or (access_key and secret_key) or credential_file:
-            return self
-
-        raise ValueError(
-            "At least one authentication method must be provided: "
-            "profile, role_arn, credential_file, or access_key_id + secret_access_key"
-        )
-
-    @model_validator(mode="after")
     def validate_proxy_config(self) -> "AWSProviderConfig":
         """
         Validate proxy configuration.

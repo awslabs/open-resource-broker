@@ -307,14 +307,15 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
 
         # Status-based message and response logic
         if status == "failed":
-            return {"message": f"Request failed: {error_message or 'Unknown error'}"}
+            return {"requestId": request_id, "message": f"Request failed: {error_message or 'Unknown error'}"}
         elif status == "cancelled":
-            return {"message": "Request cancelled"}
+            return {"requestId": request_id, "message": "Request cancelled"}
         elif status == "timeout":
-            return {"message": "Request timed out"}
+            return {"requestId": request_id, "message": "Request timed out"}
         elif status == "partial":
             return {
-                "message": f"Request partially completed: {error_message or 'Some resources failed'}"
+                "requestId": request_id,
+                "message": f"Request partially completed: {error_message or 'Some resources failed'}",
             }
         elif status == "complete":
             return {"requestId": request_id, "message": "Request completed successfully"}
@@ -928,10 +929,7 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
                 "cloudHostId": machine.get("cloud_host_id") or None,
             }
 
-            if machine.get("public_ip_address") or machine.get("public_ip"):
-                formatted_machine["publicIpAddress"] = machine.get(
-                    "public_ip_address", machine.get("public_ip")
-                )
+            formatted_machine["publicIpAddress"] = machine.get("public_ip_address") or machine.get("public_ip") or None
             if machine.get("instance_type"):
                 formatted_machine["instanceType"] = machine["instance_type"]
             if machine.get("price_type"):
@@ -977,6 +975,7 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
             "in_progress": "running",
             "provisioning": "running",
             "complete": "complete",
+            "completed": "complete",
             "partial": "complete_with_error",
             "failed": "complete_with_error",
             "cancelled": "complete_with_error",

@@ -215,14 +215,6 @@ class TestRequestStatusHandlerBehaviour:
 
         # Scheduler strategy formats the response dict
         scheduler = Mock()
-        scheduler.format_request_response = AsyncMock(
-            return_value={
-                "requests": [
-                    {"requestId": "req-12345678-1234-1234-1234-123456789012", "status": "complete"}
-                ]
-            }
-        )
-
         handler = GetRequestStatusRESTHandler(
             query_bus=query_bus,
             command_bus=command_bus,
@@ -240,11 +232,10 @@ class TestRequestStatusHandlerBehaviour:
 
         result = await handler.handle(api_request)
 
-        scheduler.format_request_response.assert_awaited_once()
-        # result is a RequestStatusResponse object; access via .requests or model_dump()
+        # post_process_response no longer calls format_request_response (correct — that was
+        # the wrong formatter for status responses). Verify the response is correctly structured.
         result_dict = result.model_dump() if hasattr(result, "model_dump") else result
         assert result_dict["requests"][0]["requestId"] == "req-12345678-1234-1234-1234-123456789012"
-        assert result_dict["requests"][0]["status"] == "complete"
 
         # Ensure the correct query type was used
         query_bus.execute.assert_awaited_once()

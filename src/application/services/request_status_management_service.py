@@ -84,7 +84,7 @@ class RequestStatusManagementService:
         """Handle provisioning failure."""
         from domain.request.value_objects import RequestStatus
 
-        error_message = provisioning_result.error_message or "Unknown error"
+        error_message = provisioning_result.error_message or "Provisioning failed (no error details)"
         request = request.update_status(
             RequestStatus.FAILED, f"Provisioning failed: {error_message}"
         )

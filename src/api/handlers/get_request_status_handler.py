@@ -249,33 +249,6 @@ class GetRequestStatusRESTHandler(BaseAPIHandler[dict[str, Any], RequestStatusRe
             response.metadata["processed_at"] = time.time()
             response.metadata["processing_duration"] = time.time() - context.start_time
 
-        # Apply scheduler strategy for format conversion if needed
-        if self._scheduler_strategy and hasattr(
-            self._scheduler_strategy, "format_request_response"
-        ):
-            # Convert Pydantic DTO to dict before formatting
-            response_payload: dict[str, Any] = (
-                response.model_dump()
-                if hasattr(response, "model_dump")
-                else response.to_dict()  # type: ignore[union-attr]
-                if hasattr(response, "to_dict")
-                else {}
-            )
-            formatter = self._scheduler_strategy.format_request_response
-            if callable(formatter):
-                import inspect
-
-                try:
-                    if inspect.iscoroutinefunction(formatter):
-                        formatted_response = await formatter(response_payload)
-                    else:
-                        formatted_response = formatter(response_payload)
-                except TypeError:
-                    # Fallback: attempt synchronous call
-                    formatted_response = formatter(response_payload)
-                if isinstance(formatted_response, RequestStatusResponse):
-                    return formatted_response
-
         return response
 
     def _normalize_request_payload(self, request_data: Any, request_id: str) -> dict[str, Any]:

@@ -809,7 +809,7 @@ def validate_all_instances_price_type(status_response, test_case):
 
 
 @pytest.fixture
-def setup_host_factory_mock(request):
+def setup_host_factory_mock(request, monkeypatch):
     processor = TemplateProcessor()
     test_name = request.node.name
 
@@ -830,13 +830,13 @@ def setup_host_factory_mock(request):
 
     # Set environment variables
     test_config_dir = processor.run_templates_dir / test_name
-    os.environ["ORB_CONFIG_DIR"] = str(test_config_dir / "config")
-    os.environ["HF_PROVIDER_CONFDIR"] = str(test_config_dir)
-    os.environ["HF_PROVIDER_LOGDIR"] = str(test_config_dir / "logs")
-    os.environ["HF_PROVIDER_WORKDIR"] = str(test_config_dir / "work")
-    os.environ["DEFAULT_PROVIDER_WORKDIR"] = str(test_config_dir / "work")
-    os.environ["AWS_PROVIDER_LOG_DIR"] = str(test_config_dir / "logs")
-    os.environ["HF_LOGDIR"] = str(test_config_dir / "logs")
+    monkeypatch.setenv("ORB_CONFIG_DIR", str(test_config_dir / "config"))
+    monkeypatch.setenv("HF_PROVIDER_CONFDIR", str(test_config_dir))
+    monkeypatch.setenv("HF_PROVIDER_LOGDIR", str(test_config_dir / "logs"))
+    monkeypatch.setenv("HF_PROVIDER_WORKDIR", str(test_config_dir / "work"))
+    monkeypatch.setenv("DEFAULT_PROVIDER_WORKDIR", str(test_config_dir / "work"))
+    monkeypatch.setenv("AWS_PROVIDER_LOG_DIR", str(test_config_dir / "logs"))
+    monkeypatch.setenv("HF_LOGDIR", str(test_config_dir / "logs"))
 
     (test_config_dir / "logs").mkdir(exist_ok=True)
     (test_config_dir / "work").mkdir(exist_ok=True)
@@ -850,7 +850,7 @@ def setup_host_factory_mock(request):
 
 
 @pytest.fixture
-def setup_host_factory_mock_with_scenario(request):
+def setup_host_factory_mock_with_scenario(request, monkeypatch):
     """Fixture that handles scenario-based overrides by extracting test name from test node."""
     # Generate templates for this test using the actual test name
     processor = TemplateProcessor()
@@ -879,13 +879,13 @@ def setup_host_factory_mock_with_scenario(request):
 
     # Set environment variables
     test_config_dir = processor.run_templates_dir / test_name
-    os.environ["ORB_CONFIG_DIR"] = str(test_config_dir / "config")
-    os.environ["HF_PROVIDER_CONFDIR"] = str(test_config_dir)
-    os.environ["HF_PROVIDER_LOGDIR"] = str(test_config_dir / "logs")
-    os.environ["HF_PROVIDER_WORKDIR"] = str(test_config_dir / "work")
-    os.environ["DEFAULT_PROVIDER_WORKDIR"] = str(test_config_dir / "work")
-    os.environ["AWS_PROVIDER_LOG_DIR"] = str(test_config_dir / "logs")
-    os.environ["HF_LOGDIR"] = str(test_config_dir / "logs")
+    monkeypatch.setenv("ORB_CONFIG_DIR", str(test_config_dir / "config"))
+    monkeypatch.setenv("HF_PROVIDER_CONFDIR", str(test_config_dir))
+    monkeypatch.setenv("HF_PROVIDER_LOGDIR", str(test_config_dir / "logs"))
+    monkeypatch.setenv("HF_PROVIDER_WORKDIR", str(test_config_dir / "work"))
+    monkeypatch.setenv("DEFAULT_PROVIDER_WORKDIR", str(test_config_dir / "work"))
+    monkeypatch.setenv("AWS_PROVIDER_LOG_DIR", str(test_config_dir / "logs"))
+    monkeypatch.setenv("HF_LOGDIR", str(test_config_dir / "logs"))
 
     (test_config_dir / "logs").mkdir(exist_ok=True)
     (test_config_dir / "work").mkdir(exist_ok=True)

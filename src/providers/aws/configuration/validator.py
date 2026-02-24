@@ -125,7 +125,7 @@ class AWSConfigManager:
 
             if config_type == AWSProviderConfig:
                 # Return a default instance - in real usage this would be injected
-                return AWSProviderConfig()  # type: ignore[call-arg]
+                raise ValueError("AWSProviderConfig not available from config manager — no AWS provider configured")
             raise ValueError(f"Unknown AWS config type: {config_type}")
 
 

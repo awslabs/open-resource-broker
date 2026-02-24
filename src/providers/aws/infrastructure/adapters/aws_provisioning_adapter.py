@@ -190,7 +190,7 @@ class AWSProvisioningAdapter(ResourceProvisioningPort):
             raise
         except Exception as e:
             self._logger.error("Error during resource provisioning: %s", str(e))
-            raise InfrastructureError(f"Failed to provision resources: {e!s}")
+            raise InfrastructureError(str(e))
 
     def _resolve_template_image(self, template: Template) -> Template:
         """Resolve SSM parameter paths in template.image_id to real AMI IDs."""

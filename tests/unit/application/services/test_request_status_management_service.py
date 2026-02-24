@@ -135,7 +135,7 @@ class TestHandleProvisioningFailure:
         prov_result = MagicMock()
         prov_result.error_message = None
         self.svc._handle_provisioning_failure(req, prov_result)
-        assert req.metadata["error_message"] == "Unknown error"
+        assert req.metadata["error_message"] == "Provisioning failed (no error details)"
 
 
 class TestExtractInstanceIds:

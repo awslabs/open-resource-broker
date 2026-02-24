@@ -39,6 +39,7 @@ class BaseSchedulerStrategy(SchedulerPort, ABC):
         "pending": "running",
         "in_progress": "running",
         "complete": "complete",
+        "completed": "complete",
         "failed": "complete_with_error",
         "partial": "complete_with_error",
         "cancelled": "complete_with_error",

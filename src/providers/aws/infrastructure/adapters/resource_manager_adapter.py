@@ -9,6 +9,7 @@ backward compatibility while using the improved architecture.
 from typing import Any, Optional
 
 from domain.base.dependency_injection import injectable
+from providers.aws.configuration.config import AWSProviderConfig
 from domain.base.ports import ConfigurationPort, LoggingPort
 from domain.base.resource_manager import (
     ResourceAllocation,
@@ -34,7 +35,11 @@ class AWSResourceManagerAdapter(CloudResourceManagerPort):
     """
 
     def __init__(
-        self, aws_client: AWSClient, logger: LoggingPort, config: ConfigurationPort
+        self,
+        aws_client: AWSClient,
+        logger: LoggingPort,
+        config: ConfigurationPort,
+        aws_config: AWSProviderConfig,
     ) -> None:
         """
         Initialize AWS resource manager adapter.
@@ -43,15 +48,13 @@ class AWSResourceManagerAdapter(CloudResourceManagerPort):
             aws_client: AWS client instance
             logger: Logger for logging messages
             config: Configuration port for accessing configuration
+            aws_config: AWS provider configuration
         """
         self._logger = logger
         self._aws_client = aws_client
         self._config = config
 
         # Use the new resource manager internally
-        from providers.aws.configuration.config import AWSProviderConfig
-
-        aws_config = AWSProviderConfig()  # type: ignore[call-arg]  # This should be injected in real implementation
         self._resource_manager = AWSResourceManagerImpl(self._aws_client, aws_config, self._logger)
 
     def get_resource_quota(

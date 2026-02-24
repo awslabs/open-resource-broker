@@ -197,7 +197,13 @@ async def handle_request_machines(
     )
 
     # Execute command — CQRS commands return None; use pre-generated request_id
-    await command_bus.execute(command)  # type: ignore[arg-type]
+    try:
+        await command_bus.execute(command)  # type: ignore[arg-type]
+    except Exception as e:
+        error_response = {"request_id": request_id, "status": "failed", "error": str(e)}
+        if scheduler_strategy:
+            return scheduler_strategy.format_request_response(error_response), 1
+        return error_response, 1
 
     # Get the request details to include resource ID information
     try:

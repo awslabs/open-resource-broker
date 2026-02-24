@@ -20,7 +20,7 @@ class HostFactoryFieldMappings:
             "templateId": "template_id",
             "maxNumber": "max_instances",
             "imageId": "image_id",
-            "keyName": "key_pair_name",
+            "keyName": "key_name",
             "fleetType": "fleet_type",
             "providerApi": "provider_api",  # Provider API type
             # Machine fields
