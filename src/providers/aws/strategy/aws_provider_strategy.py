@@ -434,9 +434,10 @@ class AWSProviderStrategy(ProviderStrategy):
 
         # Determine cache directory
         from infrastructure.di.container import get_container
+        from domain.base.ports.configuration_port import ConfigurationPort
 
         container = get_container()
-        config = container.get("configuration_port")  # type: ignore[call-overload]
+        config = container.get(ConfigurationPort)
         cache_dir = config.get_cache_dir()
 
         cache = AWSImageCache(
