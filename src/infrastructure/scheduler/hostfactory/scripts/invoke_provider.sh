@@ -33,8 +33,13 @@ if [ "$LOG_SCRIPTS" = "true" ] || [ "$LOG_SCRIPTS" = "1" ]; then
 fi
 
 # Get script directory and project root
+# Walk up from SCRIPT_DIR until we find src/run.py (works whether scripts are at
+# scripts/ after orb init or at src/infrastructure/scheduler/hostfactory/scripts/ in dev)
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
-PROJECT_ROOT="$(dirname "$(dirname "$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")")")"
+PROJECT_ROOT="$SCRIPT_DIR"
+while [ "$PROJECT_ROOT" != "/" ] && [ ! -f "$PROJECT_ROOT/src/run.py" ]; do
+    PROJECT_ROOT="$(dirname "$PROJECT_ROOT")"
+done
 
 # Prefer project virtualenv if present, otherwise fall back to system python
 if [ -x "${PROJECT_ROOT}/.venv/bin/python" ]; then
