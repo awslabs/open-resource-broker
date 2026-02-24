@@ -275,6 +275,13 @@ class AWSProviderStrategy(ProviderStrategy):
             return AWSHandlerFactory(aws_client=self.aws_client, logger=self._logger, config=None)
         return None
 
+    def get_handler(self, handler_type: str) -> Optional[Any]:
+        """Get AWS handler by type — delegates to handler registry."""
+        registry = self._get_handler_registry()
+        if registry:
+            return registry.get_handler(handler_type)
+        return None
+
     def _get_instance_service(self) -> AWSInstanceOperationService:
         """Get instance operation service with lazy initialization."""
         if self._instance_service is None:
