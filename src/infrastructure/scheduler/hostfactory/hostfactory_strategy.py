@@ -562,7 +562,7 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         # Create TemplateDTO object with validation
         return cast(TemplateDTO, TemplateDTO.from_dict(domain_data))
 
-    def parse_request_data(self, raw_data: dict[str, Any]) -> dict[str, Any]:
+    def parse_request_data(self, raw_data: dict[str, Any]) -> dict[str, Any] | list[dict[str, Any]]:
         """
         Parse HostFactory request data to domain-compatible format.
 
@@ -585,7 +585,7 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
                 {"request_id": req.get("requestId", req.get("request_id"))} for req in requests_list
             ]
             self.logger.debug("parse_request_data output (requests): %s", result)
-            return {"requests": result}
+            return result
 
         # Request Machines
         # Handle nested HostFactory format: {"template": {"templateId": "...", "machineCount": ...}}
