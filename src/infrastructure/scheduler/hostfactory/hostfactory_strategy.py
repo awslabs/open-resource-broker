@@ -703,8 +703,10 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
 
             # Create HostFactory-compliant request object (only HF spec fields)
             hf_request = {
-                "request_id": req_dict.get("request_id"),
-                "status": req_dict.get("status"),
+                "requestId": req_dict.get("request_id"),
+                "status": self._map_domain_status_to_hostfactory(
+                    req_dict.get("status") or "pending"
+                ),
                 "message": req_dict.get("message", ""),
                 "machines": machines,
             }

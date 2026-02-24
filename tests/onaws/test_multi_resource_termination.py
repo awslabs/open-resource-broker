@@ -22,6 +22,8 @@ pytestmark = [  # Apply default markers to every test in this module
     pytest.mark.aws,
 ]
 
+SCHEDULER_TYPE = "hostfactory"
+
 # Set environment variables for local development
 os.environ["USE_LOCAL_DEV"] = "1"
 os.environ["HF_LOGDIR"] = "./logs"
@@ -148,12 +150,14 @@ def setup_multi_resource_templates():
     template_configs = [
         {
             "template_name": "ASG_Template",
+            "capacity_to_request": 2,
             "overrides": {
                 "providerApi": "ASG",
             },
         },
         {
             "template_name": "EC2Fleet_Template",
+            "capacity_to_request": 2,
             "overrides": {
                 "providerApi": "EC2Fleet",
                 "fleetType": "maintain",
@@ -163,6 +167,7 @@ def setup_multi_resource_templates():
         },
         {
             "template_name": "SpotFleet_Template",
+            "capacity_to_request": 2,
             "overrides": {
                 "providerApi": "SpotFleet",
                 "fleetType": "maintain",
@@ -171,6 +176,7 @@ def setup_multi_resource_templates():
         },
         {
             "template_name": "RunInstances_Template",
+            "capacity_to_request": 2,
             "overrides": {
                 "providerApi": "RunInstances",
             },
@@ -198,89 +204,95 @@ def setup_multi_resource_templates():
     file_handler.close()
 
 
-def provision_resource_capacity(
+def provision_resource_capacity(  # dead code - commented out
     hfm: HostFactoryMock, template_json: Dict[str, Any], capacity: int
 ) -> Dict[str, Any]:
-    """Provision capacity for any resource type template and return the status response."""
-    log.info(f"Provisioning {capacity} instances for template {template_json['templateId']}")
-
-    # Request capacity
-    res = hfm.request_machines(template_json["templateId"], capacity)
-    parse_and_print_output(res)
-
-    # Validate response schema
-    try:
-        validate_json_schema(
-            instance=res, schema=plugin_io_schemas.expected_request_machines_schema
-        )
-    except ValidationError as e:
-        pytest.fail(f"JSON validation failed for request_machines response: {e}")
-
-    # Extract request ID
-    if "requestId" in res:
-        request_id = res["requestId"]
-    elif "request_id" in res:
-        request_id = res["request_id"]
-    else:
-        pytest.fail(f"AWS provider response missing requestId field. Response: {res}")
-
-    # Wait for provisioning to complete with retry logic
-    log.info(f"Waiting for provisioning to complete for request {request_id}")
-    start_time = time.time()
-    status_response = None
-    retry_count = 0
-    max_retries = 3
-
-    while True:
-        status_response = hfm.get_request_status(request_id)
-        log.debug(f"Status for {request_id}: {json.dumps(status_response, indent=2)}")
-
-        # Validate status response schema
-        try:
-            validate_json_schema(
-                instance=status_response, schema=plugin_io_schemas.expected_request_status_schema
-            )
-        except ValidationError as e:
-            pytest.fail(f"JSON validation failed for get_request_status response: {e}")
-
-        if time.time() - start_time > MAX_TIME_WAIT_FOR_CAPACITY_PROVISIONING_SEC:
-            # Check if instances are in pending state
-            machines = status_response["requests"][0].get("machines", [])
-            pending_instances = [m for m in machines if m.get("status") == "pending"]
-
-            if pending_instances and retry_count < max_retries:
-                retry_count += 1
-                log.warning(
-                    f"Timeout reached but {len(pending_instances)} instances still pending. Retry {retry_count}/{max_retries}"
-                )
-                start_time = time.time()  # Reset timer
-                continue
-
-            pytest.fail(f"Timeout waiting for capacity provisioning for request {request_id}")
-
-        if status_response["requests"][0]["status"] == "complete":
-            break
-
-        time.sleep(5)
-
-    # Verify all instances are provisioned
-    assert status_response["requests"][0]["status"] == "complete"
-    machines = status_response["requests"][0]["machines"]
-
-    instance_ids = [machine["machineId"] for machine in machines]
-    instance_states = get_instances_states(instance_ids, ec2_client)
-
-    for machine, state in zip(machines, instance_states):
-        assert machine["status"] in ["running", "pending"]
-        instance_id = machine["machineId"]
-        assert state is not None
-        assert state in ["running", "pending"]
-        log.debug(f"EC2 {instance_id} state: {state}")
-
-    log.info(
-        f"Successfully provisioned {len(machines)} instances for template {template_json['templateId']}"
-    )
-    return status_response
+    # """Provision capacity for any resource type template and return the status response."""
+    # log.info(f"Provisioning {capacity} instances for template {template_json['templateId']}")
+    #
+    # # Request capacity
+    # res = hfm.request_machines(template_json["templateId"], capacity)
+    # parse_and_print_output(res)
+    #
+    # # Validate response schema
+    # try:
+    #     validate_json_schema(
+    #         instance=res, schema=plugin_io_schemas.get_schema_for_scheduler("request_machines", SCHEDULER_TYPE)
+    #     )
+    # except ValidationError as e:
+    #     pytest.fail(f"JSON validation failed for request_machines response: {e}")
+    #
+    # # Extract request ID
+    # if "requestId" in res:
+    #     request_id = res["requestId"]
+    # elif "request_id" in res:
+    #     request_id = res["request_id"]
+    # else:
+    #     pytest.fail(f"AWS provider response missing requestId field. Response: {res}")
+    #
+    # # Wait for provisioning to complete with retry logic
+    # log.info(f"Waiting for provisioning to complete for request {request_id}")
+    # start_time = time.time()
+    # status_response = None
+    # retry_count = 0
+    # max_retries = 3
+    #
+    # while True:
+    #     status_response = hfm.get_request_status(request_id)
+    #     log.debug(f"Status for {request_id}: {json.dumps(status_response, indent=2)}")
+    #
+    #     # Validate status response schema
+    #     try:
+    #         validate_json_schema(
+    #             instance=status_response,
+    #             schema=plugin_io_schemas.get_schema_for_scheduler("request_status", SCHEDULER_TYPE)
+    #         )
+    #     except ValidationError as e:
+    #         pytest.fail(f"JSON validation failed for get_request_status response: {e}")
+    #
+    #     if time.time() - start_time > MAX_TIME_WAIT_FOR_CAPACITY_PROVISIONING_SEC:
+    #         machines = status_response["requests"][0].get("machines", [])
+    #         pending_instances = [m for m in machines if m.get("status") == "pending"]
+    #
+    #         if pending_instances and retry_count < max_retries:
+    #             retry_count += 1
+    #             log.warning(
+    #                 f"Timeout reached but {len(pending_instances)} instances still pending. Retry {retry_count}/{max_retries}"
+    #             )
+    #             start_time = time.time()
+    #             continue
+    #
+    #         pytest.fail(f"Timeout waiting for capacity provisioning for request {request_id}")
+    #
+    #     _status = status_response["requests"][0]["status"]
+    #     if _status in {"complete", "complete_with_error", "failed", "partial", "cancelled", "timeout"}:
+    #         if _status != "complete":
+    #             pytest.fail(
+    #                 f"Request {request_id} reached terminal status '{_status}'. Response: {status_response}"
+    #             )
+    #         break
+    #
+    #     time.sleep(5)
+    #
+    # # Verify all instances are provisioned
+    # assert status_response["requests"][0]["status"] == "complete"
+    # machines = status_response["requests"][0]["machines"]
+    #
+    # instance_ids = [machine.get("machineId") or machine.get("machine_id") for machine in machines]
+    # instance_states = get_instances_states(instance_ids, ec2_client)
+    #
+    # for machine, state in zip(machines, instance_states):
+    #     assert machine["status"] in ["running", "pending"]
+    #     instance_id = machine.get("machineId") or machine.get("machine_id")
+    #     assert state is not None
+    #     assert state in ["running", "pending"]
+    #     log.debug(f"EC2 {instance_id} state: {state}")
+    #
+    # log.info(
+    #     f"Successfully provisioned {len(machines)} instances for template {template_json['templateId']}"
+    # )
+    # return status_response
+    raise NotImplementedError("dead code - commented out")
 
 
 @pytest.mark.aws
@@ -318,7 +330,7 @@ def test_multi_resource_termination(setup_multi_resource_templates):
 
     try:
         validate_json_schema(
-            instance=res, schema=plugin_io_schemas.expected_get_available_templates_schema
+            instance=res, schema=plugin_io_schemas.get_schema_for_scheduler("get_available_templates", SCHEDULER_TYPE)
         )
     except ValidationError as e:
         log.warning(f"JSON validation failed for get_available_templates: {e}")
@@ -379,15 +391,8 @@ def test_multi_resource_termination(setup_multi_resource_templates):
         config = resource_info["config"]
         resource_type = resource_info["resource_type"]
 
-        # Determine capacity to request based on resource type
-        if resource_type == "ASG":
-            capacity_to_request = config["overrides"]["desiredCapacity"]
-        elif resource_type in ["EC2Fleet", "SpotFleet"]:
-            capacity_to_request = config["overrides"]["targetCapacity"]
-        elif resource_type == "RunInstances":
-            capacity_to_request = config["overrides"]["minCount"]
-        else:
-            capacity_to_request = 2  # Default fallback
+        # Determine capacity to request from scenario-level key
+        capacity_to_request = config.get("capacity_to_request", 2)
 
         log.info(
             f"Starting provisioning of {capacity_to_request} instances from {resource_type} template {template_json['templateId']}"
@@ -398,7 +403,7 @@ def test_multi_resource_termination(setup_multi_resource_templates):
 
         try:
             validate_json_schema(
-                instance=res, schema=plugin_io_schemas.expected_request_machines_schema
+                instance=res, schema=plugin_io_schemas.get_schema_for_scheduler("request_machines", SCHEDULER_TYPE)
             )
         except ValidationError as e:
             pytest.fail(f"JSON validation failed for request_machines response: {e}")
@@ -431,7 +436,7 @@ def test_multi_resource_termination(setup_multi_resource_templates):
             try:
                 validate_json_schema(
                     instance=status_response,
-                    schema=plugin_io_schemas.expected_request_status_schema,
+                    schema=plugin_io_schemas.get_schema_for_scheduler("request_status", SCHEDULER_TYPE),
                 )
             except ValidationError as e:
                 pytest.fail(f"JSON validation failed for get_request_status response: {e}")
@@ -450,7 +455,12 @@ def test_multi_resource_termination(setup_multi_resource_templates):
 
                 pytest.fail(f"Timeout waiting for capacity provisioning for request {request_id}")
 
-            if status_response["requests"][0]["status"] == "complete":
+            _status = status_response["requests"][0]["status"]
+            if _status in {"complete", "complete_with_error", "failed", "partial", "cancelled", "timeout"}:
+                if _status != "complete":
+                    pytest.fail(
+                        f"Request {request_id} reached terminal status '{_status}'. Response: {status_response}"
+                    )
                 break
 
             time.sleep(5)
@@ -459,12 +469,12 @@ def test_multi_resource_termination(setup_multi_resource_templates):
         assert status_response["requests"][0]["status"] == "complete"
         machines = status_response["requests"][0]["machines"]
 
-        instance_ids = [machine["machineId"] for machine in machines]
+        instance_ids = [machine.get("machineId") or machine.get("machine_id") for machine in machines]
         instance_states = get_instances_states(instance_ids, ec2_client)
 
         for machine, state in zip(machines, instance_states):
             assert machine["status"] in ["running", "pending"]
-            instance_id = machine["machineId"]
+            instance_id = machine.get("machineId") or machine.get("machine_id")
             assert state is not None
             assert state in ["running", "pending"]
             log.debug(f"EC2 {instance_id} state: {state}")
@@ -510,7 +520,11 @@ def test_multi_resource_termination(setup_multi_resource_templates):
     )
 
     return_response = hfm.request_return_machines(all_instance_ids)
-    return_request_id = return_response.get("result") or return_response.get("requestId")
+    return_request_id = (
+        return_response.get("result")
+        or return_response.get("requestId")
+        or return_response.get("request_id")
+    )
     log.info(f"Termination request ID: {return_request_id}")
 
     # Step 6: Monitor termination progress

@@ -81,16 +81,16 @@ expected_request_status_schema_hostfactory = {
             "type": "array",
             "items": {
                 "type": "object",
-                "required": ["request_id", "message", "status", "machines"],
+                "required": ["requestId", "message", "status", "machines"],
                 "properties": {
-                    "request_id": {
+                    "requestId": {
                         "type": "string",
                         "pattern": "^(req-|ret-)[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
                     },
                     "message": {"type": "string"},
                     "status": {
                         "type": "string",
-                        "enum": ["running", "complete", "complete_with_error", "in_progress"],
+                        "enum": ["running", "complete", "complete_with_error"],
                     },
                     "machines": {
                         "type": "array",
@@ -200,7 +200,7 @@ expected_request_status_schema_default = {
                     "message": {"type": "string"},
                     "status": {
                         "type": "string",
-                        "enum": ["running", "complete", "complete_with_error", "in_progress"],
+                        "enum": ["running", "complete", "complete_with_error", "in_progress", "failed", "partial", "cancelled", "timeout"],
                     },
                     "machines": {
                         "type": "array",

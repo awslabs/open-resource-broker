@@ -309,8 +309,8 @@ def _extract_request_id(response: dict) -> str:
         response.get("requestId")
         or response.get("request_id")
         or (response.get("requests") or [{}])[0].get("requestId")
-        or ""
         or response.get("result")
+        or ""
     )
 
 
@@ -1190,7 +1190,14 @@ def _resolve_request_machines_schema(response: dict, scheduler_type: str):
 
 
 def _resolve_request_status_schema(response: dict, scheduler_type: str):
-    """Pick request_status schema based on key style in the response payload."""
+    """Pick request_status schema based on scheduler_type, falling back to field detection."""
+    # Use scheduler_type as the primary signal — it is always known at call sites.
+    # Field detection is only used when scheduler_type is absent/unknown, because during
+    # early polling the requests/machines lists may be empty, making field names unreliable.
+    if scheduler_type in ("hostfactory", "default"):
+        return plugin_io_schemas.get_schema_for_scheduler("request_status", scheduler_type)
+
+    # Fallback: infer from field names in the response (scheduler_type unknown/None)
     requests = response.get("requests") if isinstance(response, dict) else []
     first_request = requests[0] if isinstance(requests, list) and requests else {}
 
@@ -1214,7 +1221,8 @@ def _resolve_request_status_schema(response: dict, scheduler_type: str):
         return plugin_io_schemas.expected_request_status_schema_hostfactory
     if has_snake_request or has_snake_machine:
         return plugin_io_schemas.expected_request_status_schema_default
-    return plugin_io_schemas.get_schema_for_scheduler("request_status", scheduler_type)
+    # Last resort: default to hostfactory for backward compatibility
+    return plugin_io_schemas.expected_request_status_schema_hostfactory
 
 
 def provide_release_control_loop(hfm, template_json, capacity_to_request, test_case=None):
@@ -1461,8 +1469,8 @@ def test_get_available_templates(setup_host_factory_mock):
 
     res = hfm.get_available_templates()
 
-    # Use default hostfactory schema for backward compatibility
-    scheduler_type = "hostfactory"
+    # Derive scheduler type from the fixture rather than hardcoding
+    scheduler_type = getattr(hfm, "scheduler", "hostfactory")
     schema = plugin_io_schemas.get_schema_for_scheduler("get_available_templates", scheduler_type)
 
     try:
@@ -1635,7 +1643,7 @@ def test_partial_return_reduces_capacity(setup_host_factory_mock_with_scenario, 
 
     # 2.4: Wait for return completion
     log.info("2.4: Waiting for return completion")
-    _wait_for_request_completion(hfm, return_request_id, scheduler_type)
+    _wait_for_return_completion(hfm, [first_instance], return_request_id)
 
     # 2.5: Wait for resource stabilization. When you update target capacity of a fleet, it is not
     # being reflected instantaniously, instead, fleet gets into "modifying state", when modification
