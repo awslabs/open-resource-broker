@@ -186,7 +186,7 @@ class HostFactoryMock:
             return {"error": "Failed to get templates", "message": res["stderr"]}
 
         try:
-            stdout = res["stdout"]
+            stdout = res["stdout"].replace(']\n  "', '],\n  "')
             json_start = stdout.find("{")
             if json_start == -1:
                 log.error("Could not find JSON in response")
@@ -216,7 +216,7 @@ class HostFactoryMock:
             return {"error": "Failed to request machines", "message": res["stderr"]}
 
         try:
-            stdout = res["stdout"]
+            stdout = res["stdout"].replace(']\n  "', '],\n  "')
             json_start = stdout.find("{")
             if json_start == -1:
                 log.error("Could not find JSON in response")
@@ -246,7 +246,7 @@ class HostFactoryMock:
             return {"error": "Failed to get request status", "message": res["stderr"]}
 
         try:
-            stdout = res["stdout"]
+            stdout = res["stdout"].replace(']\n  "', '],\n  "')
             json_start = stdout.find("{")
             if json_start == -1:
                 log.error("Could not find JSON in response")
@@ -277,7 +277,7 @@ class HostFactoryMock:
             return {"error": "Failed to return machines", "message": res["stderr"]}
 
         try:
-            stdout = res["stdout"]
+            stdout = res["stdout"].replace(']\n  "', '],\n  "')
             json_start = stdout.find("{")
             if json_start == -1:
                 log.error("Could not find JSON in response")
@@ -305,7 +305,7 @@ class HostFactoryMock:
             return {"error": "Failed to get return requests", "message": res["stderr"]}
 
         try:
-            stdout = res["stdout"]
+            stdout = res["stdout"].replace(']\n  "', '],\n  "')
             json_start = stdout.find("{")
             if json_start == -1:
                 log.error("Could not find JSON in response")
