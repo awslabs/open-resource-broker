@@ -312,6 +312,16 @@ class ConfigurationAdapter(ConfigurationPort):
         """Get effective provider credential profile - delegate to ConfigurationManager."""
         return self._config_manager.get_effective_aws_profile(default_profile)
 
+    def get_resource_prefix(self, resource_type: str) -> str:
+        """Get resource naming prefix for the given resource type."""
+        try:
+            resource_config = self._config_manager.app_config.resource
+            if hasattr(resource_config.prefixes, resource_type):
+                return getattr(resource_config.prefixes, resource_type)
+            return resource_config.default_prefix
+        except Exception:
+            return ""
+
     def get_active_provider_override(self) -> str | None:
         """Get current provider override from CLI."""
         return self._config_manager.get_active_provider_override()

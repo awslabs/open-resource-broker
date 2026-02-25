@@ -90,6 +90,10 @@ class ConfigurationPort(ProviderConfigPort):
         """Set configuration value."""
 
     @abstractmethod
+    def get_resource_prefix(self, resource_type: str) -> str:
+        """Get resource naming prefix for the given resource type."""
+
+    @abstractmethod
     def get_configuration_value(self, key: str, default: Any = None) -> Any:
         """Get configuration value."""
 

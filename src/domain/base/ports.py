@@ -22,6 +22,10 @@ class ConfigurationPort(Protocol):
         """Get metrics configuration."""
         ...
 
+    def get_resource_prefix(self, resource_type: str) -> str:
+        """Get resource naming prefix for the given resource type."""
+        ...
+
 
 class LoggingPort(Protocol):
     """Port for logging from domain layer."""
