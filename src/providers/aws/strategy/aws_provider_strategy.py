@@ -270,9 +270,17 @@ class AWSProviderStrategy(ProviderStrategy):
     def _get_handler_factory(self) -> Optional[AWSHandlerFactory]:
         """Get handler factory with provider-specific AWS client."""
         if self.aws_client:
+            from domain.base.ports.configuration_port import ConfigurationPort
+            from infrastructure.di.container import get_container
             from providers.aws.infrastructure.aws_handler_factory import AWSHandlerFactory
 
-            return AWSHandlerFactory(aws_client=self.aws_client, logger=self._logger, config=None)
+            try:
+                config_port = get_container().get(ConfigurationPort)
+            except Exception:
+                config_port = None
+                if self._logger:
+                    self._logger.warning("ConfigurationPort not available for handler factory")
+            return AWSHandlerFactory(aws_client=self.aws_client, logger=self._logger, config=config_port)
         return None
 
     def get_handler(self, handler_type: str) -> Optional[Any]:
