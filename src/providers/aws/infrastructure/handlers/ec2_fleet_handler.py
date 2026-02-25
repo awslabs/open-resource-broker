@@ -38,7 +38,6 @@ from domain.template.template_aggregate import Template
 from infrastructure.adapters.ports.request_adapter_port import RequestAdapterPort
 from infrastructure.error.decorators import handle_infrastructure_exceptions
 from infrastructure.resilience import CircuitBreakerOpenError
-from infrastructure.utilities.common.resource_naming import get_resource_prefix
 from providers.aws.domain.template.aws_template_aggregate import AWSTemplate
 from providers.aws.domain.template.value_objects import AWSFleetType
 from providers.aws.exceptions.aws_exceptions import (
@@ -468,7 +467,7 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
         return {
             # Fleet-specific values
             "fleet_type": template.fleet_type.value,
-            "fleet_name": f"{self.config_port.get_resource_prefix('fleet') if self.config_port else get_resource_prefix('fleet')}{request.request_id}",
+            "fleet_name": f"{self.config_port.get_resource_prefix('fleet')}{request.request_id}",
             # Computed overrides
             "instance_overrides": instance_overrides,
             "ondemand_overrides": ondemand_overrides,
@@ -574,7 +573,7 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
         fleet_tags = [
             {
                 "Key": "Name",
-                "Value": f"{self.config_port.get_resource_prefix('fleet') if self.config_port else get_resource_prefix('fleet')}{request.request_id}",
+                "Value": f"{self.config_port.get_resource_prefix('fleet')}{request.request_id}",
             },
             {"Key": "RequestId", "Value": str(request.request_id)},
             {"Key": "TemplateId", "Value": str(template.template_id)},

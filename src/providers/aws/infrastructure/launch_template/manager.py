@@ -14,10 +14,6 @@ from botocore.exceptions import ClientError
 from domain.base.dependency_injection import injectable
 from domain.base.ports import LoggingPort
 from domain.request.aggregate import Request
-from infrastructure.utilities.common.resource_naming import (
-    get_instance_name,
-    get_launch_template_name,
-)
 from providers.aws.domain.template.aws_template_aggregate import AWSTemplate
 from providers.aws.exceptions.aws_exceptions import (
     AWSValidationError,
@@ -131,8 +127,8 @@ class AWSLaunchTemplateManager:
         # Create launch template data
         launch_template_data = self._create_launch_template_data(aws_template, request)
 
-        # Get the launch template name using the helper function
-        launch_template_name = get_launch_template_name(str(request.request_id))
+        # Get the launch template name
+        launch_template_name = f"{self.config_port.get_resource_prefix('launch_template')}{request.request_id}"
 
         # Generate a deterministic client token for idempotency
         client_token = self._generate_client_token(request, aws_template)
@@ -302,7 +298,7 @@ class AWSLaunchTemplateManager:
             custom_tags = [{"key": k, "value": v} for k, v in template.tags.items()]
 
         # Get instance name
-        instance_name = get_instance_name(str(request.request_id))
+        instance_name = f"{self.config_port.get_resource_prefix('instance')}{request.request_id}"
 
         return {
             # Basic values
@@ -440,9 +436,6 @@ class AWSLaunchTemplateManager:
             hasattr(aws_template, "root_device_volume_size"),
         )
 
-        # Get instance name using the helper function
-        get_instance_name(str(request.request_id))  # type: ignore[arg-type]
-
         launch_template_data = {
             "ImageId": image_id,
             "InstanceType": (
@@ -546,8 +539,8 @@ class AWSLaunchTemplateManager:
         Returns:
             List of tag dictionaries
         """
-        # Get instance name using the helper function
-        instance_name = get_instance_name(str(request.request_id))
+        # Get instance name
+        instance_name = f"{self.config_port.get_resource_prefix('instance')}{request.request_id}"
 
         # Get package name for CreatedBy tag
         created_by = "open-resource-broker"  # fallback
@@ -585,7 +578,7 @@ class AWSLaunchTemplateManager:
         Returns:
             List of tag dictionaries
         """
-        template_name = get_launch_template_name(str(request.request_id))
+        template_name = f"{self.config_port.get_resource_prefix('launch_template')}{request.request_id}"
 
         # Get package name for CreatedBy tag
         created_by = "open-resource-broker"  # fallback
