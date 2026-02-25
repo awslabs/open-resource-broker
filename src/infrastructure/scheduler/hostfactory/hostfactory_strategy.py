@@ -60,16 +60,6 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         return self._logger
 
     @property
-    def template_defaults_service(self):
-        if self._template_defaults_service is None:
-            from domain.template.ports.template_defaults_port import TemplateDefaultsPort
-            from infrastructure.di.container import get_container, is_container_ready
-
-            if is_container_ready():
-                self._template_defaults_service = get_container().get_optional(TemplateDefaultsPort)
-        return self._template_defaults_service
-
-    @property
     def field_mapper(self) -> HostFactoryFieldMapper:
         """Lazy initialization of field mapper to avoid circular dependencies."""
         if self._field_mapper is None:
@@ -161,13 +151,10 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
             mapped["provider_api"] = PROVIDER_API_ALIASES.get(
                 mapped["provider_api"], mapped["provider_api"]
             )
-            # Apply all template defaults using the service
-            mapped = self.template_defaults_service.resolve_template_defaults(
-                mapped, target_provider
-            )
         else:
             raw_api = template.get("providerApi", template.get("provider_api", "EC2Fleet"))
             mapped["provider_api"] = PROVIDER_API_ALIASES.get(raw_api, raw_api)
+        mapped = self._apply_template_defaults(mapped, target_provider)
 
         if "template_id" in mapped:
             mapped["name"] = template.get("name", mapped["template_id"])
@@ -249,19 +236,7 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
 
     def format_request_response(self, request_data: Any) -> dict[str, Any]:
         """Format request creation response to HostFactory format."""
-        # Allow both dicts and Pydantic-style objects
-        if hasattr(request_data, "model_dump"):
-            request_dict = request_data.model_dump()
-        elif hasattr(request_data, "to_dict"):
-            request_dict = request_data.to_dict()
-        elif isinstance(request_data, dict):
-            request_dict = request_data
-        else:
-            # Fallback: try to coerce to dict
-            try:
-                request_dict = dict(request_data)
-            except Exception:
-                request_dict = {}
+        request_dict = self._coerce_to_dict(request_data)
 
         if "requests" in request_dict:
             return {
@@ -270,20 +245,8 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
                 "message": request_dict.get("message", "Status retrieved successfully"),
             }
 
-        # Prefer snake_case in API responses
-        request_id = request_dict.get("request_id", request_dict.get("requestId"))
-
-        # Handle UUID objects and nested value objects
-        if isinstance(request_id, dict) and "value" in request_id:
-            request_id = str(request_id["value"])
-        elif (
-            request_id is not None
-            and not isinstance(request_id, dict)
-            and hasattr(request_id, "value")
-        ):
-            request_id = str(request_id.value)
-        elif request_id:
-            request_id = str(request_id)
+        raw_id = request_dict.get("request_id", request_dict.get("requestId"))
+        request_id = self._unwrap_request_id(raw_id)
 
         # Check request status to provide appropriate message
         status = request_dict.get("status", "pending")

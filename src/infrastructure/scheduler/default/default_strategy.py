@@ -26,6 +26,7 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
         """Initialize the instance."""
         self._config_manager = None
         self._logger = None
+        self._template_defaults_service = None
         # Initialize field mapper
         self.field_mapper = DefaultFieldMapper()
 
@@ -101,7 +102,9 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
                 if delegate:
                     return delegate.load_templates_from_path(template_path, provider_override)
 
-            templates = self._load_single_file_from_data(data)
+            raw_templates = self._load_single_file_from_data(data)
+            provider_name = provider_override or self._get_provider_name()
+            templates = [self._apply_template_defaults(t, provider_name) for t in raw_templates]
             self.logger.debug("Loaded %d templates from %s", len(templates), template_path)
             return templates
         except Exception as e:
@@ -346,21 +349,24 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
         else:
             return workdir
 
-    def format_request_response(self, request_data: dict[str, Any]) -> dict[str, Any]:
+    def format_request_response(self, request_data: Any) -> dict[str, Any]:
         """Format request creation response to native domain format."""
+        request_dict = self._coerce_to_dict(request_data)
+
         # If this is a status/detail response, pass through the requests list and status
-        if "requests" in request_data:
+        if "requests" in request_dict:
             return {
-                "requests": request_data.get("requests", []),
-                "status": request_data.get("status", "complete"),
-                "message": request_data.get("message", "Status retrieved successfully"),
-                "errors": request_data.get("errors"),
+                "requests": request_dict.get("requests", []),
+                "status": request_dict.get("status", "complete"),
+                "message": request_dict.get("message", "Status retrieved successfully"),
+                "errors": request_dict.get("errors"),
             }
 
         # Get status and error info
-        status = request_data.get("status", "pending")
-        error_message = request_data.get("error_message")
-        request_id = request_data.get("request_id", request_data.get("requestId"))
+        status = request_dict.get("status", "pending")
+        error_message = request_dict.get("status_message") or request_dict.get("message")
+        raw_id = request_dict.get("request_id", request_dict.get("requestId"))
+        request_id = self._unwrap_request_id(raw_id)
 
         # Status-based message and response logic
         if status == "failed":
@@ -386,5 +392,5 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
         else:
             return {
                 "request_id": request_id,
-                "message": request_data.get("message", "Request status unknown"),
+                "message": request_dict.get("message", "Request status unknown"),
             }
