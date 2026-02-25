@@ -1402,9 +1402,10 @@ def provide_release_control_loop(hfm, template_json, capacity_to_request, test_c
         template_json.get("providerApi") or template_json.get("provider_api") or "EC2Fleet"
     )
 
-    # Get resource ID for verification
-    resource_id = None
-    if ec2_instance_ids:
+    # Get resource ID for verification - prefer from response, fall back to tag discovery
+    resource_ids_from_response = status_response["requests"][0].get("resource_ids") or []
+    resource_id = resource_ids_from_response[0] if resource_ids_from_response else None
+    if not resource_id and ec2_instance_ids:
         resource_id = _get_resource_id_from_instance(ec2_instance_ids[0], provider_api)
 
     try:
@@ -1629,7 +1630,10 @@ def test_partial_return_reduces_capacity(setup_host_factory_mock_with_scenario, 
     first_instance = machine_ids[0]
     log.info("Target instance for partial return: %s", first_instance)
 
-    resource_id = _get_resource_id_from_instance(first_instance, provider_api)
+    resource_ids_from_response = status_response["requests"][0].get("resource_ids") or []
+    resource_id = resource_ids_from_response[0] if resource_ids_from_response else None
+    if not resource_id:
+        resource_id = _get_resource_id_from_instance(first_instance, provider_api)
     if not resource_id:
         pytest.skip(f"Could not determine backing resource for instance {first_instance}")
     log.info("Backing resource ID: %s", resource_id)
