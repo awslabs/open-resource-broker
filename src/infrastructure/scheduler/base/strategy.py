@@ -24,16 +24,11 @@ class BaseSchedulerStrategy(SchedulerPort, ABC):
     Inherits from SchedulerPort which defines all the required abstract methods.
     """
 
-    def __init__(self, config_manager: Any, logger: Any) -> None:
-        """Initialize base scheduler strategy.
-
-        Args:
-            config_manager: Configuration manager instance
-            logger: Logger instance for this strategy
-        """
-        self.config_manager = config_manager
-        self.logger = logger
-        self._template_defaults_service = None
+    @property
+    @abstractmethod
+    def config_manager(self) -> Any:
+        """Configuration manager instance. Provided by each concrete subclass."""
+        ...
 
     @property
     def template_defaults_service(self):
