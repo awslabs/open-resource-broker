@@ -38,7 +38,6 @@ from domain.template.template_aggregate import Template
 from infrastructure.adapters.ports.request_adapter_port import RequestAdapterPort
 from infrastructure.error.decorators import handle_infrastructure_exceptions
 from providers.aws.infrastructure.tags import build_system_tags, merge_tags
-from infrastructure.utilities.common.resource_naming import get_resource_prefix
 from providers.aws.domain.template.aws_template_aggregate import AWSTemplate
 from providers.aws.exceptions.aws_exceptions import AWSInfrastructureError
 from providers.aws.infrastructure.adapters.machine_adapter import AWSMachineAdapter
@@ -255,7 +254,7 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
 
         return {
             # RunInstances-specific values
-            "instance_name": f"{self.config_port.get_resource_prefix('instance') if self.config_port else get_resource_prefix('instance')}{request.request_id}",
+            "instance_name": f"{self.config_port.get_resource_prefix('instance')}{request.request_id}",
             # Pricing configuration
             "default_capacity_type": self._get_default_capacity_type(template.price_type),
             "has_spot_options": bool(template.allocation_strategy or template.max_price),
@@ -386,7 +385,7 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
                     [
                         {
                             "Key": "Name",
-                            "Value": f"{self.config_port.get_resource_prefix('instance') if self.config_port else get_resource_prefix('instance')}{request.request_id}",
+                            "Value": f"{self.config_port.get_resource_prefix('instance')}{request.request_id}",
                         },
                         *(
                             [{"Key": k, "Value": v} for k, v in aws_template.tags.items()]

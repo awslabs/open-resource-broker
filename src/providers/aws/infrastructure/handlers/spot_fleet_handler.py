@@ -35,7 +35,6 @@ from domain.request.aggregate import Request
 from domain.template.template_aggregate import Template
 from infrastructure.adapters.ports.request_adapter_port import RequestAdapterPort
 from infrastructure.error.decorators import handle_infrastructure_exceptions
-from infrastructure.utilities.common.resource_naming import get_resource_prefix
 from providers.aws.infrastructure.tags import build_system_tags, merge_tags
 from providers.aws.domain.template.aws_template_aggregate import AWSTemplate
 from providers.aws.domain.template.value_objects import AWSFleetType
@@ -356,7 +355,7 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
 
         return {
             # Fleet-specific values
-            "fleet_name": f"{self.config_port.get_resource_prefix('spot_fleet') if self.config_port else get_resource_prefix('spot_fleet')}{request.request_id}",
+            "fleet_name": f"{self.config_port.get_resource_prefix('spot_fleet')}{request.request_id}",
             # Template reference approach (fixes duplication)
             "base_launch_spec": base_launch_spec,
             "instance_overrides": instance_overrides,

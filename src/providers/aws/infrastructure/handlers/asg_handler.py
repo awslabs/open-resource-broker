@@ -37,7 +37,6 @@ from domain.request.aggregate import Request
 from domain.template.template_aggregate import Template
 from infrastructure.adapters.ports.request_adapter_port import RequestAdapterPort
 from infrastructure.error.decorators import handle_infrastructure_exceptions
-from infrastructure.utilities.common.resource_naming import get_resource_prefix
 from providers.aws.domain.template.aws_template_aggregate import AWSTemplate
 from providers.aws.exceptions.aws_exceptions import AWSInfrastructureError
 from providers.aws.infrastructure.adapters.machine_adapter import AWSMachineAdapter
@@ -144,7 +143,7 @@ class ASGHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
 
 
         # Generate ASG name
-        asg_name = f"{self.config_port.get_resource_prefix('asg') if self.config_port else get_resource_prefix('asg')}{request.request_id}"
+        asg_name = f"{self.config_port.get_resource_prefix('asg')}{request.request_id}"
 
         # Create ASG configuration
         asg_config = self._create_asg_config(
@@ -288,7 +287,7 @@ class ASGHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
 
         return {
             # ASG-specific values
-            "asg_name": f"{self.config_port.get_resource_prefix('asg') if self.config_port else get_resource_prefix('asg')}{request.request_id}",
+            "asg_name": f"{self.config_port.get_resource_prefix('asg')}{request.request_id}",
             "min_size": 0,
             "max_size": request.requested_count * 2,  # Allow buffer
             # Configuration values

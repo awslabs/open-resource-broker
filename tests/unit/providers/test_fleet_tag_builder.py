@@ -1,6 +1,6 @@
 """Unit tests for FleetTagBuilder utility."""
 
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 import pytest
 
@@ -63,17 +63,13 @@ class TestFleetTagBuilder:
         """Test building resource tags with template tags."""
         self.mock_template.tags = {"Environment": "test", "Owner": "team"}
 
-        with patch(
-            "infrastructure.utilities.common.resource_naming.get_resource_prefix",
-            return_value="",
-        ):
-            tags = FleetTagBuilder.build_resource_tags(
-                self.mock_request, self.mock_template, "instance"
-            )
+        tags = FleetTagBuilder.build_resource_tags(
+            self.mock_request, self.mock_template, "instance"
+        )
 
-            assert len(tags) == 7  # 4 base + Name + 2 template tags
-            assert tags["Environment"] == "test"
-            assert tags["Owner"] == "team"
+        assert len(tags) == 7  # 4 base + Name + 2 template tags
+        assert tags["Environment"] == "test"
+        assert tags["Owner"] == "team"
 
     def test_format_for_aws(self):
         """Test formatting tags for AWS API."""

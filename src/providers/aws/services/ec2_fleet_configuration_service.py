@@ -11,8 +11,8 @@ from domain.base.dependency_injection import injectable
 if TYPE_CHECKING:
     from providers.aws.domain.template.value_objects import AWSAllocationStrategy
 from domain.base.ports import LoggingPort
+from domain.base.ports.configuration_port import ConfigurationPort
 from domain.request.aggregate import Request
-from infrastructure.utilities.common.resource_naming import get_resource_prefix
 from providers.aws.domain.template.aws_template_aggregate import AWSTemplate
 from providers.aws.domain.template.value_objects import AWSFleetType
 
@@ -21,13 +21,15 @@ from providers.aws.domain.template.value_objects import AWSFleetType
 class EC2FleetConfigurationService:
     """Service for EC2 Fleet configuration and context preparation."""
 
-    def __init__(self, logger: LoggingPort) -> None:
+    def __init__(self, logger: LoggingPort, config_port: ConfigurationPort | None = None) -> None:
         """Initialize the configuration service.
 
         Args:
             logger: Logger for logging messages
+            config_port: Configuration port for resource prefix lookups
         """
         self._logger = logger
+        self.config_port = config_port
 
     def prepare_template_context(
         self, template: AWSTemplate, request: Request, base_context: dict[str, Any]
@@ -95,7 +97,7 @@ class EC2FleetConfigurationService:
         return {
             # Fleet-specific values
             "fleet_type": template.fleet_type.value if template.fleet_type is not None else None,
-            "fleet_name": f"{get_resource_prefix('fleet')}-{request.request_id}",
+            "fleet_name": f"{self.config_port.get_resource_prefix('fleet')}-{request.request_id}",
             # Computed overrides
             "instance_overrides": instance_overrides,
             "ondemand_overrides": ondemand_overrides,

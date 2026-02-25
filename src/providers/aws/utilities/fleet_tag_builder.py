@@ -9,7 +9,6 @@ from typing import Any
 
 from domain.request.aggregate import Request
 from domain.template.template_aggregate import Template
-from infrastructure.utilities.common.resource_naming import get_resource_prefix
 
 
 class FleetTagBuilder:
@@ -44,6 +43,7 @@ class FleetTagBuilder:
         template: Template,
         resource_type: str,
         package_name: str = "open-resource-broker",
+        config_port: Any = None,
     ) -> dict[str, str]:
         """Build complete tags for a specific resource type.
 
@@ -52,6 +52,7 @@ class FleetTagBuilder:
             template: The template containing template information
             resource_type: Type of resource (fleet, instance, etc.)
             package_name: Package name for CreatedBy tag
+            config_port: Optional configuration port for resource prefix lookups
 
         Returns:
             Dictionary of tag key-value pairs including Name tag
@@ -59,7 +60,7 @@ class FleetTagBuilder:
         tags = FleetTagBuilder.build_base_tags(request, template, package_name)
 
         # Add resource-specific Name tag using configuration
-        prefix = get_resource_prefix(resource_type)
+        prefix = config_port.get_resource_prefix(resource_type) if config_port else ""
         tags["Name"] = f"{prefix}{request.request_id}"
 
         # Add template tags if any
@@ -86,6 +87,7 @@ class FleetTagBuilder:
         template: Template,
         resource_types: list[str],
         package_name: str = "open-resource-broker",
+        config_port: Any = None,
     ) -> list[dict[str, Any]]:
         """Build AWS TagSpecifications for multiple resource types.
 
@@ -94,6 +96,7 @@ class FleetTagBuilder:
             template: The template containing template information
             resource_types: List of AWS resource types to tag
             package_name: Package name for CreatedBy tag
+            config_port: Optional configuration port for resource prefix lookups
 
         Returns:
             List of TagSpecification dictionaries for AWS APIs
@@ -104,7 +107,7 @@ class FleetTagBuilder:
             # Build tags for this resource type
             if resource_type in ["fleet", "spot-fleet-request", "instance"]:
                 tags = FleetTagBuilder.build_resource_tags(
-                    request, template, resource_type, package_name
+                    request, template, resource_type, package_name, config_port
                 )
             else:
                 tags = FleetTagBuilder.build_base_tags(request, template, package_name)
