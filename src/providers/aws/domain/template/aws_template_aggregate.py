@@ -236,9 +236,6 @@ class AWSTemplate(Template):
     # AWS Context field for fleet operations
     context: Optional[str] = None
 
-    # Note: instance_type and instance_types are inherited from CoreTemplate
-    # No need to redefine them here - this was causing the field access issues
-
     def __init__(self, **data) -> None:
         """Initialize the instance."""
         # Set provider_type to AWS

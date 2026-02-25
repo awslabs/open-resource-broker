@@ -79,6 +79,9 @@ class TemplateDTO(BaseDTO):
     # Legacy fields
     version: Optional[str] = None
 
+    # AWS-specific fields
+    fleet_role: Optional[str] = None
+
     def __post_init__(self) -> None:
         """Validate required fields."""
         if not self.template_id:
@@ -140,6 +143,8 @@ class TemplateDTO(BaseDTO):
             is_active=getattr(template, "is_active", True),
             # Legacy fields
             version=getattr(template, "version", None),
+            # AWS-specific fields
+            fleet_role=getattr(template, "fleet_role", None),
         )
 
 

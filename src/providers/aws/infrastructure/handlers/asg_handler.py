@@ -365,11 +365,19 @@ class ASGHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                 aws_template, request, "asg", context
             )
             if native_spec:
-                # Ensure launch template info is in the spec
-                if "LaunchTemplate" not in native_spec:
-                    native_spec["LaunchTemplate"] = {}
-                native_spec["LaunchTemplate"]["LaunchTemplateId"] = launch_template_id
-                native_spec["LaunchTemplate"]["Version"] = launch_template_version
+                # When MixedInstancesPolicy is present, LaunchTemplate must live inside it —
+                # AWS rejects a top-level LaunchTemplate alongside MixedInstancesPolicy.
+                if "MixedInstancesPolicy" in native_spec:
+                    mip = native_spec["MixedInstancesPolicy"]
+                    lt_spec = mip.setdefault("LaunchTemplate", {}).setdefault("LaunchTemplateSpecification", {})
+                    lt_spec.setdefault("LaunchTemplateId", launch_template_id)
+                    lt_spec.setdefault("Version", launch_template_version)
+                    native_spec.pop("LaunchTemplate", None)
+                else:
+                    if "LaunchTemplate" not in native_spec:
+                        native_spec["LaunchTemplate"] = {}
+                    native_spec["LaunchTemplate"]["LaunchTemplateId"] = launch_template_id
+                    native_spec["LaunchTemplate"]["Version"] = launch_template_version
                 native_spec["AutoScalingGroupName"] = asg_name
                 native_spec.setdefault("NewInstancesProtectedFromScaleIn", True)
                 self._logger.info(
@@ -406,10 +414,8 @@ class ASGHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
             "NewInstancesProtectedFromScaleIn": True,
         }
 
-        # Prefer multi-instance maps (including legacy vm_types) over a single instance_type
-        instance_types_map = getattr(aws_template, "instance_types", None) or getattr(
-            aws_template, "vm_types", {}
-        )
+        # Prefer multi-instance maps over a single instance_type
+        instance_types_map = aws_template.machine_types or {}
 
         # Prefer ABIS/InstanceRequirements payload when present (no explicit types)
         instance_requirements_payload = aws_template.get_instance_requirements_payload()

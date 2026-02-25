@@ -69,6 +69,8 @@ def _register_template_services(container: DIContainer):
         from domain.base.ports.scheduler_port import SchedulerPort
         from domain.template.ports.template_defaults_port import TemplateDefaultsPort as TDP
 
+        from domain.template.factory import TemplateFactory
+
         return TemplateConfigurationManager(
             config_manager=c.get(ConfigurationManager),
             scheduler_strategy=c.get(SchedulerPort),
@@ -76,6 +78,7 @@ def _register_template_services(container: DIContainer):
             event_publisher=None,
             template_defaults_service=c.get(TDP),  # type: ignore[arg-type]
             provider_registry_service=c.get(ProviderRegistryService),
+            template_factory=TemplateFactory(logger=c.get(LoggingPort)),
         )
 
     container.register_singleton(

@@ -30,6 +30,7 @@ from .template_cache_service import TemplateCacheService, create_template_cache_
 if TYPE_CHECKING:
     from application.services.provider_registry_service import ProviderRegistryService
     from application.services.template_defaults_service import TemplateDefaultsService
+    from domain.template.factory import TemplateFactoryPort
 
 
 class TemplateConfigurationError(DomainException):
@@ -83,6 +84,7 @@ class TemplateConfigurationManager:
         event_publisher: Optional[EventPublisherPort] = None,
         template_defaults_service: Optional["TemplateDefaultsService"] = None,
         provider_registry_service: Optional["ProviderRegistryService"] = None,
+        template_factory: Optional["TemplateFactoryPort"] = None,
     ) -> None:
         """
         Initialize the template configuration manager.
@@ -96,6 +98,7 @@ class TemplateConfigurationManager:
             event_publisher: Optional event publisher for domain events
             template_defaults_service: Optional service for template defaults
             provider_registry_service: Optional provider registry service for provider operations
+            template_factory: Optional factory for creating provider-specific templates
         """
         self.config_manager = config_manager
         self.scheduler_strategy = scheduler_strategy
@@ -103,6 +106,10 @@ class TemplateConfigurationManager:
         self.event_publisher = event_publisher
         self.template_defaults_service = template_defaults_service
         self.provider_registry_service = provider_registry_service
+        if template_factory is None:
+            from domain.template.factory import TemplateFactory
+            template_factory = TemplateFactory()
+        self.template_factory = template_factory
 
         # Initialize services
         self.cache_service = cache_service or create_template_cache_service("ttl", logger)
@@ -206,9 +213,9 @@ class TemplateConfigurationManager:
         # AMI resolution is already done in _batch_resolve_images, no need to do it again
 
         # Create domain Template object from dict with defaults
-        from domain.template.template_aggregate import Template
-
-        template_domain = Template(**template_with_defaults)
+        # Use factory so provider-specific subclasses (e.g. AWSTemplate) are constructed,
+        # preserving fields that base Template silently drops (extra="ignore").
+        template_domain = self.template_factory.create_template(template_with_defaults)
 
         # Convert domain → DTO using existing method
         return TemplateDTO.from_domain(template_domain)
@@ -698,6 +705,7 @@ def create_template_configuration_manager(
     config_manager: ConfigurationManager,
     scheduler_strategy: SchedulerPort,
     logger: LoggingPort,
+    template_factory: Optional["TemplateFactoryPort"] = None,
 ) -> TemplateConfigurationManager:
     """
     Create TemplateConfigurationManager.
@@ -709,4 +717,5 @@ def create_template_configuration_manager(
         config_manager=config_manager,
         scheduler_strategy=scheduler_strategy,
         logger=logger,
+        template_factory=template_factory,
     )

@@ -161,7 +161,10 @@ class AWSProvisioningAdapter(ResourceProvisioningPort):
 
         # Convert domain Template to AWSTemplate so handlers can access AWS-specific fields
         from providers.aws.domain.template.aws_template_aggregate import AWSTemplate
-        aws_template = AWSTemplate.model_validate(template.model_dump())
+        if isinstance(template, AWSTemplate):
+            aws_template = template
+        else:
+            aws_template = AWSTemplate.model_validate(template.model_dump())
 
         try:
             # Acquire hosts using the handler

@@ -257,13 +257,18 @@ class AWSInstanceOperationService:
                             all_instances.extend(reservation.get("Instances", []))
 
             elif provider_api == "ASG":
-                # Get instance IDs from auto scaling group
+                # Get instance IDs from auto scaling group using targeted API call
                 for resource_id in resource_ids:
-                    response = self._aws_client.autoscaling_client.describe_auto_scaling_instances()
+                    asg_response = self._aws_client.autoscaling_client.describe_auto_scaling_groups(
+                        AutoScalingGroupNames=[resource_id]
+                    )
+                    asg_groups = asg_response.get("AutoScalingGroups", [])
+                    if not asg_groups:
+                        continue
                     instance_ids = [
-                        entry["InstanceId"]
-                        for entry in response.get("AutoScalingInstances", [])
-                        if entry.get("AutoScalingGroupName") == resource_id
+                        inst["InstanceId"]
+                        for inst in asg_groups[0].get("Instances", [])
+                        if inst.get("InstanceId")
                     ]
                     if instance_ids:
                         inst_response = self._aws_client.ec2_client.describe_instances(

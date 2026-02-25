@@ -169,7 +169,7 @@ class Template(BaseModel):
         fields = self.model_dump()
         fields["image_id"] = new_image_id
         fields["updated_at"] = datetime.now()
-        return Template.model_validate(fields)
+        return self.__class__.model_validate(fields)
 
     def add_subnet(self, subnet_id: str) -> "Template":
         """Add a subnet ID."""
@@ -178,7 +178,7 @@ class Template(BaseModel):
             fields = self.model_dump()
             fields["subnet_ids"] = new_subnets
             fields["updated_at"] = datetime.now()
-            return Template.model_validate(fields)
+            return self.__class__.model_validate(fields)
         return self
 
     def remove_subnet(self, subnet_id: str) -> "Template":
@@ -188,7 +188,7 @@ class Template(BaseModel):
             fields = self.model_dump()
             fields["subnet_ids"] = new_subnets
             fields["updated_at"] = datetime.now()
-            return Template.model_validate(fields)
+            return self.__class__.model_validate(fields)
         return self
 
     def add_security_group(self, security_group_id: str) -> "Template":
@@ -198,7 +198,7 @@ class Template(BaseModel):
             fields = self.model_dump()
             fields["security_group_ids"] = new_sgs
             fields["updated_at"] = datetime.now()
-            return Template.model_validate(fields)
+            return self.__class__.model_validate(fields)
         return self
 
     def remove_security_group(self, security_group_id: str) -> "Template":
@@ -208,7 +208,7 @@ class Template(BaseModel):
             fields = self.model_dump()
             fields["security_group_ids"] = new_sgs
             fields["updated_at"] = datetime.now()
-            return Template.model_validate(fields)
+            return self.__class__.model_validate(fields)
         return self
 
     def set_provider_config(self, config: dict[str, Any]) -> "Template":

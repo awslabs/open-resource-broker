@@ -144,11 +144,17 @@ class ConfigurationManager:
     def reload(self) -> None:
         """Reload configuration from sources."""
         try:
+            # Re-derive config file path in case ORB_CONFIG_DIR changed between tests
+            from config.platform_dirs import get_config_location
+
+            self._config_file = str(get_config_location() / "config.json")
+
             # Clear all caches
             self._cache_manager.clear_cache()
             self._raw_config = None
             self._app_config = None
             self._type_converter = None
+            self._path_resolver = None
             self._provider_manager = None
 
             # Force reload of loader
