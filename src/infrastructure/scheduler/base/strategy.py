@@ -12,6 +12,7 @@ from application.request.dto import RequestDTO
 
 # Import from Application layer (correct Clean Architecture)
 from domain.base.ports.scheduler_port import SchedulerPort
+from domain.template.ports.template_defaults_port import TemplateDefaultsPort
 from infrastructure.template.dtos import TemplateDTO
 
 
@@ -24,27 +25,19 @@ class BaseSchedulerStrategy(SchedulerPort, ABC):
     Inherits from SchedulerPort which defines all the required abstract methods.
     """
 
+    _template_defaults_service: TemplateDefaultsPort | None = None
+
     @property
     @abstractmethod
     def config_manager(self) -> Any:
         """Configuration manager instance. Provided by each concrete subclass."""
         ...
 
-    @property
-    def template_defaults_service(self):
-        if self._template_defaults_service is None:
-            from domain.template.ports.template_defaults_port import TemplateDefaultsPort
-            from infrastructure.di.container import get_container, is_container_ready
-
-            if is_container_ready():
-                self._template_defaults_service = get_container().get_optional(TemplateDefaultsPort)
-        return self._template_defaults_service
-
     def _apply_template_defaults(self, template_dict: dict, provider_name: str) -> dict:
         """Apply template defaults via the template defaults service if available."""
-        if self.template_defaults_service is None:
+        if self._template_defaults_service is None:
             return template_dict
-        return self.template_defaults_service.resolve_template_defaults(template_dict, provider_name)
+        return self._template_defaults_service.resolve_template_defaults(template_dict, provider_name)
 
     def format_request_status_response(self, requests: list[RequestDTO]) -> dict[str, Any]:
         """Format RequestDTOs to domain-native response format.

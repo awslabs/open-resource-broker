@@ -98,36 +98,24 @@ class TestApplyTemplateDefaults:
         assert result == {"template_id": "t1", "subnet_ids": ["s-1"]}
 
 
-class TestTemplateDefaultsServiceProperty:
-    """Tests for BaseSchedulerStrategy.template_defaults_service lazy property."""
+class TestTemplateDefaultsServiceInjection:
+    """Tests for BaseSchedulerStrategy constructor-injected template_defaults_service."""
 
-    def test_returns_none_when_container_not_ready(self):
-        strategy = make_strategy()
-        with patch("infrastructure.di.container.is_container_ready", return_value=False):
-            assert strategy.template_defaults_service is None
+    def test_defaults_to_none_when_not_provided(self):
+        strategy = DefaultSchedulerStrategy()
+        assert strategy._template_defaults_service is None
 
-    def test_returns_service_when_container_ready(self):
-        strategy = make_strategy()
+    def test_stores_injected_service(self):
         mock_service = MagicMock()
-        mock_container = MagicMock()
-        mock_container.get_optional.return_value = mock_service
+        strategy = DefaultSchedulerStrategy(template_defaults_service=mock_service)
+        assert strategy._template_defaults_service is mock_service
 
-        with patch("infrastructure.di.container.is_container_ready", return_value=True), \
-             patch("infrastructure.di.container.get_container", return_value=mock_container):
-            result = strategy.template_defaults_service
-
-        assert result is mock_service
-
-    def test_caches_service_after_first_resolution(self):
-        strategy = make_strategy()
+    def test_injected_service_used_by_apply_template_defaults(self):
         mock_service = MagicMock()
-        mock_container = MagicMock()
-        mock_container.get_optional.return_value = mock_service
-
-        with patch("infrastructure.di.container.is_container_ready", return_value=True), \
-             patch("infrastructure.di.container.get_container", return_value=mock_container):
-            first = strategy.template_defaults_service
-            second = strategy.template_defaults_service
-
-        assert first is second
-        assert mock_container.get_optional.call_count == 1
+        mock_service.resolve_template_defaults.return_value = {"resolved": True}
+        strategy = DefaultSchedulerStrategy(template_defaults_service=mock_service)
+        result = strategy._apply_template_defaults({"template_id": "t1"}, "my-provider")
+        mock_service.resolve_template_defaults.assert_called_once_with(
+            {"template_id": "t1"}, "my-provider"
+        )
+        assert result == {"resolved": True}

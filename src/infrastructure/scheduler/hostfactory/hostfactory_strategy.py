@@ -13,7 +13,7 @@ PROVIDER_API_ALIASES: dict[str, str] = {
 }
 
 if TYPE_CHECKING:
-    pass
+    from domain.template.ports.template_defaults_port import TemplateDefaultsPort
 
 from application.dto.responses import MachineDTO
 from application.request.dto import RequestDTO
@@ -29,11 +29,14 @@ from infrastructure.utilities.common.string_utils import extract_provider_type
 class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
     """HostFactory scheduler strategy for field mapping and response formatting."""
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        template_defaults_service: "TemplateDefaultsPort | None" = None,
+    ) -> None:
         """Initialize the instance."""
         self._config_manager = None
         self._logger = None
-        self._template_defaults_service = None
+        self._template_defaults_service = template_defaults_service
         # Initialize field mapper lazily - will be created when first needed
         self._field_mapper = None
 
@@ -144,8 +147,8 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
 
         # Business logic - Apply template defaults
         target_provider = provider_override or self._get_provider_name()
-        if self.template_defaults_service:
-            mapped["provider_api"] = self.template_defaults_service.resolve_provider_api_default(
+        if self._template_defaults_service:
+            mapped["provider_api"] = self._template_defaults_service.resolve_provider_api_default(
                 template
             )
             mapped["provider_api"] = PROVIDER_API_ALIASES.get(
