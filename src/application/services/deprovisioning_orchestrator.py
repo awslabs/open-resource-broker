@@ -166,7 +166,7 @@ class DeprovisioningOrchestrator:
                     "provider_api": provider_api,
                     "resource_id": resource_id,
                     "resource_mapping": {
-                        iid: (resource_id, len(instance_ids))
+                        iid: (resource_id, 1)
                         for iid in instance_ids
                     },
                 },
