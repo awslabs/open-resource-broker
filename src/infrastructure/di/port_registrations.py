@@ -113,3 +113,12 @@ def register_port_adapters(container):
         return ProviderSelectionAdapter(provider_registry_service)
 
     container.register_singleton(ProviderSelectionPort, create_provider_selection_adapter)
+
+    # Register in-memory cache service as CacheServicePort implementation.
+    # The handler (GetRequestHandler) calls only the sync convenience methods
+    # (get_cached_request / cache_request / is_caching_enabled).
+    # TODO: replace with a config-driven implementation (Redis etc.) when needed.
+    from application.ports.cache_service_port import CacheServicePort
+    from infrastructure.caching.in_memory_cache_service import InMemoryCacheService
+
+    container.register_singleton(CacheServicePort, lambda _: InMemoryCacheService())
