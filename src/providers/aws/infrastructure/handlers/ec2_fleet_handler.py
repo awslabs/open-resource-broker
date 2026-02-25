@@ -468,7 +468,7 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
         return {
             # Fleet-specific values
             "fleet_type": template.fleet_type.value,
-            "fleet_name": f"{get_resource_prefix('fleet')}{request.request_id}",
+            "fleet_name": f"{self.config_port.get_resource_prefix('fleet') if self.config_port else get_resource_prefix('fleet')}{request.request_id}",
             # Computed overrides
             "instance_overrides": instance_overrides,
             "ondemand_overrides": ondemand_overrides,
@@ -574,7 +574,7 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
         fleet_tags = [
             {
                 "Key": "Name",
-                "Value": f"{get_resource_prefix('fleet')}{request.request_id}",
+                "Value": f"{self.config_port.get_resource_prefix('fleet') if self.config_port else get_resource_prefix('fleet')}{request.request_id}",
             },
             {"Key": "RequestId", "Value": str(request.request_id)},
             {"Key": "TemplateId", "Value": str(template.template_id)},
