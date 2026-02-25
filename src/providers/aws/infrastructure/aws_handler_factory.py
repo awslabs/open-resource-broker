@@ -97,6 +97,7 @@ class AWSHandlerFactory:
             aws_ops=container.get(AWSOperations),
             launch_template_manager=container.get(AWSLaunchTemplateManager),
             machine_adapter=container.get(AWSMachineAdapter),
+            config_port=self._config,
         )
 
         # Cache the handler for future use
