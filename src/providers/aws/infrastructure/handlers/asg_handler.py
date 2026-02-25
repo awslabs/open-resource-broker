@@ -284,6 +284,14 @@ class ASGHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
         abis_instance_requirements = template.get_instance_requirements_payload()
         has_abis = bool(abis_instance_requirements)
 
+        # Explicit machine type overrides (used when no ABIS and no spot)
+        machine_types_map = template.machine_types or {}
+        has_machine_types = bool(machine_types_map) and not has_abis
+        machine_types_overrides = [
+            {"instance_type": itype, "weighted_capacity": str(weight) if weight else None}
+            for itype, weight in machine_types_map.items()
+        ] if has_machine_types else []
+
         return {
             # ASG-specific values
             "asg_name": f"{self.config_port.get_resource_prefix('asg')}{request.request_id}",
@@ -307,6 +315,9 @@ class ASGHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
             # ABIS / InstanceRequirements
             "abis_instance_requirements": abis_instance_requirements,
             "has_abis": has_abis,
+            # Explicit machine type overrides (on-demand multi-type, no ABIS)
+            "has_machine_types": has_machine_types,
+            "machine_types_overrides": machine_types_overrides,
             # Capacity split
             "percent_on_demand": percent_on_demand,
             "on_demand_count": on_demand_count,
