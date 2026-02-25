@@ -378,7 +378,7 @@ class AWSTemplate(Template):
             data.get("instance_types") or data.get("vm_types") or data.get("vmTypes")
         )
         if instance_types_map:
-            core_data["instance_types"] = instance_types_map
+            core_data["machine_types"] = instance_types_map
 
         # Add AWS-specific fields
         aws_data = {

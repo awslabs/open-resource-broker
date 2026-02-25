@@ -102,10 +102,15 @@ async def handle_get_request_status(
         if len(request_ids) == 1:
             from application.dto.queries import GetRequestQuery
 
-            query = GetRequestQuery(request_id=str(request_ids[0]))
-            request_dto = await query_bus.execute(query)
-            if request_dto:
-                request_dtos.append(request_dto)
+            try:
+                query = GetRequestQuery(request_id=str(request_ids[0]))
+                request_dto = await query_bus.execute(query)
+                if request_dto:
+                    request_dtos.append(request_dto)
+            except Exception:
+                # Return empty requests list rather than propagating — callers
+                # poll this endpoint and must always receive {"requests": [...]}
+                pass
         else:
             # For multiple IDs, we need to query each individually since there's no batch query yet
             from application.dto.queries import GetRequestQuery

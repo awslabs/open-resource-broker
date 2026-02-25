@@ -976,12 +976,17 @@ class GetTemplateHandler(BaseQueryHandler[GetTemplateQuery, TemplateDTOPort]):
             else:
                 template_factory = get_default_template_factory()
 
-            template_factory.create_template(resolved_data)
+            resolved_template = template_factory.create_template(resolved_data)
 
             self.logger.info("Retrieved template: %s", query.template_id)
 
-            # Convert domain template to DTO for CQRS compliance
-            return template_dto  # Return the DTO from template manager
+            # Convert resolved domain template to DTO so defaults (e.g. fleet_role,
+            # subnet_ids) applied by template_defaults_service are reflected in the
+            # returned value.  Falling back to the original template_dto would silently
+            # drop any field that was None in the raw DTO but filled in by defaults.
+            from infrastructure.template.dtos import TemplateDTO
+
+            return TemplateDTO.from_domain(resolved_template)  # type: ignore[return-value]
 
         except EntityNotFoundError:
             self.logger.error("Template not found: %s", query.template_id)

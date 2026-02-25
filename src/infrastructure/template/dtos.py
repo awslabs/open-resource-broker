@@ -81,6 +81,7 @@ class TemplateDTO(BaseDTO):
 
     # AWS-specific fields
     fleet_role: Optional[str] = None
+    percent_on_demand: Optional[int] = None
 
     def __post_init__(self) -> None:
         """Validate required fields."""
@@ -145,6 +146,7 @@ class TemplateDTO(BaseDTO):
             version=getattr(template, "version", None),
             # AWS-specific fields
             fleet_role=getattr(template, "fleet_role", None),
+            percent_on_demand=getattr(template, "percent_on_demand", None),
         )
 
 

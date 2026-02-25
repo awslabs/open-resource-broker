@@ -1009,7 +1009,7 @@ class ASGHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                 description="Auto Scaling Group with mixed on-demand and spot instances",
                 provider_type="aws",
                 provider_api="AutoScalingGroup",
-                instance_types={"t3.medium": 1, "t3.large": 2},
+                machine_types={"t3.medium": 1, "t3.large": 2},
                 max_instances=25,
                 price_type="heterogeneous",
                 percent_on_demand=30,

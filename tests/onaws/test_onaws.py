@@ -237,6 +237,12 @@ def get_parent_resource_from_instance(instance_id: str) -> tuple[Optional[str], 
         log.warning(f"Failed to describe instance {instance_id}: {e}")
         return None, None
 
+    # Check for ASG first — ASG instances using MixedInstancesPolicy also carry
+    # aws:ec2:fleet-id (the underlying fleet), so ASG must take priority.
+    asg_name = _get_tag_value(tags, "aws:autoscaling:groupName")
+    if asg_name:
+        return asg_name, "asg"
+
     # Check for EC2 Fleet
     fleet_id = _get_tag_value(tags, "aws:ec2:fleet-id")
     if fleet_id:
@@ -246,11 +252,6 @@ def get_parent_resource_from_instance(instance_id: str) -> tuple[Optional[str], 
     spot_fleet_id = _get_tag_value(tags, "aws:ec2spot:fleet-request-id")
     if spot_fleet_id:
         return spot_fleet_id, "spot_fleet"
-
-    # Check for ASG
-    asg_name = _get_tag_value(tags, "aws:autoscaling:groupName")
-    if asg_name:
-        return asg_name, "asg"
 
     return None, None
 
