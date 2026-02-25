@@ -138,7 +138,9 @@ class AWSProvisioningAdapter(ResourceProvisioningPort):
             self._logger.error("Provider strategy operation failed: %s", result.error_message)
             raise InfrastructureError(f"Failed to provision resources: {result.error_message}")
 
-    def _provision_via_handlers(self, request: Request, template: Template, dry_run: bool = False) -> dict[str, Any]:
+    def _provision_via_handlers(
+        self, request: Request, template: Template, dry_run: bool = False
+    ) -> dict[str, Any]:
         """
         Provision resources using the legacy handler approach.
 
@@ -153,7 +155,9 @@ class AWSProvisioningAdapter(ResourceProvisioningPort):
         handler = self._get_handler_for_template(template)
 
         if dry_run:
-            self._logger.info("Dry-run mode: skipping actual provisioning for template %s", template.template_id)
+            self._logger.info(
+                "Dry-run mode: skipping actual provisioning for template %s", template.template_id
+            )
             return {"success": True, "resource_ids": [], "instances": [], "dry_run": True}
 
         # Resolve SSM parameter paths to real AMI IDs before calling the handler
@@ -161,6 +165,7 @@ class AWSProvisioningAdapter(ResourceProvisioningPort):
 
         # Convert domain Template to AWSTemplate so handlers can access AWS-specific fields
         from providers.aws.domain.template.aws_template_aggregate import AWSTemplate
+
         if isinstance(template, AWSTemplate):
             aws_template = template
         else:

@@ -562,7 +562,9 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
         """
         try:
             if resource_mapping:
-                self._logger.debug('resource_mapping provided to release_hosts but not used by RunInstances handler')
+                self._logger.debug(
+                    "resource_mapping provided to release_hosts but not used by RunInstances handler"
+                )
             if not machine_ids:
                 self._logger.warning("No instance IDs provided for RunInstances termination")
                 return

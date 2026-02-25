@@ -128,7 +128,9 @@ class AWSLaunchTemplateManager:
         launch_template_data = self._create_launch_template_data(aws_template, request)
 
         # Get the launch template name
-        launch_template_name = f"{self.config_port.get_resource_prefix('launch_template')}{request.request_id}"
+        launch_template_name = (
+            f"{self.config_port.get_resource_prefix('launch_template')}{request.request_id}"
+        )
 
         # Generate a deterministic client token for idempotency
         client_token = self._generate_client_token(request, aws_template)
@@ -578,7 +580,9 @@ class AWSLaunchTemplateManager:
         Returns:
             List of tag dictionaries
         """
-        template_name = f"{self.config_port.get_resource_prefix('launch_template')}{request.request_id}"
+        template_name = (
+            f"{self.config_port.get_resource_prefix('launch_template')}{request.request_id}"
+        )
 
         # Get package name for CreatedBy tag
         created_by = "open-resource-broker"  # fallback

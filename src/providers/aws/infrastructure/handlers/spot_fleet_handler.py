@@ -281,6 +281,7 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
     def _is_valid_spot_fleet_tagging_role(self, role_arn: str) -> bool:
         """Validate if the provided ARN matches the EC2 Spot Fleet tagging role pattern."""
         import re
+
         pattern = r"^arn:aws:iam::\d{12}:role/aws-ec2-spot-fleet-tagging-role$"
         if re.match(pattern, role_arn):
             self._logger.debug("Valid Spot Fleet tagging role: %s", role_arn)
@@ -482,7 +483,10 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
             "IamFleetRole": fleet_role,
             "AllocationStrategy": self._get_allocation_strategy(template.allocation_strategy or ""),
             "Type": fleet_type_value,
-            "TagSpecifications": [{"ResourceType": "spot-fleet-request", "Tags": common_tags}, {"ResourceType": "instance", "Tags": common_tags}],
+            "TagSpecifications": [
+                {"ResourceType": "spot-fleet-request", "Tags": common_tags},
+                {"ResourceType": "instance", "Tags": common_tags},
+            ],
         }
 
         # Configure based on price type
@@ -518,7 +522,10 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
 
             fleet_config["LaunchTemplateConfigs"][0]["Overrides"] = overrides
         else:
-            from providers.aws.infrastructure.handlers.fleet_override_builder import build_spot_fleet_overrides
+            from providers.aws.infrastructure.handlers.fleet_override_builder import (
+                build_spot_fleet_overrides,
+            )
+
             overrides = build_spot_fleet_overrides(
                 template.machine_types,
                 template.machine_types_ondemand,
@@ -709,9 +716,7 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                                 "Terminated non-Spot Fleet instances: %s", instance_ids
                             )
                 except Exception as e:
-                    self._logger.error(
-                        "Failed to release fleet %s: %s", fleet_id, e, exc_info=True
-                    )
+                    self._logger.error("Failed to release fleet %s: %s", fleet_id, e, exc_info=True)
                     fleet_errors.append((fleet_id, e))
 
             if fleet_errors:

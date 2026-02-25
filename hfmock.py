@@ -190,7 +190,10 @@ class HostFactoryMock:
             json_start = stdout.find("{")
             if json_start == -1:
                 log.error("Could not find JSON in response")
-                return {"error": "Invalid response format", "message": "Could not find JSON in response"}
+                return {
+                    "error": "Invalid response format",
+                    "message": "Could not find JSON in response",
+                }
             result, _ = json.JSONDecoder().raw_decode(stdout, json_start)
             log.info(f"response: {json.dumps(result, indent=4)}")
             return result
@@ -220,7 +223,10 @@ class HostFactoryMock:
             json_start = stdout.find("{")
             if json_start == -1:
                 log.error("Could not find JSON in response")
-                return {"error": "Invalid response format", "message": "Could not find JSON in response"}
+                return {
+                    "error": "Invalid response format",
+                    "message": "Could not find JSON in response",
+                }
             result, _ = json.JSONDecoder().raw_decode(stdout, json_start)
             log.info(f"response: {json.dumps(result, indent=4)}")
             return result
@@ -250,7 +256,10 @@ class HostFactoryMock:
             json_start = stdout.find("{")
             if json_start == -1:
                 log.error("Could not find JSON in response")
-                return {"error": "Invalid response format", "message": "Could not find JSON in response"}
+                return {
+                    "error": "Invalid response format",
+                    "message": "Could not find JSON in response",
+                }
             result, _ = json.JSONDecoder().raw_decode(stdout, json_start)
             log.info(f"response: {json.dumps(result, indent=4)}")
             return result
@@ -281,7 +290,10 @@ class HostFactoryMock:
             json_start = stdout.find("{")
             if json_start == -1:
                 log.error("Could not find JSON in response")
-                return {"error": "Invalid response format", "message": "Could not find JSON in response"}
+                return {
+                    "error": "Invalid response format",
+                    "message": "Could not find JSON in response",
+                }
             result, _ = json.JSONDecoder().raw_decode(stdout, json_start)
             log.info(f"response: {json.dumps(result, indent=4)}")
             return result
@@ -309,7 +321,10 @@ class HostFactoryMock:
             json_start = stdout.find("{")
             if json_start == -1:
                 log.error("Could not find JSON in response")
-                return {"error": "Invalid response format", "message": "Could not find JSON in response"}
+                return {
+                    "error": "Invalid response format",
+                    "message": "Could not find JSON in response",
+                }
             result, _ = json.JSONDecoder().raw_decode(stdout, json_start)
             log.info(f"response: {json.dumps(result, indent=4)}")
             return result

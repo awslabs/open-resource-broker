@@ -230,7 +230,9 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
             self._cancel_pending_return_requests(command.machine_ids)
 
         # Validate and filter machines
-        validation_results = self._validate_and_filter_machines(command.machine_ids, force_return=command.force_return or False)
+        validation_results = self._validate_and_filter_machines(
+            command.machine_ids, force_return=command.force_return or False
+        )
 
         # If no valid machines remain after filtering, store results and return
         if not validation_results["valid_machines"]:
@@ -289,7 +291,9 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
             )
             raise
 
-    def _validate_and_filter_machines(self, machine_ids: list[str], force_return: bool = False) -> dict[str, Any]:
+    def _validate_and_filter_machines(
+        self, machine_ids: list[str], force_return: bool = False
+    ) -> dict[str, Any]:
         """Validate and filter machines for return request."""
         is_single_machine = len(machine_ids) == 1
 

@@ -28,9 +28,7 @@ def _make_request(resource_ids):
 
 
 def _make_client_error(code="InternalError"):
-    return ClientError(
-        {"Error": {"Code": code, "Message": "boom"}}, "DescribeAutoScalingGroups"
-    )
+    return ClientError({"Error": {"Code": code, "Message": "boom"}}, "DescribeAutoScalingGroups")
 
 
 def _formatted_instances(instance_ids, resource_id="asg-test"):
@@ -54,7 +52,6 @@ def _formatted_instances(instance_ids, resource_id="asg-test"):
 
 
 class TestASGHandlerCheckHostsStatus:
-
     def test_check_hosts_status_all_inservice(self):
         """All InService instances → returns all."""
         handler = _make_handler()
@@ -62,11 +59,13 @@ class TestASGHandlerCheckHostsStatus:
         instance_ids = ["i-asg1", "i-asg2"]
 
         with patch.object(
-            handler, "_get_asg_instances",
-            return_value=_formatted_instances(instance_ids, "asg-111")
+            handler,
+            "_get_asg_instances",
+            return_value=_formatted_instances(instance_ids, "asg-111"),
         ):
-            with patch.object(handler, "_format_instance_data",
-                              side_effect=lambda insts, rid, req: insts):
+            with patch.object(
+                handler, "_format_instance_data", side_effect=lambda insts, rid, req: insts
+            ):
                 result = handler.check_hosts_status(request)
 
         assert len(result) == 2
@@ -82,11 +81,11 @@ class TestASGHandlerCheckHostsStatus:
         all_ids = ["i-inservice1", "i-inservice2", "i-terminating1"]
 
         with patch.object(
-            handler, "_get_asg_instances",
-            return_value=_formatted_instances(all_ids, "asg-222")
+            handler, "_get_asg_instances", return_value=_formatted_instances(all_ids, "asg-222")
         ):
-            with patch.object(handler, "_format_instance_data",
-                              side_effect=lambda insts, rid, req: insts):
+            with patch.object(
+                handler, "_format_instance_data", side_effect=lambda insts, rid, req: insts
+            ):
                 result = handler.check_hosts_status(request)
 
         assert len(result) == 3
@@ -107,8 +106,7 @@ class TestASGHandlerCheckHostsStatus:
         request = _make_request(["asg-err"])
 
         with patch.object(
-            handler, "_get_asg_instances",
-            side_effect=AWSInfrastructureError("AWS error")
+            handler, "_get_asg_instances", side_effect=AWSInfrastructureError("AWS error")
         ):
             result = handler.check_hosts_status(request)
 
@@ -132,11 +130,13 @@ class TestASGHandlerCheckHostsStatus:
         instance_ids = ["i-cnt1", "i-cnt2", "i-cnt3"]
 
         with patch.object(
-            handler, "_get_asg_instances",
-            return_value=_formatted_instances(instance_ids, "asg-cnt")
+            handler,
+            "_get_asg_instances",
+            return_value=_formatted_instances(instance_ids, "asg-cnt"),
         ):
-            with patch.object(handler, "_format_instance_data",
-                              side_effect=lambda insts, rid, req: insts):
+            with patch.object(
+                handler, "_format_instance_data", side_effect=lambda insts, rid, req: insts
+            ):
                 result = handler.check_hosts_status(request)
 
         assert len(result) == 3
@@ -148,11 +148,13 @@ class TestASGHandlerCheckHostsStatus:
         instance_ids = ["i-asg-preserve1", "i-asg-preserve2"]
 
         with patch.object(
-            handler, "_get_asg_instances",
-            return_value=_formatted_instances(instance_ids, "asg-ids")
+            handler,
+            "_get_asg_instances",
+            return_value=_formatted_instances(instance_ids, "asg-ids"),
         ):
-            with patch.object(handler, "_format_instance_data",
-                              side_effect=lambda insts, rid, req: insts):
+            with patch.object(
+                handler, "_format_instance_data", side_effect=lambda insts, rid, req: insts
+            ):
                 result = handler.check_hosts_status(request)
 
         returned_ids = {r["instance_id"] for r in result}
@@ -171,10 +173,10 @@ class TestASGHandlerCheckHostsStatus:
                 return _formatted_instances(ids_a, "asg-A")
             return _formatted_instances(ids_b, "asg-B")
 
-        with patch.object(handler, "_get_asg_instances",
-                          side_effect=get_asg_instances_side_effect):
-            with patch.object(handler, "_format_instance_data",
-                              side_effect=lambda insts, rid, req: insts):
+        with patch.object(handler, "_get_asg_instances", side_effect=get_asg_instances_side_effect):
+            with patch.object(
+                handler, "_format_instance_data", side_effect=lambda insts, rid, req: insts
+            ):
                 result = handler.check_hosts_status(request)
 
         assert len(result) == 3
@@ -189,11 +191,13 @@ class TestASGHandlerCheckHostsStatus:
         active_ids = ["i-strict-active"]
 
         with patch.object(
-            handler, "_get_asg_instances",
-            return_value=_formatted_instances(active_ids, "asg-strict")
+            handler,
+            "_get_asg_instances",
+            return_value=_formatted_instances(active_ids, "asg-strict"),
         ):
-            with patch.object(handler, "_format_instance_data",
-                              side_effect=lambda insts, rid, req: insts):
+            with patch.object(
+                handler, "_format_instance_data", side_effect=lambda insts, rid, req: insts
+            ):
                 result = handler.check_hosts_status(request)
 
         assert len(result) == 1

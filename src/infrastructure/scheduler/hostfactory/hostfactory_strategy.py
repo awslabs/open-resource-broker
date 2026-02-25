@@ -291,7 +291,10 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
 
         # Status-based message and response logic
         if status == "failed":
-            return {"requestId": request_id, "message": f"Request failed: {error_message or 'Unknown error'}"}
+            return {
+                "requestId": request_id,
+                "message": f"Request failed: {error_message or 'Unknown error'}",
+            }
         elif status == "cancelled":
             return {"requestId": request_id, "message": "Request cancelled"}
         elif status == "timeout":
@@ -374,7 +377,9 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
                 dto_dict = data.to_dict()
                 machines_data = dto_dict.get("machines", [])
 
-                machines = self._format_machines_for_hostfactory(machines_data, request_type=dto_dict.get("request_type"))
+                machines = self._format_machines_for_hostfactory(
+                    machines_data, request_type=dto_dict.get("request_type")
+                )
                 status = self._map_domain_status_to_hostfactory(data.status)
                 message = self._generate_status_message(data.status, len(machines))
 
@@ -390,7 +395,9 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
                 }
             elif isinstance(data, dict):
                 # Handle dict format (fallback)
-                machines = self._format_machines_for_hostfactory(data.get("machines", []), request_type=data.get("request_type"))
+                machines = self._format_machines_for_hostfactory(
+                    data.get("machines", []), request_type=data.get("request_type")
+                )
                 status = self._map_domain_status_to_hostfactory(data.get("status", "unknown"))
                 message = self._generate_status_message(
                     data.get("status", "unknown"), len(machines)
@@ -683,7 +690,9 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
             # Convert machines to camelCase using existing method
             machines = []
             if "machines" in req_dict:
-                machines = self._format_machines_for_hostfactory(req_dict["machines"], request_type=req_dict.get("request_type"))
+                machines = self._format_machines_for_hostfactory(
+                    req_dict["machines"], request_type=req_dict.get("request_type")
+                )
 
             # Create HostFactory-compliant request object (only HF spec fields)
             hf_request = {
@@ -879,7 +888,9 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         formatted_machines = []
 
         for machine in machines:
-            result = self._map_machine_status_to_result(machine.get("status"), request_type=request_type)
+            result = self._map_machine_status_to_result(
+                machine.get("status"), request_type=request_type
+            )
 
             # Per IBM HF spec, message is mandatory when result=="fail"
             if result == "fail":
@@ -913,7 +924,9 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
                 "cloudHostId": machine.get("cloud_host_id") or None,
             }
 
-            formatted_machine["publicIpAddress"] = machine.get("public_ip_address") or machine.get("public_ip") or None
+            formatted_machine["publicIpAddress"] = (
+                machine.get("public_ip_address") or machine.get("public_ip") or None
+            )
             if machine.get("instance_type"):
                 formatted_machine["instanceType"] = machine["instance_type"]
             if machine.get("price_type"):

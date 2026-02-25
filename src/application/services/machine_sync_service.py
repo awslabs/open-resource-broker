@@ -142,9 +142,7 @@ class MachineSyncService:
                             (m for m in db_machines if m.machine_id.value == missing_id), None
                         )
                         if existing:
-                            domain_machines.append(
-                                self._create_terminated_machine(existing)
-                            )
+                            domain_machines.append(self._create_terminated_machine(existing))
 
                 return domain_machines, result.metadata or {}
             else:

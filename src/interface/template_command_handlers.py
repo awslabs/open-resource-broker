@@ -528,9 +528,7 @@ async def handle_refresh_templates(args: argparse.Namespace) -> dict[str, Any]:
 
         # Force refresh by listing templates with force_refresh parameter
         # This will trigger cache refresh in the query handler
-        query = ListTemplatesQuery(
-            provider_api=None, active_only=True
-        )
+        query = ListTemplatesQuery(provider_api=None, active_only=True)
 
         templates = await query_bus.execute(query)
         template_count = len(templates) if templates else 0

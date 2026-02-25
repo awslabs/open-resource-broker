@@ -52,12 +52,12 @@ class RequestStatusService:
             if request.request_type.value == "return":
                 # Return request logic — shutting-down counts as in-progress toward termination
                 terminated_count = sum(
-                    1 for m in machines_to_check
+                    1
+                    for m in machines_to_check
                     if m.status.value in ["terminated", "stopped", "shutting-down", "stopping"]
                 )
                 fully_terminated_count = sum(
-                    1 for m in machines_to_check
-                    if m.status.value in ["terminated", "stopped"]
+                    1 for m in machines_to_check if m.status.value in ["terminated", "stopped"]
                 )
                 if fully_terminated_count == total_count:
                     return RequestStatus.COMPLETED.value, "All instances terminated successfully"
@@ -78,7 +78,10 @@ class RequestStatusService:
                 return RequestStatus.FAILED.value, "All instances failed"
             elif pending_count > 0:
                 # Still have pending/starting instances — keep polling
-                return RequestStatus.IN_PROGRESS.value, f"{running_count}/{total_count} instances running, waiting for {pending_count} more"
+                return (
+                    RequestStatus.IN_PROGRESS.value,
+                    f"{running_count}/{total_count} instances running, waiting for {pending_count} more",
+                )
             elif running_count > 0:
                 # All instances terminal, mix of running and failed
                 return (

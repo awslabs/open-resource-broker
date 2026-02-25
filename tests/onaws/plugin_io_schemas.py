@@ -200,7 +200,16 @@ expected_request_status_schema_default = {
                     "message": {"type": "string"},
                     "status": {
                         "type": "string",
-                        "enum": ["running", "complete", "complete_with_error", "in_progress", "failed", "partial", "cancelled", "timeout"],
+                        "enum": [
+                            "running",
+                            "complete",
+                            "complete_with_error",
+                            "in_progress",
+                            "failed",
+                            "partial",
+                            "cancelled",
+                            "timeout",
+                        ],
                     },
                     "machines": {
                         "type": "array",

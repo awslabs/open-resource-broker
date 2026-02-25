@@ -12,10 +12,22 @@ def build_ec2_fleet_overrides(
     if machine_types and subnet_ids:
         for subnet_id in subnet_ids:
             for instance_type, weight in machine_types.items():
-                overrides.append({"SubnetId": subnet_id, "InstanceType": instance_type, "WeightedCapacity": weight})
+                overrides.append(
+                    {
+                        "SubnetId": subnet_id,
+                        "InstanceType": instance_type,
+                        "WeightedCapacity": weight,
+                    }
+                )
             if is_heterogeneous and machine_types_ondemand:
                 for instance_type, weight in machine_types_ondemand.items():
-                    overrides.append({"SubnetId": subnet_id, "InstanceType": instance_type, "WeightedCapacity": weight})
+                    overrides.append(
+                        {
+                            "SubnetId": subnet_id,
+                            "InstanceType": instance_type,
+                            "WeightedCapacity": weight,
+                        }
+                    )
     elif machine_types:
         for instance_type, weight in machine_types.items():
             overrides.append({"InstanceType": instance_type, "WeightedCapacity": weight})
@@ -53,12 +65,14 @@ def build_spot_fleet_overrides(
                         override["SpotPrice"] = spot_price_str
                     overrides.append(override)
                 for idx, (instance_type, weight) in enumerate(machine_types_ondemand.items()):
-                    overrides.append({
-                        "SubnetId": subnet_id,
-                        "InstanceType": instance_type,
-                        "WeightedCapacity": weight,
-                        "Priority": idx + len(machine_types) + 1,
-                    })
+                    overrides.append(
+                        {
+                            "SubnetId": subnet_id,
+                            "InstanceType": instance_type,
+                            "WeightedCapacity": weight,
+                            "Priority": idx + len(machine_types) + 1,
+                        }
+                    )
         else:
             for subnet_id in subnet_ids:
                 for idx, (instance_type, weight) in enumerate(machine_types.items()):

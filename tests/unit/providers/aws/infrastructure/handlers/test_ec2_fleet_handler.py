@@ -52,7 +52,6 @@ def _formatted_instances(instance_ids, resource_id="fleet-test"):
 
 
 class TestEC2FleetHandlerCheckHostsStatus:
-
     def test_check_hosts_status_all_running(self):
         """All instances running → returns all as active."""
         handler = _make_handler()
@@ -60,8 +59,9 @@ class TestEC2FleetHandlerCheckHostsStatus:
         instance_ids = ["i-aaa", "i-bbb"]
 
         with patch.object(
-            handler, "_check_single_fleet_status",
-            return_value=_formatted_instances(instance_ids, "fleet-111")
+            handler,
+            "_check_single_fleet_status",
+            return_value=_formatted_instances(instance_ids, "fleet-111"),
         ):
             result = handler.check_hosts_status(request)
 
@@ -76,8 +76,9 @@ class TestEC2FleetHandlerCheckHostsStatus:
         active_ids = ["i-running1"]
 
         with patch.object(
-            handler, "_check_single_fleet_status",
-            return_value=_formatted_instances(active_ids, "fleet-222")
+            handler,
+            "_check_single_fleet_status",
+            return_value=_formatted_instances(active_ids, "fleet-222"),
         ):
             result = handler.check_hosts_status(request)
 
@@ -90,8 +91,9 @@ class TestEC2FleetHandlerCheckHostsStatus:
         request = _make_request(["fleet-missing"], metadata={"fleet_type": "maintain"})
 
         with patch.object(
-            handler, "_check_single_fleet_status",
-            side_effect=AWSInfrastructureError("Fleet not found")
+            handler,
+            "_check_single_fleet_status",
+            side_effect=AWSInfrastructureError("Fleet not found"),
         ):
             result = handler.check_hosts_status(request)
 
@@ -111,8 +113,7 @@ class TestEC2FleetHandlerCheckHostsStatus:
             return _formatted_instances(ids_b, "fleet-B")
 
         with patch.object(
-            handler, "_check_single_fleet_status",
-            side_effect=single_fleet_side_effect
+            handler, "_check_single_fleet_status", side_effect=single_fleet_side_effect
         ):
             result = handler.check_hosts_status(request)
 
@@ -126,8 +127,7 @@ class TestEC2FleetHandlerCheckHostsStatus:
         request = _make_request(["fleet-err"], metadata={"fleet_type": "maintain"})
 
         with patch.object(
-            handler, "_check_single_fleet_status",
-            side_effect=_make_client_error("InternalError")
+            handler, "_check_single_fleet_status", side_effect=_make_client_error("InternalError")
         ):
             result = handler.check_hosts_status(request)
 
@@ -148,8 +148,9 @@ class TestEC2FleetHandlerCheckHostsStatus:
         instance_ids = ["i-1", "i-2", "i-3"]
 
         with patch.object(
-            handler, "_check_single_fleet_status",
-            return_value=_formatted_instances(instance_ids, "fleet-cnt")
+            handler,
+            "_check_single_fleet_status",
+            return_value=_formatted_instances(instance_ids, "fleet-cnt"),
         ):
             result = handler.check_hosts_status(request)
 
@@ -162,8 +163,9 @@ class TestEC2FleetHandlerCheckHostsStatus:
         instance_ids = ["i-preserve1", "i-preserve2"]
 
         with patch.object(
-            handler, "_check_single_fleet_status",
-            return_value=_formatted_instances(instance_ids, "fleet-ids")
+            handler,
+            "_check_single_fleet_status",
+            return_value=_formatted_instances(instance_ids, "fleet-ids"),
         ):
             result = handler.check_hosts_status(request)
 
@@ -177,8 +179,9 @@ class TestEC2FleetHandlerCheckHostsStatus:
         active_ids = ["i-strict-active"]
 
         with patch.object(
-            handler, "_check_single_fleet_status",
-            return_value=_formatted_instances(active_ids, "fleet-strict")
+            handler,
+            "_check_single_fleet_status",
+            return_value=_formatted_instances(active_ids, "fleet-strict"),
         ):
             result = handler.check_hosts_status(request)
 

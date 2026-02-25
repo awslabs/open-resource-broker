@@ -59,7 +59,9 @@ class HandlerDiscoveryService:
             perf_config = config_manager.get_typed(PerformanceConfig)
 
             self.cache_enabled = perf_config.caching.handler_discovery.enabled
-            self.cache_file = self._resolve_cache_path(config_manager) if self.cache_enabled else None
+            self.cache_file = (
+                self._resolve_cache_path(config_manager) if self.cache_enabled else None
+            )
 
         except Exception as e:
             logger.warning("Failed to get caching configuration: %s", e, exc_info=True)

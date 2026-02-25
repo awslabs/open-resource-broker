@@ -159,8 +159,12 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                 "instances": instances,
                 "provider_data": {
                     "resource_type": "ec2_fleet",
-                    "fleet_type": aws_template.fleet_type.value if hasattr(aws_template.fleet_type, 'value') else aws_template.fleet_type,
-                    "fleet_errors": fleet_result.get("metadata_updates", {}).get("fleet_errors", []),
+                    "fleet_type": aws_template.fleet_type.value
+                    if hasattr(aws_template.fleet_type, "value")
+                    else aws_template.fleet_type,
+                    "fleet_errors": fleet_result.get("metadata_updates", {}).get(
+                        "fleet_errors", []
+                    ),
                 },
             }
         except Exception as e:
@@ -239,7 +243,9 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                 response=response,
                 instance_ids=instance_ids,
             )
-            instance_ids = error_context.get("metadata_updates", {}).get("instance_ids", instance_ids)
+            instance_ids = error_context.get("metadata_updates", {}).get(
+                "instance_ids", instance_ids
+            )
 
             if not instance_ids:
                 self._logger.error(
@@ -665,7 +671,10 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
 
             fleet_config["LaunchTemplateConfigs"][0]["Overrides"] = overrides
         else:
-            from providers.aws.infrastructure.handlers.fleet_override_builder import build_ec2_fleet_overrides
+            from providers.aws.infrastructure.handlers.fleet_override_builder import (
+                build_ec2_fleet_overrides,
+            )
+
             overrides = build_ec2_fleet_overrides(
                 template.machine_types,
                 template.machine_types_ondemand,

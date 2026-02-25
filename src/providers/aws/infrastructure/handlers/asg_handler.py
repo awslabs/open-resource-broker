@@ -141,7 +141,6 @@ class ASGHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
             aws_template, request
         )
 
-
         # Generate ASG name
         asg_name = f"{self.config_port.get_resource_prefix('asg')}{request.request_id}"
 
@@ -277,8 +276,8 @@ class ASGHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
         """Prepare ASG-specific context."""
 
         capacity = self._calculate_capacity_distribution(template, request.requested_count)
-        on_demand_count = capacity['on_demand_count']
-        spot_count = capacity['spot_count']
+        on_demand_count = capacity["on_demand_count"]
+        spot_count = capacity["spot_count"]
         percent_on_demand = template.percent_on_demand or 0
 
         # ABIS instance requirements
@@ -343,7 +342,9 @@ class ASGHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                 # AWS rejects a top-level LaunchTemplate alongside MixedInstancesPolicy.
                 if "MixedInstancesPolicy" in native_spec:
                     mip = native_spec["MixedInstancesPolicy"]
-                    lt_spec = mip.setdefault("LaunchTemplate", {}).setdefault("LaunchTemplateSpecification", {})
+                    lt_spec = mip.setdefault("LaunchTemplate", {}).setdefault(
+                        "LaunchTemplateSpecification", {}
+                    )
                     lt_spec.setdefault("LaunchTemplateId", launch_template_id)
                     lt_spec.setdefault("Version", launch_template_version)
                     native_spec.pop("LaunchTemplate", None)
@@ -529,16 +530,18 @@ class ASGHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
         """Get instances for a specific ASG."""
         response = self._retry_with_backoff(
             self.aws_client.autoscaling_client.describe_auto_scaling_groups,
-            operation_type='standard',
+            operation_type="standard",
             AutoScalingGroupNames=[asg_name],
         )
-        groups = response.get('AutoScalingGroups', [])
+        groups = response.get("AutoScalingGroups", [])
         if not groups:
-            self._logger.warning('ASG %s not found', asg_name)
+            self._logger.warning("ASG %s not found", asg_name)
             return []
-        instance_ids = [inst['InstanceId'] for inst in groups[0].get('Instances', []) if inst.get('InstanceId')]
+        instance_ids = [
+            inst["InstanceId"] for inst in groups[0].get("Instances", []) if inst.get("InstanceId")
+        ]
         if not instance_ids:
-            self._logger.warning('No instances found in ASG %s', asg_name)
+            self._logger.warning("No instances found in ASG %s", asg_name)
             return []
         return self._get_instance_details(instance_ids)
 

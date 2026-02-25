@@ -75,6 +75,7 @@ log.addHandler(_console)
 # Fixture
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture
 def setup_sdk_test(request):
     """Generate per-test config dir, set env vars, yield config_path, teardown."""
@@ -110,6 +111,7 @@ def setup_sdk_test(request):
     # Teardown: reset DI container so next test gets a fresh one
     try:
         from infrastructure.di import reset_container
+
         reset_container()
     except Exception:
         pass
@@ -120,6 +122,7 @@ def setup_sdk_test(request):
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _extract_request_status(result) -> str:
     """Extract status string from whatever get_request_status returns."""
@@ -140,10 +143,7 @@ def _extract_machine_ids(result) -> list[str]:
         if requests and isinstance(requests[0], dict):
             machines = requests[0].get("machines", [])
             return [
-                mid
-                for m in machines
-                for mid in [m.get("machineId") or m.get("machine_id")]
-                if mid
+                mid for m in machines for mid in [m.get("machineId") or m.get("machine_id")] if mid
             ]
     # DTO object
     machines = getattr(result, "machines", [])
@@ -153,6 +153,7 @@ def _extract_machine_ids(result) -> list[str]:
 # ---------------------------------------------------------------------------
 # Core test logic (shared by parametrised and single tests)
 # ---------------------------------------------------------------------------
+
 
 async def _run_full_cycle(sdk, test_case: dict) -> None:
     """Full acquire→return cycle via SDK."""
@@ -177,6 +178,7 @@ async def _run_full_cycle(sdk, test_case: dict) -> None:
 
     # 2. Poll until complete
     import asyncio
+
     deadline = time.time() + SDK_TIMEOUTS["request_completion"]
     terminal = {"complete", "complete_with_error", "failed", "cancelled", "timeout"}
     status_response = None
@@ -252,6 +254,7 @@ async def _run_full_cycle(sdk, test_case: dict) -> None:
 # Parametrised tests
 # ---------------------------------------------------------------------------
 
+
 def _build_default_test_cases():
     if not SDK_RUN_DEFAULT_COMBINATIONS:
         return []
@@ -301,6 +304,7 @@ async def test_sdk_full_cycle_custom(setup_sdk_test, test_case):
 # ---------------------------------------------------------------------------
 # Smoke test — single scenario, always runs
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_sdk_smoke(setup_sdk_test):

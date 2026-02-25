@@ -321,7 +321,10 @@ def test_multi_spot_fleet_termination(setup_multi_spot_fleet_templates):
 
     try:
         validate_json_schema(
-            instance=res, schema=plugin_io_schemas.get_schema_for_scheduler("get_available_templates", SCHEDULER_TYPE)
+            instance=res,
+            schema=plugin_io_schemas.get_schema_for_scheduler(
+                "get_available_templates", SCHEDULER_TYPE
+            ),
         )
     except ValidationError as e:
         log.warning(f"JSON validation failed for get_available_templates: {e}")
@@ -385,7 +388,10 @@ def test_multi_spot_fleet_termination(setup_multi_spot_fleet_templates):
 
         try:
             validate_json_schema(
-                instance=res, schema=plugin_io_schemas.get_schema_for_scheduler("request_machines", SCHEDULER_TYPE)
+                instance=res,
+                schema=plugin_io_schemas.get_schema_for_scheduler(
+                    "request_machines", SCHEDULER_TYPE
+                ),
             )
         except ValidationError as e:
             pytest.fail(f"JSON validation failed for request_machines response: {e}")
@@ -417,7 +423,9 @@ def test_multi_spot_fleet_termination(setup_multi_spot_fleet_templates):
             try:
                 validate_json_schema(
                     instance=status_response,
-                    schema=plugin_io_schemas.get_schema_for_scheduler("request_status", SCHEDULER_TYPE),
+                    schema=plugin_io_schemas.get_schema_for_scheduler(
+                        "request_status", SCHEDULER_TYPE
+                    ),
                 )
             except ValidationError as e:
                 pytest.fail(f"JSON validation failed for get_request_status response: {e}")
@@ -437,7 +445,14 @@ def test_multi_spot_fleet_termination(setup_multi_spot_fleet_templates):
                 pytest.fail(f"Timeout waiting for capacity provisioning for request {request_id}")
 
             _status = status_response["requests"][0]["status"]
-            if _status in {"complete", "complete_with_error", "failed", "partial", "cancelled", "timeout"}:
+            if _status in {
+                "complete",
+                "complete_with_error",
+                "failed",
+                "partial",
+                "cancelled",
+                "timeout",
+            }:
                 if _status != "complete":
                     pytest.fail(
                         f"Request {request_id} reached terminal status '{_status}'. Response: {status_response}"
@@ -450,7 +465,9 @@ def test_multi_spot_fleet_termination(setup_multi_spot_fleet_templates):
         assert status_response["requests"][0]["status"] == "complete"
         machines = status_response["requests"][0]["machines"]
 
-        instance_ids = [machine.get("machineId") or machine.get("machine_id") for machine in machines]
+        instance_ids = [
+            machine.get("machineId") or machine.get("machine_id") for machine in machines
+        ]
         instance_states = get_instances_states(instance_ids, ec2_client)
 
         for machine, state in zip(machines, instance_states):

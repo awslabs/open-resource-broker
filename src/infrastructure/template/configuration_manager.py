@@ -108,6 +108,7 @@ class TemplateConfigurationManager:
         self.provider_registry_service = provider_registry_service
         if template_factory is None:
             from domain.template.factory import TemplateFactory
+
             template_factory = TemplateFactory()
         self.template_factory = template_factory
 

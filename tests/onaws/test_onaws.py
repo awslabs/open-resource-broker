@@ -45,10 +45,17 @@ def _get_boto_clients():
         except Exception:
             pass  # Fall back to defaults
 
-    region = region or os.environ.get("AWS_REGION") or os.environ.get("AWS_DEFAULT_REGION") or "eu-west-1"
+    region = (
+        region
+        or os.environ.get("AWS_REGION")
+        or os.environ.get("AWS_DEFAULT_REGION")
+        or "eu-west-1"
+    )
 
     session = boto3.session.Session(profile_name=profile, region_name=region)
-    return session.client("ec2", region_name=region), session.client("autoscaling", region_name=region)
+    return session.client("ec2", region_name=region), session.client(
+        "autoscaling", region_name=region
+    )
 
 
 log = logging.getLogger("awsome_test")
@@ -429,7 +436,14 @@ def _wait_for_fleet_stable(resource_id: str, timeout: int = 300) -> None:
                 fleets = resp.get("Fleets") or []
                 state = (fleets[0].get("FleetState") or "").lower() if fleets else ""
 
-            error_states = {"failed", "failed_running", "failed_terminating", "deleted", "deleted_running", "deleted_terminating"}
+            error_states = {
+                "failed",
+                "failed_running",
+                "failed_terminating",
+                "deleted",
+                "deleted_running",
+                "deleted_terminating",
+            }
             if state in error_states:
                 pytest.fail(f"Fleet {resource_id} entered error state: {state}")
             if state != "modifying":
@@ -1314,7 +1328,9 @@ def provide_release_control_loop(hfm, template_json, capacity_to_request, test_c
                 if status_response and status_response.get("requests")
                 else "unknown"
             )
-            pytest.fail(f"Timed out waiting for request {request_id} to reach terminal status, last status: {request_status}")
+            pytest.fail(
+                f"Timed out waiting for request {request_id} to reach terminal status, last status: {request_status}"
+            )
 
         request_status = (
             status_response.get("requests", [{}])[0].get("status", "")
@@ -1426,7 +1442,9 @@ def provide_release_control_loop(hfm, template_json, capacity_to_request, test_c
             status_response = hfm.get_return_requests(return_request_id)
             log.debug(json.dumps(status_response, indent=4))
             if status_response.get("error"):
-                pytest.fail(f"Return request failed: {status_response.get('message', status_response.get('error'))}")
+                pytest.fail(
+                    f"Return request failed: {status_response.get('message', status_response.get('error'))}"
+                )
 
             time.sleep(10)
 
@@ -1597,7 +1615,9 @@ def test_partial_return_reduces_capacity(setup_host_factory_mock_with_scenario, 
 
     request_id = request_response.get("requestId") or request_response.get("request_id")
     if "error" in request_response:
-        pytest.fail(f"request_machines returned an error: {request_response['error']}. Full response: {request_response}")
+        pytest.fail(
+            f"request_machines returned an error: {request_response['error']}. Full response: {request_response}"
+        )
     if not request_id:
         pytest.fail(f"Request ID missing in response: {json.dumps(request_response, indent=2)}")
 

@@ -28,9 +28,7 @@ def _make_request(resource_ids):
 
 
 def _make_client_error(code="InternalError"):
-    return ClientError(
-        {"Error": {"Code": code, "Message": "boom"}}, "DescribeSpotFleetRequests"
-    )
+    return ClientError({"Error": {"Code": code, "Message": "boom"}}, "DescribeSpotFleetRequests")
 
 
 def _formatted_instances(instance_ids, resource_id="sfr-test"):
@@ -54,7 +52,6 @@ def _formatted_instances(instance_ids, resource_id="sfr-test"):
 
 
 class TestSpotFleetHandlerCheckHostsStatus:
-
     def test_check_hosts_status_all_active(self):
         """All instances active → returns all."""
         handler = _make_handler()
@@ -62,11 +59,13 @@ class TestSpotFleetHandlerCheckHostsStatus:
         instance_ids = ["i-s1", "i-s2", "i-s3"]
 
         with patch.object(
-            handler, "_get_spot_fleet_instances",
-            return_value=_formatted_instances(instance_ids, "sfr-111")
+            handler,
+            "_get_spot_fleet_instances",
+            return_value=_formatted_instances(instance_ids, "sfr-111"),
         ):
-            with patch.object(handler, "_format_instance_data",
-                              side_effect=lambda insts, rid, req: insts):
+            with patch.object(
+                handler, "_format_instance_data", side_effect=lambda insts, rid, req: insts
+            ):
                 result = handler.check_hosts_status(request)
 
         assert len(result) == 3
@@ -80,11 +79,13 @@ class TestSpotFleetHandlerCheckHostsStatus:
         active_ids = ["i-active1", "i-active2"]
 
         with patch.object(
-            handler, "_get_spot_fleet_instances",
-            return_value=_formatted_instances(active_ids, "sfr-222")
+            handler,
+            "_get_spot_fleet_instances",
+            return_value=_formatted_instances(active_ids, "sfr-222"),
         ):
-            with patch.object(handler, "_format_instance_data",
-                              side_effect=lambda insts, rid, req: insts):
+            with patch.object(
+                handler, "_format_instance_data", side_effect=lambda insts, rid, req: insts
+            ):
                 result = handler.check_hosts_status(request)
 
         assert len(result) == 2
@@ -107,8 +108,7 @@ class TestSpotFleetHandlerCheckHostsStatus:
         request = _make_request(["sfr-err"])
 
         with patch.object(
-            handler, "_get_spot_fleet_instances",
-            side_effect=AWSInfrastructureError("AWS error")
+            handler, "_get_spot_fleet_instances", side_effect=AWSInfrastructureError("AWS error")
         ):
             result = handler.check_hosts_status(request)
 
@@ -132,11 +132,13 @@ class TestSpotFleetHandlerCheckHostsStatus:
         instance_ids = ["i-c1", "i-c2", "i-c3", "i-c4"]
 
         with patch.object(
-            handler, "_get_spot_fleet_instances",
-            return_value=_formatted_instances(instance_ids, "sfr-cnt")
+            handler,
+            "_get_spot_fleet_instances",
+            return_value=_formatted_instances(instance_ids, "sfr-cnt"),
         ):
-            with patch.object(handler, "_format_instance_data",
-                              side_effect=lambda insts, rid, req: insts):
+            with patch.object(
+                handler, "_format_instance_data", side_effect=lambda insts, rid, req: insts
+            ):
                 result = handler.check_hosts_status(request)
 
         assert len(result) == 4
@@ -148,11 +150,13 @@ class TestSpotFleetHandlerCheckHostsStatus:
         instance_ids = ["i-spot-preserve1", "i-spot-preserve2"]
 
         with patch.object(
-            handler, "_get_spot_fleet_instances",
-            return_value=_formatted_instances(instance_ids, "sfr-ids")
+            handler,
+            "_get_spot_fleet_instances",
+            return_value=_formatted_instances(instance_ids, "sfr-ids"),
         ):
-            with patch.object(handler, "_format_instance_data",
-                              side_effect=lambda insts, rid, req: insts):
+            with patch.object(
+                handler, "_format_instance_data", side_effect=lambda insts, rid, req: insts
+            ):
                 result = handler.check_hosts_status(request)
 
         returned_ids = {r["instance_id"] for r in result}
@@ -181,10 +185,12 @@ class TestSpotFleetHandlerCheckHostsStatus:
                 return _formatted_instances(ids_a, "sfr-A")
             return _formatted_instances(ids_b, "sfr-B")
 
-        with patch.object(handler, "_get_spot_fleet_instances",
-                          side_effect=get_instances_side_effect):
-            with patch.object(handler, "_format_instance_data",
-                              side_effect=lambda insts, rid, req: insts):
+        with patch.object(
+            handler, "_get_spot_fleet_instances", side_effect=get_instances_side_effect
+        ):
+            with patch.object(
+                handler, "_format_instance_data", side_effect=lambda insts, rid, req: insts
+            ):
                 result = handler.check_hosts_status(request)
 
         assert len(result) == 3
@@ -198,11 +204,13 @@ class TestSpotFleetHandlerCheckHostsStatus:
         active_ids = ["i-spot-strict-active"]
 
         with patch.object(
-            handler, "_get_spot_fleet_instances",
-            return_value=_formatted_instances(active_ids, "sfr-strict")
+            handler,
+            "_get_spot_fleet_instances",
+            return_value=_formatted_instances(active_ids, "sfr-strict"),
         ):
-            with patch.object(handler, "_format_instance_data",
-                              side_effect=lambda insts, rid, req: insts):
+            with patch.object(
+                handler, "_format_instance_data", side_effect=lambda insts, rid, req: insts
+            ):
                 result = handler.check_hosts_status(request)
 
         assert len(result) == 1

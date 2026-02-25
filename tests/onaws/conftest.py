@@ -21,19 +21,34 @@ logs_dir.mkdir(exist_ok=True)
 
 
 def _get_aws_profile_and_region() -> tuple[str | None, str | None]:
-    """Read profile and region from ORB_CONFIG_DIR config if available."""
+    """Read profile and region from ORB config.
+
+    Priority:
+    1. ORB_CONFIG_DIR env var (per-test config dir)
+    2. Project config/config.json (written by orb init)
+    3. AWS_REGION / AWS_DEFAULT_REGION env vars
+    """
+    candidates = []
     config_dir = os.environ.get("ORB_CONFIG_DIR")
     if config_dir:
+        candidates.append(os.path.join(config_dir, "config.json"))
+    # Fall back to the project's real config written by orb init
+    candidates.append(str(repo_root / "config" / "config.json"))
+
+    for config_path in candidates:
         try:
-            config_path = os.path.join(config_dir, "config.json")
             with open(config_path) as f:
                 config = json.load(f)
             providers = config.get("provider", {}).get("providers", [])
             if providers:
                 provider_config = providers[0].get("config", {})
-                return provider_config.get("profile"), provider_config.get("region")
+                profile = provider_config.get("profile")
+                region = provider_config.get("region")
+                if profile or region:
+                    return profile, region
         except Exception:
             pass
+
     region = os.environ.get("AWS_REGION") or os.environ.get("AWS_DEFAULT_REGION")
     return None, region
 
@@ -52,15 +67,17 @@ def check_aws_credentials():
         session = Session(profile_name=profile, region_name=region)
         sts = session.client("sts", region_name=region)
         identity = sts.get_caller_identity()
-        print(f"\n✓ AWS credentials valid: {identity.get('Arn')} (account: {identity.get('Account')})")
+        print(
+            f"\n✓ AWS credentials valid: {identity.get('Arn')} (account: {identity.get('Account')})"
+        )
     except NoCredentialsError as e:
-        pytest.skip(f"AWS credentials not found (profile={profile!r}): {e}")
+        pytest.exit(f"AWS credentials not found (profile={profile!r}): {e}", returncode=1)
     except ClientError as e:
         code = e.response.get("Error", {}).get("Code", "Unknown")
         msg = e.response.get("Error", {}).get("Message", str(e))
-        pytest.skip(f"AWS credentials invalid [{code}]: {msg}")
+        pytest.exit(f"AWS credentials invalid [{code}]: {msg}", returncode=1)
     except Exception as e:
-        pytest.skip(f"AWS credential check failed: {e}")
+        pytest.exit(f"AWS credential check failed: {e}", returncode=1)
 
 
 @pytest.fixture(autouse=True)

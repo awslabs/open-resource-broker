@@ -91,7 +91,6 @@ def _normalize_key(key: str, target_fmt: str) -> str:
     return _SNAKE_TO_CAMEL.get(key, key)
 
 
-
 class TemplateProcessor:
     """Generates per-test config directories from the real project config files."""
 
@@ -228,7 +227,10 @@ class TemplateProcessor:
 
         config_dir = test_dir / "config"
         config_dir.mkdir(parents=True, exist_ok=True)
-        self._write_json(config_dir / "aws_templates.json", {"scheduler_type": scheduler_type, "templates": combined})
+        self._write_json(
+            config_dir / "aws_templates.json",
+            {"scheduler_type": scheduler_type, "templates": combined},
+        )
         self._set_storage_paths(config_data, test_dir)
         self._write_json(config_dir / "config.json", config_data)
 

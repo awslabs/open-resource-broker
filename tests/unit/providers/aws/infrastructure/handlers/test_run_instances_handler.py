@@ -30,9 +30,7 @@ def _make_request(resource_ids=None, instance_ids=None, provider_data=None, meta
 
 
 def _make_client_error(code="InternalError"):
-    return ClientError(
-        {"Error": {"Code": code, "Message": "boom"}}, "DescribeInstances"
-    )
+    return ClientError({"Error": {"Code": code, "Message": "boom"}}, "DescribeInstances")
 
 
 def _formatted_instances(instance_ids, resource_id="r-test"):
@@ -56,7 +54,6 @@ def _formatted_instances(instance_ids, resource_id="r-test"):
 
 
 class TestRunInstancesHandlerCheckHostsStatus:
-
     def test_check_hosts_status_all_running(self):
         """All running instances → returns all."""
         handler = _make_handler()
@@ -67,11 +64,15 @@ class TestRunInstancesHandlerCheckHostsStatus:
         )
 
         with patch.object(
-            handler, "_get_instance_details",
-            return_value=_formatted_instances(instance_ids, "r-res1")
+            handler,
+            "_get_instance_details",
+            return_value=_formatted_instances(instance_ids, "r-res1"),
         ):
-            with patch.object(handler, "_format_instance_data",
-                              side_effect=lambda insts, rid, req, tmpl=None: insts):
+            with patch.object(
+                handler,
+                "_format_instance_data",
+                side_effect=lambda insts, rid, req, tmpl=None: insts,
+            ):
                 result = handler.check_hosts_status(request)
 
         assert len(result) == 2
@@ -88,11 +89,15 @@ class TestRunInstancesHandlerCheckHostsStatus:
         )
 
         with patch.object(
-            handler, "_get_instance_details",
-            return_value=_formatted_instances(instance_ids, "r-mixed")
+            handler,
+            "_get_instance_details",
+            return_value=_formatted_instances(instance_ids, "r-mixed"),
         ):
-            with patch.object(handler, "_format_instance_data",
-                              side_effect=lambda insts, rid, req, tmpl=None: insts):
+            with patch.object(
+                handler,
+                "_format_instance_data",
+                side_effect=lambda insts, rid, req, tmpl=None: insts,
+            ):
                 result = handler.check_hosts_status(request)
 
         assert len(result) == 3
@@ -118,8 +123,7 @@ class TestRunInstancesHandlerCheckHostsStatus:
         )
 
         with patch.object(
-            handler, "_get_instance_details",
-            side_effect=_make_client_error("InternalError")
+            handler, "_get_instance_details", side_effect=_make_client_error("InternalError")
         ):
             with pytest.raises(AWSInfrastructureError):
                 handler.check_hosts_status(request)
@@ -135,11 +139,15 @@ class TestRunInstancesHandlerCheckHostsStatus:
         )
 
         with patch.object(
-            handler, "_get_instance_details",
-            return_value=_formatted_instances(instance_ids, "r-meta")
+            handler,
+            "_get_instance_details",
+            return_value=_formatted_instances(instance_ids, "r-meta"),
         ):
-            with patch.object(handler, "_format_instance_data",
-                              side_effect=lambda insts, rid, req, tmpl=None: insts):
+            with patch.object(
+                handler,
+                "_format_instance_data",
+                side_effect=lambda insts, rid, req, tmpl=None: insts,
+            ):
                 result = handler.check_hosts_status(request)
 
         assert len(result) == 2
@@ -154,11 +162,15 @@ class TestRunInstancesHandlerCheckHostsStatus:
         )
 
         with patch.object(
-            handler, "_get_instance_details",
-            return_value=_formatted_instances(instance_ids, "r-cnt")
+            handler,
+            "_get_instance_details",
+            return_value=_formatted_instances(instance_ids, "r-cnt"),
         ):
-            with patch.object(handler, "_format_instance_data",
-                              side_effect=lambda insts, rid, req, tmpl=None: insts):
+            with patch.object(
+                handler,
+                "_format_instance_data",
+                side_effect=lambda insts, rid, req, tmpl=None: insts,
+            ):
                 result = handler.check_hosts_status(request)
 
         assert len(result) == 4
@@ -173,11 +185,15 @@ class TestRunInstancesHandlerCheckHostsStatus:
         )
 
         with patch.object(
-            handler, "_get_instance_details",
-            return_value=_formatted_instances(instance_ids, "r-ids")
+            handler,
+            "_get_instance_details",
+            return_value=_formatted_instances(instance_ids, "r-ids"),
         ):
-            with patch.object(handler, "_format_instance_data",
-                              side_effect=lambda insts, rid, req, tmpl=None: insts):
+            with patch.object(
+                handler,
+                "_format_instance_data",
+                side_effect=lambda insts, rid, req, tmpl=None: insts,
+            ):
                 result = handler.check_hosts_status(request)
 
         returned_ids = {r["instance_id"] for r in result}
@@ -195,8 +211,11 @@ class TestRunInstancesHandlerCheckHostsStatus:
         )
 
         with patch.object(handler, "_get_instance_details", return_value=returned_by_aws):
-            with patch.object(handler, "_format_instance_data",
-                              side_effect=lambda insts, rid, req, tmpl=None: insts):
+            with patch.object(
+                handler,
+                "_format_instance_data",
+                side_effect=lambda insts, rid, req, tmpl=None: insts,
+            ):
                 result = handler.check_hosts_status(request)
 
         assert len(result) == 1
@@ -213,10 +232,7 @@ class TestRunInstancesHandlerCheckHostsStatus:
 
         fallback_result = _formatted_instances(["i-fb1"], "r-fallback")
 
-        with patch.object(
-            handler, "_find_instances_by_resource_ids",
-            return_value=fallback_result
-        ):
+        with patch.object(handler, "_find_instances_by_resource_ids", return_value=fallback_result):
             result = handler.check_hosts_status(request)
 
         assert len(result) == 1
