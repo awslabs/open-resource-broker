@@ -1,9 +1,13 @@
 """onaws integration test configuration."""
 
+import json
+import os
 import sys
 from pathlib import Path
 
 import pytest
+from boto3 import Session
+from botocore.exceptions import ClientError, NoCredentialsError
 
 # Ensure repo root is on sys.path so hfmock.py and other root-level modules are importable
 repo_root = Path(__file__).parent.parent.parent
@@ -14,6 +18,49 @@ if str(repo_root) not in sys.path:
 # (some test files create FileHandlers at module level)
 logs_dir = repo_root / "logs"
 logs_dir.mkdir(exist_ok=True)
+
+
+def _get_aws_profile_and_region() -> tuple[str | None, str | None]:
+    """Read profile and region from ORB_CONFIG_DIR config if available."""
+    config_dir = os.environ.get("ORB_CONFIG_DIR")
+    if config_dir:
+        try:
+            config_path = os.path.join(config_dir, "config.json")
+            with open(config_path) as f:
+                config = json.load(f)
+            providers = config.get("provider", {}).get("providers", [])
+            if providers:
+                provider_config = providers[0].get("config", {})
+                return provider_config.get("profile"), provider_config.get("region")
+        except Exception:
+            pass
+    region = os.environ.get("AWS_REGION") or os.environ.get("AWS_DEFAULT_REGION")
+    return None, region
+
+
+@pytest.fixture(scope="session", autouse=True)
+def check_aws_credentials():
+    """Skip all onaws tests if AWS credentials are missing or expired.
+
+    Calls sts:GetCallerIdentity once per session. If it fails (no credentials,
+    expired Midway token, etc.) all tests are skipped with a clear message
+    rather than failing deep inside provisioning with cryptic errors.
+    """
+    profile, region = _get_aws_profile_and_region()
+    region = region or "eu-west-1"
+    try:
+        session = Session(profile_name=profile, region_name=region)
+        sts = session.client("sts", region_name=region)
+        identity = sts.get_caller_identity()
+        print(f"\n✓ AWS credentials valid: {identity.get('Arn')} (account: {identity.get('Account')})")
+    except NoCredentialsError as e:
+        pytest.skip(f"AWS credentials not found (profile={profile!r}): {e}")
+    except ClientError as e:
+        code = e.response.get("Error", {}).get("Code", "Unknown")
+        msg = e.response.get("Error", {}).get("Message", str(e))
+        pytest.skip(f"AWS credentials invalid [{code}]: {msg}")
+    except Exception as e:
+        pytest.skip(f"AWS credential check failed: {e}")
 
 
 @pytest.fixture(autouse=True)
