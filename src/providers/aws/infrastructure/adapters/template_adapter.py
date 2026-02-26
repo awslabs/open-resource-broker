@@ -128,11 +128,6 @@ class AWSTemplateAdapter(TemplateAdapterPort):
         if not template.provider_api:
             template.provider_api = self._determine_provider_api(template)
 
-        # Set default fleet type if not specified - only on AWSTemplate which has fleet_type
-        if not hasattr(template, "fleet_type") or not getattr(template, "fleet_type", None):
-            if hasattr(template, "fleet_type"):
-                object.__setattr__(template, "fleet_type", "instant")
-
         # Extend with AWS-specific metadata
         if not template.metadata:
             template.metadata = {}
@@ -143,7 +138,7 @@ class AWSTemplateAdapter(TemplateAdapterPort):
         # Add AWS-specific metadata
         template.metadata["aws"].update(
             {
-                "fleet_type": getattr(template, "fleet_type", "instant"),
+                "fleet_type": getattr(template, "fleet_type", None),
                 "supported_fields": self._AWS_SUPPORTED_FIELDS,
                 "validation_enabled": True,
             }
