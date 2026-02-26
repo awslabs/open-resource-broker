@@ -380,8 +380,10 @@ class ConfigurationLoader:
                 # Update JSON storage strategy
                 storage = config.setdefault("storage", {})
                 json_strategy = storage.setdefault("json_strategy", {})
-                json_strategy["base_path"] = scheduler_dir
-                get_config_logger().debug("Set JSON storage base_path to %s", scheduler_dir)
+                existing_base_path = json_strategy.get("base_path", "data")
+                if not os.path.isabs(existing_base_path):
+                    json_strategy["base_path"] = scheduler_dir
+                    get_config_logger().debug("Set JSON storage base_path to %s", scheduler_dir)
 
                 # Update SQL storage strategy if using SQLite
                 sql_strategy = storage.setdefault("sql_strategy", {})
