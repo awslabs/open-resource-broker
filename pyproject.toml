@@ -276,6 +276,7 @@ ignore = [
     "I001",   # Import block formatting - handled by formatter
     "N818",   # Exception naming conventions
     "N802",   # Function naming conventions
+    "N804",   # First argument of class method should be cls — false positive with Pydantic @model_validator
     # Pyupgrade and modernization - non-critical style issues
     "UP006",  # Use built-in types for type annotations - style preference
     "UP024",  # Replace aliased errors - style preference

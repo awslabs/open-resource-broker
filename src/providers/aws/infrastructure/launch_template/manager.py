@@ -547,16 +547,6 @@ class AWSLaunchTemplateManager:
         # Get instance name
         instance_name = f"{self.config_port.get_resource_prefix('instance')}{request.request_id}"
 
-        # Get package name for CreatedBy tag
-        created_by = "open-resource-broker"  # fallback
-        if self.config_port:
-            try:
-                package_info = self.config_port.get_package_info()
-                created_by = package_info.get("name", "open-resource-broker")
-            except Exception:
-                # Intentionally silent fallback for package info retrieval
-                pass
-
         user_tags: list[dict[str, str]] = [{"Key": "Name", "Value": instance_name}]
         if aws_template.tags:
             user_tags.extend([{"Key": k, "Value": str(v)} for k, v in aws_template.tags.items()])
@@ -586,16 +576,6 @@ class AWSLaunchTemplateManager:
         template_name = (
             f"{self.config_port.get_resource_prefix('launch_template')}{request.request_id}"
         )
-
-        # Get package name for CreatedBy tag
-        created_by = "open-resource-broker"  # fallback
-        if self.config_port:
-            try:
-                package_info = self.config_port.get_package_info()
-                created_by = package_info.get("name", "open-resource-broker")
-            except Exception:
-                # Intentionally silent fallback for package info retrieval
-                pass
 
         return merge_tags(
             [{"Key": "Name", "Value": template_name}],

@@ -69,13 +69,16 @@ class ArchitectureValidator:
                 continue
 
             # Domain should not import from infrastructure or interface layers
-            if any(layer in import_name for layer in ["src.infrastructure", "src.interface"]):
+            if any(
+                import_name == layer or import_name.startswith(layer + ".")
+                for layer in ["infrastructure", "interface", "src.infrastructure", "src.interface"]
+            ):
                 self.violations.append(
                     f"{file_path}: Domain layer importing from outer layer: {import_name}"
                 )
 
             # Domain should not import from application layer
-            if "src.application" in import_name:
+            if import_name == "application" or import_name.startswith("application.") or "src.application" in import_name:
                 self.violations.append(
                     f"{file_path}: Domain layer importing from Application layer: {import_name}"
                 )
@@ -90,7 +93,7 @@ class ArchitectureValidator:
                 continue
 
             # Application should not import from interface layer
-            if "src.interface" in import_name:
+            if import_name == "interface" or import_name.startswith("interface.") or "src.interface" in import_name:
                 self.violations.append(
                     f"{file_path}: Application layer importing from Interface layer: {import_name}"
                 )
@@ -105,7 +108,7 @@ class ArchitectureValidator:
                 continue
 
             # Infrastructure should not import from interface layer
-            if "src.interface" in import_name:
+            if import_name == "interface" or import_name.startswith("interface.") or "src.interface" in import_name:
                 self.violations.append(
                     f"{file_path}: Infrastructure layer importing from Interface layer: {import_name}"
                 )

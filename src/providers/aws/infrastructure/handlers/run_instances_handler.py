@@ -365,9 +365,6 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
                 }
 
         # Add additional tags for instances (beyond launch template)
-        # Get package name for CreatedBy tag
-        created_by = self._get_package_name()
-
         tag_specifications = [
             {
                 "ResourceType": "instance",

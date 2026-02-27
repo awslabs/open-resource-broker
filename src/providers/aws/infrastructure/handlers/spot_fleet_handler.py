@@ -467,9 +467,6 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                 f"spotfleet.amazonaws.com/AWSServiceRoleForEC2SpotFleet"
             )
 
-        # Get package name for CreatedBy tag
-        created_by = self._get_package_name()
-
         requested_count = int(getattr(request, "requested_count", 0) or 1)
         capacity_distribution = self._calculate_capacity_distribution(template, requested_count)
         target_capacity = capacity_distribution["target_capacity"]

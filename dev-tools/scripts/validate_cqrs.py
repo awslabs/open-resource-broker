@@ -47,6 +47,11 @@ class CQRSValidator:
 
     def analyze_handler_file(self, file_path: Path) -> None:
         """Analyze a single handler file for CQRS compliance."""
+        # Skip interface and base definition files — they define the contracts, not implementations
+        path_str = str(file_path)
+        if "/interfaces/" in path_str or "/base/" in path_str:
+            return
+
         try:
             content = file_path.read_text(encoding="utf-8")
             tree = ast.parse(content)
@@ -66,18 +71,30 @@ class CQRSValidator:
         if "Handler" not in class_name:
             return
 
-        # Get base class names
+        # Skip base classes — they define the interface, not implementations
+        if class_name.startswith("Base"):
+            return
+
+        # Get base class names — handle plain names, dotted names, and generic
+        # subscripts like BaseCommandHandler[T, R]
         base_names = []
         for base in class_node.bases:
             if hasattr(base, "id"):
                 base_names.append(base.id)
             elif hasattr(base, "attr"):
                 base_names.append(base.attr)
+            elif isinstance(base, ast.Subscript):
+                # Generic base: BaseCommandHandler[T] — extract the name part
+                val = base.value
+                if hasattr(val, "id"):
+                    base_names.append(val.id)
+                elif hasattr(val, "attr"):
+                    base_names.append(val.attr)
 
         # Check command handlers
         if "CommandHandler" in class_name:
             self.command_handlers.append((file_path, class_name))
-            if not any("BaseCommandHandler" in base for base in base_names):
+            if not any("CommandHandler" in base for base in base_names):
                 self.violations.append(
                     f"{file_path}: {class_name} should inherit from BaseCommandHandler"
                 )
@@ -85,7 +102,7 @@ class CQRSValidator:
         # Check query handlers
         elif "QueryHandler" in class_name:
             self.query_handlers.append((file_path, class_name))
-            if not any("BaseQueryHandler" in base for base in base_names):
+            if not any("QueryHandler" in base for base in base_names):
                 self.violations.append(
                     f"{file_path}: {class_name} should inherit from BaseQueryHandler"
                 )
@@ -93,13 +110,19 @@ class CQRSValidator:
         # Check event handlers
         elif "EventHandler" in class_name:
             self.event_handlers.append((file_path, class_name))
-            if not any("BaseEventHandler" in base for base in base_names):
+            if not any("EventHandler" in base for base in base_names):
                 self.violations.append(
                     f"{file_path}: {class_name} should inherit from BaseEventHandler"
                 )
 
-        # Check for required methods
-        self.check_required_methods(class_node, class_name, file_path)
+        # Check for required methods — only flag if not inheriting from a known base
+        # (inherited methods won't appear in the class body AST)
+        inherits_base = any(
+            "CommandHandler" in b or "QueryHandler" in b or "EventHandler" in b
+            for b in base_names
+        )
+        if not inherits_base:
+            self.check_required_methods(class_node, class_name, file_path)
 
     def check_required_methods(
         self, class_node: ast.ClassDef, class_name: str, file_path: Path
