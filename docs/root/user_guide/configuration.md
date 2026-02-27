@@ -122,7 +122,7 @@ export ORB_AWS_REGION=us-east-1
 export ORB_AWS_PROFILE=development
 
 # Start with defaults
-orb serve
+orb system serve
 ```
 
 #### Staging Environment
@@ -150,7 +150,7 @@ export ORB_REQUEST_TIMEOUT=300
 export ORB_AWS_MAX_RETRIES=3
 
 # Use configuration file for complex settings
-orb serve --config config/staging.json
+orb system serve --config config/staging.json
 ```
 
 #### Production Environment
@@ -168,7 +168,7 @@ export ORB_ENVIRONMENT=production
 export ORB_AWS_ROLE_ARN=arn:aws:iam::123456789012:role/OrbitProductionRole
 
 # All other configuration in secure configuration file
-orb serve --config /etc/orb/production.json
+orb system serve --config /etc/orb/production.json
 ```
 
 ### Configuration File Structure
@@ -258,7 +258,7 @@ orb serve --config /etc/orb/production.json
 ls -la config/config.json ~/.orb/config.json
 
 # Specify explicit path
-orb serve --config /path/to/config.json
+orb system serve --config /path/to/config.json
 ```
 
 **Environment variable not taking effect:**
@@ -285,7 +285,7 @@ Enable debug logging to see configuration loading process:
 
 ```bash
 export ORB_LOG_LEVEL=DEBUG
-orb serve --config config.json
+orb system serve --config config.json
 ```
 
 This will show:
@@ -911,7 +911,7 @@ python -m json.tool config.json
 #### Missing Required Fields
 ```bash
 # Use configuration validator
-hostfactory validate-config --config config.json
+orb config validate
 ```
 
 #### Environment Variable Issues
@@ -920,7 +920,7 @@ hostfactory validate-config --config config.json
 env | grep HF_
 
 # Test environment override
-HF_LOGGING_LEVEL=DEBUG hostfactory test-config
+ORB_LOG_LEVEL=DEBUG orb config validate
 ```
 
 ### Configuration Debugging
@@ -928,8 +928,8 @@ HF_LOGGING_LEVEL=DEBUG hostfactory test-config
 Enable debug logging to see configuration loading:
 
 ```bash
-export HF_LOGGING_LEVEL=DEBUG
-hostfactory --config config.json
+export ORB_LOG_LEVEL=DEBUG
+orb system serve --config config.json
 ```
 
 This will show:
