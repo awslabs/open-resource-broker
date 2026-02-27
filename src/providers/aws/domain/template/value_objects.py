@@ -186,45 +186,18 @@ class ProviderApi(str, Enum):
 
     @classmethod
     def _missing_(cls, value: object) -> Optional["ProviderApi"]:
-        """Handle missing enum values by checking configuration."""
+        """Handle missing enum values for raw string lookups."""
         if not isinstance(value, str):
             return None
-        # Get valid APIs from configuration
-        try:
-            from config.managers.configuration_manager import ConfigurationManager
-            from infrastructure.di.container import get_container
 
-            container = get_container()
-            config_manager = container.get(ConfigurationManager)
-            raw_config = config_manager.get_raw_config()
-
-            # Navigate to AWS handlers in configuration
-            aws_handlers = (
-                raw_config.get("provider", {})
-                .get("provider_defaults", {})
-                .get("aws", {})
-                .get("handlers", {})
-            )
-
-            if value in aws_handlers:
-                # Dynamically create enum member
-                new_member = str.__new__(cls, value)
-                new_member._name_ = value  # type: ignore[misc]
-                new_member._value_ = value
-                return new_member
-        except Exception:
-            # Fall through to hardcoded fallback
-            pass
-
-        # Fallback to hardcoded values for safety
-        fallback_values = {
+        known_values = {
             "EC2Fleet": "EC2Fleet",
             "SpotFleet": "SpotFleet",
             "ASG": "ASG",
             "RunInstances": "RunInstances",
         }
 
-        if value in fallback_values:
+        if value in known_values:
             new_member = str.__new__(cls, value)
             new_member._name_ = value  # type: ignore[misc]
             new_member._value_ = value
@@ -244,50 +217,17 @@ class AWSFleetType(str, Enum):
 
     @classmethod
     def _missing_(cls, value: object) -> Optional["AWSFleetType"]:
-        """Handle missing enum values by checking configuration."""
+        """Handle missing enum values for raw string lookups."""
         if not isinstance(value, str):
             return None
-        # Get valid fleet types from configuration
-        try:
-            from config.managers.configuration_manager import ConfigurationManager
-            from infrastructure.di.container import get_container
 
-            container = get_container()
-            config_manager = container.get(ConfigurationManager)
-            raw_config = config_manager.get_raw_config()
-
-            # Check all handlers for supported fleet types
-            aws_handlers = (
-                raw_config.get("provider", {})
-                .get("provider_defaults", {})
-                .get("aws", {})
-                .get("handlers", {})
-            )
-
-            # Collect all unique fleet types from all handlers
-            all_fleet_types = set()
-            for handler_config in aws_handlers.values():
-                fleet_types = handler_config.get("supported_fleet_types", [])
-                all_fleet_types.update(fleet_types)
-
-            if value in all_fleet_types:
-                # Dynamically create enum member
-                new_member = str.__new__(cls, value)
-                new_member._name_ = value.upper()  # type: ignore[misc]
-                new_member._value_ = value
-                return new_member
-        except Exception:
-            # Fall through to hardcoded fallback
-            pass
-
-        # Fallback to hardcoded values for safety
-        fallback_values = {
+        known_values = {
             "instant": "instant",
             "request": "request",
             "maintain": "maintain",
         }
 
-        if value in fallback_values:
+        if value in known_values:
             new_member = str.__new__(cls, value)
             new_member._name_ = value.upper()  # type: ignore[misc]
             new_member._value_ = value
