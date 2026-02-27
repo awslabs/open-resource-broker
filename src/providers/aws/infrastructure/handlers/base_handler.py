@@ -15,6 +15,7 @@ from botocore.exceptions import ClientError
 
 from domain.base.dependency_injection import injectable
 from domain.base.ports import ErrorHandlingPort, LoggingPort
+from domain.base.ports.configuration_port import ConfigurationPort
 from domain.request.aggregate import Request
 from domain.template.template_aggregate import Template
 from infrastructure.resilience import retry
@@ -67,7 +68,7 @@ class AWSHandler(ABC):
         machine_adapter=None,
         error_handler: Optional[ErrorHandlingPort] = None,
         aws_native_spec_service: Optional[Any] = None,
-        config_port: Optional[Any] = None,
+        config_port: Optional[ConfigurationPort] = None,
     ) -> None:
         """
         Initialize AWS handler with standardized dependencies.

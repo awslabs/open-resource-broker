@@ -66,7 +66,7 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
         logger: LoggingPort,
         aws_ops: AWSOperations,
         launch_template_manager: AWSLaunchTemplateManager,
-        request_adapter: RequestAdapterPort = None,
+        request_adapter: Optional[RequestAdapterPort] = None,
         machine_adapter: Optional[AWSMachineAdapter] = None,
         aws_native_spec_service=None,
         config_port=None,
@@ -159,7 +159,7 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                 "instances": instances,
                 "provider_data": {
                     "resource_type": "ec2_fleet",
-                    "fleet_type": aws_template.fleet_type.value
+                    "fleet_type": aws_template.fleet_type.value  # type: ignore[union-attr]
                     if hasattr(aws_template.fleet_type, "value")
                     else aws_template.fleet_type,
                     "fleet_errors": fleet_result.get("metadata_updates", {}).get(
@@ -463,8 +463,8 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
 
         return {
             # Fleet-specific values
-            "fleet_type": template.fleet_type.value,
-            "fleet_name": f"{self.config_port.get_resource_prefix('fleet')}{request.request_id}",
+            "fleet_type": template.fleet_type.value,  # type: ignore[union-attr]
+            "fleet_name": f"{self.config_port.get_resource_prefix('fleet')}{request.request_id}",  # type: ignore[union-attr]
             # Computed overrides
             "instance_overrides": instance_overrides,
             "ondemand_overrides": ondemand_overrides,
@@ -490,7 +490,11 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                 else None
             ),
             "allocation_strategy_on_demand": (
-                self._get_allocation_strategy_on_demand(template.allocation_strategy_on_demand)
+                self._get_allocation_strategy_on_demand(
+                    template.allocation_strategy_on_demand.value
+                    if hasattr(template.allocation_strategy_on_demand, "value")
+                    else str(template.allocation_strategy_on_demand)
+                )
                 if template.allocation_strategy_on_demand
                 else None
             ),
@@ -568,12 +572,13 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                 }
             ],
             "TargetCapacitySpecification": {"TotalTargetCapacity": request.requested_count},
-            "Type": template.fleet_type.value
+            "Type": template.fleet_type.value  # type: ignore[union-attr]
             if hasattr(template.fleet_type, "value")
             else str(template.fleet_type),
             "TagSpecifications": [],
         }
 
+        assert self.config_port is not None, "config_port must be injected"
         fleet_tags = [
             {
                 "Key": "Name",
@@ -642,7 +647,9 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
             if template.allocation_strategy_on_demand:
                 fleet_config["OnDemandOptions"] = {
                     "AllocationStrategy": self._get_allocation_strategy_on_demand(
-                        template.allocation_strategy_on_demand
+                        template.allocation_strategy_on_demand.value
+                        if hasattr(template.allocation_strategy_on_demand, "value")
+                        else str(template.allocation_strategy_on_demand)
                     )
                 }
 

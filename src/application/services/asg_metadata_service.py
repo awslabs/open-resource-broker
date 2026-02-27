@@ -122,7 +122,7 @@ class ASGMetadataService:
             Dictionary with ASG details, or empty dict if not found
         """
         try:
-            from providers.aws.infrastructure.adapters.aws_client import (
+            from providers.aws.infrastructure.adapters.aws_client import (  # type: ignore
                 AWSClient,  # type: ignore[import]
             )
 

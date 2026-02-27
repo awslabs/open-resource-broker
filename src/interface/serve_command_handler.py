@@ -31,7 +31,7 @@ async def handle_serve_api(args) -> dict[str, Any]:
     try:
         # Import here to avoid circular dependencies
         try:
-            import uvicorn
+            import uvicorn  # type: ignore
 
             from api.server import create_fastapi_app
         except ImportError:

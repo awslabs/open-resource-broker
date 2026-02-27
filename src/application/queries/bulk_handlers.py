@@ -80,10 +80,10 @@ class GetMultipleTemplatesHandler(
         self.uow_factory = uow_factory
         self._container = container
 
-        from application.factories.template_dto_factory import (
+        from application.factories.template_dto_factory import (  # type: ignore
             TemplateDTOFactory,  # type: ignore[import]
         )
-        from application.services.template_query_service import (
+        from application.services.template_query_service import (  # type: ignore
             TemplateQueryService,  # type: ignore[import]
         )
 
@@ -130,10 +130,10 @@ class GetMultipleMachinesHandler(BaseQueryHandler[GetMultipleMachinesQuery, Bulk
         self.uow_factory = uow_factory
         self._container = container
 
-        from application.factories.machine_dto_factory import (
+        from application.factories.machine_dto_factory import (  # type: ignore
             MachineDTOFactory,  # type: ignore[import]
         )
-        from application.services.machine_query_service import (
+        from application.services.machine_query_service import (  # type: ignore
             MachineQueryService,  # type: ignore[import]
         )
 

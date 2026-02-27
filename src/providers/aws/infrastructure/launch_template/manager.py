@@ -7,12 +7,13 @@ moving AWS-specific logic out of the base handler to maintain clean architecture
 
 import hashlib
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Optional
 
 from botocore.exceptions import ClientError
 
 from domain.base.dependency_injection import injectable
 from domain.base.ports import LoggingPort
+from domain.base.ports.configuration_port import ConfigurationPort
 from domain.request.aggregate import Request
 from providers.aws.domain.template.aws_template_aggregate import AWSTemplate
 from providers.aws.exceptions.aws_exceptions import (
@@ -54,9 +55,7 @@ class AWSLaunchTemplateManager:
 
         container = get_container()
         try:
-            from domain.base.ports.configuration_port import ConfigurationPort
-
-            self.config_port = container.get(ConfigurationPort)
+            self.config_port: Optional[ConfigurationPort] = container.get(ConfigurationPort)
         except Exception:
             self.config_port = None
 
@@ -128,6 +127,7 @@ class AWSLaunchTemplateManager:
         launch_template_data = self._create_launch_template_data(aws_template, request)
 
         # Get the launch template name
+        assert self.config_port is not None, "config_port must be injected"
         launch_template_name = (
             f"{self.config_port.get_resource_prefix('launch_template')}{request.request_id}"
         )
@@ -300,6 +300,7 @@ class AWSLaunchTemplateManager:
             custom_tags = [{"key": k, "value": v} for k, v in template.tags.items()]
 
         # Get instance name
+        assert self.config_port is not None, "config_port must be injected"
         instance_name = f"{self.config_port.get_resource_prefix('instance')}{request.request_id}"
 
         return {
@@ -545,6 +546,7 @@ class AWSLaunchTemplateManager:
             List of tag dictionaries
         """
         # Get instance name
+        assert self.config_port is not None, "config_port must be injected"
         instance_name = f"{self.config_port.get_resource_prefix('instance')}{request.request_id}"
 
         user_tags: list[dict[str, str]] = [{"Key": "Name", "Value": instance_name}]
@@ -573,6 +575,7 @@ class AWSLaunchTemplateManager:
         Returns:
             List of tag dictionaries
         """
+        assert self.config_port is not None, "config_port must be injected"
         template_name = (
             f"{self.config_port.get_resource_prefix('launch_template')}{request.request_id}"
         )

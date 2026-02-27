@@ -25,8 +25,8 @@ class AWSTemplateExtensionConfig(BaseModel):
 
     # AMI resolution configuration
     ami_resolution: AMIResolutionConfig = Field(
-        default_factory=AMIResolutionConfig,
-        description="AMI resolution configuration",  # type: ignore[arg-type]
+        default_factory=AMIResolutionConfig,  # type: ignore[arg-type]
+        description="AMI resolution configuration",
     )
 
     # AWS instance configuration defaults

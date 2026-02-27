@@ -244,7 +244,7 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
 
         return {
             # RunInstances-specific values
-            "instance_name": f"{self.config_port.get_resource_prefix('instance')}{request.request_id}",
+            "instance_name": f"{self.config_port.get_resource_prefix('instance')}{request.request_id}",  # type: ignore[union-attr]
             # Pricing configuration
             "default_capacity_type": self._get_default_capacity_type(template.price_type),
             "has_spot_options": bool(template.allocation_strategy or template.max_price),
@@ -372,7 +372,7 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
                     [
                         {
                             "Key": "Name",
-                            "Value": f"{self.config_port.get_resource_prefix('instance')}{request.request_id}",
+                            "Value": f"{self.config_port.get_resource_prefix('instance')}{request.request_id}",  # type: ignore[union-attr]
                         },
                         *(
                             [{"Key": k, "Value": v} for k, v in aws_template.tags.items()]

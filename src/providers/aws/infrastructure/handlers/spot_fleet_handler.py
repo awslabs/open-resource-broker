@@ -359,7 +359,7 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
 
         return {
             # Fleet-specific values
-            "fleet_name": f"{self.config_port.get_resource_prefix('spot_fleet')}{request.request_id}",
+            "fleet_name": f"{self.config_port.get_resource_prefix('spot_fleet')}{request.request_id}",  # type: ignore[union-attr]
             # Template reference approach (fixes duplication)
             "base_launch_spec": base_launch_spec,
             "instance_overrides": instance_overrides,

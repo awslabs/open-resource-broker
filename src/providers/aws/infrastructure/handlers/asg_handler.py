@@ -58,7 +58,7 @@ class ASGHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
         logger: LoggingPort,
         aws_ops: AWSOperations,
         launch_template_manager: AWSLaunchTemplateManager,
-        request_adapter: RequestAdapterPort = None,
+        request_adapter: Optional[RequestAdapterPort] = None,
         machine_adapter: Optional[AWSMachineAdapter] = None,
         aws_native_spec_service=None,
         config_port=None,
@@ -142,6 +142,7 @@ class ASGHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
         )
 
         # Generate ASG name
+        assert self.config_port is not None, "config_port must be injected"
         asg_name = f"{self.config_port.get_resource_prefix('asg')}{request.request_id}"
 
         # Create ASG configuration
@@ -166,12 +167,13 @@ class ASGHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
         self._tag_asg(asg_name, aws_template, str(request.request_id))
 
         # Enable instance protection if specified
-        if hasattr(aws_template, "instance_protection") and aws_template.instance_protection:
-            self._enable_instance_protection(asg_name)
+        if getattr(aws_template, "instance_protection", None):
+            self._enable_instance_protection(asg_name)  # type: ignore[attr-defined]
 
         # Set instance lifecycle hooks if needed
-        if hasattr(aws_template, "lifecycle_hooks") and aws_template.lifecycle_hooks:
-            self._set_lifecycle_hooks(asg_name, aws_template.lifecycle_hooks)
+        lifecycle_hooks = getattr(aws_template, "lifecycle_hooks", None)
+        if lifecycle_hooks:
+            self._set_lifecycle_hooks(asg_name, lifecycle_hooks)  # type: ignore[attr-defined]
 
         return asg_name
 
@@ -294,7 +296,7 @@ class ASGHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
 
         return {
             # ASG-specific values
-            "asg_name": f"{self.config_port.get_resource_prefix('asg')}{request.request_id}",
+            "asg_name": f"{self.config_port.get_resource_prefix('asg')}{request.request_id}",  # type: ignore[union-attr]
             "min_size": 0,
             "max_size": request.requested_count * 2,  # Allow buffer
             # Configuration values
@@ -308,10 +310,8 @@ class ASGHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
             ),
             # ASG-specific flags
             "has_context": hasattr(template, "context") and bool(template.context),
-            "has_instance_protection": hasattr(template, "instance_protection")
-            and template.instance_protection,
-            "has_lifecycle_hooks": hasattr(template, "lifecycle_hooks")
-            and bool(template.lifecycle_hooks),
+            "has_instance_protection": bool(getattr(template, "instance_protection", None)),
+            "has_lifecycle_hooks": bool(getattr(template, "lifecycle_hooks", None)),
             # ABIS / InstanceRequirements
             "abis_instance_requirements": abis_instance_requirements,
             "has_abis": has_abis,
@@ -504,13 +504,14 @@ class ASGHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                 }
 
             ondemand_pct = int(percent_on_demand) if percent_on_demand is not None else 0
-            asg_config["MixedInstancesPolicy"]["InstancesDistribution"] = {
+            instances_distribution: dict[str, Any] = {
                 "OnDemandBaseCapacity": 0,
                 "OnDemandPercentageAboveBaseCapacity": ondemand_pct,
             }
+            asg_config["MixedInstancesPolicy"]["InstancesDistribution"] = instances_distribution
 
             if getattr(aws_template, "allocation_strategy", None):
-                asg_config["MixedInstancesPolicy"]["InstancesDistribution"][
+                instances_distribution[
                     "SpotAllocationStrategy"
                 ] = aws_template.get_asg_allocation_strategy()
 
@@ -957,12 +958,6 @@ class ASGHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
 
     def _grouping_label(self) -> str:
         return "ASG"
-
-    @staticmethod
-    def _chunk_list(items: list[str], chunk_size: int):
-        """Yield successive chunk-sized lists from items."""
-        for index in range(0, len(items), chunk_size):
-            yield items[index : index + chunk_size]
 
     def check_hosts_status(self, request: Request) -> list[dict[str, Any]]:
         """Check the status of instances across all ASGs in the request."""

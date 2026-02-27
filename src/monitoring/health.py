@@ -18,7 +18,7 @@ except ImportError:
     psutil = None
 
 try:
-    from prometheus_client import Counter, Histogram, generate_latest
+    from prometheus_client import Counter, Histogram, generate_latest  # type: ignore
 
     PROMETHEUS_AVAILABLE = True
 except ImportError:

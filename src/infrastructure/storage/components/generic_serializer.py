@@ -178,11 +178,11 @@ class GenericEntitySerializer(Generic[T]):
 
             # Use Pydantic's model_validate if available
             if hasattr(self.entity_class, "model_validate"):
-                model_validate = self.entity_class.model_validate
+                model_validate = self.entity_class.model_validate  # type: ignore[union-attr]
                 return model_validate(processed_data)  # type: ignore
             # Fallback to from_dict if available
             elif hasattr(self.entity_class, "from_dict"):
-                from_dict = self.entity_class.from_dict
+                from_dict = self.entity_class.from_dict  # type: ignore[union-attr]
                 return from_dict(processed_data)  # type: ignore
             # Last resort: direct instantiation
             else:
