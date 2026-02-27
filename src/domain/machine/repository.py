@@ -48,3 +48,7 @@ class MachineRepository(AggregateRepository[Machine]):
     @abstractmethod
     def find_by_ids(self, machine_ids: list[str]) -> list[Machine]:
         """Find machines by list of machine IDs."""
+
+    @abstractmethod
+    def find_by_return_request_id(self, return_request_id: str) -> list[Machine]:
+        """Find machines by return request ID."""

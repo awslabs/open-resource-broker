@@ -383,6 +383,17 @@ class BaseStorageStrategy(StorageStrategy[T], Generic[T]):
         else:
             raise ValueError(f"Cannot determine ID for entity data: {data}")
 
+    def count(self) -> int:
+        """Count total entities.
+
+        Returns:
+            Total number of entities
+        """
+        all_entities = self.find_all()
+        if isinstance(all_entities, dict):
+            return len(all_entities)
+        return len(all_entities)
+
     def find_by_criteria(self, criteria: dict[str, Any]) -> list[dict[str, Any]]:
         """
         Find entities by criteria.

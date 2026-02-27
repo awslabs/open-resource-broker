@@ -505,8 +505,8 @@ class AWSProviderStrategy(ProviderStrategy):
 
     def _create_image_resolution_service(self):
         """Create AWS image resolution service with provider-specific context."""
-        from src.providers.aws.infrastructure.caching.aws_image_cache import AWSImageCache
-        from src.providers.aws.infrastructure.services.aws_image_resolution_service import (
+        from providers.aws.infrastructure.caching.aws_image_cache import AWSImageCache
+        from providers.aws.infrastructure.services.aws_image_resolution_service import (
             AWSImageResolutionService,
         )
 

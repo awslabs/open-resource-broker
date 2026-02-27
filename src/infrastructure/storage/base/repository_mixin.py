@@ -56,7 +56,9 @@ class StorageRepositoryMixin:
     def _load_all(self) -> list[Any]:
         """Fetch all entities and deserialize them."""
         all_data = self._get_storage().find_all()
-        return [self._deserialize(data) for data in all_data.values()]  # type: ignore[union-attr]
+        if isinstance(all_data, dict):
+            return [self._deserialize(data) for data in all_data.values()]
+        return [self._deserialize(data) for data in all_data]
 
     def _delete_by_id(self, entity_id: str) -> None:
         """Delete an entity by ID from storage."""

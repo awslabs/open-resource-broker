@@ -192,8 +192,8 @@ class TemplateRepositoryImpl(StorageRepositoryMixin, TemplateRepositoryInterface
         self.logger = get_logger(__name__)
 
     @handle_infrastructure_exceptions(context="template_save")
-    def save(self, template: Template) -> list[Any]:
-        """Save template using storage strategy and return extracted events."""
+    def save(self, template: Template) -> None:
+        """Save template using storage strategy."""
         try:
             template_id_str = (
                 str(template.template_id.value)  # type: ignore[union-attr]
@@ -215,12 +215,11 @@ class TemplateRepositoryImpl(StorageRepositoryMixin, TemplateRepositoryInterface
                 self.event_publisher.publish_events(events)
 
             self.logger.debug(
-                "Saved template %s (version %d) and extracted %s events",
+                "Saved template %s (version %d) with %s events",
                 template.template_id,
                 version,
                 len(events),
             )
-            return events
 
         except Exception as e:
             self.logger.error("Failed to save template %s: %s", template.template_id, e)
