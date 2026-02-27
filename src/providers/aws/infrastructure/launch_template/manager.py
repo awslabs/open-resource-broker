@@ -533,7 +533,7 @@ class AWSLaunchTemplateManager:
         return launch_template_data
 
     def _create_instance_tags(
-        self, aws_template: AWSTemplate, request: Request
+        self, aws_template: AWSTemplate, request: Request, provider_api: str = "LaunchTemplate"
     ) -> list[dict[str, str]]:
         """
         Create instance tags for the launch template.
@@ -541,6 +541,7 @@ class AWSLaunchTemplateManager:
         Args:
             aws_template: The AWS template configuration
             request: The associated request
+            provider_api: The AWS API name to record in orb:provider-api tag
 
         Returns:
             List of tag dictionaries
@@ -558,7 +559,7 @@ class AWSLaunchTemplateManager:
             build_system_tags(
                 request_id=str(request.request_id),
                 template_id=str(aws_template.template_id),
-                provider_api="LaunchTemplate",
+                provider_api=provider_api,
             ),
         )
 

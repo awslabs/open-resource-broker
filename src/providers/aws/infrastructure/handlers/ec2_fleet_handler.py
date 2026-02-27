@@ -26,7 +26,6 @@ Note:
     launches and is suitable for large-scale, complex deployments.
 """
 
-from datetime import datetime
 from typing import Any, Optional
 
 from botocore.exceptions import ClientError
@@ -53,6 +52,7 @@ from providers.aws.infrastructure.handlers.fleet_grouping_mixin import FleetGrou
 from providers.aws.infrastructure.launch_template.manager import (
     AWSLaunchTemplateManager,
 )
+from providers.aws.infrastructure.tags import build_system_tags, merge_tags
 from providers.aws.utilities.aws_operations import AWSOperations
 
 
@@ -559,9 +559,6 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
         launch_template_version: str,
     ) -> dict[str, Any]:
         """Create EC2 Fleet configuration using legacy logic."""
-        # Get package name for CreatedBy tag
-        created_by = self._get_package_name()
-
         fleet_config = {
             "LaunchTemplateConfigs": [
                 {
@@ -579,26 +576,26 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
         }
 
         assert self.config_port is not None, "config_port must be injected"
-        fleet_tags = [
+        user_tags: list[dict[str, str]] = [
             {
                 "Key": "Name",
                 "Value": f"{self.config_port.get_resource_prefix('fleet')}{request.request_id}",
-            },
-            {"Key": "RequestId", "Value": str(request.request_id)},
-            {"Key": "TemplateId", "Value": str(template.template_id)},
-            {"Key": "CreatedBy", "Value": created_by},
-            {"Key": "CreatedAt", "Value": datetime.utcnow().isoformat()},
-            {"Key": "ProviderApi", "Value": "EC2Fleet"},
+            }
         ]
         if template.tags:
-            fleet_tags.extend([{"Key": k, "Value": v} for k, v in template.tags.items()])
+            user_tags.extend([{"Key": k, "Value": str(v)} for k, v in template.tags.items()])
+        fleet_tags = merge_tags(
+            user_tags,
+            build_system_tags(
+                request_id=str(request.request_id),
+                template_id=str(template.template_id),
+                provider_api="EC2Fleet",
+            ),
+        )
         fleet_config["TagSpecifications"] = [
             {"ResourceType": "fleet", "Tags": fleet_tags},
+            {"ResourceType": "instance", "Tags": fleet_tags},
         ]
-        if template.fleet_type == AWSFleetType.INSTANT:
-            fleet_config["TagSpecifications"].append(
-                {"ResourceType": "instance", "Tags": fleet_tags}
-            )
 
         # Add fleet type specific configurations
         if template.fleet_type == AWSFleetType.MAINTAIN:
@@ -684,6 +681,7 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                 template.machine_types_ondemand,
                 template.subnet_ids,
                 price_type == "heterogeneous",
+                machine_types_priority=template.machine_types_priority or None,
             )
             if overrides:
                 fleet_config["LaunchTemplateConfigs"][0]["Overrides"] = overrides
@@ -1132,6 +1130,22 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                 if fleet_type == "maintain" and new_capacity == 0:
                     self._logger.info("EC2 Fleet %s capacity is zero, deleting fleet", fleet_id)
                     self._delete_ec2_fleet(fleet_id)
+                    cleanup: dict = {}
+                    if self.config_port is not None:
+                        try:
+                            cleanup = self.config_port.get_cleanup_config()
+                        except Exception:
+                            pass
+                    if cleanup.get("enabled", True) and cleanup.get("resources", {}).get(
+                        "ec2_fleet", True
+                    ):
+                        tags = {
+                            t["Key"]: t["Value"]
+                            for t in fleet_details.get("Tags", [])
+                        }
+                        request_id = tags.get("orb:request-id", "")
+                        if request_id:
+                            self._delete_orb_launch_template(request_id)
             else:
                 # If no specific instances provided, delete entire fleet
                 self._delete_ec2_fleet(fleet_id)

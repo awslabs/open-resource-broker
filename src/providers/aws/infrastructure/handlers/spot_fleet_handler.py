@@ -473,7 +473,8 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
         on_demand_capacity = capacity_distribution["on_demand_count"]
 
         # Common tags for both fleet and instances
-        user_tags = [{"Key": "Name", "Value": f"hf-{request.request_id}"}]
+        assert self.config_port is not None, "config_port must be injected"
+        user_tags = [{"Key": "Name", "Value": f"{self.config_port.get_resource_prefix('spot_fleet')}{request.request_id}"}]
         if template.tags:
             user_tags.extend([{"Key": k, "Value": v} for k, v in template.tags.items()])
         system_tags = build_system_tags(
@@ -503,6 +504,7 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
             "Type": fleet_type_value,
             "TagSpecifications": [
                 {"ResourceType": "spot-fleet-request", "Tags": common_tags},
+                {"ResourceType": "instance", "Tags": common_tags},
             ],
         }
 
@@ -549,9 +551,18 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                 template.subnet_ids,
                 template.max_price,
                 template.price_type == "heterogeneous",
+                machine_types_priority=template.machine_types_priority or None,
             )
             if overrides:
                 fleet_config["LaunchTemplateConfigs"][0]["Overrides"] = overrides
+
+        # Set ValidUntil when spot_fleet_request_expiry is configured
+        expiry_minutes = getattr(template, "spot_fleet_request_expiry", None)
+        if expiry_minutes is not None:
+            from datetime import datetime, timezone, timedelta
+
+            valid_until = datetime.now(timezone.utc) + timedelta(minutes=int(expiry_minutes))
+            fleet_config["ValidUntil"] = valid_until.strftime("%Y-%m-%dT%H:%M:%SZ")
 
         # Add Context field if specified
         if template.context:
@@ -954,6 +965,30 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                         SpotFleetRequestIds=[fleet_id],
                         TerminateInstances=False,
                     )
+                    cleanup: dict = {}
+                    if self.config_port is not None:
+                        try:
+                            cleanup = self.config_port.get_cleanup_config()
+                        except Exception:
+                            pass
+                    if cleanup.get("enabled", True) and cleanup.get("resources", {}).get(
+                        "spot_fleet", True
+                    ):
+                        fleet_config = fleet_details.get("SpotFleetRequestConfig", {})
+                        tags = {
+                            t["Key"]: t["Value"]
+                            for t in fleet_config.get("TagSpecifications", [{}])[0].get("Tags", [])
+                            if isinstance(t, dict)
+                        } if fleet_config.get("TagSpecifications") else {}
+                        # Fall back to top-level Tags if present
+                        if not tags:
+                            tags = {
+                                t["Key"]: t["Value"]
+                                for t in fleet_details.get("Tags", [])
+                            }
+                        request_id = tags.get("orb:request-id", "")
+                        if request_id:
+                            self._delete_orb_launch_template(request_id)
             else:
                 # If no specific instances provided, cancel entire spot fleet
                 self._retry_with_backoff(
