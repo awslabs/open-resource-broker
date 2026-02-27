@@ -16,7 +16,7 @@ from infrastructure.resilience import CircuitBreakerOpenError
 from providers.aws.domain.template.aws_template_aggregate import AWSTemplate
 from providers.aws.exceptions.aws_exceptions import AWSInfrastructureError
 from providers.aws.infrastructure.aws_client import AWSClient
-from providers.aws.utilities.fleet_tag_builder import FleetTagBuilder
+from providers.aws.infrastructure.tags import build_system_tags, merge_tags
 
 
 @injectable
@@ -497,9 +497,14 @@ class AWSOperations:
             True if tagging succeeded, False if failed (with warning logged)
         """
         try:
-            package_name = self._get_package_name()
-            tags = FleetTagBuilder.build_base_tags(request, template, package_name)
-            aws_tags = FleetTagBuilder.format_for_aws(tags)
+            aws_tags = merge_tags(
+                [],
+                build_system_tags(
+                    request_id=str(request.request_id),
+                    template_id=str(template.template_id),
+                    provider_api="EC2",
+                ),
+            )
 
             self.aws_client.ec2_client.create_tags(Resources=[resource_id], Tags=aws_tags)
             self._logger.debug(f"Successfully tagged resource {resource_id} with base tags")

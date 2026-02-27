@@ -40,6 +40,7 @@ from infrastructure.error.decorators import handle_infrastructure_exceptions
 from providers.aws.domain.template.aws_template_aggregate import AWSTemplate
 from providers.aws.exceptions.aws_exceptions import AWSInfrastructureError
 from providers.aws.infrastructure.adapters.machine_adapter import AWSMachineAdapter
+from providers.aws.infrastructure.tags import build_system_tags, merge_tags
 from providers.aws.infrastructure.aws_client import AWSClient
 from providers.aws.infrastructure.handlers.base_context_mixin import BaseContextMixin
 from providers.aws.infrastructure.handlers.base_handler import AWSHandler
@@ -180,72 +181,45 @@ class ASGHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
     def _tag_asg(self, asg_name: str, aws_template: AWSTemplate, request_id: str) -> None:
         """Add tags to the Auto Scaling Group."""
         try:
-            created_by = self._get_package_name()
+            assert self.config_port is not None, "config_port must be injected"
+            asg_name_tag = f"{self.config_port.get_resource_prefix('asg')}{request_id}"
 
-            # Prepare standard tags with proper ResourceId and ResourceType
-            tags = [
+            user_tags: list[dict[str, str]] = [{"Key": "Name", "Value": asg_name_tag}]
+            if aws_template.tags:
+                user_tags.extend(
+                    [{"Key": k, "Value": str(v)} for k, v in aws_template.tags.items()]
+                )
+
+            flat_tags = merge_tags(
+                user_tags,
+                build_system_tags(
+                    request_id=request_id,
+                    template_id=str(aws_template.template_id),
+                    provider_api="ASG",
+                ),
+            )
+
+            # ASG create_or_update_tags requires ResourceId, ResourceType, PropagateAtLaunch
+            asg_tags = [
                 {
-                    "Key": "Name",
-                    "Value": f"hostfactory-asg-{request_id}",
+                    "Key": t["Key"],
+                    "Value": t["Value"],
                     "PropagateAtLaunch": True,
                     "ResourceId": asg_name,
                     "ResourceType": "auto-scaling-group",
-                },
-                {
-                    "Key": "RequestId",
-                    "Value": str(request_id),
-                    "PropagateAtLaunch": True,
-                    "ResourceId": asg_name,
-                    "ResourceType": "auto-scaling-group",
-                },
-                {
-                    "Key": "TemplateId",
-                    "Value": aws_template.template_id,
-                    "PropagateAtLaunch": True,
-                    "ResourceId": asg_name,
-                    "ResourceType": "auto-scaling-group",
-                },
-                {
-                    "Key": "CreatedBy",
-                    "Value": created_by,
-                    "PropagateAtLaunch": True,
-                    "ResourceId": asg_name,
-                    "ResourceType": "auto-scaling-group",
-                },
-                {
-                    "Key": "ProviderApi",
-                    "Value": "ASG",
-                    "PropagateAtLaunch": True,
-                    "ResourceId": asg_name,
-                    "ResourceType": "auto-scaling-group",
-                },
+                }
+                for t in flat_tags
             ]
 
-            # Add custom tags from template
-            if hasattr(aws_template, "tags") and aws_template.tags:
-                for key, value in aws_template.tags.items():
-                    tags.append(
-                        {
-                            "Key": key,
-                            "Value": str(value),
-                            "PropagateAtLaunch": True,
-                            "ResourceId": asg_name,
-                            "ResourceType": "auto-scaling-group",
-                        }
-                    )
-
-            # Create tags for the ASG
             self._retry_with_backoff(
                 self.aws_client.autoscaling_client.create_or_update_tags,
                 operation_type="critical",
-                Tags=tags,
+                Tags=asg_tags,
             )
 
             self._logger.info("Successfully tagged ASG %s", asg_name)
         except Exception as e:
             self._logger.warning("Failed to tag ASG %s: %s", asg_name, e)
-            # Don't fail the entire operation if tagging fails
-            pass
 
     def _prepare_template_context(self, template: AWSTemplate, request: Request) -> dict[str, Any]:
         """Prepare context with all computed values for template rendering."""
@@ -531,7 +505,12 @@ class ASGHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
         return asg_config
 
     @handle_infrastructure_exceptions(context="asg_termination")
-    def _get_asg_instances(self, asg_name: str) -> list[dict[str, Any]]:
+    def _get_asg_instances(
+        self,
+        asg_name: str,
+        request_id: Optional[str] = None,
+        resource_id: Optional[str] = None,
+    ) -> list[dict[str, Any]]:
         """Get instances for a specific ASG."""
         response = self._retry_with_backoff(
             self.aws_client.autoscaling_client.describe_auto_scaling_groups,
@@ -548,7 +527,11 @@ class ASGHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
         if not instance_ids:
             self._logger.warning("No instances found in ASG %s", asg_name)
             return []
-        return self._get_instance_details(instance_ids)
+        return self._get_instance_details(
+            instance_ids,
+            request_id=request_id,
+            resource_id=resource_id or asg_name,
+        )
 
     def _format_instance_data(
         self,
@@ -824,10 +807,24 @@ class ASGHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
         )
         self._logger.info("Terminated ASG %s instances: %s", asg_name, asg_instance_ids)
 
-        # If desired capacity has reached zero, delete the ASG
+        # If desired capacity has reached zero, delete the ASG and its launch template
         if new_capacity == 0:
             self._logger.info("ASG %s capacity is zero, deleting ASG", asg_name)
             self._delete_asg(asg_name)
+            cleanup: dict = {}
+            if self.config_port is not None:
+                try:
+                    cleanup = self.config_port.get_cleanup_config()
+                except Exception:
+                    pass
+            if cleanup.get("enabled", True) and cleanup.get("resources", {}).get("asg", True):
+                prefix = self.config_port.get_resource_prefix("asg") if self.config_port else ""
+                request_id = (
+                    asg_name[len(prefix):]
+                    if prefix and asg_name.startswith(prefix)
+                    else asg_name
+                )
+                self._delete_orb_launch_template(request_id)
 
     def _delete_asg(self, asg_name: str) -> None:
         """Delete an Auto Scaling Group when it's no longer needed."""
@@ -971,7 +968,11 @@ class ASGHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
             # Process all ASG names instead of just the first one
             for asg_name in request.resource_ids:
                 try:
-                    asg_instances = self._get_asg_instances(asg_name)
+                    asg_instances = self._get_asg_instances(
+                        asg_name,
+                        request_id=str(request.request_id),
+                        resource_id=asg_name,
+                    )
                     if asg_instances:
                         formatted_instances = self._format_instance_data(
                             asg_instances, asg_name, request
