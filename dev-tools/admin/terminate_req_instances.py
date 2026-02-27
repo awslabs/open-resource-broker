@@ -90,6 +90,11 @@ def main() -> int:
     )
     parser.add_argument("--region", default="eu-west-1", help="AWS region (default: eu-west-1)")
     parser.add_argument(
+        "--profile",
+        default=None,
+        help="AWS profile name (optional; uses default credential chain otherwise)",
+    )
+    parser.add_argument(
         "--prefix",
         default="req-",
         help='Name tag prefix to match (default: "req-")',
@@ -101,7 +106,7 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    session = boto3.session.Session()
+    session = boto3.Session(profile_name=args.profile) if args.profile else boto3.Session()
     ec2_client = session.client("ec2", region_name=args.region)
 
     try:
