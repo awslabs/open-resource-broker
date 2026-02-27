@@ -144,6 +144,10 @@ class MockConfigurationPort(ConfigurationPort):
         """Get logging configuration."""
         return self._config.get("logging", {})
 
+    def get_resource_prefix(self, resource_type: str) -> str:
+        """Get resource prefix for a given resource type."""
+        return ""
+
     def get_native_spec_config(self) -> dict[str, Any]:
         """Get native spec configuration."""
         return self._config.get("native_spec", {})
