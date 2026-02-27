@@ -523,16 +523,16 @@ class AWSOperations:
             fleet_id: Fleet ID (EC2Fleet or SpotFleet)
             request: Request domain entity
             template: AWS template domain entity
-            provider_api: Provider API type (ec2_fleet or spot_fleet)
+            provider_api: Provider API type (EC2Fleet or SpotFleet)
 
         Returns:
             Number of instances successfully tagged
         """
         try:
             # Discover instances based on fleet type
-            if provider_api.lower() == "ec2_fleet":
+            if provider_api == "EC2Fleet":
                 instance_ids = self._get_ec2_fleet_instances(fleet_id)
-            elif provider_api.lower() == "spot_fleet":
+            elif provider_api == "SpotFleet":
                 instance_ids = self._get_spot_fleet_instances(fleet_id)
             else:
                 self._logger.warning(f"Unknown provider_api for fleet tagging: {provider_api}")
