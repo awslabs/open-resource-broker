@@ -18,6 +18,9 @@ def register_infrastructure_services(container: DIContainer) -> None:
     # Register repository services
     _register_repository_services(container)
 
+    # Register caching services
+    _register_caching_services(container)
+
 
 def _register_template_services(container: DIContainer):
     """Register template configuration services."""
@@ -133,3 +136,19 @@ def _register_repository_services(container: DIContainer) -> None:
 
     # Register with appropriate factory functions
     container.register_singleton(TemplateRepository, create_template_repository)
+
+
+def _register_caching_services(container: DIContainer) -> None:
+    """Register caching services."""
+    from config.managers.configuration_manager import ConfigurationManager
+    from domain.base import UnitOfWorkFactory
+    from infrastructure.caching.request_cache_service import RequestCacheService
+
+    def create_request_cache_service(c: DIContainer) -> RequestCacheService:
+        return RequestCacheService(
+            uow_factory=c.get(UnitOfWorkFactory),
+            config_manager=c.get(ConfigurationManager),
+            logger=c.get(LoggingPort),
+        )
+
+    container.register_singleton(RequestCacheService, create_request_cache_service)
