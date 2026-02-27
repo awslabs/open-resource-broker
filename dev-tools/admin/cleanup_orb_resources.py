@@ -47,8 +47,32 @@ def _chunked(items: list[str], size: int) -> Iterable[list[str]]:
         yield items[start : start + size]
 
 
-def _orb_tag_filter(tag_key: str, tag_value: str) -> list[dict[str, Any]]:
-    return [{"Name": f"tag:{tag_key}", "Values": [tag_value]}]
+def _parse_tags(tag_args: list[str]) -> list[tuple[str, str]]:
+    """Parse 'key=value' strings into (key, value) tuples."""
+    result: list[tuple[str, str]] = []
+    for tag in tag_args:
+        if "=" not in tag:
+            raise ValueError(f"Invalid tag format {tag!r} — expected key=value")
+        key, _, value = tag.partition("=")
+        result.append((key.strip(), value.strip()))
+    return result
+
+
+def _ec2_tag_filters(tags: list[tuple[str, str]]) -> list[dict[str, Any]]:
+    return [{"Name": f"tag:{k}", "Values": [v]} for k, v in tags]
+
+
+def _asg_tag_filters(tags: list[tuple[str, str]]) -> list[dict[str, Any]]:
+    # ASG API uses tag-key / tag-value, not tag:<key>
+    return [f for k, v in tags for f in (
+        {"Name": "tag-key", "Values": [k]},
+        {"Name": "tag-value", "Values": [v]},
+    )]
+
+
+def _matches_tags(resource_tags: list[dict[str, str]], tags: list[tuple[str, str]]) -> bool:
+    tag_map = {t.get("Key", ""): t.get("Value", "") for t in resource_tags}
+    return all(tag_map.get(k) == v for k, v in tags)
 
 
 def _get_tag(tags: list[dict[str, str]], key: str) -> str:
@@ -60,23 +84,18 @@ def _get_tag(tags: list[dict[str, str]], key: str) -> str:
 
 # ── Discovery ────────────────────────────────────────────────────────────────
 
-def _find_asgs(asg_client, tag_key: str, tag_value: str) -> list[dict[str, Any]]:
+def _find_asgs(asg_client, tags: list[tuple[str, str]]) -> list[dict[str, Any]]:
     results: list[dict[str, Any]] = []
     paginator = asg_client.get_paginator("describe_auto_scaling_groups")
-    # ASG API uses tag-key / tag-value filter format, not tag:<key>
-    filters = [
-        {"Name": "tag-key", "Values": [tag_key]},
-        {"Name": "tag-value", "Values": [tag_value]},
-    ]
-    for page in paginator.paginate(Filters=filters):
+    for page in paginator.paginate(Filters=_asg_tag_filters(tags)):
         results.extend(page.get("AutoScalingGroups", []))
     return results
 
 
-def _find_ec2_fleets(ec2_client, tag_key: str, tag_value: str) -> list[dict[str, Any]]:
+def _find_ec2_fleets(ec2_client, tags: list[tuple[str, str]]) -> list[dict[str, Any]]:
     results: list[dict[str, Any]] = []
     paginator = ec2_client.get_paginator("describe_fleets")
-    filters = _orb_tag_filter(tag_key, tag_value) + [
+    filters = _ec2_tag_filters(tags) + [
         {"Name": "fleet-state", "Values": list(EC2_FLEET_ACTIVE_STATES)}
     ]
     for page in paginator.paginate(Filters=filters):
@@ -84,24 +103,23 @@ def _find_ec2_fleets(ec2_client, tag_key: str, tag_value: str) -> list[dict[str,
     return results
 
 
-def _find_spot_fleets(ec2_client, tag_key: str, tag_value: str) -> list[dict[str, Any]]:
+def _find_spot_fleets(ec2_client, tags: list[tuple[str, str]]) -> list[dict[str, Any]]:
     results: list[dict[str, Any]] = []
     paginator = ec2_client.get_paginator("describe_spot_fleet_requests")
     for page in paginator.paginate():
         for config in page.get("SpotFleetRequestConfigs", []):
             if config.get("SpotFleetRequestState") not in SPOT_FLEET_ACTIVE_STATES:
                 continue
-            tags = config.get("Tags") or []
-            if any(t.get("Key") == tag_key and t.get("Value") == tag_value for t in tags):
+            if _matches_tags(config.get("Tags") or [], tags):
                 results.append(config)
     return results
 
 
-def _find_standalone_instances(ec2_client, tag_key: str, tag_value: str) -> list[dict[str, Any]]:
+def _find_standalone_instances(ec2_client, tags: list[tuple[str, str]]) -> list[dict[str, Any]]:
     """Find ORB-managed instances NOT owned by an ASG or fleet (RunInstances)."""
     results: list[dict[str, Any]] = []
     paginator = ec2_client.get_paginator("describe_instances")
-    filters = _orb_tag_filter(tag_key, tag_value) + [
+    filters = _ec2_tag_filters(tags) + [
         {"Name": "instance-state-name", "Values": list(INSTANCE_ACTIVE_STATES)},
         {"Name": "tag:orb:provider-api", "Values": ["RunInstances"]},
     ]
@@ -111,11 +129,10 @@ def _find_standalone_instances(ec2_client, tag_key: str, tag_value: str) -> list
     return results
 
 
-def _find_launch_templates(ec2_client, tag_key: str, tag_value: str) -> list[dict[str, Any]]:
+def _find_launch_templates(ec2_client, tags: list[tuple[str, str]]) -> list[dict[str, Any]]:
     results: list[dict[str, Any]] = []
     paginator = ec2_client.get_paginator("describe_launch_templates")
-    filters = _orb_tag_filter(tag_key, tag_value)
-    for page in paginator.paginate(Filters=filters):
+    for page in paginator.paginate(Filters=_ec2_tag_filters(tags)):
         results.extend(page.get("LaunchTemplates", []))
     return results
 
@@ -300,8 +317,17 @@ def main() -> int:
     )
     parser.add_argument("--region", default=DEFAULT_REGION, help=f"AWS region (default: {DEFAULT_REGION})")
     parser.add_argument("--profile", default=None, help="AWS profile name")
-    parser.add_argument("--tag-key", default=ORB_TAG_KEY, help=f"Tag key to filter by (default: {ORB_TAG_KEY})")
-    parser.add_argument("--tag-value", default=ORB_TAG_VALUE, help=f"Tag value to filter by (default: {ORB_TAG_VALUE})")
+    parser.add_argument(
+        "--tag",
+        metavar="KEY=VALUE",
+        action="append",
+        dest="tags",
+        default=[],
+        help=(
+            "Tag filter as key=value. Repeatable: --tag k1=v1 --tag k2=v2. "
+            f"Defaults to {ORB_TAG_KEY}={ORB_TAG_VALUE} when omitted."
+        ),
+    )
     parser.add_argument("--terminate", action="store_true", help="Terminate all discovered resources")
     parser.add_argument("--dry-run", action="store_true", help="Show what would be terminated without doing it")
     args = parser.parse_args()
@@ -309,23 +335,25 @@ def main() -> int:
     if args.dry_run and not args.terminate:
         parser.error("--dry-run requires --terminate")
 
+    try:
+        tags = _parse_tags(args.tags) if args.tags else [(ORB_TAG_KEY, ORB_TAG_VALUE)]
+    except ValueError as exc:
+        parser.error(str(exc))
+        return 1
+
     session = boto3.Session(profile_name=args.profile) if args.profile else boto3.Session()
     ec2_client = session.client("ec2", region_name=args.region)
     asg_client = session.client("autoscaling", region_name=args.region)
 
-    # Allow tag override at runtime
-    tag_key = args.tag_key
-    tag_value = args.tag_value
-
     print(f"Region: {args.region}")
-    print(f"Filter: {tag_key}={tag_value}")
+    print(f"Filters: {', '.join(f'{k}={v}' for k, v in tags)}")
 
     try:
-        asgs = _find_asgs(asg_client, tag_key, tag_value)
-        ec2_fleets = _find_ec2_fleets(ec2_client, tag_key, tag_value)
-        spot_fleets = _find_spot_fleets(ec2_client, tag_key, tag_value)
-        instances = _find_standalone_instances(ec2_client, tag_key, tag_value)
-        launch_templates = _find_launch_templates(ec2_client, tag_key, tag_value)
+        asgs = _find_asgs(asg_client, tags)
+        ec2_fleets = _find_ec2_fleets(ec2_client, tags)
+        spot_fleets = _find_spot_fleets(ec2_client, tags)
+        instances = _find_standalone_instances(ec2_client, tags)
+        launch_templates = _find_launch_templates(ec2_client, tags)
     except ClientError as exc:
         print(f"AWS error during discovery: {exc}", file=sys.stderr)
         return 1
