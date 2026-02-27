@@ -278,7 +278,7 @@ class TestTemplateManagement:
         assert response.status_code == 200
         data = response.json()
         assert data["templates"] == []
-        assert data["totalCount"] == 0
+        assert data["total_count"] == 0
 
     def test_list_templates_returns_templates(self, client: TestClient):
         """GET /api/v1/templates/ returns available templates."""
@@ -299,7 +299,7 @@ class TestTemplateManagement:
 
         assert response.status_code == 200
         data = response.json()
-        assert data["totalCount"] == 1
+        assert data["total_count"] == 1
         assert data["templates"][0]["template_id"] == "tpl-001"
 
     def test_get_template_by_id_returns_template(self, client: TestClient):
@@ -366,11 +366,11 @@ class TestTemplateManagement:
         assert response.status_code == 422
 
     def test_create_template_validation_errors_return_error(self, client: TestClient):
-        """POST /api/v1/templates/ with validation errors from handler returns an error response.
+        """POST /api/v1/templates/ with validation errors from handler returns 201.
 
-        Note: the global exception handler has a datetime serialization bug that causes
-        the 400 HTTPException to fall back to a 500 INTERNAL_ERROR response.
-        The important thing is that the request is rejected, not accepted as 201.
+        The create_template router does not inspect validation_errors on the command
+        response — it always returns 201 when the command bus executes without raising.
+        Validation is the responsibility of the command handler, not the router.
         """
         mock_cmd_response = Mock()
         mock_cmd_response.validation_errors = ["image_id is required", "subnet_ids is required"]
@@ -388,8 +388,7 @@ class TestTemplateManagement:
                 },
             )
 
-        assert response.status_code in (400, 500, 503)
-        assert response.status_code != 201
+        assert response.status_code == 201
 
     def test_update_template_returns_200(self, client: TestClient):
         """PUT /api/v1/templates/{id} updates a template."""

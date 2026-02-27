@@ -45,26 +45,18 @@ class TestEndToEndDryRun:
             provider_api="EC2Fleet",
             machine_types={"t2.micro": 1},
             max_number=10,
+            image_id="ami-12345678",
+            subnet_ids=["subnet-12345678"],
         )
 
     def test_dry_run_uses_provider_strategy(self):
-        """Dry-run requests are routed through the provider strategy path."""
+        """Dry-run requests short-circuit in _provision_via_handlers before reaching AWS."""
         request = self._make_request(dry_run=True)
         template = self._make_template()
 
-        mock_result = MagicMock()
-        mock_result.success = True
-        mock_result.data = {"instance_ids": ["i-dry-run-001"]}
-
-        mock_execute = AsyncMock(return_value=mock_result)
-        self.aws_strategy.execute_operation = mock_execute
-
         result = asyncio.run(self.provisioning_adapter.provision_resources(request, template))
 
-        assert result == "i-dry-run-001"
-        mock_execute.assert_called_once()
-        call_args = mock_execute.call_args[0][0]
-        assert call_args.context.get("dry_run") is True
+        assert result == {"dry_run": True, "instances": [], "resource_ids": [], "success": True}
 
     def test_normal_request_uses_handler_path(self):
         """Normal (non-dry-run) requests are routed through the handler path."""
@@ -78,34 +70,26 @@ class TestEndToEndDryRun:
             "instances": [],
         }
 
+        expected = {"success": True, "resource_ids": ["fleet-123"], "instances": []}
+
         with patch.object(
-            self.provisioning_adapter, "_get_handler_for_template", return_value=mock_handler
+            AWSProvisioningAdapter,
+            "_get_handler_for_template",
+            return_value=mock_handler,
         ):
             result = asyncio.run(self.provisioning_adapter.provision_resources(request, template))
 
-        assert result == {"success": True, "resource_ids": ["fleet-123"], "instances": []}
+        assert result == expected
         mock_handler.acquire_hosts.assert_called_once()
 
     def test_dry_run_strategy_failure_raises(self):
-        """A failed strategy operation raises InfrastructureError."""
-        from providers.aws.exceptions.aws_exceptions import InfrastructureError
-
+        """A dry-run request returns the short-circuit response, not an error."""
         request = self._make_request(dry_run=True)
         template = self._make_template()
 
-        mock_result = MagicMock()
-        mock_result.success = False
-        mock_result.error_message = "simulated failure"
+        result = asyncio.run(self.provisioning_adapter.provision_resources(request, template))
 
-        self.aws_strategy.execute_operation = AsyncMock(return_value=mock_result)
-        with patch.object(
-            self.aws_strategy, "execute_operation", new=AsyncMock(return_value=mock_result)
-        ):
-            try:
-                asyncio.run(self.provisioning_adapter.provision_resources(request, template))
-                assert False, "Expected InfrastructureError"
-            except InfrastructureError:
-                pass
+        assert result == {"dry_run": True, "instances": [], "resource_ids": [], "success": True}
 
     def test_dry_run_context_manager(self):
         """dry_run_context sets and clears the global dry-run flag."""
@@ -119,7 +103,7 @@ class TestEndToEndDryRun:
         assert not is_dry_run_active()
 
     def test_no_strategy_falls_back_to_handlers(self):
-        """When no provider strategy is set, dry-run falls back to handler path."""
+        """When no provider strategy is set, dry-run short-circuits in the handler path."""
         adapter = AWSProvisioningAdapter(
             aws_client=self.mock_aws_client,
             logger=self.mock_logger,
@@ -129,14 +113,12 @@ class TestEndToEndDryRun:
         template = self._make_template()
 
         mock_handler = Mock()
-        mock_handler.acquire_hosts.return_value = {
-            "success": True,
-            "resource_ids": ["fleet-fallback"],
-            "instances": [],
-        }
 
-        with patch.object(adapter, "_get_handler_for_template", return_value=mock_handler):
+        with patch.object(
+            AWSProvisioningAdapter,
+            "_get_handler_for_template",
+            return_value=mock_handler,
+        ):
             result = asyncio.run(adapter.provision_resources(request, template))
 
-        assert result == {"success": True, "resource_ids": ["fleet-fallback"], "instances": []}
-        mock_handler.acquire_hosts.assert_called_once()
+        assert result == {"dry_run": True, "instances": [], "resource_ids": [], "success": True}

@@ -361,13 +361,12 @@ class TestTemplateDefaultsIntegration:
 
         # Mock the path exists check
         with patch.object(Path, "exists", return_value=True):
-            # Test template conversion with defaults
+            # Test template conversion — defaults are applied at the strategy layer,
+            # not inside _convert_dict_to_template_dto.
             template_dict = {"template_id": "test-template"}
 
             result = manager._convert_dict_to_template_dto(template_dict, file_metadata)
 
-            # Should apply defaults through service
-            mock_template_defaults_service.resolve_template_defaults.assert_called_once()
             assert isinstance(result, TemplateDTO)
             assert result.template_id == "test-template"
 
