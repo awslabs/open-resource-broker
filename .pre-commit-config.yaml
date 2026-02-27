@@ -27,6 +27,14 @@ repos:
         description: "Extended Python code checks with Ruff (warnings only)"
         stages: [manual]  # Optional check - run as warning only
 
+      - id: pyright
+        name: pyright (Type Checking)
+        entry: make ci-quality-pyright
+        language: system
+        files: \.(py)$
+        pass_filenames: false
+        description: "Check Python type annotations with pyright"
+
       - id: mypy
         name: mypy (Type Checking)
         entry: make ci-quality-mypy
@@ -84,7 +92,6 @@ repos:
         files: \.(py)$
         pass_filenames: false
         description: "Validate CQRS architecture patterns"
-        stages: [manual]  # Optional check - run as warning only
 
       - id: check-architecture
         name: Check Architecture Compliance
@@ -93,7 +100,6 @@ repos:
         files: \.(py)$
         pass_filenames: false
         description: "Check Clean Architecture compliance"
-        stages: [manual]  # Optional check - run as warning only
 
       - id: validate-imports-arch
         name: Validate Import Architecture

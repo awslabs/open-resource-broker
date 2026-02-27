@@ -177,19 +177,37 @@ The project uses a secure three-tier publishing strategy:
 
 ## Code Quality
 
+### Running Checks Locally
+
+Before pushing, run the full quality gate suite:
+
+```bash
+# 1. Type checking (must pass — enforced in CI)
+make ci-quality-pyright
+# or: uv run pyright src/
+
+# 2. Linting (must pass — enforced in CI)
+make ci-quality-ruff
+# or: uv run ruff check src/
+
+# 3. Architecture checks (must pass — enforced in CI)
+make ci-arch-clean    # Clean Architecture layer boundaries
+make ci-arch-cqrs     # CQRS pattern compliance
+make ci-arch-imports  # Import validation
+# or: uv run ./dev-tools/scripts/check_architecture.py
+#     uv run ./dev-tools/scripts/validate_cqrs.py
+
+# 4. Unit tests (must pass — enforced in CI)
+make ci-tests-unit
+# or: uv run pytest tests/ --ignore=tests/onaws -q
+
+# Run everything in one shot
+make ci-check
+```
+
 ### Formatting and Linting
 
 We use Ruff for code formatting and linting (replaces Black, isort, flake8, pylint).
-
-Since pre-commit hooks cannot be installed due to git configuration:
-
-1. **Enable format-on-save** in your IDE (see .vscode/settings.json)
-2. **Run before committing**: `make pre-commit`
-3. **Let CI auto-format**: If you forget, CI will auto-format and commit
-
-### IDE Setup
-- **VS Code**: Install Ruff extension, settings already configured
-- **PyCharm**: Install Ruff plugin, enable format-on-save
 
 ```bash
 # Format code (auto-fix what can be fixed)
@@ -200,12 +218,6 @@ make lint
 
 # Check extended rules (warnings only)
 make lint-optional
-
-# Run all pre-commit checks locally
-make pre-commit
-
-# Type checking
-make type-check
 ```
 
 ### Pre-commit Hooks
@@ -217,6 +229,21 @@ pre-commit install
 # Run on all files
 pre-commit run --all-files
 ```
+
+Hooks that run on every commit (enforced):
+- `format-fix` — auto-formats Python with Ruff
+- `ruff-check` — linting (required rules)
+- `pyright` — type checking
+- `validate-cqrs` — CQRS pattern compliance
+- `check-architecture` — Clean Architecture layer boundaries
+- `validate-imports` — import validation
+- `bandit` — security analysis
+- `detect-secrets` — hardcoded secret detection
+- `validate-workflows` — GitHub Actions YAML validation
+
+### IDE Setup
+- **VS Code**: Install Ruff extension, settings already configured
+- **PyCharm**: Install Ruff plugin, enable format-on-save
 
 ## Architecture
 

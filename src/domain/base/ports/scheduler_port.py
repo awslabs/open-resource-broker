@@ -102,3 +102,15 @@ class SchedulerPort(ABC):
     @abstractmethod
     def get_scripts_directory(self) -> Path | None:
         """Return the path to the scheduler's scripts directory, or None if not applicable."""
+
+    @abstractmethod
+    def should_log_to_console(self) -> bool:
+        """Return True if log output should be written to the console."""
+
+    @abstractmethod
+    def format_error_response(self, error: Exception, context: dict[str, Any]) -> dict[str, Any]:
+        """Format an exception into a scheduler-specific error response dict."""
+
+    @abstractmethod
+    def format_health_response(self, checks: list[dict[str, Any]]) -> dict[str, Any]:
+        """Format health check results into a scheduler-specific response dict."""
