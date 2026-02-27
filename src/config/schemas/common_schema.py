@@ -11,7 +11,8 @@ class ResourcePrefixConfig(BaseModel):
     return_prefix: str = Field("ret-", description="Prefix for return request IDs")
     launch_template: str = Field("", description="Prefix for launch template names")
     instance: str = Field("", description="Prefix for instance names")
-    fleet: str = Field("", description="Prefix for fleet names")
+    fleet: str = Field("", description="Prefix for EC2 Fleet names")
+    spot_fleet: str = Field("", description="Prefix for Spot Fleet names")
     asg: str = Field("", description="Prefix for Auto Scaling group names")
     tag: str = Field("", description="Prefix for resource tags")
 
