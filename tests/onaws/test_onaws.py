@@ -52,7 +52,7 @@ def _get_boto_clients():
         or "eu-west-1"
     )
 
-    session = boto3.session.Session(profile_name=profile, region_name=region)
+    session = boto3.Session(profile_name=profile, region_name=region)
     return session.client("ec2", region_name=region), session.client(
         "autoscaling", region_name=region
     )
@@ -859,9 +859,49 @@ def setup_host_factory_mock(request, monkeypatch):
     scheduler_type = overrides.get("scheduler", "hostfactory")
     hfm = HostFactoryMock(scheduler=scheduler_type)
 
+    # Track request IDs so teardown can clean up orphaned AWS resources if the test fails.
+    _tracked_request_ids: list[str] = []
+    _original_request_machines = hfm.request_machines
+
+    def _tracking_request_machines(template_name: str, machine_count: int):
+        result = _original_request_machines(template_name, machine_count)
+        request_id = result.get("requestId") or result.get("request_id")
+        if request_id:
+            _tracked_request_ids.append(request_id)
+        return result
+
+    hfm.request_machines = _tracking_request_machines  # type: ignore[method-assign]
+
     yield hfm
 
     processor.cleanup_test_templates(test_name)
+
+    # Best-effort cleanup of any AWS resources that were not returned during the test.
+    if _tracked_request_ids:
+        log.warning(
+            "Fixture teardown: %d request(s) still tracked — attempting cleanup",
+            len(_tracked_request_ids),
+        )
+        for req_id in _tracked_request_ids:
+            try:
+                status = hfm.get_request_status(req_id)
+                machines = status.get("requests", [{}])[0].get("machines", [])
+                machine_ids = [
+                    m.get("machineId") or m.get("machine_id")
+                    for m in machines
+                    if m.get("machineId") or m.get("machine_id")
+                ]
+                if machine_ids:
+                    log.warning(
+                        "Fixture teardown: returning %d orphaned machine(s) for request %s",
+                        len(machine_ids),
+                        req_id,
+                    )
+                    hfm.request_return_machines(machine_ids)
+            except Exception as exc:
+                log.warning(
+                    "Fixture teardown: cleanup failed for request %s: %s", req_id, exc
+                )
 
 
 @pytest.fixture
@@ -908,9 +948,49 @@ def setup_host_factory_mock_with_scenario(request, monkeypatch):
     scheduler_type = overrides.get("scheduler", "hostfactory")
     hfm = HostFactoryMock(scheduler=scheduler_type)
 
+    # Track request IDs so teardown can clean up orphaned AWS resources if the test fails.
+    _tracked_request_ids: list[str] = []
+    _original_request_machines = hfm.request_machines
+
+    def _tracking_request_machines(template_name: str, machine_count: int):
+        result = _original_request_machines(template_name, machine_count)
+        request_id = result.get("requestId") or result.get("request_id")
+        if request_id:
+            _tracked_request_ids.append(request_id)
+        return result
+
+    hfm.request_machines = _tracking_request_machines  # type: ignore[method-assign]
+
     yield hfm
 
     processor.cleanup_test_templates(test_name)
+
+    # Best-effort cleanup of any AWS resources that were not returned during the test.
+    if _tracked_request_ids:
+        log.warning(
+            "Fixture teardown: %d request(s) still tracked — attempting cleanup",
+            len(_tracked_request_ids),
+        )
+        for req_id in _tracked_request_ids:
+            try:
+                status = hfm.get_request_status(req_id)
+                machines = status.get("requests", [{}])[0].get("machines", [])
+                machine_ids = [
+                    m.get("machineId") or m.get("machine_id")
+                    for m in machines
+                    if m.get("machineId") or m.get("machine_id")
+                ]
+                if machine_ids:
+                    log.warning(
+                        "Fixture teardown: returning %d orphaned machine(s) for request %s",
+                        len(machine_ids),
+                        req_id,
+                    )
+                    hfm.request_return_machines(machine_ids)
+            except Exception as exc:
+                log.warning(
+                    "Fixture teardown: cleanup failed for request %s: %s", req_id, exc
+                )
 
 
 def _check_request_machines_response_status(status_response):
@@ -1050,7 +1130,7 @@ def _cleanup_asg_resources(machine_ids: list[str], provider_api: str) -> None:
 
 
 def _verify_all_resources_cleaned(
-    machine_ids: list[str], resource_id: str = None, provider_api: str = None
+    machine_ids: list[str], resource_id: Optional[str] = None, provider_api: Optional[str] = None
 ) -> bool:
     """
     Verify that all resources (instances and backing resources) are properly cleaned up.
@@ -1424,6 +1504,7 @@ def provide_release_control_loop(hfm, template_json, capacity_to_request, test_c
     if not resource_id and ec2_instance_ids:
         resource_id = _get_resource_id_from_instance(ec2_instance_ids[0], provider_api)
 
+    graceful_completed = False
     try:
         # Try graceful return first
         return_request_id = hfm.request_return_machines(ec2_instance_ids)
@@ -1431,7 +1512,6 @@ def provide_release_control_loop(hfm, template_json, capacity_to_request, test_c
 
         # Wait for graceful termination with timeout
         graceful_start = time.time()
-        graceful_completed = False
 
         while time.time() - graceful_start < 180:  # 3 minute timeout for graceful return
             if _check_all_ec2_hosts_are_being_terminated(ec2_instance_ids):
