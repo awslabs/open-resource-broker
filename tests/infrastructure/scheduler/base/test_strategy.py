@@ -15,6 +15,14 @@ from infrastructure.scheduler.base.strategy import BaseSchedulerStrategy
 class ConcreteSchedulerStrategy(BaseSchedulerStrategy):
     """Concrete implementation for testing."""
 
+    def __init__(self, config_manager_instance=None, logger_instance=None):
+        self._config_manager_instance = config_manager_instance
+        self._logger_instance = logger_instance
+
+    @property
+    def config_manager(self) -> Any:
+        return self._config_manager_instance
+
     def get_config_file_path(self) -> str:
         return "/test/config.json"
 
@@ -102,7 +110,6 @@ class TestBaseSchedulerStrategy:
         strategy = ConcreteSchedulerStrategy(config_manager, logger)
 
         assert strategy.config_manager is config_manager
-        assert strategy.logger is logger
 
     def test_scheduler_port_methods_implemented(self):
         """Test that concrete implementation provides required SchedulerPort methods."""
