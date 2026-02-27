@@ -124,7 +124,9 @@ class BaseSchedulerStrategy(SchedulerPort, ABC):
         """Apply template defaults via the template defaults service if available."""
         if self._template_defaults_service is None:
             return template_dict
-        return self._template_defaults_service.resolve_template_defaults(template_dict, provider_name)
+        return self._template_defaults_service.resolve_template_defaults(
+            template_dict, provider_name
+        )
 
     def format_request_status_response(self, requests: list[RequestDTO]) -> dict[str, Any]:
         """Format RequestDTOs to domain-native response format.
