@@ -28,10 +28,97 @@ class BaseSchedulerStrategy(SchedulerPort, ABC):
     _template_defaults_service: TemplateDefaultsPort | None = None
 
     @property
-    @abstractmethod
     def config_manager(self) -> Any:
-        """Configuration manager instance. Provided by each concrete subclass."""
-        ...
+        """Configuration manager instance, resolved lazily from the DI container."""
+        if self._config_manager is None:
+            from domain.base.ports.configuration_port import ConfigurationPort
+            from infrastructure.di.container import get_container, is_container_ready
+
+            if is_container_ready():
+                self._config_manager = get_container().get(ConfigurationPort)
+        return self._config_manager
+
+    @property
+    def logger(self) -> Any:
+        """Logger instance, resolved lazily from the DI container."""
+        if self._logger is None:
+            from domain.base.ports.logging_port import LoggingPort
+            from infrastructure.di.container import get_container, is_container_ready
+
+            if is_container_ready():
+                self._logger = get_container().get(LoggingPort)
+            else:
+                from infrastructure.logging.logger import get_logger
+
+                return get_logger(__name__)  # fallback, don't cache — pick up DI logger once ready
+        return self._logger
+
+    def _get_provider_name(self) -> str:
+        """Get the active provider instance name via proper DI."""
+        try:
+            from application.services.provider_registry_service import ProviderRegistryService
+            from infrastructure.di.container import get_container
+
+            container = get_container()
+            provider_service = container.get(ProviderRegistryService)
+            selection_result = provider_service.select_active_provider()
+            return selection_result.provider_name
+        except Exception as e:
+            self.logger.warning("Failed to get provider instance name: %s", e)
+            return "default"
+
+    def _get_active_provider_type(self) -> str:
+        """Get the active provider type via proper DI."""
+        try:
+            from application.services.provider_registry_service import ProviderRegistryService
+            from infrastructure.di.container import get_container
+
+            container = get_container()
+            provider_service = container.get(ProviderRegistryService)
+            selection_result = provider_service.select_active_provider()
+            provider_type = selection_result.provider_type
+            self.logger.debug("Active provider type: %s", provider_type)
+            return provider_type
+        except Exception as e:
+            self.logger.warning("Failed to get active provider type, defaulting to 'aws': %s", e)
+            return "aws"
+
+    def _load_single_file(self, template_path: str) -> list[dict[str, Any]]:
+        """Load templates from a single file."""
+        try:
+            import json
+
+            with open(template_path) as f:
+                data = json.load(f)
+            if isinstance(data, dict) and "templates" in data:
+                return data["templates"]
+            elif isinstance(data, list):
+                return data
+            return []
+        except Exception:
+            return []
+
+    def get_storage_base_path(self) -> str:
+        """Get storage base path within working directory."""
+        import os
+
+        workdir = self.get_working_directory()
+        return os.path.join(workdir, "data")
+
+    def get_exit_code_for_status(self, status: str) -> int:
+        """Get appropriate exit code for request status."""
+        problem_statuses = ["failed", "cancelled", "timeout", "partial"]
+        return 1 if status in problem_statuses else 0
+
+    def format_health_response(self, checks: list[dict[str, Any]]) -> dict[str, Any]:
+        """Format health check response."""
+        passed = sum(1 for c in checks if c.get("status") == "pass")
+        failed = len(checks) - passed
+        return {
+            "success": failed == 0,
+            "checks": checks,
+            "summary": {"total": len(checks), "passed": passed, "failed": failed},
+        }
 
     def _apply_template_defaults(self, template_dict: dict, provider_name: str) -> dict:
         """Apply template defaults via the template defaults service if available."""
@@ -135,16 +222,6 @@ class BaseSchedulerStrategy(SchedulerPort, ABC):
     @abstractmethod
     def get_scripts_directory(self) -> Path | None:
         """Return the path to the scheduler's scripts directory, or None if not applicable."""
-        ...
-
-    @abstractmethod
-    def _get_provider_name(self) -> str:
-        """Get the active provider instance name."""
-        ...
-
-    @abstractmethod
-    def _get_active_provider_type(self) -> str:
-        """Get the active provider type."""
         ...
 
     def get_template_paths(self) -> list[str]:

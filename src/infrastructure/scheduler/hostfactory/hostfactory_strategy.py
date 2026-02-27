@@ -17,8 +17,6 @@ if TYPE_CHECKING:
 
 from application.dto.responses import MachineDTO
 from application.request.dto import RequestDTO
-from domain.base.ports.configuration_port import ConfigurationPort
-from domain.base.ports.logging_port import LoggingPort
 from infrastructure.scheduler.base.strategy import BaseSchedulerStrategy
 from infrastructure.scheduler.hostfactory.field_mapper import HostFactoryFieldMapper
 from infrastructure.scheduler.hostfactory.transformations import HostFactoryTransformations
@@ -39,28 +37,6 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         self._template_defaults_service = template_defaults_service
         # Initialize field mapper lazily - will be created when first needed
         self._field_mapper = None
-
-    @property
-    def config_manager(self) -> Any:
-        if self._config_manager is None:
-            from infrastructure.di.container import get_container, is_container_ready
-
-            if is_container_ready():
-                self._config_manager = get_container().get(ConfigurationPort)
-        return self._config_manager
-
-    @property
-    def logger(self) -> Any:
-        if self._logger is None:
-            from infrastructure.di.container import get_container, is_container_ready
-
-            if is_container_ready():
-                self._logger = get_container().get(LoggingPort)
-            else:
-                from infrastructure.logging.logger import get_logger
-
-                return get_logger(__name__)  # fallback, don't cache — pick up DI logger once ready
-        return self._logger
 
     @property
     def field_mapper(self) -> HostFactoryFieldMapper:
@@ -102,25 +78,6 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
             return processed_templates
         except Exception as e:
             self.logger.error("Error loading templates from %s: %s", template_path, e)
-            return []
-
-    def _load_single_file(self, template_path: str) -> list[dict[str, Any]]:
-        """Load templates from a single file."""
-        try:
-            import json
-
-            with open(template_path) as f:
-                data = json.load(f)
-
-            # Handle different template file formats
-            if isinstance(data, dict) and "templates" in data:
-                return data["templates"]
-            elif isinstance(data, list):
-                return data
-            else:
-                return []
-
-        except Exception:
             return []
 
     def _map_template_fields(
@@ -174,36 +131,6 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         mapped["version"] = template.get("version")
 
         return mapped
-
-    def _get_provider_name(self) -> str:
-        """Get the active provider instance name."""
-        try:
-            from application.services.provider_registry_service import ProviderRegistryService
-            from infrastructure.di.container import get_container
-
-            container = get_container()
-            provider_service = container.get(ProviderRegistryService)
-            selection_result = provider_service.select_active_provider()
-            return selection_result.provider_name
-        except Exception as e:
-            self.logger.warning("Failed to get provider instance name: %s", e)
-            return "default"
-
-    def _get_active_provider_type(self) -> str:
-        """Get the active provider type from configuration."""
-        try:
-            from application.services.provider_registry_service import ProviderRegistryService
-            from infrastructure.di.container import get_container
-
-            container = get_container()
-            provider_service = container.get(ProviderRegistryService)
-            selection_result = provider_service.select_active_provider()
-            provider_type = selection_result.provider_type
-            self.logger.debug("Active provider type: %s", provider_type)
-            return provider_type
-        except Exception as e:
-            self.logger.warning("Failed to get active provider type, defaulting to 'aws': %s", e)
-            return "aws"  # Default fallback
 
     def convert_cli_args_to_hostfactory_input(self, operation: str, args: Any) -> dict[str, Any]:
         """Convert CLI arguments to HostFactory JSON input format.
@@ -755,11 +682,6 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         """Return the path to the HostFactory scripts directory."""
         return Path("src/infrastructure/scheduler/hostfactory/scripts/")
 
-    def get_storage_base_path(self) -> str:
-        """Get storage base path within working directory."""
-        workdir = self.get_working_directory()
-        return os.path.join(workdir, "data")
-
     def _templates_filename_pattern_key(self) -> str:
         return "provider_specific"
 
@@ -785,22 +707,6 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
             response["traceback"] = traceback.format_exc()
 
         return response
-
-    def get_exit_code_for_status(self, status: str) -> int:
-        """HostFactory exit codes: 1 for failures, 0 for accepted requests."""
-        failure_statuses = ["failed", "cancelled", "timeout", "partial"]
-        return 1 if status in failure_statuses else 0
-
-    def format_health_response(self, checks: list[dict[str, Any]]) -> dict[str, Any]:
-        """Format health check response for HostFactory."""
-        passed = sum(1 for c in checks if c.get("status") == "pass")
-        failed = len(checks) - passed
-
-        return {
-            "success": failed == 0,
-            "checks": checks,
-            "summary": {"total": len(checks), "passed": passed, "failed": failed},
-        }
 
     def get_directory(self, file_type: str) -> str | None:
         self.logger.debug("[HF_STRATEGY] get_directory called with file_type=%s", file_type)

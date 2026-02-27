@@ -4,7 +4,6 @@ import os
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from domain.base.ports.logging_port import LoggingPort
 from domain.machine.aggregate import Machine
 from domain.template.template_aggregate import Template
 from infrastructure.scheduler.base.strategy import BaseSchedulerStrategy
@@ -35,29 +34,6 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
         self._template_defaults_service = template_defaults_service
         # Initialize field mapper
         self.field_mapper = DefaultFieldMapper()
-
-    @property
-    def config_manager(self) -> Any:
-        if self._config_manager is None:
-            from domain.base.ports.configuration_port import ConfigurationPort
-            from infrastructure.di.container import get_container, is_container_ready
-
-            if is_container_ready():
-                self._config_manager = get_container().get(ConfigurationPort)
-        return self._config_manager
-
-    @property
-    def logger(self) -> Any:
-        if self._logger is None:
-            from infrastructure.di.container import get_container, is_container_ready
-
-            if is_container_ready():
-                self._logger = get_container().get(LoggingPort)
-            else:
-                from infrastructure.logging.logger import get_logger
-
-                return get_logger(__name__)  # fallback, don't cache — pick up DI logger once ready
-        return self._logger
 
     def get_scheduler_type(self) -> str:
         """Return the scheduler type identifier."""
@@ -112,47 +88,6 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
         elif isinstance(data, list):
             return data
         return []
-
-    def _load_single_file(self, template_path: str) -> list[dict[str, Any]]:
-        """Load templates from a single file."""
-        try:
-            import json
-
-            with open(template_path) as f:
-                data = json.load(f)
-            return self._load_single_file_from_data(data)
-        except Exception:
-            return []
-
-    def _get_provider_name(self) -> str:
-        """Get the active provider instance name via proper DI."""
-        try:
-            from application.services.provider_registry_service import ProviderRegistryService
-            from infrastructure.di.container import get_container
-
-            container = get_container()
-            provider_service = container.get(ProviderRegistryService)
-            selection_result = provider_service.select_active_provider()
-            return selection_result.provider_name
-        except Exception as e:
-            self.logger.warning("Failed to get provider instance name: %s", e)
-            return "default"
-
-    def _get_active_provider_type(self) -> str:
-        """Get the active provider type via proper DI."""
-        try:
-            from application.services.provider_registry_service import ProviderRegistryService
-            from infrastructure.di.container import get_container
-
-            container = get_container()
-            provider_service = container.get(ProviderRegistryService)
-            selection_result = provider_service.select_active_provider()
-            provider_type = selection_result.provider_type
-            self.logger.debug("Active provider type: %s", provider_type)
-            return provider_type
-        except Exception as e:
-            self.logger.warning("Failed to get active provider type, defaulting to 'aws': %s", e)
-            return "aws"
 
     def get_config_file_path(self) -> str:
         """Get config file path - using default configuration."""
@@ -271,13 +206,6 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
             "tags": machine_data.get("tags"),
         }
 
-    def get_storage_base_path(self) -> str:
-        """Get storage base path within working directory."""
-        import os
-
-        workdir = self.get_working_directory()
-        return os.path.join(workdir, "data")
-
     def should_log_to_console(self) -> bool:
         """Check if logs should be written to console for Default scheduler.
 
@@ -301,22 +229,6 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
             response["traceback"] = traceback.format_exc()
 
         return response
-
-    def get_exit_code_for_status(self, status: str) -> int:
-        """Default scheduler exit codes: 1 for any problem, 0 for success."""
-        problem_statuses = ["failed", "cancelled", "timeout", "partial"]
-        return 1 if status in problem_statuses else 0
-
-    def format_health_response(self, checks: list[dict[str, Any]]) -> dict[str, Any]:
-        """Format health check response for Default scheduler."""
-        passed = sum(1 for c in checks if c.get("status") == "pass")
-        failed = len(checks) - passed
-
-        return {
-            "success": failed == 0,
-            "checks": checks,
-            "summary": {"total": len(checks), "passed": passed, "failed": failed},
-        }
 
     def get_directory(self, file_type: str) -> str | None:
         """Get directory path for the given file type."""
