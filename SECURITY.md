@@ -1,5 +1,7 @@
 # Security Hardening Implementation
 
+> **Note:** This document is an internal implementation reference describing security controls built into ORB. It is not a vulnerability disclosure policy. To report a security vulnerability, follow the standard responsible disclosure process for this repository.
+
 ## Overview
 
 This document describes the security hardening implementations for the Open Resource Broker (ORB) project, addressing OWASP Top 10 vulnerabilities and implementing defense-in-depth security controls.

@@ -424,7 +424,7 @@ export ORB_CIRCUIT_BREAKER__ENABLED=true
 export ORB_CIRCUIT_BREAKER__FAILURE_THRESHOLD=5
 
 # Start the application
-orb serve --port 8000
+orb system serve --port 8000
 ```
 
 ### Configuration Validation
@@ -433,10 +433,10 @@ Validate your configuration before deployment:
 
 ```bash
 # Validate current configuration
-python run.py validateProviderConfig
+orb config validate
 
 # Validate specific configuration file
-python run.py validateProviderConfig --file config/production.json
+orb config validate --config config/production.json
 ```
 
 ### Configuration Reload
@@ -445,10 +445,10 @@ Reload configuration without restarting the application:
 
 ```bash
 # Reload from default location
-python run.py reloadProviderConfig
+orb config show
 
 # Reload from specific file
-python run.py reloadProviderConfig --config-path config/new-config.json
+orb --config config/new-config.json config show
 ```
 
 ## CLI Operations
@@ -457,29 +457,28 @@ python run.py reloadProviderConfig --config-path config/new-config.json
 
 ```bash
 # Get current provider configuration
-python run.py getProviderConfig
+orb config show
 
 # Get provider configuration with sensitive data
-python run.py getProviderConfig --data '{"include_sensitive": true}'
+orb config show
 
 # Validate provider configuration
-python run.py validateProviderConfig
+orb config validate
 
 # Validate with detailed output
-python run.py validateProviderConfig --data '{"detailed": true}'
+orb config validate
 
 # Reload provider configuration
-python run.py reloadProviderConfig --config-path config/updated.json
+orb --config config/updated.json config show
 
-# Migrate legacy configuration
-python run.py migrateProviderConfig --data '{"save_to_file": true, "backup_original": true}'
+# Migrate legacy configuration (manual: update config.json to consolidated format)
 ```
 
 ### Provider Strategy Operations
 
 ```bash
 # Select provider strategy for operation
-python run.py selectProviderStrategy --data '{
+orb providers select --data '{
   "operation_type": "CREATE_INSTANCES",
   "required_capabilities": ["compute"],
   "min_success_rate": 0.95,
@@ -487,7 +486,7 @@ python run.py selectProviderStrategy --data '{
 }'
 
 # Execute provider operation
-python run.py executeProviderOperation --data '{
+orb providers exec --data '{
   "operation_type": "CREATE_INSTANCES",
   "operation_data": {
     "instance_count": 2,
@@ -496,27 +495,23 @@ python run.py executeProviderOperation --data '{
 }'
 
 # Get provider health status
-python run.py getProviderHealth
+orb providers health
 
 # List available providers
-python run.py listAvailableProviders
+orb providers list
 ```
 
 ### Template Operations
 
 ```bash
-# Get available templates (now with provider strategy support)
-python run.py getAvailableTemplates
+# Get available templates
+orb templates list
 
 # Get templates for specific provider
-python run.py getAvailableTemplates --provider-api aws-primary
+orb templates list --provider aws-primary
 
-# Request machines (now with provider selection)
-python run.py requestMachines --data '{
-  "template_id": "basic-template",
-  "machine_count": 2,
-  "provider_preference": "aws-primary"
-}'
+# Request machines
+orb machines request basic-template 2
 ```
 
 ## Migration Guide
@@ -535,21 +530,20 @@ cp config/awsprov_templates.json config/awsprov_templates.json.backup
 
 ```bash
 # Migrate to consolidated format with backup
-python run.py migrateProviderConfig --data '{
-  "save_to_file": true,
-  "backup_original": true
-}'
+# Update config.json manually to the consolidated format shown above.
+# Back up your original first:
+cp config/awsprov_config.json config/awsprov_config.json.backup
 ```
 
 #### Validate Migrated Configuration
 
 ```bash
 # Validate the migrated configuration
-python run.py validateProviderConfig
+orb config validate
 
 # Test provider operations
-python run.py getProviderConfig
-python run.py getAvailableTemplates
+orb config show
+orb templates list
 ```
 
 #### Update Deployment Scripts
@@ -688,10 +682,10 @@ export HF_PROVIDER_HEALTH_CHECK_INTERVAL=30
 **Solution:**
 ```bash
 # Get detailed validation information
-python run.py validateProviderConfig --data '{"detailed": true}'
+orb config validate
 
 # Check provider configuration
-python run.py getProviderConfig
+orb config show
 ```
 
 #### Provider Selection Issues
@@ -701,13 +695,13 @@ python run.py getProviderConfig
 **Diagnosis:**
 ```bash
 # Check provider health
-python run.py getProviderHealth
+orb providers health
 
 # List available providers
-python run.py listAvailableProviders
+orb providers list
 
 # Test provider selection
-python run.py selectProviderStrategy --data '{
+orb providers select --data '{
   "operation_type": "CREATE_INSTANCES",
   "required_capabilities": ["compute"]
 }'
@@ -720,15 +714,10 @@ python run.py selectProviderStrategy --data '{
 **Solution:**
 ```bash
 # Validate original configuration first
-python run.py validateProviderConfig
+orb config validate
 
-# Run migration with backup
-python run.py migrateProviderConfig --data '{
-  "save_to_file": false,
-  "backup_original": true
-}'
-
-# Review migration output before saving
+# Run migration with backup (manual: back up config file first)
+cp config/awsprov_config.json config/awsprov_config.json.backup
 ```
 
 ### Debug Mode
@@ -756,13 +745,13 @@ Monitor provider health and system status:
 
 ```bash
 # Check overall system health
-python run.py healthCheck
+orb system health
 
 # Get provider-specific health
-python run.py getProviderHealth
+orb providers health
 
 # Monitor provider metrics
-python run.py getProviderMetrics
+orb providers metrics
 ```
 
 ### Performance Tuning
