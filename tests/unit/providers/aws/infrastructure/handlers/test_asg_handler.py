@@ -6,7 +6,7 @@ import pytest
 from botocore.exceptions import ClientError
 
 from providers.aws.exceptions.aws_exceptions import AWSInfrastructureError
-from providers.aws.infrastructure.handlers.asg_handler import ASGHandler
+from providers.aws.infrastructure.handlers.asg.handler import ASGHandler
 
 
 def _make_handler():

@@ -43,9 +43,9 @@ from providers.aws.infrastructure.adapters.machine_adapter import AWSMachineAdap
 from providers.aws.infrastructure.aws_client import AWSClient
 from providers.aws.infrastructure.handlers.asg.capacity_manager import ASGCapacityManager
 from providers.aws.infrastructure.handlers.asg.config_builder import ASGConfigBuilder
-from providers.aws.infrastructure.handlers.base_context_mixin import BaseContextMixin
+from providers.aws.infrastructure.handlers.shared.base_context_mixin import BaseContextMixin
 from providers.aws.infrastructure.handlers.base_handler import AWSHandler
-from providers.aws.infrastructure.handlers.fleet_grouping_mixin import FleetGroupingMixin
+from providers.aws.infrastructure.handlers.shared.fleet_grouping_mixin import FleetGroupingMixin
 from providers.aws.infrastructure.launch_template.manager import AWSLaunchTemplateManager
 from providers.aws.utilities.aws_operations import AWSOperations
 

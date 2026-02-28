@@ -46,11 +46,11 @@ from providers.aws.exceptions.aws_exceptions import (
 )
 from providers.aws.infrastructure.adapters.machine_adapter import AWSMachineAdapter
 from providers.aws.infrastructure.aws_client import AWSClient
-from providers.aws.infrastructure.handlers.base_context_mixin import BaseContextMixin
+from providers.aws.infrastructure.handlers.shared.base_context_mixin import BaseContextMixin
 from providers.aws.infrastructure.handlers.base_handler import AWSHandler
 from providers.aws.infrastructure.handlers.ec2_fleet.config_builder import EC2FleetConfigBuilder
 from providers.aws.infrastructure.handlers.ec2_fleet.release_manager import EC2FleetReleaseManager
-from providers.aws.infrastructure.handlers.fleet_grouping_mixin import FleetGroupingMixin
+from providers.aws.infrastructure.handlers.shared.fleet_grouping_mixin import FleetGroupingMixin
 from providers.aws.infrastructure.launch_template.manager import (
     AWSLaunchTemplateManager,
 )

@@ -31,8 +31,8 @@ from infrastructure.storage.repositories.request_repository import (
 from infrastructure.storage.repositories.template_repository import (
     TemplateRepositoryImpl,
 )
-from providers.aws.infrastructure.handlers.ec2_fleet_handler import EC2FleetHandler
-from providers.aws.infrastructure.handlers.spot_fleet_handler import SpotFleetHandler
+from providers.aws.infrastructure.handlers.ec2_fleet.handler import EC2FleetHandler
+from providers.aws.infrastructure.handlers.spot_fleet.handler import SpotFleetHandler
 from providers.aws.infrastructure.launch_template.manager import (
     AWSLaunchTemplateManager,
     LaunchTemplateResult,

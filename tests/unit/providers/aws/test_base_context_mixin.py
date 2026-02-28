@@ -3,7 +3,7 @@
 from unittest.mock import Mock, patch
 
 from providers.aws.domain.template.aws_template_aggregate import AWSTemplate
-from providers.aws.infrastructure.handlers.base_context_mixin import BaseContextMixin
+from providers.aws.infrastructure.handlers.shared.base_context_mixin import BaseContextMixin
 
 
 class TestableContextMixin(BaseContextMixin):
@@ -34,7 +34,7 @@ class TestBaseContextMixin:
 
     def test_prepare_base_context(self):
         """Test base context preparation."""
-        with patch("providers.aws.infrastructure.handlers.base_context_mixin.datetime") as mock_dt:
+        with patch("providers.aws.infrastructure.handlers.shared.base_context_mixin.datetime") as mock_dt:
             mock_dt.utcnow.return_value.isoformat.return_value = "2025-01-15T10:30:00Z"
 
             context = self.mixin._prepare_base_context(
@@ -146,7 +146,7 @@ class TestBaseContextMixin:
         """Test standard tag preparation."""
         with patch.object(self.mixin, "_get_package_name", return_value="test-package"):
             with patch(
-                "providers.aws.infrastructure.handlers.base_context_mixin.datetime"
+                "providers.aws.infrastructure.handlers.shared.base_context_mixin.datetime"
             ) as mock_dt:
                 mock_dt.utcnow.return_value.isoformat.return_value = "2025-01-15T10:30:00Z"
 

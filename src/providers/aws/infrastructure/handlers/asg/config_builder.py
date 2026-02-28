@@ -11,7 +11,7 @@ from domain.base.ports import LoggingPort
 from domain.base.ports.configuration_port import ConfigurationPort
 from providers.aws.domain.template.aws_template_aggregate import AWSTemplate
 from domain.request.aggregate import Request
-from providers.aws.infrastructure.handlers.base_config_builder import BaseConfigBuilder
+from providers.aws.infrastructure.handlers.shared.base_config_builder import BaseConfigBuilder
 
 
 class ASGConfigBuilder(BaseConfigBuilder):

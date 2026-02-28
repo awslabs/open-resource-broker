@@ -11,11 +11,11 @@ from domain.base.ports.configuration_port import ConfigurationPort
 from domain.request.aggregate import Request
 from providers.aws.domain.template.aws_template_aggregate import AWSTemplate
 from providers.aws.domain.template.value_objects import AWSFleetType
-from providers.aws.infrastructure.handlers.fleet_override_builder import (
+from providers.aws.infrastructure.handlers.shared.fleet_override_builder import (
     map_ec2_fleet_allocation_strategy,
     map_ec2_fleet_ondemand_strategy,
 )
-from providers.aws.infrastructure.handlers.base_config_builder import BaseConfigBuilder
+from providers.aws.infrastructure.handlers.shared.base_config_builder import BaseConfigBuilder
 from providers.aws.infrastructure.tags import build_resource_tags
 
 
@@ -188,7 +188,7 @@ class EC2FleetConfigBuilder(BaseConfigBuilder):
                 overrides.append({"InstanceRequirements": instance_requirements_payload})
             fleet_config["LaunchTemplateConfigs"][0]["Overrides"] = overrides
         else:
-            from providers.aws.infrastructure.handlers.instance_override_builder import (
+            from providers.aws.infrastructure.handlers.shared.instance_override_builder import (
                 build_fleet_overrides,
             )
 

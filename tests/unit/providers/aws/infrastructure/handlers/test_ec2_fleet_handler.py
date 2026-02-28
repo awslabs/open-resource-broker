@@ -6,7 +6,7 @@ import pytest
 from botocore.exceptions import ClientError
 
 from providers.aws.exceptions.aws_exceptions import AWSInfrastructureError
-from providers.aws.infrastructure.handlers.ec2_fleet_handler import EC2FleetHandler
+from providers.aws.infrastructure.handlers.ec2_fleet.handler import EC2FleetHandler
 
 
 def _make_handler():

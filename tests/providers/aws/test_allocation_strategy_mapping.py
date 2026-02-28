@@ -2,7 +2,7 @@
 
 import pytest
 
-from providers.aws.infrastructure.handlers.fleet_override_builder import (
+from providers.aws.infrastructure.handlers.shared.fleet_override_builder import (
     map_ec2_fleet_allocation_strategy,
     map_ec2_fleet_ondemand_strategy,
     map_spot_fleet_allocation_strategy,

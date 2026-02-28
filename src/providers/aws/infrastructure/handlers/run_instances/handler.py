@@ -42,7 +42,7 @@ from providers.aws.domain.template.aws_template_aggregate import AWSTemplate
 from providers.aws.exceptions.aws_exceptions import AWSInfrastructureError
 from providers.aws.infrastructure.adapters.machine_adapter import AWSMachineAdapter
 from providers.aws.infrastructure.aws_client import AWSClient
-from providers.aws.infrastructure.handlers.base_context_mixin import BaseContextMixin
+from providers.aws.infrastructure.handlers.shared.base_context_mixin import BaseContextMixin
 from providers.aws.infrastructure.handlers.base_handler import AWSHandler
 from providers.aws.infrastructure.launch_template.manager import (
     AWSLaunchTemplateManager,

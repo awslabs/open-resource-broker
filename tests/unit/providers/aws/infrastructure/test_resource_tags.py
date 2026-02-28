@@ -5,9 +5,9 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from providers.aws.domain.template.value_objects import AWSFleetType
-from providers.aws.infrastructure.handlers.asg_handler import ASGHandler
-from providers.aws.infrastructure.handlers.ec2_fleet_handler import EC2FleetHandler
-from providers.aws.infrastructure.handlers.spot_fleet_handler import SpotFleetHandler
+from providers.aws.infrastructure.handlers.asg.handler import ASGHandler
+from providers.aws.infrastructure.handlers.ec2_fleet.handler import EC2FleetHandler
+from providers.aws.infrastructure.handlers.spot_fleet.handler import SpotFleetHandler
 from providers.aws.infrastructure.launch_template.manager import AWSLaunchTemplateManager
 from providers.aws.infrastructure.tags import build_system_tags, merge_tags
 

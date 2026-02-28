@@ -41,9 +41,9 @@ from providers.aws.exceptions.aws_exceptions import (
 )
 from providers.aws.infrastructure.adapters.machine_adapter import AWSMachineAdapter
 from providers.aws.infrastructure.aws_client import AWSClient
-from providers.aws.infrastructure.handlers.base_context_mixin import BaseContextMixin
+from providers.aws.infrastructure.handlers.shared.base_context_mixin import BaseContextMixin
 from providers.aws.infrastructure.handlers.base_handler import AWSHandler
-from providers.aws.infrastructure.handlers.fleet_grouping_mixin import FleetGroupingMixin
+from providers.aws.infrastructure.handlers.shared.fleet_grouping_mixin import FleetGroupingMixin
 from providers.aws.infrastructure.handlers.spot_fleet.config_builder import SpotFleetConfigBuilder
 from providers.aws.infrastructure.handlers.spot_fleet.release_manager import SpotFleetReleaseManager
 from providers.aws.infrastructure.handlers.spot_fleet.validator import SpotFleetValidator
