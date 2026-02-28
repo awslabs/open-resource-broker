@@ -245,6 +245,7 @@ class TestLazyLoadingPerformance:
 class TestPerformanceRegression:
     """Test suite to prevent performance regressions."""
 
+    @pytest.mark.slow
     def test_startup_time_regression(self):
         """Ensure startup time doesn't regress beyond acceptable limits."""
         measurements = []
@@ -265,6 +266,7 @@ class TestPerformanceRegression:
 
         print(f"PASS: Startup regression test: avg={avg_startup:.1f}ms, max={max_startup:.1f}ms")
 
+    @pytest.mark.slow
     def test_memory_usage_regression(self):
         """Ensure memory usage doesn't regress significantly."""
         process = psutil.Process(os.getpid())

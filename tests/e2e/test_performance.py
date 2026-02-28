@@ -448,6 +448,7 @@ class TestPerformance:
             f"Benchmark results: {iterations} operations in {total_time:.3f}s, {avg_time:.6f}s average"
         )
 
+    @pytest.mark.slow
     def test_stress_test_configuration_operations(self):
         """Stress test configuration operations."""
         # Create configuration

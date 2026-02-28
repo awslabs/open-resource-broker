@@ -200,6 +200,7 @@ class TestLazyLoadingErrorHandling:
 class TestLazyLoadingCompatibility:
     """Test compatibility with existing functionality."""
 
+    @pytest.mark.slow
     def test_all_cli_commands_compatibility(self):
         """Test that all CLI commands are compatible with lazy loading."""
         # This would ideally test all CLI commands, but we'll test a representative sample
