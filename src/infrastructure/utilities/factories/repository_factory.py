@@ -40,42 +40,32 @@ class RepositoryFactory:
         return self._storage_registry
 
     def create_machine_repository(self) -> MachineRepositoryInterface:
-        """Create machine repository with injected storage port."""
+        """Create machine repository with injected storage strategy."""
         from infrastructure.storage.repositories.machine_repository import (
             MachineRepositoryImpl as MachineRepository,
         )
 
         try:
-            # Get storage port from DI container
-            from domain.base.ports.storage_port import StoragePort
-            from infrastructure.di.container import get_container
-
-            container = get_container()
-            storage_port = container.get(StoragePort)
-
-            # Create repository with storage port injection
-            return MachineRepository(storage_port)
+            storage_type = self.config_manager.get_storage_strategy()
+            config = self.config_manager.app_config.model_dump()
+            storage_strategy = self.storage_registry.create_strategy(storage_type, config)
+            return MachineRepository(storage_strategy)
 
         except Exception as e:
             self.logger.error("Failed to create machine repository: %s", e)
             raise
 
     def create_request_repository(self) -> RequestRepositoryInterface:
-        """Create request repository with injected storage port."""
+        """Create request repository with injected storage strategy."""
         from infrastructure.storage.repositories.request_repository import (
             RequestRepositoryImpl as RequestRepository,
         )
 
         try:
-            # Get storage port from DI container
-            from domain.base.ports.storage_port import StoragePort
-            from infrastructure.di.container import get_container
-
-            container = get_container()
-            storage_port = container.get(StoragePort)
-
-            # Create repository with storage port injection
-            return RequestRepository(storage_port)
+            storage_type = self.config_manager.get_storage_strategy()
+            config = self.config_manager.app_config.model_dump()
+            storage_strategy = self.storage_registry.create_strategy(storage_type, config)
+            return RequestRepository(storage_strategy)
 
         except Exception as e:
             self.logger.error("Failed to create request repository: %s", e)
