@@ -214,4 +214,3 @@ class ASGCapacityManager:
             self._logger.info("Successfully deleted ASG %s", asg_name)
         except Exception as exc:
             self._logger.warning("Failed to delete ASG %s: %s", asg_name, exc)
-
