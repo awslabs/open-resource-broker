@@ -307,4 +307,3 @@ class EC2FleetConfigBuilder(BaseConfigBuilder):
             "max_spot_price": (str(template.max_price) if template.max_price is not None else None),
             "default_capacity_type": default_capacity_type,
         }
-
