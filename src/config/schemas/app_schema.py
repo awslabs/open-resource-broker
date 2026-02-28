@@ -61,9 +61,10 @@ class AppConfig(BaseModel):
         self.request_timeout = core.request_timeout
         self.max_machines_per_request = core.max_machines_per_request
 
-        # Override logging level if LOG_LEVEL env var is set
+        # Override logging fields from env vars
         if hasattr(self, "logging") and self.logging:
             self.logging.level = core.log_level
+            self.logging.console_enabled = core.log_console_enabled
 
         return self
 

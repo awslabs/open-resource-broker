@@ -357,7 +357,7 @@ async def main() -> None:
     import sys
 
     # Get provider type from environment or config
-    config_path = os.getenv("CONFIG_PATH")
+    config_path = os.getenv("ORB_CONFIG_FILE")
 
     # Only print before app creation - no logger available yet
     print("Starting Open Host Factory...")

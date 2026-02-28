@@ -12,6 +12,7 @@ class CoreAppSettings(BaseSettings):
 
     # Core fields - automatically map to ORB_LOG_LEVEL, ORB_DEBUG, etc.
     log_level: str = "INFO"
+    log_console_enabled: bool = True
     debug: bool = False
     environment: str = "development"
     request_timeout: int = 300

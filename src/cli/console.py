@@ -37,8 +37,15 @@ except ImportError:
 
 
 def _should_print() -> bool:
-    """Check if console output is enabled."""
-    return os.environ.get("LOG_CONSOLE_ENABLED", "true").lower() == "true"
+    """Check if console output is enabled.
+
+    Checks ORB_LOG_CONSOLE_ENABLED first, then LOG_CONSOLE_ENABLED for backward compatibility.
+    """
+    for var in ("ORB_LOG_CONSOLE_ENABLED", "LOG_CONSOLE_ENABLED"):
+        val = os.environ.get(var)
+        if val is not None:
+            return val.lower() == "true"
+    return True
 
 
 def _console_output(func):
