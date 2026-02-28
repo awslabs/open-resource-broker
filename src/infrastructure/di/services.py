@@ -185,7 +185,11 @@ def _register_services_eager(container: "DIContainer") -> "DIContainer":
 
 
 def _register_lazy_service_factories(container: "DIContainer") -> None:
-    """Register on-demand factories for services that can be deferred."""
+    """Register lazy factories for services that can be loaded on-demand.
+
+    Note: CQRS infrastructure and provider services are now registered
+    immediately in lazy mode, so no additional lazy registration is needed.
+    """
     from infrastructure.logging.logger import get_logger
 
     logger = get_logger(__name__)

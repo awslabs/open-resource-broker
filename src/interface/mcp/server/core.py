@@ -149,9 +149,11 @@ class OpenResourceBrokerMCPServer:
         Returns:
             JSON-RPC 2.0 response string
         """
+        from infrastructure.utilities.json_utils import safe_json_loads, safe_json_dumps, JSONParseError
+
         try:
             # Parse message
-            data = json.loads(message)
+            data = safe_json_loads(message, raise_on_error=True, context="MCP message parsing")
             mcp_msg = MCPMessage(**data)
 
             # Handle different message types
@@ -162,11 +164,11 @@ class OpenResourceBrokerMCPServer:
                     id=mcp_msg.id, error={"code": -32600, "message": "Invalid Request"}
                 )
 
-            return json.dumps(response.__dict__, default=str)
+            return safe_json_dumps(response.__dict__, default="{}", context="MCP response serialization")
 
-        except json.JSONDecodeError:
+        except JSONParseError:
             error_response = MCPMessage(error={"code": -32700, "message": "Parse error"})
-            return json.dumps(error_response.__dict__)
+            return safe_json_dumps(error_response.__dict__, default="{}")
         except Exception as e:
             self.logger.error("Error handling MCP message: %s", e, exc_info=True)
             error_response = MCPMessage(

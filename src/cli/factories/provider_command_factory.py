@@ -96,10 +96,15 @@ class ProviderCommandFactory:
         # Parse params if provided
         parsed_params = {}
         if params:
+            from infrastructure.utilities.json_utils import safe_json_loads, JSONParseError
             try:
-                parsed_params = json.loads(params)
-            except json.JSONDecodeError:
-                raise ValueError(f"Invalid JSON in params: {params}")
+                parsed_params = safe_json_loads(
+                    params,
+                    raise_on_error=True,
+                    context="Provider operation params"
+                )
+            except JSONParseError as e:
+                raise ValueError(f"Invalid JSON in params: {params}") from e
 
         # Create ProviderOperation
         provider_operation = ProviderOperation(

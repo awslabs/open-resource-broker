@@ -77,10 +77,10 @@ async def handle_mcp_tools_call(args) -> dict[str, Any]:
 
     elif hasattr(args, "args") and args.args:
         # Parse arguments from command line JSON string
-        try:
-            tool_args = json.loads(args.args)
-        except json.JSONDecodeError as e:
-            return {"error": f"Invalid JSON in arguments: {e!s}"}
+        from infrastructure.utilities.json_utils import safe_json_loads
+        tool_args = safe_json_loads(args.args, default={}, context="MCP tool arguments")
+        if not tool_args:
+            return {"error": "Invalid JSON in arguments"}
 
     # Execute tool
     async with OpenResourceBrokerMCPTools() as tools:

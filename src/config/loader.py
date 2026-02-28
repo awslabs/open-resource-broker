@@ -421,8 +421,10 @@ class ConfigurationLoader:
             return float(value)
 
         # Try to convert to JSON
-        with suppress(json.JSONDecodeError):
-            return json.loads(value)
+        from infrastructure.utilities.json_utils import safe_json_loads
+        result = safe_json_loads(value, default=None)
+        if result is not None:
+            return result
 
         # Return as string if no conversion possible
         return value
@@ -457,7 +459,9 @@ class ConfigurationLoader:
         Returns:
             Deep copy of dictionary
         """
-        return json.loads(json.dumps(obj))
+        from infrastructure.utilities.json_utils import safe_json_loads, safe_json_dumps
+        json_str = safe_json_dumps(obj, raise_on_error=True, context="Deep copy serialization")
+        return safe_json_loads(json_str, raise_on_error=True, context="Deep copy deserialization")
 
     @classmethod
     def _get_scheduler_directory(

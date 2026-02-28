@@ -75,6 +75,8 @@ class TemplateConfigurationAdapter(TemplateConfigurationPort):
                 metadata=config.get("metadata", {}),
             )
 
+            # Note: Template validation is skipped here as it requires async context.
+            # Validation is performed by the template manager during template operations.
         except Exception as e:
             self._logger.warning("Template validation failed: %s", e)
             errors.append(f"Template validation error: {e!s}")
