@@ -57,7 +57,7 @@ jobs:
       testing-flag: "true"
     steps:
     - name: Checkout code
-      uses: actions/checkout@v6.0.2
+      uses: actions/checkout@v6
 
     - name: Setup cache
       uses: actions/cache@v5

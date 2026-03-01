@@ -59,7 +59,7 @@ jobs:
       python-tags: ${{ steps.tags.outputs.python-tags }}
     steps:
     - name: Checkout code
-      uses: actions/checkout@v6.0.2
+      uses: actions/checkout@v6
 
     - name: Calculate container tags
       id: tags
@@ -97,7 +97,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v6.0.2
+      uses: actions/checkout@v6
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
@@ -161,7 +161,7 @@ jobs:
         fi
 
     - name: Run Trivy security scan
-      uses: aquasecurity/trivy-action@0.33.1
+      uses: aquasecurity/trivy-action@0.34.1
       with:
         image-ref: "${{ needs.config.outputs.container-registry }}/${{ needs.config.outputs.container-image }}:${{ needs.config.outputs.package-version }}-python${{ matrix.python-version }}"
         format: 'sarif'
