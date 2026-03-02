@@ -249,7 +249,6 @@ class SpotFleetConfigBuilder(BaseConfigBuilder):
             "Type": fleet_type_value,
             "TagSpecifications": [
                 {"ResourceType": "spot-fleet-request", "Tags": common_tags},
-                {"ResourceType": "instance", "Tags": common_tags},
             ],
         }
 
