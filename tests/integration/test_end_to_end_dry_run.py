@@ -19,10 +19,14 @@ class TestEndToEndDryRun:
         """Set up test fixtures."""
         self.mock_logger = Mock()
         self.aws_config = AWSProviderConfig(region="us-east-1", profile="default")
-        self.aws_strategy = AWSProviderStrategy(config=self.aws_config, logger=self.mock_logger)
+        self.mock_aws_client = Mock()
+        self.aws_strategy = AWSProviderStrategy(
+            config=self.aws_config,
+            logger=self.mock_logger,
+            aws_client_resolver=lambda: self.mock_aws_client,
+        )
         self.aws_strategy._initialized = True
 
-        self.mock_aws_client = Mock()
         self.provisioning_adapter = AWSProvisioningAdapter(
             aws_client=self.mock_aws_client,
             logger=self.mock_logger,

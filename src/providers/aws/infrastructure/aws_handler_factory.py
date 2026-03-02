@@ -90,16 +90,7 @@ class AWSHandlerFactory:
         )
         from providers.aws.utilities.aws_operations import AWSOperations
 
-        # Resolve ConfigurationPort from the container at construction time,
-        # falling back to the factory's stored config if the container is unavailable.
         config_port = self._config
-        try:
-            from domain.base.ports.configuration_port import ConfigurationPort
-            from infrastructure.di.container import get_container
-
-            config_port = get_container().get(ConfigurationPort)
-        except Exception:
-            pass
 
         # Construct AWSNativeSpecService if application services are available
         aws_native_spec_service = None

@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Any, Callable, Optional
 
 from domain.base.dependency_injection import injectable
 from domain.base.ports import LoggingPort
+from domain.base.ports.configuration_port import ConfigurationPort
 
 # Import AWS-specific components
 from providers.aws.configuration.config import AWSProviderConfig
@@ -63,6 +64,7 @@ class AWSProviderStrategy(ProviderStrategy):
         aws_client_resolver: Optional[Callable[[], AWSClient]] = None,
         provider_name: Optional[str] = None,
         provider_instance_config: Optional[Any] = None,
+        config_port: Optional[ConfigurationPort] = None,
     ) -> None:
         """Initialize AWS provider strategy with focused services."""
         if not isinstance(config, AWSProviderConfig):
@@ -77,6 +79,7 @@ class AWSProviderStrategy(ProviderStrategy):
         self._aws_provisioning_port = aws_provisioning_port
         self._aws_provisioning_port_resolver = aws_provisioning_port_resolver
         self._provider_name = provider_name
+        self._config_port = config_port
 
         # Initialize services (lazy)
         self._instance_service: Optional[AWSInstanceOperationService] = None
@@ -107,21 +110,16 @@ class AWSProviderStrategy(ProviderStrategy):
                 except Exception as exc:
                     self._logger.warning("Failed to resolve AWSClient: %s", exc, exc_info=True)
             else:
-                try:
-                    # Need config_port to create AWS client
-                    from infrastructure.di.container import get_container
-
-                    container = get_container()
-                    from domain.base.ports.configuration_port import ConfigurationPort
-
-                    config_port = container.get(ConfigurationPort)
-
-                    self._aws_client = AWSClient(
-                        config=config_port, logger=self._logger, provider_name=self._provider_name
-                    )
-                    self._logger.debug("AWS client created directly")
-                except Exception as exc:
-                    self._logger.warning("Failed to create AWSClient: %s", exc, exc_info=True)
+                if self._config_port is not None:
+                    try:
+                        self._aws_client = AWSClient(
+                            config=self._config_port,
+                            logger=self._logger,
+                            provider_name=self._provider_name,
+                        )
+                        self._logger.debug("AWS client created directly")
+                    except Exception as exc:
+                        self._logger.warning("Failed to create AWSClient: %s", exc, exc_info=True)
         return self._aws_client
 
     def initialize(self) -> bool:
@@ -253,12 +251,9 @@ class AWSProviderStrategy(ProviderStrategy):
             return None
 
         try:
-            from domain.base.ports import ConfigurationPort
-            from infrastructure.di.container import get_container
-
-            container = get_container()
-            config_port = container.get(ConfigurationPort)
-            provider_config_root = config_port.get_provider_config()
+            if self._config_port is None:
+                return None
+            provider_config_root = self._config_port.get_provider_config()
             if provider_config_root is None:
                 return None
             return provider_config_root.provider_defaults.get(self._provider_instance_config.type)
@@ -270,18 +265,10 @@ class AWSProviderStrategy(ProviderStrategy):
     def _get_handler_factory(self) -> Optional[AWSHandlerFactory]:
         """Get handler factory with provider-specific AWS client."""
         if self.aws_client:
-            from domain.base.ports.configuration_port import ConfigurationPort
-            from infrastructure.di.container import get_container
             from providers.aws.infrastructure.aws_handler_factory import AWSHandlerFactory
 
-            try:
-                config_port = get_container().get(ConfigurationPort)
-            except Exception:
-                config_port = None
-                if self._logger:
-                    self._logger.warning("ConfigurationPort not available for handler factory")
             return AWSHandlerFactory(
-                aws_client=self.aws_client, logger=self._logger, config=config_port
+                aws_client=self.aws_client, logger=self._logger, config=self._config_port
             )
         return None
 
@@ -513,18 +500,12 @@ class AWSProviderStrategy(ProviderStrategy):
 
     def _create_image_resolution_service(self):
         """Create AWS image resolution service with provider-specific context."""
-        from domain.base.ports.configuration_port import ConfigurationPort
-
-        # Determine cache directory
-        from infrastructure.di.container import get_container
         from providers.aws.infrastructure.caching.aws_image_cache import AWSImageCache
         from providers.aws.infrastructure.services.aws_image_resolution_service import (
             AWSImageResolutionService,
         )
 
-        container = get_container()
-        config = container.get(ConfigurationPort)
-        cache_dir = config.get_cache_dir()
+        cache_dir = self._config_port.get_cache_dir() if self._config_port else ""
 
         cache = AWSImageCache(
             provider_name=getattr(self, "provider_name", "aws"),

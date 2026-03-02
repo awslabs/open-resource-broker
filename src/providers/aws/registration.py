@@ -54,12 +54,22 @@ def create_aws_strategy(provider_config: Any) -> Any:
         # The DI container will inject the appropriate logger later if needed
         logger = LoggingAdapter()
 
+        config_port = None
+        try:
+            from domain.base.ports.configuration_port import ConfigurationPort
+            from infrastructure.di.container import get_container
+
+            config_port = get_container().get(ConfigurationPort)
+        except Exception:
+            pass
+
         # Create AWS provider strategy
         strategy = AWSProviderStrategy(
             config=aws_config,
             logger=logger,
             provider_name=provider_name,
             provider_instance_config=provider_instance_config,
+            config_port=config_port,
         )
 
         # Initialize the strategy

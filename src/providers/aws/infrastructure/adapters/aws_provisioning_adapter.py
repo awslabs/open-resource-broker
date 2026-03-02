@@ -151,14 +151,14 @@ class AWSProvisioningAdapter(ResourceProvisioningPort):
         Returns:
             dict: The provisioning result with resource_ids list
         """
-        # Get the appropriate handler for the template
-        handler = self._get_handler_for_template(template)
-
         if dry_run:
             self._logger.info(
                 "Dry-run mode: skipping actual provisioning for template %s", template.template_id
             )
             return {"success": True, "resource_ids": [], "instances": [], "dry_run": True}
+
+        # Get the appropriate handler for the template
+        handler = self._get_handler_for_template(template)
 
         # Resolve SSM parameter paths to real AMI IDs before calling the handler
         template = self._resolve_template_image(template)
