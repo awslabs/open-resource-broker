@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any, Dict, Optional, TypeVar
 
 from config.schemas import AppConfig, validate_config
 from domain.base.exceptions import ConfigurationError
+from infrastructure.utilities.json_utils import safe_json_dumps, safe_json_loads
 
 if TYPE_CHECKING:
     from config.managers.configuration_manager import ConfigurationManager
@@ -421,7 +422,6 @@ class ConfigurationLoader:
             return float(value)
 
         # Try to convert to JSON
-        from infrastructure.utilities.json_utils import safe_json_loads
         result = safe_json_loads(value, default=None)
         if result is not None:
             return result
@@ -459,7 +459,6 @@ class ConfigurationLoader:
         Returns:
             Deep copy of dictionary
         """
-        from infrastructure.utilities.json_utils import safe_json_loads, safe_json_dumps
         json_str = safe_json_dumps(obj, raise_on_error=True, context="Deep copy serialization")
         return safe_json_loads(json_str, raise_on_error=True, context="Deep copy deserialization")
 

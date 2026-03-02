@@ -3,6 +3,7 @@
 from typing import Any, Optional
 
 from application.provider.commands import ExecuteProviderOperationCommand
+from infrastructure.utilities.json_utils import JSONParseError, safe_json_loads
 from application.provider.queries import (
     GetProviderCapabilitiesQuery,
     GetProviderHealthQuery,
@@ -95,7 +96,6 @@ class ProviderCommandFactory:
         # Parse params if provided
         parsed_params = {}
         if params:
-            from infrastructure.utilities.json_utils import safe_json_loads, JSONParseError
             try:
                 parsed_params = safe_json_loads(
                     params,
