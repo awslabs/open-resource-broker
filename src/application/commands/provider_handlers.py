@@ -1,7 +1,6 @@
 """Provider Strategy Command Handlers - CQRS handlers for provider strategy commands."""
 
 import time
-from typing import Any
 
 from application.base.handlers import BaseCommandHandler
 from application.decorators import command_handler
@@ -20,6 +19,7 @@ from domain.base.events.provider_events import (
     ProviderStrategySelectedEvent,
 )
 from domain.base.ports import ContainerPort, ErrorHandlingPort, EventPublisherPort, LoggingPort
+
 
 @command_handler(SelectProviderStrategyCommand)  # type: ignore[arg-type]
 class SelectProviderStrategyHandler(BaseCommandHandler[SelectProviderStrategyCommand, None]):
@@ -243,9 +243,19 @@ class UpdateProviderHealthHandler(BaseCommandHandler[UpdateProviderHealthCommand
         """Handle provider health update. Result stored in command.result."""
         self.logger.debug("Updating health for provider: %s", command.provider_name)
         try:
-            old_status = self._provider_registry_service.check_strategy_health(command.provider_name)
-            new_is_healthy = command.health_status.get("is_healthy", False) if isinstance(command.health_status, dict) else getattr(command.health_status, "is_healthy", False)
-            old_is_healthy = old_status.get("is_healthy") if isinstance(old_status, dict) else getattr(old_status, "is_healthy", None)
+            old_status = self._provider_registry_service.check_strategy_health(
+                command.provider_name
+            )
+            new_is_healthy = (
+                command.health_status.get("is_healthy", False)
+                if isinstance(command.health_status, dict)
+                else getattr(command.health_status, "is_healthy", False)
+            )
+            old_is_healthy = (
+                old_status.get("is_healthy")
+                if isinstance(old_status, dict)
+                else getattr(old_status, "is_healthy", None)
+            )
             if old_status is None or old_is_healthy != new_is_healthy:
                 event = ProviderHealthChangedEvent(
                     provider_name=command.provider_name,
@@ -265,7 +275,11 @@ class UpdateProviderHealthHandler(BaseCommandHandler[UpdateProviderHealthCommand
                 )
             command.result = {
                 "provider_name": command.provider_name,
-                "health_status": command.health_status if isinstance(command.health_status, dict) else command.health_status.model_dump() if hasattr(command.health_status, "model_dump") else str(command.health_status),
+                "health_status": command.health_status
+                if isinstance(command.health_status, dict)
+                else command.health_status.model_dump()
+                if hasattr(command.health_status, "model_dump")
+                else str(command.health_status),
                 "updated_at": command.timestamp or time.strftime("%Y-%m-%d %H:%M:%S"),
             }
         except Exception as e:

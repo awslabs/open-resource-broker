@@ -24,7 +24,7 @@ make dev-install-uv
 uv pip install -e ".[dev]"
 
 # Setup git hooks (required for beads integration)
-./dev-tools/scripts/setup-hooks.sh
+git config core.hooksPath .githooks
 ```
 
 ### Traditional Setup
@@ -41,7 +41,7 @@ make dev-install-pip
 pip install -e ".[dev]"
 
 # Setup git hooks (required for beads integration)
-./dev-tools/scripts/setup-hooks.sh
+git config core.hooksPath .githooks
 ```
 
 ### Optional Dependencies
@@ -222,11 +222,26 @@ make lint-optional
 
 ### Pre-commit Hooks
 
-```bash
-# Install pre-commit hooks
-pre-commit install
+Git hooks live in `.githooks/` and are activated by:
 
-# Run on all files
+```bash
+git config core.hooksPath .githooks
+```
+
+`git commit` automatically runs all non-manual checks via the pre-commit tool (reads
+`.pre-commit-config.yaml`, only checks staged files, skips slow/manual-stage hooks).
+
+To run the full suite including security scans and other slow checks:
+
+```bash
+make pre-commit-full
+```
+
+To run only the standard (non-manual) checks manually:
+
+```bash
+make pre-commit
+# or directly:
 pre-commit run --all-files
 ```
 
@@ -237,6 +252,8 @@ Hooks that run on every commit (enforced):
 - `validate-cqrs` — CQRS pattern compliance
 - `check-architecture` — Clean Architecture layer boundaries
 - `validate-imports` — import validation
+
+Additional hooks run via `make pre-commit-full` (manual stage):
 - `bandit` — security analysis
 - `detect-secrets` — hardcoded secret detection
 - `validate-workflows` — GitHub Actions YAML validation
@@ -266,7 +283,7 @@ The plugin follows Clean Architecture principles:
 ### Before Submitting
 
 1. **Run tests locally**: `make test`
-2. **Run pre-commit checks**: `make pre-commit`
+2. **Run pre-commit checks**: `make pre-commit-full`
 3. **Update documentation** if needed
 4. **Add tests** for new functionality
 

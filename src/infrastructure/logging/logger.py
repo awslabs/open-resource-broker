@@ -7,9 +7,10 @@ import logging
 import logging.handlers
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Dict, Optional
 
-from config import LoggingConfig
+if TYPE_CHECKING:
+    from config.schemas.logging_schema import LoggingConfig
 
 
 class ColoredFormatter(logging.Formatter):

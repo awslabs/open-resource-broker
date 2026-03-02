@@ -1,8 +1,6 @@
 {
   "pythonVersion": "3.12",
-  "pythonPlatform": "Darwin",
   "typeCheckingMode": "basic",
-  "venvPath": ".",
   "include": ["src"],
   "extraPaths": ["src"]
 }

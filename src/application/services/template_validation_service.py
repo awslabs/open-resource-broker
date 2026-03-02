@@ -1,9 +1,9 @@
 """Generic template validation service."""
 
 from domain.base.ports.logging_port import LoggingPort
+from domain.base.results import ValidationResult
 from domain.services.template_validation_domain_service import TemplateValidationDomainService
 from domain.template.template_aggregate import Template
-from domain.base.results import ValidationResult
 
 
 class TemplateValidationService:

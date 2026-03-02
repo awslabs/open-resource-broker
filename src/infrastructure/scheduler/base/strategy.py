@@ -195,17 +195,17 @@ class BaseSchedulerStrategy(SchedulerPort, ABC):
         # 2. Scheduler-specific env
         if level := self._get_scheduler_env_var("LOG_LEVEL"):
             return level
-        # 3. Standard ORB env
-        import os
-
-        return os.environ.get("ORB_LOG_LEVEL", "INFO")
+        # 3. Injected config — ORB_LOG_LEVEL resolved by _load_from_env
+        if self._config_manager is not None:
+            if level := self._config_manager.get_logging_config().get("level"):
+                return level
+        # 4. Hard default
+        return "INFO"
 
     def _coalesce_directory(
         self, config_override: str | None, env_var_name: str, default_factory: "Callable[[], str]"
     ) -> str:
         """Coalesce directory from multiple sources."""
-        import os
-
         # 1. Config override
         if config_override:
             return config_override
@@ -214,11 +214,7 @@ class BaseSchedulerStrategy(SchedulerPort, ABC):
         if scheduler_var := self._get_scheduler_env_var(env_var_name):
             return scheduler_var
 
-        # 3. Standard ORB env var
-        if orb_var := os.environ.get(f"ORB_{env_var_name}"):
-            return orb_var
-
-        # 4. Default factory
+        # 3. Default factory
         return default_factory()
 
     def _get_scheduler_env_var(self, suffix: str) -> str | None:

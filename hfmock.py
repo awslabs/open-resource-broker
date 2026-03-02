@@ -159,7 +159,9 @@ class HostFactoryMock:
             # os.environ["AWS_PROVIDER_LOG_DIR"] = "./logs"
             os.environ["LOG_DESTINATION"] = "file"
 
-            hf_scripts_location = Path(__file__).parent / "src/infrastructure/scheduler/hostfactory/scripts"
+            hf_scripts_location = (
+                Path(__file__).parent / "src/infrastructure/scheduler/hostfactory/scripts"
+            )
 
         self.get_available_templates_script = os.path.join(
             hf_scripts_location, "getAvailableTemplates.sh"
@@ -184,7 +186,10 @@ class HostFactoryMock:
         bracket = stdout.find("[")
         if brace == -1 and bracket == -1:
             log.error("Could not find JSON in %s response", error_context)
-            return {"error": "Invalid response format", "message": "Could not find JSON in response"}
+            return {
+                "error": "Invalid response format",
+                "message": "Could not find JSON in response",
+            }
         if brace == -1:
             json_start = bracket
         elif bracket == -1:

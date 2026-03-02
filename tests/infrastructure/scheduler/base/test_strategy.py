@@ -135,3 +135,38 @@ class TestBaseSchedulerStrategy:
 
         with pytest.raises(TypeError):
             BaseSchedulerStrategy(config_manager, logger)
+
+    def test_get_log_level_reads_from_injected_config(self):
+        """get_log_level returns level from injected config when no scheduler override."""
+        config_manager = Mock()
+        config_manager.app_config.scheduler.log_level = None
+        config_manager.get_logging_config.return_value = {"level": "DEBUG"}
+
+        strategy = ConcreteSchedulerStrategy(config_manager)
+        strategy._init_base(config_port=config_manager)
+
+        assert strategy.get_log_level() == "DEBUG"
+
+    def test_get_log_level_does_not_read_env_directly(self, monkeypatch):
+        """get_log_level does not fall back to os.environ for ORB_LOG_LEVEL."""
+        monkeypatch.setenv("ORB_LOG_LEVEL", "WARNING")
+
+        config_manager = Mock()
+        config_manager.app_config.scheduler.log_level = None
+        config_manager.get_logging_config.return_value = {}
+
+        strategy = ConcreteSchedulerStrategy(config_manager)
+        strategy._init_base(config_port=config_manager)
+
+        # No env fallback — returns hard default
+        assert strategy.get_log_level() == "INFO"
+
+    def test_coalesce_directory_uses_default_factory_when_no_override(self):
+        """_coalesce_directory calls default_factory when config and env are absent."""
+        strategy = ConcreteSchedulerStrategy()
+        result = strategy._coalesce_directory(
+            config_override=None,
+            env_var_name="NONEXISTENT_VAR",
+            default_factory=lambda: "/default/path",
+        )
+        assert result == "/default/path"

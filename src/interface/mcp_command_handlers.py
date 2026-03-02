@@ -78,6 +78,7 @@ async def handle_mcp_tools_call(args) -> dict[str, Any]:
     elif hasattr(args, "args") and args.args:
         # Parse arguments from command line JSON string
         from infrastructure.utilities.json_utils import safe_json_loads
+
         tool_args = safe_json_loads(args.args, default={}, context="MCP tool arguments")
         if not tool_args:
             return {"error": "Invalid JSON in arguments"}

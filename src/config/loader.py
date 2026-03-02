@@ -340,18 +340,41 @@ class ConfigurationLoader:
         cls, config: dict[str, Any], config_manager: Optional[ConfigurationManager] = None
     ) -> None:
         """
-        Load configuration from environment variables using BaseSettings.
+        Apply ORB_* environment variable overrides to the raw config dict.
+
+        Only variables that are explicitly set in the environment take effect.
+        Precedence: env var > config file > schema default.
 
         Args:
-            config: Configuration dictionary to update
+            config: Configuration dictionary to update in place
             config_manager: Configuration manager for scheduler directories
         """
-        # Configuration will be loaded via BaseSettings when AppConfig is created
-        # This provides automatic environment variable mapping with type safety
-        get_config_logger().debug("Configuration will be loaded via BaseSettings")
+        if val := os.environ.get("ORB_LOG_LEVEL"):
+            config.setdefault("logging", {})["level"] = val
+        if val := cls._resolve_console_enabled():
+            config.setdefault("logging", {})["console_enabled"] = val.lower() == "true"
+        if val := os.environ.get("ORB_DEBUG"):
+            config["debug"] = val.lower() == "true"
+        if val := os.environ.get("ORB_ENVIRONMENT"):
+            config["environment"] = val
+        if val := os.environ.get("ORB_REQUEST_TIMEOUT"):
+            config["request_timeout"] = int(val)
+        if val := os.environ.get("ORB_MAX_MACHINES_PER_REQUEST"):
+            config["max_machines_per_request"] = int(val)
+        if val := os.environ.get("ORB_CONFIG_FILE"):
+            config["config_file"] = val
 
-        # Keep scheduler directory processing for storage and logging paths
         cls._process_scheduler_directories(config, config_manager)
+
+    @classmethod
+    def _resolve_console_enabled(cls) -> Optional[str]:
+        """
+        Resolve the console logging enabled setting from environment variables.
+
+        Returns:
+            String value of the env var if set, None otherwise
+        """
+        return os.environ.get("ORB_LOG_CONSOLE_ENABLED")
 
     @classmethod
     def _process_scheduler_directories(

@@ -10,12 +10,12 @@ if TYPE_CHECKING:
 from application.base.handlers import BaseQueryHandler
 from application.decorators import query_handler
 from application.dto.queries import GetMachineQuery, ListMachinesQuery
+from application.dto.responses import MachineDTO
 from application.machine.queries import (
     ConvertBatchMachineStatusQuery,
     ConvertMachineStatusQuery,
     ValidateProviderStateQuery,
 )
-from application.dto.responses import MachineDTO
 from application.ports.command_bus_port import CommandBusPort
 from domain.base import UnitOfWorkFactory
 from domain.base.exceptions import EntityNotFoundError
@@ -228,7 +228,7 @@ class ConvertMachineStatusQueryHandler(BaseQueryHandler[ConvertMachineStatusQuer
         container: ContainerPort,
         logger: LoggingPort,
         error_handler: ErrorHandlingPort,
-        provider_registry_service: "ProviderRegistryService",
+        provider_registry_service: ProviderRegistryService,
     ) -> None:
         super().__init__(logger, error_handler)
         self._container = container
@@ -236,17 +236,24 @@ class ConvertMachineStatusQueryHandler(BaseQueryHandler[ConvertMachineStatusQuer
 
     async def execute_query(self, query: ConvertMachineStatusQuery) -> dict[str, str]:
         """Return the domain status for the given provider state."""
-        from domain.base.operations import Operation as ProviderOperation, OperationType as ProviderOperationType
+        from domain.base.operations import (
+            Operation as ProviderOperation,
+            OperationType as ProviderOperationType,
+        )
 
         operation = ProviderOperation(
             operation_type=ProviderOperationType.GET_INSTANCE_STATUS,
             parameters={"provider_state": query.provider_state, "convert_only": True},
         )
-        result = await self._provider_registry_service.execute_operation(query.provider_type, operation)
+        result = await self._provider_registry_service.execute_operation(
+            query.provider_type, operation
+        )
         from domain.machine.value_objects import MachineStatus
 
         status: MachineStatus = (
-            result.data.get("status", MachineStatus.UNKNOWN) if result.success else MachineStatus.UNKNOWN
+            result.data.get("status", MachineStatus.UNKNOWN)
+            if result.success
+            else MachineStatus.UNKNOWN
         )
         return {
             "status": status.value if hasattr(status, "value") else str(status),
@@ -264,7 +271,7 @@ class ConvertBatchMachineStatusQueryHandler(BaseQueryHandler[ConvertBatchMachine
         container: ContainerPort,
         logger: LoggingPort,
         error_handler: ErrorHandlingPort,
-        provider_registry_service: "ProviderRegistryService",
+        provider_registry_service: ProviderRegistryService,
     ) -> None:
         super().__init__(logger, error_handler)
         self._container = container
@@ -272,7 +279,10 @@ class ConvertBatchMachineStatusQueryHandler(BaseQueryHandler[ConvertBatchMachine
 
     async def execute_query(self, query: ConvertBatchMachineStatusQuery) -> dict:
         """Return domain statuses for all provider states in the batch."""
-        from domain.base.operations import Operation as ProviderOperation, OperationType as ProviderOperationType
+        from domain.base.operations import (
+            Operation as ProviderOperation,
+            OperationType as ProviderOperationType,
+        )
         from domain.machine.value_objects import MachineStatus
 
         statuses = []
@@ -285,7 +295,9 @@ class ConvertBatchMachineStatusQueryHandler(BaseQueryHandler[ConvertBatchMachine
                 state_info["provider_type"], operation
             )
             status: MachineStatus = (
-                result.data.get("status", MachineStatus.UNKNOWN) if result.success else MachineStatus.UNKNOWN
+                result.data.get("status", MachineStatus.UNKNOWN)
+                if result.success
+                else MachineStatus.UNKNOWN
             )
             statuses.append(status.value if hasattr(status, "value") else str(status))
         return {"statuses": statuses, "count": len(statuses)}
@@ -300,7 +312,7 @@ class ValidateProviderStateQueryHandler(BaseQueryHandler[ValidateProviderStateQu
         container: ContainerPort,
         logger: LoggingPort,
         error_handler: ErrorHandlingPort,
-        provider_registry_service: "ProviderRegistryService",
+        provider_registry_service: ProviderRegistryService,
     ) -> None:
         super().__init__(logger, error_handler)
         self._container = container
@@ -308,7 +320,10 @@ class ValidateProviderStateQueryHandler(BaseQueryHandler[ValidateProviderStateQu
 
     async def execute_query(self, query: ValidateProviderStateQuery) -> dict:
         """Return whether the provider state is valid."""
-        from domain.base.operations import Operation as ProviderOperation, OperationType as ProviderOperationType
+        from domain.base.operations import (
+            Operation as ProviderOperation,
+            OperationType as ProviderOperationType,
+        )
         from domain.machine.value_objects import MachineStatus
 
         try:
@@ -316,9 +331,13 @@ class ValidateProviderStateQueryHandler(BaseQueryHandler[ValidateProviderStateQu
                 operation_type=ProviderOperationType.GET_INSTANCE_STATUS,
                 parameters={"provider_state": query.provider_state, "convert_only": True},
             )
-            result = await self._provider_registry_service.execute_operation(query.provider_type, operation)
+            result = await self._provider_registry_service.execute_operation(
+                query.provider_type, operation
+            )
             status: MachineStatus = (
-                result.data.get("status", MachineStatus.UNKNOWN) if result.success else MachineStatus.UNKNOWN
+                result.data.get("status", MachineStatus.UNKNOWN)
+                if result.success
+                else MachineStatus.UNKNOWN
             )
             is_valid = result.success and status != MachineStatus.UNKNOWN
         except Exception:

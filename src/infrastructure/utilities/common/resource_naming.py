@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from config import ResourceConfig
+from config.schemas.common_schema import ResourceConfig
 
 
 def get_resource_prefix(resource_type: str, config: Optional[ResourceConfig] = None) -> str:

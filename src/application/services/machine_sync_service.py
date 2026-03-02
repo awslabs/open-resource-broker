@@ -56,8 +56,11 @@ class MachineSyncService:
     ) -> Tuple[list[Machine], dict]:
         """Fetch machines from provider."""
         try:
+            from domain.base.operations import (
+                Operation as ProviderOperation,
+                OperationType as ProviderOperationType,
+            )
             from domain.base.ports.configuration_port import ConfigurationPort
-            from domain.base.operations import Operation as ProviderOperation, OperationType as ProviderOperationType
 
             # Use resource-level discovery when available (handles scaling/replacement)
             if request.resource_ids:
