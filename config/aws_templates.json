@@ -15,9 +15,8 @@
       },
       "priceType": "ondemand",
       "allocationStrategy": "lowest_price",
-      "instanceTags": {
-        "Environment": "dev",
-        "ManagedBy": "ORB"
+      "tags": {
+        "environment": "dev"
       },
       "vmTypesOnDemand": {},
       "vmTypesPriority": {}
@@ -37,9 +36,8 @@
       "priceType": "spot",
       "maxSpotPrice": 0.05,
       "allocationStrategy": "price_capacity_optimized",
-      "instanceTags": {
-        "Environment": "dev",
-        "ManagedBy": "ORB"
+      "tags": {
+        "environment": "dev"
       },
       "vmTypesOnDemand": {},
       "vmTypesPriority": {}
@@ -59,9 +57,8 @@
       "priceType": "heterogeneous",
       "maxSpotPrice": 0.05,
       "allocationStrategy": "diversified",
-      "instanceTags": {
-        "Environment": "dev",
-        "ManagedBy": "ORB"
+      "tags": {
+        "environment": "dev"
       },
       "vmTypesOnDemand": {},
       "vmTypesPriority": {}
@@ -80,9 +77,8 @@
       },
       "priceType": "ondemand",
       "allocationStrategy": "lowest_price",
-      "instanceTags": {
-        "Environment": "test",
-        "ManagedBy": "ORB"
+      "tags": {
+        "environment": "test"
       },
       "vmTypesOnDemand": {},
       "vmTypesPriority": {}
@@ -102,9 +98,8 @@
       "priceType": "spot",
       "maxSpotPrice": 0.08,
       "allocationStrategy": "capacity_optimized",
-      "instanceTags": {
-        "Environment": "test",
-        "ManagedBy": "ORB"
+      "tags": {
+        "environment": "test"
       },
       "vmTypesOnDemand": {},
       "vmTypesPriority": {}
@@ -125,9 +120,8 @@
       "priceType": "heterogeneous",
       "maxSpotPrice": 0.08,
       "allocationStrategy": "diversified",
-      "instanceTags": {
-        "Environment": "test",
-        "ManagedBy": "ORB"
+      "tags": {
+        "environment": "test"
       },
       "vmTypesOnDemand": {},
       "vmTypesPriority": {}
@@ -146,9 +140,8 @@
       },
       "priceType": "ondemand",
       "allocationStrategy": "lowest_price",
-      "instanceTags": {
-        "Environment": "prod",
-        "ManagedBy": "ORB"
+      "tags": {
+        "environment": "prod"
       },
       "vmTypesOnDemand": {},
       "vmTypesPriority": {}
@@ -168,9 +161,8 @@
       "priceType": "spot",
       "maxSpotPrice": 0.1,
       "allocationStrategy": "price_capacity_optimized",
-      "instanceTags": {
-        "Environment": "prod",
-        "ManagedBy": "ORB"
+      "tags": {
+        "environment": "prod"
       },
       "vmTypesOnDemand": {},
       "vmTypesPriority": {}
@@ -192,9 +184,8 @@
       "priceType": "heterogeneous",
       "maxSpotPrice": 0.12,
       "allocationStrategy": "capacity_optimized",
-      "instanceTags": {
-        "Environment": "prod",
-        "ManagedBy": "ORB"
+      "tags": {
+        "environment": "prod"
       },
       "vmTypesOnDemand": {},
       "vmTypesPriority": {}
@@ -215,9 +206,8 @@
       "priceType": "spot",
       "maxSpotPrice": 0.05,
       "allocationStrategy": "lowest_price",
-      "instanceTags": {
-        "Environment": "dev",
-        "ManagedBy": "ORB"
+      "tags": {
+        "environment": "dev"
       },
       "vmTypesOnDemand": {},
       "vmTypesPriority": {}
@@ -238,9 +228,8 @@
       "priceType": "spot",
       "maxSpotPrice": 0.06,
       "allocationStrategy": "diversified",
-      "instanceTags": {
-        "Environment": "dev",
-        "ManagedBy": "ORB"
+      "tags": {
+        "environment": "dev"
       },
       "vmTypesOnDemand": {},
       "vmTypesPriority": {}
@@ -261,9 +250,8 @@
       "priceType": "spot",
       "maxSpotPrice": 0.07,
       "allocationStrategy": "capacity_optimized",
-      "instanceTags": {
-        "Environment": "dev",
-        "ManagedBy": "ORB"
+      "tags": {
+        "environment": "dev"
       },
       "vmTypesOnDemand": {},
       "vmTypesPriority": {}
@@ -284,9 +272,8 @@
       "priceType": "spot",
       "maxSpotPrice": 0.04,
       "allocationStrategy": "lowest_price",
-      "instanceTags": {
-        "Environment": "prod",
-        "ManagedBy": "ORB"
+      "tags": {
+        "environment": "prod"
       },
       "vmTypesOnDemand": {},
       "vmTypesPriority": {}
@@ -307,9 +294,8 @@
       "priceType": "spot",
       "maxSpotPrice": 0.05,
       "allocationStrategy": "diversified",
-      "instanceTags": {
-        "Environment": "prod",
-        "ManagedBy": "ORB"
+      "tags": {
+        "environment": "prod"
       },
       "vmTypesOnDemand": {},
       "vmTypesPriority": {}
@@ -330,9 +316,8 @@
       "priceType": "spot",
       "maxSpotPrice": 0.06,
       "allocationStrategy": "capacity_optimized",
-      "instanceTags": {
-        "Environment": "prod",
-        "ManagedBy": "ORB"
+      "tags": {
+        "environment": "prod"
       },
       "vmTypesOnDemand": {},
       "vmTypesPriority": {}
@@ -351,9 +336,8 @@
       },
       "priceType": "ondemand",
       "allocationStrategy": "lowest_price",
-      "instanceTags": {
-        "Environment": "prod",
-        "ManagedBy": "ORB"
+      "tags": {
+        "environment": "prod"
       },
       "vmTypesOnDemand": {},
       "vmTypesPriority": {}
@@ -373,9 +357,8 @@
       "priceType": "spot",
       "maxSpotPrice": 0.05,
       "allocationStrategy": "price_capacity_optimized",
-      "instanceTags": {
-        "Environment": "dev",
-        "ManagedBy": "ORB"
+      "tags": {
+        "environment": "dev"
       },
       "vmTypesOnDemand": {},
       "vmTypesPriority": {}
@@ -395,9 +378,8 @@
       },
       "priceType": "heterogeneous",
       "allocationStrategy": "lowest_price",
-      "instanceTags": {
-        "Environment": "prod",
-        "ManagedBy": "ORB"
+      "tags": {
+        "environment": "prod"
       },
       "vmTypesOnDemand": {},
       "vmTypesPriority": {}
@@ -416,9 +398,8 @@
       },
       "priceType": "ondemand",
       "allocationStrategy": "lowest_price",
-      "instanceTags": {
-        "Environment": "dev",
-        "ManagedBy": "ORB"
+      "tags": {
+        "environment": "dev"
       },
       "vmTypesOnDemand": {},
       "vmTypesPriority": {}
@@ -438,9 +419,8 @@
       "priceType": "spot",
       "maxSpotPrice": 0.05,
       "allocationStrategy": "price_capacity_optimized",
-      "instanceTags": {
-        "Environment": "dev",
-        "ManagedBy": "ORB"
+      "tags": {
+        "environment": "dev"
       },
       "vmTypesOnDemand": {},
       "vmTypesPriority": {}

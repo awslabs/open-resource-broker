@@ -722,7 +722,7 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                 price_type="ondemand",
                 subnet_ids=["subnet-12345678"],
                 security_group_ids=["sg-12345678"],
-                tags={"Environment": "dev", "ManagedBy": "ORB"},
+                tags={"environment": "dev"},
                 metadata={"fleet_type": "instant"},
             ),
             AWSTemplate(
@@ -737,7 +737,7 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                 max_price=0.05,
                 subnet_ids=["subnet-12345678"],
                 security_group_ids=["sg-12345678"],
-                tags={"Environment": "dev", "ManagedBy": "ORB"},
+                tags={"environment": "dev"},
                 metadata={"fleet_type": "instant"},
             ),
             AWSTemplate(
@@ -754,7 +754,7 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                 max_price=0.05,
                 subnet_ids=["subnet-12345678"],
                 security_group_ids=["sg-12345678"],
-                tags={"Environment": "dev", "ManagedBy": "ORB"},
+                tags={"environment": "dev"},
                 metadata={"fleet_type": "instant", "percent_on_demand": 30},
             ),
             # Request fleet types
@@ -769,7 +769,7 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                 price_type="ondemand",
                 subnet_ids=["subnet-12345678"],
                 security_group_ids=["sg-12345678"],
-                tags={"Environment": "test", "ManagedBy": "ORB"},
+                tags={"environment": "test"},
                 metadata={"fleet_type": "request"},
             ),
             AWSTemplate(
@@ -785,7 +785,7 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                 max_price=0.08,
                 subnet_ids=["subnet-12345678"],
                 security_group_ids=["sg-12345678"],
-                tags={"Environment": "test", "ManagedBy": "ORB"},
+                tags={"environment": "test"},
                 metadata={"fleet_type": "request"},
             ),
             AWSTemplate(
@@ -803,7 +803,7 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                 max_price=0.08,
                 subnet_ids=["subnet-12345678", "subnet-87654321"],
                 security_group_ids=["sg-12345678"],
-                tags={"Environment": "test", "ManagedBy": "ORB"},
+                tags={"environment": "test"},
                 metadata={"fleet_type": "request", "percent_on_demand": 40},
             ),
             # Maintain fleet types
@@ -818,7 +818,7 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                 price_type="ondemand",
                 subnet_ids=["subnet-12345678"],
                 security_group_ids=["sg-12345678"],
-                tags={"Environment": "prod", "ManagedBy": "ORB"},
+                tags={"environment": "prod"},
                 metadata={"fleet_type": "maintain"},
             ),
             AWSTemplate(
@@ -834,7 +834,7 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                 max_price=0.10,
                 subnet_ids=["subnet-12345678"],
                 security_group_ids=["sg-12345678"],
-                tags={"Environment": "prod", "ManagedBy": "ORB"},
+                tags={"environment": "prod"},
                 metadata={"fleet_type": "maintain"},
             ),
             AWSTemplate(
@@ -852,7 +852,7 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                 max_price=0.12,
                 subnet_ids=["subnet-12345678", "subnet-87654321", "subnet-11223344"],
                 security_group_ids=["sg-12345678"],
-                tags={"Environment": "prod", "ManagedBy": "ORB"},
+                tags={"environment": "prod"},
                 metadata={"fleet_type": "maintain", "percent_on_demand": 50},
             ),
         ]

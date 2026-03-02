@@ -125,10 +125,10 @@ class EC2FleetConfigBuilder(BaseConfigBuilder):
             provider_api="EC2Fleet",
             template_tags=template.tags,
         )
-        fleet_config["TagSpecifications"] = [
-            {"ResourceType": "fleet", "Tags": fleet_tags},
-            {"ResourceType": "instance", "Tags": fleet_tags},
-        ]
+        tag_specs = [{"ResourceType": "fleet", "Tags": fleet_tags}]
+        if template.fleet_type == AWSFleetType.INSTANT:
+            tag_specs.append({"ResourceType": "instance", "Tags": fleet_tags})
+        fleet_config["TagSpecifications"] = tag_specs
 
         if template.fleet_type == AWSFleetType.MAINTAIN:
             fleet_config["ReplaceUnhealthyInstances"] = True
