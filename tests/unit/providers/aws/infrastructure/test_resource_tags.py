@@ -1,7 +1,8 @@
 """Tests verifying consistent orb: tag application across all AWS resource creation paths."""
 
-import pytest
 from unittest.mock import MagicMock
+
+import pytest
 
 from providers.aws.domain.template.value_objects import AWSFleetType
 from providers.aws.infrastructure.handlers.asg.handler import ASGHandler

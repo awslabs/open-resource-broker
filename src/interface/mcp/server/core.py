@@ -7,6 +7,7 @@ from typing import Any, Callable, Optional, Union
 
 from _package import PACKAGE_NAME, __version__
 from infrastructure.logging.logger import get_logger
+from infrastructure.utilities.json_utils import JSONParseError, safe_json_dumps, safe_json_loads
 
 
 class MCPMessageType(Enum):
@@ -149,8 +150,6 @@ class OpenResourceBrokerMCPServer:
         Returns:
             JSON-RPC 2.0 response string
         """
-        from infrastructure.utilities.json_utils import safe_json_loads, safe_json_dumps, JSONParseError
-
         try:
             # Parse message
             data = safe_json_loads(message, raise_on_error=True, context="MCP message parsing")

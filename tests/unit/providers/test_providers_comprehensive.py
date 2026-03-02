@@ -286,8 +286,6 @@ class TestAWSProviderEnvironmentVariables:
             # Register AWS provider
             ProviderSettingsRegistry.register_provider_settings("aws", AWSProviderConfig)
 
-            config_dict = {"region": "config-region", "profile": "config-profile"}
-
             # Environment should override config dict
             with patch.dict(
                 os.environ,
