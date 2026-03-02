@@ -11,7 +11,7 @@ on:
       - 'src/**'
       - 'pyproject.toml'
       - 'deployment/docker/**'
-      - 'dev-tools/scripts/container_build.sh'
+      - 'dev-tools/container/container_build.sh'
       - '.github/workflows/dev-containers.yml'
   workflow_run:
     workflows: ["Quality Checks", "Unit Tests"]
@@ -24,7 +24,7 @@ on:
       - 'src/**'
       - 'pyproject.toml'
       - 'deployment/docker/**'
-      - 'dev-tools/scripts/container_build.sh'
+      - 'dev-tools/container/container_build.sh'
       - '.github/workflows/dev-containers.yml'
   workflow_dispatch:
     inputs:
@@ -161,7 +161,7 @@ jobs:
         fi
 
     - name: Run Trivy security scan
-      uses: aquasecurity/trivy-action@0.34.0
+      uses: aquasecurity/trivy-action@0.33.1
       with:
         image-ref: "${{ needs.config.outputs.container-registry }}/${{ needs.config.outputs.container-image }}:${{ needs.config.outputs.package-version }}-python${{ matrix.python-version }}"
         format: 'sarif'

@@ -17,7 +17,7 @@ def parse_args(args):
 def run_whitespace_cleanup():
     """Run whitespace cleanup."""
     try:
-        subprocess.run(["./dev-tools/scripts/dev_tools_runner.py", "clean-whitespace"], check=True)
+        subprocess.run(["./dev-tools/quality/dev_tools_runner.py", "clean-whitespace"], check=True)
         return True
     except subprocess.CalledProcessError:
         return False
@@ -65,7 +65,8 @@ def run_additional_checks():
     """Run additional quality checks."""
     try:
         subprocess.run(
-            ["python3", "./dev-tools/scripts/quality_check.py", "--strict", "--all"], check=True
+            ["python3", "./dev-tools/quality/quality_dispatcher.py", "--strict", "--all"],
+            check=True,
         )
         return True
     except subprocess.CalledProcessError:

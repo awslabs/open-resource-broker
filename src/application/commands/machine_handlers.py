@@ -15,7 +15,10 @@ from application.machine.commands import (
     ValidateProviderStateCommand,
 )
 from domain.base.exceptions import DuplicateError
-from domain.base.operations import Operation as ProviderOperation, OperationType as ProviderOperationType
+from domain.base.operations import (
+    Operation as ProviderOperation,
+    OperationType as ProviderOperationType,
+)
 from domain.base.ports import ContainerPort, ErrorHandlingPort, EventPublisherPort, LoggingPort
 from domain.machine.exceptions import MachineNotFoundError
 
@@ -27,6 +30,7 @@ from domain.machine.value_objects import MachineStatus
 
 class ConvertMachineStatusResponse(BaseResponse):
     """Response for machine status conversion."""
+
     status: MachineStatus
     original_state: str
     provider_type: str
@@ -34,12 +38,14 @@ class ConvertMachineStatusResponse(BaseResponse):
 
 class ConvertBatchMachineStatusResponse(BaseResponse):
     """Response for batch machine status conversion."""
+
     statuses: list[MachineStatus]
     count: int
 
 
 class ValidateProviderStateResponse(BaseResponse):
     """Response for provider state validation."""
+
     is_valid: bool
     provider_state: str
     provider_type: str
@@ -284,6 +290,7 @@ class RegisterMachineHandler(BaseCommandHandler[RegisterMachineCommand, None]):
         if existing_machine:
             raise DuplicateError(f"Machine already registered: {command.machine_id}")
         from domain.machine.aggregate import Machine
+
         machine = Machine.create(  # type: ignore[attr-defined]
             machine_id=command.machine_id,
             template_id=command.template_id,

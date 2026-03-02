@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any, Optional
 
 # Import configuration
-from config import AppConfig
+from config.schemas.app_schema import AppConfig
 
 # Import logging
 from infrastructure.logging.logger import get_logger, setup_logging

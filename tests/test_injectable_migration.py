@@ -157,6 +157,10 @@ class MockConfigurationPort(ConfigurationPort):
             "resources": {"asg": True, "ec2_fleet": True, "spot_fleet": True},
         }
 
+    def get_config_file_path(self) -> str:
+        """Get the config file path."""
+        return ""
+
     def get_native_spec_config(self) -> dict[str, Any]:
         """Get native spec configuration."""
         return self._config.get("native_spec", {})

@@ -9,8 +9,10 @@ from application.provider.queries import (
     GetProviderStrategyConfigQuery,
     ListAvailableProvidersQuery,
 )
-from domain.base.operations import Operation as ProviderOperation
-from domain.base.operations import OperationType as ProviderOperationType
+from domain.base.operations import (
+    Operation as ProviderOperation,
+    OperationType as ProviderOperationType,
+)
 from infrastructure.utilities.json_utils import JSONParseError, safe_json_loads
 
 
@@ -98,9 +100,7 @@ class ProviderCommandFactory:
         if params:
             try:
                 parsed_params = safe_json_loads(
-                    params,
-                    raise_on_error=True,
-                    context="Provider operation params"
+                    params, raise_on_error=True, context="Provider operation params"
                 )
             except JSONParseError as e:
                 raise ValueError(f"Invalid JSON in params: {params}") from e

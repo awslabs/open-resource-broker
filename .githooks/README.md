@@ -7,7 +7,7 @@ Version-controlled git hooks for the Open Resource Broker project.
 After cloning the repository, run once:
 
 ```bash
-./dev-tools/scripts/setup-hooks.sh
+./dev-tools/setup/install-hooks.sh
 ```
 
 This configures git to use `.githooks/` instead of `.git/hooks/`.
@@ -16,7 +16,7 @@ This configures git to use `.githooks/` instead of `.git/hooks/`.
 
 ### pre-commit
 1. **Beads sync** - Flushes pending changes to JSONL
-2. **Quality checks** - Runs `make pre-commit` (lint, format, type check)
+2. **Quality checks** - Runs `pre-commit run` (reads `.pre-commit-config.yaml`, skips manual-stage hooks)
 
 ### post-merge
 - **Beads sync** - Imports updated JSONL after pull/merge
@@ -40,7 +40,7 @@ Edit hooks in `.githooks/` and they'll be version controlled:
 set -e
 
 bd hooks run pre-commit    # Beads integration
-make pre-commit            # Project checks
+pre-commit run             # Project checks (reads .pre-commit-config.yaml)
 # Add more checks here
 ```
 

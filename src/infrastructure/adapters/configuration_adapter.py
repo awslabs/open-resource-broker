@@ -3,9 +3,10 @@
 import logging
 from typing import Any, Optional
 
-from config import NamingConfig, RequestConfig, TemplateConfig
 from config.manager import ConfigurationManager
 from config.schemas.app_schema import AppConfig
+from config.schemas.common_schema import NamingConfig, RequestConfig
+from config.schemas.template_schema import TemplateConfig
 from domain.base.ports import ConfigurationPort
 
 _logger = logging.getLogger(__name__)
@@ -209,6 +210,7 @@ class ConfigurationAdapter(ConfigurationPort):
                     "format", "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
                 ),
                 "file_enabled": logging_config.get("file_enabled", True),
+                "console_enabled": logging_config.get("console_enabled", True),
             }
         except Exception as e:
             _logger.warning("Failed to load logging config, using defaults: %s", e)
@@ -216,7 +218,12 @@ class ConfigurationAdapter(ConfigurationPort):
                 "level": "INFO",
                 "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
                 "file_enabled": True,
+                "console_enabled": True,
             }
+
+    def get_config_file_path(self) -> str:
+        """Get the config file path from configuration."""
+        return self._config_manager.get("config_file", "")
 
     def get_storage_strategy(self) -> str:
         """Get storage strategy - delegate to ConfigurationManager."""

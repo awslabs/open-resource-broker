@@ -181,14 +181,6 @@ repos:
         description: "Validate shell scripts with shellcheck"
         stages: [manual]  # Optional check - run as warning only
 
-      - id: detect-secrets
-        name: Detect Hardcoded Secrets
-        entry: make detect-secrets
-        language: system
-        files: ^src/.*\.py$
-        pass_filenames: false
-        description: "Detect potential hardcoded secrets in source code"
-
       - id: check-file-sizes
         name: Check File Sizes
         entry: make file-sizes

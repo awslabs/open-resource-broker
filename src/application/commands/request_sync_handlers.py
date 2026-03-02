@@ -62,7 +62,10 @@ class PopulateMachineIdsHandler(BaseCommandHandler[PopulateMachineIdsCommand, No
     async def _discover_machine_ids(self, request) -> list[str]:
         """Discover machine IDs from provider resources."""
         try:
-            from domain.base.operations import Operation as ProviderOperation, OperationType as ProviderOperationType
+            from domain.base.operations import (
+                Operation as ProviderOperation,
+                OperationType as ProviderOperationType,
+            )
 
             if not request.resource_ids:
                 return []

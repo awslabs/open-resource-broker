@@ -5,7 +5,7 @@
 set -e
 
 REPO_ROOT=$(git rev-parse --show-toplevel)
-HOOKS_DIR="$REPO_ROOT/dev-tools/scripts/hooks"
+HOOKS_DIR="$REPO_ROOT/.githooks"
 
 echo "Installing git hooks..."
 

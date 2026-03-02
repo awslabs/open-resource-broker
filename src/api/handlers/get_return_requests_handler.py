@@ -7,8 +7,8 @@ from typing import TYPE_CHECKING, Any, Optional, cast
 from application.base.infrastructure_handlers import BaseAPIHandler, RequestContext
 from application.dto.responses import ReturnRequestResponse
 from application.request.queries import ListRequestsQuery
-from config import RequestConfig
 from config.managers.configuration_manager import ConfigurationManager
+from config.schemas.common_schema import RequestConfig
 from domain.base.dependency_injection import injectable
 from domain.base.ports import ErrorHandlingPort, LoggingPort
 from domain.base.ports.scheduler_port import SchedulerPort

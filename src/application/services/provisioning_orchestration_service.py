@@ -44,8 +44,11 @@ class ProvisioningOrchestrationService:
     ) -> ProvisioningResult:
         """Execute provisioning via selected provider using registry execution."""
         try:
+            from domain.base.operations import (
+                Operation as ProviderOperation,
+                OperationType as ProviderOperationType,
+            )
             from domain.base.ports.scheduler_port import SchedulerPort
-            from domain.base.operations import Operation as ProviderOperation, OperationType as ProviderOperationType
 
             scheduler = self._container.get(SchedulerPort)
 

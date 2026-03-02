@@ -18,7 +18,7 @@ ci-quality-radon:  ## Run radon complexity analysis
 
 ci-quality-mypy:  ## Run mypy type checking
 	@echo "Running mypy type check..."
-	$(call run-tool,mypy,-p api -p application -p cli -p config -p domain -p infrastructure -p interface -p mcp -p metrics -p monitoring -p orb_py -p providers -p sdk)
+	$(call run-tool,mypy,src/)
 
 ci-quality-pyright:  ## Run pyright type checking
 	@echo "Running pyright type check..."
@@ -32,19 +32,19 @@ ci-quality-full: ci-quality-ruff ci-quality-ruff-optional ci-quality-mypy  ## Ru
 # Individual architecture quality targets (with tool names)
 ci-arch-cqrs:  ## Run CQRS pattern validation
 	@echo "Running CQRS pattern validation..."
-	./dev-tools/scripts/validate_cqrs.py
+	./dev-tools/quality/validate_cqrs.py
 
 ci-arch-clean:  ## Run Clean Architecture dependency validation
 	@echo "Running Clean Architecture validation..."
-	./dev-tools/scripts/check_architecture.py
+	./dev-tools/quality/check_architecture.py
 
-ci-arch-imports:  ## Run import validation
+ci-arch-imports: dev-install  ## Run import validation
 	@echo "Running import validation..."
-	./dev-tools/scripts/validate_imports.py
+	uv run python ./dev-tools/quality/validate_imports.py
 
 ci-arch-file-sizes:  ## Check file size compliance
 	@echo "Running file size checks..."
-	./dev-tools/scripts/dev_tools_runner.py check-file-sizes --warn-only
+	./dev-tools/quality/dev_tools_runner.py check-file-sizes --warn-only
 
 # Composite target
 ci-architecture: ci-arch-cqrs ci-arch-clean ci-arch-imports ci-arch-file-sizes  ## Run all architecture checks
@@ -112,7 +112,7 @@ ci-check-quick:  ## Run quick CI checks (fast checks only)
 
 ci-check-verbose:  ## Run CI checks with verbose output
 	@echo "Running CI checks with verbose output..."
-	./dev-tools/scripts/workflow_orchestrator.py ci-check --verbose
+	$(MAKE) ci-check
 
 ci: ci-check ci-tests-integration ci-tests-e2e  ## Run full CI pipeline (comprehensive checks + all tests)
 	@echo "Full CI pipeline completed successfully!"

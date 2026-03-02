@@ -98,6 +98,10 @@ class ConfigurationPort(ProviderConfigPort):
         """Get cleanup configuration."""
 
     @abstractmethod
+    def get_config_file_path(self) -> str:
+        """Get the config file path."""
+
+    @abstractmethod
     def get_configuration_value(self, key: str, default: Any = None) -> Any:
         """Get configuration value."""
 

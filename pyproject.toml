@@ -320,7 +320,7 @@ skip-magic-trailing-comma = false
 line-ending = "auto"
 
 [tool.ruff.lint.isort]
-known-first-party = ["orb", "application", "domain", "infrastructure", "interface", "api", "monitoring"]
+known-first-party = ["orb", "application", "config", "domain", "infrastructure", "interface", "api", "monitoring"]
 combine-as-imports = true
 
 [tool.pyright]

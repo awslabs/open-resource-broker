@@ -9,8 +9,8 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import QueuePool
 
-from config import SqlStrategyConfig
 from config.manager import ConfigurationManager
+from config.schemas.storage_schema import SqlStrategyConfig
 from infrastructure.logging.logger import get_logger
 
 

@@ -666,6 +666,7 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
             "WORK_DIR": "HF_PROVIDER_WORKDIR",
             "LOG_DIR": "HF_PROVIDER_LOGDIR",
             "LOG_LEVEL": "HF_LOGLEVEL",
+            "CONSOLE_ENABLED": "HF_LOGGING_CONSOLE_ENABLED",
         }
         if env_var := mapping.get(suffix):
             return os.environ.get(env_var)
@@ -690,9 +691,17 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
 
         HostFactory scripts log to file by default, console only if enabled.
         """
-        import os
-
-        return os.environ.get("HF_LOGGING_CONSOLE_ENABLED", "false").lower() == "true"
+        # 1. Config file override
+        if (val := getattr(self.config_manager.app_config.scheduler, "console_enabled", None)) is not None:
+            return bool(val)
+        # 2. Scheduler-specific env var (HF_LOGGING_CONSOLE_ENABLED via _get_scheduler_env_var)
+        if val := self._get_scheduler_env_var("CONSOLE_ENABLED"):
+            return val.lower() == "true"
+        # 3. Injected config — ORB_LOG_CONSOLE_ENABLED resolved by _load_from_env
+        if self._config_manager is not None:
+            return bool(self._config_manager.get_logging_config().get("console_enabled", False))
+        # 4. Hard default
+        return False
 
     def format_error_response(self, error: Exception, context: dict[str, Any]) -> dict[str, Any]:
         """Format error response for HostFactory (JSON only)."""

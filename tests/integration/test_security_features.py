@@ -640,19 +640,19 @@ class TestInputValidatorIntegration:
 
 
 # ===========================================================================
-# EnhancedAuthMiddleware – security headers
+# AuthMiddleware – security headers
 # ===========================================================================
 
 
-class TestEnhancedAuthMiddlewareSecurityHeaders:
-    """Integration tests for security headers added by EnhancedAuthMiddleware."""
+class TestAuthMiddlewareSecurityHeaders:
+    """Integration tests for security headers added by AuthMiddleware."""
 
     def _make_app_with_enhanced_middleware(self, require_auth: bool = False):
-        """Build a minimal FastAPI app with EnhancedAuthMiddleware."""
+        """Build a minimal FastAPI app with AuthMiddleware."""
         from fastapi import FastAPI
         from fastapi.testclient import TestClient
 
-        from api.middleware.auth_middleware_enhanced import EnhancedAuthMiddleware
+        from api.middleware.auth_middleware import AuthMiddleware
         from infrastructure.auth.strategy.no_auth_strategy import NoAuthStrategy
 
         app = FastAPI()
@@ -663,7 +663,7 @@ class TestEnhancedAuthMiddlewareSecurityHeaders:
 
         auth_port = NoAuthStrategy(enabled=False)
         app.add_middleware(
-            EnhancedAuthMiddleware,
+            AuthMiddleware,
             auth_port=auth_port,
             excluded_paths=["/ping"],
             require_auth=require_auth,
@@ -731,9 +731,9 @@ class TestEnhancedAuthMiddlewareSecurityHeaders:
         """Normalized paths must not allow traversal to bypass excluded paths."""
         from unittest.mock import MagicMock
 
-        from api.middleware.auth_middleware_enhanced import EnhancedAuthMiddleware
+        from api.middleware.auth_middleware import AuthMiddleware
 
-        middleware = EnhancedAuthMiddleware(
+        middleware = AuthMiddleware(
             app=MagicMock(),
             auth_port=MagicMock(),
             excluded_paths=["/health"],
@@ -755,9 +755,9 @@ class TestEnhancedAuthMiddlewareSecurityHeaders:
         """Prefix paths must not bypass auth via excluded path matching."""
         from unittest.mock import MagicMock
 
-        from api.middleware.auth_middleware_enhanced import EnhancedAuthMiddleware
+        from api.middleware.auth_middleware import AuthMiddleware
 
-        middleware = EnhancedAuthMiddleware(
+        middleware = AuthMiddleware(
             app=MagicMock(),
             auth_port=MagicMock(),
             excluded_paths=["/health"],

@@ -192,11 +192,10 @@ class HostFactoryMock:
                     results.append(
                         {"request_id": mid, "status": req["status"], "machines": req["machines"]}
                     )
+            # Unknown ID — return empty entry
+            elif self.scheduler == "hostfactory":
+                results.append({"requestId": mid, "status": "unknown", "machines": []})
             else:
-                # Unknown ID — return empty entry
-                if self.scheduler == "hostfactory":
-                    results.append({"requestId": mid, "status": "unknown", "machines": []})
-                else:
-                    results.append({"request_id": mid, "status": "unknown", "machines": []})
+                results.append({"request_id": mid, "status": "unknown", "machines": []})
 
         return {"requests": results}

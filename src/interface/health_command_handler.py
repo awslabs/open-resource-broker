@@ -1,10 +1,10 @@
 """Health check command handler."""
 
-import os
 from pathlib import Path
 from typing import Any, cast
 
 from cli.console import print_error, print_info, print_success, print_warning
+from domain.base.ports.configuration_port import ConfigurationPort
 from domain.base.ports.scheduler_port import SchedulerPort
 from infrastructure.di.container import get_container
 
@@ -18,11 +18,12 @@ def handle_health_check(args) -> int:
     try:
         container = get_container()
         scheduler_strategy = container.get(SchedulerPort)
+        config_port = container.get(ConfigurationPort)
 
         checks = []
 
         # 1. Config file check
-        config_path = os.environ.get("ORB_CONFIG_FILE") or "./config/config.json"
+        config_path = config_port.get_config_file_path() or "./config/config.json"
         checks.append(
             {
                 "name": "config_file",

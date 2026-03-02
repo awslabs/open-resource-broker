@@ -163,7 +163,9 @@ class OpenResourceBrokerMCPServer:
                     id=mcp_msg.id, error={"code": -32600, "message": "Invalid Request"}
                 )
 
-            return safe_json_dumps(response.__dict__, default="{}", context="MCP response serialization")
+            return safe_json_dumps(
+                response.__dict__, default="{}", context="MCP response serialization"
+            )
 
         except JSONParseError:
             error_response = MCPMessage(error={"code": -32700, "message": "Parse error"})

@@ -50,13 +50,13 @@ docs-clean:  ## Clean documentation build files
 
 # CI documentation targets (PRESERVE: used by workflows)
 ci-docs-build:  ## Build documentation for CI PR testing (matches docs.yml PR builds)
-	@dev-tools/scripts/ci_docs_build.sh
+	@dev-tools/docs/ci_docs_build.sh
 
 ci-docs-build-for-pages:  ## Build documentation for GitHub Pages deployment (no push)
-	@dev-tools/scripts/ci_docs_build_for_pages.sh
+	@dev-tools/docs/ci_docs_build_for_pages.sh
 
 ci-docs-deploy:  ## Deploy documentation to GitHub Pages (matches docs.yml main branch)
-	@dev-tools/scripts/ci_docs_deploy.sh
+	@dev-tools/docs/ci_docs_deploy.sh
 
 # Dummy targets removed (consolidated in quality.mk)
 

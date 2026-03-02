@@ -132,9 +132,15 @@ def register_query_handlers_with_bus(container: DIContainer) -> None:
                 ValidateProviderStateQueryHandler,
             )
 
-            query_bus.register(ConvertMachineStatusQuery, container.get(ConvertMachineStatusQueryHandler))
-            query_bus.register(ConvertBatchMachineStatusQuery, container.get(ConvertBatchMachineStatusQueryHandler))
-            query_bus.register(ValidateProviderStateQuery, container.get(ValidateProviderStateQueryHandler))
+            query_bus.register(
+                ConvertMachineStatusQuery, container.get(ConvertMachineStatusQueryHandler)
+            )
+            query_bus.register(
+                ConvertBatchMachineStatusQuery, container.get(ConvertBatchMachineStatusQueryHandler)
+            )
+            query_bus.register(
+                ValidateProviderStateQuery, container.get(ValidateProviderStateQueryHandler)
+            )
 
         except ImportError as e:
             logger.debug("Machine query handlers not available for bus registration: %s", e)
