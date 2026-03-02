@@ -3,7 +3,10 @@
 import time
 from typing import Any, Optional, cast
 
-from application.base.infrastructure_handlers import BaseAPIHandler, RequestContext
+from application.base.infrastructure_handlers import (
+    BaseAsyncAPIHandler as BaseAPIHandler,
+    RequestContext,
+)
 from application.dto.commands import CreateReturnRequestCommand
 from application.dto.responses import (
     CleanupResourcesResponse,

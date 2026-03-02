@@ -25,18 +25,6 @@ class GetProviderConfigQuery(Query, BaseModel):
     include_sensitive: bool = False
 
 
-class GetProviderMetricsQuery(Query, BaseModel):
-    """Query to get provider performance metrics."""
-
-    model_config = ConfigDict(frozen=True)
-
-    provider_name: Optional[str] = None
-    timeframe: Optional[str] = "1h"
-    detailed: bool = False
-
-    filter_expressions: list[str] = []
-
-
 class GetConfigurationSectionQuery(Query, BaseModel):
     """Query to get entire configuration section."""
 

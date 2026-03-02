@@ -3,7 +3,7 @@
 from typing import Any, Optional
 
 from domain.machine.machine_identifiers import MachineId
-from infrastructure.interfaces.provider import ProviderConfig, ProviderPort
+from infrastructure.interfaces.provider import ProviderConfig
 
 
 class MockProviderConfig(ProviderConfig):
@@ -13,7 +13,7 @@ class MockProviderConfig(ProviderConfig):
     region: Optional[str] = "mock-region"
 
 
-class MockProvider(ProviderPort):
+class MockProvider:
     """Mock provider for testing generic functionality."""
 
     def __init__(self):

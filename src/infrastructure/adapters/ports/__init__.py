@@ -14,7 +14,6 @@ from .cloud_account_port import CloudAccountPort
 from .cloud_resource_catalog_port import CloudResourceCatalogPort
 from .cloud_resource_manager_port import CloudResourceManagerPort
 from .cloud_resource_quota_port import CloudResourceQuotaPort
-from .logger_port import LoggerPort
 from .request_adapter_port import RequestAdapterPort
 from .resource_provisioning_port import ResourceProvisioningPort
 
@@ -23,7 +22,6 @@ __all__: list[str] = [
     "CloudResourceCatalogPort",
     "CloudResourceManagerPort",
     "CloudResourceQuotaPort",
-    "LoggerPort",
     "RequestAdapterPort",
     "ResourceProvisioningPort",
 ]

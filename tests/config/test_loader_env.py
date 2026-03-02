@@ -1,6 +1,5 @@
 """Tests for ConfigurationLoader environment variable handling."""
 
-import pytest
 
 from config.loader import ConfigurationLoader
 

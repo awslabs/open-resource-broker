@@ -9,6 +9,7 @@ from typing import Any, cast
 
 from application.base.handlers import BaseQueryHandler
 from application.decorators import query_handler
+from application.dto.system import ProviderMetricsDTO
 from application.provider.queries import (
     GetProviderCapabilitiesQuery,
     GetProviderHealthQuery,
@@ -17,6 +18,7 @@ from application.provider.queries import (
     ListAvailableProvidersQuery,
 )
 from application.services.provider_registry_service import ProviderRegistryService
+from domain.base import UnitOfWorkFactory
 from domain.base.ports import ConfigurationPort, ErrorHandlingPort, LoggingPort
 from domain.services.generic_filter_service import GenericFilterService
 from domain.services.timestamp_service import TimestampService
@@ -251,15 +253,15 @@ class GetProviderCapabilitiesHandler(
 
 
 @query_handler(GetProviderMetricsQuery)  # type: ignore[arg-type]
-class GetProviderMetricsHandler(BaseQueryHandler[GetProviderMetricsQuery, dict[str, Any]]):
+class GetProviderMetricsHandler(BaseQueryHandler[GetProviderMetricsQuery, ProviderMetricsDTO]):
     """Handler for retrieving provider metrics."""
 
     def __init__(
         self,
         logger: LoggingPort,
         error_handler: ErrorHandlingPort,
-        timestamp_service: TimestampService,
-        provider_registry_service: ProviderRegistryService,
+        uow_factory: UnitOfWorkFactory,
+        config_port: ConfigurationPort,
     ) -> None:
         """
         Initialize provider metrics handler.
@@ -267,29 +269,78 @@ class GetProviderMetricsHandler(BaseQueryHandler[GetProviderMetricsQuery, dict[s
         Args:
             logger: Logging port for operation logging
             error_handler: Error handling port for exception management
-            timestamp_service: Service for timestamp formatting
-            provider_registry_service: Service for provider registry operations
+            uow_factory: Unit of work factory for data access
+            config_port: Configuration port for provider information
         """
         super().__init__(logger, error_handler)
-        self.timestamp_service = timestamp_service
-        self._provider_registry_service = provider_registry_service
+        self.uow_factory = uow_factory
+        self._config_port = config_port
 
-    async def execute_query(self, query: GetProviderMetricsQuery) -> dict[str, Any]:
+    async def execute_query(self, query: GetProviderMetricsQuery) -> ProviderMetricsDTO:
         """Execute provider metrics query."""
-        self.logger.info("Getting metrics for provider: %s", query.provider_name)
+        self.logger.info("Getting metrics for provider: %s, timeframe: %s", query.provider_name, query.timeframe)
 
         try:
-            # Get basic metrics (registry doesn't store detailed metrics)
+            from datetime import datetime, timedelta, timezone
 
-            metrics = {
-                "provider_name": query.provider_name,
-                "timestamp": self.timestamp_service.current_timestamp(),
-                "status": "active",
-                "registered_at": "unknown",  # Registry doesn't track registration time
-            }
+            end_time = datetime.now(timezone.utc)
+            if query.timeframe == "1h":
+                start_time = end_time - timedelta(hours=1)
+            elif query.timeframe == "24h":
+                start_time = end_time - timedelta(hours=24)
+            elif query.timeframe == "7d":
+                start_time = end_time - timedelta(days=7)
+            else:
+                start_time = end_time - timedelta(hours=1)
+
+            with self.uow_factory.create_unit_of_work() as uow:
+                all_requests = uow.requests.find_all()
+                _all_time_metrics = {
+                    "total": len(all_requests),
+                    "completed": sum(1 for r in all_requests if r.status.value == "complete"),
+                    "failed": sum(1 for r in all_requests if r.status.value == "failed"),
+                    "in_progress": sum(
+                        1
+                        for r in all_requests
+                        if r.status.value in ["in_progress", "running", "shutting-down"]
+                    ),
+                    "pending": sum(1 for r in all_requests if r.status.value == "pending"),
+                }
+                timeframe_requests = uow.requests.find_by_date_range(start_time, end_time)
+                timeframe_metrics = {
+                    "total": len(timeframe_requests),
+                    "completed": sum(1 for r in timeframe_requests if r.status.value == "complete"),
+                    "failed": sum(1 for r in timeframe_requests if r.status.value == "failed"),
+                }
+
+            # Optionally enrich with per-provider breakdown
+            try:
+                provider_config = self._config_port.get_provider_config()
+                if provider_config and hasattr(provider_config, "get_active_providers"):
+                    active_providers = provider_config.get_active_providers()  # type: ignore[union-attr]
+                    self.logger.debug(
+                        "Provider metrics covering %d active providers", len(active_providers)
+                    )
+            except Exception as enrich_error:
+                self.logger.warning("Could not enrich metrics with provider details: %s", enrich_error)
 
             self.logger.info("Retrieved metrics for provider: %s", query.provider_name)
-            return metrics
+            return ProviderMetricsDTO(
+                provider_name=query.provider_name or "all",
+                total_requests=timeframe_metrics["total"],
+                successful_requests=timeframe_metrics["completed"],
+                failed_requests=timeframe_metrics["failed"],
+                average_response_time_ms=0.0,
+                error_rate_percent=(
+                    timeframe_metrics["failed"] / timeframe_metrics["total"] * 100
+                    if timeframe_metrics["total"] > 0
+                    else 0.0
+                ),
+                throughput_per_minute=0.0,
+                last_request_time=None,
+                uptime_percent=100.0,
+                health_status="healthy",
+            )
 
         except Exception as e:
             self.logger.error("Failed to get provider metrics: %s", e, exc_info=True)

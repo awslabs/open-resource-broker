@@ -5,7 +5,7 @@ from typing import Any, Optional, cast
 
 from api.models import RequestMachinesModel
 from api.validation import ValidationException
-from application.base.infrastructure_handlers import BaseAPIHandler
+from application.base.infrastructure_handlers import BaseAsyncAPIHandler as BaseAPIHandler
 from application.dto.commands import CreateRequestCommand
 from application.request.dto import RequestMachinesResponse
 from domain.base.dependency_injection import injectable

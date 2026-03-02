@@ -4,7 +4,10 @@ import time
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, Optional, cast
 
-from application.base.infrastructure_handlers import BaseAPIHandler, RequestContext
+from application.base.infrastructure_handlers import (
+    BaseAsyncAPIHandler as BaseAPIHandler,
+    RequestContext,
+)
 from application.dto.responses import ReturnRequestResponse
 from application.request.queries import ListRequestsQuery
 from config.managers.configuration_manager import ConfigurationManager

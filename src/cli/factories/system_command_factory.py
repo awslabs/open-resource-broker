@@ -12,9 +12,9 @@ from application.dto.queries import (
     ValidateMCPQuery,  # type: ignore[attr-defined]
     ValidateStorageQuery,  # type: ignore[attr-defined]
 )
+from application.provider.queries import GetProviderMetricsQuery
 from application.queries.system import (
     GetProviderConfigQuery,
-    GetProviderMetricsQuery,
     GetSystemStatusQuery,
     ValidateProviderConfigQuery,
 )
@@ -61,13 +61,10 @@ class SystemCommandFactory:
         self,
         provider_name: Optional[str] = None,
         timeframe: str = "1h",
-        detailed: bool = False,
         **kwargs: Any,
     ) -> GetProviderMetricsQuery:
         """Create query to get provider metrics."""
-        return GetProviderMetricsQuery(
-            provider_name=provider_name, timeframe=timeframe, detailed=detailed
-        )
+        return GetProviderMetricsQuery(provider_name=provider_name, timeframe=timeframe)
 
     def create_validate_provider_config_query(
         self, detailed: bool = False, **kwargs: Any

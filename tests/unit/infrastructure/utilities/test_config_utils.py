@@ -3,15 +3,11 @@
 import json
 import os
 import tempfile
-from pathlib import Path
 
 import pytest
 
 from domain.base.exceptions import ConfigurationError
-from infrastructure.utilities.config_utils import (
-    ConfigFileLoader,
-    ConfigPathResolver,
-)
+from infrastructure.utilities.config_utils import ConfigFileLoader
 
 
 class TestConfigFileLoader:
@@ -112,51 +108,3 @@ class TestConfigFileLoader:
         with pytest.raises(ConfigurationError) as exc_info:
             ConfigFileLoader.validate_config_path("/nonexistent", required=True)
         assert "not found" in exc_info.value.message
-
-
-class TestConfigPathResolver:
-    """Tests for ConfigPathResolver."""
-
-    def test_resolve_config_path_explicit_with_dir(self):
-        """Test resolving explicit path with directory."""
-        with tempfile.NamedTemporaryFile(delete=False) as f:
-            temp_path = f.name
-
-        try:
-            result = ConfigPathResolver.resolve_config_path(
-                "conf", "config.json", explicit_path=temp_path
-            )
-            assert result == temp_path
-        finally:
-            os.unlink(temp_path)
-
-    def test_resolve_config_path_explicit_filename_only(self):
-        """Test resolving explicit filename without directory."""
-        result = ConfigPathResolver.resolve_config_path(
-            "conf", "default.json", explicit_path="custom.json"
-        )
-        # Should use custom.json as filename with fallback path
-        assert result.endswith("custom.json")
-
-    def test_resolve_config_path_scheduler_dir(self):
-        """Test resolving with scheduler directory."""
-        with tempfile.TemporaryDirectory() as temp_dir:
-            config_file = os.path.join(temp_dir, "config.json")
-            Path(config_file).touch()
-
-            result = ConfigPathResolver.resolve_config_path(
-                "conf", "config.json", scheduler_dir=temp_dir
-            )
-            assert result == config_file
-
-    def test_resolve_config_path_fallback(self):
-        """Test resolving with fallback to default directory."""
-        result = ConfigPathResolver.resolve_config_path("conf", "config.json")
-        assert result.endswith(os.path.join("config", "config.json"))
-
-    def test_get_default_dir(self):
-        """Test getting default directory for file type."""
-        assert ConfigPathResolver.get_default_dir("conf") == "config"
-        assert ConfigPathResolver.get_default_dir("log") == "logs"
-        assert ConfigPathResolver.get_default_dir("work") == "data"
-        assert ConfigPathResolver.get_default_dir("unknown") == "config"

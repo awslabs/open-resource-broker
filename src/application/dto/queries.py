@@ -133,15 +133,6 @@ class GetMachineHealthQuery(Query, BaseModel):
     machine_id: str
 
 
-# System Queries for CQRS compliance
-class GetProviderHealthQuery(Query, BaseModel):
-    """Query to get provider health status."""
-
-    model_config = ConfigDict(frozen=True)
-
-    provider_name: Optional[str] = None
-
-
 class ValidateStorageQuery(Query, BaseModel):
     """Query to validate storage connectivity."""
 

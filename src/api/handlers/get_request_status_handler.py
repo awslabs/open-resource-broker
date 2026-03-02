@@ -5,7 +5,10 @@ from typing import TYPE_CHECKING, Any, Optional
 
 from api.models import RequestStatusModel
 from api.validation import RequestValidator, ValidationException
-from application.base.infrastructure_handlers import BaseAPIHandler, RequestContext
+from application.base.infrastructure_handlers import (
+    BaseAsyncAPIHandler as BaseAPIHandler,
+    RequestContext,
+)
 from application.dto.queries import GetRequestQuery, ListActiveRequestsQuery
 from application.request.dto import RequestStatusResponse
 from domain.base.dependency_injection import injectable

@@ -147,15 +147,15 @@ def register_query_handlers_with_bus(container: DIContainer) -> None:
 
         # Register system query handlers
         try:
+            from application.provider.queries import GetProviderMetricsQuery
+            from application.queries.provider_handlers import GetProviderMetricsHandler
             from application.queries.system import (
                 GetProviderConfigQuery,
-                GetProviderMetricsQuery,
                 GetSystemStatusQuery,
                 ValidateProviderConfigQuery,
             )
             from application.queries.system_handlers import (
                 GetProviderConfigHandler,
-                GetProviderMetricsHandler,
                 GetSystemStatusHandler,
                 ValidateProviderConfigHandler,
             )

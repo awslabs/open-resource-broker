@@ -5,21 +5,18 @@ from typing import TYPE_CHECKING, Any
 from application.base.handlers import BaseQueryHandler
 from application.decorators import query_handler
 from application.dto.queries import (
-    GetProviderHealthQuery,  # type: ignore[attr-defined]
     ValidateMCPQuery,  # type: ignore[attr-defined]
     ValidateStorageQuery,  # type: ignore[attr-defined]
 )
 from application.dto.system import (
     ConfigurationSectionResponse,
     ProviderConfigDTO,
-    ProviderMetricsDTO,
     SystemStatusDTO,
     ValidationResultDTO,
 )
 from application.queries.system import (
     GetConfigurationSectionQuery,
     GetProviderConfigQuery,
-    GetProviderMetricsQuery,
     GetSystemStatusQuery,
     ValidateProviderConfigQuery,
 )
@@ -336,218 +333,6 @@ class GetSystemStatusHandler(BaseQueryHandler[GetSystemStatusQuery, SystemStatus
             self.logger.error("Failed to get system status: %s", e)
             raise
 
-
-@query_handler(GetProviderMetricsQuery)
-class GetProviderMetricsHandler(BaseQueryHandler[GetProviderMetricsQuery, ProviderMetricsDTO]):
-    """Handler for getting provider metrics information."""
-
-    def __init__(
-        self,
-        logger: LoggingPort,
-        container: ContainerPort,
-        error_handler: ErrorHandlingPort,
-        uow_factory: UnitOfWorkFactory,
-    ) -> None:
-        """
-        Initialize get provider metrics handler.
-
-        Args:
-            logger: Logging port for operation logging
-            container: Container port for dependency access
-            error_handler: Error handling port for exception management
-            uow_factory: Unit of work factory for data access
-        """
-        super().__init__(logger, error_handler)
-        self.container = container
-        self.uow_factory = uow_factory
-
-    async def execute_query(self, query: GetProviderMetricsQuery) -> ProviderMetricsDTO:  # type: ignore[override]
-        """Execute provider metrics query."""
-        self.logger.info("Getting provider metrics for timeframe: %s", query.timeframe)
-
-        try:
-            from datetime import datetime, timedelta, timezone
-
-            # Calculate time range based on query timeframe
-            end_time = datetime.now(timezone.utc)
-            if query.timeframe == "1h":
-                start_time = end_time - timedelta(hours=1)
-            elif query.timeframe == "24h":
-                start_time = end_time - timedelta(hours=24)
-            elif query.timeframe == "7d":
-                start_time = end_time - timedelta(days=7)
-            else:
-                start_time = end_time - timedelta(hours=1)  # Default to 1 hour
-
-            # Get actual metrics from repository using UoW pattern
-            with self.uow_factory.create_unit_of_work() as uow:
-                # Get all-time metrics for accurate counts
-                all_requests = uow.requests.find_all()
-                all_time_metrics = {
-                    "total": len(all_requests),
-                    "completed": sum(1 for r in all_requests if r.status.value == "complete"),
-                    "failed": sum(1 for r in all_requests if r.status.value == "failed"),
-                    "in_progress": sum(
-                        1
-                        for r in all_requests
-                        if r.status.value in ["in_progress", "running", "shutting-down"]
-                    ),
-                    "pending": sum(1 for r in all_requests if r.status.value == "pending"),
-                }
-
-                # Get timeframe-specific metrics for comparison
-                timeframe_requests = uow.requests.find_by_date_range(start_time, end_time)
-                timeframe_metrics = {
-                    "total": len(timeframe_requests),
-                    "completed": sum(1 for r in timeframe_requests if r.status.value == "complete"),
-                    "failed": sum(1 for r in timeframe_requests if r.status.value == "failed"),
-                    "in_progress": sum(
-                        1
-                        for r in timeframe_requests
-                        if r.status.value in ["in_progress", "running", "shutting-down"]
-                    ),
-                    "pending": sum(1 for r in timeframe_requests if r.status.value == "pending"),
-                }
-
-            # Build response with all-time data and timeframe annotation
-            metrics = {
-                "timeframe": f"{query.timeframe} (showing all-time data)",
-                "start_time": start_time.isoformat(),
-                "end_time": end_time.isoformat(),
-                "timeframe_requests": timeframe_metrics["total"],
-                "providers": {},
-                "summary": {
-                    "total_requests": all_time_metrics["total"],
-                    "successful_requests": all_time_metrics["completed"],
-                    "failed_requests": all_time_metrics["failed"],
-                    "in_progress_requests": all_time_metrics["in_progress"],
-                    "pending_requests": all_time_metrics["pending"],
-                    "average_response_time": 0.0,
-                },
-            }
-
-            # Try to get actual provider metrics if available
-            try:
-                from domain.base.ports import ConfigurationPort
-
-                config_manager = self.container.get(ConfigurationPort)
-
-                if hasattr(config_manager, "get_provider_config"):
-                    provider_config = config_manager.get_provider_config()
-                    if hasattr(provider_config, "get_active_providers"):
-                        active_providers = provider_config.get_active_providers()  # type: ignore[union-attr]
-
-                        for provider in active_providers:
-                            metrics["providers"][provider.name] = {
-                                "status": "active",
-                                "type": (provider.type if hasattr(provider, "type") else "unknown"),
-                                "requests": all_time_metrics["total"],
-                                "errors": all_time_metrics["failed"],
-                                "timeframe_requests": timeframe_metrics["total"],
-                                "avg_response_time": 0.0,
-                            }
-            except Exception as provider_error:
-                self.logger.warning("Could not get provider-specific metrics: %s", provider_error)
-                metrics["providers"]["default"] = {
-                    "status": "unknown",
-                    "type": "unknown",
-                    "requests": all_time_metrics["total"],
-                    "errors": all_time_metrics["failed"],
-                    "timeframe_requests": timeframe_metrics["total"],
-                    "avg_response_time": 0.0,
-                }
-
-            summary = metrics["summary"]
-            return ProviderMetricsDTO(
-                provider_name=query.provider_name or "all",
-                total_requests=summary["total_requests"],
-                successful_requests=summary["successful_requests"],
-                failed_requests=summary["failed_requests"],
-                average_response_time_ms=summary["average_response_time"],
-                error_rate_percent=(
-                    summary["failed_requests"] / summary["total_requests"] * 100
-                    if summary["total_requests"] > 0
-                    else 0.0
-                ),
-                throughput_per_minute=0.0,
-                last_request_time=None,
-                uptime_percent=100.0,
-                health_status="healthy",
-            )
-
-        except Exception as e:
-            self.logger.error("Failed to get provider metrics: %s", e)
-            raise
-
-
-@query_handler(GetProviderHealthQuery)
-class GetProviderHealthHandler(BaseQueryHandler[GetProviderHealthQuery, dict[str, Any]]):
-    """Handler for getting provider health status."""
-
-    def __init__(
-        self,
-        logger: LoggingPort,
-        container: ContainerPort,
-        error_handler: ErrorHandlingPort,
-        timestamp_service: TimestampService,
-    ) -> None:
-        """Initialize get provider health handler."""
-        super().__init__(logger, error_handler)
-        self.container = container
-        self.timestamp_service = timestamp_service
-
-    async def execute_query(self, query: GetProviderHealthQuery) -> dict[str, Any]:
-        """Execute provider health query."""
-        self.logger.info("Getting provider health status for: %s", query.provider_name or "all")
-
-        try:
-            from domain.base.ports import ConfigurationPort
-
-            config_manager = self.container.get(ConfigurationPort)
-
-            # Get provider configuration
-            if hasattr(config_manager, "get_provider_config"):
-                provider_config = config_manager.get_provider_config()
-                active_providers = (
-                    provider_config.get_active_providers()  # type: ignore[union-attr]
-                    if hasattr(provider_config, "get_active_providers")
-                    else []
-                )
-
-                health_status = {
-                    "status": "success",
-                    "timestamp": self.timestamp_service.current_timestamp(),
-                    "providers": {},
-                }
-
-                # Check health for specific provider or all
-                for provider in active_providers:
-                    if query.provider_name and provider.name != query.provider_name:
-                        continue
-
-                    # Basic health check - provider is configured and accessible
-                    health_status["providers"][provider.name] = {
-                        "status": "healthy",
-                        "name": provider.name,
-                        "type": provider.type if hasattr(provider, "type") else "unknown",
-                        "available": True,
-                    }
-
-                return health_status
-            else:
-                return {
-                    "status": "error",
-                    "error": "Provider configuration not available",
-                    "providers": {},
-                }
-
-        except Exception as e:
-            self.logger.error("Failed to get provider health: %s", e, exc_info=True)
-            return {
-                "status": "error",
-                "error": str(e),
-                "providers": {},
-            }
 
 
 @query_handler(ValidateStorageQuery)

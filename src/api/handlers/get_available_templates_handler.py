@@ -3,7 +3,7 @@
 import time
 from typing import Any, Optional, cast
 
-from application.base.infrastructure_handlers import BaseAPIHandler
+from application.base.infrastructure_handlers import BaseAsyncAPIHandler as BaseAPIHandler
 from application.dto.queries import ListTemplatesQuery
 from domain.base.dependency_injection import injectable
 from domain.base.ports import ErrorHandlingPort, LoggingPort

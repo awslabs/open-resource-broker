@@ -175,10 +175,10 @@ async def handle_provider_metrics(args) -> dict[str, Any]:
     container = get_container()
     query_bus = container.get(QueryBus)
 
-    from application.queries.system import GetProviderMetricsQuery
+    from application.provider.queries import GetProviderMetricsQuery
 
     query = GetProviderMetricsQuery(provider_name=getattr(args, "provider", None))
-    metrics = await query_bus.execute(query)
+    metrics = await query_bus.execute(query)  # type: ignore[arg-type]
 
     return {"metrics": metrics, "message": "Provider metrics retrieved successfully"}
 
