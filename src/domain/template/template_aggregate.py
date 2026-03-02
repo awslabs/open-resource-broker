@@ -113,6 +113,14 @@ class Template(BaseModel):
             else:  # ondemand, heterogeneous
                 self.allocation_strategy = "lowest_price"
 
+        # Reject tag keys that use the reserved system namespace
+        reserved_keys = [k for k in self.tags if k.startswith("orb:")]
+        if reserved_keys:
+            raise ValueError(
+                f"Tag keys must not start with 'orb:' (reserved for system use): "
+                f"{', '.join(sorted(reserved_keys))}"
+            )
+
         return self
 
     @model_validator(mode="after")

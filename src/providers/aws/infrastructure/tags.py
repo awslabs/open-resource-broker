@@ -68,6 +68,14 @@ def build_resource_tags(
     Returns:
         Merged list of ``{"Key": k, "Value": v}`` dicts ready for AWS API calls.
     """
+    if template_tags:
+        reserved = [k for k in template_tags if k.startswith(SYSTEM_TAG_PREFIX)]
+        if reserved:
+            raise ValueError(
+                f"Tag keys must not start with '{SYSTEM_TAG_PREFIX}' (reserved for system use): "
+                f"{', '.join(sorted(reserved))}"
+            )
+
     prefix = config_port.get_resource_prefix(resource_prefix_key)
     user_tags: list[dict[str, str]] = [{"Key": "Name", "Value": f"{prefix}{request_id}"}]
     if template_tags:

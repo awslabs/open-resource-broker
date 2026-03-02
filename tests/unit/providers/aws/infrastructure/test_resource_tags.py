@@ -1,5 +1,6 @@
 """Tests verifying consistent orb: tag application across all AWS resource creation paths."""
 
+import pytest
 from unittest.mock import MagicMock
 
 from providers.aws.domain.template.value_objects import AWSFleetType
@@ -7,7 +8,7 @@ from providers.aws.infrastructure.handlers.asg.handler import ASGHandler
 from providers.aws.infrastructure.handlers.ec2_fleet.handler import EC2FleetHandler
 from providers.aws.infrastructure.handlers.spot_fleet.handler import SpotFleetHandler
 from providers.aws.infrastructure.launch_template.manager import AWSLaunchTemplateManager
-from providers.aws.infrastructure.tags import build_system_tags, merge_tags
+from providers.aws.infrastructure.tags import build_resource_tags, build_system_tags, merge_tags
 
 ORB_SYSTEM_KEYS = {
     "orb:managed-by",
@@ -82,6 +83,58 @@ class TestBuildSystemTags:
         tags = build_system_tags("req-1", "tmpl-1", "EC2Fleet")
         d = _tag_dict(tags)
         assert d["orb:created-at"]  # non-empty
+
+
+class TestBuildResourceTagsReservedNamespace:
+    def test_orb_prefixed_template_tag_raises(self):
+        cp = _make_config_port()
+        with pytest.raises(ValueError, match="orb:"):
+            build_resource_tags(
+                config_port=cp,
+                request_id="req-1",
+                template_id="tmpl-1",
+                resource_prefix_key="fleet",
+                provider_api="EC2Fleet",
+                template_tags={"orb:request-id": "spoofed"},
+            )
+
+    def test_multiple_orb_prefixed_keys_reported(self):
+        cp = _make_config_port()
+        with pytest.raises(ValueError, match="orb:"):
+            build_resource_tags(
+                config_port=cp,
+                request_id="req-1",
+                template_id="tmpl-1",
+                resource_prefix_key="fleet",
+                provider_api="EC2Fleet",
+                template_tags={"orb:managed-by": "x", "orb:template-id": "y"},
+            )
+
+    def test_plain_template_tags_are_accepted(self):
+        cp = _make_config_port()
+        tags = build_resource_tags(
+            config_port=cp,
+            request_id="req-1",
+            template_id="tmpl-1",
+            resource_prefix_key="fleet",
+            provider_api="EC2Fleet",
+            template_tags={"env": "prod"},
+        )
+        d = _tag_dict(tags)
+        assert d["env"] == "prod"
+
+    def test_none_template_tags_are_accepted(self):
+        cp = _make_config_port()
+        tags = build_resource_tags(
+            config_port=cp,
+            request_id="req-1",
+            template_id="tmpl-1",
+            resource_prefix_key="fleet",
+            provider_api="EC2Fleet",
+            template_tags=None,
+        )
+        keys = {t["Key"] for t in tags}
+        assert ORB_SYSTEM_KEYS.issubset(keys)
 
 
 class TestMergeTags:
@@ -179,17 +232,21 @@ class TestASGHandlerTags:
         keys = {t["Key"] for t in tags}
         assert "env" in keys
 
-    def test_tag_asg_user_cannot_spoof_orb_keys(self):
+    def test_tag_asg_orb_prefixed_template_tag_logs_warning(self):
+        # _tag_asg is best-effort: it catches all exceptions and logs a warning.
+        # An orb: tag key in template.tags causes build_resource_tags to raise
+        # ValueError, which _tag_asg catches and logs — it does not re-raise.
         handler = self._make_handler()
         template = _make_template()
         template.tags = {"orb:request-id": "spoofed"}
 
+        # Should not raise — the error is swallowed and logged
         handler._tag_asg("asg-test", template, "req-real")
 
-        call_kwargs = handler._retry_with_backoff.call_args[1]
-        tags = call_kwargs["Tags"]
-        request_id_tag = next(t for t in tags if t["Key"] == "orb:request-id")
-        assert request_id_tag["Value"] == "req-real"
+        # Warning was logged with the reserved-namespace message
+        handler._logger.warning.assert_called_once()
+        warning_msg = str(handler._logger.warning.call_args)
+        assert "orb:" in warning_msg or "Failed to tag" in warning_msg
 
 
 # ---------------------------------------------------------------------------

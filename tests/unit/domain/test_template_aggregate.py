@@ -392,6 +392,32 @@ class TestTemplateValueObjects:
 
 
 @pytest.mark.unit
+class TestTemplateTagValidation:
+    """Test that reserved orb: tag keys are rejected at the domain level."""
+
+    def test_orb_prefixed_tag_key_is_rejected(self):
+        with pytest.raises(ValueError, match="orb:"):
+            _make_template(tags={"orb:request-id": "spoofed"})
+
+    def test_multiple_orb_prefixed_keys_are_reported(self):
+        with pytest.raises(ValueError, match="orb:"):
+            _make_template(tags={"orb:managed-by": "x", "orb:template-id": "y"})
+
+    def test_plain_tag_keys_are_accepted(self):
+        t = _make_template(tags={"env": "prod", "team": "platform"})
+        assert t.tags == {"env": "prod", "team": "platform"}
+
+    def test_empty_tags_are_accepted(self):
+        t = _make_template(tags={})
+        assert t.tags == {}
+
+    def test_key_with_orb_not_as_prefix_is_accepted(self):
+        # "my-orb:tag" does not start with "orb:" so it must be allowed
+        t = _make_template(tags={"my-orb:tag": "value"})
+        assert "my-orb:tag" in t.tags
+
+
+@pytest.mark.unit
 class TestTemplateExceptions:
     """Test cases for Template-specific exceptions."""
 
