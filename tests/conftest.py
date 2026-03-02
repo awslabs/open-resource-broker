@@ -13,11 +13,14 @@ def pytest_addoption(parser):
 
 
 def pytest_collection_modifyitems(config, items):
-    if not config.getoption("--run-aws"):
-        skip = pytest.mark.skip(reason="requires real AWS credentials — pass --run-aws to run")
-        for item in items:
-            if "aws" in item.keywords:
-                item.add_marker(skip)
+    if config.getoption("--run-aws"):
+        return
+    if any("onaws" in str(a) for a in config.args):
+        return
+    skip = pytest.mark.skip(reason="requires real AWS credentials — pass --run-aws to run")
+    for item in items:
+        if "aws" in item.keywords:
+            item.add_marker(skip)
 
 
 import json
