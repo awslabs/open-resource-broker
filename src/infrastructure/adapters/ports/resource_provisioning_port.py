@@ -56,4 +56,3 @@ class ResourceProvisioningPort(ABC):
             EntityNotFoundError: If the resource is not found
             InfrastructureError: For other infrastructure errors
         """
-

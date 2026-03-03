@@ -199,7 +199,9 @@ class ProvisioningOrchestrationService:
             if state is not None:
                 state["failure_count"] = 0
         except Exception as e:
-            self._logger.warning("Failed to reset circuit breaker state for %s: %s", provider_name, e)
+            self._logger.warning(
+                "Failed to reset circuit breaker state for %s: %s", provider_name, e
+            )
 
     async def _dispatch_single_attempt(
         self,
