@@ -232,7 +232,9 @@ def _print_instances(instances: list[dict[str, Any]]) -> None:
         itype = inst.get("InstanceType", "-")
         launched = _utc_iso(inst.get("LaunchTime"))
         request_id = _get_tag(inst.get("Tags", []), "orb:request-id")
-        print(f"  - {inst_id} | state={state} type={itype} request={request_id} launched={launched}")
+        print(
+            f"  - {inst_id} | state={state} type={itype} request={request_id} launched={launched}"
+        )
 
 
 def _print_ec2_fleet_instances(instances: list[dict[str, Any]]) -> None:
@@ -247,7 +249,9 @@ def _print_ec2_fleet_instances(instances: list[dict[str, Any]]) -> None:
         launched = _utc_iso(inst.get("LaunchTime"))
         request_id = _get_tag(inst.get("Tags", []), "orb:request-id")
         fleet_id = _get_tag(inst.get("Tags", []), "aws:ec2:fleet-id")
-        print(f"  - {inst_id} | state={state} type={itype} fleet={fleet_id} request={request_id} launched={launched}")
+        print(
+            f"  - {inst_id} | state={state} type={itype} fleet={fleet_id} request={request_id} launched={launched}"
+        )
 
 
 def _print_launch_templates(templates: list[dict[str, Any]]) -> None:
@@ -347,7 +351,9 @@ def _terminate_instances(ec2_client, instances: list[dict[str, Any]], dry_run: b
             print(f"  - instance termination error: {exc}", file=sys.stderr)
 
 
-def _terminate_ec2_fleet_instances(ec2_client, instances: list[dict[str, Any]], dry_run: bool) -> None:
+def _terminate_ec2_fleet_instances(
+    ec2_client, instances: list[dict[str, Any]], dry_run: bool
+) -> None:
     """Terminate EC2Fleet instances (including instant fleets).
 
     Attempts delete_fleets first (handles fleets still in active state),
@@ -358,11 +364,13 @@ def _terminate_ec2_fleet_instances(ec2_client, instances: list[dict[str, Any]], 
         return
 
     # Collect unique fleet IDs from instance tags
-    fleet_ids: list[str] = list({
-        fid
-        for inst in instances
-        if (fid := _get_tag(inst.get("Tags", []), "aws:ec2:fleet-id")) != "-"
-    })
+    fleet_ids: list[str] = list(
+        {
+            fid
+            for inst in instances
+            if (fid := _get_tag(inst.get("Tags", []), "aws:ec2:fleet-id")) != "-"
+        }
+    )
 
     if fleet_ids:
         for chunk in _chunked(fleet_ids, 100):
@@ -375,7 +383,9 @@ def _terminate_ec2_fleet_instances(ec2_client, instances: list[dict[str, Any]], 
                     print(f"  - deleted EC2 Fleet (instant): {item.get('FleetId', '-')}")
                 for item in response.get("UnsuccessfulFleetDeletions", []):
                     # Fleet may already be deleted — not an error
-                    print(f"  - fleet {item.get('FleetId', '-')} already gone or failed: {item.get('ErrorMessage', 'unknown')}")
+                    print(
+                        f"  - fleet {item.get('FleetId', '-')} already gone or failed: {item.get('ErrorMessage', 'unknown')}"
+                    )
             except ClientError as exc:
                 print(f"  - EC2 Fleet deletion error: {exc}", file=sys.stderr)
 
@@ -477,7 +487,14 @@ def main() -> int:
     _print_instances(run_instances)
     _print_launch_templates(launch_templates)
 
-    total = len(asgs) + len(ec2_fleets) + len(spot_fleets) + len(fleet_instances) + len(run_instances) + len(launch_templates)
+    total = (
+        len(asgs)
+        + len(ec2_fleets)
+        + len(spot_fleets)
+        + len(fleet_instances)
+        + len(run_instances)
+        + len(launch_templates)
+    )
     print(f"\nTotal ORB resources found: {total}")
 
     if not args.terminate:
