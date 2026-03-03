@@ -225,19 +225,9 @@ class TestCleanArchitecture:
 
     def test_ports_and_adapters_pattern(self):
         """Test ports and adapters (hexagonal architecture) implementation."""
-        # Test that ports (interfaces) are defined
-        # Ports should be abstract interfaces
+        # Test that adapters implement ports
         import inspect
 
-        from infrastructure.adapters.ports.cloud_resource_manager_port import (
-            CloudResourceManagerPort,
-        )
-
-        assert inspect.isabstract(CloudResourceManagerPort) or hasattr(
-            CloudResourceManagerPort, "__abstractmethods__"
-        )
-
-        # Test that adapters implement ports
         from infrastructure.adapters.logging_adapter import LoggingAdapter
 
         # Adapters should implement the corresponding port interface

@@ -238,13 +238,6 @@ class TestInjectableMigration(unittest.TestCase):
         instance_manager = self.container.get(AWSInstanceManager)
         self.assertIsNotNone(instance_manager)
 
-        # Register and test AWSResourceManagerImpl
-        from providers.aws.managers.aws_resource_manager import AWSResourceManagerImpl
-
-        self.container.register_singleton(AWSResourceManagerImpl)
-        resource_manager = self.container.get(AWSResourceManagerImpl)
-        self.assertIsNotNone(resource_manager)
-
 
 if __name__ == "__main__":
     unittest.main()

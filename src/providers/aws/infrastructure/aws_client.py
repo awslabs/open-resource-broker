@@ -102,7 +102,6 @@ class AWSClient:
             # Initialize service client attributes but don't create clients yet
             self._ec2_client = None
             self._autoscaling_client = None
-            self._service_quotas_client = None
             self._sts_client = None
             self._cost_explorer_client = None
             self._ssm_client = None

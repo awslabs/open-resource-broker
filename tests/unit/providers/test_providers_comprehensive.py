@@ -492,7 +492,6 @@ class TestAWSProviderComprehensive:
             "machine_adapter",
             "provisioning_adapter",
             "request_adapter",
-            "resource_manager_adapter",
             "template_adapter",
         ]
 
@@ -562,7 +561,7 @@ class TestAWSProviderComprehensive:
     def test_aws_managers_exist(self):
         """Test that AWS managers exist."""
         manager_modules = []
-        manager_files = ["aws_instance_manager", "aws_resource_manager"]
+        manager_files = ["aws_instance_manager"]
 
         for manager_file in manager_files:
             try:

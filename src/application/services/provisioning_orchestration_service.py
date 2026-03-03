@@ -8,6 +8,8 @@ if TYPE_CHECKING:
     from domain.base.ports.provider_selection_port import ProviderSelectionPort
 
 from domain.base.ports import ConfigurationPort, ContainerPort, LoggingPort, ProviderConfigPort
+from infrastructure.resilience.exceptions import CircuitBreakerOpenError
+from infrastructure.resilience.strategy.circuit_breaker import CircuitBreakerStrategy
 from domain.base.results import ProviderSelectionResult
 from domain.request.aggregate import Request
 from domain.request.request_types import RequestStatus
@@ -104,9 +106,17 @@ class ProvisioningOrchestrationService:
             # Stamp attempt number so provider-level idempotency tokens are unique per attempt
             request.metadata["provisioning_attempt"] = attempt_number
 
-            last_result = await self._dispatch_single_attempt(
-                template, request, selection_result, attempt_count
-            )
+            try:
+                last_result = await self._dispatch_single_attempt(
+                    template, request, selection_result, attempt_count
+                )
+            except CircuitBreakerOpenError as e:
+                self._logger.warning(
+                    "Circuit breaker open for provider %s — aborting retry loop: %s",
+                    selection_result.provider_name,
+                    e,
+                )
+                break
 
             attempt_completed = datetime.now(timezone.utc)
 
@@ -182,6 +192,17 @@ class ProvisioningOrchestrationService:
             self._logger.warning("Failed to persist ACQUIRING status: %s", e)
             return request
 
+    def _record_provider_success(self, provider_name: str) -> None:
+        """Reset circuit breaker failure count after a successful dispatch."""
+        try:
+            state = CircuitBreakerStrategy._circuit_states.get(provider_name)
+            if state is not None:
+                state["failure_count"] = 0
+        except Exception as e:
+            self._logger.warning(
+                "Failed to reset circuit breaker state for %s: %s", provider_name, e
+            )
+
     async def _dispatch_single_attempt(
         self,
         template: Template,
@@ -241,6 +262,7 @@ class ProvisioningOrchestrationService:
                     e.get("error_code") in capacity_error_codes for e in fleet_errors
                 )
 
+                self._record_provider_success(selection_result.provider_name)
                 return ProvisioningResult(
                     success=True,
                     resource_ids=resource_ids,
@@ -260,6 +282,9 @@ class ProvisioningOrchestrationService:
                     provider_data=result.metadata or {},
                     error_message=result.error_message,
                 )
+
+        except CircuitBreakerOpenError:
+            raise  # do not swallow — let it propagate to execute_provisioning
 
         except Exception as e:
             self._logger.error(
