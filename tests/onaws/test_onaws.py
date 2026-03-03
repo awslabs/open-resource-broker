@@ -824,7 +824,7 @@ def validate_all_instances_price_type(status_response, test_case):
 
 
 @pytest.fixture
-def setup_host_factory_mock(request, monkeypatch):
+def setup_host_factory_mock(request, monkeypatch, check_aws_credentials):
     processor = TemplateProcessor()
     test_name = request.node.name
 
@@ -911,7 +911,7 @@ def setup_host_factory_mock(request, monkeypatch):
 
 
 @pytest.fixture
-def setup_host_factory_mock_with_scenario(request, monkeypatch):
+def setup_host_factory_mock_with_scenario(request, monkeypatch, check_aws_credentials):
     """Fixture that handles scenario-based overrides by extracting test name from test node."""
     # Generate templates for this test using the actual test name
     processor = TemplateProcessor()
