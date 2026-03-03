@@ -54,13 +54,15 @@ def _get_aws_profile_and_region() -> tuple[str | None, str | None]:
 
 
 @pytest.fixture(scope="session", autouse=True)
-def check_aws_credentials():
+def check_aws_credentials(request):
     """Skip all onaws tests if AWS credentials are missing or expired.
 
     Calls sts:GetCallerIdentity once per session. If it fails (no credentials,
     expired Midway token, etc.) all tests are skipped with a clear message
     rather than failing deep inside provisioning with cryptic errors.
     """
+    if not request.config.getoption("--run-aws", default=False):
+        return
     profile, region = _get_aws_profile_and_region()
     region = region or "eu-west-1"
     try:
@@ -71,13 +73,13 @@ def check_aws_credentials():
             f"\n✓ AWS credentials valid: {identity.get('Arn')} (account: {identity.get('Account')})"
         )
     except NoCredentialsError as e:
-        pytest.exit(f"AWS credentials not found (profile={profile!r}): {e}", returncode=1)
+        pytest.skip(f"AWS credentials not found (profile={profile!r}): {e}")
     except ClientError as e:
         code = e.response.get("Error", {}).get("Code", "Unknown")
         msg = e.response.get("Error", {}).get("Message", str(e))
-        pytest.exit(f"AWS credentials invalid [{code}]: {msg}", returncode=1)
+        pytest.skip(f"AWS credentials invalid [{code}]: {msg}")
     except Exception as e:
-        pytest.exit(f"AWS credential check failed: {e}", returncode=1)
+        pytest.skip(f"AWS credential check failed: {e}")
 
 
 @pytest.fixture(autouse=True)
