@@ -61,8 +61,6 @@ def check_aws_credentials(request):
     expired token, etc.) all tests are skipped with the raw AWS error message
     rather than failing deep inside provisioning with cryptic errors.
     """
-    if not request.config.getoption("--run-aws", default=False):
-        return
     profile, region = _get_aws_profile_and_region()
     region = region or "eu-west-1"
     try:
