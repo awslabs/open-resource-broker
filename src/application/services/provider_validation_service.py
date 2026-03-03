@@ -62,7 +62,8 @@ class ProviderValidationService:
                 raise ApplicationError("; ".join(errors))
 
         validation_result = self._provider_selection_port.validate_template_requirements(
-            template, selection_result.provider_name  # type: ignore[arg-type]
+            template,
+            selection_result.provider_name,  # type: ignore[arg-type]
         )
         if validation_result.warnings:
             for warning in validation_result.warnings:
