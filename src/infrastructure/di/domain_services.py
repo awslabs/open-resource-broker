@@ -68,10 +68,18 @@ def register_domain_services(container: DIContainer) -> None:
 
     # Provider validation service (SRP refactoring)
     def create_provider_validation_service(c):
+        from providers.registry.provider_registry import get_provider_registry
+
+        validator = None
+        try:
+            validator = get_provider_registry().create_validator("aws")
+        except Exception:
+            pass
         return ProviderValidationService(
             container=c.get(ContainerPort),
             logger=c.get(LoggingPort),
             provider_selection_port=c.get(ProviderSelectionPort),
+            validator=validator,
         )
 
     container.register_singleton(ProviderValidationService, create_provider_validation_service)
