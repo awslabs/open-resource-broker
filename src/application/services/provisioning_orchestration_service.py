@@ -22,6 +22,8 @@ class ProvisioningResult:
     instances: list[dict[str, Any]]
     provider_data: dict[str, Any]
     error_message: str | None = None
+    fulfilled_count: int = 0
+    is_terminal: bool = True
 
 
 class ProvisioningOrchestrationService:
@@ -95,12 +97,24 @@ class ProvisioningOrchestrationService:
                             type(resource_id),
                         )
 
+                fleet_errors = result.data.get("provider_data", {}).get("fleet_errors") or []
+                capacity_error_codes = {
+                    "InsufficientInstanceCapacity",
+                    "SpotMaxPriceTooLow",
+                    "MaxSpotInstanceCountExceeded",
+                }
+                has_capacity_error = any(
+                    e.get("error_code") in capacity_error_codes for e in fleet_errors
+                )
+
                 return ProvisioningResult(
                     success=True,
                     resource_ids=resource_ids,
                     instance_ids=result.data.get("instance_ids", []),
                     instances=instances,
                     provider_data=result.metadata or {},
+                    fulfilled_count=len(instances),
+                    is_terminal=not has_capacity_error,
                 )
             else:
                 return ProvisioningResult(
