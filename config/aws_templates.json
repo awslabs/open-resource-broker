@@ -168,9 +168,12 @@
       "maxSpotPrice": 0.05,
       "allocationStrategy": "lowestPrice",
       "volumeType": "gp3",
+      "vmTypes": {
+        "t3.medium": 1,
+        "t3.large": 2
+      },
       "instanceTags": {
-        "Environment": "dev",
-        "ManagedBy": "ORB"
+        "Environment": "dev"
       },
       "subnetId": "subnet-12345678"
     },
@@ -186,9 +189,12 @@
       "maxSpotPrice": 0.06,
       "allocationStrategy": "diversified",
       "volumeType": "gp3",
+      "vmTypes": {
+        "t3.medium": 1,
+        "t3.large": 2
+      },
       "instanceTags": {
-        "Environment": "dev",
-        "ManagedBy": "ORB"
+        "Environment": "dev"
       },
       "subnetId": "subnet-12345678"
     },
@@ -204,9 +210,12 @@
       "maxSpotPrice": 0.07,
       "allocationStrategy": "capacityOptimized",
       "volumeType": "gp3",
+      "vmTypes": {
+        "t3.medium": 1,
+        "t3.large": 2
+      },
       "instanceTags": {
-        "Environment": "dev",
-        "ManagedBy": "ORB"
+        "Environment": "dev"
       },
       "subnetId": "subnet-12345678"
     },
@@ -222,9 +231,12 @@
       "maxSpotPrice": 0.04,
       "allocationStrategy": "lowestPrice",
       "volumeType": "gp3",
+      "vmTypes": {
+        "t3.medium": 1,
+        "t3.large": 2
+      },
       "instanceTags": {
-        "Environment": "prod",
-        "ManagedBy": "ORB"
+        "Environment": "prod"
       },
       "subnetId": "subnet-12345678"
     },
@@ -240,9 +252,12 @@
       "maxSpotPrice": 0.05,
       "allocationStrategy": "diversified",
       "volumeType": "gp3",
+      "vmTypes": {
+        "t3.medium": 1,
+        "t3.large": 2
+      },
       "instanceTags": {
-        "Environment": "prod",
-        "ManagedBy": "ORB"
+        "Environment": "prod"
       },
       "subnetId": "subnet-12345678"
     },
@@ -258,9 +273,12 @@
       "maxSpotPrice": 0.06,
       "allocationStrategy": "capacityOptimized",
       "volumeType": "gp3",
+      "vmTypes": {
+        "t3.medium": 1,
+        "t3.large": 2
+      },
       "instanceTags": {
-        "Environment": "prod",
-        "ManagedBy": "ORB"
+        "Environment": "prod"
       },
       "subnetId": "subnet-12345678"
     },
@@ -275,8 +293,7 @@
       "allocationStrategy": "lowest_price",
       "volumeType": "gp3",
       "instanceTags": {
-        "Environment": "prod",
-        "ManagedBy": "ORB"
+        "Environment": "prod"
       },
       "subnetId": "subnet-12345678"
     },
@@ -292,8 +309,7 @@
       "allocationStrategy": "price_capacity_optimized",
       "volumeType": "gp3",
       "instanceTags": {
-        "Environment": "dev",
-        "ManagedBy": "ORB"
+        "Environment": "dev"
       },
       "subnetId": "subnet-12345678"
     },
@@ -308,8 +324,7 @@
       "allocationStrategy": "lowestPrice",
       "volumeType": "gp3",
       "instanceTags": {
-        "Environment": "prod",
-        "ManagedBy": "ORB"
+        "Environment": "prod"
       },
       "percentOnDemand": 30,
       "subnetId": "subnet-12345678,subnet-87654321"
@@ -325,8 +340,7 @@
       "allocationStrategy": "lowest_price",
       "volumeType": "gp3",
       "instanceTags": {
-        "Environment": "dev",
-        "ManagedBy": "ORB"
+        "Environment": "dev"
       },
       "subnetId": "subnet-12345678"
     },
@@ -342,8 +356,7 @@
       "allocationStrategy": "price_capacity_optimized",
       "volumeType": "gp3",
       "instanceTags": {
-        "Environment": "dev",
-        "ManagedBy": "ORB"
+        "Environment": "dev"
       },
       "subnetId": "subnet-12345678"
     }
