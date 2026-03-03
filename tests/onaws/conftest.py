@@ -54,7 +54,7 @@ def _get_aws_profile_and_region() -> tuple[str | None, str | None]:
 
 
 @pytest.fixture(scope="session", autouse=True)
-def check_aws_credentials(request):
+def check_aws_credentials():
     """Skip all onaws tests if AWS credentials are missing or expired.
 
     Calls sts:GetCallerIdentity once per session. If it fails (no credentials,
