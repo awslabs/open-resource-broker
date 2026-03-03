@@ -181,6 +181,7 @@ class AWSHandler(ABC):
         self,
         machine_ids: list[str],
         resource_mapping: Optional[dict[str, tuple[Optional[str], int]]] = None,
+        request_id: str = "",
     ) -> None:
         """
         Release hosts by instance ID.
@@ -189,6 +190,7 @@ class AWSHandler(ABC):
             machine_ids: List of instance IDs to terminate
             resource_mapping: Optional mapping of instance_id to (resource_id, desired_capacity)
                               for intelligent resource management (e.g. ASG/fleet capacity reduction)
+            request_id: Original provisioning request ID, used for launch template cleanup
 
         Raises:
             AWSEntityNotFoundError: If the AWS resource is not found

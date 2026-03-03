@@ -9,6 +9,7 @@ class CleanupResourcesConfig(BaseModel):
     asg: bool = True
     ec2_fleet: bool = True
     spot_fleet: bool = True
+    run_instances: bool = True
 
 
 class CleanupConfig(BaseModel):

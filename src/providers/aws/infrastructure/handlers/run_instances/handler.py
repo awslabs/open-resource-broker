@@ -33,6 +33,7 @@ from botocore.exceptions import ClientError
 
 from domain.base.dependency_injection import injectable
 from domain.base.ports import ErrorHandlingPort, LoggingPort
+from domain.base.ports.configuration_port import ConfigurationPort
 from domain.request.aggregate import Request
 from domain.template.template_aggregate import Template
 from infrastructure.adapters.ports.request_adapter_port import RequestAdapterPort
@@ -41,7 +42,6 @@ from providers.aws.domain.template.aws_template_aggregate import AWSTemplate
 from providers.aws.exceptions.aws_exceptions import AWSInfrastructureError
 from providers.aws.infrastructure.adapters.machine_adapter import AWSMachineAdapter
 from providers.aws.infrastructure.aws_client import AWSClient
-from domain.base.ports.configuration_port import ConfigurationPort
 from providers.aws.infrastructure.handlers.base_handler import AWSHandler
 from providers.aws.infrastructure.handlers.shared.base_context_mixin import BaseContextMixin
 from providers.aws.infrastructure.launch_template.manager import (
@@ -546,6 +546,7 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
         self,
         machine_ids: list[str],
         resource_mapping: Optional[dict[str, tuple[Optional[str], int]]] = None,
+        request_id: str = "",
     ) -> None:
         """
         Release hosts created by RunInstances.
@@ -553,12 +554,9 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
         Args:
             machine_ids: List of instance IDs to terminate
             resource_mapping: Dict mapping instance_id to (resource_id or None, desired_capacity)
+            request_id: Original provisioning request ID, used for launch template cleanup
         """
         try:
-            if resource_mapping:
-                self._logger.debug(
-                    "resource_mapping provided to release_hosts but not used by RunInstances handler"
-                )
             if not machine_ids:
                 self._logger.warning("No instance IDs provided for RunInstances termination")
                 return
@@ -568,6 +566,9 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
                 machine_ids, self._request_adapter, "RunInstances instances"
             )
             self._logger.info("Terminated RunInstances instances: %s", machine_ids)
+
+            if request_id:
+                self._cleanup_on_zero_capacity("run_instances", request_id)
 
         except ClientError as e:
             error = self._convert_client_error(e)

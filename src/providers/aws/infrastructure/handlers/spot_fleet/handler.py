@@ -30,6 +30,7 @@ from typing import Any, Optional
 
 from domain.base.dependency_injection import injectable
 from domain.base.ports import LoggingPort
+from domain.base.ports.configuration_port import ConfigurationPort
 from domain.request.aggregate import Request
 from domain.template.template_aggregate import Template
 from infrastructure.adapters.ports.request_adapter_port import RequestAdapterPort
@@ -41,7 +42,6 @@ from providers.aws.exceptions.aws_exceptions import (
 )
 from providers.aws.infrastructure.adapters.machine_adapter import AWSMachineAdapter
 from providers.aws.infrastructure.aws_client import AWSClient
-from domain.base.ports.configuration_port import ConfigurationPort
 from providers.aws.infrastructure.handlers.base_handler import AWSHandler
 from providers.aws.infrastructure.handlers.shared.base_context_mixin import BaseContextMixin
 from providers.aws.infrastructure.handlers.shared.fleet_grouping_mixin import FleetGroupingMixin
@@ -297,12 +297,14 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
         self,
         machine_ids: list[str],
         resource_mapping: Optional[dict[str, tuple[Optional[str], int]]] = None,
+        request_id: str = "",
     ) -> None:
         """Release hosts across multiple Spot Fleets by detecting fleet membership.
 
         Args:
             machine_ids: List of instance IDs to terminate
             resource_mapping: Dict mapping instance_id to (resource_id or None, desired_capacity)
+            request_id: Original provisioning request ID (unused by SpotFleet handler — recovered from fleet tag)
         """
         try:
             if not machine_ids:

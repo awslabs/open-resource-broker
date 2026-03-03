@@ -149,6 +149,7 @@ class AWSInstanceOperationService:
                         provider_api=operation.parameters.get("provider_api", "RunInstances"),
                         context={},
                         resource_mapping=resource_mapping,
+                        request_id=operation.parameters.get("request_id", ""),
                     )
                     return ProviderResult.success_result(
                         {"success": True, "terminated_count": len(instance_ids)},
