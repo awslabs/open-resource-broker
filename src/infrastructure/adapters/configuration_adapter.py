@@ -352,7 +352,9 @@ class ConfigurationAdapter(ConfigurationPort):
                 for api, caps in handler_config.capabilities.items()
             }
         except Exception as e:
-            _logger.warning("Failed to load handler capabilities, validation will be permissive: %s", e)
+            _logger.warning(
+                "Failed to load handler capabilities, validation will be permissive: %s", e
+            )
             return {}
 
     def get_cleanup_config(self) -> dict[str, Any]:
