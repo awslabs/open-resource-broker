@@ -248,6 +248,7 @@ class AWSProvisioningAdapter(ResourceProvisioningPort):
         provider_api: str,
         context: dict = None,  # type: ignore[assignment]
         resource_mapping: Optional[dict[str, tuple[Optional[str], int]]] = None,
+        request_id: str = "",
     ) -> None:
         """
         Release provisioned AWS resources using direct parameters.
@@ -258,6 +259,7 @@ class AWSProvisioningAdapter(ResourceProvisioningPort):
             provider_api: Provider API type (ASG, EC2Fleet, SpotFleet, RunInstances)
             context: Context dictionary (unused in new flow)
             resource_mapping: Dict mapping instance_id -> (resource_id or None, desired_capacity)
+            request_id: Original provisioning request ID, used for launch template cleanup
 
         Raises:
             AWSEntityNotFoundError: If the resource is not found
@@ -287,7 +289,9 @@ class AWSProvisioningAdapter(ResourceProvisioningPort):
 
         # Call handler's release_hosts method for all provider APIs
         try:
-            handler.release_hosts(machine_ids, resource_mapping=resource_mapping)  # type: ignore[call-arg]
+            handler.release_hosts(
+                machine_ids, resource_mapping=resource_mapping, request_id=request_id
+            )  # type: ignore[call-arg]
 
         except Exception as e:
             self._logger.error(

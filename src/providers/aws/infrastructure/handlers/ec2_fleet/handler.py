@@ -32,6 +32,7 @@ from botocore.exceptions import ClientError
 
 from domain.base.dependency_injection import injectable
 from domain.base.ports import LoggingPort
+from domain.base.ports.configuration_port import ConfigurationPort
 from domain.base.value_objects import AllocationStrategy
 from domain.request.aggregate import Request
 from domain.template.template_aggregate import Template
@@ -47,7 +48,6 @@ from providers.aws.exceptions.aws_exceptions import (
 )
 from providers.aws.infrastructure.adapters.machine_adapter import AWSMachineAdapter
 from providers.aws.infrastructure.aws_client import AWSClient
-from domain.base.ports.configuration_port import ConfigurationPort
 from providers.aws.infrastructure.handlers.base_handler import AWSHandler
 from providers.aws.infrastructure.handlers.ec2_fleet.config_builder import EC2FleetConfigBuilder
 from providers.aws.infrastructure.handlers.ec2_fleet.release_manager import EC2FleetReleaseManager
@@ -513,12 +513,14 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
         self,
         machine_ids: list[str],
         resource_mapping: Optional[dict[str, tuple[Optional[str], int]]] = None,
+        request_id: str = "",
     ) -> None:
         """Release hosts across multiple EC2 Fleets by detecting fleet membership.
 
         Args:
             machine_ids: List of instance IDs to terminate
             resource_mapping: Dict mapping instance_id to (resource_id or None, desired_capacity)
+            request_id: Original provisioning request ID (unused by EC2Fleet handler — recovered from fleet tag)
         """
         try:
             if not machine_ids:

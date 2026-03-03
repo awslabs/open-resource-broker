@@ -160,6 +160,10 @@ class DeprovisioningOrchestrator:
                 OperationType as ProviderOperationType,
             )
 
+            # Each machine carries its original provisioning request_id; all machines
+            # in a resource group share the same resource so they share the same origin.
+            origin_request_id = machines[0].request_id or ""
+
             operation = ProviderOperation(
                 operation_type=ProviderOperationType.TERMINATE_INSTANCES,
                 parameters={
@@ -169,6 +173,7 @@ class DeprovisioningOrchestrator:
                     "provider_api": provider_api,
                     "resource_id": resource_id,
                     "resource_mapping": {iid: (resource_id, 1) for iid in instance_ids},
+                    "request_id": origin_request_id,
                 },
                 context={
                     "correlation_id": str(request.request_id),

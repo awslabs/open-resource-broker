@@ -401,7 +401,8 @@
     "resources": {
       "asg": true,
       "ec2_fleet": true,
-      "spot_fleet": true
+      "spot_fleet": true,
+      "run_instances": true
     }
   }
 }

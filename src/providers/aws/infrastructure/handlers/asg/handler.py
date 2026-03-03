@@ -33,6 +33,7 @@ from botocore.exceptions import ClientError
 
 from domain.base.dependency_injection import injectable
 from domain.base.ports import LoggingPort
+from domain.base.ports.configuration_port import ConfigurationPort
 from domain.request.aggregate import Request
 from domain.template.template_aggregate import Template
 from infrastructure.adapters.ports.request_adapter_port import RequestAdapterPort
@@ -43,7 +44,6 @@ from providers.aws.infrastructure.adapters.machine_adapter import AWSMachineAdap
 from providers.aws.infrastructure.aws_client import AWSClient
 from providers.aws.infrastructure.handlers.asg.capacity_manager import ASGCapacityManager
 from providers.aws.infrastructure.handlers.asg.config_builder import ASGConfigBuilder
-from domain.base.ports.configuration_port import ConfigurationPort
 from providers.aws.infrastructure.handlers.base_handler import AWSHandler
 from providers.aws.infrastructure.handlers.shared.base_context_mixin import BaseContextMixin
 from providers.aws.infrastructure.handlers.shared.fleet_grouping_mixin import FleetGroupingMixin
@@ -335,12 +335,14 @@ class ASGHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
         self,
         machine_ids: list[str],
         resource_mapping: Optional[dict[str, tuple[Optional[str], int]]] = None,
+        request_id: str = "",
     ) -> None:
         """Release hosts across multiple ASGs by detecting ASG membership.
 
         Args:
             machine_ids: List of instance IDs to terminate
             resource_mapping: Dict mapping instance_id to (resource_id or None, desired_capacity) for intelligent resource management
+            request_id: Original provisioning request ID (unused by ASG handler — recovered from ASG name)
         """
         try:
             if not machine_ids:
