@@ -8,7 +8,6 @@ It implements the ResourceProvisioningPort interface from the domain layer.
 from typing import Any, Optional
 
 from domain.base.dependency_injection import injectable
-from domain.base.exceptions import EntityNotFoundError
 from domain.base.ports import LoggingPort
 from domain.request.aggregate import Request
 from domain.template.template_aggregate import Template
@@ -242,64 +241,6 @@ class AWSProvisioningAdapter(ResourceProvisioningPort):
 
         return template
 
-    # KBG TODO: this function is not used.
-    def check_resources_status(self, request: Request) -> list[dict[str, Any]]:
-        """
-        Check the status of provisioned AWS resources.
-
-        Args:
-            request: The request containing resource identifier
-
-        Returns:
-            List of resource details
-
-        Raises:
-            AWSEntityNotFoundError: If the resource is not found
-            InfrastructureError: For other infrastructure errors
-        """
-        self._logger.info("Checking status of resources for request %s", request.request_id)
-
-        if not request.resource_id:
-            self._logger.error("No resource ID found in request %s", request.request_id)
-            raise AWSEntityNotFoundError(f"No resource ID found in request {request.request_id}")
-
-        # Get the template to determine the handler type
-        if not self._template_config_manager:
-            self._logger.warning(
-                "TemplateConfigurationManager not injected, getting from container"
-            )
-            from infrastructure.di.container import get_container
-
-            container = get_container()
-            self._template_config_manager = container.get(TemplateConfigurationManager)
-
-        # Ensure template_id is not None
-        if not request.template_id:
-            raise AWSValidationError("Template ID is required")
-
-        # Get template using the configuration manager
-        template = self._template_config_manager.get_template(str(request.template_id))
-        if not template:
-            raise EntityNotFoundError("Template", str(request.template_id))
-
-        # Get the appropriate handler for the template
-        handler = self._get_handler_for_template(template)  # type: ignore[arg-type]
-
-        try:
-            # Check hosts status using the handler
-            status = handler.check_hosts_status(request)
-            self._logger.info(
-                "Successfully checked status of resources for request %s",
-                request.request_id,
-            )
-            return status
-        except AWSEntityNotFoundError as e:
-            self._logger.error("Resource not found during status check: %s", str(e))
-            raise
-        except Exception as e:
-            self._logger.error("Error during resource status check: %s", str(e))
-            raise InfrastructureError(f"Failed to check resource status: {e!s}")
-
     def release_resources(
         self,
         machine_ids: list[str],
@@ -358,6 +299,7 @@ class AWSProvisioningAdapter(ResourceProvisioningPort):
             "Successfully released %d instances using %s handler", len(machine_ids), provider_api
         )
 
+    # No current caller — available for a future health endpoint
     def get_resource_health(self, resource_id: str) -> dict[str, Any]:
         """
         Get health information for a specific AWS resource.

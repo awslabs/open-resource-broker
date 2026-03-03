@@ -5,6 +5,7 @@ import threading
 from typing import Any, Callable, List, Optional
 
 from domain.base.exceptions import ConfigurationError
+from domain.base.ports.configuration_port import ConfigurationPort
 from domain.base.results import ProviderSelectionResult
 from infrastructure.registry.base_registry import BaseRegistration, BaseRegistry, RegistryMode
 from infrastructure.utilities.common.string_utils import extract_provider_type
@@ -19,10 +20,11 @@ class ProviderRegistry(BaseRegistry):
     Thread-safe singleton implementation using BaseRegistry.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, config_port: Optional[ConfigurationPort] = None) -> None:
         # Provider is MULTI_CHOICE - multiple provider strategies simultaneously
         super().__init__(mode=RegistryMode.MULTI_CHOICE)
         self._strategy_cache: dict[str, Any] = {}
+        self._config_port = config_port
         # Create logger directly since BaseRegistry no longer provides it
         from infrastructure.logging.logger import get_logger
 
@@ -65,14 +67,11 @@ class ProviderRegistry(BaseRegistry):
         if self.is_provider_instance_registered(provider_identifier):
             # If no config provided, get the stored provider instance config
             if config is None:
-                # Get the provider instance config from configuration manager
+                # Get the provider instance config from the injected configuration port
                 try:
-                    from domain.base.ports.configuration_port import ConfigurationPort
-                    from infrastructure.di.container import get_container
-
-                    container = get_container()
-                    config_port = container.get(ConfigurationPort)
-                    provider_config = config_port.get_provider_config()
+                    if self._config_port is None:
+                        raise ConfigurationError("No configuration port available")
+                    provider_config = self._config_port.get_provider_config()
 
                     if provider_config:
                         for instance in provider_config.get_active_providers():  # type: ignore[union-attr]
@@ -679,17 +678,8 @@ class ProviderRegistry(BaseRegistry):
         return None
 
     def _get_config_port(self) -> Optional[Any]:
-        """Get configuration port from DI container using lazy injection."""
-        try:
-            from domain.base.ports.configuration_port import ConfigurationPort
-            from infrastructure.di.container import get_container
-
-            container = get_container()
-            return container.get(ConfigurationPort)
-        except Exception as e:
-            if self._logger:
-                self._logger.debug("Failed to get configuration port: %s", e)
-            return None
+        """Get the injected configuration port."""
+        return self._config_port
 
     def _get_provider_instance_config(self, provider_name: str) -> Optional[Any]:
         """Get provider instance configuration by name."""
