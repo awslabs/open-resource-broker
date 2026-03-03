@@ -497,6 +497,7 @@ class AWSProviderStrategy(ProviderStrategy):
                         "fulfilled_capacity_units": fulfilled,
                         "provisioned_instance_count": int(fulfilled),
                         "state": fleet.get("FleetState"),
+                        "fleet_type": (fleet.get("Type") or "maintain").lower(),
                     }
             elif provider_api == "SpotFleet":
                 response = self.aws_client.ec2_client.describe_spot_fleet_requests(
@@ -511,6 +512,7 @@ class AWSProviderStrategy(ProviderStrategy):
                         "fulfilled_capacity_units": fulfilled,
                         "provisioned_instance_count": int(fulfilled),
                         "state": configs[0].get("SpotFleetRequestState"),
+                        "fleet_type": (cfg.get("Type") or "request").lower(),
                     }
             elif provider_api == "ASG":
                 response = self.aws_client.autoscaling_client.describe_auto_scaling_groups(
