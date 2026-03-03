@@ -144,18 +144,37 @@ def create_aws_resolver() -> Any:
         raise RuntimeError(f"Failed to create AWS resolver: {e!s}")
 
 
-def create_aws_validator() -> Any:
+def create_aws_validator(provider_config: Any = None) -> Any:
     """
     Create AWS template validator.
 
+    Args:
+        provider_config: AWSProviderConfig instance or raw config dict
+
     Returns:
-        AWS template validator instance
+        AWSValidationAdapter instance, or None if config unavailable
     """
     try:
-        # AWS doesn't have a specific validator yet, return None
-        return None
+        from infrastructure.adapters.logging_adapter import LoggingAdapter
+        from providers.aws.configuration.config import AWSProviderConfig
+        from providers.aws.infrastructure.adapters.aws_validation_adapter import (
+            AWSValidationAdapter,
+        )
+
+        if provider_config is None:
+            return None
+
+        if isinstance(provider_config, AWSProviderConfig):
+            aws_config = provider_config
+        elif hasattr(provider_config, "config"):
+            aws_config = AWSProviderConfig(**provider_config.config)
+        elif isinstance(provider_config, dict):
+            aws_config = AWSProviderConfig(**provider_config)
+        else:
+            return None
+
+        return AWSValidationAdapter(config=aws_config, logger=LoggingAdapter())
     except Exception as e:
-        # Re-raise with context - let caller handle logging
         raise RuntimeError(f"Failed to create AWS validator: {e!s}")
 
 

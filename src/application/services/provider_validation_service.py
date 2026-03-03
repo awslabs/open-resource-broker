@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Optional
+
+from domain.base.exceptions import ApplicationError
 
 from domain.base.ports import ContainerPort, LoggingPort, ProviderSelectionPort
 from domain.base.ports.configuration_port import ConfigurationPort
+from domain.base.ports.provider_validation_port import ProviderValidationPort
 
 
 class ProviderValidationService:
@@ -16,10 +19,12 @@ class ProviderValidationService:
         container: ContainerPort,
         logger: LoggingPort,
         provider_selection_port: ProviderSelectionPort,
+        validator: Optional[ProviderValidationPort] = None,
     ) -> None:
         self._container = container
         self.logger = logger
         self._provider_selection_port = provider_selection_port
+        self._validator = validator
 
     async def validate_provider_availability(self) -> None:
         """Validate that providers are available."""
@@ -48,4 +53,21 @@ class ProviderValidationService:
             selection_result.provider_name,
             selection_result.selection_reason,
         )
+
+        if self._validator is not None:
+            template_dict = template if isinstance(template, dict) else vars(template)
+            result = self._validator.validate_template_configuration(template_dict)
+            if not result.get("valid", True):
+                errors = result.get("errors", [])
+                raise ApplicationError("; ".join(errors))
+
+        validation_result = self._provider_selection_port.validate_template_requirements(
+            template, selection_result.provider_name  # type: ignore[arg-type]
+        )
+        if validation_result.warnings:
+            for warning in validation_result.warnings:
+                self.logger.warning("Template validation warning: %s", warning)
+        if not validation_result.is_valid:
+            raise ApplicationError("; ".join(validation_result.errors))
+
         return selection_result
