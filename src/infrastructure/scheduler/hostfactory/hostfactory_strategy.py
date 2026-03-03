@@ -191,7 +191,6 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         # Status-based message and response logic
         if status == "failed":
             return {
-                "requestId": request_id,
                 "message": f"Request failed: {error_message or 'Unknown error'}",
             }
         elif status == "cancelled":

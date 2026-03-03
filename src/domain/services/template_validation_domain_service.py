@@ -66,8 +66,9 @@ class TemplateValidationDomainService:
             errors=[],
             warnings=[],
             supported_features=[],
+            unsupported_features=[],
             provider_instance=provider_instance,
-        )  # type: ignore[call-arg]
+        )
 
         try:
             capabilities = self._get_config_based_capabilities(provider_instance)
