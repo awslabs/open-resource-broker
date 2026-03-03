@@ -483,15 +483,18 @@ class AWSProviderStrategy(ProviderStrategy):
             if not image_specifications:
                 return ProviderResult.success_result({"resolved_images": {}})
 
-            # Create image resolution service
-            service = self._create_image_resolution_service()
+            # Partition specs — only create the service (and activate aws_client) if needed
+            needs_resolution = [
+                s for s in image_specifications
+                if not s.startswith("ami-")
+            ]
 
-            resolved_images = {}
-            for spec in image_specifications:
-                if service.is_resolution_needed(spec):
+            resolved_images = {s: s for s in image_specifications}  # default: pass-through
+
+            if needs_resolution:
+                service = self._create_image_resolution_service()
+                for spec in needs_resolution:
                     resolved_images[spec] = service.resolve_image_id(spec)
-                else:
-                    resolved_images[spec] = spec  # Already resolved
 
             return ProviderResult.success_result({"resolved_images": resolved_images})
 
@@ -513,8 +516,12 @@ class AWSProviderStrategy(ProviderStrategy):
             ttl_seconds=3600,
         )
 
+        aws_client = self.aws_client
+        if aws_client is None:
+            raise RuntimeError("AWS client not available for image resolution")
+
         return AWSImageResolutionService(
-            aws_client=self.aws_client,  # type: ignore[arg-type]
+            aws_client=aws_client,
             cache=cache,
             logger=self._logger,
         )

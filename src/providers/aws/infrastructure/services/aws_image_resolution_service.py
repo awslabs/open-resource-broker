@@ -50,14 +50,17 @@ class AWSImageResolutionService(ImageResolutionService):
 
     def is_resolution_needed(self, image_specification: str) -> bool:
         """Check if image specification needs resolution."""
+        return self.is_resolution_needed_static(image_specification)
+
+    @staticmethod
+    def is_resolution_needed_static(image_specification: str) -> bool:
+        """Check if image specification needs resolution (no instance required)."""
         # AWS AMI IDs start with 'ami-'
         if image_specification.startswith("ami-"):
             return False
-
         # SSM parameters typically start with '/'
         if image_specification.startswith("/"):
             return True
-
         # Assume other formats need resolution
         return True
 
