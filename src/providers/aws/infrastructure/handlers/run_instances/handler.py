@@ -593,7 +593,7 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
                 price_type="ondemand",
                 subnet_ids=["subnet-12345678"],
                 security_group_ids=["sg-12345678"],
-                tags={"Environment": "dev", "ManagedBy": "ORB"},
+                tags={"Environment": "dev"},
             ),
             AWSTemplate(
                 template_id="RunInstances-Spot",
@@ -607,6 +607,6 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
                 max_price=0.05,
                 subnet_ids=["subnet-12345678"],
                 security_group_ids=["sg-12345678"],
-                tags={"Environment": "dev", "ManagedBy": "ORB"},
+                tags={"Environment": "dev"},
             ),
         ]

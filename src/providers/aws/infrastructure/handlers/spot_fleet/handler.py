@@ -508,7 +508,7 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                 max_price=0.05,
                 subnet_ids=["subnet-12345678"],
                 security_group_ids=["sg-12345678"],
-                tags={"Environment": "dev", "ManagedBy": "ORB"},
+                tags={"Environment": "dev"},
             ),
             AWSTemplate(
                 template_id="SpotFleet-Request-Diversified",
@@ -524,7 +524,7 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                 max_price=0.06,
                 subnet_ids=["subnet-12345678"],
                 security_group_ids=["sg-12345678"],
-                tags={"Environment": "dev", "ManagedBy": "ORB"},
+                tags={"Environment": "dev"},
             ),
             AWSTemplate(
                 template_id="SpotFleet-Request-CapacityOptimized",
@@ -540,7 +540,7 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                 max_price=0.07,
                 subnet_ids=["subnet-12345678"],
                 security_group_ids=["sg-12345678"],
-                tags={"Environment": "dev", "ManagedBy": "ORB"},
+                tags={"Environment": "dev"},
             ),
             # Maintain fleet type examples
             AWSTemplate(
@@ -557,7 +557,7 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                 max_price=0.04,
                 subnet_ids=["subnet-12345678"],
                 security_group_ids=["sg-12345678"],
-                tags={"Environment": "prod", "ManagedBy": "ORB"},
+                tags={"Environment": "prod"},
             ),
             AWSTemplate(
                 template_id="SpotFleet-Maintain-Diversified",
@@ -573,7 +573,7 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                 max_price=0.05,
                 subnet_ids=["subnet-12345678"],
                 security_group_ids=["sg-12345678"],
-                tags={"Environment": "prod", "ManagedBy": "ORB"},
+                tags={"Environment": "prod"},
             ),
             AWSTemplate(
                 template_id="SpotFleet-Maintain-CapacityOptimized",
@@ -589,6 +589,6 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                 max_price=0.06,
                 subnet_ids=["subnet-12345678"],
                 security_group_ids=["sg-12345678"],
-                tags={"Environment": "prod", "ManagedBy": "ORB"},
+                tags={"Environment": "prod"},
             ),
         ]
