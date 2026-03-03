@@ -41,6 +41,7 @@ from providers.aws.domain.template.aws_template_aggregate import AWSTemplate
 from providers.aws.exceptions.aws_exceptions import AWSInfrastructureError
 from providers.aws.infrastructure.adapters.machine_adapter import AWSMachineAdapter
 from providers.aws.infrastructure.aws_client import AWSClient
+from domain.base.ports.configuration_port import ConfigurationPort
 from providers.aws.infrastructure.handlers.base_handler import AWSHandler
 from providers.aws.infrastructure.handlers.shared.base_context_mixin import BaseContextMixin
 from providers.aws.infrastructure.launch_template.manager import (
@@ -64,7 +65,7 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
         machine_adapter: Optional[AWSMachineAdapter] = None,
         error_handler: ErrorHandlingPort = None,  # type: ignore[assignment]
         aws_native_spec_service=None,
-        config_port=None,
+        config_port: Optional[ConfigurationPort] = None,
     ) -> None:
         """
         Initialize RunInstances handler with integrated dependencies.
@@ -225,9 +226,10 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
     ) -> dict[str, Any]:
         """Prepare RunInstances-specific context."""
 
+        assert self.config_port is not None, "config_port must be injected"
         return {
             # RunInstances-specific values
-            "instance_name": f"{self.config_port.get_resource_prefix('instance')}{request.request_id}",  # type: ignore[union-attr]
+            "instance_name": f"{self.config_port.get_resource_prefix('instance')}{request.request_id}",
             # Pricing configuration
             "default_capacity_type": self._get_default_capacity_type(template.price_type),
             "has_spot_options": bool(template.allocation_strategy or template.max_price),
@@ -348,11 +350,12 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
                 }
 
         # Add additional tags for instances (beyond launch template)
+        assert self.config_port is not None, "config_port must be injected"
         instance_tags = merge_tags(
             [
                 {
                     "Key": "Name",
-                    "Value": f"{self.config_port.get_resource_prefix('instance')}{request.request_id}",  # type: ignore[union-attr]
+                    "Value": f"{self.config_port.get_resource_prefix('instance')}{request.request_id}",
                 },
                 *(
                     [{"Key": k, "Value": v} for k, v in aws_template.tags.items()]

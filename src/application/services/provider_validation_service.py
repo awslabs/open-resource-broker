@@ -2,13 +2,17 @@
 
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Optional
 
 from domain.base.exceptions import ApplicationError
+
+if TYPE_CHECKING:
+    from domain.template.template_aggregate import Template
 
 from domain.base.ports import ContainerPort, LoggingPort, ProviderSelectionPort
 from domain.base.ports.configuration_port import ConfigurationPort
 from domain.base.ports.provider_validation_port import ProviderValidationPort
+from domain.base.results import ProviderSelectionResult
 
 
 class ProviderValidationService:
@@ -45,7 +49,7 @@ class ProviderValidationService:
 
         self.logger.debug("Available provider strategies: %s", available_strategies)
 
-    async def select_and_validate_provider(self, template: Any) -> Any:
+    async def select_and_validate_provider(self, template: "Template") -> ProviderSelectionResult:
         """Select provider and validate template compatibility."""
         selection_result = self._provider_selection_port.select_provider_for_template(template)
         self.logger.info(
@@ -63,7 +67,7 @@ class ProviderValidationService:
 
         validation_result = self._provider_selection_port.validate_template_requirements(
             template,
-            selection_result.provider_name,  # type: ignore[arg-type]
+            selection_result.provider_name,
         )
         if validation_result.warnings:
             for warning in validation_result.warnings:

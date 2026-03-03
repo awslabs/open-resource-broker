@@ -47,6 +47,7 @@ from providers.aws.exceptions.aws_exceptions import (
 )
 from providers.aws.infrastructure.adapters.machine_adapter import AWSMachineAdapter
 from providers.aws.infrastructure.aws_client import AWSClient
+from domain.base.ports.configuration_port import ConfigurationPort
 from providers.aws.infrastructure.handlers.base_handler import AWSHandler
 from providers.aws.infrastructure.handlers.ec2_fleet.config_builder import EC2FleetConfigBuilder
 from providers.aws.infrastructure.handlers.ec2_fleet.release_manager import EC2FleetReleaseManager
@@ -71,7 +72,7 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
         request_adapter: Optional[RequestAdapterPort] = None,
         machine_adapter: Optional[AWSMachineAdapter] = None,
         aws_native_spec_service=None,
-        config_port=None,
+        config_port: Optional[ConfigurationPort] = None,
         fleet_config_builder: Optional[EC2FleetConfigBuilder] = None,
         fleet_release_manager: Optional[EC2FleetReleaseManager] = None,
     ) -> None:

@@ -41,6 +41,7 @@ from providers.aws.exceptions.aws_exceptions import (
 )
 from providers.aws.infrastructure.adapters.machine_adapter import AWSMachineAdapter
 from providers.aws.infrastructure.aws_client import AWSClient
+from domain.base.ports.configuration_port import ConfigurationPort
 from providers.aws.infrastructure.handlers.base_handler import AWSHandler
 from providers.aws.infrastructure.handlers.shared.base_context_mixin import BaseContextMixin
 from providers.aws.infrastructure.handlers.shared.fleet_grouping_mixin import FleetGroupingMixin
@@ -66,7 +67,7 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
         request_adapter: RequestAdapterPort = None,  # type: ignore[assignment]
         machine_adapter: Optional[AWSMachineAdapter] = None,
         aws_native_spec_service=None,
-        config_port=None,
+        config_port: Optional[ConfigurationPort] = None,
         spot_fleet_validator: Optional[SpotFleetValidator] = None,
         config_builder: Optional[SpotFleetConfigBuilder] = None,
         release_manager: Optional[SpotFleetReleaseManager] = None,

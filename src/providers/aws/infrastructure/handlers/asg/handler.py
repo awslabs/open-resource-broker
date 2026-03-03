@@ -43,6 +43,7 @@ from providers.aws.infrastructure.adapters.machine_adapter import AWSMachineAdap
 from providers.aws.infrastructure.aws_client import AWSClient
 from providers.aws.infrastructure.handlers.asg.capacity_manager import ASGCapacityManager
 from providers.aws.infrastructure.handlers.asg.config_builder import ASGConfigBuilder
+from domain.base.ports.configuration_port import ConfigurationPort
 from providers.aws.infrastructure.handlers.base_handler import AWSHandler
 from providers.aws.infrastructure.handlers.shared.base_context_mixin import BaseContextMixin
 from providers.aws.infrastructure.handlers.shared.fleet_grouping_mixin import FleetGroupingMixin
@@ -63,7 +64,7 @@ class ASGHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
         request_adapter: Optional[RequestAdapterPort] = None,
         machine_adapter: Optional[AWSMachineAdapter] = None,
         aws_native_spec_service=None,
-        config_port=None,
+        config_port: Optional[ConfigurationPort] = None,
     ) -> None:
         """
         Initialize the ASG handler with integrated dependencies.
