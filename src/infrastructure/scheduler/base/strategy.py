@@ -130,6 +130,7 @@ class BaseSchedulerStrategy(SchedulerPort, ABC):
     _HF_STATUS_MAP: dict[str, str] = {
         "pending": "running",
         "in_progress": "running",
+        "acquiring": "running",
         "provisioning": "running",
         "complete": "complete",
         "completed": "complete",

@@ -107,7 +107,7 @@ class RequestStatusService:
                 # Fleet metadata (FulfilledCapacity) can lag or use floating-point values
                 # that don't exactly match target. Use running instance count as the
                 # authoritative signal when it meets the requested count.
-                fleet_type = fleet_capacity.get("fleet_type", "")
+                fulfillment_final = fleet_capacity.get("fulfillment_final", False)
                 fleet_errors = provider_metadata.get("fleet_errors") or []
 
                 instance_target = request.requested_count
@@ -115,7 +115,7 @@ class RequestStatusService:
                     effective_fulfilled >= effective_target and failed_count == 0
                 ):
                     return RequestStatus.COMPLETED.value, "All instances running successfully"
-                elif fleet_type == "instant" and pending_count == 0:
+                elif fulfillment_final and pending_count == 0:
                     error_detail = (
                         f": {'; '.join(e.get('error_code', '') for e in fleet_errors if e.get('error_code'))}"
                         if fleet_errors

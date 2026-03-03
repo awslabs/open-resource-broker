@@ -42,6 +42,7 @@ class TestRequestStatus:
         assert RequestStatus.CANCELLED.value == "cancelled"
         assert RequestStatus.PARTIAL.value == "partial"
         assert RequestStatus.TIMEOUT.value == "timeout"
+        assert RequestStatus.ACQUIRING.value == "acquiring"
 
     def test_from_str_valid(self):
         assert RequestStatus.from_str("pending") == RequestStatus.PENDING
@@ -57,13 +58,15 @@ class TestRequestStatus:
         assert RequestStatus.FAILED.is_terminal() is True
         assert RequestStatus.CANCELLED.is_terminal() is True
         assert RequestStatus.TIMEOUT.is_terminal() is True
+        assert RequestStatus.PARTIAL.is_terminal() is True
         assert RequestStatus.PENDING.is_terminal() is False
         assert RequestStatus.IN_PROGRESS.is_terminal() is False
-        assert RequestStatus.PARTIAL.is_terminal() is False
+        assert RequestStatus.ACQUIRING.is_terminal() is False
 
     def test_is_active(self):
         assert RequestStatus.PENDING.is_active() is True
         assert RequestStatus.IN_PROGRESS.is_active() is True
+        assert RequestStatus.ACQUIRING.is_active() is True
         assert RequestStatus.COMPLETED.is_active() is False
         assert RequestStatus.FAILED.is_active() is False
 
@@ -71,9 +74,17 @@ class TestRequestStatus:
         assert RequestStatus.PENDING.can_transition_to(RequestStatus.IN_PROGRESS) is True
         assert RequestStatus.PENDING.can_transition_to(RequestStatus.CANCELLED) is True
         assert RequestStatus.IN_PROGRESS.can_transition_to(RequestStatus.COMPLETED) is True
+        assert RequestStatus.IN_PROGRESS.can_transition_to(RequestStatus.PARTIAL) is True
         assert RequestStatus.IN_PROGRESS.can_transition_to(RequestStatus.FAILED) is True
         assert RequestStatus.IN_PROGRESS.can_transition_to(RequestStatus.CANCELLED) is True
         assert RequestStatus.IN_PROGRESS.can_transition_to(RequestStatus.TIMEOUT) is True
+        assert RequestStatus.IN_PROGRESS.can_transition_to(RequestStatus.ACQUIRING) is True
+        assert RequestStatus.ACQUIRING.can_transition_to(RequestStatus.ACQUIRING) is True
+        assert RequestStatus.ACQUIRING.can_transition_to(RequestStatus.COMPLETED) is True
+        assert RequestStatus.ACQUIRING.can_transition_to(RequestStatus.PARTIAL) is True
+        assert RequestStatus.ACQUIRING.can_transition_to(RequestStatus.FAILED) is True
+        assert RequestStatus.ACQUIRING.can_transition_to(RequestStatus.TIMEOUT) is True
+        assert RequestStatus.ACQUIRING.can_transition_to(RequestStatus.CANCELLED) is True
 
     def test_can_transition_to_invalid(self):
         # Terminal states cannot transition
@@ -81,6 +92,7 @@ class TestRequestStatus:
         assert RequestStatus.FAILED.can_transition_to(RequestStatus.IN_PROGRESS) is False
         assert RequestStatus.CANCELLED.can_transition_to(RequestStatus.COMPLETED) is False
         assert RequestStatus.TIMEOUT.can_transition_to(RequestStatus.FAILED) is False
+        assert RequestStatus.PARTIAL.can_transition_to(RequestStatus.ACQUIRING) is False
         # PENDING cannot jump to COMPLETED
         assert RequestStatus.PENDING.can_transition_to(RequestStatus.COMPLETED) is False
 

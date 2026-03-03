@@ -492,12 +492,14 @@ class AWSProviderStrategy(ProviderStrategy):
                     spec = fleet.get("TargetCapacitySpecification") or {}
                     target = spec.get("TotalTargetCapacity")
                     fulfilled = fleet.get("FulfilledCapacity") or 0
+                    fleet_type_val = (fleet.get("Type") or "maintain").lower()
                     metadata["fleet_capacity_fulfilment"] = {
                         "target_capacity_units": target,
                         "fulfilled_capacity_units": fulfilled,
                         "provisioned_instance_count": int(fulfilled),
                         "state": fleet.get("FleetState"),
-                        "fleet_type": (fleet.get("Type") or "maintain").lower(),
+                        "fleet_type": fleet_type_val,
+                        "fulfillment_final": fleet_type_val == "instant",
                     }
             elif provider_api == "SpotFleet":
                 response = self.aws_client.ec2_client.describe_spot_fleet_requests(
