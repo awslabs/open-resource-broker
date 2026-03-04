@@ -121,7 +121,9 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
         )
 
     @handle_infrastructure_exceptions(context="ec2_fleet_creation")
-    def _acquire_hosts_internal(self, request: Request, aws_template: AWSTemplate) -> dict[str, Any]:
+    def _acquire_hosts_internal(
+        self, request: Request, aws_template: AWSTemplate
+    ) -> dict[str, Any]:
         """
         Create an EC2 Fleet to acquire hosts.
         Returns structured result with resource IDs and instance data.
@@ -705,7 +707,7 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                 name="EC2 Fleet Instant On-Demand",
                 description="EC2 Fleet with instant fulfillment using on-demand instances",
                 provider_api="EC2Fleet",
-                instance_type="t3.medium",
+                machine_types={"t3.medium": 1},
                 max_instances=10,
                 price_type="ondemand",
                 subnet_ids=[],
@@ -718,7 +720,7 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                 name="EC2 Fleet Instant Spot",
                 description="EC2 Fleet with instant fulfillment using spot instances",
                 provider_api="EC2Fleet",
-                instance_type="t3.medium",
+                machine_types={"t3.medium": 1},
                 max_instances=10,
                 price_type="spot",
                 max_price=0.05,
@@ -732,7 +734,7 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                 name="EC2 Fleet Instant Mixed",
                 description="EC2 Fleet with instant fulfillment using mixed pricing",
                 provider_api="EC2Fleet",
-                instance_type="t3.medium",
+                machine_types={"t3.medium": 1},
                 max_instances=10,
                 price_type="heterogeneous",
                 percent_on_demand=30,
@@ -749,7 +751,7 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                 name="EC2 Fleet Request On-Demand",
                 description="EC2 Fleet with request fulfillment using on-demand instances",
                 provider_api="EC2Fleet",
-                instance_type="t3.medium",
+                machine_types={"t3.medium": 1},
                 max_instances=15,
                 price_type="ondemand",
                 subnet_ids=[],
@@ -762,7 +764,7 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                 name="EC2 Fleet Request Spot",
                 description="EC2 Fleet with request fulfillment using spot instances",
                 provider_api="EC2Fleet",
-                instance_type="t3.medium",
+                machine_types={"t3.medium": 1},
                 max_instances=20,
                 price_type="spot",
                 allocation_strategy="capacityOptimized",
@@ -797,7 +799,7 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                 name="EC2 Fleet Maintain On-Demand",
                 description="EC2 Fleet with maintain capacity using on-demand instances",
                 provider_api="EC2Fleet",
-                instance_type="t3.medium",
+                machine_types={"t3.medium": 1},
                 max_instances=12,
                 price_type="ondemand",
                 subnet_ids=[],
@@ -810,7 +812,7 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                 name="EC2 Fleet Maintain Spot",
                 description="EC2 Fleet with maintain capacity using spot instances",
                 provider_api="EC2Fleet",
-                instance_type="t3.medium",
+                machine_types={"t3.medium": 1},
                 max_instances=30,
                 price_type="spot",
                 allocation_strategy="priceCapacityOptimized",

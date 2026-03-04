@@ -92,7 +92,9 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
         )
 
     @handle_infrastructure_exceptions(context="run_instances_creation")
-    def _acquire_hosts_internal(self, request: Request, aws_template: AWSTemplate) -> dict[str, Any]:
+    def _acquire_hosts_internal(
+        self, request: Request, aws_template: AWSTemplate
+    ) -> dict[str, Any]:
         """
         Create EC2 instances using RunInstances to acquire hosts.
         Returns structured result with resource IDs and instance data.

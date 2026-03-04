@@ -109,7 +109,9 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
         )
 
     @handle_infrastructure_exceptions(context="spot_fleet_creation")
-    def _acquire_hosts_internal(self, request: Request, aws_template: AWSTemplate) -> dict[str, Any]:
+    def _acquire_hosts_internal(
+        self, request: Request, aws_template: AWSTemplate
+    ) -> dict[str, Any]:
         """
         Create a Spot Fleet to acquire hosts.
         Returns structured result with resource IDs and instance data.

@@ -125,7 +125,9 @@ class ASGHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
         self._cleanup_on_zero_capacity(resource_type, request_id)
 
     @handle_infrastructure_exceptions(context="asg_creation")
-    def _acquire_hosts_internal(self, request: Request, aws_template: AWSTemplate) -> dict[str, Any]:
+    def _acquire_hosts_internal(
+        self, request: Request, aws_template: AWSTemplate
+    ) -> dict[str, Any]:
         """
         Create an Auto Scaling Group to acquire hosts.
         Returns structured result with resource IDs and instance data.
@@ -531,7 +533,7 @@ class ASGHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                 name="Auto Scaling Group On-Demand",
                 description="Auto Scaling Group with on-demand instances only",
                 provider_api="ASG",
-                instance_type="t3.medium",
+                machine_types={"t3.medium": 1},
                 max_instances=15,
                 price_type="ondemand",
                 subnet_ids=[],
@@ -543,7 +545,7 @@ class ASGHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                 name="Auto Scaling Group Spot",
                 description="Auto Scaling Group with spot instances only",
                 provider_api="ASG",
-                instance_type="t3.medium",
+                machine_types={"t3.medium": 1},
                 max_instances=20,
                 price_type="spot",
                 max_price=0.05,

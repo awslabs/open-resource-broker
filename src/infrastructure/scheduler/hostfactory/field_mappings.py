@@ -33,6 +33,12 @@ class HostFactoryFieldMappings:
             "iops": "iops",
             # Tags and metadata
             "instanceTags": "tags",  # Will be parsed from string format
+            # Template metadata
+            "name": "name",
+            "providerName": "provider_name",
+            "providerApi": "provider_api",
+            "providerType": "provider_type",
+            "createdAt": "created_at",
         },
         # AWS-specific fields (only mapped when AWS provider is active)
         "aws": {
