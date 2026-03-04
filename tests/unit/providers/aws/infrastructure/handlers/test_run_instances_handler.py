@@ -258,6 +258,7 @@ class TestRunInstancesHandlerMachineAdapterContext:
             instance_ids,
             request_id=str(request.request_id),
             resource_id=resource_id,
+            provider_api="RunInstances",
         )
 
     def test_find_instances_by_resource_ids_passes_context(self):
@@ -285,4 +286,5 @@ class TestRunInstancesHandlerMachineAdapterContext:
             ["i-find1"],
             request_id=str(request.request_id),
             resource_id=resource_id,
+            provider_api="RunInstances",
         )

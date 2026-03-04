@@ -131,13 +131,13 @@ class EC2FleetReleaseManager:
                 if fleet_type == "maintain" and new_capacity == 0:
                     self._logger.info("EC2 Fleet %s capacity is zero, deleting fleet", fleet_id)
                     self._delete_fleet(fleet_id)
+                    self._maybe_cleanup_launch_template(fleet_details)
                 else:
                     self._logger.debug(
                         "EC2 Fleet %s is non-maintain type (%s), skipping fleet deletion",
                         fleet_id,
                         fleet_type,
                     )
-                self._maybe_cleanup_launch_template(fleet_details)
             else:
                 self._delete_fleet(fleet_id)
 

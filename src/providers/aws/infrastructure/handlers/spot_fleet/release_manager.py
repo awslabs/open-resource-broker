@@ -101,7 +101,7 @@ class SpotFleetReleaseManager:
                         SpotFleetRequestIds=[fleet_id],
                         TerminateInstances=False,
                     )
-                self._maybe_cleanup_launch_template(fleet_details, fleet_config)
+                    self._maybe_cleanup_launch_template(fleet_details, fleet_config)
             else:
                 # No specific instances — cancel the entire fleet
                 self._retry(

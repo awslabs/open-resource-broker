@@ -266,4 +266,5 @@ class TestASGHandlerNameTag:
             ["i-ctx1"],
             request_id="req-ctx",
             resource_id="asg-ctx",
+            provider_api="ASG",
         )
