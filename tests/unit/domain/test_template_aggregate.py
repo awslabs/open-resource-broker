@@ -89,7 +89,7 @@ class TestTemplateAggregate:
 
         assert template.template_id == "template-002"
         assert template.name == "minimal-template"
-        assert template.key_pair_name is None
+        assert template.key_name is None
         assert template.user_data is None
         assert template.tags == {}
 

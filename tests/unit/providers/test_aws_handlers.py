@@ -335,7 +335,7 @@ class TestEC2FleetHandler:
         template.security_group_ids = [sg["GroupId"]]
         template.tags = {}
         template.fleet_type = AWSFleetType.MAINTAIN
-        template.key_pair_name = None
+        template.key_name = None
         template.user_data = None
 
         # Mock the AWS operations to return success
@@ -384,7 +384,7 @@ class TestEC2FleetHandler:
         template.security_group_ids = ["sg-invalid"]
         template.tags = {}
         template.fleet_type = "maintain"
-        template.key_pair_name = None
+        template.key_name = None
         template.user_data = None
 
         # Mock AWS operations to raise an exception
@@ -1979,7 +1979,7 @@ class TestRunInstancesHandler:
         template.template_id = "test-template"
         template.machine_types = {"t2.micro": 1}
         template.image_id = "ami-12345678"
-        template.key_pair_name = "test-key"
+        template.key_name = "test-key"
         template.security_group_ids = ["sg-12345678"]
         template.subnet_ids = None
         template.tags = {}
@@ -2027,7 +2027,7 @@ class TestRunInstancesHandler:
         template.template_id = "test-template"
         template.machine_types = {"x1e.32xlarge": 1}  # Very large instance
         template.image_id = "ami-12345678"
-        template.key_pair_name = None
+        template.key_name = None
         template.security_group_ids = ["sg-12345678"]
         template.subnet_ids = None
         template.tags = {}
@@ -2073,7 +2073,7 @@ class TestRunInstancesHandler:
         template.template_id = "test-template"
         template.machine_types = {"t2.micro": 1}
         template.image_id = "ami-12345678"
-        template.key_pair_name = None
+        template.key_name = None
         template.security_group_ids = ["sg-12345678"]
         template.subnet_ids = None
         template.tags = {}

@@ -207,14 +207,10 @@ class AWSTemplate(Template):
     provider_api: ProviderApi = ProviderApi.EC2_FLEET  # type: ignore[assignment]
     fleet_type: Optional[AWSFleetType] = None
     fleet_role: Optional[str] = None
-    key_name: Optional[str] = None
     user_data: Optional[str] = None
 
     # AWS instance configuration
-    root_device_volume_size: Optional[int] = None
     volume_type: Optional[str] = "gp3"  # gp2, gp3, io1, io2, standard
-    iops: Optional[int] = None
-    instance_profile: Optional[str] = None
 
     # AWS spot configuration
     spot_fleet_request_expiry: Optional[int] = None
