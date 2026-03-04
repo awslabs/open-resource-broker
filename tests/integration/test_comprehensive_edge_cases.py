@@ -845,7 +845,10 @@ def test_template_field_variations():
                 ):
                     validation_errors.append("Invalid AMI format")
 
-                if template_data.get("root_device_volume_size") and template_data["root_device_volume_size"] < 0:
+                if (
+                    template_data.get("root_device_volume_size")
+                    and template_data["root_device_volume_size"] < 0
+                ):
                     validation_errors.append("Invalid volume size")
 
                 # Determine validation result

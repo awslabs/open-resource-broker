@@ -139,7 +139,9 @@ class TemplateSerializer(BaseEntitySerializer):
                 ),
                 "network_zones": processed_data.get("network_zones", []),
                 "public_ip_assignment": processed_data.get("public_ip_assignment"),
-                "root_device_volume_size": data.get("root_device_volume_size", data.get("root_volume_size")),
+                "root_device_volume_size": data.get(
+                    "root_device_volume_size", data.get("root_volume_size")
+                ),
                 "volume_type": data.get("volume_type", data.get("root_volume_type")),
                 "iops": data.get("iops", data.get("root_volume_iops")),
                 "throughput": data.get("throughput", data.get("root_volume_throughput")),
