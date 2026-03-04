@@ -153,7 +153,9 @@ class SpotFleetConfigBuilder(BaseConfigBuilder):
         abis_instance_requirements = template.get_instance_requirements_payload()
 
         _ft = template.fleet_type
-        fleet_type = _ft.value if _ft is not None and hasattr(_ft, "value") else str(_ft or "request")
+        fleet_type = (
+            _ft.value if _ft is not None and hasattr(_ft, "value") else str(_ft or "request")
+        )
 
         tag_context = self._build_tag_context(
             request_id=str(request.request_id),
