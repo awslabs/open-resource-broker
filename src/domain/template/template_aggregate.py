@@ -43,15 +43,15 @@ class Template(BaseModel):
     public_ip_assignment: Optional[bool] = None  # generic concept
 
     # Storage configuration (generic concepts)
-    root_volume_size: Optional[int] = None  # root disk size
-    root_volume_type: Optional[str] = None  # disk type
-    root_volume_iops: Optional[int] = None  # performance
-    root_volume_throughput: Optional[int] = None  # throughput
+    root_device_volume_size: Optional[int] = None  # root disk size
+    volume_type: Optional[str] = None  # disk type
+    iops: Optional[int] = None  # performance
+    throughput: Optional[int] = None  # throughput
     storage_encryption: Optional[bool] = None  # encryption
     encryption_key: Optional[str] = None  # key reference
 
     # Access and security (generic concepts)
-    key_pair_name: Optional[str] = None  # SSH key, etc.
+    key_name: Optional[str] = None  # SSH key, etc.
     user_data: Optional[str] = None  # cloud-init, etc.
     instance_profile: Optional[str] = None  # IAM role, service principal
 

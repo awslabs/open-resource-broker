@@ -48,7 +48,7 @@ class TestAWSLaunchTemplateManager:
             image_id="ami-12345678",
             subnet_ids=["subnet-123"],
             security_group_ids=["sg-123"],
-            key_pair_name="test-key",
+            key_name="test-key",
         )
 
         # Sample request

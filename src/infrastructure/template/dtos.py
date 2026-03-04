@@ -45,15 +45,15 @@ class TemplateDTO(BaseDTO):
     public_ip_assignment: Optional[bool] = None
 
     # Storage configuration
-    root_volume_size: Optional[int] = None
-    root_volume_type: Optional[str] = None
-    root_volume_iops: Optional[int] = None
-    root_volume_throughput: Optional[int] = None
+    root_device_volume_size: Optional[int] = None
+    volume_type: Optional[str] = None
+    iops: Optional[int] = None
+    throughput: Optional[int] = None
     storage_encryption: Optional[bool] = None
     encryption_key: Optional[str] = None
 
     # Access and security
-    key_pair_name: Optional[str] = None
+    key_name: Optional[str] = None
     user_data: Optional[str] = None
     instance_profile: Optional[str] = None
 
@@ -127,14 +127,14 @@ class TemplateDTO(BaseDTO):
             network_zones=getattr(template, "network_zones", []),
             public_ip_assignment=getattr(template, "public_ip_assignment", None),
             # Storage configuration
-            root_volume_size=getattr(template, "root_volume_size", None),
-            root_volume_type=getattr(template, "root_volume_type", None),
-            root_volume_iops=getattr(template, "root_volume_iops", None),
-            root_volume_throughput=getattr(template, "root_volume_throughput", None),
+            root_device_volume_size=getattr(template, "root_device_volume_size", None),
+            volume_type=getattr(template, "volume_type", None),
+            iops=getattr(template, "iops", None),
+            throughput=getattr(template, "throughput", None),
             storage_encryption=getattr(template, "storage_encryption", None),
             encryption_key=getattr(template, "encryption_key", None),
             # Access and security
-            key_pair_name=getattr(template, "key_pair_name", None),
+            key_name=getattr(template, "key_name", None),
             user_data=getattr(template, "user_data", None),
             instance_profile=getattr(template, "instance_profile", None),
             # Advanced configuration
