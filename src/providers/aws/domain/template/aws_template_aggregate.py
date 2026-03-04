@@ -2,7 +2,15 @@
 
 from typing import Any, Optional
 
-from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_serializer, model_validator
+from pydantic import (
+    AliasChoices,
+    BaseModel,
+    ConfigDict,
+    Field,
+    field_serializer,
+    field_validator,
+    model_validator,
+)
 
 from domain.base.value_objects import AllocationStrategy
 from domain.template.template_aggregate import Template
@@ -293,6 +301,16 @@ class AWSTemplate(Template):
                     )
 
         return self
+
+    @field_validator("allocation_strategy_on_demand", mode="before")
+    @classmethod
+    def coerce_allocation_strategy_on_demand(cls, value: Any) -> Optional["AWSAllocationStrategy"]:
+        """Coerce raw strings to AWSAllocationStrategy."""
+        if value is None or isinstance(value, AWSAllocationStrategy):
+            return value
+        if isinstance(value, str):
+            return AWSAllocationStrategy.from_core(AllocationStrategy(value))
+        return value
 
     @field_serializer("allocation_strategy_on_demand")
     def serialize_allocation_strategy_on_demand(

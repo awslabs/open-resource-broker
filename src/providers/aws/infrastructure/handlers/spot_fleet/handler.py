@@ -222,8 +222,10 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                 f"arn:aws:iam::{account_id}:role/aws-service-role/"
                 f"spotfleet.amazonaws.com/AWSServiceRoleForEC2SpotFleet"
             )
+        else:
+            resolved = fleet_role
 
-        if resolved is not None:
+        if resolved != aws_template.fleet_role:
             aws_template = aws_template.model_copy(update={"fleet_role": resolved})
         return aws_template
 
