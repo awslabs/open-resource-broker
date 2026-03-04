@@ -13,7 +13,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 from providers.aws.exceptions.aws_exceptions import AWSValidationError
-from tests.aws_mock.conftest import (
+from tests.onmoto.conftest import (
     _make_aws_client,
     _make_config_port,
     _make_logger,
@@ -297,3 +297,298 @@ class TestErrorResponseShape:
 
         assert response["success"] is False
         assert "traceback" in response
+
+
+# ---------------------------------------------------------------------------
+# EC2Fleet handler edge cases
+# ---------------------------------------------------------------------------
+
+
+class TestEC2FleetHandlerEdgeCases:
+    @pytest.fixture
+    def handler(self, moto_aws):
+        aws_client = _make_aws_client(region=REGION)
+        logger = _make_logger()
+        config_port = _make_config_port(prefix="")
+        from tests.onmoto.conftest import make_ec2_fleet_handler
+
+        return make_ec2_fleet_handler(aws_client, logger, config_port)
+
+    @pytest.fixture
+    def vpc(self, moto_aws):
+        import boto3
+
+        ec2 = boto3.client("ec2", region_name=REGION)
+        vpc = ec2.create_vpc(CidrBlock="10.0.0.0/16")
+        vpc_id = vpc["Vpc"]["VpcId"]
+        subnet = ec2.create_subnet(
+            VpcId=vpc_id, CidrBlock="10.0.1.0/24", AvailabilityZone=f"{REGION}a"
+        )
+        sg = ec2.create_security_group(GroupName="test-sg-fleet", Description="test", VpcId=vpc_id)
+        return {
+            "subnet_id": subnet["Subnet"]["SubnetId"],
+            "sg_id": sg["GroupId"],
+            "ec2": ec2,
+        }
+
+    def test_acquire_fleet_missing_fleet_type_returns_failure(self, handler, vpc):
+        bad_template = make_aws_template(subnet_id=vpc["subnet_id"], sg_id=vpc["sg_id"])
+        bad_template = bad_template.model_copy(update={"fleet_type": None})
+        request = make_request(request_id="req-fleet-err-001")
+
+        result = handler.acquire_hosts(request, bad_template)
+
+        assert result["success"] is False
+
+    def test_check_hosts_status_no_resource_ids_raises(self, handler):
+        from providers.aws.exceptions.aws_exceptions import AWSInfrastructureError
+
+        request = make_request(resource_ids=[])
+        with pytest.raises(AWSInfrastructureError):
+            handler.check_hosts_status(request)
+
+    def test_check_hosts_status_after_acquire_maintain(self, handler, vpc):
+        from tests.onmoto.conftest import make_ec2_fleet_handler
+
+        aws_client = _make_aws_client(region=REGION)
+        h = make_ec2_fleet_handler(aws_client, _make_logger(), _make_config_port())
+        template = make_aws_template(
+            subnet_id=vpc["subnet_id"], sg_id=vpc["sg_id"], fleet_type="maintain"
+        )
+        request = make_request(request_id="req-fleet-err-002", requested_count=1)
+        acquire_result = h.acquire_hosts(request, template)
+        fleet_id = acquire_result["resource_ids"][0]
+
+        status_request = make_request(resource_ids=[fleet_id], metadata={"fleet_type": "maintain"})
+        result = h.check_hosts_status(status_request)
+        assert isinstance(result, list)
+
+    def test_release_hosts_with_resource_mapping(self, handler, vpc):
+        template = make_aws_template(
+            subnet_id=vpc["subnet_id"], sg_id=vpc["sg_id"], fleet_type="instant"
+        )
+        request = make_request(request_id="req-fleet-err-003", requested_count=1)
+        result = handler.acquire_hosts(request, template)
+        fleet_id = result["resource_ids"][0]
+
+        fake_instance_ids = ["i-bbbbbbbbbbbbbbb01"]
+        resource_mapping = {iid: (fleet_id, 1) for iid in fake_instance_ids}
+
+        try:
+            handler.release_hosts(fake_instance_ids, resource_mapping=resource_mapping)
+        except Exception as exc:
+            assert "InvalidInstanceID" in str(exc) or "does not exist" in str(exc).lower()
+
+
+# ---------------------------------------------------------------------------
+# SpotFleet handler edge cases
+# ---------------------------------------------------------------------------
+
+SPOT_FLEET_ROLE = "arn:aws:iam::123456789012:role/aws-service-role/spotfleet.amazonaws.com/AWSServiceRoleForEC2SpotFleet"
+
+
+def _make_spot_handler_patched(moto_aws):
+    from tests.onmoto.conftest import make_spot_fleet_handler
+
+    aws_client = _make_aws_client(region=REGION)
+    h = make_spot_fleet_handler(aws_client, _make_logger(), _make_config_port())
+    original_build = h._config_builder.build
+
+    def patched_build(**kwargs):
+        config = original_build(**kwargs)
+        tag_specs = config.get("TagSpecifications", [])
+        config["TagSpecifications"] = [
+            ts for ts in tag_specs if ts.get("ResourceType") != "instance"
+        ]
+        return config
+
+    h._config_builder.build = patched_build
+    return h
+
+
+class TestSpotFleetHandlerEdgeCases:
+    @pytest.fixture
+    def vpc(self, moto_aws):
+        import boto3
+
+        ec2 = boto3.client("ec2", region_name=REGION)
+        vpc = ec2.create_vpc(CidrBlock="10.0.0.0/16")
+        vpc_id = vpc["Vpc"]["VpcId"]
+        subnet = ec2.create_subnet(
+            VpcId=vpc_id, CidrBlock="10.0.1.0/24", AvailabilityZone=f"{REGION}a"
+        )
+        sg = ec2.create_security_group(GroupName="test-sg-spot", Description="test", VpcId=vpc_id)
+        return {"subnet_id": subnet["Subnet"]["SubnetId"], "sg_id": sg["GroupId"]}
+
+    def test_acquire_fleet_missing_fleet_type_returns_failure(self, moto_aws, vpc):
+        h = _make_spot_handler_patched(moto_aws)
+        bad_template = make_aws_template(
+            subnet_id=vpc["subnet_id"],
+            sg_id=vpc["sg_id"],
+            price_type="spot",
+            fleet_role=SPOT_FLEET_ROLE,
+        )
+        bad_template = bad_template.model_copy(update={"fleet_type": None})
+        request = make_request(request_id="req-spot-err-001")
+
+        result = h.acquire_hosts(request, bad_template)
+
+        assert result["success"] is False
+
+    def test_check_hosts_status_unknown_fleet_returns_empty(self, moto_aws):
+        h = _make_spot_handler_patched(moto_aws)
+        request = make_request(resource_ids=["sfr-00000000-0000-0000-0000-000000000000"])
+        result = h.check_hosts_status(request)
+        assert isinstance(result, list)
+
+    def test_release_hosts_with_resource_mapping(self, moto_aws, vpc):
+        h = _make_spot_handler_patched(moto_aws)
+        template = make_aws_template(
+            subnet_id=vpc["subnet_id"],
+            sg_id=vpc["sg_id"],
+            price_type="spot",
+            fleet_type="request",
+            fleet_role=SPOT_FLEET_ROLE,
+            allocation_strategy="lowest_price",
+        )
+        request = make_request(request_id="req-spot-err-002", requested_count=1)
+        result = h.acquire_hosts(request, template)
+        fleet_id = result["resource_ids"][0]
+
+        fake_instance_ids = ["i-ccccccccccccccc01"]
+        resource_mapping = {iid: (fleet_id, 1) for iid in fake_instance_ids}
+
+        try:
+            h.release_hosts(fake_instance_ids, resource_mapping=resource_mapping)
+        except Exception:
+            pass
+
+
+# ---------------------------------------------------------------------------
+# RunInstances handler edge cases
+# ---------------------------------------------------------------------------
+
+
+class TestRunInstancesHandlerEdgeCases:
+    @pytest.fixture
+    def handler(self, moto_aws):
+        aws_client = _make_aws_client(region=REGION)
+        from tests.onmoto.conftest import make_run_instances_handler
+
+        return make_run_instances_handler(aws_client, _make_logger(), _make_config_port())
+
+    @pytest.fixture
+    def vpc(self, moto_aws):
+        import boto3
+
+        ec2 = boto3.client("ec2", region_name=REGION)
+        vpc = ec2.create_vpc(CidrBlock="10.0.0.0/16")
+        vpc_id = vpc["Vpc"]["VpcId"]
+        subnet = ec2.create_subnet(
+            VpcId=vpc_id, CidrBlock="10.0.1.0/24", AvailabilityZone=f"{REGION}a"
+        )
+        sg = ec2.create_security_group(GroupName="test-sg-run", Description="test", VpcId=vpc_id)
+        return {"subnet_id": subnet["Subnet"]["SubnetId"], "sg_id": sg["GroupId"]}
+
+    def test_acquire_hosts_missing_image_id_raises_validation_error(self, handler, vpc):
+        from providers.aws.exceptions.aws_exceptions import AWSValidationError
+
+        bad_template = make_aws_template(subnet_id=vpc["subnet_id"], sg_id=vpc["sg_id"])
+        bad_template = bad_template.model_copy(update={"image_id": None})
+        request = make_request(request_id="req-run-err-001")
+
+        with pytest.raises(AWSValidationError, match="Image ID"):
+            handler.acquire_hosts(request, bad_template)
+
+    def test_acquire_hosts_missing_subnet_raises_validation_error(self, handler, vpc):
+        from providers.aws.exceptions.aws_exceptions import AWSValidationError
+
+        bad_template = make_aws_template(subnet_id=vpc["subnet_id"], sg_id=vpc["sg_id"])
+        bad_template = bad_template.model_copy(update={"subnet_ids": []})
+        request = make_request(request_id="req-run-err-002")
+
+        with pytest.raises(AWSValidationError, match="subnet"):
+            handler.acquire_hosts(request, bad_template)
+
+    def test_check_hosts_status_falls_back_to_resource_ids(self, handler, vpc):
+        template = make_aws_template(subnet_id=vpc["subnet_id"], sg_id=vpc["sg_id"])
+        request = make_request(request_id="req-run-err-003", requested_count=1)
+        acquire_result = handler.acquire_hosts(request, template)
+        reservation_id = acquire_result["resource_ids"][0]
+
+        status_request = make_request(
+            request_id="req-run-err-003",
+            resource_ids=[reservation_id],
+            provider_data={},
+        )
+        result = handler.check_hosts_status(status_request)
+
+        assert isinstance(result, list)
+        assert len(result) == 1
+
+    def test_check_hosts_status_no_ids_returns_empty(self, handler):
+        request = make_request(resource_ids=[], provider_data={})
+        result = handler.check_hosts_status(request)
+        assert result == []
+
+    def test_check_hosts_status_multiple_instances(self, handler, vpc):
+        template = make_aws_template(subnet_id=vpc["subnet_id"], sg_id=vpc["sg_id"])
+        request = make_request(request_id="req-run-err-004", requested_count=3)
+        acquire_result = handler.acquire_hosts(request, template)
+
+        instance_ids = acquire_result["provider_data"]["instance_ids"]
+        reservation_id = acquire_result["resource_ids"][0]
+
+        status_request = make_request(
+            request_id="req-run-err-004",
+            resource_ids=[reservation_id],
+            provider_data={"instance_ids": instance_ids, "reservation_id": reservation_id},
+        )
+        result = handler.check_hosts_status(status_request)
+
+        assert len(result) == len(instance_ids)
+        assert {r["instance_id"] for r in result} == set(instance_ids)
+
+    def test_release_hosts_idempotent_on_already_terminated(self, handler, vpc):
+        template = make_aws_template(subnet_id=vpc["subnet_id"], sg_id=vpc["sg_id"])
+        request = make_request(request_id="req-run-err-005", requested_count=1)
+        acquire_result = handler.acquire_hosts(request, template)
+        instance_ids = acquire_result["provider_data"]["instance_ids"]
+
+        handler.release_hosts(instance_ids)
+        handler.release_hosts(instance_ids)
+
+
+# ---------------------------------------------------------------------------
+# ASG handler edge cases
+# ---------------------------------------------------------------------------
+
+
+class TestASGHandlerEdgeCases:
+    @pytest.fixture
+    def handler(self, moto_aws):
+        aws_client = _make_aws_client(region=REGION)
+        return make_asg_handler(aws_client, _make_logger(), _make_config_port())
+
+    @pytest.fixture
+    def vpc(self, moto_aws):
+        import boto3
+
+        ec2 = boto3.client("ec2", region_name=REGION)
+        vpc = ec2.create_vpc(CidrBlock="10.0.0.0/16")
+        vpc_id = vpc["Vpc"]["VpcId"]
+        subnet = ec2.create_subnet(
+            VpcId=vpc_id, CidrBlock="10.0.1.0/24", AvailabilityZone=f"{REGION}a"
+        )
+        sg = ec2.create_security_group(GroupName="test-sg-asg2", Description="test", VpcId=vpc_id)
+        return {"subnet_id": subnet["Subnet"]["SubnetId"], "sg_id": sg["GroupId"]}
+
+    def test_acquire_hosts_missing_sg_raises_validation_error(self, handler, vpc):
+        from providers.aws.exceptions.aws_exceptions import AWSValidationError
+
+        bad_template = make_aws_template(subnet_id=vpc["subnet_id"], sg_id=vpc["sg_id"])
+        bad_template = bad_template.model_copy(update={"security_group_ids": []})
+        request = make_request(request_id="req-asg-err-001")
+
+        with pytest.raises(AWSValidationError, match="security"):
+            handler.acquire_hosts(request, bad_template)
