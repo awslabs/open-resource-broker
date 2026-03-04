@@ -5,39 +5,39 @@ from typing import Any
 # ---------------------------------------------------------------------------
 
 _EC2_FLEET_SPOT_STRATEGY_MAP: dict[str, str] = {
-    "capacityOptimized": "capacity-optimized",
-    "capacityOptimizedPrioritized": "capacity-optimized-prioritized",
+    "capacity_optimized": "capacity-optimized",
+    "capacity_optimized_prioritized": "capacity-optimized-prioritized",
     "diversified": "diversified",
-    "lowestPrice": "lowest-price",
-    "priceCapacityOptimized": "price-capacity-optimized",
+    "lowest_price": "lowest-price",
+    "price_capacity_optimized": "price-capacity-optimized",
 }
 
 _EC2_FLEET_ONDEMAND_STRATEGY_MAP: dict[str, str] = {
-    "lowestPrice": "lowest-price",
+    "lowest_price": "lowest-price",
     "prioritized": "prioritized",
 }
 
 _SPOT_FLEET_STRATEGY_MAP: dict[str, str] = {
-    "capacityOptimized": "capacityOptimized",
-    "capacityOptimizedPrioritized": "capacityOptimizedPrioritized",
+    "capacity_optimized": "capacityOptimized",
+    "capacity_optimized_prioritized": "capacityOptimizedPrioritized",
     "diversified": "diversified",
-    "lowestPrice": "lowestPrice",
-    "priceCapacityOptimized": "priceCapacityOptimized",
+    "lowest_price": "lowestPrice",
+    "price_capacity_optimized": "priceCapacityOptimized",
 }
 
 
 def map_ec2_fleet_allocation_strategy(strategy: str) -> str:
-    """Map a Symphony spot allocation strategy name to the EC2 Fleet API value (hyphenated)."""
+    """Map a domain allocation strategy value to the EC2 Fleet API value (hyphenated)."""
     return _EC2_FLEET_SPOT_STRATEGY_MAP.get(strategy, "lowest-price")
 
 
 def map_ec2_fleet_ondemand_strategy(strategy: str) -> str:
-    """Map a Symphony on-demand allocation strategy name to the EC2 Fleet API value."""
+    """Map a domain on-demand allocation strategy value to the EC2 Fleet API value."""
     return _EC2_FLEET_ONDEMAND_STRATEGY_MAP.get(strategy, "lowest-price")
 
 
 def map_spot_fleet_allocation_strategy(strategy: str) -> str:
-    """Map a Symphony allocation strategy name to the Spot Fleet API value (camelCase)."""
+    """Map a domain allocation strategy value to the Spot Fleet API value (camelCase)."""
     if not strategy:
         return "lowestPrice"
     return _SPOT_FLEET_STRATEGY_MAP.get(strategy, "lowestPrice")

@@ -63,6 +63,16 @@ def _safe_reset_global_variable(module_name: str, variable_name: str) -> None:
         pass
 
 
+def _reset_circuit_breaker_states() -> None:
+    """Clear class-level circuit breaker state so tests start with closed circuits."""
+    try:
+        from infrastructure.resilience.strategy.circuit_breaker import CircuitBreakerStrategy
+
+        CircuitBreakerStrategy._circuit_states.clear()
+    except ImportError:
+        pass
+
+
 def reset_all_singletons() -> None:
     """
     Reset all singletons for testing.
@@ -73,6 +83,9 @@ def reset_all_singletons() -> None:
     # Reset all singletons in the registry
     registry = SingletonRegistry.get_instance()
     registry.reset()
+
+    # Reset circuit breaker shared state
+    _reset_circuit_breaker_states()
 
     # Also reset the registry itself
     _safe_reset_class_instance(

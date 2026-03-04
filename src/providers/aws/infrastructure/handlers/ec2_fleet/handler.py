@@ -767,7 +767,7 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                 machine_types={"t3.medium": 1},
                 max_instances=20,
                 price_type="spot",
-                allocation_strategy="capacityOptimized",
+                allocation_strategy="capacity_optimized",
                 max_price=0.08,
                 subnet_ids=[],
                 security_group_ids=[],
@@ -815,7 +815,7 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                 machine_types={"t3.medium": 1},
                 max_instances=30,
                 price_type="spot",
-                allocation_strategy="priceCapacityOptimized",
+                allocation_strategy="price_capacity_optimized",
                 max_price=0.10,
                 subnet_ids=[],
                 security_group_ids=[],
@@ -831,7 +831,7 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                 max_instances=50,
                 price_type="heterogeneous",
                 percent_on_demand=50,
-                allocation_strategy="capacityOptimized",
+                allocation_strategy="capacity_optimized",
                 allocation_strategy_on_demand=AWSAllocationStrategy.from_core(
                     AllocationStrategy.PRIORITIZED
                 ),

@@ -13,11 +13,11 @@ class TestMapEc2FleetAllocationStrategy:
     @pytest.mark.parametrize(
         "input_strategy, expected",
         [
-            ("capacityOptimized", "capacity-optimized"),
-            ("capacityOptimizedPrioritized", "capacity-optimized-prioritized"),
+            ("capacity_optimized", "capacity-optimized"),
+            ("capacity_optimized_prioritized", "capacity-optimized-prioritized"),
             ("diversified", "diversified"),
-            ("lowestPrice", "lowest-price"),
-            ("priceCapacityOptimized", "price-capacity-optimized"),
+            ("lowest_price", "lowest-price"),
+            ("price_capacity_optimized", "price-capacity-optimized"),
         ],
     )
     def test_known_strategies(self, input_strategy: str, expected: str) -> None:
@@ -34,7 +34,7 @@ class TestMapEc2FleetOndemandStrategy:
     @pytest.mark.parametrize(
         "input_strategy, expected",
         [
-            ("lowestPrice", "lowest-price"),
+            ("lowest_price", "lowest-price"),
             ("prioritized", "prioritized"),
         ],
     )
@@ -52,11 +52,11 @@ class TestMapSpotFleetAllocationStrategy:
     @pytest.mark.parametrize(
         "input_strategy, expected",
         [
-            ("capacityOptimized", "capacityOptimized"),
-            ("capacityOptimizedPrioritized", "capacityOptimizedPrioritized"),
+            ("capacity_optimized", "capacityOptimized"),
+            ("capacity_optimized_prioritized", "capacityOptimizedPrioritized"),
             ("diversified", "diversified"),
-            ("lowestPrice", "lowestPrice"),
-            ("priceCapacityOptimized", "priceCapacityOptimized"),
+            ("lowest_price", "lowestPrice"),
+            ("price_capacity_optimized", "priceCapacityOptimized"),
         ],
     )
     def test_known_strategies(self, input_strategy: str, expected: str) -> None:
@@ -70,5 +70,5 @@ class TestMapSpotFleetAllocationStrategy:
 
     def test_ec2_fleet_and_spot_fleet_use_different_formats(self) -> None:
         # EC2 Fleet uses hyphenated; Spot Fleet uses camelCase
-        assert map_ec2_fleet_allocation_strategy("capacityOptimized") == "capacity-optimized"
-        assert map_spot_fleet_allocation_strategy("capacityOptimized") == "capacityOptimized"
+        assert map_ec2_fleet_allocation_strategy("capacity_optimized") == "capacity-optimized"
+        assert map_spot_fleet_allocation_strategy("capacity_optimized") == "capacityOptimized"

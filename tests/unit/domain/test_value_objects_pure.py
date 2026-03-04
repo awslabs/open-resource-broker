@@ -243,10 +243,10 @@ class TestPriceType:
 
 class TestAllocationStrategy:
     def test_values(self):
-        assert AllocationStrategy.LOWEST_PRICE.value == "lowestPrice"
+        assert AllocationStrategy.LOWEST_PRICE.value == "lowest_price"
         assert AllocationStrategy.DIVERSIFIED.value == "diversified"
-        assert AllocationStrategy.CAPACITY_OPTIMIZED.value == "capacityOptimized"
-        assert AllocationStrategy.PRICE_CAPACITY_OPTIMIZED.value == "priceCapacityOptimized"
+        assert AllocationStrategy.CAPACITY_OPTIMIZED.value == "capacity_optimized"
+        assert AllocationStrategy.PRICE_CAPACITY_OPTIMIZED.value == "price_capacity_optimized"
 
     def test_is_str(self):
         assert isinstance(AllocationStrategy.DIVERSIFIED, str)

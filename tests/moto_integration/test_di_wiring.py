@@ -191,7 +191,7 @@ def test_aws_template_accepts_allocation_strategy_as_string():
         template_id="test-tpl",
         name="test",
         provider_api="EC2Fleet",
-        allocation_strategy_on_demand="lowestPrice",
+        allocation_strategy_on_demand="lowest_price",
     )
 
     assert template.allocation_strategy_on_demand is not None

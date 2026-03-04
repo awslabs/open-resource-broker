@@ -79,7 +79,7 @@ class TestTemplateDefaultsService:
                     "max_number": 10,
                     "ami_resolution": {"enabled": True},
                     "default_price_type": "ondemand",
-                    "default_allocation_strategy": "capacityOptimized",
+                    "default_allocation_strategy": "capacity_optimized",
                 }
             }
         )

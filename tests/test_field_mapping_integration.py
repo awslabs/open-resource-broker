@@ -153,7 +153,7 @@ class TestFieldMappingIntegration:
             "vmTypesOnDemand": {"t2.medium": 1},
             "priceType": "heterogeneous",
             "percentOnDemand": 30,
-            "allocationStrategy": "capacityOptimized",
+            "allocationStrategy": "capacity_optimized",
             "allocationStrategyOnDemand": "prioritized",
             "fleetRole": "AWSServiceRoleForEC2SpotFleet",
             "spotFleetRequestExpiry": 60,
@@ -171,7 +171,7 @@ class TestFieldMappingIntegration:
         # Verify AWS-specific heterogeneous mappings
         assert mapped["machine_types_ondemand"] == {"t2.medium": 1}
         assert mapped["percent_on_demand"] == 30
-        assert mapped["allocation_strategy"] == "capacityOptimized"
+        assert mapped["allocation_strategy"] == "capacity_optimized"
         assert mapped["allocation_strategy_on_demand"] == "prioritized"
         assert mapped["fleet_role"] == "AWSServiceRoleForEC2SpotFleet"
         assert mapped["spot_fleet_request_expiry"] == 60

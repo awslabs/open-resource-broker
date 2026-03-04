@@ -50,7 +50,7 @@ class TestCleanArchitectureIntegration:
                         "fallback_on_failure": True,
                         "cache_enabled": True,
                     },
-                    "allocation_strategy": "capacityOptimized",
+                    "allocation_strategy": "capacity_optimized",
                     "volume_type": "gp3",
                 },
             )
@@ -98,7 +98,7 @@ class TestCleanArchitectureIntegration:
 
         # Test extension defaults - must provide non-empty config_data or it returns {}
         extension_defaults = TemplateExtensionRegistry.get_extension_defaults(
-            "aws", {"allocation_strategy": "capacityOptimized"}
+            "aws", {"allocation_strategy": "capacity_optimized"}
         )
         assert isinstance(extension_defaults, dict)
         assert "allocation_strategy" in extension_defaults
@@ -138,14 +138,14 @@ class TestCleanArchitectureIntegration:
         """Test AWS extension configuration works correctly."""
         # Test AWS extension config
         aws_extension_config = AWSTemplateExtensionConfig(
-            allocation_strategy="capacityOptimized",
+            allocation_strategy="capacity_optimized",
             volume_type="gp3",
             spot_fleet_request_expiry=30,
         )
 
         # Test conversion to template defaults
         defaults = aws_extension_config.to_template_defaults()
-        assert defaults["allocation_strategy"] == "capacityOptimized"
+        assert defaults["allocation_strategy"] == "capacity_optimized"
         assert defaults["volume_type"] == "gp3"
         assert defaults["spot_fleet_request_expiry"] == 30
 

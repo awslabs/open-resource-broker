@@ -245,9 +245,9 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
         # RunInstances doesn't support all EC2Fleet allocation strategies
         # Map to supported spot instance types
         strategy_map = {
-            "lowestPrice": "one-time",
+            "lowest_price": "one-time",
             "diversified": "one-time",  # RunInstances doesn't support diversified directly
-            "capacityOptimized": "one-time",  # RunInstances doesn't support capacity-optimized directly
+            "capacity_optimized": "one-time",  # RunInstances doesn't support capacity-optimized directly
         }
         return strategy_map.get(allocation_strategy, "one-time")
 

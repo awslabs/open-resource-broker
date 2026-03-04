@@ -31,7 +31,7 @@ def _make_template(fleet_type=AWSFleetType.MAINTAIN, tags=None):
     t.fleet_type = fleet_type
     t.tags = tags
     t.fleet_role = "arn:aws:iam::123456789012:role/aws-ec2-spot-fleet-tagging-role"
-    t.allocation_strategy = "lowestPrice"
+    t.allocation_strategy = "lowest_price"
     t.price_type = "spot"
     t.max_price = None
     t.percent_on_demand = 0

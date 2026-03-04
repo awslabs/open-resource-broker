@@ -51,7 +51,7 @@ def spot_template(vpc_resources):
         price_type="spot",
         fleet_type="request",
         fleet_role=SPOT_FLEET_ROLE,
-        allocation_strategy="lowestPrice",
+        allocation_strategy="lowest_price",
     )
 
 
