@@ -23,7 +23,7 @@ class ProvisioningResult:
 
     success: bool
     resource_ids: list[str]
-    instance_ids: list[str]
+    machine_ids: list[str]
     instances: list[dict[str, Any]]
     provider_data: dict[str, Any]
     error_message: str | None = None
@@ -77,7 +77,7 @@ class ProvisioningOrchestrationService:
         attempt_number = 0
 
         accumulated_resource_ids: list[str] = []
-        accumulated_instance_ids: list[str] = []
+        accumulated_machine_ids: list[str] = []
         accumulated_instances: list[dict[str, Any]] = []
         accumulated_provider_data: dict[str, Any] = {}
         last_result: ProvisioningResult | None = None
@@ -124,7 +124,7 @@ class ProvisioningOrchestrationService:
 
             # Accumulate results
             accumulated_resource_ids.extend(last_result.resource_ids)
-            accumulated_instance_ids.extend(last_result.instance_ids)
+            accumulated_machine_ids.extend(last_result.machine_ids)
             accumulated_instances.extend(last_result.instances)
             accumulated_provider_data.update(last_result.provider_data)
 
@@ -171,7 +171,7 @@ class ProvisioningOrchestrationService:
         return ProvisioningResult(
             success=success,
             resource_ids=accumulated_resource_ids,
-            instance_ids=accumulated_instance_ids,
+            machine_ids=accumulated_machine_ids,
             instances=accumulated_instances,
             provider_data=accumulated_provider_data,
             error_message=last_result.error_message if last_result else "No provisioning attempted",
@@ -299,7 +299,7 @@ class ProvisioningOrchestrationService:
                 return ProvisioningResult(
                     success=True,
                     resource_ids=resource_ids,
-                    instance_ids=result.data.get("instance_ids", []),
+                    machine_ids=result.data.get("instance_ids", []),
                     instances=instances,
                     provider_data=result.metadata or {},
                     fulfilled_count=len(instances),
@@ -310,7 +310,7 @@ class ProvisioningOrchestrationService:
                 return ProvisioningResult(
                     success=False,
                     resource_ids=[],
-                    instance_ids=[],
+                    machine_ids=[],
                     instances=[],
                     provider_data=result.metadata or {},
                     error_message=result.error_message,
@@ -335,7 +335,7 @@ class ProvisioningOrchestrationService:
             return ProvisioningResult(
                 success=False,
                 resource_ids=[],
-                instance_ids=[],
+                machine_ids=[],
                 instances=[],
                 provider_data={},
                 error_message=f"Quota exceeded: {e}",
@@ -359,7 +359,7 @@ class ProvisioningOrchestrationService:
             return ProvisioningResult(
                 success=False,
                 resource_ids=[],
-                instance_ids=[],
+                machine_ids=[],
                 instances=[],
                 provider_data={},
                 error_message=f"Provisioning failed: {e}",

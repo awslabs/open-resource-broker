@@ -143,7 +143,7 @@ def _make_result(**kwargs) -> ProvisioningResult:
     defaults: dict = dict(
         success=True,
         resource_ids=[],
-        instance_ids=[],
+        machine_ids=[],
         instances=[],
         provider_data={},
         fulfilled_count=0,
@@ -153,36 +153,36 @@ def _make_result(**kwargs) -> ProvisioningResult:
     return ProvisioningResult(**defaults)
 
 
-class TestExtractInstanceIds:
+class TestExtractMachineIds:
     def setup_method(self):
         self.svc = _make_service()
 
-    def test_extract_from_instance_ids_key(self):
-        result = _make_result(instance_ids=["i-abc", "i-def"])
-        ids = self.svc._extract_instance_ids(result)
+    def test_extract_from_machine_ids_key(self):
+        result = _make_result(machine_ids=["i-abc", "i-def"])
+        ids = self.svc._extract_machine_ids(result)
         assert ids == ["i-abc", "i-def"]
 
     def test_extract_from_instances_list(self):
         result = _make_result(instances=[{"instance_id": "i-aaa"}, {"instance_id": "i-bbb"}])
-        ids = self.svc._extract_instance_ids(result)
+        ids = self.svc._extract_machine_ids(result)
         assert ids == ["i-aaa", "i-bbb"]
 
     def test_extract_skips_instances_without_id(self):
         result = _make_result(instances=[{"instance_id": "i-aaa"}, {"other_key": "no-id"}])
-        ids = self.svc._extract_instance_ids(result)
+        ids = self.svc._extract_machine_ids(result)
         assert ids == ["i-aaa"]
 
     def test_returns_empty_when_no_relevant_keys(self):
         result = _make_result()
-        ids = self.svc._extract_instance_ids(result)
+        ids = self.svc._extract_machine_ids(result)
         assert ids == []
 
-    def test_instance_ids_takes_precedence_over_instances(self):
+    def test_machine_ids_takes_precedence_over_instances(self):
         result = _make_result(
-            instance_ids=["i-abc"],
+            machine_ids=["i-abc"],
             instances=[{"instance_id": "i-aaa"}],
         )
-        ids = self.svc._extract_instance_ids(result)
+        ids = self.svc._extract_machine_ids(result)
         assert ids == ["i-abc"]
 
 

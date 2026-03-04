@@ -44,7 +44,7 @@ class RequestStatusManagementService:
                 request = request.add_resource_id(resource_id)
 
         # Populate machine IDs if available
-        instance_ids = self._extract_instance_ids(provisioning_result)
+        instance_ids = self._extract_machine_ids(provisioning_result)
         if instance_ids:
             request = request.add_machine_ids(instance_ids)
             self._logger.info("Populated %d machine IDs immediately", len(instance_ids))
@@ -147,11 +147,11 @@ class RequestStatusManagementService:
 
         return request
 
-    def _extract_instance_ids(self, result: ProvisioningResult) -> List[str]:
-        """Extract instance IDs if available in provider result."""
+    def _extract_machine_ids(self, result: ProvisioningResult) -> List[str]:
+        """Extract machine IDs if available in provider result."""
         try:
-            if result.instance_ids:
-                return result.instance_ids
+            if result.machine_ids:
+                return result.machine_ids
             elif result.instances:
                 instances = result.instances
                 if isinstance(instances, list) and instances:
@@ -166,7 +166,7 @@ class RequestStatusManagementService:
             return []
         except (KeyError, TypeError, AttributeError) as e:
             self._logger.warning(
-                "Failed to extract instance IDs from provider result: %s",
+                "Failed to extract machine IDs from provider result: %s",
                 e,
                 exc_info=True,
             )

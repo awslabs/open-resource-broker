@@ -16,7 +16,7 @@ class ProvisioningResult:
 
     success: bool
     resource_ids: list[str]
-    instance_ids: list[str]
+    machine_ids: list[str]
     instances: list[dict[str, Any]]
     provider_data: dict[str, Any]
     error_message: str | None = None
