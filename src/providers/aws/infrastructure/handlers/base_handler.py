@@ -119,10 +119,11 @@ class AWSHandler(ABC):
         if machine_adapter:
             self._logger.debug("Machine adapter provided for AWS handler")
 
-    @abstractmethod
     def acquire_hosts(self, request: Request, aws_template: AWSTemplate) -> str:
         """
         Acquire hosts using the specified AWS template.
+
+        Validates common prerequisites then delegates to _acquire_hosts_internal.
 
         Args:
             request: The request to fulfill
@@ -135,6 +136,24 @@ class AWSHandler(ABC):
             AWSValidationError: If the template is invalid
             QuotaExceededError: If AWS quotas would be exceeded
             InfrastructureError: For other AWS API errors
+        """
+        self._validate_prerequisites(aws_template)
+        return self._acquire_hosts_internal(request, aws_template)
+
+    @abstractmethod
+    def _acquire_hosts_internal(self, request: Request, aws_template: AWSTemplate) -> str:
+        """
+        Handler-specific host acquisition logic.
+
+        Called by acquire_hosts after common prerequisites have been validated.
+        Subclasses implement their AWS-specific provisioning here.
+
+        Args:
+            request: The request to fulfill
+            aws_template: The AWS template to use
+
+        Returns:
+            str: The AWS resource ID (e.g., fleet ID, ASG name)
         """
 
     @abstractmethod

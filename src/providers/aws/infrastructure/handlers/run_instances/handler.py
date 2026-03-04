@@ -92,7 +92,7 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
         )
 
     @handle_infrastructure_exceptions(context="run_instances_creation")
-    def acquire_hosts(self, request: Request, aws_template: AWSTemplate) -> dict[str, Any]:
+    def _acquire_hosts_internal(self, request: Request, aws_template: AWSTemplate) -> dict[str, Any]:
         """
         Create EC2 instances using RunInstances to acquire hosts.
         Returns structured result with resource IDs and instance data.
@@ -145,9 +145,6 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
         self, request: Request, aws_template: AWSTemplate
     ) -> dict[str, Any]:
         """Create RunInstances and return full AWS response."""
-        # Validate prerequisites
-        self._validate_prerequisites(aws_template)
-
         # Create launch template using the new manager
         launch_template_result = self.launch_template_manager.create_or_update_launch_template(
             aws_template, request

@@ -121,7 +121,7 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
         )
 
     @handle_infrastructure_exceptions(context="ec2_fleet_creation")
-    def acquire_hosts(self, request: Request, aws_template: AWSTemplate) -> dict[str, Any]:
+    def _acquire_hosts_internal(self, request: Request, aws_template: AWSTemplate) -> dict[str, Any]:
         """
         Create an EC2 Fleet to acquire hosts.
         Returns structured result with resource IDs and instance data.
@@ -205,8 +205,6 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
 
     def _create_fleet_internal(self, request: Request, aws_template: AWSTemplate) -> dict[str, Any]:
         """Create EC2 Fleet with pure business logic."""
-        # Validate prerequisites
-        self._validate_prerequisites(aws_template)
         # Validate fleet type
         if not aws_template.fleet_type:
             raise AWSValidationError("Fleet type is required for EC2Fleet")

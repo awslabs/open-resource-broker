@@ -125,7 +125,7 @@ class ASGHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
         self._cleanup_on_zero_capacity(resource_type, request_id)
 
     @handle_infrastructure_exceptions(context="asg_creation")
-    def acquire_hosts(self, request: Request, aws_template: AWSTemplate) -> dict[str, Any]:
+    def _acquire_hosts_internal(self, request: Request, aws_template: AWSTemplate) -> dict[str, Any]:
         """
         Create an Auto Scaling Group to acquire hosts.
         Returns structured result with resource IDs and instance data.
@@ -151,30 +151,8 @@ class ASGHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                 "error_message": str(e),
             }
 
-    def _validate_asg_prerequisites(self, template: AWSTemplate) -> None:
-        """Validate ASG-specific prerequisites."""
-        errors = {}
-
-        # ASG requires at least one subnet
-        if not template.subnet_ids:
-            errors["subnet_ids"] = "At least one subnet ID is required for Auto Scaling Groups"
-
-        # ASG requires security groups
-        if not template.security_group_ids:
-            errors["security_group_ids"] = "Security group IDs are required for Auto Scaling Groups"
-
-        if errors:
-            error_details = []
-            for field, message in errors.items():
-                error_details.append(f"{field}: {message}")
-            detailed_message = f"ASG template validation failed - {'; '.join(error_details)}"
-            raise AWSInfrastructureError(detailed_message, errors)
-
     def _create_asg_internal(self, request: Request, aws_template: AWSTemplate) -> str:
         """Create ASG with pure business logic."""
-        # Validate ASG specific prerequisites
-        self._validate_asg_prerequisites(aws_template)
-
         # Create launch template using the new manager
         launch_template_result = self.launch_template_manager.create_or_update_launch_template(
             aws_template, request

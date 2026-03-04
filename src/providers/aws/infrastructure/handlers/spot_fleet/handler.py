@@ -109,7 +109,7 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
         )
 
     @handle_infrastructure_exceptions(context="spot_fleet_creation")
-    def acquire_hosts(self, request: Request, aws_template: AWSTemplate) -> dict[str, Any]:
+    def _acquire_hosts_internal(self, request: Request, aws_template: AWSTemplate) -> dict[str, Any]:
         """
         Create a Spot Fleet to acquire hosts.
         Returns structured result with resource IDs and instance data.
@@ -183,13 +183,6 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
 
     def _validate_spot_prerequisites(self, aws_template: AWSTemplate) -> None:
         """Validate Spot Fleet specific prerequisites."""
-        # First validate common prerequisites
-        try:
-            self._validate_prerequisites(aws_template)
-        except AWSValidationError as e:
-            # Re-raise common validation errors immediately
-            raise AWSValidationError(str(e)) from e
-
         # Delegate Spot Fleet specific validation to the validator
         self._spot_fleet_validator.validate(aws_template)
 
