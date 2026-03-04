@@ -617,7 +617,9 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
                     instance_ids, self._request_adapter, f"RunInstances reservation {resource_id}"
                 )
                 self._logger.info(
-                    "Terminated RunInstances reservation %s instances: %s", resource_id, instance_ids
+                    "Terminated RunInstances reservation %s instances: %s",
+                    resource_id,
+                    instance_ids,
                 )
             else:
                 self._logger.info(
@@ -628,7 +630,10 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
             if request_id:
                 self._cleanup_on_zero_capacity("run_instances", request_id)
 
-            return {"status": "success", "message": f"RunInstances reservation {resource_id} cancelled"}
+            return {
+                "status": "success",
+                "message": f"RunInstances reservation {resource_id} cancelled",
+            }
         except Exception as e:
             self._logger.error("Failed to cancel RunInstances reservation %s: %s", resource_id, e)
             return {

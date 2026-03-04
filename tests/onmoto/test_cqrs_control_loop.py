@@ -30,9 +30,7 @@ SPOT_FLEET_ROLE = (
     "spotfleet.amazonaws.com/AWSServiceRoleForEC2SpotFleet"
 )
 
-REQUEST_ID_RE = re.compile(
-    r"^req-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
-)
+REQUEST_ID_RE = re.compile(r"^req-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
 VALID_HF_STATUSES = {"running", "complete", "complete_with_error"}
 
 
@@ -61,6 +59,7 @@ def patch_moto_compat():
     from providers.aws.infrastructure.adapters.aws_provisioning_adapter import (
         AWSProvisioningAdapter,
     )
+
     _original_provision = AWSProvisioningAdapter._provision_via_handlers
 
     def _patched_provision(self, request, template, dry_run=False):
@@ -77,11 +76,14 @@ def patch_moto_compat():
                 result["instances"] = [{"instance_id": iid} for iid in iids]
         return result
 
-    with patch(
-        "providers.aws.infrastructure.services.aws_image_resolution_service"
-        ".AWSImageResolutionService.is_resolution_needed",
-        return_value=False,
-    ), patch.object(AWSProvisioningAdapter, "_provision_via_handlers", _patched_provision):
+    with (
+        patch(
+            "providers.aws.infrastructure.services.aws_image_resolution_service"
+            ".AWSImageResolutionService.is_resolution_needed",
+            return_value=False,
+        ),
+        patch.object(AWSProvisioningAdapter, "_provision_via_handlers", _patched_provision),
+    ):
         yield
 
 
@@ -430,9 +432,7 @@ class TestCQRSControlLoopEC2Fleet:
         assert parsed["template_id"] == "EC2Fleet-Instant-OnDemand"
         assert parsed["requested_count"] == 2
 
-        request_id = await _create_request(
-            command_bus, "EC2Fleet-Instant-OnDemand", count=2
-        )
+        request_id = await _create_request(command_bus, "EC2Fleet-Instant-OnDemand", count=2)
         assert REQUEST_ID_RE.match(request_id), (
             f"request_id {request_id!r} does not match expected pattern"
         )
@@ -442,9 +442,7 @@ class TestCQRSControlLoopEC2Fleet:
         """GetRequestQuery returns a queryable RequestDTO after EC2Fleet creation."""
         command_bus, query_bus = cqrs_buses
 
-        request_id = await _create_request(
-            command_bus, "EC2Fleet-Instant-OnDemand", count=1
-        )
+        request_id = await _create_request(command_bus, "EC2Fleet-Instant-OnDemand", count=1)
 
         request_dto = await _get_request(query_bus, request_id)
         assert request_dto is not None
@@ -525,9 +523,7 @@ class TestCQRSControlLoopSpotFleet:
         assert isinstance(parsed, dict)
         assert parsed["template_id"] == "SpotFleet-Request-LowestPrice"
 
-        request_id = await _create_request(
-            command_bus, "SpotFleet-Request-LowestPrice", count=1
-        )
+        request_id = await _create_request(command_bus, "SpotFleet-Request-LowestPrice", count=1)
         assert REQUEST_ID_RE.match(request_id), (
             f"request_id {request_id!r} does not match expected pattern"
         )
@@ -539,9 +535,7 @@ class TestCQRSControlLoopSpotFleet:
 
         _patch_spot_fleet_via_container()
 
-        request_id = await _create_request(
-            command_bus, "SpotFleet-Request-LowestPrice", count=1
-        )
+        request_id = await _create_request(command_bus, "SpotFleet-Request-LowestPrice", count=1)
 
         request_dto = await _get_request(query_bus, request_id)
         assert request_dto is not None
@@ -600,9 +594,7 @@ class TestCQRSControlLoopRunInstances:
         )
 
     @pytest.mark.asyncio
-    async def test_get_request_status_returns_machine_data(
-        self, cqrs_buses, hf_strategy
-    ):
+    async def test_get_request_status_returns_machine_data(self, cqrs_buses, hf_strategy):
         """GetRequestQuery returns machine data for RunInstances after creation."""
         command_bus, query_bus = cqrs_buses
 

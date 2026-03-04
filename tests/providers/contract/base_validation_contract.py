@@ -37,7 +37,9 @@ class BaseValidationContract:
     def test_validate_unknown_api_returns_false(self, validation_adapter):
         """validate_provider_api must return False for an unknown API."""
         result = validation_adapter.validate_provider_api("NONEXISTENT_API_XYZ")
-        assert result is False, "expected validate_provider_api('NONEXISTENT_API_XYZ') to return False"
+        assert result is False, (
+            "expected validate_provider_api('NONEXISTENT_API_XYZ') to return False"
+        )
 
     @pytest.mark.provider_contract
     def test_get_provider_type_returns_string(self, validation_adapter):
@@ -47,7 +49,9 @@ class BaseValidationContract:
         assert len(provider_type) > 0, "get_provider_type must return a non-empty string"
 
     @pytest.mark.provider_contract
-    def test_validate_template_config_returns_result_shape(self, validation_adapter, known_provider_api):
+    def test_validate_template_config_returns_result_shape(
+        self, validation_adapter, known_provider_api
+    ):
         """validate_template_configuration must return a dict with valid, errors, warnings keys."""
         result = validation_adapter.validate_template_configuration(
             {"provider_api": known_provider_api}

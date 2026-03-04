@@ -295,5 +295,7 @@ class SpotFleetConfigBuilder(BaseConfigBuilder):
         if template.context:
             fleet_config["Context"] = template.context
 
-        self._logger.debug("Spot Fleet configuration: %s", json.dumps(fleet_config, indent=2, default=str))
+        self._logger.debug(
+            "Spot Fleet configuration: %s", json.dumps(fleet_config, indent=2, default=str)
+        )
         return fleet_config

@@ -90,7 +90,7 @@ def _make_request_dto(
     request_type: str = "acquire",
 ) -> RequestDTO:
     machine_refs = []
-    for m in (machines or []):
+    for m in machines or []:
         machine_refs.append(
             MachineReferenceDTO(
                 machine_id=m.get("machine_id", _VALID_INSTANCE_ID),
@@ -284,7 +284,15 @@ def test_hf_format_request_status_response_machine_keys():
     dto = _make_request_dto(status="pending", machines=[machine])
     result = strategy.format_request_status_response([dto])
     m = result["requests"][0]["machines"][0]
-    for key in ("machineId", "name", "result", "status", "privateIpAddress", "launchtime", "message"):
+    for key in (
+        "machineId",
+        "name",
+        "result",
+        "status",
+        "privateIpAddress",
+        "launchtime",
+        "message",
+    ):
         assert key in m, f"HF machine item missing key '{key}'"
 
 
@@ -400,7 +408,9 @@ def test_default_format_request_status_response_validates_schema():
 
 def test_hf_format_request_response_pending_status():
     strategy = make_hf_strategy()
-    result = strategy.format_request_response({"request_id": _VALID_REQUEST_ID, "status": "pending"})
+    result = strategy.format_request_response(
+        {"request_id": _VALID_REQUEST_ID, "status": "pending"}
+    )
     assert "requestId" in result
     assert "message" in result
     assert result["requestId"] == _VALID_REQUEST_ID
@@ -408,21 +418,25 @@ def test_hf_format_request_response_pending_status():
 
 def test_hf_format_request_response_failed_status():
     strategy = make_hf_strategy()
-    result = strategy.format_request_response({
-        "request_id": _VALID_REQUEST_ID,
-        "status": "failed",
-        "status_message": "out of capacity",
-    })
+    result = strategy.format_request_response(
+        {
+            "request_id": _VALID_REQUEST_ID,
+            "status": "failed",
+            "status_message": "out of capacity",
+        }
+    )
     assert "requestId" in result
     assert "failed" in result["message"].lower() or "Request failed" in result["message"]
 
 
 def test_hf_format_request_response_complete_status():
     strategy = make_hf_strategy()
-    result = strategy.format_request_response({
-        "request_id": _VALID_REQUEST_ID,
-        "status": "complete",
-    })
+    result = strategy.format_request_response(
+        {
+            "request_id": _VALID_REQUEST_ID,
+            "status": "complete",
+        }
+    )
     assert "requestId" in result
     assert result["requestId"] == _VALID_REQUEST_ID
 
@@ -430,7 +444,9 @@ def test_hf_format_request_response_complete_status():
 def test_hf_format_request_response_no_snake_case_request_id():
     """HF format_request_response must use requestId not request_id."""
     strategy = make_hf_strategy()
-    result = strategy.format_request_response({"request_id": _VALID_REQUEST_ID, "status": "pending"})
+    result = strategy.format_request_response(
+        {"request_id": _VALID_REQUEST_ID, "status": "pending"}
+    )
     assert "requestId" in result
     assert "request_id" not in result
 
@@ -442,18 +458,22 @@ def test_hf_format_request_response_no_snake_case_request_id():
 
 def test_default_format_request_response_pending_status():
     strategy = make_default_strategy()
-    result = strategy.format_request_response({"request_id": _VALID_REQUEST_ID, "status": "pending"})
+    result = strategy.format_request_response(
+        {"request_id": _VALID_REQUEST_ID, "status": "pending"}
+    )
     assert "request_id" in result
     assert result["request_id"] == _VALID_REQUEST_ID
 
 
 def test_default_format_request_response_failed_status():
     strategy = make_default_strategy()
-    result = strategy.format_request_response({
-        "request_id": _VALID_REQUEST_ID,
-        "status": "failed",
-        "status_message": "quota exceeded",
-    })
+    result = strategy.format_request_response(
+        {
+            "request_id": _VALID_REQUEST_ID,
+            "status": "failed",
+            "status_message": "quota exceeded",
+        }
+    )
     assert "request_id" in result
     assert "error" in result or "message" in result
 
@@ -461,6 +481,8 @@ def test_default_format_request_response_failed_status():
 def test_default_format_request_response_no_camelcase_request_id():
     """Default format_request_response must use request_id not requestId."""
     strategy = make_default_strategy()
-    result = strategy.format_request_response({"request_id": _VALID_REQUEST_ID, "status": "pending"})
+    result = strategy.format_request_response(
+        {"request_id": _VALID_REQUEST_ID, "status": "pending"}
+    )
     assert "request_id" in result
     assert "requestId" not in result

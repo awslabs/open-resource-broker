@@ -495,7 +495,10 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
             return {"status": "success", "message": f"Spot Fleet {resource_id} cancelled"}
         except Exception as e:
             self._logger.error("Failed to cancel Spot Fleet %s: %s", resource_id, e)
-            return {"status": "error", "message": f"Failed to cancel Spot Fleet {resource_id}: {e!s}"}
+            return {
+                "status": "error",
+                "message": f"Failed to cancel Spot Fleet {resource_id}: {e!s}",
+            }
 
     def _release_hosts_for_single_spot_fleet(
         self, fleet_id: str, fleet_instance_ids: list[str], fleet_details: dict

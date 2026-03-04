@@ -37,9 +37,7 @@ def test_hf_map_input_produces_no_camelcase_keys_for_mapped_fields():
     result = mapper.map_input_fields(sample)
 
     for hf_key in camel_hf_fields:
-        assert hf_key not in result, (
-            f"camelCase key '{hf_key}' leaked into map_input_fields output"
-        )
+        assert hf_key not in result, f"camelCase key '{hf_key}' leaked into map_input_fields output"
 
 
 def test_hf_map_input_copies_unmapped_fields():
@@ -150,7 +148,9 @@ def test_hf_map_output_vm_type_produces_attributes():
     HostFactorySchedulerStrategy.format_templates_response via _build_hf_attributes.
     We test that path here via the strategy, not the mapper directly.
     """
-    from infrastructure.scheduler.hostfactory.hostfactory_strategy import HostFactorySchedulerStrategy
+    from infrastructure.scheduler.hostfactory.hostfactory_strategy import (
+        HostFactorySchedulerStrategy,
+    )
     from infrastructure.template.dtos import TemplateDTO
 
     strategy = HostFactorySchedulerStrategy()

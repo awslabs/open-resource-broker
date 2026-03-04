@@ -224,5 +224,3 @@ class PriceType(str, Enum):
     SPOT = "spot"
     RESERVED = "reserved"
     HETEROGENEOUS = "heterogeneous"  # Mix of different pricing types
-
-

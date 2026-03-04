@@ -454,8 +454,7 @@ class AWSRequestAdapter(RequestAdapterPort):
                 return {
                     "status": "success",
                     "successful_fleets": [
-                        fleet["SpotFleetRequestId"]
-                        for fleet in response["SuccessfulFleetRequests"]
+                        fleet["SpotFleetRequestId"] for fleet in response["SuccessfulFleetRequests"]
                     ],
                     "unsuccessful_fleets": [
                         {

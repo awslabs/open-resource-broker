@@ -238,5 +238,3 @@ class TestPriceType:
     def test_is_str(self):
         assert isinstance(PriceType.SPOT, str)
         assert PriceType.SPOT == "spot"
-
-

@@ -170,10 +170,15 @@ class TestAWSAllocationStrategyRoundTrip:
     """Round-trip tests: input format → construction → output format."""
 
     def test_camel_case_input_to_ec2_fleet_format(self) -> None:
-        assert AWSAllocationStrategy("capacityOptimized").to_ec2_fleet_format() == "capacity-optimized"
+        assert (
+            AWSAllocationStrategy("capacityOptimized").to_ec2_fleet_format() == "capacity-optimized"
+        )
 
     def test_hyphenated_input_to_spot_fleet_format(self) -> None:
-        assert AWSAllocationStrategy("capacity-optimized").to_spot_fleet_format() == "capacityOptimized"
+        assert (
+            AWSAllocationStrategy("capacity-optimized").to_spot_fleet_format()
+            == "capacityOptimized"
+        )
 
     def test_snake_case_input_to_asg_format(self) -> None:
         assert AWSAllocationStrategy("capacity_optimized").to_asg_format() == "capacity-optimized"

@@ -80,10 +80,14 @@ def test_hf_load_skips_none_templates(tmp_path):
     """HF strategy skips None entries without raising."""
     f = tmp_path / "hf_with_none.json"
     # Write raw JSON with a null entry
-    f.write_text(json.dumps({
-        "scheduler_type": "hostfactory",
-        "templates": [None, _MINIMAL_HF_TEMPLATE_ON_DISK],
-    }))
+    f.write_text(
+        json.dumps(
+            {
+                "scheduler_type": "hostfactory",
+                "templates": [None, _MINIMAL_HF_TEMPLATE_ON_DISK],
+            }
+        )
+    )
     strategy = make_hf_strategy()
     results = strategy.load_templates_from_path(str(f))
     # The valid template should still be loaded

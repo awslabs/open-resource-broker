@@ -187,7 +187,12 @@ def test_hf_no_domain_status_raises_on_mapping(hf_strategy):
 
 def test_hf_no_machine_status_raises_on_mapping(hf_strategy):
     """_map_machine_status_to_result never raises for any known machine status."""
-    known_statuses = list(HF_MACHINE_STATUSES) + ["launching", "stopping", "shutting-down", "stopped"]
+    known_statuses = list(HF_MACHINE_STATUSES) + [
+        "launching",
+        "stopping",
+        "shutting-down",
+        "stopped",
+    ]
     for status in known_statuses:
         try:
             result = hf_strategy._map_machine_status_to_result(status)

@@ -25,9 +25,7 @@ from tests.onaws.plugin_io_schemas import (
 
 from .conftest import make_machine_ref_dto, make_request_dto
 
-_REQ_ID_PATTERN = re.compile(
-    r"^req-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
-)
+_REQ_ID_PATTERN = re.compile(r"^req-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
 _STATUS_ID_PATTERN = re.compile(
     r"^(req-|ret-)[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
 )
@@ -196,7 +194,15 @@ def test_default_request_status_machine_fields_present(default_strategy):
     dto = make_request_dto(status="complete", machine_refs=[machine])
     response = default_strategy.format_request_status_response([dto])
 
-    required = {"machine_id", "name", "result", "status", "private_ip_address", "launch_time", "message"}
+    required = {
+        "machine_id",
+        "name",
+        "result",
+        "status",
+        "private_ip_address",
+        "launch_time",
+        "message",
+    }
     machines = response["requests"][0]["machines"]
     assert len(machines) == 1
     missing = required - set(machines[0].keys())

@@ -371,8 +371,7 @@ def normalise_allocation_strategy(value: str) -> str:
     if canonical is None:
         valid = ", ".join(sorted(CANONICAL_ALLOCATION_STRATEGIES))
         raise ValueError(
-            f"Unknown allocation strategy {value!r}. "
-            f"Valid canonical values are: {valid}"
+            f"Unknown allocation strategy {value!r}. Valid canonical values are: {valid}"
         )
     return canonical
 

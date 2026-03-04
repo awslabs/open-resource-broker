@@ -405,9 +405,7 @@ class TestResourcePrefixConfig:
 
         assert result["success"] is True
         fleet_id = result["resource_ids"][0]
-        assert fleet_id.startswith("fleet-"), (
-            f"Expected fleet-* resource ID, got: {fleet_id!r}"
-        )
+        assert fleet_id.startswith("fleet-"), f"Expected fleet-* resource ID, got: {fleet_id!r}"
 
 
 # ---------------------------------------------------------------------------
@@ -468,8 +466,7 @@ class TestTemplateDefaultsConfig:
         # Every loaded template should have subnet_ids populated from config defaults
         for tpl in templates:
             assert tpl.subnet_ids, (
-                f"Template {tpl.template_id!r} has empty subnet_ids — "
-                "template_defaults not applied"
+                f"Template {tpl.template_id!r} has empty subnet_ids — template_defaults not applied"
             )
             assert tpl.subnet_ids[0] in moto_vpc_resources["subnet_ids"], (
                 f"Template subnet_id {tpl.subnet_ids[0]!r} not from moto config"
@@ -517,9 +514,7 @@ class TestConfigPortInjection:
         config_port = container.get(ConfigurationPort)
 
         prefix = config_port.get_resource_prefix("asg")
-        assert prefix == "ci-", (
-            f"Expected get_resource_prefix('asg') == 'ci-', got: {prefix!r}"
-        )
+        assert prefix == "ci-", f"Expected get_resource_prefix('asg') == 'ci-', got: {prefix!r}"
 
     def test_config_port_returns_empty_prefix_when_not_configured(
         self, moto_vpc_resources, orb_config_no_prefix
@@ -532,9 +527,7 @@ class TestConfigPortInjection:
         config_port = container.get(ConfigurationPort)
 
         prefix = config_port.get_resource_prefix("asg")
-        assert prefix == "", (
-            f"Expected empty prefix when not configured, got: {prefix!r}"
-        )
+        assert prefix == "", f"Expected empty prefix when not configured, got: {prefix!r}"
 
     def test_all_handlers_use_same_config_port_instance(
         self, moto_vpc_resources, orb_config_with_prefix

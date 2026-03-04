@@ -705,7 +705,10 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
             return {"status": "success", "message": f"EC2 Fleet {resource_id} cancelled"}
         except Exception as e:
             self._logger.error("Failed to cancel EC2 Fleet %s: %s", resource_id, e)
-            return {"status": "error", "message": f"Failed to cancel EC2 Fleet {resource_id}: {e!s}"}
+            return {
+                "status": "error",
+                "message": f"Failed to cancel EC2 Fleet {resource_id}: {e!s}",
+            }
 
     def _release_hosts_for_single_ec2_fleet(
         self, fleet_id: str, fleet_instance_ids: list[str], fleet_details: dict

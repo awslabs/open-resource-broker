@@ -211,4 +211,3 @@ class AWSInstanceOperationService:
             return ProviderResult.error_result(
                 f"Failed to get instance status: {e}", "GET_INSTANCE_STATUS_ERROR"
             )
-

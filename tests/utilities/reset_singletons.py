@@ -97,7 +97,9 @@ def reset_all_singletons() -> None:
     _safe_reset_global_variable(
         "src.infrastructure.aws.aws_client_singleton", "_aws_client_singleton_instance"
     )
-    _safe_reset_global_variable("providers.registry.provider_registry", "_provider_registry_instance")
+    _safe_reset_global_variable(
+        "providers.registry.provider_registry", "_provider_registry_instance"
+    )
     _safe_reset_class_instance("src.infrastructure.config.manager", "ConfigurationManager")
     _safe_reset_class_instance("src.infrastructure.logging.logger_singleton", "LoggerSingleton")
 

@@ -344,9 +344,7 @@ class TestGetAvailableTemplatesSchema:
             assert "attributes" in tmpl, f"Template {tmpl.get('templateId')} missing 'attributes'"
             attrs = tmpl["attributes"]
             for key in ("type", "ncores", "ncpus", "nram"):
-                assert key in attrs, (
-                    f"Template {tmpl.get('templateId')} attributes missing '{key}'"
-                )
+                assert key in attrs, f"Template {tmpl.get('templateId')} attributes missing '{key}'"
 
     def test_hf_instance_tags_is_string_not_dict(self, hf_strat, orb_config_dir):
         """instanceTags in HF response is a string (not a dict) when present."""
@@ -383,7 +381,9 @@ class TestRequestMachinesSchema:
         import re
 
         request_id = "req-a1b2c3d4-e5f6-7890-abcd-ef1234567890"
-        response = default_strat.format_request_response({"request_id": request_id, "status": "pending"})
+        response = default_strat.format_request_response(
+            {"request_id": request_id, "status": "pending"}
+        )
         _validate(response, expected_request_machines_schema_default)
         pattern = r"^req-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
         assert re.match(pattern, response["request_id"]), (
@@ -526,6 +526,7 @@ class TestGetRequestStatusSchema:
                 # Must be either None or a valid IP string
                 if ip is not None:
                     import re
+
                     assert re.match(r"^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$", ip), (
                         f"privateIpAddress {ip!r} is not a valid IPv4 address"
                     )

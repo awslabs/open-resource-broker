@@ -25,9 +25,7 @@ from application.dto.queries import GetRequestQuery
 from application.ports.command_bus_port import CommandBusPort
 from application.ports.query_bus_port import QueryBusPort
 
-_RET_PREFIX_RE = re.compile(
-    r"^ret-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
-)
+_RET_PREFIX_RE = re.compile(r"^ret-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
 
 
 # ---------------------------------------------------------------------------
@@ -96,9 +94,9 @@ def orb_config_dir(orb_config_dir):
     if default_cfg_path.exists():
         cfg = _json.loads(default_cfg_path.read_text())
         try:
-            cfg["provider"]["provider_defaults"]["aws"]["template_defaults"][
-                "image_id"
-            ] = "ami-12345678"
+            cfg["provider"]["provider_defaults"]["aws"]["template_defaults"]["image_id"] = (
+                "ami-12345678"
+            )
         except (KeyError, TypeError):
             pass
         default_cfg_path.write_text(_json.dumps(cfg, indent=2))
@@ -115,7 +113,9 @@ def run_instances_template_id(orb_config_dir):
     container = get_container()
     manager = container.get(TemplateConfigurationManager)
     templates = asyncio.run(manager.get_all_templates())
-    run_templates = [t for t in templates if str(getattr(t, "provider_api", "")).upper() == "RUNINSTANCES"]
+    run_templates = [
+        t for t in templates if str(getattr(t, "provider_api", "")).upper() == "RUNINSTANCES"
+    ]
     assert run_templates, "No RunInstances template found in test config"
     return str(run_templates[0].template_id)
 
@@ -166,10 +166,7 @@ def _machine_ids_from_dto(request_dto) -> list:
     refs = getattr(request_dto, "machine_references", None) or []
     result = []
     for m in refs:
-        mid = (
-            m.get("machine_id") if isinstance(m, dict)
-            else getattr(m, "machine_id", None)
-        )
+        mid = m.get("machine_id") if isinstance(m, dict) else getattr(m, "machine_id", None)
         if mid:
             result.append(mid)
     return result
@@ -258,9 +255,7 @@ class TestRunInstancesReturnFlow:
             f"Instances not terminated after return: {post_states}"
         )
 
-    def test_return_status_shows_request_completed(
-        self, cqrs_buses, run_instances_template_id
-    ):
+    def test_return_status_shows_request_completed(self, cqrs_buses, run_instances_template_id):
         """The return request reaches a terminal status after release_hosts completes."""
         command_bus = cqrs_buses["command_bus"]
         query_bus = cqrs_buses["query_bus"]
@@ -314,7 +309,10 @@ class TestRunInstancesReturnFlow:
                         return True
                     if isinstance(v, list):
                         if any(
-                            (isinstance(e, dict) and (e.get("request_id") == rid or e.get("id") == rid))
+                            (
+                                isinstance(e, dict)
+                                and (e.get("request_id") == rid or e.get("id") == rid)
+                            )
                             for e in v
                         ):
                             return True

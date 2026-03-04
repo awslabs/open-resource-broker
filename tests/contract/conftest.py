@@ -54,9 +54,7 @@ def moto_vpc_resources(moto_aws):
     ec2 = boto3.client("ec2", region_name=REGION)
     vpc = ec2.create_vpc(CidrBlock="10.0.0.0/16")
     vpc_id = vpc["Vpc"]["VpcId"]
-    subnet = ec2.create_subnet(
-        VpcId=vpc_id, CidrBlock="10.0.1.0/24", AvailabilityZone=f"{REGION}a"
-    )
+    subnet = ec2.create_subnet(VpcId=vpc_id, CidrBlock="10.0.1.0/24", AvailabilityZone=f"{REGION}a")
     subnet_id = subnet["Subnet"]["SubnetId"]
     sg = ec2.create_security_group(
         GroupName="contract-test-sg", Description="contract test SG", VpcId=vpc_id

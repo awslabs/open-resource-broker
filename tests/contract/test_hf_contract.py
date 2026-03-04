@@ -35,14 +35,20 @@ from .conftest import make_machine_ref_dto, make_request_dto
 # Helpers
 # ---------------------------------------------------------------------------
 
-_REQ_ID_PATTERN = re.compile(
-    r"^req-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
-)
+_REQ_ID_PATTERN = re.compile(r"^req-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
 _STATUS_ID_PATTERN = re.compile(
     r"^(req-|ret-)[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
 )
 
-HF_REQUEST_STATUSES = {"running", "complete", "complete_with_error", "failed", "partial", "cancelled", "timeout"}
+HF_REQUEST_STATUSES = {
+    "running",
+    "complete",
+    "complete_with_error",
+    "failed",
+    "partial",
+    "cancelled",
+    "timeout",
+}
 HF_MACHINE_RESULTS = {"executing", "succeed", "fail"}
 HF_MACHINE_STATUSES = {"pending", "running", "terminated", "failed", "error"}
 
@@ -169,15 +175,24 @@ def test_hf_request_machines_request_id_pattern(hf_strategy):
 
 def test_hf_request_machines_all_statuses_produce_valid_response(hf_strategy):
     """format_request_response validates for every domain status value."""
-    domain_statuses = ["pending", "in_progress", "complete", "failed", "cancelled", "timeout", "partial"]
+    domain_statuses = [
+        "pending",
+        "in_progress",
+        "complete",
+        "failed",
+        "cancelled",
+        "timeout",
+        "partial",
+    ]
     for status in domain_statuses:
         request_data = {
             "request_id": "req-00000000-0000-0000-0000-000000000001",
             "status": status,
         }
         response = hf_strategy.format_request_response(request_data)
-        _validate(response, expected_request_machines_schema_hostfactory), (
-            f"Schema validation failed for domain status '{status}'"
+        (
+            _validate(response, expected_request_machines_schema_hostfactory),
+            (f"Schema validation failed for domain status '{status}'"),
         )
 
 
@@ -217,7 +232,15 @@ def test_hf_request_status_request_id_pattern(hf_strategy):
 
 def test_hf_request_status_status_enum(hf_strategy):
     """Every status value in the HF status response is in the allowed enum set."""
-    for domain_status in ["pending", "in_progress", "complete", "failed", "cancelled", "timeout", "partial"]:
+    for domain_status in [
+        "pending",
+        "in_progress",
+        "complete",
+        "failed",
+        "cancelled",
+        "timeout",
+        "partial",
+    ]:
         dto = make_request_dto(status=domain_status)
         response = hf_strategy.format_request_status_response([dto])
         emitted = response["requests"][0]["status"]
@@ -253,7 +276,15 @@ def test_hf_request_status_machine_fields_present(hf_strategy):
     dto = make_request_dto(status="complete", machine_refs=[machine])
     response = hf_strategy.format_request_status_response([dto])
 
-    required = {"machineId", "name", "result", "status", "privateIpAddress", "launchtime", "message"}
+    required = {
+        "machineId",
+        "name",
+        "result",
+        "status",
+        "privateIpAddress",
+        "launchtime",
+        "message",
+    }
     machines = response["requests"][0]["machines"]
     assert len(machines) == 1
     missing = required - set(machines[0].keys())
