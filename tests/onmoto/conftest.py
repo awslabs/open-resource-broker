@@ -109,7 +109,6 @@ def orb_config_dir(tmp_path, moto_vpc_resources):
                     "default": True,
                     "config": {
                         "region": REGION,
-                        "profile": "default",
                     },
                     "template_defaults": {
                         "subnet_ids": subnet_ids,

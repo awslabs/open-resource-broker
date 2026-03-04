@@ -214,6 +214,9 @@ markers = [
     "manual_aws: marks tests that must be run manually against AWS",
     "rest_api: marks REST API integration tests",
     "sdk: marks SDK-based integration tests",
+    "provider_contract: part of the provider contract test suite",
+    "simulator_limitation: assertion weakened due to known simulator gap",
+    "requires_real_provider: skipped unless --run-real-provider flag passed",
 ]
 env = [
     "AWS_DEFAULT_REGION=us-east-1",

@@ -629,6 +629,17 @@ class AWSHandler(ABC):
             detailed_message = f"Template validation failed - {'; '.join(error_details)}"
             raise AWSValidationError(detailed_message, errors)
 
+    def get_provider_info(self) -> dict[str, Any]:
+        """Return basic provider metadata for this handler.
+
+        Satisfies the ProviderMonitoringPort contract. Subclasses may override
+        to add handler-specific fields.
+        """
+        return {
+            "provider_type": "aws",
+            "handler_type": self.get_handler_type(),
+        }
+
     # Utility methods for AWS operations (keeping existing functionality)
     def get_handler_type(self) -> str:
         """Get handler type from class name."""
