@@ -3,23 +3,19 @@
 import sys
 from pathlib import Path
 
-import pytest
-
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent.parent / "src"))
 
 from infrastructure.scheduler.default.default_strategy import DefaultSchedulerStrategy
 from infrastructure.scheduler.hostfactory.hostfactory_strategy import HostFactorySchedulerStrategy
-
 from tests.unit.infrastructure.scheduler.conftest import (
-    make_default_strategy,
-    make_hf_strategy,
-    make_defaults_service,
-    write_default_file,
-    write_hf_file,
     _MINIMAL_HF_TEMPLATE_ON_DISK,
     _MINIMAL_SNAKE_TEMPLATE,
+    make_default_strategy,
+    make_defaults_service,
+    make_hf_strategy,
+    write_default_file,
+    write_hf_file,
 )
-
 
 # ---------------------------------------------------------------------------
 # get_scheduler_type identity

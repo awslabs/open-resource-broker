@@ -7,15 +7,12 @@ immediately rather than discovered at runtime by an HF client.
 
 from unittest.mock import MagicMock
 
-import pytest
-
 from infrastructure.scheduler.hostfactory.hostfactory_strategy import (
     HostFactorySchedulerStrategy,
 )
 from infrastructure.scheduler.hostfactory.response_formatter import (
     HostFactoryResponseFormatter,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers

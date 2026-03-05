@@ -226,7 +226,6 @@ class TestCleanArchitecture:
     def test_ports_and_adapters_pattern(self):
         """Test ports and adapters (hexagonal architecture) implementation."""
         # Test that adapters implement ports
-        import inspect
 
         from infrastructure.adapters.logging_adapter import LoggingAdapter
 

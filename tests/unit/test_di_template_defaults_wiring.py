@@ -2,8 +2,6 @@
 
 from unittest.mock import MagicMock
 
-import pytest
-
 from infrastructure.scheduler.registration import (
     create_default_strategy,
     create_symphony_hostfactory_strategy,

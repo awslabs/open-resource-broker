@@ -74,11 +74,11 @@ def _make_aws_client(region: str = REGION) -> Any:
 
 
 def _make_launch_template_manager(aws_client: Any, logger: Any) -> Any:
+    from providers.aws.domain.template.aws_template_aggregate import AWSTemplate
     from providers.aws.infrastructure.launch_template.manager import (
         AWSLaunchTemplateManager,
         LaunchTemplateResult,
     )
-    from providers.aws.domain.template.aws_template_aggregate import AWSTemplate
 
     lt_manager = MagicMock(spec=AWSLaunchTemplateManager)
 
@@ -190,8 +190,6 @@ def _build_request_dto_from_run_instances(
     reservation_id: str,
 ) -> Any:
     """Call check_hosts_status and build a minimal RequestDTO-like object for formatting."""
-    from application.request.dto import MachineReferenceDTO, RequestDTO
-    from datetime import datetime, timezone
 
     status_request = _make_request(
         request_id=request_id,
@@ -309,8 +307,8 @@ def sg_id(moto_vpc_resources):
 
 def _get_all_template_dtos(strat: Any, orb_config_dir: Path) -> list:
     """Load all TemplateDTOs via the strategy's template pipeline."""
-    from infrastructure.template.configuration_manager import TemplateConfigurationManager
     from infrastructure.di.container import get_container
+    from infrastructure.template.configuration_manager import TemplateConfigurationManager
 
     container = get_container()
     manager = container.get(TemplateConfigurationManager)
@@ -425,8 +423,6 @@ class TestGetRequestStatusSchema:
 
     def test_default_status_schema_no_machines(self, default_strat):
         """Default getRequestStatus with empty machines validates against schema."""
-        from application.request.dto import RequestDTO, MachineReferenceDTO
-        from datetime import datetime, timezone
 
         dto = MagicMock()
         dto.request_id = "req-a1b2c3d4-e5f6-7890-abcd-ef1234567890"

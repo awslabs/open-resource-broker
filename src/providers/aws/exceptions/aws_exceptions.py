@@ -2,8 +2,10 @@
 
 from typing import Any, Optional
 
-from domain.base.exceptions import InfrastructureError
-from domain.base.exceptions import QuotaExceededError as DomainQuotaExceededError
+from domain.base.exceptions import (
+    InfrastructureError,
+    QuotaExceededError as DomainQuotaExceededError,
+)
 
 
 class AWSError(InfrastructureError):

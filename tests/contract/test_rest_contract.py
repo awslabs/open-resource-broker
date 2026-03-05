@@ -8,7 +8,6 @@ If FastAPI or httpx is not available, tests are skipped with a clear message.
 
 import sys
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 

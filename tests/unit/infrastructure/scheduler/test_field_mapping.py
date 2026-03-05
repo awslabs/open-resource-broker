@@ -6,15 +6,12 @@ No file I/O, no DI container, no AWS.
 import sys
 from pathlib import Path
 
-import pytest
-
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent.parent / "src"))
 
 from infrastructure.scheduler.default.field_mapper import DefaultFieldMapper
 from infrastructure.scheduler.hostfactory.field_mapper import HostFactoryFieldMapper
 from infrastructure.scheduler.hostfactory.field_mappings import HostFactoryFieldMappings
 from infrastructure.scheduler.hostfactory.transformations import HostFactoryTransformations
-
 
 # ---------------------------------------------------------------------------
 # HF mapper — input direction (camelCase → snake_case)

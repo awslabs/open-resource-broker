@@ -1,10 +1,10 @@
 """Request query service for pure data retrieval."""
 
 from domain.base import UnitOfWorkFactory
-from domain.request.exceptions import RequestNotFoundError
 from domain.base.ports.logging_port import LoggingPort
 from domain.machine.aggregate import Machine
 from domain.request.aggregate import Request
+from domain.request.exceptions import RequestNotFoundError
 from domain.request.request_types import RequestType
 from domain.request.value_objects import RequestId
 

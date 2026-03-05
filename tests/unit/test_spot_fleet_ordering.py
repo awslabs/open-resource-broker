@@ -5,14 +5,13 @@ validation failed with "Fleet role ARN is required" even when a fleet_role was
 available in config.
 """
 
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock
 
 import pytest
 
 from providers.aws.domain.template.aws_template_aggregate import AWSTemplate
 from providers.aws.infrastructure.handlers.spot_fleet.handler import SpotFleetHandler
 from providers.aws.infrastructure.handlers.spot_fleet.validator import SpotFleetValidator
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -77,9 +76,6 @@ class TestResolveBeforeValidate:
         handler = _make_handler()
 
         call_order = []
-
-        original_resolve = handler._resolve_fleet_role
-        original_validate = handler._validate_spot_prerequisites
 
         def tracking_resolve(template):
             call_order.append("resolve")

@@ -7,24 +7,20 @@ import json
 import sys
 from pathlib import Path
 from typing import Any
-from unittest.mock import MagicMock
-
-import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent.parent / "src"))
 
 from infrastructure.scheduler.default.default_strategy import DefaultSchedulerStrategy
 from infrastructure.scheduler.hostfactory.hostfactory_strategy import HostFactorySchedulerStrategy
 from infrastructure.template.dtos import TemplateDTO
-
 from tests.unit.infrastructure.scheduler.conftest import (
+    _MINIMAL_HF_TEMPLATE_ON_DISK,
+    _MINIMAL_SNAKE_TEMPLATE,
     SCHEDULER_CONFIGS,
     make_default_strategy,
     make_hf_strategy,
     write_default_file,
     write_hf_file,
-    _MINIMAL_HF_TEMPLATE_ON_DISK,
-    _MINIMAL_SNAKE_TEMPLATE,
 )
 
 # ---------------------------------------------------------------------------

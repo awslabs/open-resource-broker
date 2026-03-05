@@ -21,9 +21,7 @@ from providers.aws.domain.template.aws_template_aggregate import AWSTemplate
 from providers.aws.infrastructure.aws_client import AWSClient
 from providers.aws.infrastructure.aws_handler_factory import AWSHandlerFactory
 from providers.aws.infrastructure.handlers.asg.handler import ASGHandler
-from providers.aws.infrastructure.handlers.ec2_fleet.handler import EC2FleetHandler
 from providers.aws.infrastructure.handlers.run_instances.handler import RunInstancesHandler
-from providers.aws.infrastructure.handlers.spot_fleet.handler import SpotFleetHandler
 from providers.aws.infrastructure.launch_template.manager import AWSLaunchTemplateManager
 from providers.aws.utilities.aws_operations import AWSOperations
 from tests.utilities.reset_singletons import reset_all_singletons

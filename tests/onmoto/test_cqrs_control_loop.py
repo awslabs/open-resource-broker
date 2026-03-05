@@ -176,11 +176,11 @@ def _inject_moto_factory_into_strategy(aws_client: Any, logger: Any, config_port
         AWSProvisioningAdapter,
     )
     from providers.aws.infrastructure.adapters.machine_adapter import AWSMachineAdapter
+    from providers.aws.infrastructure.aws_handler_factory import AWSHandlerFactory
     from providers.aws.infrastructure.handlers.asg.handler import ASGHandler
     from providers.aws.infrastructure.handlers.ec2_fleet.handler import EC2FleetHandler
     from providers.aws.infrastructure.handlers.run_instances.handler import RunInstancesHandler
     from providers.aws.infrastructure.handlers.spot_fleet.handler import SpotFleetHandler
-    from providers.aws.infrastructure.aws_handler_factory import AWSHandlerFactory
     from providers.aws.services.instance_operation_service import AWSInstanceOperationService
     from providers.aws.utilities.aws_operations import AWSOperations
     from providers.registry import get_provider_registry

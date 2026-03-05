@@ -9,12 +9,12 @@ if TYPE_CHECKING:
 
 from domain.base.exceptions import QuotaError
 from domain.base.ports import ConfigurationPort, ContainerPort, LoggingPort, ProviderConfigPort
-from infrastructure.resilience.exceptions import CircuitBreakerOpenError
-from infrastructure.resilience.strategy.circuit_breaker import CircuitBreakerStrategy
 from domain.base.results import ProviderSelectionResult
 from domain.request.aggregate import Request
 from domain.request.request_types import RequestStatus
 from domain.template.template_aggregate import Template
+from infrastructure.resilience.exceptions import CircuitBreakerOpenError
+from infrastructure.resilience.strategy.circuit_breaker import CircuitBreakerStrategy
 
 
 @dataclass

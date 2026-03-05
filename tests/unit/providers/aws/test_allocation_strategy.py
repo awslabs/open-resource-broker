@@ -7,7 +7,6 @@ from providers.aws.domain.template.value_objects import (
     normalise_allocation_strategy,
 )
 
-
 # ---------------------------------------------------------------------------
 # normalise_allocation_strategy
 # ---------------------------------------------------------------------------
