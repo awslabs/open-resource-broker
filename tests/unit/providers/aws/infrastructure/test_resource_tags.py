@@ -291,17 +291,19 @@ class TestEC2FleetHandlerTags:
         )
         assert provider_api == "EC2Fleet"
 
-    def test_instance_tags_present_for_maintain(self):
+    def test_instance_tags_absent_for_maintain(self):
+        """AWS rejects ResourceType='instance' in CreateFleet for maintain fleets."""
         handler = self._make_handler()
         config = self._call_legacy(handler, fleet_type=AWSFleetType.MAINTAIN)
         resource_types = {s["ResourceType"] for s in config["TagSpecifications"]}
-        assert "instance" in resource_types
+        assert "instance" not in resource_types
 
-    def test_instance_tags_present_for_request(self):
+    def test_instance_tags_absent_for_request(self):
+        """AWS rejects ResourceType='instance' in CreateFleet for request fleets."""
         handler = self._make_handler()
         config = self._call_legacy(handler, fleet_type=AWSFleetType.REQUEST)
         resource_types = {s["ResourceType"] for s in config["TagSpecifications"]}
-        assert "instance" in resource_types
+        assert "instance" not in resource_types
 
     def test_instance_tags_present_for_instant(self):
         handler = self._make_handler()
@@ -309,9 +311,10 @@ class TestEC2FleetHandlerTags:
         resource_types = {s["ResourceType"] for s in config["TagSpecifications"]}
         assert "instance" in resource_types
 
-    def test_instance_tags_use_orb_keys(self):
+    def test_instance_tags_use_orb_keys_for_instant(self):
+        """Instance tags are only present for instant fleets — verify they use orb keys."""
         handler = self._make_handler()
-        config = self._call_legacy(handler)
+        config = self._call_legacy(handler, fleet_type=AWSFleetType.INSTANT)
         inst_spec = next(s for s in config["TagSpecifications"] if s["ResourceType"] == "instance")
         keys = {t["Key"] for t in inst_spec["Tags"]}
         assert ORB_SYSTEM_KEYS.issubset(keys)
@@ -356,25 +359,19 @@ class TestSpotFleetHandlerTags:
         provider_api = next(t["Value"] for t in sfr_spec["Tags"] if t["Key"] == "orb:provider-api")
         assert provider_api == "SpotFleet"
 
-    def test_instance_tags_present(self):
+    def test_instance_tags_absent(self):
+        """AWS RequestSpotFleet rejects ResourceType='instance' in TagSpecifications."""
         handler = self._make_handler()
         config = self._call_legacy(handler)
         resource_types = {s["ResourceType"] for s in config["TagSpecifications"]}
-        assert "instance" in resource_types
+        assert "instance" not in resource_types
 
-    def test_instance_tags_use_orb_keys(self):
+    def test_only_spot_fleet_request_resource_type(self):
+        """SpotFleet TagSpecifications should only contain 'spot-fleet-request'."""
         handler = self._make_handler()
         config = self._call_legacy(handler)
-        inst_spec = next(s for s in config["TagSpecifications"] if s["ResourceType"] == "instance")
-        keys = {t["Key"] for t in inst_spec["Tags"]}
-        assert ORB_SYSTEM_KEYS.issubset(keys)
-
-    def test_instance_provider_api_is_spotfleet(self):
-        handler = self._make_handler()
-        config = self._call_legacy(handler)
-        inst_spec = next(s for s in config["TagSpecifications"] if s["ResourceType"] == "instance")
-        provider_api = next(t["Value"] for t in inst_spec["Tags"] if t["Key"] == "orb:provider-api")
-        assert provider_api == "SpotFleet"
+        resource_types = {s["ResourceType"] for s in config["TagSpecifications"]}
+        assert resource_types == {"spot-fleet-request"}
 
 
 # ---------------------------------------------------------------------------

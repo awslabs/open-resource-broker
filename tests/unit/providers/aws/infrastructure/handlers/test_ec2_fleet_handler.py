@@ -204,7 +204,7 @@ class TestEC2FleetHandlerCheckHostsStatus:
 
 class TestEC2FleetHandlerNameTag:
     def test_fleet_config_instance_tag_uses_config_prefix(self):
-        """Instance Name tag in EC2Fleet config uses config_port prefix for all fleet types."""
+        """Instance Name tag in EC2Fleet config uses config_port prefix (instant fleet only)."""
         from providers.aws.domain.template.aws_template_aggregate import AWSFleetType
 
         aws_client = MagicMock()
@@ -221,7 +221,7 @@ class TestEC2FleetHandlerNameTag:
         )
 
         template = MagicMock()
-        template.fleet_type = AWSFleetType.MAINTAIN
+        template.fleet_type = AWSFleetType.INSTANT
         template.tags = {}
         template.price_type = "ondemand"
         template.allocation_strategy = None
@@ -246,7 +246,7 @@ class TestEC2FleetHandlerNameTag:
             ),
             None,
         )
-        assert instance_ts is not None, "No instance TagSpecification found"
+        assert instance_ts is not None, "No instance TagSpecification found (instant fleet)"
         name_tag = next((t for t in instance_ts["Tags"] if t["Key"] == "Name"), None)
         assert name_tag is not None, "No Name tag in instance TagSpecification"
         assert "req-ec2-001" in name_tag["Value"]
