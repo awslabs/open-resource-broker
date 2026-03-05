@@ -57,33 +57,25 @@ class TestOndemandTemplateFields:
         template = _make_template(price_type="ondemand")
         result = hf_strategy.format_templates_response([template])
         output = result["templates"][0]
-        assert "maxSpotPrice" not in output, (
-            "ondemand template must not contain maxSpotPrice"
-        )
+        assert "maxSpotPrice" not in output, "ondemand template must not contain maxSpotPrice"
 
     def test_ondemand_does_not_emit_vm_types_ondemand(self, hf_strategy):
         template = _make_template(price_type="ondemand")
         result = hf_strategy.format_templates_response([template])
         output = result["templates"][0]
-        assert "vmTypesOnDemand" not in output, (
-            "ondemand template must not contain vmTypesOnDemand"
-        )
+        assert "vmTypesOnDemand" not in output, "ondemand template must not contain vmTypesOnDemand"
 
     def test_ondemand_does_not_emit_vm_types_priority(self, hf_strategy):
         template = _make_template(price_type="ondemand")
         result = hf_strategy.format_templates_response([template])
         output = result["templates"][0]
-        assert "vmTypesPriority" not in output, (
-            "ondemand template must not contain vmTypesPriority"
-        )
+        assert "vmTypesPriority" not in output, "ondemand template must not contain vmTypesPriority"
 
     def test_ondemand_does_not_emit_percent_on_demand(self, hf_strategy):
         template = _make_template(price_type="ondemand")
         result = hf_strategy.format_templates_response([template])
         output = result["templates"][0]
-        assert "percentOnDemand" not in output, (
-            "ondemand template must not contain percentOnDemand"
-        )
+        assert "percentOnDemand" not in output, "ondemand template must not contain percentOnDemand"
 
     def test_ondemand_does_not_emit_allocation_strategy_ondemand(self, hf_strategy):
         template = _make_template(price_type="ondemand")
@@ -97,9 +89,7 @@ class TestOndemandTemplateFields:
         template = _make_template(price_type="ondemand")
         result = hf_strategy.format_templates_response([template])
         output = result["templates"][0]
-        assert "fleetRole" not in output, (
-            "ondemand template must not contain fleetRole"
-        )
+        assert "fleetRole" not in output, "ondemand template must not contain fleetRole"
 
     def test_ondemand_forbidden_fields_absent_as_a_set(self, hf_strategy):
         """All forbidden ondemand fields are absent in a single assertion."""
@@ -119,9 +109,7 @@ class TestSpotTemplateFields:
         template = _make_template(price_type="spot", max_price=0.05)
         result = hf_strategy.format_templates_response([template])
         output = result["templates"][0]
-        assert "maxSpotPrice" in output, (
-            "spot template must contain maxSpotPrice"
-        )
+        assert "maxSpotPrice" in output, "spot template must contain maxSpotPrice"
 
     def test_spot_max_spot_price_value_is_correct(self, hf_strategy):
         template = _make_template(price_type="spot", max_price=0.05)
@@ -133,25 +121,19 @@ class TestSpotTemplateFields:
         template = _make_template(price_type="spot", max_price=0.05)
         result = hf_strategy.format_templates_response([template])
         output = result["templates"][0]
-        assert "vmTypesOnDemand" not in output, (
-            "spot template must not contain vmTypesOnDemand"
-        )
+        assert "vmTypesOnDemand" not in output, "spot template must not contain vmTypesOnDemand"
 
     def test_spot_does_not_emit_vm_types_priority(self, hf_strategy):
         template = _make_template(price_type="spot", max_price=0.05)
         result = hf_strategy.format_templates_response([template])
         output = result["templates"][0]
-        assert "vmTypesPriority" not in output, (
-            "spot template must not contain vmTypesPriority"
-        )
+        assert "vmTypesPriority" not in output, "spot template must not contain vmTypesPriority"
 
     def test_spot_does_not_emit_percent_on_demand(self, hf_strategy):
         template = _make_template(price_type="spot", max_price=0.05)
         result = hf_strategy.format_templates_response([template])
         output = result["templates"][0]
-        assert "percentOnDemand" not in output, (
-            "spot template must not contain percentOnDemand"
-        )
+        assert "percentOnDemand" not in output, "spot template must not contain percentOnDemand"
 
     def test_spot_does_not_emit_allocation_strategy_ondemand(self, hf_strategy):
         template = _make_template(price_type="spot", max_price=0.05)
@@ -183,9 +165,7 @@ class TestHeterogeneousTemplateFields:
         )
         result = hf_strategy.format_templates_response([template])
         output = result["templates"][0]
-        assert "maxSpotPrice" in output, (
-            "heterogeneous template must contain maxSpotPrice"
-        )
+        assert "maxSpotPrice" in output, "heterogeneous template must contain maxSpotPrice"
 
     def test_heterogeneous_emits_percent_on_demand(self, hf_strategy):
         template = _make_template(
@@ -195,9 +175,7 @@ class TestHeterogeneousTemplateFields:
         )
         result = hf_strategy.format_templates_response([template])
         output = result["templates"][0]
-        assert "percentOnDemand" in output, (
-            "heterogeneous template must contain percentOnDemand"
-        )
+        assert "percentOnDemand" in output, "heterogeneous template must contain percentOnDemand"
 
     def test_heterogeneous_percent_on_demand_value_is_correct(self, hf_strategy):
         template = _make_template(
@@ -232,9 +210,7 @@ class TestHeterogeneousTemplateFields:
         )
         result = hf_strategy.format_templates_response([template])
         output = result["templates"][0]
-        assert "vmTypesOnDemand" not in output, (
-            "vmTypesOnDemand must not be emitted when empty"
-        )
+        assert "vmTypesOnDemand" not in output, "vmTypesOnDemand must not be emitted when empty"
 
     def test_heterogeneous_optional_vm_types_priority_only_when_non_empty(self, hf_strategy):
         """vmTypesPriority must not appear when the underlying value is empty."""
@@ -245,9 +221,7 @@ class TestHeterogeneousTemplateFields:
         )
         result = hf_strategy.format_templates_response([template])
         output = result["templates"][0]
-        assert "vmTypesPriority" not in output, (
-            "vmTypesPriority must not be emitted when empty"
-        )
+        assert "vmTypesPriority" not in output, "vmTypesPriority must not be emitted when empty"
 
     def test_heterogeneous_optional_allocation_strategy_ondemand_only_when_non_empty(
         self, hf_strategy
@@ -279,9 +253,7 @@ class TestEmptyFieldSuppression:
         result = hf_strategy.format_templates_response([template])
         output = result["templates"][0]
         empty_dicts = [k for k, v in output.items() if v == {}]
-        assert not empty_dicts, (
-            f"{price_type} template emits empty dicts for fields: {empty_dicts}"
-        )
+        assert not empty_dicts, f"{price_type} template emits empty dicts for fields: {empty_dicts}"
 
     @pytest.mark.parametrize("price_type", ["ondemand", "spot", "heterogeneous"])
     def test_empty_list_fields_not_emitted(self, hf_strategy, price_type):
@@ -294,6 +266,4 @@ class TestEmptyFieldSuppression:
         result = hf_strategy.format_templates_response([template])
         output = result["templates"][0]
         empty_lists = [k for k, v in output.items() if v == []]
-        assert not empty_lists, (
-            f"{price_type} template emits empty lists for fields: {empty_lists}"
-        )
+        assert not empty_lists, f"{price_type} template emits empty lists for fields: {empty_lists}"
