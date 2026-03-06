@@ -186,7 +186,7 @@ async with orb(app_config={"provider": {"type": "aws", "providers": [{"name": "e
         west_templates = await west_client.list_templates()
 ```
 
-For a complete working example, see `examples/sdk_usage.py` in the repository.
+For a complete working example, see `docs/root/examples/sdk_usage.py` in the repository.
 
 ## CLI vs SDK Equivalents
 

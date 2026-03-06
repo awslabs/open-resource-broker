@@ -26,8 +26,17 @@ Welcome to the Open Resource Broker documentation. ORB lets you define what comp
 
 - **[Developer Guide](developer_guide/architecture.md)** — development-focused guidance
 - **[SDK Quickstart](sdk/quickstart.md)** — programmatic access via Python SDK
+- **[SDK API Reference](sdk/api-reference.md)** — parameter mapping across all interfaces
 - **[API Reference](api/readme.md)** — REST API documentation
 - **[Testing Guide](testing/readme.md)** — testing strategies and examples
+
+## Examples
+
+- **[SDK Usage](examples/sdk_usage.py)** — full SDK lifecycle: templates, requests, batch, middleware, discovery
+- **[Provider Strategy](examples/provider_strategy_usage_examples.py)** — custom providers, load balancing, fallback, composition
+- **[Config: Single Provider](examples/single-provider.json)** — minimal single-provider config
+- **[Config: Multi Provider](examples/multi-provider.json)** — multi-provider setup
+- **[Config: Production](examples/production-config.json)** — production-ready config
 
 ## Deployment & Operations
 
