@@ -235,7 +235,7 @@ class TestRequestStatusHandlerBehaviour:
         # post_process_response no longer calls format_request_response (correct — that was
         # the wrong formatter for status responses). Verify the response is correctly structured.
         result_dict = result.model_dump() if hasattr(result, "model_dump") else result
-        assert result_dict["requests"][0]["requestId"] == "req-12345678-1234-1234-1234-123456789012"
+        assert result_dict["requests"][0]["request_id"] == "req-12345678-1234-1234-1234-123456789012"
 
         # Ensure the correct query type was used
         query_bus.execute.assert_awaited_once()
@@ -247,12 +247,12 @@ class TestRequestStatusHandlerBehaviour:
         command_bus = Mock()
 
         mock_req = Mock()
-        mock_req.to_dict.return_value = {"requestId": "req-2", "status": "running"}
+        mock_req.to_dict.return_value = {"request_id": "req-2", "status": "running"}
         query_bus.execute = AsyncMock(return_value=[mock_req])
 
         scheduler = Mock()
         scheduler.format_request_response = AsyncMock(
-            return_value={"requests": [{"requestId": "req-2", "status": "running"}]}
+            return_value={"requests": [{"request_id": "req-2", "status": "running"}]}
         )
 
         handler = GetRequestStatusRESTHandler(
@@ -270,7 +270,7 @@ class TestRequestStatusHandlerBehaviour:
         query_bus.execute.assert_awaited_once()
         assert isinstance(query_bus.execute.call_args.args[0], ListActiveRequestsQuery)
         result_dict = result.model_dump() if hasattr(result, "model_dump") else result
-        assert result_dict["requests"][0]["requestId"] == "req-2"
+        assert result_dict["requests"][0]["request_id"] == "req-2"
 
     @pytest.mark.asyncio
     async def test_long_requests_use_get_request_query(self):
@@ -280,7 +280,7 @@ class TestRequestStatusHandlerBehaviour:
         scheduler.format_request_response = AsyncMock(
             return_value={
                 "requests": [
-                    {"requestId": "req-87654321-4321-4321-4321-210987654321", "status": "complete"}
+                    {"request_id": "req-87654321-4321-4321-4321-210987654321", "status": "complete"}
                 ]
             }
         )

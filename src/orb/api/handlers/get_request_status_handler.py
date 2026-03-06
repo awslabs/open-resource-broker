@@ -194,7 +194,7 @@ class GetRequestStatusRESTHandler(BaseAPIHandler[dict[str, Any], RequestStatusRe
                                 },
                             )
 
-                        errors.append({"requestId": request_id, "error": str(e)})
+                        errors.append({"request_id": request_id, "error": str(e)})
 
                 # Create response DTO
                 response = RequestStatusResponse(
@@ -272,12 +272,11 @@ class GetRequestStatusRESTHandler(BaseAPIHandler[dict[str, Any], RequestStatusRe
         elif isinstance(request_data, dict):
             payload = request_data
         else:
-            payload = {"requestId": request_id, "status": request_data}
+            payload = {"request_id": request_id, "status": request_data}
 
         # Ensure request_type matches ID prefix for return requests
         if str(request_id).startswith("ret-"):
             payload["request_type"] = "return"
-            payload["requestType"] = "return"
 
         return payload
 

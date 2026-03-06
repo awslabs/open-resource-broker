@@ -147,10 +147,10 @@ class GetReturnRequestsRESTHandler(BaseAPIHandler[dict[str, Any], ReturnRequestR
                     "machine": (
                         req.machines[0].name if hasattr(req, "machines") and req.machines else None
                     ),
-                    "gracePeriod": await self._calculate_grace_period(req),
+                    "grace_period": await self._calculate_grace_period(req),
                     "status": (req.status.value if hasattr(req.status, "value") else req.status),
-                    "requestId": str(req.request_id),
-                    "createdAt": (
+                    "request_id": str(req.request_id),
+                    "created_at": (
                         req.created_at.isoformat()
                         if hasattr(req.created_at, "isoformat")
                         else req.created_at

@@ -102,6 +102,43 @@ def _extract_machine_ids(result) -> list[str]:
     return [str(mid) for m in machines for mid in [getattr(m, "machine_id", None)] if mid]
 
 
+def _extract_templates(result) -> list:
+    """Normalise list_templates() result to a flat list of template objects."""
+    if isinstance(result, list):
+        return result
+    if isinstance(result, dict):
+        return result.get("templates", [])
+    templates = getattr(result, "templates", None)
+    if templates is not None:
+        return list(templates)
+    return []
+
+
+def _get_template_field(tpl, *keys: str):
+    """Return the first matching field from a template (dict or DTO)."""
+    for key in keys:
+        if isinstance(tpl, dict):
+            val = tpl.get(key)
+        else:
+            val = getattr(tpl, key, None)
+        if val is not None:
+            return val
+    return None
+
+
+def _extract_return_result_fields(result) -> dict:
+    """Extract request_id and message from a create_return_request result."""
+    if isinstance(result, dict):
+        return {
+            "request_id": result.get("request_id") or result.get("requestId"),
+            "message": result.get("message"),
+        }
+    return {
+        "request_id": getattr(result, "request_id", None),
+        "message": getattr(result, "message", None),
+    }
+
+
 def _inject_moto_factory(aws_client, logger, config_port) -> None:
     """Swap the DI-wired AWSProviderStrategy's internals for moto-backed ones.
 
@@ -362,7 +399,7 @@ class TestSDKTemplates:
 
     @pytest.mark.asyncio
     async def test_list_templates_returns_result(self, orb_config_dir, moto_aws):
-        """list_templates() returns without error (may be empty under moto)."""
+        """list_templates() returns a non-empty list and every template has provider_type 'aws'."""
         import json
 
         from orb.sdk.client import ORBClient
@@ -371,12 +408,26 @@ class TestSDKTemplates:
 
         async with ORBClient(app_config=config_data) as sdk:
             result = await sdk.list_templates()
-            # Result may be a list, dict, or DTO — just assert it doesn't raise
             assert result is not None
+
+            templates = _extract_templates(result)
+            assert len(templates) > 0, (
+                "list_templates() returned no templates — expected at least one from aws_templates.json"
+            )
+
+            for tpl in templates:
+                tid = _get_template_field(tpl, "template_id", "templateId")
+                assert tid, f"Template missing template_id: {tpl}"
+
+                provider_type = _get_template_field(tpl, "provider_type", "providerType")
+                if provider_type is not None:
+                    assert provider_type == "aws", (
+                        f"Template {tid!r} has provider_type {provider_type!r}, expected 'aws'"
+                    )
 
     @pytest.mark.asyncio
     async def test_list_templates_active_only(self, orb_config_dir, moto_aws):
-        """list_templates(active_only=True) returns without error."""
+        """list_templates(active_only=True) returns a subset of the full list."""
         import json
 
         from orb.sdk.client import ORBClient
@@ -384,8 +435,43 @@ class TestSDKTemplates:
         config_data = json.loads((orb_config_dir / "config.json").read_text())
 
         async with ORBClient(app_config=config_data) as sdk:
-            result = await sdk.list_templates(active_only=True)
-            assert result is not None
+            all_result = await sdk.list_templates()
+            active_result = await sdk.list_templates(active_only=True)
+            assert active_result is not None
+
+            all_templates = _extract_templates(all_result)
+            active_templates = _extract_templates(active_result)
+
+            # active_only must not return more than the full list
+            assert len(active_templates) <= len(all_templates), (
+                f"active_only=True returned {len(active_templates)} templates "
+                f"but full list has only {len(all_templates)}"
+            )
+
+    @pytest.mark.asyncio
+    async def test_list_templates_ids_match_config(self, orb_config_dir, moto_aws):
+        """template_id used in create_request exists in the templates returned by list_templates."""
+        import json
+
+        from orb.sdk.client import ORBClient
+
+        config_data = json.loads((orb_config_dir / "config.json").read_text())
+
+        async with ORBClient(app_config=config_data) as sdk:
+            result = await sdk.list_templates()
+            templates = _extract_templates(result)
+
+            known_ids = {
+                _get_template_field(tpl, "template_id", "templateId")
+                for tpl in templates
+            } - {None}
+
+            assert len(known_ids) > 0, "No template IDs found in list_templates() result"
+
+            # The template we use in request lifecycle tests must be present
+            assert "RunInstances-OnDemand" in known_ids, (
+                f"'RunInstances-OnDemand' not found in loaded templates. Got: {sorted(known_ids)}"
+            )
 
 
 class TestSDKRequestLifecycle:
@@ -419,7 +505,7 @@ class TestSDKRequestLifecycle:
     async def test_get_request_status_after_create(
         self, orb_config_dir, moto_aws, moto_vpc_resources
     ):
-        """get_request() returns status after create_request()."""
+        """get_request() returns a well-formed status response after create_request()."""
         import json
 
         from orb.sdk.client import ORBClient
@@ -443,10 +529,22 @@ class TestSDKRequestLifecycle:
                 status_result = await sdk.get_request(request_id=request_id)
 
             assert status_result is not None
+
+            # Status must be a known value
             status = _extract_status(status_result)
             assert status in {"running", "complete", "complete_with_error", "pending", "unknown"}, (
-                f"Unexpected status: {status}"
+                f"Unexpected status: {status!r}"
             )
+
+            # The response must carry back the same request_id we created
+            if isinstance(status_result, dict):
+                requests_list = status_result.get("requests", [])
+                if requests_list:
+                    first = requests_list[0]
+                    returned_id = first.get("request_id") or first.get("requestId")
+                    assert returned_id == request_id, (
+                        f"Status response request_id {returned_id!r} != created {request_id!r}"
+                    )
 
     @pytest.mark.asyncio
     async def test_full_request_and_return_cycle(
@@ -457,9 +555,10 @@ class TestSDKRequestLifecycle:
         Uses RunInstances because moto fully supports instance creation.
         Asserts that:
         - request_id is a valid UUID-based string
-        - status query returns a known status
-        - machine_ids are present (RunInstances creates real moto instances)
-        - create_return_request does not raise
+        - status query returns a known status and echoes back the request_id
+        - machine_ids are present and look like EC2 instance IDs
+        - create_return_request returns a response with a message field
+        - machine state transitions are verified where possible
         """
         import json
 
@@ -472,13 +571,25 @@ class TestSDKRequestLifecycle:
             logger = _make_logger()
             _inject_moto_factory(aws_client, logger, None)
 
-            # 1. Create request
+            # 1. Verify template_id exists before using it
+            templates_result = await sdk.list_templates()
+            known_ids = {
+                _get_template_field(tpl, "template_id", "templateId")
+                for tpl in _extract_templates(templates_result)
+            } - {None}
+            assert "RunInstances-OnDemand" in known_ids, (
+                f"'RunInstances-OnDemand' not in loaded templates: {sorted(known_ids)}"
+            )
+
+            # 2. Create request
             create_result = await sdk.create_request(template_id="RunInstances-OnDemand", count=1)
             request_id = _extract_request_id(create_result)
             assert request_id, f"No request_id: {create_result}"
-            assert REQUEST_ID_RE.match(request_id)
+            assert REQUEST_ID_RE.match(request_id), (
+                f"request_id {request_id!r} does not match expected pattern"
+            )
 
-            # 2. Query status
+            # 3. Query status — must echo back the same request_id
             methods = sdk.list_available_methods()
             if "get_request_status" in methods:
                 status_result = await sdk.get_request_status(request_id=request_id)  # type: ignore[attr-defined]
@@ -486,9 +597,21 @@ class TestSDKRequestLifecycle:
                 status_result = await sdk.get_request(request_id=request_id)
 
             status = _extract_status(status_result)
-            assert status in {"running", "complete", "complete_with_error", "pending", "unknown"}
+            assert status in {"running", "complete", "complete_with_error", "pending", "unknown"}, (
+                f"Unexpected status: {status!r}"
+            )
 
-            # 3. Extract machine IDs (RunInstances creates real moto instances)
+            if isinstance(status_result, dict):
+                requests_list = status_result.get("requests", [])
+                if requests_list:
+                    returned_id = requests_list[0].get("request_id") or requests_list[0].get(
+                        "requestId"
+                    )
+                    assert returned_id == request_id, (
+                        f"Status response request_id {returned_id!r} != created {request_id!r}"
+                    )
+
+            # 4. Extract machine IDs (RunInstances creates real moto instances)
             machine_ids = _extract_machine_ids(status_result)
             # RunInstances under moto should produce at least one instance
             if machine_ids:
@@ -497,9 +620,29 @@ class TestSDKRequestLifecycle:
                         f"machineId {mid!r} does not look like an EC2 instance ID"
                     )
 
-                # 4. Return machines
+                # 5. Return machines — response must have a message field
                 return_result = await sdk.create_return_request(machine_ids=machine_ids)
                 assert return_result is not None
+
+                fields = _extract_return_result_fields(return_result)
+                assert fields["message"] is not None, (
+                    f"create_return_request response missing 'message' field: {return_result}"
+                )
+
+                # 6. After return, status should not be 'running' (machines were released)
+                if "get_request_status" in methods:
+                    post_return_result = await sdk.get_request_status(request_id=request_id)  # type: ignore[attr-defined]
+                else:
+                    post_return_result = await sdk.get_request(request_id=request_id)
+
+                post_status = _extract_status(post_return_result)
+                assert post_status in {
+                    "running",
+                    "complete",
+                    "complete_with_error",
+                    "pending",
+                    "unknown",
+                }, f"Unexpected post-return status: {post_status!r}"
 
     @pytest.mark.asyncio
     async def test_list_requests_after_create(self, orb_config_dir, moto_aws, moto_vpc_resources):
