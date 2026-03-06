@@ -73,15 +73,27 @@ class RequestReturnMachinesRESTHandler(
             return
 
         # Validate input data
-        if not input_data or "machines" not in input_data:
-            raise ValueError("Input must include 'machines' key")
+        if not input_data or (
+            "machine_ids" not in input_data and "machines" not in input_data
+        ):
+            raise ValueError("Input must include 'machine_ids' or 'machines' key")
 
-        # Validate machine data
+        # Flat list path (preferred)
+        if "machine_ids" in input_data:
+            machine_ids = input_data["machine_ids"]
+            if not isinstance(machine_ids, list):
+                raise ValueError("'machine_ids' must be a list")
+            for mid in machine_ids:
+                if not isinstance(mid, str):
+                    raise ValueError(f"Invalid machine ID format: {mid}")
+            context.metadata["machine_ids"] = machine_ids
+            return
+
+        # Legacy dict-of-dicts path
         machines_data = input_data.get("machines", [])
         if not isinstance(machines_data, list):
             raise ValueError("'machines' must be a list")
 
-        # Store extracted machine IDs in context for later use
         machine_ids = []
         for machine in machines_data:
             if not isinstance(machine, dict):
@@ -178,8 +190,11 @@ class RequestReturnMachinesRESTHandler(
             else:
                 # Get machine IDs from context or extract them
                 machine_ids = context.metadata.get("machine_ids")
-                if machine_ids is None and input_data and "machines" in input_data:
-                    machine_ids = self._extract_machine_ids(input_data["machines"])
+                if machine_ids is None and input_data:
+                    if "machine_ids" in input_data:
+                        machine_ids = input_data["machine_ids"]
+                    elif "machines" in input_data:
+                        machine_ids = self._extract_machine_ids(input_data["machines"])
 
                 if not machine_ids:
                     # Create response for no machines to return

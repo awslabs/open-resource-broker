@@ -22,34 +22,6 @@ def register_scheduler_services(container: DIContainer) -> None:
 
 def _register_configured_scheduler_strategy(container: DIContainer) -> None:
     """Register only the configured scheduler strategy."""
-
-    # Make this lazy too - don't access config during registration
-    def lazy_register():
-        try:
-            config = container.get(ConfigurationPort)
-            scheduler_type = config.get_scheduler_strategy()
-
-            logger = get_logger(__name__)
-
-            # Registry handles dynamic registration - no hardcoded types here
-            from orb.infrastructure.scheduler.registry import get_scheduler_registry
-
-            registry = get_scheduler_registry()
-            registry.ensure_type_registered(scheduler_type)
-
-            logger.info("Registered configured scheduler strategy: %s", scheduler_type)
-
-        except Exception as e:
-            logger = get_logger(__name__)
-            logger.error("Failed to register configured scheduler strategy: %s", e, exc_info=True)
-            # Fallback to default
-            from orb.infrastructure.scheduler.registry import get_scheduler_registry
-
-            registry = get_scheduler_registry()
-            registry.ensure_type_registered("default")
-
-    # Don't call lazy_register() here - let it be called when needed
-    # For now, just register the default to avoid issues
     from orb.infrastructure.scheduler.registry import get_scheduler_registry
 
     registry = get_scheduler_registry()

@@ -75,13 +75,19 @@ async def request_machines(
 
     result = await handler.handle(request_model)
 
-    # Let the scheduler strategy own the response format (requestId for HF, request_id for default)
+    # Serialize DTO to snake_case then convert to camelCase at the API boundary
     if hasattr(result, "to_dict"):
-        response_content = result.to_dict()
+        dto_dict = result.to_dict()
     elif hasattr(result, "model_dump"):
-        response_content = result.model_dump(by_alias=True)
+        dto_dict = result.model_dump()
     else:
-        response_content = result
+        dto_dict = result
+
+    # camelCase conversion at the REST serialization boundary
+    response_content = {
+        "requestId": dto_dict.get("request_id", dto_dict.get("requestId", "")),
+        "message": dto_dict.get("message", ""),
+    }
 
     return JSONResponse(content=response_content, status_code=202)
 
@@ -97,7 +103,7 @@ async def return_machines(
     - **machine_ids**: List of machine IDs to return
     """
     api_request = {
-        "input_data": {"machines": [{"machineId": mid} for mid in request_data.machine_ids]},
+        "input_data": {"machine_ids": request_data.machine_ids},
         "all_flag": False,
         "clean": False,
     }

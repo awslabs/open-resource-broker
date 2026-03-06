@@ -317,7 +317,7 @@ class TestAPIModelsComprehensive:
     def get_model_modules(self):
         """Get all model modules."""
         model_modules = []
-        model_files = ["base", "request_machines", "requests", "responses", "templates"]
+        model_files = ["base", "requests", "responses", "templates"]
 
         for model_file in model_files:
             try:

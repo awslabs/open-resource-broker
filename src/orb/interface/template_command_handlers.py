@@ -212,18 +212,18 @@ async def handle_create_template(args: argparse.Namespace) -> dict[str, Any]:
         except json.JSONDecodeError as e:
             return {"success": False, "error": f"Invalid JSON in template file: {e}"}
 
-        # Extract required fields from JSON
-        template_id = template_config.get("templateId")
+        # Extract required fields from JSON — accept snake_case or camelCase
+        template_id = template_config.get("template_id") or template_config.get("templateId")
         if not template_id:
-            return {"success": False, "error": "templateId is required in template file"}
+            return {"success": False, "error": "template_id is required in template file"}
 
-        provider_api = template_config.get("providerApi")
+        provider_api = template_config.get("provider_api") or template_config.get("providerApi")
         if not provider_api:
-            return {"success": False, "error": "providerApi is required in template file"}
+            return {"success": False, "error": "provider_api is required in template file"}
 
-        image_id = template_config.get("imageId")
+        image_id = template_config.get("image_id") or template_config.get("imageId")
         if not image_id:
-            return {"success": False, "error": "imageId is required in template file"}
+            return {"success": False, "error": "image_id is required in template file"}
 
         # Create command with fields from JSON file
         command = CreateTemplateCommand(
@@ -231,7 +231,7 @@ async def handle_create_template(args: argparse.Namespace) -> dict[str, Any]:
             name=template_config.get("name"),
             description=template_config.get("description"),
             provider_api=provider_api,
-            instance_type=template_config.get("instanceType"),
+            instance_type=template_config.get("instance_type") or template_config.get("instanceType"),
             image_id=image_id,
             tags=template_config.get("tags", {}),
             configuration=template_config,

@@ -24,7 +24,7 @@ from orb.config.schemas.server_schema import AuthConfig, ServerConfig
 def _make_request_machines_response(request_id: str):
     """Build a minimal RequestMachinesResponse-like object."""
     mock = MagicMock()
-    mock.to_dict.return_value = {"requestId": request_id, "message": "Request VM success."}
+    mock.to_dict.return_value = {"request_id": request_id, "message": "Request VM success."}
     return mock
 
 

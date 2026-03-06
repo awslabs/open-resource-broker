@@ -249,13 +249,12 @@ class RequestMachinesResponse(BaseDTO):
 
     def to_dict(self) -> dict[str, Any]:
         """
-        Convert to dictionary format matching the expected API format.
+        Convert to dictionary format.
 
         Returns:
-            Dictionary with requestId and message fields (camelCase for API consumers)
+            Dictionary with snake_case keys
         """
-        # Clients must use the full prefixed ID for subsequent requests
-        return {"requestId": self.request_id, "message": self.message}
+        return {"request_id": self.request_id, "message": self.message}
 
 
 class RequestReturnMachinesResponse(BaseDTO):
@@ -267,13 +266,13 @@ class RequestReturnMachinesResponse(BaseDTO):
 
     def to_dict(self) -> dict[str, Any]:
         """
-        Convert to dictionary format matching the expected API format.
+        Convert to dictionary format.
 
         Returns:
-            Dictionary with requestId and message fields
+            Dictionary with snake_case keys
         """
         return {
-            "requestId": self.request_id if self.request_id else "",
+            "request_id": self.request_id if self.request_id else "",
             "message": self.message,
         }
 
@@ -307,23 +306,23 @@ class RequestSummaryDTO(BaseDTO):
 
     def to_dict(self) -> dict[str, Any]:
         """
-        Convert to dictionary format matching the expected API format.
+        Convert to dictionary format.
 
         Returns:
-            Dictionary with summary fields
+            Dictionary with snake_case keys
         """
-        result = {
-            "requestId": self.request_id,
+        result: dict[str, Any] = {
+            "request_id": self.request_id,
             "status": self.status,
-            "totalMachines": self.total_machines,
-            "machineStatuses": self.machine_statuses,
+            "total_machines": self.total_machines,
+            "machine_statuses": self.machine_statuses,
         }
 
         # Format datetime fields
         if self.created_at:
-            result["createdAt"] = self.created_at.isoformat()
+            result["created_at"] = self.created_at.isoformat()
         if self.updated_at:
-            result["updatedAt"] = self.updated_at.isoformat()
+            result["updated_at"] = self.updated_at.isoformat()
         if self.duration is not None:
             result["duration"] = self.duration
 

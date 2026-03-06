@@ -24,7 +24,6 @@ router = APIRouter(prefix="/templates", tags=["Templates"])
 
 # Module-level dependency variables to avoid B008 warnings
 PROVIDER_API_QUERY = Query(None, description="Filter by provider API")
-FORCE_REFRESH_QUERY = Query(False, description="Force refresh from files")
 TEMPLATE_DATA_BODY = Body(...)
 
 
@@ -89,13 +88,11 @@ class TemplateUpdateRequest(APIRequest):
 @handle_rest_exceptions(endpoint="/api/v1/templates", method="GET")
 async def list_templates(
     provider_api: Optional[str] = PROVIDER_API_QUERY,
-    force_refresh: bool = FORCE_REFRESH_QUERY,
 ) -> JSONResponse:
     """
     List all available templates.
 
     - **provider_api**: Filter templates by provider API
-    - **force_refresh**: Force reload from configuration files
     """
     try:
         container = get_container()
@@ -123,7 +120,6 @@ async def list_templates(
             content={
                 "templates": serializable_templates,
                 "total_count": len(templates),
-                "count": len(templates),
                 "message": f"Retrieved {len(templates)} templates successfully",
                 "success": True,
                 "timestamp": datetime.now().isoformat(),
