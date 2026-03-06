@@ -422,6 +422,7 @@ typeCheckingMode = "basic"
 reportMissingImports = true
 reportMissingTypeStubs = false
 reportUnusedVariable = true
+reportUnusedImport = true
 reportPrivateUsage = false
 venvPath = "."
 venv = ".venv"

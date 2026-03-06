@@ -32,6 +32,8 @@ class BearerTokenStrategy(AuthPort):
             token_expiry: Token expiry time in seconds
             enabled: Whether this strategy is enabled
         """
+        if len(secret_key.encode()) < 32:
+            raise ValueError("Bearer token secret_key must be at least 32 bytes for security.")
         self.secret_key = secret_key
         self.algorithm = algorithm
         self.token_expiry = token_expiry
@@ -186,8 +188,10 @@ class BearerTokenStrategy(AuthPort):
         Returns:
             True if token was revoked
         """
-        self.logger.info("JWT revocation requested (not implemented)")
-        return True
+        raise NotImplementedError(
+            "Token revocation not supported by BearerTokenStrategy. "
+            "Use EnhancedBearerTokenStrategy for revocation support."
+        )
 
     def get_strategy_name(self) -> str:
         """

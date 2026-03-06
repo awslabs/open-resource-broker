@@ -24,7 +24,6 @@ from orb.application.dto.queries import (
 )
 from orb.application.request.queries import ListRequestsQuery
 
-
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------

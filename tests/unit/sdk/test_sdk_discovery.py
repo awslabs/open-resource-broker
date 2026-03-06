@@ -6,7 +6,6 @@ import pytest
 
 from orb.sdk.discovery import SDKMethodDiscovery
 
-
 # ---------------------------------------------------------------------------
 # _extract_command_output
 # ---------------------------------------------------------------------------

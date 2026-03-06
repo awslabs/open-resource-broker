@@ -18,7 +18,15 @@ from orb.infrastructure.logging.logger import get_logger
 
 
 class RateLimiter:
-    """Simple rate limiter for token validation."""
+    """Simple in-memory rate limiter for token validation.
+
+    Note: This implementation stores attempt counters in process memory.
+    With ServerConfig.workers > 1, each worker process maintains independent
+    counters, so the effective per-IP limit is multiplied by the worker count.
+    For multi-worker deployments a shared backend (e.g. Redis) would be needed
+    to enforce a single global limit. The current default is single-worker
+    (ServerConfig.workers=1), so this implementation is correct for that case.
+    """
 
     def __init__(self, max_attempts: int = 10, window_seconds: int = 60) -> None:
         """

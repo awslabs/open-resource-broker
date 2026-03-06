@@ -460,7 +460,11 @@ class TestTemplateDefaultsConfig:
         # Load all templates — at least one should have subnet_ids from config defaults
         import asyncio
 
-        templates = asyncio.run(manager.load_templates())
+        loop = asyncio.new_event_loop()
+        try:
+            templates = loop.run_until_complete(manager.load_templates())
+        finally:
+            loop.close()
 
         assert len(templates) > 0, "Expected at least one template to be loaded"
         # Every loaded template should have subnet_ids populated from config defaults

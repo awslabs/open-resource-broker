@@ -4,9 +4,9 @@ from typing import Any, Optional
 
 try:
     from fastapi import APIRouter, Depends, Query
-    from pydantic import AliasChoices, Field
     from fastapi.encoders import jsonable_encoder
     from fastapi.responses import JSONResponse
+    from pydantic import AliasChoices, Field
 except ImportError:
     raise ImportError("FastAPI routing requires: pip install orb-py[api]") from None
 

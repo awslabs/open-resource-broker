@@ -259,7 +259,7 @@ class TestHandleRequestReturnMachines:
         )
 
         with patch("orb.interface.request_command_handlers.get_container", return_value=container):
-            result = await handle_request_return_machines(args)
+            _result = await handle_request_return_machines(args)
 
         cmd = command_bus.execute.call_args[0][0]
         assert cmd.machine_ids == ["i-1", "i-2"]
@@ -307,7 +307,7 @@ class TestHandleRequestReturnMachines:
         args = _make_namespace(all=True, force=True)
 
         with patch("orb.interface.request_command_handlers.get_container", return_value=container):
-            result = await handle_request_return_machines(args)
+            _result = await handle_request_return_machines(args)
 
         query_bus.execute.assert_awaited_once()
         list_query = query_bus.execute.call_args[0][0]
@@ -453,7 +453,7 @@ class TestHandleGetRequestStatus:
         args = _make_namespace(request_id="req-123", all=False)
 
         with patch("orb.interface.request_command_handlers.get_container", return_value=container):
-            result = await handle_get_request_status(args)
+            _result = await handle_get_request_status(args)
 
         query_bus.execute.assert_awaited_once()
         q = query_bus.execute.call_args[0][0]
@@ -470,7 +470,7 @@ class TestHandleGetRequestStatus:
         args = _make_namespace(all=True)
 
         with patch("orb.interface.request_command_handlers.get_container", return_value=container):
-            result = await handle_get_request_status(args)
+            _result = await handle_get_request_status(args)
 
         query_bus.execute.assert_awaited_once()
         q = query_bus.execute.call_args[0][0]

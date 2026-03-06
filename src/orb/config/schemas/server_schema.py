@@ -77,6 +77,11 @@ class ServerConfig(BaseModel):
     # Security
     require_https: bool = Field(False, description="Require HTTPS for all requests")
     trusted_hosts: list[str] = Field(["*"], description="Trusted host headers")
+    trusted_proxies: list[str] = Field(
+        default_factory=list,
+        description="IP addresses of trusted reverse proxies. When set, X-Forwarded-For is only "
+        "read if the direct client IP matches an entry in this list.",
+    )
 
     # Performance
     request_timeout: int = Field(30, description="Request timeout in seconds")

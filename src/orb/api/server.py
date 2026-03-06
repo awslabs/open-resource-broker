@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
 try:
-    from fastapi import FastAPI, Request
+    from fastapi import FastAPI
     from fastapi.middleware.cors import CORSMiddleware
     from fastapi.middleware.trustedhost import TrustedHostMiddleware
     from fastapi.responses import JSONResponse
@@ -13,7 +13,6 @@ try:
 except ImportError:
     FASTAPI_AVAILABLE = False
     FastAPI = None  # type: ignore[assignment,misc]
-    Request = None  # type: ignore[assignment,misc]
     CORSMiddleware = None  # type: ignore[assignment,misc]
     TrustedHostMiddleware = None  # type: ignore[assignment,misc]
     JSONResponse = None  # type: ignore[assignment,misc]
@@ -111,7 +110,12 @@ def create_fastapi_app(server_config: Any) -> Any:
     if server_config.auth.enabled:
         auth_strategy = _create_auth_strategy(server_config.auth)
         if auth_strategy:
-            app.add_middleware(AuthMiddleware, auth_port=auth_strategy, require_auth=True)
+            app.add_middleware(
+                AuthMiddleware,
+                auth_port=auth_strategy,
+                require_auth=True,
+                trusted_proxies=server_config.trusted_proxies,
+            )
             logger.info(
                 "Authentication middleware enabled with strategy: %s",
                 auth_strategy.get_strategy_name(),

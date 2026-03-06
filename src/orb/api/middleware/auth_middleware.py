@@ -25,6 +25,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
         auth_port: AuthPort,
         excluded_paths: Optional[list[str]] = None,
         require_auth: bool = True,
+        trusted_proxies: Optional[list[str]] = None,
     ) -> None:
         """
         Initialize authentication middleware.
@@ -34,6 +35,9 @@ class AuthMiddleware(BaseHTTPMiddleware):
             auth_port: Authentication port implementation
             excluded_paths: Paths that don't require authentication
             require_auth: Whether authentication is required by default
+            trusted_proxies: IP addresses of trusted reverse proxies. X-Forwarded-For is
+                only read when the direct client IP is in this list. Empty list (default)
+                means always use the direct connection IP.
         """
         super().__init__(app)
         self.auth_port = auth_port
@@ -52,6 +56,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
             )
         ]
         self.require_auth = require_auth
+        self.trusted_proxies: frozenset[str] = frozenset(trusted_proxies or [])
         self.logger = get_logger(__name__)
 
     async def dispatch(self, request: Request, call_next):
@@ -188,7 +193,12 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
     def _get_client_ip(self, request: Request) -> Optional[str]:
         """
-        Get client IP address with proxy support.
+        Get client IP address.
+
+        X-Forwarded-For is only trusted when the direct client IP is in the
+        configured trusted_proxies list. When trusted_proxies is empty (the
+        default) the direct connection IP is always used, preventing clients
+        from spoofing their IP via the X-Forwarded-For header.
 
         Args:
             request: FastAPI request
@@ -196,14 +206,14 @@ class AuthMiddleware(BaseHTTPMiddleware):
         Returns:
             Client IP address
         """
-        # Check X-Forwarded-For header (if behind proxy)
-        forwarded_for = request.headers.get("x-forwarded-for")
-        if forwarded_for:
-            # Take first IP (client IP)
-            return forwarded_for.split(",")[0].strip()
+        direct_ip = request.client.host if request.client else None
 
-        # Fall back to direct client IP
-        return request.client.host if request.client else None
+        if direct_ip and self.trusted_proxies and direct_ip in self.trusted_proxies:
+            forwarded_for = request.headers.get("x-forwarded-for")
+            if forwarded_for:
+                return forwarded_for.split(",")[0].strip()
+
+        return direct_ip
 
     def _handle_auth_failure(self, auth_result: AuthResult) -> Response:
         """

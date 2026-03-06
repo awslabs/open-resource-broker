@@ -140,7 +140,7 @@ class TestAPIHandlerRegistration:
         mock_register_api_handlers.assert_called_once_with(container)
 
     def test_register_server_services_without_fastapi(self):
-        """Test that register_server_services handles missing FastAPI gracefully."""
+        """Test that register_server_services raises when FastAPI is unavailable."""
         from orb.config.schemas.server_schema import ServerConfig
         from orb.infrastructure.di.server_services import register_server_services
 
@@ -156,11 +156,10 @@ class TestAPIHandlerRegistration:
         ) as mock_fastapi:
             mock_fastapi.side_effect = ImportError("No module named 'fastapi'")
 
-            # Act - should not raise exception
-            register_server_services(container)
+            import pytest
 
-            # Assert - function completes without error
-            assert True
+            with pytest.raises(ImportError, match="No module named 'fastapi'"):
+                register_server_services(container)
 
     @patch("orb.infrastructure.di.server_services._register_api_handlers")
     def test_register_server_services_disabled(self, mock_register_api_handlers):

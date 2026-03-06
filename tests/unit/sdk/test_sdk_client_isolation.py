@@ -2,8 +2,6 @@
 
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 from orb.sdk.client import ORBClient
 
 
@@ -25,7 +23,7 @@ class TestContainerIsolation:
 
             # Simulate the container-creation step inside initialize() without
             # running the full async init (which requires provider setup).
-            client_a._container = create_container_call = MagicMock()
+            client_a._container = MagicMock()
             client_b._container = MagicMock()
 
         # Verify the two stored containers are independent objects
@@ -44,7 +42,7 @@ class TestContainerIsolation:
 
         import asyncio
 
-        asyncio.get_event_loop().run_until_complete(client_a.cleanup())
+        asyncio.run(client_a.cleanup())
 
         container_a.clear.assert_called_once()
         container_b.clear.assert_not_called()
@@ -58,7 +56,7 @@ class TestContainerIsolation:
 
         import asyncio
 
-        asyncio.get_event_loop().run_until_complete(client.cleanup())
+        asyncio.run(client.cleanup())
 
         assert client._container is None
 
@@ -80,10 +78,11 @@ class TestContainerIsolation:
             patch("orb.sdk.client.Application", return_value=mock_app),
         ):
             import asyncio
+
             from orb.sdk.exceptions import ProviderError
 
             try:
-                asyncio.get_event_loop().run_until_complete(client.initialize())
+                asyncio.run(client.initialize())
             except (ProviderError, Exception):
                 pass
 
@@ -109,10 +108,11 @@ class TestContainerIsolation:
             patch("orb.sdk.client.Application", side_effect=capture_app),
         ):
             import asyncio
+
             from orb.sdk.exceptions import ProviderError
 
             try:
-                asyncio.get_event_loop().run_until_complete(client.initialize())
+                asyncio.run(client.initialize())
             except (ProviderError, Exception):
                 pass
 
@@ -125,7 +125,7 @@ class TestRegionProfileOverrideIsolation:
     def _run(self, coro):
         import asyncio
 
-        return asyncio.get_event_loop().run_until_complete(coro)
+        return asyncio.run(coro)
 
     def _make_full_init_mocks(self, mock_container):
         """Return a mock app + discovery that complete initialization successfully."""
@@ -141,8 +141,6 @@ class TestRegionProfileOverrideIsolation:
 
     def test_region_override_uses_isolated_container_not_singleton(self):
         """override_provider_region must be called on self._container, not get_container()."""
-        from unittest.mock import AsyncMock
-
         client = _make_client(region="us-east-1")
 
         mock_config_port = MagicMock()
@@ -168,8 +166,6 @@ class TestRegionProfileOverrideIsolation:
 
     def test_profile_override_uses_isolated_container_not_singleton(self):
         """override_provider_profile must be called on self._container, not get_container()."""
-        from unittest.mock import AsyncMock
-
         client = _make_client(profile="prod")
 
         mock_config_port = MagicMock()

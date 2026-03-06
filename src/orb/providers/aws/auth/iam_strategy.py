@@ -28,6 +28,8 @@ class IAMAuthStrategy(AuthPort):
 
     ADMIN_ROLE_PATTERNS: frozenset[str] = frozenset({"Admin", "Administrator", "OrbAdmin"})
 
+    ASSUME_ALL_PERMISSIONS: bool = False
+
     def __init__(
         self,
         logger: LoggingPort,
@@ -35,6 +37,7 @@ class IAMAuthStrategy(AuthPort):
         profile: Optional[str] = None,
         required_actions: Optional[list[str]] = None,
         enabled: bool = True,
+        assume_permissions: bool = False,
     ) -> None:
         """
         Initialize IAM authentication strategy.
@@ -45,6 +48,8 @@ class IAMAuthStrategy(AuthPort):
             profile: AWS profile to use
             required_actions: Required IAM actions for access
             enabled: Whether this strategy is enabled
+            assume_permissions: If True, grant all required_actions without evaluation.
+                Only use in development/testing. Defaults to False (deny-all).
         """
         self._logger = logger
         self.region = region
@@ -55,6 +60,7 @@ class IAMAuthStrategy(AuthPort):
             "ec2:TerminateInstances",
         ]
         self.enabled = enabled
+        self._assume_permissions = assume_permissions
 
         # Initialize AWS session
         try:
@@ -204,23 +210,22 @@ class IAMAuthStrategy(AuthPort):
         """
         Check IAM permissions for the caller.
 
+        By default this method denies all permissions. Actual IAM policy evaluation
+        (via SimulatePrincipalPolicy) is not yet implemented.
+
+        Set ``assume_permissions=True`` at construction time to grant all
+        ``required_actions`` unconditionally — intended for development and testing
+        only, never for production use.
+
         Args:
             identity: Caller identity
 
         Returns:
-            List of permissions/actions the user can perform
+            List of permissions/actions the user can perform. Empty list unless
+            ``assume_permissions=True``.
         """
-        permissions = []
-
-        try:
-            # Simulate permission checking by testing required actions
-            # In a real implementation, you would use IAM policy simulation
-            for action in self.required_actions:
-                # This is a simplified check - in production you'd use
-                # iam:SimulatePrincipalPolicy or similar
-                permissions.append(action)
-
-            # Add basic permissions
+        if self._assume_permissions:
+            permissions = list(self.required_actions)
             permissions.extend(
                 [
                     "hostfactory:list_templates",
@@ -228,11 +233,13 @@ class IAMAuthStrategy(AuthPort):
                     "hostfactory:get_status",
                 ]
             )
+            return permissions
 
-        except Exception as e:
-            self._logger.error("Failed to check permissions: %s", e)
-
-        return permissions
+        self._logger.warning(
+            "IAM permission evaluation not implemented. All permissions denied by default. "
+            "Set assume_permissions=True to grant all permissions for development."
+        )
+        return []
 
     async def _determine_roles(self, identity: dict[str, Any], permissions: list[str]) -> list[str]:
         """

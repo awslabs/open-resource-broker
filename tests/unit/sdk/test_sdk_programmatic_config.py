@@ -6,7 +6,6 @@ from orb.bootstrap import Application
 from orb.config.managers.configuration_manager import ConfigurationManager
 from orb.sdk.client import ORBClient
 
-
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
@@ -207,7 +206,7 @@ class TestORBClientAppConfig:
         try:
             import asyncio
 
-            asyncio.get_event_loop().run_until_complete(sdk.initialize())
+            asyncio.run(sdk.initialize())
         except Exception:
             pass
         finally:

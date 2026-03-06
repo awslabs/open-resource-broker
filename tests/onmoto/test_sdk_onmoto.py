@@ -155,10 +155,6 @@ def _inject_moto_factory(aws_client, logger, config_port) -> None:
     from orb.providers.aws.infrastructure.handlers.ec2_fleet.handler import EC2FleetHandler
     from orb.providers.aws.infrastructure.handlers.run_instances.handler import RunInstancesHandler
     from orb.providers.aws.infrastructure.handlers.spot_fleet.handler import SpotFleetHandler
-    from orb.providers.aws.infrastructure.launch_template.manager import (
-        AWSLaunchTemplateManager,
-        LaunchTemplateResult,
-    )
     from orb.providers.aws.services.instance_operation_service import AWSInstanceOperationService
     from orb.providers.aws.utilities.aws_operations import AWSOperations
     from orb.providers.registry import get_provider_registry
@@ -289,8 +285,9 @@ def _make_lt_manager(aws_client):
 
 
 def _make_moto_aws_client():
-    import boto3
     from unittest.mock import MagicMock
+
+    import boto3
 
     from orb.providers.aws.infrastructure.aws_client import AWSClient
 

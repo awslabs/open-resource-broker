@@ -4,7 +4,6 @@ import inspect
 
 from orb.sdk.protocols import ORBClientProtocol
 
-
 EXPECTED_METHODS = [
     # Template operations
     "get_template",

@@ -17,24 +17,19 @@ def register_server_services(container: DIContainer) -> None:
     Args:
         container: DI container instance
     """
-    try:
-        from orb.config.managers.configuration_manager import ConfigurationManager
+    from orb.config.managers.configuration_manager import ConfigurationManager
 
-        config_manager = container.get(ConfigurationManager)
-        server_config = config_manager.get_typed(ServerConfig)
+    config_manager = container.get(ConfigurationManager)
+    server_config = config_manager.get_typed(ServerConfig)
 
-        # Only register server services if enabled
-        if server_config.enabled:
-            logger.info("Server enabled - registering FastAPI services")
-            _register_fastapi_services(container, server_config)
-            _register_api_handlers(container)
-            logger.info("FastAPI services registered successfully")
-        else:
-            logger.debug("Server disabled - skipping FastAPI service registration")
-
-    except Exception as e:
-        logger.warning("Failed to register server services: %s", e, exc_info=True)
-        # Don't raise - server services are optional
+    # Only register server services if enabled
+    if server_config.enabled:
+        logger.info("Server enabled - registering FastAPI services")
+        _register_fastapi_services(container, server_config)
+        _register_api_handlers(container)
+        logger.info("FastAPI services registered successfully")
+    else:
+        logger.debug("Server disabled - skipping FastAPI service registration")
 
 
 def _register_fastapi_services(container: DIContainer, server_config: ServerConfig) -> None:

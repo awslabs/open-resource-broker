@@ -4,7 +4,7 @@ Provides IDE autocompletion and type checking for dynamically
 discovered CQRS methods that are attached via setattr at runtime.
 """
 
-from typing import Any, Optional, Protocol, runtime_checkable
+from typing import Any, Protocol, runtime_checkable
 
 
 @runtime_checkable

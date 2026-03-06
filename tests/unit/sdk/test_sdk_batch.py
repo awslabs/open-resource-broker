@@ -8,7 +8,6 @@ import pytest
 from orb.sdk.client import ORBClient
 from orb.sdk.exceptions import SDKError
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
