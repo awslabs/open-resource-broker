@@ -89,19 +89,18 @@ def reset_all_singletons() -> None:
 
     # Also reset the registry itself
     _safe_reset_class_instance(
-        "src.infrastructure.patterns.singleton_registry", "SingletonRegistry"
+        "orb.infrastructure.patterns.singleton_registry", "SingletonRegistry"
     )
 
     # Reset any global singleton instances
-    # This is for backward compatibility with old singleton implementations
     _safe_reset_global_variable(
-        "src.infrastructure.aws.aws_client_singleton", "_aws_client_singleton_instance"
+        "orb.infrastructure.aws.aws_client_singleton", "_aws_client_singleton_instance"
     )
     _safe_reset_global_variable(
-        "providers.registry.provider_registry", "_provider_registry_instance"
+        "orb.providers.registry.provider_registry", "_provider_registry_instance"
     )
-    _safe_reset_class_instance("src.infrastructure.config.manager", "ConfigurationManager")
-    _safe_reset_class_instance("src.infrastructure.logging.logger_singleton", "LoggerSingleton")
+    _safe_reset_class_instance("orb.infrastructure.config.manager", "ConfigurationManager")
+    _safe_reset_class_instance("orb.infrastructure.logging.logger_singleton", "LoggerSingleton")
 
 
 def reset_singleton(singleton_class: type[Any]) -> None:
@@ -123,10 +122,10 @@ def reset_singleton(singleton_class: type[Any]) -> None:
     class_name = singleton_class.__name__
     if class_name == "AWSClient":
         _safe_reset_global_variable(
-            "src.infrastructure.aws.aws_client_singleton",
+            "orb.infrastructure.aws.aws_client_singleton",
             "_aws_client_singleton_instance",
         )
     elif class_name == "ConfigurationManager":
-        _safe_reset_class_instance("src.infrastructure.config.manager", "ConfigurationManager")
+        _safe_reset_class_instance("orb.infrastructure.config.manager", "ConfigurationManager")
     elif class_name == "LoggerSingleton":
-        _safe_reset_class_instance("src.infrastructure.logging.logger_singleton", "LoggerSingleton")
+        _safe_reset_class_instance("orb.infrastructure.logging.logger_singleton", "LoggerSingleton")
