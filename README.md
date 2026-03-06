@@ -33,12 +33,6 @@ Built for AWS today (EC2, Auto Scaling Groups, SpotFleet, EC2Fleet), with an ext
 - **HostFactory** — runs as an [IBM Spectrum Symphony provider plugin](#hostfactory-integration)
 - **Standalone** — direct usage without an external scheduler
 
-**Interface modes** (ordered by typical usage):
-- **CLI** — primary interface for all operations
-- **REST API** — HTTP endpoints for service integration (`pip install "orb-py[api]"`)
-- **Python SDK** — async-first programmatic access (`from orb import ORBClient`)
-- **MCP Server** — AI assistant integration via Model Context Protocol
-
 ## Quick Start
 
 ```bash
@@ -71,7 +65,9 @@ orb requests status <request-id>
 orb machines return --request-id <request-id>
 ```
 
----
+## Setup
+
+Get ORB installed and configured for your environment.
 
 <details>
 <summary>Installation</summary>
@@ -106,21 +102,56 @@ pip install "orb-py[monitoring]"
 pip install "orb-py[all]"
 ```
 
-### Development install
-
-```bash
-git clone https://github.com/awslabs/open-resource-broker.git
-cd open-resource-broker
-python -m venv .venv
-source .venv/bin/activate
-pip install -e ".[dev]"
-```
-
 Requires Python 3.10+.
 
 </details>
 
----
+<details>
+<summary>Configuration</summary>
+
+`orb init` creates a `config.json` in a location based on your install type (virtualenv, user install, system install, or development checkout). Override with:
+
+```bash
+export ORB_CONFIG_DIR=/path/to/config
+```
+
+| Variable | Description |
+|---|---|
+| `ORB_CONFIG_DIR` | Override config directory path |
+| `ORB_LOG_LEVEL` | Logging level: `DEBUG`, `INFO`, `WARNING`, `ERROR` |
+
+See the [Configuration Guide](docs/root/user_guide/configuration.md) for path resolution details, environment variables, and REST API server setup.
+
+</details>
+
+<details>
+<summary>AWS Provider Setup</summary>
+
+ORB uses boto3's standard credential chain — any method that works with the AWS CLI works with ORB.
+
+```bash
+# Verify your credentials are active
+aws sts get-caller-identity
+```
+
+**Supported credential methods:** AWS CLI profiles, environment variables (`AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY`), IAM instance profiles, SSO (`aws sso login`), and credential process.
+
+### Supported resource types
+
+| Type | Description |
+|---|---|
+| `RunInstances` | Direct EC2 instance provisioning |
+| `EC2Fleet` | Fleet provisioning with mixed instance types |
+| `SpotFleet` | Cost-optimized spot instance fleets |
+| `AutoScalingGroup` | Managed scaling groups |
+
+See the [AWS Provider Guide](docs/root/user_guide/configuration.md) for required IAM permissions and SpotFleet service-linked role setup.
+
+</details>
+
+## Interfaces
+
+ORB provides four ways to interact with your infrastructure.
 
 <details>
 <summary>CLI Reference</summary>
@@ -156,73 +187,6 @@ See the [CLI Reference](docs/root/cli/cli-reference.md) for the full flag refere
 
 </details>
 
----
-
-<details>
-<summary>AWS Provider Setup</summary>
-
-ORB uses boto3's standard credential chain — any method that works with the AWS CLI works with ORB.
-
-```bash
-# Verify your credentials are active
-aws sts get-caller-identity
-```
-
-**Supported credential methods:** AWS CLI profiles, environment variables (`AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY`), IAM instance profiles, SSO (`aws sso login`), and credential process.
-
-### Supported resource types
-
-| Type | Description |
-|---|---|
-| `RunInstances` | Direct EC2 instance provisioning |
-| `EC2Fleet` | Fleet provisioning with mixed instance types |
-| `SpotFleet` | Cost-optimized spot instance fleets |
-| `AutoScalingGroup` | Managed scaling groups |
-
-See the [AWS Provider Guide](docs/root/user_guide/configuration.md) for required IAM permissions and SpotFleet service-linked role setup.
-
-</details>
-
----
-
-<details>
-<summary>Configuration</summary>
-
-`orb init` creates a `config.json` in a location based on your install type (virtualenv, user install, system install, or development checkout). Override with:
-
-```bash
-export ORB_CONFIG_DIR=/path/to/config
-```
-
-| Variable | Description |
-|---|---|
-| `ORB_CONFIG_DIR` | Override config directory path |
-| `ORB_LOG_LEVEL` | Logging level: `DEBUG`, `INFO`, `WARNING`, `ERROR` |
-
-See the [Configuration Guide](docs/root/user_guide/configuration.md) for path resolution details, environment variables, and REST API server setup.
-
-</details>
-
----
-
-<details>
-<summary>Architecture</summary>
-
-ORB is built on Clean Architecture with Domain-Driven Design (DDD) and CQRS:
-
-- **Domain layer** — pure business logic, no infrastructure dependencies
-- **Application layer** — command/query handlers using abstract ports
-- **Infrastructure layer** — AWS adapters, DI container, storage strategies
-- **Interface layer** — CLI, REST API, MCP server
-
-The **provider system** uses a Strategy/Registry pattern — each cloud provider (AWS, future providers) registers its own strategy, handlers, and template format. The **scheduler system** uses the same pattern — HostFactory and Default schedulers are interchangeable strategies behind a common port.
-
-See the [Architecture Guide](docs/root/developer_guide/architecture.md) for details.
-
-</details>
-
----
-
 <details>
 <summary>REST API</summary>
 
@@ -242,8 +206,6 @@ curl -X GET "http://localhost:8000/api/v1/requests/req-12345"
 ```
 
 </details>
-
----
 
 <details>
 <summary>Python SDK</summary>
@@ -270,8 +232,6 @@ async with orb(provider="aws") as sdk:
 See the [SDK Quickstart](docs/root/sdk/quickstart.md) for the full guide.
 
 </details>
-
----
 
 <details>
 <summary>MCP Server (AI Assistant Integration)</summary>
@@ -311,7 +271,9 @@ orb mcp serve --port 3000 --host localhost
 
 </details>
 
----
+## Integrations
+
+Connect ORB to schedulers and container platforms.
 
 <details>
 <summary>HostFactory Integration</summary>
@@ -356,8 +318,6 @@ See the [HostFactory Guide](docs/root/hostfactory/integration_guide.md) for full
 
 </details>
 
----
-
 <details>
 <summary>Docker Deployment</summary>
 
@@ -374,7 +334,25 @@ curl http://localhost:8000/health
 
 </details>
 
----
+## Project
+
+Architecture, development, and documentation.
+
+<details>
+<summary>Architecture</summary>
+
+ORB is built on Clean Architecture with Domain-Driven Design (DDD) and CQRS:
+
+- **Domain layer** — pure business logic, no infrastructure dependencies
+- **Application layer** — command/query handlers using abstract ports
+- **Infrastructure layer** — AWS adapters, DI container, storage strategies
+- **Interface layer** — CLI, REST API, MCP server
+
+The **provider system** uses a Strategy/Registry pattern — each cloud provider (AWS, future providers) registers its own strategy, handlers, and template format. The **scheduler system** uses the same pattern — HostFactory and Default schedulers are interchangeable strategies behind a common port.
+
+See the [Architecture Guide](docs/root/developer_guide/architecture.md) for details.
+
+</details>
 
 <details>
 <summary>Development</summary>
@@ -405,8 +383,6 @@ make format
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the full development guide.
 
 </details>
-
----
 
 <details>
 <summary>Documentation & CI</summary>
