@@ -95,8 +95,8 @@ class TestOpenResourceBrokerInitialize:
         mock_app.get_command_bus.return_value = AsyncMock()
 
         with (
-            patch("sdk.client.Application", return_value=mock_app),
-            patch("sdk.client.SDKMethodDiscovery") as mock_disc_cls,
+            patch("orb.sdk.client.Application", return_value=mock_app),
+            patch("orb.sdk.client.SDKMethodDiscovery") as mock_disc_cls,
         ):
             mock_disc = MagicMock()
             mock_disc.discover_cqrs_methods = AsyncMock(return_value={})
@@ -120,7 +120,7 @@ class TestOpenResourceBrokerInitialize:
         mock_app = AsyncMock()
         mock_app.initialize.return_value = False
 
-        with patch("sdk.client.Application", return_value=mock_app):
+        with patch("orb.sdk.client.Application", return_value=mock_app):
             with pytest.raises(ProviderError):
                 await sdk.initialize()
 
@@ -134,7 +134,7 @@ class TestOpenResourceBrokerInitialize:
         mock_app.get_query_bus.return_value = None
         mock_app.get_command_bus.return_value = None
 
-        with patch("sdk.client.Application", return_value=mock_app):
+        with patch("orb.sdk.client.Application", return_value=mock_app):
             with pytest.raises(ConfigurationError, match="CQRS buses not available"):
                 await sdk.initialize()
 
@@ -148,8 +148,8 @@ class TestOpenResourceBrokerInitialize:
         mock_app.cleanup = AsyncMock()
 
         with (
-            patch("sdk.client.Application", return_value=mock_app),
-            patch("sdk.client.SDKMethodDiscovery") as mock_disc_cls,
+            patch("orb.sdk.client.Application", return_value=mock_app),
+            patch("orb.sdk.client.SDKMethodDiscovery") as mock_disc_cls,
         ):
             mock_disc = MagicMock()
             mock_disc.discover_cqrs_methods = AsyncMock(return_value={})

@@ -207,7 +207,7 @@ class TestCommandBusImplementation:
         update_handler = AsyncMock()
 
         # Mock handler discovery to return handler class names
-        with patch("infrastructure.di.buses.get_command_handler_for_type") as mock_get_handler:
+        with patch("orb.infrastructure.di.buses.get_command_handler_for_type") as mock_get_handler:
             # Mock container to return handler instances
             mock_container = Mock()
             mock_container.get.side_effect = lambda cls: (
@@ -275,7 +275,7 @@ class TestCommandBusImplementation:
         async_handler = AsyncMock()
 
         # Mock handler discovery
-        with patch("infrastructure.di.buses.get_command_handler_for_type") as mock_get_handler:
+        with patch("orb.infrastructure.di.buses.get_command_handler_for_type") as mock_get_handler:
             mock_container = Mock()
             mock_container.get.return_value = async_handler
             mock_logger = Mock()
@@ -309,7 +309,7 @@ class TestQueryBusImplementation:
         templates_handler.handle.return_value = []
 
         # Mock handler discovery
-        with patch("infrastructure.di.buses.get_query_handler_for_type") as mock_get_handler:
+        with patch("orb.infrastructure.di.buses.get_query_handler_for_type") as mock_get_handler:
             mock_container = Mock()
             mock_container.get.side_effect = lambda cls: (
                 status_handler if cls == "GetRequestStatusHandler" else templates_handler
@@ -347,7 +347,7 @@ class TestQueryBusImplementation:
         cached_handler.handle.return_value = cached_result
 
         # Mock handler discovery
-        with patch("infrastructure.di.buses.get_query_handler_for_type") as mock_get_handler:
+        with patch("orb.infrastructure.di.buses.get_query_handler_for_type") as mock_get_handler:
             mock_container = Mock()
             mock_container.get.return_value = cached_handler
             mock_logger = Mock()
@@ -374,7 +374,7 @@ class TestQueryBusImplementation:
         handler = AsyncMock()
         handler.handle.return_value = []
 
-        with patch("infrastructure.di.buses.get_query_handler_for_type") as mock_get_handler:
+        with patch("orb.infrastructure.di.buses.get_query_handler_for_type") as mock_get_handler:
             mock_container = Mock()
             mock_container.get.return_value = handler
             mock_logger = Mock()

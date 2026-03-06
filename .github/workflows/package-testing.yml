@@ -84,7 +84,7 @@ jobs:
           
           # Test core imports always work
           try:
-              import run
+              import orb.run
               from orb.bootstrap import Application
               from orb.domain.base.exceptions import DomainException
               from orb.infrastructure.logging.logger import get_logger
@@ -322,7 +322,7 @@ jobs:
                   print(f'PASS: {dep} correctly not available')
           
           # Test that core functionality still works
-          import run
+          import orb.run
           from orb.bootstrap import Application
           from orb.domain.base.exceptions import DomainException
           print('PASS: Core functionality works without optional deps')

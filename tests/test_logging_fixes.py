@@ -399,7 +399,7 @@ class TestLoggingFixes:
     async def test_integration_logging_flow(self, mock_config_manager):
         """Integration test for the complete logging flow."""
         with LogCapture() as log_capture:
-            with patch("src.infrastructure.di.container.get_container") as mock_container:
+            with patch("orb.infrastructure.di.container.get_container") as mock_container:
                 # Mock DI container
                 container = Mock()
                 mock_container.return_value = container

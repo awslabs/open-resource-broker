@@ -352,7 +352,7 @@ class TestTemplateManagement:
         query_bus = _make_query_bus(return_value=[])
         container = _make_container(query_bus=query_bus)
 
-        with patch("api.routers.templates.get_container", return_value=container):
+        with patch("orb.api.routers.templates.get_container", return_value=container):
             response = client.get("/api/v1/templates/")
 
         assert response.status_code == 200
@@ -374,7 +374,7 @@ class TestTemplateManagement:
         query_bus = _make_query_bus(return_value=[mock_template])
         container = _make_container(query_bus=query_bus)
 
-        with patch("api.routers.templates.get_container", return_value=container):
+        with patch("orb.api.routers.templates.get_container", return_value=container):
             response = client.get("/api/v1/templates/")
 
         assert response.status_code == 200
@@ -392,7 +392,7 @@ class TestTemplateManagement:
         query_bus = _make_query_bus(return_value=mock_template)
         container = _make_container(query_bus=query_bus)
 
-        with patch("api.routers.templates.get_container", return_value=container):
+        with patch("orb.api.routers.templates.get_container", return_value=container):
             response = client.get("/api/v1/templates/tpl-001")
 
         assert response.status_code == 200
@@ -408,7 +408,7 @@ class TestTemplateManagement:
         query_bus = _make_query_bus(return_value=None)
         container = _make_container(query_bus=query_bus)
 
-        with patch("api.routers.templates.get_container", return_value=container):
+        with patch("orb.api.routers.templates.get_container", return_value=container):
             response = client.get("/api/v1/templates/nonexistent-tpl")
 
         assert response.status_code in (404, 500, 503)
@@ -421,7 +421,7 @@ class TestTemplateManagement:
         command_bus = _make_command_bus(return_value=mock_cmd_response)
         container = _make_container(command_bus=command_bus)
 
-        with patch("api.routers.templates.get_container", return_value=container):
+        with patch("orb.api.routers.templates.get_container", return_value=container):
             response = client.post(
                 "/api/v1/templates/",
                 json={
@@ -458,7 +458,7 @@ class TestTemplateManagement:
         command_bus = _make_command_bus(return_value=mock_cmd_response)
         container = _make_container(command_bus=command_bus)
 
-        with patch("api.routers.templates.get_container", return_value=container):
+        with patch("orb.api.routers.templates.get_container", return_value=container):
             response = client.post(
                 "/api/v1/templates/",
                 json={
@@ -478,7 +478,7 @@ class TestTemplateManagement:
         command_bus = _make_command_bus(return_value=mock_cmd_response)
         container = _make_container(command_bus=command_bus)
 
-        with patch("api.routers.templates.get_container", return_value=container):
+        with patch("orb.api.routers.templates.get_container", return_value=container):
             response = client.put(
                 "/api/v1/templates/tpl-001",
                 json={"name": "updated-name"},
@@ -496,7 +496,7 @@ class TestTemplateManagement:
         command_bus = _make_command_bus(return_value=mock_cmd_response)
         container = _make_container(command_bus=command_bus)
 
-        with patch("api.routers.templates.get_container", return_value=container):
+        with patch("orb.api.routers.templates.get_container", return_value=container):
             response = client.delete("/api/v1/templates/tpl-001")
 
         assert response.status_code == 200
@@ -511,7 +511,7 @@ class TestTemplateManagement:
         command_bus = _make_command_bus(return_value=mock_cmd_response)
         container = _make_container(command_bus=command_bus)
 
-        with patch("api.routers.templates.get_container", return_value=container):
+        with patch("orb.api.routers.templates.get_container", return_value=container):
             create_resp = client.post(
                 "/api/v1/templates/",
                 json={
@@ -530,7 +530,7 @@ class TestTemplateManagement:
         query_bus = _make_query_bus(return_value=mock_template)
         container2 = _make_container(query_bus=query_bus)
 
-        with patch("api.routers.templates.get_container", return_value=container2):
+        with patch("orb.api.routers.templates.get_container", return_value=container2):
             get_resp = client.get("/api/v1/templates/tpl-flow-001")
 
         assert get_resp.status_code == 200
@@ -545,7 +545,7 @@ class TestTemplateManagement:
         query_bus = _make_query_bus(return_value=[mock_template])
         container = _make_container(query_bus=query_bus)
 
-        with patch("api.routers.templates.get_container", return_value=container):
+        with patch("orb.api.routers.templates.get_container", return_value=container):
             response = client.post("/api/v1/templates/refresh")
 
         assert response.status_code == 200
@@ -562,7 +562,7 @@ class TestTemplateManagement:
         query_bus = _make_query_bus(return_value=[mock_template])
         container = _make_container(query_bus=query_bus)
 
-        with patch("api.routers.templates.get_container", return_value=container):
+        with patch("orb.api.routers.templates.get_container", return_value=container):
             response = client.get("/api/v1/templates/?provider_api=ec2_fleet")
 
         assert response.status_code == 200
@@ -578,7 +578,7 @@ class TestTemplateManagement:
         command_bus = _make_command_bus(return_value=mock_cmd_response)
         container = _make_container(command_bus=command_bus)
 
-        with patch("api.routers.templates.get_container", return_value=container):
+        with patch("orb.api.routers.templates.get_container", return_value=container):
             create_resp = client.post(
                 "/api/v1/templates/",
                 json={
@@ -605,7 +605,7 @@ class TestTemplateManagement:
         query_bus = _make_query_bus(return_value=mock_template)
         container2 = _make_container(query_bus=query_bus)
 
-        with patch("api.routers.templates.get_container", return_value=container2):
+        with patch("orb.api.routers.templates.get_container", return_value=container2):
             get_resp = client.get(f"/api/v1/templates/{template_id}")
         assert get_resp.status_code == 200
         assert get_resp.json()["template"]["template_id"] == template_id
@@ -807,7 +807,7 @@ class TestConfigurationManagement:
         query_bus = _make_query_bus(return_value=templates)
         container = _make_container(query_bus=query_bus)
 
-        with patch("api.routers.templates.get_container", return_value=container):
+        with patch("orb.api.routers.templates.get_container", return_value=container):
             response = client.post("/api/v1/templates/refresh")
 
         assert response.status_code == 200
@@ -852,7 +852,7 @@ class TestConfigurationManagement:
         container = Mock()
         container.get.return_value = None
 
-        with patch("api.routers.templates.get_container", return_value=container):
+        with patch("orb.api.routers.templates.get_container", return_value=container):
             response = client.get("/api/v1/templates/")
 
         assert response.status_code in (500, 503)
@@ -862,7 +862,7 @@ class TestConfigurationManagement:
         container = Mock()
         container.get.return_value = None
 
-        with patch("api.routers.templates.get_container", return_value=container):
+        with patch("orb.api.routers.templates.get_container", return_value=container):
             response = client.post(
                 "/api/v1/templates/",
                 json={

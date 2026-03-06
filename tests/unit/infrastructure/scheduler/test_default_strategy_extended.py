@@ -344,7 +344,7 @@ class TestCrossSchedulerDelegation:
         strategy = DefaultSchedulerStrategy()
         strategy._logger = MagicMock()
 
-        with patch("infrastructure.scheduler.registry.get_scheduler_registry") as mock_get_registry:
+        with patch("orb.infrastructure.scheduler.registry.get_scheduler_registry") as mock_get_registry:
             mock_registry = MagicMock()
             mock_registry.is_registered.return_value = False
             mock_get_registry.return_value = mock_registry
@@ -358,7 +358,7 @@ class TestCrossSchedulerDelegation:
         strategy = DefaultSchedulerStrategy()
         strategy._logger = MagicMock()
 
-        with patch("infrastructure.scheduler.registry.get_scheduler_registry") as mock_get_registry:
+        with patch("orb.infrastructure.scheduler.registry.get_scheduler_registry") as mock_get_registry:
             mock_registry = MagicMock()
             mock_registry.is_registered.return_value = True
             mock_registry.get_strategy_class.side_effect = RuntimeError("boom")
@@ -376,7 +376,7 @@ class TestCrossSchedulerDelegation:
         mock_delegate_strategy = MagicMock()
         mock_delegate_strategy.load_templates_from_path.return_value = [{"template_id": "t1"}]
 
-        with patch("infrastructure.scheduler.registry.get_scheduler_registry") as mock_get_registry:
+        with patch("orb.infrastructure.scheduler.registry.get_scheduler_registry") as mock_get_registry:
             mock_registry = MagicMock()
             mock_registry.is_registered.return_value = True
             mock_registry.get_strategy_class.return_value = MagicMock(

@@ -78,7 +78,7 @@ class TestApplyTemplateDefaults:
         strategy = make_strategy()
         strategy._template_defaults_service = cast(None, None)
         # Patch is_container_ready so the lazy property stays None
-        with patch("infrastructure.di.container.is_container_ready", return_value=False):
+        with patch("orb.infrastructure.di.container.is_container_ready", return_value=False):
             template = {"template_id": "t1", "image_id": "ami-123"}
             result = strategy._apply_template_defaults(template, "my-provider")
         assert result == template

@@ -258,7 +258,7 @@ class TestSpotFleetHandlerNameTag:
             return_value={"target_capacity": 2, "on_demand_count": 0},
         ):
             with patch(
-                "providers.aws.infrastructure.handlers.shared.fleet_override_builder.build_spot_fleet_overrides",
+                "orb.providers.aws.infrastructure.handlers.shared.fleet_override_builder.build_spot_fleet_overrides",
                 return_value=[],
             ):
                 fleet_config = handler._config_builder._build_legacy(

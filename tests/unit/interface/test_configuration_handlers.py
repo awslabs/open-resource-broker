@@ -41,7 +41,7 @@ class TestProviderConfigHandlers:
         """Test handle_provider_config function - takes only args, no app param."""
         args = Namespace(resource="provider", action="config")
 
-        with patch("interface.system_command_handlers.get_container") as mock_get_container:
+        with patch("orb.interface.system_command_handlers.get_container") as mock_get_container:
             mock_container = Mock()
             mock_get_container.return_value = mock_container
 

@@ -488,7 +488,7 @@ class TestTimedOperation:
 
     def test_timed_operation_fast(self):
         """Test timed operation with fast execution."""
-        with patch("infrastructure.di.container.logger") as mock_logger:
+        with patch("orb.infrastructure.di.container.logger") as mock_logger:
             with timed_operation("fast_operation"):
                 pass  # Fast operation
 
@@ -498,7 +498,7 @@ class TestTimedOperation:
 
     def test_timed_operation_slow(self):
         """Test timed operation with slow execution."""
-        with patch("infrastructure.di.container.logger") as mock_logger:
+        with patch("orb.infrastructure.di.container.logger") as mock_logger:
             with timed_operation("slow_operation"):
                 import time
 
@@ -509,7 +509,7 @@ class TestTimedOperation:
 
     def test_timed_operation_with_exception(self):
         """Test timed operation when exception occurs."""
-        with patch("infrastructure.di.container.logger") as mock_logger:
+        with patch("orb.infrastructure.di.container.logger") as mock_logger:
             try:
                 with timed_operation("failing_operation"):
                     raise ValueError("Test exception")

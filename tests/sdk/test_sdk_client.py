@@ -120,7 +120,7 @@ class TestOpenResourceBroker:
     @pytest.mark.asyncio
     async def test_initialize_application_failure(self):
         """Test initialization failure when application fails to initialize."""
-        with patch("sdk.client.Application") as mock_app_class:
+        with patch("orb.sdk.client.Application") as mock_app_class:
             mock_app = Mock()
             mock_app.initialize = AsyncMock(return_value=False)
             mock_app_class.return_value = mock_app
@@ -133,7 +133,7 @@ class TestOpenResourceBroker:
     @pytest.mark.asyncio
     async def test_initialize_missing_application_service(self):
         """Test initialization failure when CQRS buses are not available."""
-        with patch("sdk.client.Application") as mock_app_class:
+        with patch("orb.sdk.client.Application") as mock_app_class:
             mock_app = Mock()
             mock_app.initialize = AsyncMock(return_value=True)
             mock_app.get_query_bus = Mock(return_value=None)

@@ -67,8 +67,8 @@ async def _init_app(config_path=None):
     mock_container = _make_mock_container(mock_config_manager)
 
     with (
-        patch("infrastructure.di.container.get_container", return_value=mock_container),
-        patch("providers.registry.get_provider_registry") as mock_get_registry,
+        patch("orb.infrastructure.di.container.get_container", return_value=mock_container),
+        patch("orb.providers.registry.get_provider_registry") as mock_get_registry,
     ):
         mock_registry = Mock()
         mock_registry.get_registered_providers.return_value = ["aws"]
@@ -232,7 +232,7 @@ class TestFullWorkflow:
     async def test_error_handling_integration(self):
         """Test error handling integration."""
         # Test initialization failure
-        with patch("infrastructure.di.container.get_container") as mock_get_container:
+        with patch("orb.infrastructure.di.container.get_container") as mock_get_container:
             mock_container = Mock()
             mock_container.is_lazy_loading_enabled.return_value = False
             mock_container.get.side_effect = Exception("Initialization failed")

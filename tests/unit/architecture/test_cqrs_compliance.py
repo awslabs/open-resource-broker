@@ -141,7 +141,7 @@ class TestCQRSCompliance:
     def test_command_bus_pattern(self):
         """Test command bus pattern implementation."""
         # Mock command bus behavior
-        with patch("src.infrastructure.di.buses.CommandBus") as mock_bus:
+        with patch("orb.infrastructure.di.buses.CommandBus") as mock_bus:
             mock_instance = Mock()
             mock_bus.return_value = mock_instance
 
@@ -158,7 +158,7 @@ class TestCQRSCompliance:
     def test_query_bus_pattern(self):
         """Test query bus pattern implementation."""
         # Mock query bus behavior
-        with patch("src.infrastructure.di.buses.QueryBus") as mock_bus:
+        with patch("orb.infrastructure.di.buses.QueryBus") as mock_bus:
             mock_instance = Mock()
             mock_bus.return_value = mock_instance
 

@@ -42,7 +42,7 @@ class TestSpecFileLoading:
         }
 
         with patch(
-            "providers.aws.infrastructure.services.aws_native_spec_service.read_json_file"
+            "orb.providers.aws.infrastructure.services.aws_native_spec_service.read_json_file"
         ) as mock_read:
             mock_read.return_value = spec_content
 
@@ -65,7 +65,7 @@ class TestSpecFileLoading:
         spec_content = {"Type": "maintain"}
 
         with patch(
-            "providers.aws.infrastructure.services.aws_native_spec_service.read_json_file"
+            "orb.providers.aws.infrastructure.services.aws_native_spec_service.read_json_file"
         ) as mock_read:
             mock_read.return_value = spec_content
 
@@ -82,7 +82,7 @@ class TestSpecFileLoading:
         spec_content = {"Type": "instant"}
 
         with patch(
-            "providers.aws.infrastructure.services.aws_native_spec_service.read_json_file"
+            "orb.providers.aws.infrastructure.services.aws_native_spec_service.read_json_file"
         ) as mock_read:
             mock_read.return_value = spec_content
 
@@ -92,7 +92,7 @@ class TestSpecFileLoading:
             assert result == spec_content
             mock_read.assert_called_once_with("specs/aws/test-template.json")
 
-    @patch("providers.aws.infrastructure.services.aws_native_spec_service.read_json_file")
+    @patch("orb.providers.aws.infrastructure.services.aws_native_spec_service.read_json_file")
     def test_load_spec_file_not_found(self, mock_read):
         """Test spec file loading when file doesn't exist."""
         mock_read.side_effect = FileNotFoundError("File not found")
@@ -106,7 +106,7 @@ class TestSpecFileLoading:
         with pytest.raises(FileNotFoundError):
             self.service._load_spec_file("nonexistent.json")
 
-    @patch("providers.aws.infrastructure.services.aws_native_spec_service.read_json_file")
+    @patch("orb.providers.aws.infrastructure.services.aws_native_spec_service.read_json_file")
     def test_load_spec_file_invalid_json(self, mock_read):
         """Test spec file loading with invalid JSON."""
         mock_read.side_effect = json.JSONDecodeError("Invalid JSON", "doc", 0)
@@ -284,7 +284,7 @@ class TestSpecFileLoading:
             }
 
             with patch(
-                "providers.aws.infrastructure.services.aws_native_spec_service.read_json_file"
+                "orb.providers.aws.infrastructure.services.aws_native_spec_service.read_json_file"
             ) as mock_read:
                 mock_read.return_value = {"test": "data"}
 
@@ -303,7 +303,7 @@ class TestSpecFileLoading:
         spec_content = {"Type": "instant"}
 
         with patch(
-            "providers.aws.infrastructure.services.aws_native_spec_service.read_json_file"
+            "orb.providers.aws.infrastructure.services.aws_native_spec_service.read_json_file"
         ) as mock_read:
             mock_read.return_value = spec_content
 
@@ -326,7 +326,7 @@ class TestSpecFileLoading:
 
         # Note: This test assumes YAML support is added to the file utilities
         with patch(
-            "providers.aws.infrastructure.services.aws_native_spec_service.read_json_file"
+            "orb.providers.aws.infrastructure.services.aws_native_spec_service.read_json_file"
         ) as mock_read:
             mock_read.return_value = {"Type": "maintain"}
 

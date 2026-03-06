@@ -33,8 +33,8 @@ class TestMCPServerHandler:
     async def test_handle_mcp_serve_stdio_mode(self, stdio_args, mock_app):
         """Test MCP serve handler in stdio mode."""
         with (
-            patch("interface.mcp.server.handler._run_stdio_server") as mock_stdio,
-            patch("interface.mcp.server.handler.get_container", return_value=mock_app),
+            patch("orb.interface.mcp.server.handler._run_stdio_server") as mock_stdio,
+            patch("orb.interface.mcp.server.handler.get_container", return_value=mock_app),
         ):
             mock_stdio.return_value = None
 
@@ -47,8 +47,8 @@ class TestMCPServerHandler:
     async def test_handle_mcp_serve_tcp_mode(self, tcp_args, mock_app):
         """Test MCP serve handler in TCP mode."""
         with (
-            patch("interface.mcp.server.handler._run_tcp_server") as mock_tcp,
-            patch("interface.mcp.server.handler.get_container", return_value=mock_app),
+            patch("orb.interface.mcp.server.handler._run_tcp_server") as mock_tcp,
+            patch("orb.interface.mcp.server.handler.get_container", return_value=mock_app),
         ):
             mock_tcp.return_value = None
 
@@ -134,8 +134,8 @@ class TestMCPServerHandler:
     async def test_error_handling_in_handler(self, stdio_args, mock_app):
         """Test error handling in MCP serve handler."""
         with (
-            patch("interface.mcp.server.handler._run_stdio_server") as mock_stdio,
-            patch("interface.mcp.server.handler.get_container", return_value=mock_app),
+            patch("orb.interface.mcp.server.handler._run_stdio_server") as mock_stdio,
+            patch("orb.interface.mcp.server.handler.get_container", return_value=mock_app),
         ):
             mock_stdio.side_effect = Exception("Test error")
 

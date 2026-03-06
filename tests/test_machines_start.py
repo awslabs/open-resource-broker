@@ -15,7 +15,7 @@ async def test_machines_start_specific_ids():
     args.all = False
 
     # Mock the dependencies
-    with patch("interface.machine_command_handlers.get_container") as mock_get_container:
+    with patch("orb.interface.machine_command_handlers.get_container") as mock_get_container:
         # Setup mocks
         mock_container = Mock()
         mock_get_container.return_value = mock_container
@@ -53,7 +53,7 @@ async def test_machines_start_all():
     args.all = True
 
     # Mock the dependencies
-    with patch("interface.machine_command_handlers.get_container") as mock_get_container:
+    with patch("orb.interface.machine_command_handlers.get_container") as mock_get_container:
         # Setup mocks
         mock_container = Mock()
         mock_get_container.return_value = mock_container

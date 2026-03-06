@@ -117,8 +117,8 @@ class TestAPIHandlerInitialization:
 class TestAPIHandlerRegistration:
     """Test API handler registration in server_services.py."""
 
-    @patch("infrastructure.di.server_services._register_fastapi_services")
-    @patch("infrastructure.di.server_services._register_api_handlers")
+    @patch("orb.infrastructure.di.server_services._register_fastapi_services")
+    @patch("orb.infrastructure.di.server_services._register_api_handlers")
     def test_register_server_services_with_fastapi(
         self, mock_register_api_handlers, mock_register_fastapi
     ):
@@ -150,7 +150,7 @@ class TestAPIHandlerRegistration:
         config_manager.get_typed.return_value = server_config
         container.get.return_value = config_manager
 
-        with patch("infrastructure.di.server_services._register_fastapi_services") as mock_fastapi:
+        with patch("orb.infrastructure.di.server_services._register_fastapi_services") as mock_fastapi:
             mock_fastapi.side_effect = ImportError("No module named 'fastapi'")
 
             # Act - should not raise exception
@@ -159,7 +159,7 @@ class TestAPIHandlerRegistration:
             # Assert - function completes without error
             assert True
 
-    @patch("infrastructure.di.server_services._register_api_handlers")
+    @patch("orb.infrastructure.di.server_services._register_api_handlers")
     def test_register_server_services_disabled(self, mock_register_api_handlers):
         """Test that register_server_services doesn't call _register_api_handlers when server is disabled."""
         from orb.config.schemas.server_schema import ServerConfig

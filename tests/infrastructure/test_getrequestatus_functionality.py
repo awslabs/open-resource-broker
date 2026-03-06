@@ -58,7 +58,7 @@ class TestGetRequestStatusFunctionality:
     @pytest.fixture
     def scheduler_strategy(self):
         """Create scheduler strategy for testing."""
-        with patch("infrastructure.di.container.get_container") as mock_get_container:
+        with patch("orb.infrastructure.di.container.get_container") as mock_get_container:
             mock_container = Mock()
             mock_provider_service = Mock()
             mock_provider_service.select_active_provider.return_value = ProviderSelectionResult(

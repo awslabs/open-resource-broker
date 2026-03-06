@@ -380,7 +380,7 @@ class TestNativeSpecAllProviders:
         assert api_result["TargetCapacitySpecification"]["SpotTargetCapacity"] == "3"
         assert api_result["ReplaceUnhealthyInstances"] is True
 
-    @patch("providers.aws.infrastructure.services.aws_native_spec_service.read_json_file")
+    @patch("orb.providers.aws.infrastructure.services.aws_native_spec_service.read_json_file")
     def test_file_based_native_specs_integration(self, mock_read_file):
         """Test template with file-based native specs."""
         # Mock file contents

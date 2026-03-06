@@ -29,7 +29,7 @@ class TestFormatConversionConsistency:
         mock_provider_service = MagicMock()
         mock_container.get.return_value = mock_provider_service
 
-        with patch("infrastructure.di.container.get_container", return_value=mock_container):
+        with patch("orb.infrastructure.di.container.get_container", return_value=mock_container):
             self.symphony_strategy = HostFactorySchedulerStrategy()
 
         # Sample data for testing
@@ -153,7 +153,7 @@ class TestFormatConversionInHandlers:
 
         from orb.interface.template_command_handlers import handle_list_templates
 
-        with patch("src.interface.template_command_handlers.get_container") as mock_get_container:
+        with patch("orb.interface.template_command_handlers.get_container") as mock_get_container:
             container = MagicMock()
             query_bus = MagicMock()
             scheduler_strategy = MagicMock(spec=SchedulerPort)

@@ -181,8 +181,8 @@ class TestMultiInstanceProviderSupport:
                 "infrastructure.di.provider_services.get_config_manager",
                 return_value=mock_config_manager,
             ),
-            patch("providers.aws.registration.register_aws_provider") as mock_aws_register,
-            patch("infrastructure.di.provider_services.get_logger"),
+            patch("orb.providers.aws.registration.register_aws_provider") as mock_aws_register,
+            patch("orb.infrastructure.di.provider_services.get_logger"),
         ):
             from orb.infrastructure.di.provider_services import _register_providers
 

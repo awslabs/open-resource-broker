@@ -15,7 +15,7 @@ class TestConfigurationAdapterPackageInfo:
         self.mock_config_manager = Mock()
         self.adapter = ConfigurationAdapter(self.mock_config_manager)
 
-    @patch("infrastructure.adapters.configuration_adapter._package", create=True)
+    @patch("orb.infrastructure.adapters.configuration_adapter._package", create=True)
     def test_get_package_info_success(self, mock_package):
         """Test successful package info retrieval."""
         # Arrange - patch the _package module-level name used inside get_package_info

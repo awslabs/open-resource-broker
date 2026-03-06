@@ -136,7 +136,7 @@ class TestRequestCacheService:
         # Should not raise any exceptions
         cache_service.cache_request(request_dto)
 
-    @patch("infrastructure.caching.request_cache_service.datetime")
+    @patch("orb.infrastructure.caching.request_cache_service.datetime")
     def test_cache_validity_check(self, mock_datetime, cache_service):
         """Test cache validity checking logic."""
         # Mock current time

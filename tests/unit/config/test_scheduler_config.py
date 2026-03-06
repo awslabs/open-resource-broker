@@ -95,7 +95,7 @@ class TestAppConfigWithScheduler:
             },
         }
         mock_registry = patch(
-            "providers.registry.get_provider_registry",
+            "orb.providers.registry.get_provider_registry",
             return_value=type(
                 "R", (), {"get_registered_providers": lambda self: ["aws", "provider1"]}
             )(),

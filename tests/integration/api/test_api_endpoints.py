@@ -39,7 +39,7 @@ class TestAPIEndpoints:
         server_config = ServerConfig(
             enabled=True, auth=AuthConfig(enabled=False, strategy="replace")
         )
-        with patch("api.server._register_routers") as mock_register:
+        with patch("orb.api.server._register_routers") as mock_register:
             mock_register.side_effect = self._install_stub_routes
             app = create_fastapi_app(server_config)
         return TestClient(app)
@@ -55,7 +55,7 @@ class TestAPIEndpoints:
                 bearer_token={"secret_key": "test-secret"},
             ),
         )
-        with patch("api.server._register_routers") as mock_register:
+        with patch("orb.api.server._register_routers") as mock_register:
             mock_register.side_effect = self._install_stub_routes
             app = create_fastapi_app(server_config)
         return TestClient(app, raise_server_exceptions=False)

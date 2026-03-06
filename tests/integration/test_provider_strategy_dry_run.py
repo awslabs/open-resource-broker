@@ -74,7 +74,7 @@ class TestProviderStrategyDryRun:
         self.aws_strategy._instance_service = mock_instance_service
 
     @pytest.mark.asyncio
-    @patch("providers.aws.infrastructure.dry_run_adapter.aws_dry_run_context")
+    @patch("orb.providers.aws.infrastructure.dry_run_adapter.aws_dry_run_context")
     async def test_provider_operation_without_dry_run_context(self, mock_dry_run_context):
         """Test provider operation execution without dry-run context."""
         # Create operation without dry-run context
@@ -110,7 +110,7 @@ class TestProviderStrategyDryRun:
         self.mock_handler.acquire_hosts.assert_called_once()
 
     @pytest.mark.asyncio
-    @patch("providers.aws.infrastructure.dry_run_adapter.aws_dry_run_context")
+    @patch("orb.providers.aws.infrastructure.dry_run_adapter.aws_dry_run_context")
     async def test_provider_operation_with_dry_run_context(self, mock_dry_run_context):
         """Test provider operation execution with dry-run context."""
         # Mock the context manager
@@ -204,7 +204,7 @@ class TestProviderStrategyDryRun:
         assert "Unsupported operation" in result.error_message
 
     @pytest.mark.asyncio
-    @patch("providers.aws.infrastructure.dry_run_adapter.aws_dry_run_context")
+    @patch("orb.providers.aws.infrastructure.dry_run_adapter.aws_dry_run_context")
     async def test_multiple_operations_with_mixed_dry_run_contexts(self, mock_dry_run_context):
         """Test multiple operations with different dry-run contexts."""
         # Mock the context manager

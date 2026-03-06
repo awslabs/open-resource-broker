@@ -207,7 +207,7 @@ class TestCleanArchitecture:
         # Test that high-level modules don't depend on low-level modules
         # Mock the ProviderValidationService since it requires many dependencies
         with patch(
-            "application.services.provider_validation_service.ProviderValidationService"
+            "orb.application.services.provider_validation_service.ProviderValidationService"
         ) as mock_app_service:
             mock_instance = Mock()
             mock_app_service.return_value = mock_instance
@@ -265,7 +265,7 @@ class TestCleanArchitecture:
         """Test application service layer compliance."""
         # Mock the ProviderValidationService since it requires many dependencies
         with patch(
-            "application.services.provider_validation_service.ProviderValidationService"
+            "orb.application.services.provider_validation_service.ProviderValidationService"
         ) as mock_app_service:
             mock_instance = Mock()
             mock_app_service.return_value = mock_instance

@@ -35,7 +35,7 @@ class TestBaseContextMixin:
     def test_prepare_base_context(self):
         """Test base context preparation."""
         with patch(
-            "providers.aws.infrastructure.handlers.shared.base_context_mixin.datetime"
+            "orb.providers.aws.infrastructure.handlers.shared.base_context_mixin.datetime"
         ) as mock_dt:
             mock_dt.utcnow.return_value.isoformat.return_value = "2025-01-15T10:30:00Z"
 
@@ -148,7 +148,7 @@ class TestBaseContextMixin:
         """Test standard tag preparation."""
         with patch.object(self.mixin, "_get_package_name", return_value="test-package"):
             with patch(
-                "providers.aws.infrastructure.handlers.shared.base_context_mixin.datetime"
+                "orb.providers.aws.infrastructure.handlers.shared.base_context_mixin.datetime"
             ) as mock_dt:
                 mock_dt.utcnow.return_value.isoformat.return_value = "2025-01-15T10:30:00Z"
 

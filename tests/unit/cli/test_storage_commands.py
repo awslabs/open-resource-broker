@@ -23,7 +23,7 @@ class TestStorageCommandHandlers:
         """Test list storage strategies handler."""
         args = Namespace(resource="storage", action="list")
 
-        with patch("interface.storage_command_handlers.get_container") as mock_get_container:
+        with patch("orb.interface.storage_command_handlers.get_container") as mock_get_container:
             mock_query_bus = AsyncMock()
             mock_result = Mock()
             mock_result.strategies = ["json", "dynamodb"]
@@ -45,7 +45,7 @@ class TestStorageCommandHandlers:
         """Test show storage configuration handler."""
         args = Namespace(resource="storage", action="show")
 
-        with patch("interface.storage_command_handlers.get_container") as mock_get_container:
+        with patch("orb.interface.storage_command_handlers.get_container") as mock_get_container:
             mock_query_bus = AsyncMock()
             mock_query_bus.execute = AsyncMock(return_value={"type": "json", "path": "data"})
 
@@ -62,7 +62,7 @@ class TestStorageCommandHandlers:
         """Test validate storage configuration handler."""
         args = Namespace(resource="storage", action="validate")
 
-        with patch("interface.storage_command_handlers.get_container") as mock_get_container:
+        with patch("orb.interface.storage_command_handlers.get_container") as mock_get_container:
             mock_query_bus = AsyncMock()
             mock_query_bus.execute = AsyncMock(return_value={"valid": True, "errors": []})
 
@@ -79,7 +79,7 @@ class TestStorageCommandHandlers:
         """Test storage connection test handler."""
         args = Namespace(resource="storage", action="test")
 
-        with patch("interface.storage_command_handlers.get_container") as mock_get_container:
+        with patch("orb.interface.storage_command_handlers.get_container") as mock_get_container:
             mock_query_bus = AsyncMock()
             mock_query_bus.execute = AsyncMock(return_value={"success": True})
 
@@ -96,7 +96,7 @@ class TestStorageCommandHandlers:
         """Test storage health check handler."""
         args = Namespace(resource="storage", action="health")
 
-        with patch("interface.storage_command_handlers.get_container") as mock_get_container:
+        with patch("orb.interface.storage_command_handlers.get_container") as mock_get_container:
             mock_query_bus = AsyncMock()
             mock_query_bus.execute = AsyncMock(return_value={"status": "healthy"})
 
@@ -113,7 +113,7 @@ class TestStorageCommandHandlers:
         """Test storage metrics handler."""
         args = Namespace(resource="storage", action="metrics")
 
-        with patch("interface.storage_command_handlers.get_container") as mock_get_container:
+        with patch("orb.interface.storage_command_handlers.get_container") as mock_get_container:
             mock_query_bus = AsyncMock()
             mock_query_bus.execute = AsyncMock(return_value={"operations": 100})
 

@@ -72,7 +72,7 @@ class TestInjectableDecorator:
                 self.port = port
                 self.service = service
 
-        with patch("infrastructure.di.container.get_container", return_value=self.container):
+        with patch("orb.infrastructure.di.container.get_container", return_value=self.container):
             # Create instance - dependencies should be auto-resolved
             instance = ServiceWithDependency()
 
@@ -90,7 +90,7 @@ class TestInjectableDecorator:
                 self.port = port
                 self.optional_service = optional_service
 
-        with patch("infrastructure.di.container.get_container", return_value=self.container):
+        with patch("orb.infrastructure.di.container.get_container", return_value=self.container):
             instance = ServiceWithOptional()
 
             # Required dependency resolved
@@ -111,7 +111,7 @@ class TestInjectableDecorator:
                 self.port = port
                 self.unavailable = unavailable
 
-        with patch("infrastructure.di.container.get_container", return_value=self.container):
+        with patch("orb.infrastructure.di.container.get_container", return_value=self.container):
             instance = ServiceWithUnavailableOptional()
 
             # Required dependency resolved
@@ -129,7 +129,7 @@ class TestInjectableDecorator:
                 self.manual_param = manual_param
                 self.service = service
 
-        with patch("infrastructure.di.container.get_container", return_value=self.container):
+        with patch("orb.infrastructure.di.container.get_container", return_value=self.container):
             instance = MixedService(manual_param="test_value")
 
             # Auto-resolved dependencies
@@ -153,7 +153,7 @@ class TestInjectableDecorator:
                 self.default_param = default_param
                 self.service = service
 
-        with patch("infrastructure.di.container.get_container", return_value=self.container):
+        with patch("orb.infrastructure.di.container.get_container", return_value=self.container):
             instance = ServiceWithDefaults()
 
             assert isinstance(instance.port, MockAdapter)
@@ -255,7 +255,7 @@ class TestInjectableIntegration:
         mock_logger = Mock(spec=LoggingPort)
         container.register_singleton(LoggingPort, lambda c: mock_logger)
 
-        with patch("infrastructure.di.container.get_container", return_value=container):
+        with patch("orb.infrastructure.di.container.get_container", return_value=container):
 
             @injectable
             class ServiceWithLogging:
@@ -286,7 +286,7 @@ class TestInjectableIntegration:
         container.register_singleton(LoggingPort, lambda c: Mock(spec=LoggingPort))
         container.register_singleton(MockEventPublisher, lambda c: MockEventPublisher())
 
-        with patch("infrastructure.di.container.get_container", return_value=container):
+        with patch("orb.infrastructure.di.container.get_container", return_value=container):
             # This should work without the Optional[LoggingPort] error
             bus = TestCommandBus()
             assert bus.logger is not None

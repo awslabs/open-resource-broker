@@ -30,7 +30,7 @@ class TestJSONStorageRegistration:
         """Clean up after tests."""
         reset_storage_registry()
 
-    @patch("infrastructure.persistence.json.strategy.JSONStorageStrategy")
+    @patch("orb.infrastructure.persistence.json.strategy.JSONStorageStrategy")
     def test_create_json_strategy(self, mock_strategy_class):
         """Test creating JSON storage strategy."""
         from orb.infrastructure.persistence.json.registration import create_json_strategy
@@ -52,7 +52,7 @@ class TestJSONStorageRegistration:
             file_path="test_data/test.json", create_dirs=True, entity_type="generic"
         )
 
-    @patch("src.config.schemas.storage_schema.JsonStrategyConfig")
+    @patch("orb.config.schemas.storage_schema.JsonStrategyConfig")
     def test_create_json_config(self, mock_config_class):
         """Test creating JSON storage configuration."""
         from orb.infrastructure.persistence.json.registration import create_json_config
@@ -66,8 +66,8 @@ class TestJSONStorageRegistration:
         assert result == mock_config
         mock_config_class.assert_called_once_with(**data)
 
-    @patch("src.infrastructure.persistence.repositories.request_repository.RequestRepository")
-    @patch("src.infrastructure.persistence.json.strategy.JSONStorageStrategy")
+    @patch("orb.infrastructure.persistence.repositories.request_repository.RequestRepository")
+    @patch("orb.infrastructure.persistence.json.strategy.JSONStorageStrategy")
     def test_create_json_request_repository(self, mock_strategy_class, mock_repo_class):
         """Test creating JSON request repository."""
         from orb.infrastructure.persistence.json.registration import (
@@ -102,7 +102,7 @@ class TestJSONStorageRegistration:
 
         # Mock the imports to avoid dependency issues
         with (
-            patch("src.infrastructure.persistence.json.strategy.JSONStorageStrategy"),
+            patch("orb.infrastructure.persistence.json.strategy.JSONStorageStrategy"),
             patch(
                 "src.infrastructure.persistence.repositories.request_repository.RequestRepository"
             ),
@@ -112,7 +112,7 @@ class TestJSONStorageRegistration:
             patch(
                 "src.infrastructure.persistence.repositories.template_repository.TemplateRepository"
             ),
-            patch("src.infrastructure.persistence.json.unit_of_work.JSONUnitOfWork"),
+            patch("orb.infrastructure.persistence.json.unit_of_work.JSONUnitOfWork"),
         ):
             register_json_storage()
 
@@ -136,7 +136,7 @@ class TestSQLStorageRegistration:
         """Clean up after tests."""
         reset_storage_registry()
 
-    @patch("src.infrastructure.persistence.sql.registration.SQLStorageStrategy")
+    @patch("orb.infrastructure.persistence.sql.registration.SQLStorageStrategy")
     def test_create_sql_strategy(self, mock_strategy_class):
         """Test creating SQL storage strategy."""
         from orb.infrastructure.persistence.sql.registration import create_sql_strategy
@@ -159,7 +159,7 @@ class TestSQLStorageRegistration:
             columns={"id": "TEXT PRIMARY KEY", "data": "TEXT"},
         )
 
-    @patch("src.config.schemas.storage_schema.SqlStrategyConfig")
+    @patch("orb.config.schemas.storage_schema.SqlStrategyConfig")
     def test_create_sql_config(self, mock_config_class):
         """Test creating SQL storage configuration."""
         from orb.infrastructure.persistence.sql.registration import create_sql_config
@@ -207,7 +207,7 @@ class TestSQLStorageRegistration:
 
         # Mock the imports to avoid dependency issues
         with (
-            patch("src.infrastructure.persistence.sql.registration.SQLStorageStrategy"),
+            patch("orb.infrastructure.persistence.sql.registration.SQLStorageStrategy"),
             patch(
                 "src.infrastructure.persistence.repositories.request_repository.RequestRepository"
             ),
@@ -217,7 +217,7 @@ class TestSQLStorageRegistration:
             patch(
                 "src.infrastructure.persistence.repositories.template_repository.TemplateRepository"
             ),
-            patch("src.infrastructure.persistence.sql.registration.SQLUnitOfWork"),
+            patch("orb.infrastructure.persistence.sql.registration.SQLUnitOfWork"),
         ):
             register_sql_storage()
 
@@ -241,7 +241,7 @@ class TestDynamoDBStorageRegistration:
         """Clean up after tests."""
         reset_storage_registry()
 
-    @patch("src.providers.aws.persistence.dynamodb.registration.DynamoDBStorageStrategy")
+    @patch("orb.providers.aws.persistence.dynamodb.registration.DynamoDBStorageStrategy")
     def test_create_dynamodb_strategy(self, mock_strategy_class):
         """Test creating DynamoDB storage strategy."""
         from orb.providers.aws.persistence.dynamodb.registration import (
@@ -268,7 +268,7 @@ class TestDynamoDBStorageRegistration:
             profile="test-profile",
         )
 
-    @patch("src.config.schemas.storage_schema.DynamodbStrategyConfig")
+    @patch("orb.config.schemas.storage_schema.DynamodbStrategyConfig")
     def test_create_dynamodb_config(self, mock_config_class):
         """Test creating DynamoDB storage configuration."""
         from orb.providers.aws.persistence.dynamodb.registration import (
@@ -294,7 +294,7 @@ class TestDynamoDBStorageRegistration:
 
         # Mock the imports to avoid dependency issues
         with (
-            patch("src.providers.aws.persistence.dynamodb.registration.DynamoDBStorageStrategy"),
+            patch("orb.providers.aws.persistence.dynamodb.registration.DynamoDBStorageStrategy"),
             patch(
                 "src.infrastructure.persistence.repositories.request_repository.RequestRepository"
             ),
@@ -304,7 +304,7 @@ class TestDynamoDBStorageRegistration:
             patch(
                 "src.infrastructure.persistence.repositories.template_repository.TemplateRepository"
             ),
-            patch("src.providers.aws.persistence.dynamodb.registration.DynamoDBUnitOfWork"),
+            patch("orb.providers.aws.persistence.dynamodb.registration.DynamoDBUnitOfWork"),
         ):
             register_dynamodb_storage()
 
@@ -328,9 +328,9 @@ class TestCentralStorageRegistration:
         """Clean up after tests."""
         reset_storage_registry()
 
-    @patch("src.infrastructure.persistence.registration.register_json_storage")
-    @patch("src.infrastructure.persistence.registration.register_sql_storage")
-    @patch("src.infrastructure.persistence.registration.register_dynamodb_storage")
+    @patch("orb.infrastructure.persistence.registration.register_json_storage")
+    @patch("orb.infrastructure.persistence.registration.register_sql_storage")
+    @patch("orb.infrastructure.persistence.registration.register_dynamodb_storage")
     def test_register_all_storage_types_success(self, mock_dynamodb, mock_sql, mock_json):
         """Test successful registration of all storage types."""
         from orb.infrastructure.persistence.registration import register_all_storage_types
@@ -348,9 +348,9 @@ class TestCentralStorageRegistration:
         mock_sql.assert_called_once()
         mock_dynamodb.assert_called_once()
 
-    @patch("src.infrastructure.persistence.registration.register_json_storage")
-    @patch("src.infrastructure.persistence.registration.register_sql_storage")
-    @patch("src.infrastructure.persistence.registration.register_dynamodb_storage")
+    @patch("orb.infrastructure.persistence.registration.register_json_storage")
+    @patch("orb.infrastructure.persistence.registration.register_sql_storage")
+    @patch("orb.infrastructure.persistence.registration.register_dynamodb_storage")
     def test_register_all_storage_types_partial_failure(self, mock_dynamodb, mock_sql, mock_json):
         """Test registration with some failures."""
         from orb.infrastructure.persistence.registration import register_all_storage_types
@@ -368,9 +368,9 @@ class TestCentralStorageRegistration:
         mock_sql.assert_called_once()
         mock_dynamodb.assert_called_once()
 
-    @patch("src.infrastructure.persistence.registration.register_json_storage")
-    @patch("src.infrastructure.persistence.registration.register_sql_storage")
-    @patch("src.infrastructure.persistence.registration.register_dynamodb_storage")
+    @patch("orb.infrastructure.persistence.registration.register_json_storage")
+    @patch("orb.infrastructure.persistence.registration.register_sql_storage")
+    @patch("orb.infrastructure.persistence.registration.register_dynamodb_storage")
     def test_register_all_storage_types_complete_failure(self, mock_dynamodb, mock_sql, mock_json):
         """Test registration with complete failure."""
         from orb.infrastructure.persistence.registration import register_all_storage_types
@@ -390,9 +390,9 @@ class TestCentralStorageRegistration:
 
         # Mock successful imports
         with (
-            patch("src.infrastructure.persistence.registration.JSONStorageStrategy"),
-            patch("src.infrastructure.persistence.registration.SQLStorageStrategy"),
-            patch("src.infrastructure.persistence.registration.DynamoDBStorageStrategy"),
+            patch("orb.infrastructure.persistence.registration.JSONStorageStrategy"),
+            patch("orb.infrastructure.persistence.registration.SQLStorageStrategy"),
+            patch("orb.infrastructure.persistence.registration.DynamoDBStorageStrategy"),
         ):
             available_types = get_available_storage_types()
 
@@ -414,7 +414,7 @@ class TestCentralStorageRegistration:
             assert is_storage_type_available("dynamodb") is False
             assert is_storage_type_available("unknown") is False
 
-    @patch("src.infrastructure.persistence.registration.register_json_storage")
+    @patch("orb.infrastructure.persistence.registration.register_json_storage")
     def test_register_storage_type_success(self, mock_register):
         """Test successful registration of specific storage type."""
         from orb.infrastructure.persistence.registration import register_storage_type
@@ -426,7 +426,7 @@ class TestCentralStorageRegistration:
         assert result is True
         mock_register.assert_called_once()
 
-    @patch("src.infrastructure.persistence.registration.register_json_storage")
+    @patch("orb.infrastructure.persistence.registration.register_json_storage")
     def test_register_storage_type_failure(self, mock_register):
         """Test failed registration of specific storage type."""
         from orb.infrastructure.persistence.registration import register_storage_type

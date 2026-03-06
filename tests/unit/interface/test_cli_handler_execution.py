@@ -20,7 +20,7 @@ class TestCLIHandlerExecution:
     """Test CLI handler execution."""
 
     @pytest.mark.asyncio
-    @patch("interface.template_command_handlers.get_container")
+    @patch("orb.interface.template_command_handlers.get_container")
     async def test_handle_list_templates(self, mock_get_container):
         """Test that handle_list_templates executes correctly."""
         container = MagicMock(spec=DIContainer)
@@ -59,7 +59,7 @@ class TestCLIHandlerExecution:
         assert "templates" in result
 
     @pytest.mark.asyncio
-    @patch("interface.scheduler_command_handlers.get_container")
+    @patch("orb.interface.scheduler_command_handlers.get_container")
     async def test_handle_list_scheduler_strategies(self, mock_get_container):
         """Test that handle_list_scheduler_strategies executes correctly."""
         container = MagicMock(spec=DIContainer)
@@ -90,7 +90,7 @@ class TestCLIHandlerExecution:
         query_bus.execute.assert_called_once()
 
     @pytest.mark.asyncio
-    @patch("interface.storage_command_handlers.get_container")
+    @patch("orb.interface.storage_command_handlers.get_container")
     async def test_handle_list_storage_strategies(self, mock_get_container):
         """Test that handle_list_storage_strategies executes correctly."""
         container = MagicMock(spec=DIContainer)
@@ -122,7 +122,7 @@ class TestCLIHandlerExecution:
         query_bus.execute.assert_called_once()
 
     @pytest.mark.asyncio
-    @patch("interface.request_command_handlers.get_container")
+    @patch("orb.interface.request_command_handlers.get_container")
     async def test_handle_get_request_status(self, mock_get_container):
         """Test that handle_get_request_status executes correctly."""
         container = MagicMock(spec=DIContainer)
@@ -162,7 +162,7 @@ class TestFormatConversionConsistency:
     """Test format conversion consistency."""
 
     @pytest.mark.asyncio
-    @patch("interface.template_command_handlers.get_container")
+    @patch("orb.interface.template_command_handlers.get_container")
     async def test_format_conversion_in_template_handler(self, mock_get_container):
         """Test that format conversion is done using the scheduler strategy in template handlers."""
         container = MagicMock(spec=DIContainer)

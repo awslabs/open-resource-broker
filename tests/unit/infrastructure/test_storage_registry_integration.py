@@ -55,7 +55,7 @@ class TestStorageRegistryIntegration:
         mock_container.get.return_value = mock_storage_port
 
         with (
-            patch("infrastructure.di.container.get_container") as mock_get_container,
+            patch("orb.infrastructure.di.container.get_container") as mock_get_container,
             patch(
                 "infrastructure.persistence.repositories.request_repository.RequestRepositoryImpl"
             ) as mock_repo_class,
@@ -93,7 +93,7 @@ class TestStorageRegistryIntegration:
         mock_factory.create_request_repository.return_value = mock_repository
 
         with (
-            patch("src.infrastructure.persistence.registration.register_all_storage_types"),
+            patch("orb.infrastructure.persistence.registration.register_all_storage_types"),
             patch(
                 "src.infrastructure.utilities.factories.repository_factory.RepositoryFactory"
             ) as mock_factory_class,

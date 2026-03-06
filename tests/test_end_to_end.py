@@ -117,7 +117,7 @@ def test_machine_operations():
     assert machine_data["status"] == "running"
 
 
-@patch("infrastructure.logging.logger.get_logger")
+@patch("orb.infrastructure.logging.logger.get_logger")
 def test_logging_functionality(mock_get_logger):
     """Test that logging functionality works."""
     mock_logger = MagicMock()

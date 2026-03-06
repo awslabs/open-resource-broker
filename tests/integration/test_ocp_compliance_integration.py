@@ -49,7 +49,7 @@ class TestOCPComplianceIntegration:
         config_obj = registry.create_config("aws", {"test": "data"})
         assert config_obj == "config_{'test': 'data'}"
 
-    @patch("providers.aws.strategy.aws_provider_strategy.AWSProviderStrategy")
+    @patch("orb.providers.aws.strategy.aws_provider_strategy.AWSProviderStrategy")
     def test_aws_provider_registration_integration(self, mock_aws_strategy):
         """Test AWS provider registration integration."""
         from orb.providers.aws.registration import register_aws_provider
