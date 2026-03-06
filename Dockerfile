@@ -6,26 +6,17 @@ ARG PACKAGE_NAME_SHORT=orb
 
 FROM python:${PYTHON_VERSION}-slim
 
-# Update system packages to fix security vulnerabilities
-RUN apt-get update && \
-    apt-get upgrade -y && \
-    apt-get install -y --no-install-recommends \
-        ca-certificates=20250419 && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
-
 ARG PYTHON_VERSION=3.13
 ARG PACKAGE_NAME_SHORT=orb
 
-# Security: Update system packages and install security updates
+# Apply all available security patches and upgrade Python toolchain
 RUN apt-get update && \
     apt-get upgrade -y && \
     apt-get install -y --no-install-recommends \
         ca-certificates=20250419 && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* && \
-    # Security: Upgrade setuptools to latest version
-    pip install --no-cache-dir --upgrade pip==25.3 setuptools==80.9.0
+    pip install --no-cache-dir --upgrade pip setuptools wheel
 ARG BUILD_DATE
 ARG VERSION=dev
 ARG VCS_REF
@@ -48,12 +39,8 @@ ENV BUILD_DATE="${BUILD_DATE}" \
     VERSION="${VERSION}" \
     VCS_REF="${VCS_REF}"
 
-# Install runtime dependencies and create user in single layer
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates=20250419 \
-    && rm -rf /var/lib/apt/lists/* \
-    && apt-get clean \
-    && groupadd -r "${PACKAGE_NAME_SHORT:-orb}" \
+# Create non-root user
+RUN groupadd -r "${PACKAGE_NAME_SHORT:-orb}" \
     && useradd -r -g "${PACKAGE_NAME_SHORT:-orb}" -s /bin/false "${PACKAGE_NAME_SHORT:-orb}"
 
 # Set working directory and create directories
