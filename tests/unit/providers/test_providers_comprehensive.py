@@ -363,7 +363,7 @@ class TestAWSProviderComprehensive:
         for handler_file in handler_files:
             try:
                 module = importlib.import_module(
-                    f"src.providers.aws.infrastructure.handlers.{handler_file}"
+                    f"orb.providers.aws.infrastructure.handlers.{handler_file}"
                 )
                 handler_modules.append((handler_file, module))
             except ImportError:
@@ -498,7 +498,7 @@ class TestAWSProviderComprehensive:
         for adapter_file in adapter_files:
             try:
                 module = importlib.import_module(
-                    f"src.providers.aws.infrastructure.adapters.{adapter_file}"
+                    f"orb.providers.aws.infrastructure.adapters.{adapter_file}"
                 )
                 adapter_modules.append((adapter_file, module))
             except ImportError:
@@ -551,7 +551,7 @@ class TestAWSProviderComprehensive:
 
         for utility_file in utility_files:
             try:
-                module = importlib.import_module(f"src.providers.aws.utilities.{utility_file}")
+                module = importlib.import_module(f"orb.providers.aws.utilities.{utility_file}")
                 utility_modules.append((utility_file, module))
             except ImportError:
                 continue
@@ -565,7 +565,7 @@ class TestAWSProviderComprehensive:
 
         for manager_file in manager_files:
             try:
-                module = importlib.import_module(f"src.providers.aws.managers.{manager_file}")
+                module = importlib.import_module(f"orb.providers.aws.managers.{manager_file}")
                 manager_modules.append((manager_file, module))
             except ImportError:
                 continue
@@ -702,7 +702,7 @@ class TestProviderStrategyPatternsComprehensive:
 
         for module_name, class_name in strategy_modules:
             try:
-                module = importlib.import_module(f"src.providers.base.strategy.{module_name}")
+                module = importlib.import_module(f"orb.providers.base.strategy.{module_name}")
                 strategy_class = getattr(module, class_name)
                 strategy_classes.append((class_name, strategy_class))
             except (ImportError, AttributeError):
@@ -821,7 +821,7 @@ class TestAWSAuthenticationComprehensive:
 
         for module_name, class_name in auth_strategies:
             try:
-                module = importlib.import_module(f"src.providers.aws.auth.{module_name}")
+                module = importlib.import_module(f"orb.providers.aws.auth.{module_name}")
                 strategy_class = getattr(module, class_name)
 
                 # Try to create strategy
@@ -918,7 +918,7 @@ class TestAWSTemplateInfrastructureComprehensive:
         for module_name, class_name in template_classes:
             try:
                 module = importlib.import_module(
-                    f"src.providers.aws.infrastructure.template.{module_name}"
+                    f"orb.providers.aws.infrastructure.template.{module_name}"
                 )
                 template_class = getattr(module, class_name)
 

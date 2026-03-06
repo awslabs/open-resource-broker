@@ -21,10 +21,10 @@ class TestPackageNameIntegration:
         """Test complete package name flow from configuration to template rendering."""
         # Arrange - patch _package module attributes
         with (
-            patch("_package.PACKAGE_NAME", "test-plugin"),
-            patch("_package.__version__", "2.0.0"),
-            patch("_package.DESCRIPTION", "Test plugin"),
-            patch("_package.AUTHOR", "Test Author"),
+            patch("orb._package.PACKAGE_NAME", "test-plugin"),
+            patch("orb._package.__version__", "2.0.0"),
+            patch("orb._package.DESCRIPTION", "Test plugin"),
+            patch("orb._package.AUTHOR", "Test Author"),
         ):
             # Act - get package info
             package_info = self.config_adapter.get_package_info()
@@ -48,10 +48,10 @@ class TestPackageNameIntegration:
     def test_native_spec_service_uses_package_info(self):
         """Test that native spec service correctly uses package info in context."""
         with (
-            patch("_package.PACKAGE_NAME", "integration-test-plugin"),
-            patch("_package.__version__", "3.0.0"),
-            patch("_package.DESCRIPTION", "Test"),
-            patch("_package.AUTHOR", "Test"),
+            patch("orb._package.PACKAGE_NAME", "integration-test-plugin"),
+            patch("orb._package.__version__", "3.0.0"),
+            patch("orb._package.DESCRIPTION", "Test"),
+            patch("orb._package.AUTHOR", "Test"),
         ):
             # Mock native spec service
             mock_native_spec = Mock()

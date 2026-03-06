@@ -97,7 +97,7 @@ class TestCLIMigration:
 
     def test_run_py_is_minimal(self):
         """Test that run.py is now minimal and delegates to CLI modules."""
-        run_py_path = os.path.join(project_root, "src", "run.py")
+        run_py_path = os.path.join(project_root, "src", "orb", "run.py")
 
         with open(run_py_path) as f:
             content = f.read()
@@ -107,7 +107,7 @@ class TestCLIMigration:
         assert len(lines) < 70, f"run.py should be minimal, but has {len(lines)} lines"
 
         # Should import from CLI modules
-        assert "from cli.main import main" in content
+        assert "from orb.cli.main import main" in content
 
         # Should delegate to main()
         assert "main()" in content

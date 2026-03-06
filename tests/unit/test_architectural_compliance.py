@@ -20,7 +20,7 @@ class TestDDDCompliance:
 
     def test_domain_has_no_infrastructure_dependencies(self):
         """Ensure domain layer imports no infrastructure code."""
-        domain_path = Path(__file__).parent.parent.parent / "src" / "domain"
+        domain_path = Path(__file__).parent.parent.parent / "src" / "orb" / "domain"
         infrastructure_imports = []
 
         for py_file in domain_path.rglob("*.py"):
@@ -52,7 +52,7 @@ class TestDDDCompliance:
         Exception: domain/template/factory.py is allowed to import from providers
         as it is a factory that creates provider-specific template objects.
         """
-        domain_path = Path(__file__).parent.parent.parent / "src" / "domain"
+        domain_path = Path(__file__).parent.parent.parent / "src" / "orb" / "domain"
         provider_imports = []
 
         for py_file in domain_path.rglob("*.py"):
@@ -83,7 +83,7 @@ class TestDDDCompliance:
 
     def test_bounded_context_isolation(self):
         """Ensure bounded contexts don't leak into each other."""
-        domain_path = Path(__file__).parent.parent.parent / "src" / "domain"
+        domain_path = Path(__file__).parent.parent.parent / "src" / "orb" / "domain"
         contexts = ["template", "request", "machine"]
         violations = []
 
@@ -303,20 +303,24 @@ class TestCleanArchitectureCompliance:
         app_imports_domain = False
 
         # Check application layer imports
-        app_path = Path(__file__).parent.parent.parent / "src" / "application"
+        app_path = Path(__file__).parent.parent.parent / "src" / "orb" / "application"
         for py_file in app_path.rglob("*.py"):
             if py_file.name == "__init__.py":
                 continue
 
             with open(py_file) as f:
                 content = f.read()
-                if "from domain" in content or "import domain" in content:
+                if (
+                    "from domain" in content
+                    or "import domain" in content
+                    or "from orb.domain" in content
+                ):
                     app_imports_domain = True
 
         # Check domain layer imports - exclude ports that reference application DTOs
         # (domain/base/ports/request_creation_port.py references application.dto.commands
         # which is a known violation tracked separately)
-        domain_path = Path(__file__).parent.parent.parent / "src" / "domain"
+        domain_path = Path(__file__).parent.parent.parent / "src" / "orb" / "domain"
         app_importing_files = []
         for py_file in domain_path.rglob("*.py"):
             if py_file.name == "__init__.py":
@@ -324,7 +328,11 @@ class TestCleanArchitectureCompliance:
 
             with open(py_file) as f:
                 content = f.read()
-                if "from application" in content or "import application" in content:
+                if (
+                    "from application" in content
+                    or "import application" in content
+                    or "from orb.application" in content
+                ):
                     app_importing_files.append(py_file.name)
 
         assert app_imports_domain, "Application layer should import domain layer"
@@ -337,7 +345,7 @@ class TestCleanArchitectureCompliance:
 
     def test_layer_isolation(self):
         """Ensure domain layer only depends on stdlib, pydantic (per ADR-003), and domain itself."""
-        domain_path = Path(__file__).parent.parent.parent / "src" / "domain"
+        domain_path = Path(__file__).parent.parent.parent / "src" / "orb" / "domain"
         external_deps = []
 
         # Allowed prefixes per ADR-003 and clean architecture
@@ -349,7 +357,8 @@ class TestCleanArchitectureCompliance:
             "abc",
             "dataclasses",
             "pydantic",  # Explicitly allowed by ADR-003
-            "domain",  # Intra-domain imports
+            "domain",  # Intra-domain imports (bare)
+            "orb.domain",  # Intra-domain imports (namespaced)
             "__future__",  # Python future imports
             "functools",  # stdlib
             "fnmatch",  # stdlib
@@ -409,7 +418,7 @@ class TestCleanArchitectureCompliance:
         'requests' appears in variable names and comments, not as an import of the
         requests HTTP library. This test checks actual imports only.
         """
-        domain_path = Path(__file__).parent.parent.parent / "src" / "domain"
+        domain_path = Path(__file__).parent.parent.parent / "src" / "orb" / "domain"
         framework_deps = []
 
         # Only check actual framework imports, not string occurrences
@@ -518,7 +527,7 @@ class TestCodeQualityCompliance:
         for handler registries and adapters. This test verifies it is only used
         within the providers/aws subtree and not leaked into application/domain layers.
         """
-        src_path = Path(__file__).parent.parent.parent / "src"
+        src_path = Path(__file__).parent.parent.parent / "src" / "orb"
         aws_handler_in_wrong_layer = []
 
         # Only flag aws_handler usage outside of providers/aws and infrastructure

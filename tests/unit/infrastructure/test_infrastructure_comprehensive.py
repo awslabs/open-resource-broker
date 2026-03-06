@@ -182,7 +182,9 @@ class TestPersistenceLayerComprehensive:
 
         for repo_file in repo_files:
             try:
-                module = importlib.import_module(f"infrastructure.storage.repositories.{repo_file}")
+                module = importlib.import_module(
+                    f"orb.infrastructure.storage.repositories.{repo_file}"
+                )
                 repo_modules.append((repo_file, module))
             except ImportError:
                 continue
@@ -300,10 +302,10 @@ class TestPersistenceLayerComprehensive:
         strategy_modules = []
 
         strategy_paths = [
-            "infrastructure.storage.json.strategy",
-            "infrastructure.storage.sql.strategy",
-            "infrastructure.storage.base.strategy",
-            "infrastructure.storage.dynamodb.strategy",
+            "orb.infrastructure.storage.json.strategy",
+            "orb.infrastructure.storage.sql.strategy",
+            "orb.infrastructure.storage.base.strategy",
+            "orb.infrastructure.storage.dynamodb.strategy",
         ]
 
         for strategy_path in strategy_paths:
@@ -320,10 +322,10 @@ class TestPersistenceLayerComprehensive:
         uow_modules = []
 
         uow_paths = [
-            "infrastructure.storage.json.unit_of_work",
-            "infrastructure.storage.sql.unit_of_work",
-            "infrastructure.storage.base.unit_of_work",
-            "infrastructure.storage.dynamodb.unit_of_work",
+            "orb.infrastructure.storage.json.unit_of_work",
+            "orb.infrastructure.storage.sql.unit_of_work",
+            "orb.infrastructure.storage.base.unit_of_work",
+            "orb.infrastructure.storage.dynamodb.unit_of_work",
         ]
 
         for uow_path in uow_paths:
@@ -490,7 +492,7 @@ class TestAdaptersComprehensive:
 
         for adapter_file in adapter_files:
             try:
-                module = importlib.import_module(f"src.infrastructure.adapters.{adapter_file}")
+                module = importlib.import_module(f"orb.infrastructure.adapters.{adapter_file}")
                 adapter_modules.append((adapter_file, module))
             except ImportError:
                 continue
@@ -563,11 +565,11 @@ class TestFactoriesComprehensive:
 
         # Check different factory locations
         factory_paths = [
-            "src.infrastructure.factories.provider_strategy_factory",
-            "src.infrastructure.utilities.factories.api_handler_factory",
-            "src.infrastructure.utilities.factories.repository_factory",
-            "src.infrastructure.utilities.factories.sql_engine_factory",
-            "src.infrastructure.adapters.factories.container_adapter_factory",
+            "orb.infrastructure.factories.provider_strategy_factory",
+            "orb.infrastructure.utilities.factories.api_handler_factory",
+            "orb.infrastructure.utilities.factories.repository_factory",
+            "orb.infrastructure.utilities.factories.sql_engine_factory",
+            "orb.infrastructure.adapters.factories.container_adapter_factory",
         ]
 
         for factory_path in factory_paths:
