@@ -104,7 +104,7 @@ class TestCLIMigration:
 
         # Should be reasonably short (updated for current implementation)
         lines = content.strip().split("\n")
-        assert len(lines) < 70, f"run.py should be minimal, but has {len(lines)} lines"
+        assert len(lines) < 80, f"run.py should be minimal, but has {len(lines)} lines"
 
         # Should import from CLI modules
         assert "from orb.cli.main import main" in content

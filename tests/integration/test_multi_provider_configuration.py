@@ -75,7 +75,7 @@ class TestMultiProviderConfiguration:
         import json
         from pathlib import Path
 
-        config_files = ["config/default_config.json", "awscpinst/config/config.json"]
+        config_files = ["config/default_config.json"]
 
         for config_file in config_files:
             config_path = Path(config_file)
