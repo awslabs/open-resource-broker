@@ -11,7 +11,11 @@ try:
 except ImportError:
     raise ImportError("FastAPI routing requires: pip install orb-py[api]") from None
 
-from orb.api.dependencies import get_query_bus, get_request_status_handler, get_return_requests_handler
+from orb.api.dependencies import (
+    get_query_bus,
+    get_request_status_handler,
+    get_return_requests_handler,
+)
 from orb.infrastructure.error.decorators import handle_rest_exceptions
 
 router = APIRouter(prefix="/requests", tags=["Requests"])

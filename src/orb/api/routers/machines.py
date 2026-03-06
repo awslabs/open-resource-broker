@@ -31,9 +31,7 @@ class RequestMachinesRequest(APIRequest):
     """
 
     template_id: str
-    count: int = Field(
-        validation_alias=AliasChoices("count", "machine_count", "machineCount")
-    )
+    count: int = Field(validation_alias=AliasChoices("count", "machine_count", "machineCount"))
     additional_data: Optional[dict[str, Any]] = None
 
 
