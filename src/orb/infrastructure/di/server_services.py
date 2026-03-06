@@ -136,6 +136,7 @@ def _register_api_handlers(container: DIContainer) -> None:
         from orb.api.handlers.get_return_requests_handler import (
             GetReturnRequestsRESTHandler,
         )
+        from orb.config.managers.configuration_manager import ConfigurationManager
 
         if not container.is_registered(GetReturnRequestsRESTHandler):
             container.register_singleton(
@@ -144,6 +145,7 @@ def _register_api_handlers(container: DIContainer) -> None:
                     query_bus=c.get(QueryBus),
                     command_bus=c.get(CommandBus),
                     scheduler_strategy=c.get(SchedulerPort),
+                    config_manager=c.get(ConfigurationManager),
                     logger=c.get(LoggingPort),
                     error_handler=(
                         c.get(ErrorHandlingPort) if c.is_registered(ErrorHandlingPort) else None
