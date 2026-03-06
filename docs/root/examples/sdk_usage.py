@@ -349,9 +349,7 @@ async def main() -> int:
             # Step 2: request machines
             request_id = None
             if template_id:
-                request_id = await demo_request_machines(
-                    sdk, template_id, args.count, args.dry_run
-                )
+                request_id = await demo_request_machines(sdk, template_id, args.count, args.dry_run)
             else:
                 print("\n[2] No template available — skipping machine request.")
 
