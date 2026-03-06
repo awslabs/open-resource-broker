@@ -11,7 +11,7 @@ try:
 except ImportError:
     raise ImportError("FastAPI routing requires: pip install orb-py[api]") from None
 
-from orb.api.dependencies import get_request_status_handler, get_return_requests_handler
+from orb.api.dependencies import get_query_bus, get_request_status_handler, get_return_requests_handler
 from orb.infrastructure.error.decorators import handle_rest_exceptions
 
 router = APIRouter(prefix="/requests", tags=["Requests"])
@@ -19,6 +19,7 @@ router = APIRouter(prefix="/requests", tags=["Requests"])
 # Module-level dependency variables to avoid B008 warnings
 REQUEST_STATUS_HANDLER = Depends(get_request_status_handler)
 RETURN_REQUESTS_HANDLER = Depends(get_return_requests_handler)
+QUERY_BUS = Depends(get_query_bus)
 STATUS_QUERY = Query(None, description="Filter by request status")
 LIMIT_QUERY = Query(None, description="Limit number of results")
 
@@ -59,7 +60,7 @@ async def get_request_status(
 async def list_requests(
     status: Optional[str] = STATUS_QUERY,
     limit: Optional[int] = LIMIT_QUERY,
-    handler=RETURN_REQUESTS_HANDLER,
+    query_bus=QUERY_BUS,
 ) -> JSONResponse:
     """
     List requests with optional filtering.
@@ -67,13 +68,21 @@ async def list_requests(
     - **status**: Filter by request status (pending, running, complete, failed)
     - **limit**: Limit number of results
     """
-    api_request = {
-        "input_data": {},
-        "status": status,
-        "limit": limit,
-    }
-    result = await handler.handle(api_request)
+    from orb.application.request.queries import ListRequestsQuery
 
+    query = ListRequestsQuery(status=status, limit=limit or 50)
+    results = await query_bus.execute(query)
+    return JSONResponse(content=jsonable_encoder([r.model_dump() for r in results]))
+
+
+@router.get("/return", summary="List Return Requests", description="List requests pending return")
+@handle_rest_exceptions(endpoint="/api/v1/requests/return", method="GET")
+async def list_return_requests(
+    handler=RETURN_REQUESTS_HANDLER,
+) -> JSONResponse:
+    """List requests that are pending return."""
+    api_request = {"input_data": {}}
+    result = await handler.handle(api_request)
     return JSONResponse(content=jsonable_encoder(result))
 
 

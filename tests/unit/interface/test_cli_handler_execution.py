@@ -132,11 +132,10 @@ class TestCLIHandlerExecution:
         request_dto = MagicMock()
         query_bus.execute.return_value = request_dto
 
-        scheduler_strategy.parse_request_data.return_value = {
-            "requests": [{"request_id": "request1"}]
-        }
+        # parse_request_data returns a list for the "requests" branch (both strategies)
+        scheduler_strategy.parse_request_data.return_value = [{"request_id": "req-abc123"}]
         scheduler_strategy.format_request_status_response.return_value = {
-            "requests": [{"requestId": "request1", "status": "complete"}]
+            "requests": [{"requestId": "req-abc123", "status": "complete"}]
         }
 
         container.get.side_effect = lambda x: {
@@ -147,7 +146,7 @@ class TestCLIHandlerExecution:
         mock_get_container.return_value = container
 
         args = argparse.Namespace(
-            request_id="request1",
+            request_id="req-abc123",
             request_ids=[],
             flag_request_ids=[],
             all=False,
@@ -156,6 +155,9 @@ class TestCLIHandlerExecution:
         result = await handle_get_request_status(args)
 
         assert isinstance(result, dict)
+        # Verify the query bus was actually called — proves request_id was extracted correctly
+        query_bus.execute.assert_called_once()
+        scheduler_strategy.format_request_status_response.assert_called_once()
 
 
 class TestFormatConversionConsistency:

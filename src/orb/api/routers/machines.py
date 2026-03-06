@@ -4,6 +4,7 @@ from typing import Any, Optional
 
 try:
     from fastapi import APIRouter, Depends, Query
+    from pydantic import AliasChoices, Field
     from fastapi.encoders import jsonable_encoder
     from fastapi.responses import JSONResponse
 except ImportError:
@@ -26,11 +27,13 @@ LIMIT_QUERY = Query(None, description="Limit number of results")
 class RequestMachinesRequest(APIRequest):
     """Request for machine provisioning.
 
-    Accepts both camelCase (templateId, machineCount) and snake_case field names.
+    Accepts count, machine_count, or machineCount in the request body.
     """
 
     template_id: str
-    machine_count: int
+    count: int = Field(
+        validation_alias=AliasChoices("count", "machine_count", "machineCount")
+    )
     additional_data: Optional[dict[str, Any]] = None
 
 
@@ -57,13 +60,13 @@ async def request_machines(
     Request new machines from a template.
 
     - **template_id**: Template to use for machine creation
-    - **machine_count**: Number of machines to request
+    - **count**: Number of machines to request (also accepted as machine_count or machineCount)
     - **additional_data**: Optional additional configuration data
     """
     # Translate incoming request into the internal request model expected by the handler
     template_payload = {
         "templateId": request_data.template_id,
-        "machineCount": request_data.machine_count,
+        "machineCount": request_data.count,
     }
     if request_data.additional_data:
         template_payload.update(request_data.additional_data)

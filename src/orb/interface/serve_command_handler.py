@@ -68,6 +68,19 @@ async def handle_serve_api(args) -> dict[str, Any]:
         if log_level:
             server_config.log_level = log_level
 
+        # Initialize Application to register providers in the DI container.
+        # The CLI path does this via Application.__aenter__, but the REST
+        # startup path was missing it — providers were never registered.
+        from orb.bootstrap import Application
+
+        orb_app = Application(
+            config_path=getattr(config_manager, "_config_file", None),
+            skip_validation=True,
+            container=container,
+        )
+        if not await orb_app.initialize():
+            logger.error("Failed to initialize application — providers may not be available")
+
         logger.info("Starting REST API server on %s:%s", server_config.host, server_config.port)
         logger.info(
             "Workers: %s, Reload: %s, Log Level: %s",
