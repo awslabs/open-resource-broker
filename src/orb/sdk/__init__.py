@@ -57,6 +57,7 @@ from .exceptions import (
     SDKError,
 )
 from .middleware import SDKMiddleware
+from .protocols import ORBClientProtocol
 
 # Convenient alias
 orb = ORBClient
@@ -73,4 +74,5 @@ __all__: list[str] = [
     "SDKConfig",
     "SDKError",
     "SDKMiddleware",
+    "ORBClientProtocol",
 ]
