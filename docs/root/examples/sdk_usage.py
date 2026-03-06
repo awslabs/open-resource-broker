@@ -203,7 +203,9 @@ async def demo_request_machines(sdk, template_id: str, count: int, dry_run: bool
             return None
 
         request_id = (
-            result.get("request_id") or result.get("id") if isinstance(result, dict) else None
+            result.get("created_request_id") or result.get("request_id") or result.get("id")
+            if isinstance(result, dict)
+            else None
         )
         print(f"    Request created: {request_id}")
         return request_id

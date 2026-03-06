@@ -1,6 +1,6 @@
 """Authentication middleware for FastAPI."""
 
-import os
+import posixpath
 from typing import Optional
 
 from fastapi import HTTPException, Request, Response, status
@@ -144,7 +144,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
         # Convert to lowercase for case-insensitive comparison
         normalized = normalized.lower()
         # Resolve path traversal attempts
-        normalized = os.path.normpath(normalized)
+        normalized = posixpath.normpath(normalized)
         # Remove any remaining .. or . components
         parts = [p for p in normalized.split("/") if p and p not in (".", "..")]
         return "/" + "/".join(parts) if parts else "/"

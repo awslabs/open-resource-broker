@@ -28,7 +28,9 @@ class HandlerDefaultsConfig(BaseModel):
     @classmethod
     def validate_default_handler(cls, v: str) -> str:
         """Reject values that are not valid ProviderApi registry keys."""
-        if ProviderApi(v) is None:
+        try:
+            ProviderApi(v)
+        except ValueError:
             valid = [m.value for m in ProviderApi]
             raise ValueError(
                 f"default_handler {v!r} is not a valid ProviderApi value; expected one of {valid}"

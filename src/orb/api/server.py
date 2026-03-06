@@ -64,13 +64,6 @@ def create_fastapi_app(server_config: Any) -> Any:
 
         server_config = ServerConfig()  # type: ignore[call-arg]
 
-    # Final safety check - ensure server_config is not None
-    if server_config is None:
-        logger.error("Server configuration is None after validation, using defaults")
-        from orb.config.schemas.server_schema import ServerConfig
-
-        server_config = ServerConfig()  # type: ignore[call-arg]
-
     from orb.api.documentation import configure_openapi
     from orb.api.middleware import AuthMiddleware, LoggingMiddleware
     from orb.infrastructure.error.exception_handler import get_exception_handler
@@ -121,7 +114,9 @@ def create_fastapi_app(server_config: Any) -> Any:
                 auth_strategy.get_strategy_name(),
             )
         else:
-            logger.warning("Authentication enabled but strategy creation failed")
+            raise ConfigurationError(
+                f"Authentication enabled but strategy '{server_config.auth.strategy}' could not be created"
+            )
 
     # Add global exception handler
     exception_handler = get_exception_handler()
@@ -219,9 +214,9 @@ def _create_auth_strategy(auth_config: Any) -> Any:
     """
     logger = get_logger(__name__)
 
+    strategy_name = getattr(auth_config, "strategy", "unknown")
     try:
         auth_registry = get_auth_registry()
-        strategy_name = auth_config.strategy
 
         if strategy_name == "none":
             return auth_registry.get_strategy("none", enabled=False)
@@ -289,8 +284,7 @@ def _create_auth_strategy(auth_config: Any) -> Any:
             return None
 
     except Exception as e:
-        logger.error("Failed to create auth strategy: %s", e, exc_info=True)
-        return None
+        raise ConfigurationError(f"Failed to create auth strategy '{strategy_name}': {e}") from e
 
 
 def _register_routers(app: Any) -> None:

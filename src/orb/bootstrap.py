@@ -353,6 +353,10 @@ class Application:
         self.logger.info("Shutting down application")
         self._initialized = False
 
+    async def cleanup(self) -> None:
+        """Async cleanup — delegates to synchronous shutdown."""
+        self.shutdown()
+
     async def __aenter__(self) -> Application:
         """Async context manager entry."""
         if not await self.initialize():

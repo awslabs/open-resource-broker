@@ -62,6 +62,14 @@ class IAMAuthStrategy(AuthPort):
         self.enabled = enabled
         self._assume_permissions = assume_permissions
 
+        if not self._assume_permissions:
+            self._logger.error(
+                "IAM strategy active with assume_permissions=False. "
+                "IAM permission evaluation (SimulatePrincipalPolicy) is not yet implemented. "
+                "All permission checks will DENY by default. "
+                "Set assume_permissions=True for development/testing only."
+            )
+
         # Initialize AWS session
         try:
             self.session = AWSSessionFactory.create_session(profile, region)
