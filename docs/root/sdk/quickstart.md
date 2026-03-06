@@ -136,6 +136,19 @@ async with orb(config_path="config.json") as sdk:
     pass
 ```
 
+### Per-Client Isolation
+
+Each `ORBClient` instance creates its own isolated DI container. Multiple clients in the same process don't share state:
+
+```python
+# Two clients with different regions — fully isolated
+async with orb(app_config={"provider": {"type": "aws", "providers": [{"name": "east", "type": "aws", "region": "us-east-1"}]}, "storage": {"type": "json"}}) as east_client:
+    async with orb(app_config={"provider": {"type": "aws", "providers": [{"name": "west", "type": "aws", "region": "us-west-2"}]}, "storage": {"type": "json"}}) as west_client:
+        # Each client operates independently
+        east_templates = await east_client.list_templates()
+        west_templates = await west_client.list_templates()
+```
+
 ## CLI vs SDK Equivalents
 
 For users familiar with the CLI, the SDK provides both convenience methods and direct CQRS methods:
@@ -189,6 +202,19 @@ async with orb(provider="mock") as sdk:
     # Get SDK statistics
     stats = sdk.get_stats()
     print(f"SDK stats: {stats}")
+```
+
+### Type Safety
+
+The SDK provides `ORBClientProtocol` for IDE autocompletion and type checking:
+
+```python
+from orb.sdk import ORBClientProtocol
+
+async def provision_machines(client: ORBClientProtocol, template_id: str, count: int):
+    """Type-safe function accepting any ORBClient-compatible object."""
+    request = await client.create_request(template_id=template_id, count=count)
+    return await client.get_request_status(request_id=request["created_request_id"])
 ```
 
 ## Common Operations
@@ -353,15 +379,43 @@ async with orb(provider="aws") as sdk:
         print(f"Request ID: {result['created_request_id']}")
 ```
 
+Failed operations do not raise — the exception instance is returned at that index instead. Always check before accessing result fields:
+
+```python
+results = await sdk.batch([
+    sdk.create_request("template-us-east", 2),
+    sdk.create_request("template-invalid", 1),  # will fail
+    sdk.create_request("template-eu-west", 1)
+])
+
+for i, result in enumerate(results):
+    if isinstance(result, Exception):
+        print(f"Operation {i} failed: {result}")
+    else:
+        print(f"Operation {i} succeeded: {result['created_request_id']}")
+```
+
 ### Custom Serialization
+
+All SDK methods accept optional serialization parameters:
+
+- `raw_response=True` — returns the raw handler result without dict conversion. Takes precedence over `format`.
+- `format="json"` — returns a JSON string instead of a dict.
+- `format="yaml"` — returns a YAML string instead of a dict.
 
 ```python
 async with orb(provider="aws") as sdk:
-    # Get raw response data
+    # Raw handler result — no dict conversion applied
     raw_data = await sdk.list_templates(raw_response=True)
 
-    # Custom serialization format
-    yaml_data = await sdk.list_templates(format="yaml")
+    # JSON string representation
+    json_str = await sdk.list_templates(format="json")
+
+    # YAML string representation
+    yaml_str = await sdk.list_templates(format="yaml")
+
+    # raw_response takes precedence — format is ignored here
+    raw_data = await sdk.list_templates(raw_response=True, format="json")
 ```
 
 ## Performance Considerations
@@ -373,7 +427,7 @@ async with orb(provider="aws") as sdk:
 
 ## Next Steps
 
-- [API Reference](#api-reference) - Complete method documentation
 - [Configuration Guide](#configuration) - Detailed configuration options
-- [Examples](examples/) - More usage examples
-- [Integration Guide](#integration) - Integrating with existing applications
+- [Method Discovery](#method-discovery) - Explore available SDK methods
+- [Error Handling](#error-handling) - Handle errors and exceptions
+- [Advanced Usage](#advanced-usage) - Middleware, batch operations, and serialization
