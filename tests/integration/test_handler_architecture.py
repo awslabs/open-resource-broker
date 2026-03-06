@@ -467,14 +467,14 @@ def test_import_consistency():
                 content = f.read()
 
             # Check for AWSTemplate import (not Template)
-            if "from domain.template.template_aggregate import Template" in content:
+            if "from orb.domain.template.template_aggregate import Template" in content:
                 print(
                     f"   FAIL: {handler_file}: Still importing generic Template instead of AWSTemplate"
                 )
                 return False
 
             if (
-                "from providers.aws.domain.template.aws_template_aggregate import AWSTemplate"
+                "from orb.providers.aws.domain.template.aws_template_aggregate import AWSTemplate"
                 not in content
             ):
                 print(f"   FAIL: {handler_file}: Missing AWSTemplate import")
@@ -482,7 +482,7 @@ def test_import_consistency():
 
             # Check for base handler import
             if (
-                "from providers.aws.infrastructure.handlers.base_handler import AWSHandler"
+                "from orb.providers.aws.infrastructure.handlers.base_handler import AWSHandler"
                 not in content
             ):
                 print(f"   FAIL: {handler_file}: Missing AWSHandler import")

@@ -13,7 +13,7 @@ Key Components:
 - Value Objects: Operation, Result, Capabilities, Health status
 
 Usage Example:
-    from providers.base.strategy import (
+    from orb.providers.base.strategy import (
         ProviderOperation,
         ProviderOperationType,
         SelectorFactory,
@@ -22,7 +22,7 @@ Usage Example:
         FallbackProviderStrategy,
         LoadBalancingProviderStrategy
     )
-    from providers.registry import get_provider_registry
+    from orb.providers.registry import get_provider_registry
 
     # Get registry for strategy execution
     registry = get_provider_registry()

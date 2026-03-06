@@ -27,7 +27,7 @@ from orb.providers.aws.infrastructure.handlers.base_handler import AWSHandler
 
 # Removed TYPE_CHECKING import to avoid circular dependency issues during DI resolution
 # if TYPE_CHECKING:
-#     from providers.aws.strategy.aws_provider_strategy import AWSProviderStrategy
+#     from orb.providers.aws.strategy.aws_provider_strategy import AWSProviderStrategy
 
 
 @injectable

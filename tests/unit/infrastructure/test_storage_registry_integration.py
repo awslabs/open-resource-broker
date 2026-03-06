@@ -5,7 +5,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 pytestmark = pytest.mark.skip(
-    reason="infrastructure.registry.storage_registry module removed - using application services"
+    reason="orb.infrastructure.registry.storage_registry module removed - using application services"
 )
 
 try:
@@ -57,7 +57,7 @@ class TestStorageRegistryIntegration:
         with (
             patch("orb.infrastructure.di.container.get_container") as mock_get_container,
             patch(
-                "infrastructure.persistence.repositories.request_repository.RequestRepositoryImpl"
+                "orb.infrastructure.persistence.repositories.request_repository.RequestRepositoryImpl"
             ) as mock_repo_class,
         ):
             mock_get_container.return_value = mock_container

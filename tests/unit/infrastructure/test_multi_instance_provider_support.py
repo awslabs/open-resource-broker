@@ -5,7 +5,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 pytestmark = pytest.mark.skip(
-    reason="infrastructure.registry.provider_registry module removed - using application services"
+    reason="orb.infrastructure.registry.provider_registry module removed - using application services"
 )
 
 try:
@@ -178,7 +178,7 @@ class TestMultiInstanceProviderSupport:
         # Mock AWS registration
         with (
             patch(
-                "infrastructure.di.provider_services.get_config_manager",
+                "orb.infrastructure.di.provider_services.get_config_manager",
                 return_value=mock_config_manager,
             ),
             patch("orb.providers.aws.registration.register_aws_provider") as mock_aws_register,
@@ -226,7 +226,7 @@ class TestMultiInstanceProviderSupport:
         mock_registry.create_strategy_from_instance.return_value = mock_strategy
 
         with patch(
-            "infrastructure.factories.provider_strategy_factory.get_provider_registry",
+            "orb.infrastructure.factories.provider_strategy_factory.get_provider_registry",
             return_value=mock_registry,
         ):
             strategy = factory._create_provider_strategy(provider_config)
@@ -265,7 +265,7 @@ class TestMultiInstanceProviderSupport:
         mock_registry.create_strategy.return_value = mock_strategy
 
         with patch(
-            "infrastructure.factories.provider_strategy_factory.get_provider_registry",
+            "orb.infrastructure.factories.provider_strategy_factory.get_provider_registry",
             return_value=mock_registry,
         ):
             strategy = factory._create_provider_strategy(provider_config)

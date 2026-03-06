@@ -446,7 +446,7 @@ class TestEC2FleetHandler:
         template = SimpleNamespace(template_id="tmpl-123", fleet_type=AWSFleetType.INSTANT)
 
         with patch(
-            "providers.aws.infrastructure.handlers.ec2_fleet.handler.AWSValidationAdapter"
+            "orb.providers.aws.infrastructure.handlers.ec2_fleet.handler.AWSValidationAdapter"
         ) as mock_validation_cls:
             mock_validation_cls.return_value.get_valid_fleet_types_for_api.return_value = [
                 "instant",
@@ -505,7 +505,7 @@ class TestEC2FleetHandler:
         template = SimpleNamespace(template_id="tmpl-789", fleet_type=AWSFleetType.INSTANT)
 
         with patch(
-            "providers.aws.infrastructure.handlers.ec2_fleet.handler.AWSValidationAdapter"
+            "orb.providers.aws.infrastructure.handlers.ec2_fleet.handler.AWSValidationAdapter"
         ) as mock_validation_cls:
             mock_validation_cls.return_value.get_valid_fleet_types_for_api.return_value = [
                 "instant",
@@ -550,7 +550,7 @@ class TestEC2FleetHandler:
         template = SimpleNamespace(template_id="tmpl-456", fleet_type=AWSFleetType.INSTANT)
 
         with patch(
-            "providers.aws.infrastructure.handlers.ec2_fleet.handler.AWSValidationAdapter"
+            "orb.providers.aws.infrastructure.handlers.ec2_fleet.handler.AWSValidationAdapter"
         ) as mock_validation_cls:
             mock_validation_cls.return_value.get_valid_fleet_types_for_api.return_value = [
                 "instant",

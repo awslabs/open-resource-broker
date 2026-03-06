@@ -5,7 +5,7 @@ from unittest.mock import Mock
 import pytest
 
 pytestmark = pytest.mark.skip(
-    reason="infrastructure.registry.scheduler_registry module removed - using application services"
+    reason="orb.infrastructure.registry.scheduler_registry module removed - using application services"
 )
 
 from orb.domain.base.exceptions import ConfigurationError

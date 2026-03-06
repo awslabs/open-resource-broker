@@ -37,7 +37,7 @@ class TestAPIHandlersComprehensive:
 
         for handler_file in handler_files:
             try:
-                module = importlib.import_module(f"api.handlers.{handler_file}")
+                module = importlib.import_module(f"orb.api.handlers.{handler_file}")
                 handler_modules.append((handler_file, module))
             except ImportError:
                 continue
@@ -321,7 +321,7 @@ class TestAPIModelsComprehensive:
 
         for model_file in model_files:
             try:
-                module = importlib.import_module(f"api.models.{model_file}")
+                module = importlib.import_module(f"orb.api.models.{model_file}")
                 model_modules.append((model_file, module))
             except ImportError:
                 continue
@@ -452,7 +452,7 @@ class TestAPIRoutersComprehensive:
 
         for router_file in router_files:
             try:
-                module = importlib.import_module(f"api.routers.{router_file}")
+                module = importlib.import_module(f"orb.api.routers.{router_file}")
                 router_modules.append((router_file, module))
             except ImportError:
                 continue

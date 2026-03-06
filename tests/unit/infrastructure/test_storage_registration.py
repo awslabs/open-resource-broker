@@ -5,7 +5,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 pytestmark = pytest.mark.skip(
-    reason="infrastructure.registry.storage_registry module removed - using application services"
+    reason="orb.infrastructure.registry.storage_registry module removed - using application services"
 )
 
 try:

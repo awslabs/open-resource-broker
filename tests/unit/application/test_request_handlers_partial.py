@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, Mock
 import pytest
 
 pytestmark = pytest.mark.skip(
-    reason="application.services modules removed (provider_capability_service, provider_selection_service)"
+    reason="orb.application.services modules removed (provider_capability_service, provider_selection_service)"
 )
 
 from orb.application.commands.request_handlers import CreateMachineRequestHandler

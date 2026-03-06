@@ -5,7 +5,7 @@ from unittest.mock import Mock
 import pytest
 
 pytestmark = pytest.mark.skip(
-    reason="application.services.provider_selection_service module removed"
+    reason="orb.application.services.provider_selection_service module removed"
 )
 
 try:
