@@ -314,7 +314,7 @@ env = [
 ]
 
 [tool.coverage.run]
-source = ["src/orb"]
+source = ["orb"]
 branch = true
 
 [tool.coverage.report]
