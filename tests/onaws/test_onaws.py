@@ -11,6 +11,10 @@ from jsonschema import ValidationError, validate as validate_json_schema
 
 from hfmock import HostFactoryMock
 from tests.onaws import plugin_io_schemas, scenarios
+from tests.onaws.cleanup_helpers import (
+    cleanup_launch_templates_for_request,
+    wait_for_instances_terminated,
+)
 from tests.onaws.parse_output import parse_and_print_output
 from tests.onaws.template_processor import TemplateProcessor
 
@@ -824,7 +828,7 @@ def validate_all_instances_price_type(status_response, test_case):
 
 
 @pytest.fixture
-def setup_host_factory_mock(request, monkeypatch):
+def setup_host_factory_mock(request, monkeypatch, test_session_id):
     processor = TemplateProcessor()
     test_name = request.node.name
 
@@ -833,6 +837,7 @@ def setup_host_factory_mock(request, monkeypatch):
         if hasattr(request, "param") and isinstance(request.param, dict)
         else {}
     )
+    overrides["instanceTags"] = {**overrides.get("instanceTags", {}), "test-session": test_session_id}
 
     # Clear and regenerate
     test_config_dir = processor.run_templates_dir / test_name
@@ -885,6 +890,7 @@ def setup_host_factory_mock(request, monkeypatch):
             "Fixture teardown: %d request(s) still tracked — attempting cleanup",
             len(_tracked_request_ids),
         )
+        ec2_client, _ = _get_boto_clients()
         for req_id in _tracked_request_ids:
             try:
                 status = hfm.get_request_status(req_id)
@@ -901,8 +907,10 @@ def setup_host_factory_mock(request, monkeypatch):
                         req_id,
                     )
                     hfm.request_return_machines(machine_ids)
+                    wait_for_instances_terminated(machine_ids, ec2_client)
             except Exception as exc:
                 log.warning("Fixture teardown: cleanup failed for request %s: %s", req_id, exc)
+            cleanup_launch_templates_for_request(req_id, ec2_client)
 
     if not request.config.getoption("--keep-logs", default=False):
         processor.cleanup_test_templates(test_name)
@@ -911,7 +919,7 @@ def setup_host_factory_mock(request, monkeypatch):
 
 
 @pytest.fixture
-def setup_host_factory_mock_with_scenario(request, monkeypatch):
+def setup_host_factory_mock_with_scenario(request, monkeypatch, test_session_id):
     """Fixture that handles scenario-based overrides by extracting test name from test node."""
     # Generate templates for this test using the actual test name
     processor = TemplateProcessor()
@@ -928,6 +936,7 @@ def setup_host_factory_mock_with_scenario(request, monkeypatch):
     test_case = scenarios.get_test_case_by_name(scenario_name) if scenario_name else {}
 
     overrides = test_case.get("overrides", {}) if test_case else {}
+    overrides["instanceTags"] = {**overrides.get("instanceTags", {}), "test-session": test_session_id}
 
     # Clear and regenerate
     test_config_dir = processor.run_templates_dir / test_name
@@ -980,6 +989,7 @@ def setup_host_factory_mock_with_scenario(request, monkeypatch):
             "Fixture teardown: %d request(s) still tracked — attempting cleanup",
             len(_tracked_request_ids),
         )
+        ec2_client, _ = _get_boto_clients()
         for req_id in _tracked_request_ids:
             try:
                 status = hfm.get_request_status(req_id)
@@ -996,8 +1006,10 @@ def setup_host_factory_mock_with_scenario(request, monkeypatch):
                         req_id,
                     )
                     hfm.request_return_machines(machine_ids)
+                    wait_for_instances_terminated(machine_ids, ec2_client)
             except Exception as exc:
                 log.warning("Fixture teardown: cleanup failed for request %s: %s", req_id, exc)
+            cleanup_launch_templates_for_request(req_id, ec2_client)
 
     if not request.config.getoption("--keep-logs", default=False):
         processor.cleanup_test_templates(test_name)

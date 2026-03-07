@@ -642,6 +642,18 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                                 ec2_fleet_instance_ids.add(instance_id)
                                 group_ids_to_fetch.add(ec2_fleet_id)
 
+                                # For instant fleets the fleet record is deleted by AWS;
+                                # capture the request_id from instance tags so cleanup
+                                # can proceed even when describe_fleets returns empty.
+                                instance_tags = {
+                                    t.get("Key"): t.get("Value")
+                                    for t in instance.get("Tags", [])
+                                }
+                                if instance_tags.get("orb:fleet-type") == "instant":
+                                    orb_request_id = instance_tags.get("orb:request-id", "")
+                                    if orb_request_id and not groups[ec2_fleet_id].get("request_id"):
+                                        groups[ec2_fleet_id]["request_id"] = orb_request_id
+
                     non_ec2_fleet_instances = [
                         iid for iid in chunk if iid not in ec2_fleet_instance_ids
                     ]
@@ -703,7 +715,7 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
             Dictionary with ``status`` of ``"success"`` or ``"error"``.
         """
         try:
-            self._fleet_release_manager.release(resource_id, [], {})
+            self._fleet_release_manager.release(resource_id, [], {}, request_id=request_id)
             return {"status": "success", "message": f"EC2 Fleet {resource_id} cancelled"}
         except Exception as e:
             self._logger.error("Failed to cancel EC2 Fleet %s: %s", resource_id, e)
@@ -716,7 +728,8 @@ class EC2FleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
         self, fleet_id: str, fleet_instance_ids: list[str], fleet_details: dict
     ) -> None:
         """Release hosts for a single EC2 Fleet, delegating to EC2FleetReleaseManager."""
-        self._fleet_release_manager.release(fleet_id, fleet_instance_ids, fleet_details)
+        request_id = fleet_details.get("request_id", "") if isinstance(fleet_details, dict) else ""
+        self._fleet_release_manager.release(fleet_id, fleet_instance_ids, fleet_details, request_id)
 
     @classmethod
     def get_example_templates(cls) -> list[Template]:

@@ -157,9 +157,15 @@ def _make_moto_config_port() -> Any:
     """Build a minimal config port mock for handler construction."""
     from unittest.mock import MagicMock
 
+    from orb.config.schemas.cleanup_schema import CleanupConfig
+    from orb.config.schemas.provider_strategy_schema import ProviderDefaults
+
     config_port = MagicMock()
     config_port.get_resource_prefix.return_value = ""
-    config_port.get_cleanup_config.return_value = {"enabled": False}
+    provider_defaults = ProviderDefaults(cleanup=CleanupConfig(enabled=False))
+    provider_config = MagicMock()
+    provider_config.provider_defaults = {"aws": provider_defaults}
+    config_port.get_provider_config.return_value = provider_config
     return config_port
 
 
