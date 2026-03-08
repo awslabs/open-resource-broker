@@ -80,9 +80,7 @@ class TestHandleProviderHealth:
 
         container, query_bus = _mock_container_with_query_bus(query_return={"status": "ok"})
 
-        with patch(
-            "orb.interface.system_command_handlers.get_container", return_value=container
-        ):
+        with patch("orb.interface.system_command_handlers.get_container", return_value=container):
             result = await handle_provider_health(_ns())
 
         query_bus.execute.assert_awaited_once()
@@ -100,9 +98,7 @@ class TestHandleProviderConfig:
 
         container, query_bus = _mock_container_with_query_bus(query_return={"provider": "aws"})
 
-        with patch(
-            "orb.interface.system_command_handlers.get_container", return_value=container
-        ):
+        with patch("orb.interface.system_command_handlers.get_container", return_value=container):
             result = await handle_provider_config(_ns())
 
         query_bus.execute.assert_awaited_once()
@@ -120,9 +116,7 @@ class TestHandleProviderMetrics:
 
         container, query_bus = _mock_container_with_query_bus(query_return={"latency_ms": 42})
 
-        with patch(
-            "orb.interface.system_command_handlers.get_container", return_value=container
-        ):
+        with patch("orb.interface.system_command_handlers.get_container", return_value=container):
             result = await handle_provider_metrics(_ns(provider="aws"))
 
         query_bus.execute.assert_awaited_once()
@@ -138,9 +132,7 @@ class TestHandleProviderMetrics:
 
         container, query_bus = _mock_container_with_query_bus(query_return={})
 
-        with patch(
-            "orb.interface.system_command_handlers.get_container", return_value=container
-        ):
+        with patch("orb.interface.system_command_handlers.get_container", return_value=container):
             await handle_provider_metrics(_ns())
 
         q = query_bus.execute.call_args[0][0]
@@ -157,9 +149,7 @@ class TestHandleSystemStatus:
 
         container, query_bus = _mock_container_with_query_bus(query_return={"healthy": True})
 
-        with patch(
-            "orb.interface.system_command_handlers.get_container", return_value=container
-        ):
+        with patch("orb.interface.system_command_handlers.get_container", return_value=container):
             result = await handle_system_status(_ns(detailed=True))
 
         query_bus.execute.assert_awaited_once()
@@ -176,9 +166,7 @@ class TestHandleSystemStatus:
 
         container, query_bus = _mock_container_with_query_bus(query_return={})
 
-        with patch(
-            "orb.interface.system_command_handlers.get_container", return_value=container
-        ):
+        with patch("orb.interface.system_command_handlers.get_container", return_value=container):
             await handle_system_status(_ns())
 
         q = query_bus.execute.call_args[0][0]
@@ -217,9 +205,7 @@ class TestHandleListProviders:
         container = MagicMock()
         container.get.return_value = mock_config_port
 
-        with patch(
-            "orb.interface.system_command_handlers.get_container", return_value=container
-        ):
+        with patch("orb.interface.system_command_handlers.get_container", return_value=container):
             result = await handle_list_providers(_ns())
 
         assert result["count"] == 1
@@ -236,9 +222,7 @@ class TestHandleListProviders:
         container = MagicMock()
         container.get.return_value = mock_config_port
 
-        with patch(
-            "orb.interface.system_command_handlers.get_container", return_value=container
-        ):
+        with patch("orb.interface.system_command_handlers.get_container", return_value=container):
             result = await handle_list_providers(_ns())
 
         assert result["count"] == 0
@@ -251,9 +235,7 @@ class TestHandleListProviders:
         container = MagicMock()
         container.get.side_effect = RuntimeError("container exploded")
 
-        with patch(
-            "orb.interface.system_command_handlers.get_container", return_value=container
-        ):
+        with patch("orb.interface.system_command_handlers.get_container", return_value=container):
             result = await handle_list_providers(_ns())
 
         assert result["count"] == 0
@@ -306,9 +288,7 @@ class TestHandleSystemMetrics:
         container = MagicMock()
         container.get_optional.return_value = mock_metrics
 
-        with patch(
-            "orb.interface.system_command_handlers.get_container", return_value=container
-        ):
+        with patch("orb.interface.system_command_handlers.get_container", return_value=container):
             result = await handle_system_metrics(_ns())
 
         assert result["metrics"] == {"requests_total": 5}
@@ -320,9 +300,7 @@ class TestHandleSystemMetrics:
         container = MagicMock()
         container.get_optional.return_value = None
 
-        with patch(
-            "orb.interface.system_command_handlers.get_container", return_value=container
-        ):
+        with patch("orb.interface.system_command_handlers.get_container", return_value=container):
             result = await handle_system_metrics(_ns())
 
         assert result["metrics"] == {}
@@ -337,9 +315,7 @@ class TestHandleSystemMetrics:
         container = MagicMock()
         container.get_optional.return_value = mock_metrics
 
-        with patch(
-            "orb.interface.system_command_handlers.get_container", return_value=container
-        ):
+        with patch("orb.interface.system_command_handlers.get_container", return_value=container):
             result = await handle_system_metrics(_ns())
 
         assert result["metrics"] == {}
@@ -357,9 +333,7 @@ class TestHandleSelectProviderStrategy:
     async def test_returns_selected_provider_from_args(self):
         from orb.interface.system_command_handlers import handle_select_provider_strategy
 
-        with patch(
-            "orb.providers.registry.get_provider_registry"
-        ) as mock_registry_fn:
+        with patch("orb.providers.registry.get_provider_registry") as mock_registry_fn:
             mock_registry = MagicMock()
             mock_registry.get_registered_providers.return_value = ["aws"]
             mock_registry_fn.return_value = mock_registry
@@ -372,9 +346,7 @@ class TestHandleSelectProviderStrategy:
     async def test_falls_back_to_first_registered_provider_when_no_args(self):
         from orb.interface.system_command_handlers import handle_select_provider_strategy
 
-        with patch(
-            "orb.providers.registry.get_provider_registry"
-        ) as mock_registry_fn:
+        with patch("orb.providers.registry.get_provider_registry") as mock_registry_fn:
             mock_registry = MagicMock()
             mock_registry.get_registered_providers.return_value = ["aws"]
             mock_registry_fn.return_value = mock_registry
