@@ -1,10 +1,13 @@
 """onaws integration test configuration."""
 
 import json
+import logging
 import os
 import sys
+import uuid
 from pathlib import Path
 
+import boto3
 import pytest
 from boto3 import Session
 from botocore.exceptions import ClientError, NoCredentialsError
@@ -105,6 +108,12 @@ def pytest_sessionstart(session: pytest.Session) -> None:
         pytest.exit(f"AWS credential check failed: {e}", returncode=1)
 
 
+@pytest.fixture(scope="session")
+def test_session_id() -> str:
+    """Generate a unique ID for this test session for targeted AWS resource cleanup."""
+    return uuid.uuid4().hex[:12]
+
+
 @pytest.fixture(autouse=True)
 def reset_di_container():
     """Reset DI container between tests.
@@ -118,3 +127,26 @@ def reset_di_container():
     from orb.infrastructure.di.container import reset_container
 
     reset_container()
+
+
+@pytest.fixture(scope="session", autouse=True)
+def nuclear_cleanup(test_session_id: str):
+    """Session-scoped safety net: clean up resources from this test session after all tests.
+
+    Runs once after the entire test session completes. Uses the session tag for
+    targeted cleanup when available. Best-effort only — never raises so it
+    cannot interfere with test result reporting.
+    """
+    yield
+
+    try:
+        from tests.onaws.cleanup_helpers import cleanup_all_orb_resources
+
+        profile, region = _get_aws_profile_and_region()
+        region = region or "eu-west-1"
+        boto_session = boto3.Session(profile_name=profile, region_name=region)
+        ec2 = boto_session.client("ec2", region_name=region)
+        asg = boto_session.client("autoscaling", region_name=region)
+        cleanup_all_orb_resources(ec2, autoscaling_client=asg, session_id=test_session_id)
+    except Exception as exc:
+        logging.getLogger("onaws.conftest").warning("nuclear_cleanup: failed with %s", exc)

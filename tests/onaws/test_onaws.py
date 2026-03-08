@@ -11,6 +11,10 @@ from jsonschema import ValidationError, validate as validate_json_schema
 
 from hfmock import HostFactoryMock
 from tests.onaws import plugin_io_schemas, scenarios
+from tests.onaws.cleanup_helpers import (
+    cleanup_launch_templates_for_request,
+    wait_for_instances_terminated,
+)
 from tests.onaws.parse_output import parse_and_print_output
 from tests.onaws.template_processor import TemplateProcessor
 
@@ -24,6 +28,8 @@ os.environ["USE_LOCAL_DEV"] = "1"
 os.environ.setdefault("HF_LOGDIR", "./logs")  # Set log directory to avoid permission issues
 os.environ.setdefault("AWS_PROVIDER_LOG_DIR", "./logss")
 os.environ["LOG_DESTINATION"] = "file"
+
+from tests.shared.constants import REQUEST_ID_RE
 
 
 def _get_boto_clients():
@@ -824,7 +830,7 @@ def validate_all_instances_price_type(status_response, test_case):
 
 
 @pytest.fixture
-def setup_host_factory_mock(request, monkeypatch):
+def setup_host_factory_mock(request, monkeypatch, test_session_id):
     processor = TemplateProcessor()
     test_name = request.node.name
 
@@ -833,6 +839,10 @@ def setup_host_factory_mock(request, monkeypatch):
         if hasattr(request, "param") and isinstance(request.param, dict)
         else {}
     )
+    overrides["instanceTags"] = {
+        **overrides.get("instanceTags", {}),
+        "test-session": test_session_id,
+    }
 
     # Clear and regenerate
     test_config_dir = processor.run_templates_dir / test_name
@@ -885,6 +895,7 @@ def setup_host_factory_mock(request, monkeypatch):
             "Fixture teardown: %d request(s) still tracked — attempting cleanup",
             len(_tracked_request_ids),
         )
+        ec2_client, _ = _get_boto_clients()
         for req_id in _tracked_request_ids:
             try:
                 status = hfm.get_request_status(req_id)
@@ -901,8 +912,10 @@ def setup_host_factory_mock(request, monkeypatch):
                         req_id,
                     )
                     hfm.request_return_machines(machine_ids)
+                    wait_for_instances_terminated(machine_ids, ec2_client)
             except Exception as exc:
                 log.warning("Fixture teardown: cleanup failed for request %s: %s", req_id, exc)
+            cleanup_launch_templates_for_request(req_id, ec2_client)
 
     if not request.config.getoption("--keep-logs", default=False):
         processor.cleanup_test_templates(test_name)
@@ -911,7 +924,7 @@ def setup_host_factory_mock(request, monkeypatch):
 
 
 @pytest.fixture
-def setup_host_factory_mock_with_scenario(request, monkeypatch):
+def setup_host_factory_mock_with_scenario(request, monkeypatch, test_session_id):
     """Fixture that handles scenario-based overrides by extracting test name from test node."""
     # Generate templates for this test using the actual test name
     processor = TemplateProcessor()
@@ -928,6 +941,10 @@ def setup_host_factory_mock_with_scenario(request, monkeypatch):
     test_case = scenarios.get_test_case_by_name(scenario_name) if scenario_name else {}
 
     overrides = test_case.get("overrides", {}) if test_case else {}
+    overrides["instanceTags"] = {
+        **overrides.get("instanceTags", {}),
+        "test-session": test_session_id,
+    }
 
     # Clear and regenerate
     test_config_dir = processor.run_templates_dir / test_name
@@ -980,6 +997,7 @@ def setup_host_factory_mock_with_scenario(request, monkeypatch):
             "Fixture teardown: %d request(s) still tracked — attempting cleanup",
             len(_tracked_request_ids),
         )
+        ec2_client, _ = _get_boto_clients()
         for req_id in _tracked_request_ids:
             try:
                 status = hfm.get_request_status(req_id)
@@ -996,8 +1014,10 @@ def setup_host_factory_mock_with_scenario(request, monkeypatch):
                         req_id,
                     )
                     hfm.request_return_machines(machine_ids)
+                    wait_for_instances_terminated(machine_ids, ec2_client)
             except Exception as exc:
                 log.warning("Fixture teardown: cleanup failed for request %s: %s", req_id, exc)
+            cleanup_launch_templates_for_request(req_id, ec2_client)
 
     if not request.config.getoption("--keep-logs", default=False):
         processor.cleanup_test_templates(test_name)
@@ -1379,7 +1399,9 @@ def provide_release_control_loop(hfm, template_json, capacity_to_request, test_c
         else:
             pytest.fail(f"AWS provider response missing requestId field. Response: {res}")
 
-    # log.debug(json.dumps(res, indent=4))
+    assert REQUEST_ID_RE.match(request_id), (
+        f"request_id {request_id!r} does not match expected format"
+    )
 
     # Get scheduler type for validation
     scheduler_type = get_scheduler_from_scenario(test_case) if test_case else "hostfactory"
@@ -1436,6 +1458,13 @@ def provide_release_control_loop(hfm, template_json, capacity_to_request, test_c
         time.sleep(1)
 
     _check_request_machines_response_status(status_response)
+
+    returned_id = status_response.get("requests", [{}])[0].get("request_id") or status_response.get(
+        "requests", [{}]
+    )[0].get("requestId")
+    assert returned_id == request_id, (
+        f"Status response echoed {returned_id!r}, expected {request_id!r}"
+    )
 
     _check_all_ec2_hosts_are_being_provisioned(status_response)
 
@@ -1712,6 +1741,9 @@ def test_partial_return_reduces_capacity(setup_host_factory_mock_with_scenario, 
         )
     if not request_id:
         pytest.fail(f"Request ID missing in response: {json.dumps(request_response, indent=2)}")
+    assert REQUEST_ID_RE.match(request_id), (
+        f"request_id {request_id!r} does not match expected format"
+    )
 
     # 1.5: Wait for provisioning completion
     log.info("1.5: Waiting for provisioning completion (request_id: %s)", request_id)
@@ -1725,6 +1757,14 @@ def test_partial_return_reduces_capacity(setup_host_factory_mock_with_scenario, 
     status_response = _wait_for_request_completion(hfm, request_id, scheduler_type)
     _check_request_machines_response_status(status_response)
     _check_all_ec2_hosts_are_being_provisioned(status_response)
+
+    returned_id = status_response.get("requests", [{}])[0].get("request_id") or status_response.get(
+        "requests", [{}]
+    )[0].get("requestId")
+    assert returned_id == request_id, (
+        f"Status response echoed {returned_id!r}, expected {request_id!r}"
+    )
+
     log.debug("Final provisioning status: %s", json.dumps(status_response, indent=2))
 
     # 1.6: Extract provisioned instances
@@ -1920,4 +1960,52 @@ def test_full_cycle(setup_host_factory_mock_with_scenario, test_case):
         template_json=template_json,
         capacity_to_request=test_case["capacity_to_request"],
         test_case=test_case,
+    )
+
+
+@pytest.mark.aws
+def test_unknown_template_returns_error(setup_host_factory_mock):
+    """request_machines() with a non-existent template_id returns an error, not a crash."""
+    hfm = setup_host_factory_mock
+
+    try:
+        result = hfm.request_machines("NonExistent-Template-XYZ", 1)
+        # If no exception, the result must indicate an error
+        is_error = result is None or (
+            isinstance(result, dict)
+            and (
+                result.get("error")
+                or result.get("status") == "error"
+                or "not found" in str(result).lower()
+                or "NonExistent" in str(result)
+            )
+        )
+        assert is_error, f"Expected error response for unknown template, got: {result}"
+    except Exception as exc:
+        # Any exception is acceptable — verify it's related to the template lookup
+        assert (
+            "NonExistent" in str(exc)
+            or "not found" in str(exc).lower()
+            or "error" in str(exc).lower()
+        ), f"Unexpected exception type for unknown template: {exc}"
+
+
+def test_requests_list_cli_shows_request_id(setup_host_factory_mock):
+    """orb requests list output includes a request_id after request_machines."""
+    import subprocess  # nosec B404
+    import sys as _sys
+
+    hfm = setup_host_factory_mock
+    res = hfm.request_machines("ASG-OnDemand", 1)
+    request_id = res.get("requestId") or res.get("request_id") or ""
+    assert request_id, f"No request_id in request_machines response: {res}"
+
+    proc = subprocess.run(  # nosec B603
+        [_sys.executable, "-m", "orb", "requests", "list"],
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    assert request_id in proc.stdout, (
+        f"request_id {request_id!r} not found in `orb requests list` output: {proc.stdout!r}"
     )

@@ -13,6 +13,7 @@ from jsonschema import ValidationError, validate as validate_json_schema
 
 from hfmock import HostFactoryMock
 from tests.onaws import plugin_io_schemas
+from tests.onaws.cleanup_helpers import cleanup_tracked_requests
 from tests.onaws.parse_output import parse_and_print_output
 from tests.onaws.template_processor import TemplateProcessor
 from tests.onaws.test_onaws import get_instances_states
@@ -30,7 +31,7 @@ os.environ["HF_LOGDIR"] = "./logs"
 os.environ["AWS_PROVIDER_LOG_DIR"] = "./logs"
 os.environ["LOG_DESTINATION"] = "file"
 
-_boto_session = boto3.session.Session()
+_boto_session = boto3.Session()
 _ec2_region = (
     os.environ.get("AWS_REGION")
     or os.environ.get("AWS_DEFAULT_REGION")
@@ -131,7 +132,7 @@ def check_all_instances_terminating_or_terminated(instance_ids: List[str]) -> bo
 
 
 @pytest.fixture
-def setup_multi_spot_fleet_templates():
+def setup_multi_spot_fleet_templates(test_session_id):
     """Setup fixture that creates two different Spot Fleet templates for testing."""
     processor = TemplateProcessor()
     test_name = f"test_multi_spot_fleet_termination_{uuid.uuid4().hex[:8]}"
@@ -159,6 +160,7 @@ def setup_multi_spot_fleet_templates():
                 "fleetType": "request",
                 "allocationStrategy": "lowestPrice",
                 "priceType": "ondemand",
+                "instanceTags": {"test-session": test_session_id},
             },
         },
         {
@@ -169,6 +171,7 @@ def setup_multi_spot_fleet_templates():
                 "fleetType": "request",
                 "allocationStrategy": "lowestPrice",
                 "priceType": "ondemand",
+                "instanceTags": {"test-session": test_session_id},
             },
         },
     ]
@@ -187,7 +190,24 @@ def setup_multi_spot_fleet_templates():
 
     hfm = HostFactoryMock()
 
+    _tracked_request_ids: list[str] = []
+    _original_request_machines = hfm.request_machines
+
+    def _tracking_request_machines(template_name: str, machine_count: int):
+        result = _original_request_machines(template_name, machine_count)
+        request_id = result.get("requestId") or result.get("request_id")
+        if request_id:
+            _tracked_request_ids.append(request_id)
+        return result
+
+    hfm.request_machines = _tracking_request_machines  # type: ignore[method-assign]
+
     yield hfm, template_configs
+
+    try:
+        cleanup_tracked_requests(_tracked_request_ids, hfm, ec2_client)
+    except Exception as exc:
+        log.warning("Fixture teardown: cleanup_tracked_requests failed: %s", exc)
 
     processor.cleanup_test_templates(test_name)
     log.removeHandler(file_handler)

@@ -123,7 +123,8 @@ class EC2FleetConfigBuilder(BaseConfigBuilder):
         )
         tag_specs = [{"ResourceType": "fleet", "Tags": fleet_tags}]
         if template.fleet_type == AWSFleetType.INSTANT:
-            tag_specs.append({"ResourceType": "instance", "Tags": fleet_tags})
+            instance_tags = fleet_tags + [{"Key": "orb:fleet-type", "Value": "instant"}]
+            tag_specs.append({"ResourceType": "instance", "Tags": instance_tags})
         fleet_config["TagSpecifications"] = tag_specs
 
         if template.fleet_type == AWSFleetType.MAINTAIN:
