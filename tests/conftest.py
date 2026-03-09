@@ -2,11 +2,6 @@
 
 import pytest
 
-# Files with broken imports that cannot be collected — exclude from default run.
-collect_ignore = [
-    "integration/test_machine_status_cqrs_migration.py",
-]
-
 
 def pytest_addoption(parser):
     parser.addoption(
