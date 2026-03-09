@@ -143,7 +143,6 @@ class StartupValidator:
             return False
 
         try:
-            # Get AWS config from first provider
             providers = self.app_config.provider.providers
             if not providers:
                 return True  # No AWS providers configured
@@ -152,20 +151,18 @@ class StartupValidator:
             if not aws_provider:
                 return True  # No AWS providers
 
-            # Try to get AWS credentials
+            from orb.providers.registry import get_provider_registry
+
+            registry = get_provider_registry()
+            registry.ensure_provider_type_registered("aws")
+            strategy = registry.get_or_create_strategy("aws")
+            if strategy is None:
+                return True  # Cannot determine — don't block startup
+
             profile = aws_provider.config.get("profile", "default")
             region = aws_provider.config.get("region", "us-east-1")
-
-            from botocore.config import Config
-
-            from orb.providers.aws.session_factory import AWSSessionFactory
-
-            session = AWSSessionFactory.create_session(profile, region)
-            session.client(
-                "sts",
-                config=Config(connect_timeout=10, read_timeout=30, retries={"max_attempts": 3}),
-            ).get_caller_identity()
-            return True
+            result = strategy.test_credentials(profile, region=region)
+            return result.get("success", False)
 
         except (NoCredentialsError, ClientError):
             return False

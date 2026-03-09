@@ -89,10 +89,20 @@ class AWSProviderStrategy(ProviderStrategy):
         self._handler_registry: Optional[AWSHandlerRegistry] = None
         self._capability_service: Optional[AWSCapabilityService] = None
 
+    _API_ALIASES: dict[str, str] = {
+        "AutoScalingGroup": "ASG",
+        "autoscalinggroup": "ASG",
+        "asg": "ASG",
+    }
+
     @property
     def provider_type(self) -> str:
         """Get the provider type identifier."""
         return "aws"
+
+    def resolve_api_alias(self, raw_api: str) -> str:
+        """Resolve AWS-specific API name aliases to canonical registry keys."""
+        return self._API_ALIASES.get(raw_api, raw_api)
 
     @property
     def provider_name(self) -> Optional[str]:

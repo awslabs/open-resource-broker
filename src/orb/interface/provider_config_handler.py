@@ -331,21 +331,27 @@ async def handle_provider_show(args) -> int:
 def _test_provider_credentials(
     provider_type: str, profile: Optional[str], **kwargs
 ) -> tuple[bool, str]:
-    """Test provider credentials."""
-    if provider_type == "aws":
-        try:
-            from orb.providers.aws.session_factory import AWSSessionFactory
+    """Test provider credentials via the provider strategy."""
+    try:
+        from orb.providers.registry import get_provider_registry
 
-            region = kwargs.get("region")
-            result = AWSSessionFactory.discover_credentials(profile, region)
-            if result.get("success", False):
-                return True, ""
-            else:
-                return False, result.get("error", "Unknown error")
-        except Exception as e:
-            return False, str(e)
-    else:
-        return False, "Provider type not supported"
+        registry = get_provider_registry()
+
+        if not registry.ensure_provider_type_registered(provider_type):
+            return False, f"Provider type not supported: {provider_type}"
+
+        provider_config = {"profile": profile, **kwargs}
+        strategy = registry.get_or_create_strategy(provider_type, provider_config)
+
+        if strategy is None:
+            return False, f"Failed to create strategy for provider type: {provider_type}"
+
+        result = strategy.test_credentials(credential_source=profile, **kwargs)
+        if result.get("success", False):
+            return True, ""
+        return False, result.get("error", "Unknown error")
+    except Exception as e:
+        return False, str(e)
 
 
 def _discover_infrastructure(provider_type: str, region: str, profile: str) -> Dict[str, Any]:

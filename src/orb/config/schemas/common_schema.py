@@ -129,15 +129,6 @@ class NamingConfig(BaseModel):
         },
         description="Table names for SQL databases",
     )
-    handler_types: dict[str, str] = Field(
-        default_factory=lambda: {
-            "ec2_fleet": "EC2Fleet",
-            "spot_fleet": "SpotFleet",
-            "asg": "ASG",
-            "run_instances": "RunInstances",
-        },
-        description="Handler types for different AWS resources",
-    )
     fleet_types: dict[str, str] = Field(
         default_factory=lambda: {
             "instant": "instant",

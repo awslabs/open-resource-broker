@@ -463,7 +463,7 @@ def register_aws_services_with_di(container) -> None:
         from orb.domain.base.ports.template_example_generator_port import (
             TemplateExampleGeneratorPort,
         )
-        from orb.infrastructure.adapters.template_example_generator_adapter import (
+        from orb.providers.aws.adapters.template_example_generator_adapter import (
             AWSTemplateExampleGeneratorAdapter,
         )
         from orb.providers.aws.infrastructure.aws_handler_factory import AWSHandlerFactory

@@ -323,6 +323,20 @@ class ProviderStrategy(ABC):
         """
         return []
 
+    def resolve_api_alias(self, raw_api: str) -> str:
+        """Resolve a provider API name to its canonical form.
+
+        Default implementation is a passthrough — subclasses override to map
+        legacy or alternate names to the canonical registry key.
+
+        Args:
+            raw_api: Raw API name from template or request data.
+
+        Returns:
+            Canonical API name for this provider.
+        """
+        return raw_api
+
     @abstractmethod
     def cleanup(self) -> None:
         """
