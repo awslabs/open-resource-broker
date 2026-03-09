@@ -47,7 +47,9 @@ class TestTemplatesRouter:
         command_bus.execute = AsyncMock(return_value=None)
         client = self._make_client(templates_app, mock_command_bus=command_bus)
 
-        resp = client.post("/templates/", json={"template_id": "tpl-new", "instance_type": "t3.micro"})
+        resp = client.post(
+            "/templates/", json={"template_id": "tpl-new", "instance_type": "t3.micro"}
+        )
 
         assert resp.status_code == 201
         body = resp.json()

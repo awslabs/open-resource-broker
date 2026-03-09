@@ -211,7 +211,9 @@ class TestHandleMcpValidate:
 
         args = _make_args()
 
-        with patch("orb.interface.mcp_command_handlers.OpenResourceBrokerMCPTools", return_value=mock_tools):
+        with patch(
+            "orb.interface.mcp_command_handlers.OpenResourceBrokerMCPTools", return_value=mock_tools
+        ):
             result = await handle_mcp_validate(args)
 
         assert result["valid"] is True
@@ -230,7 +232,9 @@ class TestHandleMcpValidate:
 
         args = _make_args()
 
-        with patch("orb.interface.mcp_command_handlers.OpenResourceBrokerMCPTools", return_value=mock_tools):
+        with patch(
+            "orb.interface.mcp_command_handlers.OpenResourceBrokerMCPTools", return_value=mock_tools
+        ):
             result = await handle_mcp_validate(args)
 
         assert result["valid"] is False
@@ -253,7 +257,9 @@ class TestHandleMcpValidate:
 
         args = _make_args(config=str(config_file))
 
-        with patch("orb.interface.mcp_command_handlers.OpenResourceBrokerMCPTools", return_value=mock_tools):
+        with patch(
+            "orb.interface.mcp_command_handlers.OpenResourceBrokerMCPTools", return_value=mock_tools
+        ):
             result = await handle_mcp_validate(args)
 
         config_check = next(
@@ -276,12 +282,17 @@ class TestHandleMcpValidate:
 
         args = _make_args(config="/nonexistent/path/config.json")
 
-        with patch("orb.interface.mcp_command_handlers.OpenResourceBrokerMCPTools", return_value=mock_tools):
+        with patch(
+            "orb.interface.mcp_command_handlers.OpenResourceBrokerMCPTools", return_value=mock_tools
+        ):
             result = await handle_mcp_validate(args)
 
         assert result["valid"] is False
         fail_check = next(c for c in result["checks"] if c["status"] == "FAIL")
-        assert "not found" in fail_check["details"].lower() or "File not found" in fail_check["details"]
+        assert (
+            "not found" in fail_check["details"].lower()
+            or "File not found" in fail_check["details"]
+        )
 
     @pytest.mark.asyncio
     async def test_validate_table_format_returns_table_key(self):
@@ -296,7 +307,9 @@ class TestHandleMcpValidate:
 
         args = _make_args(format="table")
 
-        with patch("orb.interface.mcp_command_handlers.OpenResourceBrokerMCPTools", return_value=mock_tools):
+        with patch(
+            "orb.interface.mcp_command_handlers.OpenResourceBrokerMCPTools", return_value=mock_tools
+        ):
             result = await handle_mcp_validate(args)
 
         assert "validation_table" in result

@@ -35,13 +35,13 @@ def _collect_sse_lines(response) -> list[dict]:
     for raw in response.iter_lines():
         line = raw if isinstance(raw, str) else raw.decode()
         if line.startswith("data: "):
-            payload = line[len("data: "):]
+            payload = line[len("data: ") :]
             try:
                 obj = json.loads(payload)
                 if obj:
                     parsed.append(obj)
             except json.JSONDecodeError:
-                pass
+                pass  # Malformed SSE lines are intentionally skipped
     return parsed
 
 
@@ -72,7 +72,7 @@ class TestStreamEndpoint:
         ]
         assert len(data_lines) >= 1
         for line in data_lines:
-            payload = line[len("data: "):]
+            payload = line[len("data: ") :]
             # Must be valid JSON
             json.loads(payload)
 
@@ -120,9 +120,7 @@ class TestStreamEndpoint:
         )
         client = self._make_client(requests_app, handler)
 
-        with client.stream(
-            "GET", "/requests/req-stream-1/stream?interval=0.5&timeout=1"
-        ) as resp:
+        with client.stream("GET", "/requests/req-stream-1/stream?interval=0.5&timeout=1") as resp:
             assert resp.status_code == 200
             events = _collect_sse_lines(resp)
 
@@ -139,10 +137,7 @@ class TestStreamEndpoint:
 
         with client.stream("GET", "/requests/req-stream-1/stream?interval=0.5&timeout=30") as resp:
             assert resp.status_code == 200
-            raw_lines = [
-                l if isinstance(l, str) else l.decode()
-                for l in resp.iter_lines()
-            ]
+            raw_lines = [l if isinstance(l, str) else l.decode() for l in resp.iter_lines()]
 
         data_lines = [l for l in raw_lines if l.startswith("data: ")]
         # The error path yields exactly one sentinel "data: {}\n\n" then returns

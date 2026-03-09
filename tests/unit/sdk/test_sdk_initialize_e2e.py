@@ -48,7 +48,7 @@ def _patched_init(methods: dict | None = None):
 
 
 # ---------------------------------------------------------------------------
-# Task 1480-1: initialize() with real method discovery
+# initialize() with real method discovery
 # ---------------------------------------------------------------------------
 
 
@@ -108,7 +108,7 @@ class TestInitializeWithRealDiscovery:
 
 
 # ---------------------------------------------------------------------------
-# Task 1480-2: SDKConfig.from_env via env var injection
+# SDKConfig.from_env via env var injection
 # ---------------------------------------------------------------------------
 
 
@@ -153,7 +153,7 @@ class TestSDKConfigFromEnv:
 
 
 # ---------------------------------------------------------------------------
-# Task 1480-3: get_method_parameters against a discovered method
+# get_method_parameters against a discovered method
 # ---------------------------------------------------------------------------
 
 
@@ -181,7 +181,10 @@ class TestGetMethodParameters:
             patch("orb.sdk.client.Application", return_value=mock_app),
             patch("orb.sdk.client.SDKMethodDiscovery", return_value=mock_disc),
             patch("orb.sdk.client.create_container", return_value=MagicMock()),
-            patch("orb.sdk.parameter_mapping.ParameterMapper.get_supported_parameters", return_value={"active_only": "active_only"}),
+            patch(
+                "orb.sdk.parameter_mapping.ParameterMapper.get_supported_parameters",
+                return_value={"active_only": "active_only"},
+            ),
         ):
             await sdk.initialize()
             params = sdk.get_method_parameters("list_templates")
@@ -204,7 +207,7 @@ class TestGetMethodParameters:
 
 
 # ---------------------------------------------------------------------------
-# Task 1480-4: SDKError wrapping — initialize() with bus that raises
+# SDKError wrapping — initialize() with bus that raises
 # ---------------------------------------------------------------------------
 
 
@@ -263,7 +266,7 @@ class TestSDKErrorWrapping:
 
 
 # ---------------------------------------------------------------------------
-# Task 1480-5: get_stats returns counts matching discovered methods
+# get_stats returns counts matching discovered methods
 # ---------------------------------------------------------------------------
 
 
@@ -327,7 +330,7 @@ class TestGetStats:
 
 
 # ---------------------------------------------------------------------------
-# Task 1480-6: cleanup() removes dynamically-added attributes
+# cleanup() removes dynamically-added attributes
 # ---------------------------------------------------------------------------
 
 

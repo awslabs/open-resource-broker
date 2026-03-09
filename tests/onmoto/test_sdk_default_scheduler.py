@@ -8,11 +8,14 @@ No real AWS or network calls — all AWS interactions go through moto.
 """
 
 import json
+import logging
 import re
 import shutil
 import sys
 from pathlib import Path
 from unittest.mock import MagicMock, patch
+
+logger = logging.getLogger(__name__)
 
 import boto3
 import pytest
@@ -157,7 +160,8 @@ def orb_config_dir_default(tmp_path, moto_vpc_resources):
         from tests.onaws.template_processor import TemplateProcessor
 
         templates_data = TemplateProcessor.generate_templates_programmatically("default")
-    except Exception:
+    except Exception as exc:
+        logger.warning("TemplateProcessor failed, using fallback templates: %s", exc)
         # Fallback: build a minimal snake_case template set
         templates_data = {
             "scheduler_type": "default",
@@ -330,7 +334,8 @@ def _inject_moto_factory(aws_client, logger) -> None:
             )
             lt_id = resp["LaunchTemplate"]["LaunchTemplateId"]
             version = str(resp["LaunchTemplate"]["LatestVersionNumber"])
-        except Exception:
+        except Exception as exc:
+            logger.warning("Launch template creation failed, using mock: %s", exc)
             lt_id = "lt-mock"
             version = "1"
         return LaunchTemplateResult(
