@@ -79,6 +79,7 @@ def get_event_bus():
 
     try:
         from orb.infrastructure.di.container import get_container
+        from orb.infrastructure.logging.logger import get_logger
 
         container = get_container()
 
@@ -88,12 +89,13 @@ def get_event_bus():
             return event_bus
 
         # Create EventBus if not in container
-        from orb.infrastructure.logging.logger import get_logger
-
         logger = get_logger(__name__)
         return create_event_bus(logger)  # type: ignore[misc]
-    except Exception:
+    except Exception as e:
         # Final fallback to legacy system
+        from orb.infrastructure.logging.logger import get_logger
+
+        get_logger(__name__).warning("EventBus unavailable, falling back to legacy publisher: %s", e)
         return get_event_publisher()
 
 

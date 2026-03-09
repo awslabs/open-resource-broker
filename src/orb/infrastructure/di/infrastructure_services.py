@@ -75,7 +75,8 @@ def _register_template_services(container: DIContainer):
 
             register_aws_template_factory(factory, c.get(LoggingPort))
         except ImportError:
-            pass
+            logger = c.get(LoggingPort)
+            logger.debug("AWS provider module not available; AWS-specific templates will not be registered.")
         return factory
 
     from orb.domain.template.factory import TemplateFactory
@@ -111,7 +112,7 @@ def _register_template_services(container: DIContainer):
     _register_ami_resolver_if_enabled(container)
 
 
-def _register_ami_resolver_if_enabled(container: DIContainer) -> None:
+def _register_ami_resolver_if_enabled(_container: DIContainer) -> None:
     """Register AMI resolver when implemented.
 
     TODO: CachingAMIResolver is not yet implemented. When ready, check
