@@ -2,8 +2,9 @@
 
 import inspect
 
-import orb.config.managers.type_converter as type_converter_module
 import pytest
+
+import orb.config.managers.type_converter as type_converter_module
 
 
 @pytest.mark.unit

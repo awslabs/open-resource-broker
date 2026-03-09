@@ -1,7 +1,8 @@
 """Unit tests for RequestCreationService."""
 
-import pytest
 from unittest.mock import MagicMock, patch
+
+import pytest
 
 from orb.application.services.request_creation_service import RequestCreationService
 from orb.domain.request.request_types import RequestType

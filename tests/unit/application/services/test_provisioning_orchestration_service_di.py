@@ -1,8 +1,7 @@
 """Tests for ProvisioningOrchestrationService DI wiring and constructor contract."""
 
-import inspect
 import ast
-import textwrap
+import inspect
 from unittest.mock import MagicMock
 
 import pytest
@@ -11,7 +10,6 @@ from orb.application.services.provisioning_orchestration_service import (
     ProvisioningOrchestrationService,
 )
 from orb.infrastructure.resilience.strategy.circuit_breaker import CircuitBreakerStrategy
-
 
 # ---------------------------------------------------------------------------
 # Task 1716 — circuit_breaker_factory is a required constructor parameter
@@ -102,10 +100,6 @@ class TestDIWiringCircuitBreakerFactory:
         Call the factory function directly with a mock container and verify the
         returned service stores CircuitBreakerStrategy as its factory callable.
         """
-        from orb.infrastructure.di.infrastructure_services import (
-            _register_provisioning_orchestration_service,
-        )
-        from orb.infrastructure.di.container import DIContainer
         from orb.domain.base.ports import (
             ConfigurationPort,
             ContainerPort,
@@ -113,6 +107,10 @@ class TestDIWiringCircuitBreakerFactory:
             ProviderConfigPort,
         )
         from orb.domain.base.ports.provider_selection_port import ProviderSelectionPort
+        from orb.infrastructure.di.container import DIContainer
+        from orb.infrastructure.di.infrastructure_services import (
+            _register_provisioning_orchestration_service,
+        )
 
         container = DIContainer()
 

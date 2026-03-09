@@ -3,10 +3,7 @@
 from pathlib import Path
 from unittest.mock import MagicMock
 
-import pytest
-
 from orb.infrastructure.adapters.provider_registry_adapter import ProviderRegistryAdapter
-
 
 SOURCE_PATH = (
     Path(__file__).parents[3] / "src/orb/infrastructure/adapters/provider_registry_adapter.py"

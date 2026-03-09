@@ -48,12 +48,9 @@ class TestInfrastructureCommandHandlerNoAWSLeaks:
 
     def test_fallback_dict_has_no_region_key(self):
         """When no config file exists the fallback dict must not include 'region'."""
-        import json
-        from unittest.mock import patch
+        from unittest.mock import MagicMock, patch
 
         from orb.interface.infrastructure_command_handler import _get_active_providers
-
-        from unittest.mock import MagicMock
 
         mock_registry = MagicMock()
         mock_registry.get_registered_providers.return_value = ["mock"]
@@ -176,7 +173,7 @@ class TestValidateAWSRegionRemovedFromGenericLayer:
         )
 
     def test_validate_aws_region_not_exported_from_validation_package(self):
-        import orb.infrastructure.validation as pkg
+        from orb.infrastructure import validation as pkg
 
         assert not hasattr(pkg, "validate_aws_region"), (
             "orb.infrastructure.validation must not export validate_aws_region"
@@ -190,7 +187,7 @@ class TestValidateAWSRegionRemovedFromGenericLayer:
         )
 
     def test_validate_aws_region_not_in_init_all(self):
-        import orb.infrastructure.validation as pkg
+        from orb.infrastructure import validation as pkg
 
         all_exports = getattr(pkg, "__all__", [])
         assert "validate_aws_region" not in all_exports, (

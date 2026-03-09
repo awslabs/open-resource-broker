@@ -812,8 +812,12 @@ class ProviderRegistry(BaseRegistry):
                 caps = strategy.get_capabilities()
                 if caps.supported_apis:
                     return api in caps.supported_apis
-            except Exception:
-                pass
+            except Exception as exc:
+                self._logger.warning(
+                    "Failed to check capabilities for API '%s': %s",
+                    api,
+                    exc,
+                )
 
         return True
 

@@ -3,15 +3,12 @@
 import ast
 import os
 
-import pytest
-
 from orb.infrastructure.template.dtos import TemplateDTO
 from orb.providers.aws.domain.template.aws_template_aggregate import (
     ABISInstanceRequirements,
     AWSFleetType,
     AWSTemplate,
 )
-
 
 # ---------------------------------------------------------------------------
 # AST scan — no top-level AWS fields on TemplateDTO

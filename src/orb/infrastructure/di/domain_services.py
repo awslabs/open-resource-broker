@@ -9,13 +9,13 @@ from orb.domain.base.ports.configuration_port import ConfigurationPort
 from orb.domain.base.ports.container_port import ContainerPort
 from orb.domain.base.ports.logging_port import LoggingPort
 from orb.domain.base.ports.provider_selection_port import ProviderSelectionPort
+from orb.domain.constants import PROVIDER_TYPE_AWS
 from orb.domain.services.filter_service import FilterService
 from orb.domain.services.generic_filter_service import GenericFilterService
 from orb.domain.services.template_validation_domain_service import TemplateValidationDomainService
 from orb.domain.services.timestamp_service import TimestampService
 from orb.infrastructure.di.container import DIContainer
 from orb.infrastructure.services.iso_timestamp_service import ISOTimestampService
-from orb.domain.constants import PROVIDER_TYPE_AWS
 from orb.infrastructure.services.machine_filter_service import MachineFilterService
 
 

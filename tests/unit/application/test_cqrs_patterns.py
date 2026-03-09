@@ -457,7 +457,6 @@ class TestCommandHandlerImplementation:
 
         mock_query_bus = AsyncMock()
         mock_provider_selection = Mock()
-        mock_provider_capability = Mock()
         mock_provider_port = Mock()
         mock_provider_port.available_strategies = ["test-strategy"]
 
@@ -498,6 +497,7 @@ class TestCommandHandlerImplementation:
             mock_provider_validation_result
         )
 
+        mock_provider_capability = Mock()
         mock_validation_result = Mock()
         mock_validation_result.is_valid = True
         mock_validation_result.supported_features = []
@@ -612,7 +612,6 @@ class TestCommandHandlerImplementation:
 
         mock_query_bus = AsyncMock()
         mock_provider_selection = Mock()
-        mock_provider_capability = Mock()
         mock_provider_port = Mock()
         mock_provider_port.available_strategies = ["test-strategy"]
 
