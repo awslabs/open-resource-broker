@@ -6,6 +6,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
+import orb.infrastructure.di.infrastructure_services as _infra_svc_mod
 from orb.application.services.provisioning_orchestration_service import (
     ProvisioningOrchestrationService,
 )
@@ -64,8 +65,6 @@ class TestDIWiringCircuitBreakerFactory:
         This avoids spinning up the full DI container while still asserting the
         actual wiring code rather than a mock.
         """
-        import orb.infrastructure.di.infrastructure_services as _infra_svc_mod
-
         src = inspect.getsource(_infra_svc_mod)
 
         tree = ast.parse(src)
@@ -108,9 +107,6 @@ class TestDIWiringCircuitBreakerFactory:
         )
         from orb.domain.base.ports.provider_selection_port import ProviderSelectionPort
         from orb.infrastructure.di.container import DIContainer
-        from orb.infrastructure.di.infrastructure_services import (
-            _register_provisioning_orchestration_service,
-        )
 
         container = DIContainer()
 
@@ -121,7 +117,7 @@ class TestDIWiringCircuitBreakerFactory:
         container.register_instance(ProviderConfigPort, MagicMock(spec=ProviderConfigPort))
         container.register_instance(ConfigurationPort, MagicMock(spec=ConfigurationPort))
 
-        _register_provisioning_orchestration_service(container)
+        _infra_svc_mod._register_provisioning_orchestration_service(container)
 
         svc = container.get(ProvisioningOrchestrationService)
 
