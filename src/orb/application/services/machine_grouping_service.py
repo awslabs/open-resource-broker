@@ -85,7 +85,7 @@ class MachineGroupingService:
                     # Use machine's actual provider context
                     if not machine.provider_api:
                         self.logger.warning(
-                            "Machine %s has no provider_api — skipping (legacy DB row)",
+                            "Machine %s has no provider_api — skipping",
                             machine_id,
                         )
                         continue

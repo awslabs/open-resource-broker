@@ -15,6 +15,7 @@ from orb.domain.services.template_validation_domain_service import TemplateValid
 from orb.domain.services.timestamp_service import TimestampService
 from orb.infrastructure.di.container import DIContainer
 from orb.infrastructure.services.iso_timestamp_service import ISOTimestampService
+from orb.domain.constants import PROVIDER_TYPE_AWS
 from orb.infrastructure.services.machine_filter_service import MachineFilterService
 
 
@@ -72,7 +73,7 @@ def register_domain_services(container: DIContainer) -> None:
 
         validator = None
         try:
-            validator = get_provider_registry().create_validator("aws")
+            validator = get_provider_registry().create_validator(PROVIDER_TYPE_AWS)
         except Exception:
             pass
         return ProviderValidationService(

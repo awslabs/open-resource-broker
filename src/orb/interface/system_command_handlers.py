@@ -6,6 +6,7 @@ from orb.infrastructure.di.buses import QueryBus
 from orb.infrastructure.di.container import get_container
 from orb.infrastructure.error.decorators import handle_interface_exceptions
 from orb.monitoring.metrics import MetricsCollector
+from orb.domain.constants import PROVIDER_TYPE_AWS
 
 
 @handle_interface_exceptions(context="system_health", interface_type="cli")
@@ -138,7 +139,7 @@ async def handle_reload_provider_config(args) -> dict[str, Any]:
 async def handle_select_provider_strategy(args) -> dict[str, Any]:
     """Handle select provider strategy operations."""
     # Get first available provider as default
-    default_provider = "aws"  # Keep as fallback
+    default_provider = PROVIDER_TYPE_AWS  # Keep as fallback
     try:
         from orb.providers.registry import get_provider_registry
 

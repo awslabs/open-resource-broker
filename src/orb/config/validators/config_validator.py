@@ -1,9 +1,9 @@
 """Main configuration validator orchestrator."""
 
+from collections.abc import Callable
 from typing import Any, Optional
 
 from orb.config.schemas import AppConfig, validate_config
-from orb.providers.registry import get_provider_registry
 
 
 class ValidationResult:
@@ -76,7 +76,10 @@ class ConfigValidator:
                 result.add_warning("Large SQL connection pool size may consume excessive resources")
 
     def validate_provider_config(
-        self, provider_type: str, provider_config: dict[str, Any]
+        self,
+        provider_type: str,
+        provider_config: dict[str, Any],
+        is_provider_registered: Callable[[str], bool],
     ) -> ValidationResult:
         """
         Validate provider-specific configuration.
@@ -84,13 +87,14 @@ class ConfigValidator:
         Args:
             provider_type: Type of provider (e.g., 'aws')
             provider_config: Provider configuration data
+            is_provider_registered: Callable to check if a provider type is registered
 
         Returns:
             ValidationResult with provider-specific validation
         """
         result = ValidationResult()
 
-        if not get_provider_registry().is_provider_registered(provider_type):
+        if not is_provider_registered(provider_type):
             result.add_error(f"Unsupported provider type: {provider_type}")
 
         return result

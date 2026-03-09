@@ -1,8 +1,4 @@
-"""TDD tests for removing AWS-specific fields from shared TemplateDTO.
-
-RED phase: these tests assert the post-refactor state and will fail until
-the implementation is complete.
-"""
+"""Tests asserting AWS-specific fields are not top-level attributes on TemplateDTO."""
 
 import ast
 import os

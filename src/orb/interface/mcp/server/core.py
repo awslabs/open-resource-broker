@@ -6,6 +6,7 @@ from enum import Enum
 from typing import Any, Callable, Optional, Union
 
 from orb._package import PACKAGE_NAME, __version__
+from orb.domain.constants import PROVIDER_TYPE_AWS
 from orb.infrastructure.logging.logger import get_logger
 from orb.infrastructure.utilities.json_utils import JSONParseError, safe_json_dumps, safe_json_loads
 
@@ -453,7 +454,7 @@ Use the available MCP tools to diagnose the issue."""
     def _generate_best_practices_prompt(self, arguments: dict[str, Any]) -> str:
         """Generate best practices prompt."""
         # Get first available provider as default
-        default_provider = "aws"  # Keep as fallback
+        default_provider = PROVIDER_TYPE_AWS  # Keep as fallback
         try:
             from orb.providers.registry import get_provider_registry
 

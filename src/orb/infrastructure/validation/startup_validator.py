@@ -3,6 +3,7 @@
 import json
 import os
 import sys
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any, Optional, cast
 
@@ -16,10 +17,15 @@ from orb.config.schemas.app_schema import AppConfig
 class StartupValidator:
     """Validates ORB startup requirements with fail-fast behavior."""
 
-    def __init__(self, config_path: Optional[str] = None):
+    def __init__(
+        self,
+        config_path: Optional[str] = None,
+        credentials_checker: Optional[Callable[[list], bool]] = None,
+    ):
         self.config_path = config_path
         self.config_data: Optional[dict] = None
         self.app_config: Optional[AppConfig] = None
+        self._credentials_checker = credentials_checker
 
     def validate_startup(self) -> None:
         """Validate startup requirements. Exit on critical failures."""
@@ -140,23 +146,15 @@ class StartupValidator:
         if not self.app_config:
             return False
 
+        if self._credentials_checker is None:
+            return True  # No checker provided — skip credential validation
+
         try:
             providers = self.app_config.provider.providers
             if not providers:
                 return True  # No providers configured
 
-            from orb.providers.registry import get_provider_registry
-
-            registry = get_provider_registry()
-            for provider in providers:
-                strategy = registry.get_or_create_strategy(provider.type, provider.config)
-                if strategy is None:
-                    continue  # Cannot determine — don't block startup
-                result = strategy.test_credentials()
-                if not result.get("success", False):
-                    return False
-
-            return True
+            return self._credentials_checker(providers)
 
         except Exception:
             return True  # Don't fail on unexpected errors

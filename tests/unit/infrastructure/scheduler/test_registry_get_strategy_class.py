@@ -1,4 +1,4 @@
-"""Tests for SchedulerRegistry.get_strategy_class registry-based dispatch (task 1710)."""
+"""Tests for SchedulerRegistry.get_strategy_class registry-based dispatch."""
 
 import ast
 import inspect

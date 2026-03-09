@@ -178,7 +178,7 @@ class TemplateDefaultsService(TemplateDefaultsPort):
             self.logger.debug("Using provider_api from global defaults: %s", provider_api)
             return provider_api
 
-        # 5. No fallback — misconfiguration must be surfaced explicitly
+        # 5. No provider_api configured — raise to surface misconfiguration
         raise ValueError(
             "No provider_api configured — set provider_api in template file or provider defaults"
         )

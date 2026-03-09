@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING, Any, Callable, Optional
+from typing import TYPE_CHECKING, Any, Callable
 
 if TYPE_CHECKING:
     from orb.domain.base.ports.provider_selection_port import ProviderSelectionPort
@@ -40,8 +40,8 @@ class ProvisioningOrchestrationService:
         logger: LoggingPort,
         provider_selection_port: "ProviderSelectionPort",
         provider_config_port: ProviderConfigPort,
-        config_port: ConfigurationPort | None = None,
-        circuit_breaker_factory: Optional[Callable[[str], "CircuitBreakerStrategy"]] = None,
+        config_port: ConfigurationPort,
+        circuit_breaker_factory: Callable[[str], "CircuitBreakerStrategy"],
     ):
         self._container = container
         self._logger = logger
@@ -54,21 +54,13 @@ class ProvisioningOrchestrationService:
         self, template: Template, request: Request, selection_result: ProviderSelectionResult
     ) -> ProvisioningResult:
         """Execute provisioning with capacity top-up retry loop."""
-        if self._config_port is not None:
-            request_config = self._config_port.get_request_config()
-            default_config: dict[str, Any] = {
-                "max_retries": request_config.get("fulfillment_max_retries", 3),
-                "timeout_seconds": request_config.get("fulfillment_timeout_seconds", 300),
-                "batch_size": request_config.get("fulfillment_batch_size", 1000),
-                "fallback_template_id": request_config.get("fulfillment_fallback_template_id"),
-            }
-        else:
-            default_config = {
-                "max_retries": 3,
-                "timeout_seconds": 300,
-                "batch_size": 1000,
-                "fallback_template_id": None,
-            }
+        request_config = self._config_port.get_request_config()
+        default_config: dict[str, Any] = {
+            "max_retries": request_config.get("fulfillment_max_retries", 3),
+            "timeout_seconds": request_config.get("fulfillment_timeout_seconds", 300),
+            "batch_size": request_config.get("fulfillment_batch_size", 1000),
+            "fallback_template_id": request_config.get("fulfillment_fallback_template_id"),
+        }
         config = {**default_config, **request.metadata.get("fulfillment_config", {})}
         max_retries: int = int(config["max_retries"])
         timeout_seconds: float = float(config["timeout_seconds"])
@@ -199,8 +191,6 @@ class ProvisioningOrchestrationService:
 
     def _record_provider_success(self, provider_name: str) -> None:
         """Reset circuit breaker failure count after a successful dispatch."""
-        if self._circuit_breaker_factory is None:
-            return
         cb_key = f"provider:{provider_name}"
         try:
             cb = self._circuit_breaker_factory(cb_key)
@@ -215,8 +205,6 @@ class ProvisioningOrchestrationService:
         """Increment circuit breaker failure count and open circuit if threshold is reached."""
         import time
 
-        if self._circuit_breaker_factory is None:
-            return
         cb_key = f"provider:{provider_name}"
         try:
             cb = self._circuit_breaker_factory(cb_key)

@@ -6,7 +6,12 @@ from .base_config import BaseCircuitBreakerConfig
 
 
 class BatchSizesConfig(BaseModel):
-    """Batch sizes for different operations."""
+    """Batch sizes for different operations.
+
+    NOTE: All fields here are AWS EC2 API operation names and are AWS-specific.
+    Known debt: move to providers/aws/configuration/ once PerformanceConfig is
+    decoupled from AppConfig or a provider-extension mechanism exists.
+    """
 
     terminate_instances: int = Field(
         25, description="Batch size for terminate_instances operations"

@@ -91,7 +91,7 @@ class TemplateDTO(BaseDTO):
     @classmethod
     def from_domain(cls, template) -> "TemplateDTO":
         """Convert domain template to DTO."""
-        # Pack AWS-specific fields into metadata so the shared DTO stays provider-agnostic.
+        # Pack AWS-specific fields into metadata.
         _fleet_type = getattr(template, "fleet_type", None)
         _fleet_type_str: Optional[str] = (
             str(_fleet_type.value)
@@ -149,7 +149,7 @@ class TemplateDTO(BaseDTO):
             instance_profile=getattr(template, "instance_profile", None),
             # Advanced configuration
             monitoring_enabled=getattr(template, "monitoring_enabled", None),
-            # Tags and metadata (AWS-specific fields packed into metadata)
+            # Tags and metadata
             tags=getattr(template, "tags", {}),
             metadata=metadata,
             # Provider configuration

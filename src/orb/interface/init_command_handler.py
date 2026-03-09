@@ -175,6 +175,8 @@ def _interactive_setup() -> Dict[str, Any]:
         print_separator(char="-", color="cyan")
 
         providers = _get_available_providers()
+        if not providers:
+            raise ValueError("No providers registered. Install a provider plugin to continue.")
         for i, provider in enumerate(providers, 1):
             print_info(f"  ({i}) {provider['display_name']} - {provider['description']}")
 
@@ -183,9 +185,7 @@ def _interactive_setup() -> Dict[str, Any]:
         try:
             provider_type = providers[int(provider_choice) - 1]["type"]
         except (ValueError, IndexError):
-            # Use first available provider as default
-            providers = _get_available_providers()
-            provider_type = providers[0]["type"] if providers else ""
+            provider_type = providers[0]["type"]
 
         print_newline()
         print_separator(char="-", color="cyan")
@@ -332,6 +332,8 @@ def _configure_additional_provider() -> Optional[Dict[str, Any]]:
 
         # Provider type
         providers = _get_available_providers()
+        if not providers:
+            raise ValueError("No providers registered. Install a provider plugin to continue.")
         for i, provider in enumerate(providers, 1):
             print_info(f"  ({i}) {provider['display_name']} - {provider['description']}")
 
@@ -340,7 +342,7 @@ def _configure_additional_provider() -> Optional[Dict[str, Any]]:
         try:
             provider_type = providers[int(provider_choice) - 1]["type"]
         except (ValueError, IndexError):
-            provider_type = providers[0]["type"] if providers else ""
+            provider_type = providers[0]["type"]
 
         # Provider configuration
         print_info("")
@@ -539,6 +541,8 @@ def _get_default_config(args) -> Dict[str, Any]:
     """Get default configuration from args."""
     # Get first available provider as default
     providers = _get_available_providers()
+    if not providers and not args.provider:
+        raise ValueError("No providers registered. Install a provider plugin to continue.")
     default_provider = providers[0]["type"] if providers else ""
 
     provider_type = args.provider or default_provider
@@ -602,7 +606,7 @@ def _write_config_file(config_file: Path, user_config: Dict[str, Any]):
         provider_config = {"profile": provider_data["profile"], "region": provider_data["region"]}
         provider_type = provider_data["type"]
 
-        # Generate provider name and get strategy for config key routing
+        # Generate provider name
         strategy = None
         try:
             from orb.infrastructure.di.container import get_container

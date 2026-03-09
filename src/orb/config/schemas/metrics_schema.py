@@ -3,6 +3,12 @@
 from pydantic import BaseModel, Field
 
 
+# NOTE: AwsMetricsConfig is AWS-specific and ideally belongs in
+# providers/aws/configuration/. Moving it there is blocked by a circular import:
+# orb.config.schemas -> orb.providers.* triggers orb.providers.__init__ which
+# imports ProviderStrategyFactory -> infrastructure.utilities -> orb.config.manager
+# -> orb.config.schemas (partially initialized). Known debt: resolve once
+# orb/providers/__init__.py stops eagerly importing ProviderStrategyFactory.
 class AwsMetricsConfig(BaseModel):
     """AWS-specific metrics configuration."""
 

@@ -276,8 +276,7 @@ class AWSTemplate(Template):
             # Use simple default without configuration dependency
             object.__setattr__(self, "fleet_type", AWSFleetType.REQUEST)
 
-        # Read fleet_role, percent_on_demand, abis_instance_requirements from metadata
-        # when not already set as top-level fields (supports TemplateDTO round-trip).
+        # Promote AWS-specific fields from metadata when not set directly.
         metadata = self.metadata or {}
         if not self.fleet_role:
             fleet_role_val = metadata.get("fleet_role")

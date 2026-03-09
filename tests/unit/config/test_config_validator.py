@@ -34,42 +34,21 @@ class TestValidateProviderConfigRegistryDriven:
 
     def test_registered_provider_type_is_valid(self):
         """A provider type registered in the registry should pass validation."""
-        from orb.providers.registry import get_provider_registry
-
-        registry = get_provider_registry()
-        # Register a fake provider type for this test
-        registry.register_provider(
-            provider_type="testprovider",
-            strategy_factory=lambda cfg: None,
-            config_factory=lambda data: None,
-        )
-        try:
-            validator = ConfigValidator()
-            result = validator.validate_provider_config("testprovider", {})
-            assert result.is_valid, f"Expected valid, got errors: {result.errors}"
-        finally:
-            registry.unregister_provider("testprovider")
+        validator = ConfigValidator()
+        result = validator.validate_provider_config("testprovider", {}, lambda _: True)
+        assert result.is_valid, f"Expected valid, got errors: {result.errors}"
 
     def test_unregistered_provider_type_is_invalid(self):
         """A provider type not in the registry should produce a validation error."""
         validator = ConfigValidator()
-        result = validator.validate_provider_config("nonexistent_provider_xyz", {})
+        result = validator.validate_provider_config("nonexistent_provider_xyz", {}, lambda _: False)
         assert not result.is_valid
         assert any("nonexistent_provider_xyz" in e for e in result.errors)
 
     def test_aws_provider_valid_when_registered(self):
-        """'aws' passes validation because it is registered by aws/registration.py."""
-        # Importing aws registration auto-registers 'aws' in ProviderSettingsRegistry.
-        # The ProviderRegistry registration happens lazily; ensure it is present.
-        from orb.providers.aws.registration import register_aws_provider
-        from orb.providers.registry import get_provider_registry
-
-        registry = get_provider_registry()
-        if not registry.is_provider_registered("aws"):
-            register_aws_provider(registry)
-
+        """'aws' passes validation when the caller confirms it is registered."""
         validator = ConfigValidator()
-        result = validator.validate_provider_config("aws", {})
+        result = validator.validate_provider_config("aws", {}, lambda _: True)
         assert result.is_valid, f"Expected valid for 'aws', got errors: {result.errors}"
 
 
