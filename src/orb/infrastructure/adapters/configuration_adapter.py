@@ -137,7 +137,7 @@ class ConfigurationAdapter(ConfigurationPort):
             "trace_buffer_size": 1000,
             "trace_file_max_size_mb": 10,
             "provider_metrics": {
-                "aws_metrics_enabled": False,
+                "provider_metrics_enabled": False,
                 "sample_rate": 1.0,
                 "monitored_services": [],
                 "monitored_operations": [],

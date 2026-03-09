@@ -11,7 +11,11 @@ from pydantic import BaseModel, ConfigDict, Field
 class ProviderMetricsConfig(BaseModel):
     """Provider-specific metrics configuration."""
 
-    aws_metrics_enabled: bool = Field(False, description="Enable provider metrics collection")
+    model_config = ConfigDict(populate_by_name=True)
+
+    provider_metrics_enabled: bool = Field(
+        False, alias="aws_metrics_enabled", description="Enable provider metrics collection"
+    )
     sample_rate: float = Field(1.0, description="Sampling rate for metrics (0.0-1.0)")
     monitored_services: list[str] = Field(
         default_factory=list, description="List of services to monitor"

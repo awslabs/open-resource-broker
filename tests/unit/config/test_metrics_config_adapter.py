@@ -17,7 +17,7 @@ def test_metrics_config_defaults_when_missing_section():
     assert cfg["metrics_enabled"] is False
     assert cfg["metrics_dir"] == "./metrics"
     assert cfg["metrics_interval"] == 60
-    assert cfg["provider_metrics"]["aws_metrics_enabled"] is False
+    assert cfg["provider_metrics"]["provider_metrics_enabled"] is False
     assert cfg["provider_metrics"]["sample_rate"] == 1.0
     assert cfg["provider_metrics"]["monitored_services"] == []
     assert cfg["provider_metrics"]["monitored_operations"] == []
@@ -31,7 +31,7 @@ def test_metrics_config_overrides_top_level_and_nested():
             "metrics_dir": "/tmp/metrics",
             "metrics_interval": 15,
             "provider_metrics": {
-                "aws_metrics_enabled": False,
+                "provider_metrics_enabled": False,
                 "sample_rate": 0.5,
                 "monitored_services": ["ec2"],
                 "monitored_operations": ["DescribeInstances"],
@@ -48,7 +48,7 @@ def test_metrics_config_overrides_top_level_and_nested():
     assert cfg["metrics_interval"] == 15
 
     aws_cfg = cfg["provider_metrics"]
-    assert aws_cfg["aws_metrics_enabled"] is False
+    assert aws_cfg["provider_metrics_enabled"] is False
     assert aws_cfg["sample_rate"] == 0.5
     assert aws_cfg["monitored_services"] == ["ec2"]
     assert aws_cfg["monitored_operations"] == ["DescribeInstances"]
@@ -74,7 +74,7 @@ def test_metrics_config_partial_overrides_preserve_defaults():
 
     aws_cfg = cfg["provider_metrics"]
     assert aws_cfg["sample_rate"] == 0.25
-    assert aws_cfg["aws_metrics_enabled"] is False
+    assert aws_cfg["provider_metrics_enabled"] is False
     assert aws_cfg["monitored_services"] == []
     assert aws_cfg["monitored_operations"] == []
     assert aws_cfg["track_payload_sizes"] is False

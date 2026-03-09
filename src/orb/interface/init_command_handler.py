@@ -543,7 +543,7 @@ def _get_default_config(args) -> Dict[str, Any]:
     providers = _get_available_providers()
     if not providers and not args.provider:
         raise ValueError("No providers registered. Install a provider plugin to continue.")
-    default_provider = providers[0]["type"] if providers else ""
+    default_provider = providers[0]["type"] if providers else args.provider
 
     provider_type = args.provider or default_provider
     strategy = _get_provider_strategy(provider_type)
