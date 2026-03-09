@@ -71,27 +71,6 @@ class ConfigurationAdapter(ConfigurationPort):
                 "prefixes": {"request": REQUEST_ID_PREFIX_ACQUIRE, "return": REQUEST_ID_PREFIX_RETURN},
             }
 
-    def get_validation_config(self) -> dict[str, Any]:
-        """Get validation configuration for domain layer."""
-        try:
-            request_config = self._config_manager.get_typed(RequestConfig)
-            return {
-                "max_machines_per_request": getattr(
-                    request_config, "max_machines_per_request", 100
-                ),
-                "default_timeout": getattr(request_config, "default_timeout", 300),
-                "min_timeout": getattr(request_config, "min_timeout", 30),
-                "max_timeout": getattr(request_config, "max_timeout", 3600),
-            }
-        except Exception as e:
-            _logger.warning("Failed to load validation config, using defaults: %s", e)
-            return {
-                "max_machines_per_request": 100,
-                "default_timeout": 300,
-                "min_timeout": 30,
-                "max_timeout": 3600,
-            }
-
     def get_provider_config(self):
         """Get provider configuration - delegate to ConfigurationManager."""
         return self._config_manager.get_provider_config()
