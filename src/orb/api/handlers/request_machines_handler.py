@@ -8,9 +8,9 @@ from orb.api.validation import ValidationException
 from orb.application.base.infrastructure_handlers import BaseAsyncAPIHandler as BaseAPIHandler
 from orb.application.dto.commands import CreateRequestCommand
 from orb.application.request.dto import RequestMachinesResponse
+from orb.domain.base.configuration_service import DomainConfigurationService
 from orb.domain.base.dependency_injection import injectable
 from orb.domain.base.ports import ErrorHandlingPort, LoggingPort
-from orb.domain.base.ports.configuration_port import ConfigurationPort
 from orb.domain.constants import REQUEST_ID_PREFIX_ACQUIRE
 from orb.infrastructure.di.buses import CommandBus, QueryBus
 from orb.infrastructure.error.decorators import handle_interface_exceptions
@@ -28,7 +28,7 @@ class RequestMachinesRESTHandler(BaseAPIHandler[RequestMachinesModel, RequestMac
         logger: Optional[LoggingPort] = None,
         error_handler: Optional[ErrorHandlingPort] = None,
         metrics: Optional[MetricsCollector] = None,
-        config_port: Optional[ConfigurationPort] = None,
+        domain_config_service: Optional[DomainConfigurationService] = None,
     ) -> None:
         """
         Initialize handler with pure CQRS dependencies.
@@ -39,13 +39,13 @@ class RequestMachinesRESTHandler(BaseAPIHandler[RequestMachinesModel, RequestMac
             logger: Logging port for operation logging
             error_handler: Error handling port for exception management
             metrics: Optional metrics collector
-            config_port: Configuration port for reading naming config
+            domain_config_service: Domain configuration service for naming config
         """
         super().__init__(logger, error_handler)
         self._query_bus = query_bus
         self._command_bus = command_bus
         self._metrics_collector = metrics
-        self._config_port = config_port
+        self._domain_config = domain_config_service
 
     async def validate_api_request(self, request: RequestMachinesModel, context) -> None:
         """
@@ -100,9 +100,8 @@ class RequestMachinesRESTHandler(BaseAPIHandler[RequestMachinesModel, RequestMac
             from orb.domain.request.value_objects import RequestType
 
             prefix = REQUEST_ID_PREFIX_ACQUIRE
-            if self._config_port:
-                naming_config = self._config_port.get_naming_config()
-                prefix = naming_config.get("prefixes", {}).get("request", REQUEST_ID_PREFIX_ACQUIRE)
+            if self._domain_config:
+                prefix = self._domain_config.get_acquire_request_prefix()
             request_id = str(RequestId.generate(RequestType.ACQUIRE, prefix=prefix))
 
             # Create CQRS command

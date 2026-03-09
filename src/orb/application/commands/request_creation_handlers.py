@@ -12,6 +12,7 @@ from orb.application.dto.commands import (
 )
 from orb.application.ports.query_bus_port import QueryBusPort
 from orb.domain.base import UnitOfWorkFactory
+from orb.domain.base.configuration_service import DomainConfigurationService
 from orb.domain.base.exceptions import ApplicationError, EntityNotFoundError
 from orb.domain.base.ports import (
     ConfigurationPort,
@@ -22,7 +23,6 @@ from orb.domain.base.ports import (
     ProviderConfigPort,
     ProviderSelectionPort,
 )
-from orb.domain.constants import REQUEST_ID_PREFIX_RETURN
 from orb.domain.request.request_identifiers import RequestId
 from orb.domain.request.value_objects import RequestType
 
@@ -259,9 +259,8 @@ class CreateReturnRequestHandler(BaseCommandHandler[CreateReturnRequestCommand, 
 
             # Create separate return requests for each provider
             created_requests = []
-            config_port = self._container.get(ConfigurationPort)
-            naming_config = config_port.get_naming_config()
-            prefix = naming_config.get("prefixes", {}).get("return", REQUEST_ID_PREFIX_RETURN)
+            domain_config = self._container.get(DomainConfigurationService)
+            prefix = domain_config.get_return_request_prefix()
 
             for (provider_type, provider_name), machine_ids in provider_groups.items():
                 return_request_id = str(RequestId.generate(RequestType.RETURN, prefix=prefix))

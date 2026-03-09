@@ -5,6 +5,7 @@ from orb.application.services.deprovisioning_orchestrator import DeprovisioningO
 from orb.application.services.machine_grouping_service import MachineGroupingService
 from orb.application.services.provider_validation_service import ProviderValidationService
 from orb.domain.base import UnitOfWorkFactory
+from orb.domain.base.configuration_service import DomainConfigurationService
 from orb.domain.base.ports.configuration_port import ConfigurationPort
 from orb.domain.base.ports.container_port import ContainerPort
 from orb.domain.base.ports.logging_port import LoggingPort
@@ -95,3 +96,9 @@ def register_domain_services(container: DIContainer) -> None:
         )
 
     container.register_singleton(ASGMetadataService, create_asg_metadata_service)
+
+    # Domain configuration service — translates raw config dicts into typed domain values
+    container.register_singleton(
+        DomainConfigurationService,
+        lambda c: DomainConfigurationService(c.get(ConfigurationPort)),
+    )
