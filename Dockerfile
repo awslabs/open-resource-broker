@@ -59,6 +59,9 @@ RUN uv pip install --no-cache /tmp/*.whl \
 
 # Copy only runtime files needed
 COPY config/ ./config/
+# Provide a default config so the container starts without an external volume mount.
+# config/config.json is gitignored (user-specific); fall back to the committed example.
+RUN if [ ! -f /app/config/config.json ]; then cp /app/config/config.example.json /app/config/config.json; fi
 COPY src/orb/infrastructure/scheduler/hostfactory/scripts/ ./scripts/
 COPY deployment/docker/docker-entrypoint.sh ./docker-entrypoint.sh
 

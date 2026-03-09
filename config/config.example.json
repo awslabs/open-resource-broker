@@ -7,159 +7,40 @@
   "provider": {
     "providers": [
       {
-        "name": "aws_default_us-east-1",
+        "name": "aws-us-east-1",
         "type": "aws",
         "enabled": true,
         "config": {
           "region": "us-east-1",
-          "profile": "default"
-        }
-      },
-      {
-        "name": "aws_default_us-west-2",
-        "type": "aws",
-        "enabled": true,
-        "config": {
-          "region": "us-west-2",
-          "profile": "default"
-        }
-      },
-      {
-        "name": "provider1",
-        "type": "provider1",
-        "enabled": false,
-        "config": {
-          "region": "east-1",
-          "credentials": "${PROVIDER1_CREDENTIALS}"
-        }
-      },
-      {
-        "name": "provider2",
-        "type": "provider2",
-        "enabled": false,
-        "config": {
-          "zone": "central-1a",
-          "project": "example-project",
-          "credentials_path": "/path/to/credentials.json"
+          "profile": "your-profile-name"
         }
       }
     ],
-    "selection_policy": "FIRST_AVAILABLE",
-    "default_provider_type": "aws",
-    "health_check_interval": 60,
-    "circuit_breaker": {
-      "enabled": true,
-      "failure_threshold": 5,
-      "recovery_timeout": 60,
-      "half_open_max_calls": 3
-    },
     "provider_defaults": {
       "aws": {
-        "handlers": {
-          "EC2Fleet": {
-            "handler_class": "EC2FleetHandler",
-            "supported_fleet_types": ["instant", "request", "maintain"],
-            "default_fleet_type": "instant",
-            "supports_spot": true,
-            "supports_ondemand": true
-          },
-          "SpotFleet": {
-            "handler_class": "SpotFleetHandler",
-            "supported_fleet_types": ["request", "maintain"],
-            "default_fleet_type": "request",
-            "supports_spot": true,
-            "supports_ondemand": false
-          },
-          "ASG": {
-            "handler_class": "ASGHandler",
-            "supports_spot": true,
-            "supports_ondemand": true
-          },
-          "RunInstances": {
-            "handler_class": "RunInstancesHandler",
-            "supports_spot": false,
-            "supports_ondemand": true
-          }
-        },
         "template_defaults": {
-          "image_id": "ami-0abcdef1234567890",
+          "image_id": "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64",
           "machine_types": {"t3.micro": 1},
-          "security_group_ids": ["sg-0123456789abcdef0"],
-          "subnet_id": "subnet-0123456789abcdef0",
-          "key_name": "my-key-pair",
-          "iam_instance_profile": {
-            "Name": "EC2-Instance-Profile"
-          },
-          "user_data": "#!/bin/bash\necho 'Hello World' > /tmp/hello.txt",
+          "subnet_ids": ["subnet-xxxxxxxxxxxxxxxxx"],
+          "security_group_ids": ["sg-xxxxxxxxxxxxxxxxx"],
+          "iam_fleet_role": "arn:aws:iam::123456789012:role/your-fleet-role",
           "tags": {
             "Environment": "development",
-            "Project": "hostfactory"
+            "Project": "open-resource-broker"
           }
         }
       }
     }
   },
   "storage": {
-    "type": "json",
-    "config": {
-      "base_path": "./data",
-      "backup_enabled": true,
-      "backup_interval": 3600
-    }
-  },
-  "server": {
-    "host": "0.0.0.0",
-    "port": 8000,
-    "workers": 1,
-    "reload": false,
-    "log_level": "info",
-    "access_log": true,
-    "cors": {
-      "enabled": true,
-      "allow_origins": ["*"],
-      "allow_methods": ["GET", "POST", "PUT", "DELETE"],
-      "allow_headers": ["*"]
-    },
-    "auth": {
-      "enabled": false,
-      "type": "bearer_token",
-      "config": {
-        "token": "${API_TOKEN}"
-      }
-    }
+    "type": "json"
   },
   "logging": {
     "level": "INFO",
-    "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    "handlers": {
-      "console": {
-        "enabled": true,
-        "level": "INFO"
-      },
-      "file": {
-        "enabled": false,
-        "level": "DEBUG",
-        "filename": "hostfactory.log",
-        "max_bytes": 10485760,
-        "backup_count": 5
-      }
-    }
+    "file_path": "logs/app.log"
   },
-  "performance": {
-    "monitoring": {
-      "enabled": true,
-      "metrics_interval": 60,
-      "health_check_timeout": 30
-    },
-    "caching": {
-      "enabled": true,
-      "ttl": 300,
-      "max_size": 1000
-    },
-    "rate_limiting": {
-      "enabled": false,
-      "requests_per_minute": 100,
-      "burst_size": 10
-    }
+  "server": {
+    "host": "0.0.0.0",
+    "port": 8000
   }
 }
