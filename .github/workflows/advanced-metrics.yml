@@ -28,7 +28,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v6
+      uses: actions/checkout@v4
 
     - name: Setup Python and UV
       uses: ./.github/actions/setup-uv-fresh
@@ -38,7 +38,7 @@ jobs:
 
     - name: Install additional tools
       run: |
-        uv pip install coverage pytest cloc
+        sudo apt-get update && sudo apt-get install -y cloc
 
     - name: Run tests with coverage
       run: |
@@ -48,9 +48,6 @@ jobs:
 
     - name: Calculate lines of code
       run: |
-        # Install cloc if not available
-        sudo apt-get update && sudo apt-get install -y cloc
-        
         # Count lines of code (excluding tests, docs, config)
         cloc src/ --json --out=cloc.json
         
@@ -89,9 +86,11 @@ jobs:
 
     - name: Extract coverage percentage
       run: |
-        coverage_percent=$(cat coverage.txt)
+        coverage_raw=$(cat coverage.txt)
+        # Truncate to integer for badge display and comparison (coverage can be e.g. "87.23")
+        coverage_percent=$(printf "%.0f" "$coverage_raw")
         echo "COVERAGE_PERCENT=$coverage_percent" >> "$GITHUB_ENV"
-        
+
         # Set coverage color
         if [ "$coverage_percent" -ge 90 ]; then
           coverage_color="brightgreen"
@@ -102,10 +101,11 @@ jobs:
         else
           coverage_color="red"
         fi
-        
+
         echo "COVERAGE_COLOR=$coverage_color" >> "$GITHUB_ENV"
 
     - name: Create coverage badge
+      continue-on-error: true
       uses: schneegans/dynamic-badges-action@v1.7.0
       with:
         auth: ${{ secrets.GITHUB_TOKEN }}
@@ -116,6 +116,7 @@ jobs:
         color: ${{ env.COVERAGE_COLOR }}
 
     - name: Create lines of code badge
+      continue-on-error: true
       uses: schneegans/dynamic-badges-action@v1.7.0
       with:
         auth: ${{ secrets.GITHUB_TOKEN }}
@@ -126,6 +127,7 @@ jobs:
         color: lightgrey
 
     - name: Create comment percentage badge
+      continue-on-error: true
       uses: schneegans/dynamic-badges-action@v1.7.0
       with:
         auth: ${{ secrets.GITHUB_TOKEN }}
@@ -138,6 +140,7 @@ jobs:
         minColorRange: 0
 
     - name: Create test duration badge
+      continue-on-error: true
       uses: schneegans/dynamic-badges-action@v1.7.0
       with:
         auth: ${{ secrets.GITHUB_TOKEN }}
@@ -148,7 +151,7 @@ jobs:
         color: blue
 
     - name: Upload coverage report
-      uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@v4
       with:
         name: coverage-report
         retention-days: 30
