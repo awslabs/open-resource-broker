@@ -218,7 +218,9 @@ async def handle_request_machines(
     from orb.domain.request.request_types import RequestType
 
     domain_config = container.get(DomainConfigurationService)
-    request_id = str(RequestId.generate(RequestType.ACQUIRE, prefix=domain_config.get_acquire_request_prefix()))
+    request_id = str(
+        RequestId.generate(RequestType.ACQUIRE, prefix=domain_config.get_acquire_request_prefix())
+    )
 
     command = CreateRequestCommand(
         request_id=request_id,
