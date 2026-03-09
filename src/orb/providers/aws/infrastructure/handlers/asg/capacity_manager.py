@@ -138,7 +138,24 @@ class ASGCapacityManager:
 
         if not asg_details:
             self._logger.warning(
-                "ASG details missing for %s, terminating instances without ASG operations",
+                "ASG details missing for %s, attempting direct describe before cleanup",
+                asg_name,
+            )
+            try:
+                response = self._retry_with_backoff(
+                    self._aws_client.autoscaling_client.describe_auto_scaling_groups,
+                    operation_type="read_only",
+                    AutoScalingGroupNames=[asg_name],
+                )
+                groups = response.get("AutoScalingGroups", [])
+                if groups:
+                    asg_details = groups[0]
+            except Exception as exc:
+                self._logger.warning("Retry describe for ASG %s also failed: %s", asg_name, exc)
+
+        if not asg_details:
+            self._logger.warning(
+                "ASG details unavailable for %s, terminating instances and proceeding with cleanup",
                 asg_name,
             )
             self._aws_ops.terminate_instances_with_fallback(
@@ -151,6 +168,8 @@ class ASGCapacityManager:
                 asg_name,
                 instance_ids,
             )
+            self._call_delete_asg(asg_name)
+            self._cleanup_on_zero_capacity("asg", asg_name)
             return
 
         # Detach instances (API limit: 50 per call; use 20 for safety)

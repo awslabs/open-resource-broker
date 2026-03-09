@@ -13,7 +13,9 @@ from typing import Any, Callable, Optional, TypeVar
 
 from botocore.exceptions import ClientError
 
+from orb.config.schemas.cleanup_schema import CleanupConfig
 from orb.domain.base.dependency_injection import injectable
+from orb.domain.base.exceptions import InfrastructureError
 from orb.domain.base.ports import ErrorHandlingPort, LoggingPort
 from orb.domain.base.ports.configuration_port import ConfigurationPort
 from orb.domain.request.aggregate import Request
@@ -24,7 +26,6 @@ from orb.providers.aws.exceptions.aws_exceptions import (
     AuthorizationError,
     AWSEntityNotFoundError,
     AWSValidationError,
-    InfrastructureError,
     NetworkError,
     QuotaExceededError,
     RateLimitError,
@@ -704,6 +705,20 @@ class AWSHandler(ABC):
             template_tags=template.tags,
         )
 
+    def _get_cleanup_config(self) -> CleanupConfig:
+        """Read cleanup config from AWS provider defaults."""
+        try:
+            if self.config_port is None:
+                return CleanupConfig()
+            provider_config = self.config_port.get_provider_config()
+            if provider_config and provider_config.provider_defaults:
+                defaults = provider_config.provider_defaults.get("aws")
+                if defaults and defaults.cleanup is not None:
+                    return defaults.cleanup
+        except Exception as e:
+            self._logger.warning("Failed to read cleanup config, using defaults: %s", e)
+        return CleanupConfig()
+
     def _cleanup_on_zero_capacity(self, resource_type: str, request_id: str) -> None:
         """Delete the ORB-managed launch template when a resource reaches zero capacity.
 
@@ -721,14 +736,15 @@ class AWSHandler(ABC):
             return
 
         try:
-            cleanup = self.config_port.get_cleanup_config()
-        except Exception:
+            cleanup = self._get_cleanup_config()
+        except Exception as e:
+            self._logger.warning("Failed to read cleanup config, skipping cleanup: %s", e)
             return
 
-        if not cleanup.get("enabled", True):
+        if not cleanup.enabled:
             return
 
-        if not cleanup.get("resources", {}).get(resource_type, True):
+        if not getattr(cleanup.resources, resource_type, True):
             return
 
         self._delete_orb_launch_template(request_id)
@@ -748,69 +764,82 @@ class AWSHandler(ABC):
             return
 
         try:
-            cleanup = self.config_port.get_cleanup_config()
+            cleanup = self._get_cleanup_config()
         except Exception as e:
             self._logger.warning("Could not read cleanup config, skipping LT cleanup: %s", e)
             return
 
-        if not cleanup.get("enabled", True) or not cleanup.get("delete_launch_template", True):
+        if not cleanup.enabled or not cleanup.delete_launch_template:
             return
 
-        lt_name = f"{self.config_port.get_resource_prefix('launch_template')}{request_id}"
-        dry_run = cleanup.get("dry_run", False)
+        dry_run = cleanup.dry_run
 
         try:
             response = self.aws_client.ec2_client.describe_launch_templates(
-                LaunchTemplateNames=[lt_name]
+                Filters=[{"Name": "tag:orb:request-id", "Values": [request_id]}]
             )
             templates = response.get("LaunchTemplates", [])
             if not templates:
                 self._logger.debug(
-                    "No launch template named %s found; nothing to clean up", lt_name
+                    "No launch templates found for request %s; nothing to clean up", request_id
                 )
                 return
 
-            lt = templates[0]
-            tags = {t["Key"]: t["Value"] for t in lt.get("Tags", [])}
-            if tags.get("orb:managed-by") != "open-resource-broker":
-                self._logger.warning(
-                    "Launch template %s is not ORB-managed (orb:managed-by tag absent or wrong);"
-                    " skipping deletion",
-                    lt_name,
-                )
-                return
-
-            lt_id = lt["LaunchTemplateId"]
-
-            if dry_run:
-                self._logger.info(
-                    "[dry-run] Would delete launch template %s (%s) for request %s",
-                    lt_name,
-                    lt_id,
-                    request_id,
-                )
-                return
-
-            self.aws_client.ec2_client.delete_launch_template(LaunchTemplateId=lt_id)
             self._logger.info(
-                "Deleted launch template %s (%s) for request %s", lt_name, lt_id, request_id
+                "Found %d launch template(s) to clean up for request %s",
+                len(templates),
+                request_id,
             )
 
+            for lt in templates:
+                tags = {t["Key"]: t["Value"] for t in lt.get("Tags", [])}
+                lt_id = lt["LaunchTemplateId"]
+                lt_name = lt.get("LaunchTemplateName", lt_id)
+
+                if tags.get("orb:managed-by") != "open-resource-broker":
+                    self._logger.warning(
+                        "Launch template %s (%s) is not ORB-managed (orb:managed-by tag absent"
+                        " or wrong); skipping deletion",
+                        lt_name,
+                        lt_id,
+                    )
+                    continue
+
+                if dry_run:
+                    self._logger.info(
+                        "[dry-run] Would delete launch template %s (%s) for request %s",
+                        lt_name,
+                        lt_id,
+                        request_id,
+                    )
+                    continue
+
+                try:
+                    self.aws_client.ec2_client.delete_launch_template(LaunchTemplateId=lt_id)
+                    self._logger.info(
+                        "Deleted launch template %s (%s) for request %s",
+                        lt_name,
+                        lt_id,
+                        request_id,
+                    )
+                except ClientError as e:
+                    self._logger.warning(
+                        "Failed to delete launch template %s (%s) for request %s: %s",
+                        lt_name,
+                        lt_id,
+                        request_id,
+                        e,
+                    )
+
         except ClientError as e:
-            error_code = e.response["Error"]["Code"]
-            if error_code == "InvalidLaunchTemplateName.NotFoundException":
-                self._logger.debug("Launch template %s not found; nothing to clean up", lt_name)
-            else:
-                self._logger.warning(
-                    "Failed to delete launch template %s for request %s: %s",
-                    lt_name,
-                    request_id,
-                    e,
-                )
+            self._logger.warning(
+                "Failed to describe launch templates for request %s: %s",
+                request_id,
+                e,
+            )
         except Exception as e:
             self._logger.warning(
-                "Unexpected error deleting launch template %s for request %s: %s",
-                lt_name,
+                "Unexpected error cleaning up launch templates for request %s: %s",
                 request_id,
                 e,
             )

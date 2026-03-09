@@ -38,7 +38,9 @@ class TestAWSLaunchTemplateManager:
 
         self.mock_config_port = Mock()
         self.mock_config_port.get_resource_prefix.return_value = ""
-        self.mock_config_port.get_cleanup_config.return_value = {"enabled": False}
+        provider_config = Mock()
+        provider_config.provider_defaults = {}
+        self.mock_config_port.get_provider_config.return_value = provider_config
 
         # Create manager instance
         self.manager = AWSLaunchTemplateManager(

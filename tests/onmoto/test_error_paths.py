@@ -14,9 +14,9 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 from orb.providers.aws.exceptions.aws_exceptions import AWSValidationError
 from tests.onmoto.conftest import (
-    _make_aws_client,
     _make_config_port,
     _make_logger,
+    _make_moto_aws_client as _make_aws_client,
     make_asg_handler,
     make_aws_template,
     make_request,
@@ -357,7 +357,7 @@ class TestEC2FleetHandlerEdgeCases:
         )
         request = make_request(request_id="req-fleet-err-002", requested_count=1)
         acquire_result = h.acquire_hosts(request, template)
-        fleet_id = acquire_result["resource_ids"][0]
+        fleet_id = acquire_result["resource_ids"][0]  # type: ignore[index]
 
         status_request = make_request(resource_ids=[fleet_id], metadata={"fleet_type": "maintain"})
         result = h.check_hosts_status(status_request)
@@ -402,7 +402,7 @@ def _make_spot_handler_patched(moto_aws):
         ]
         return config
 
-    h._config_builder.build = patched_build
+    h._config_builder.build = patched_build  # type: ignore[method-assign]
     return h
 
 
@@ -433,7 +433,7 @@ class TestSpotFleetHandlerEdgeCases:
 
         result = h.acquire_hosts(request, bad_template)
 
-        assert result["success"] is False
+        assert result["success"] is False  # type: ignore[index]
 
     def test_check_hosts_status_unknown_fleet_returns_empty(self, moto_aws):
         h = _make_spot_handler_patched(moto_aws)
@@ -453,10 +453,12 @@ class TestSpotFleetHandlerEdgeCases:
         )
         request = make_request(request_id="req-spot-err-002", requested_count=1)
         result = h.acquire_hosts(request, template)
-        fleet_id = result["resource_ids"][0]
+        fleet_id = result["resource_ids"][0]  # type: ignore[index]
 
         fake_instance_ids = ["i-ccccccccccccccc01"]
-        resource_mapping = {iid: (fleet_id, 1) for iid in fake_instance_ids}
+        resource_mapping: dict[str, tuple[str | None, int]] = {
+            iid: (fleet_id, 1) for iid in fake_instance_ids
+        }
 
         try:
             h.release_hosts(fake_instance_ids, resource_mapping=resource_mapping)

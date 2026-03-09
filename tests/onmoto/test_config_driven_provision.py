@@ -423,7 +423,13 @@ class TestTemplateDefaultsConfig:
         logger = _make_logger()
         config_port = MagicMock()
         config_port.get_resource_prefix.return_value = ""
-        config_port.get_cleanup_config.return_value = {"enabled": False}
+        from orb.config.schemas.cleanup_schema import CleanupConfig
+        from orb.config.schemas.provider_strategy_schema import ProviderDefaults
+
+        provider_defaults = ProviderDefaults(cleanup=CleanupConfig(enabled=False))
+        provider_config = MagicMock()
+        provider_config.provider_defaults = {"aws": provider_defaults}
+        config_port.get_provider_config.return_value = provider_config
 
         aws_client = _make_aws_client()
         factory = _make_factory_with_config_port(aws_client, logger, config_port)
