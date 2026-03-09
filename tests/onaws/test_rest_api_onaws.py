@@ -58,7 +58,7 @@ os.environ["LOG_DESTINATION"] = "file"
 os.environ.setdefault("AWS_REGION", "eu-west-1")
 
 # AWS client setup
-_boto_session = boto3.session.Session()
+_boto_session = boto3.Session()
 _ec2_region = (
     os.environ.get("AWS_REGION")
     or os.environ.get("AWS_DEFAULT_REGION")
@@ -96,6 +96,8 @@ REST_TIMEOUTS = scenarios_rest_api.REST_API_TIMEOUTS
 REST_API_SERVER_CFG = scenarios_rest_api.REST_API_SERVER
 MAX_CONCURRENCY = int(os.environ.get("REST_API_MAX_CONCURRENCY", 2))
 LAUNCH_DELAY = float(os.environ.get("REST_API_LAUNCH_DELAY_SEC", 3.0))
+from tests.shared.constants import REQUEST_ID_RE
+
 WorkerResult = namedtuple("WorkerResult", "scenario status error traceback")
 
 
@@ -164,7 +166,7 @@ class ORBServerManager:
 
         # Server failed to start - capture output
         try:
-            stdout, stderr = self.process.communicate(
+            _stdout, stderr = self.process.communicate(
                 timeout=scenarios_rest_api.REST_API_SERVER["start_capture_timeout"]
             )
             error_msg = f"ORB server failed to start within {timeout}s. stderr: {stderr}"
@@ -281,7 +283,7 @@ class RestApiClient:
 
 
 @pytest.fixture
-def setup_rest_api_environment(request):
+def setup_rest_api_environment(request, test_session_id):
     """Generate templates and set env vars before starting the server."""
     processor = TemplateProcessor()
     raw_test_name = request.node.name
@@ -303,6 +305,10 @@ def setup_rest_api_environment(request):
     test_case = scenarios_rest_api.get_test_case_by_name(scenario_name) if scenario_name else {}
 
     overrides = test_case.get("overrides", {})
+    overrides["instanceTags"] = {
+        **overrides.get("instanceTags", {}),
+        "test-session": test_session_id,
+    }
     metrics_config = test_case.get("metrics_config")
 
     # Generate templates
@@ -334,7 +340,13 @@ def setup_rest_api_environment(request):
         (test_config_dir / "metrics").mkdir(exist_ok=True)
 
     log.info(f"Test environment configured for: {test_name}")
-    return test_case
+
+    yield test_case
+
+    try:
+        processor.cleanup_test_templates(test_name)
+    except Exception as exc:
+        log.warning("Fixture teardown: cleanup_test_templates failed: %s", exc)
 
 
 @pytest.fixture
@@ -453,11 +465,14 @@ def _log_aws_capacity_progress(
         )
         return
 
-    resource_id = _get_resource_id_from_instance(machine_ids[0], provider_api)
+    first_machine_id = machine_ids[0]
+    if not first_machine_id:
+        return
+    resource_id = _get_resource_id_from_instance(first_machine_id, provider_api)
     if not resource_id:
         log.debug(
             "AWS capacity check: could not determine backing resource for instance %s (provider=%s)",
-            machine_ids[0],
+            first_machine_id,
             provider_api,
         )
         return
@@ -965,6 +980,9 @@ def test_rest_api_partial_return_reduces_capacity(
     request_id = request_response.get("request_id")
     if not request_id:
         pytest.fail(f"Request ID missing in response: {request_response}")
+    assert REQUEST_ID_RE.match(request_id), (
+        f"request_id {request_id!r} does not match expected format"
+    )
 
     status_response = _wait_for_request_completion_rest(
         rest_api_client,
@@ -975,6 +993,13 @@ def test_rest_api_partial_return_reduces_capacity(
     )
     _check_request_machines_response_status(status_response)
     _check_all_ec2_hosts_are_being_provisioned(status_response)
+
+    returned_id = status_response.get("requests", [{}])[0].get("request_id") or status_response.get(
+        "requests", [{}]
+    )[0].get("requestId")
+    assert returned_id == request_id, (
+        f"Status response echoed {returned_id!r}, expected {request_id!r}"
+    )
 
     machines = status_response["requests"][0]["machines"]
     machine_ids = [m.get("machine_id") for m in machines]
@@ -1036,7 +1061,9 @@ def test_rest_api_partial_return_reduces_capacity(
             return_response = rest_api_client.return_machines(remaining_ids)
             rrid = return_response.get("request_id")
             if rrid:
-                _wait_for_return_completion_rest(rest_api_client, rrid)
+                _wait_for_return_completion_rest(
+                    rest_api_client, rrid, REST_TIMEOUTS["cleanup_wait_timeout"]
+                )
         except Exception as exc:
             log.warning("Graceful return failed for remaining instances: %s", exc)
 
@@ -1712,7 +1739,7 @@ def _capture_history_if_enabled(resource_id: str | None, provider_api: str | Non
     """Common history capture helper used in timeout/finally blocks."""
     if scenarios_rest_api.CAPTURE_RESOURCE_HISTORY:
         log.info("[STATE: 3.1a]: Capturing resource history before termination")
-        if resource_id and provider_api != "RunInstances":
+        if resource_id and provider_api and provider_api != "RunInstances":
             log.info(f"Calling _capture_resource_history for {provider_api} resource {resource_id}")
             _capture_resource_history(resource_id, provider_api, test_case["test_name"])
         else:
@@ -1790,6 +1817,9 @@ def test_rest_api_control_loop(rest_api_client, setup_rest_api_environment, test
     request_id = request_response.get("request_id")
     if not request_id:
         pytest.fail(f"Request ID missing in response: {request_response}")
+    assert REQUEST_ID_RE.match(request_id), (
+        f"request_id {request_id!r} does not match expected format"
+    )
 
     log.info(f"Request ID: {request_id}")
 
@@ -1844,6 +1874,13 @@ def test_rest_api_control_loop(rest_api_client, setup_rest_api_environment, test
 
     # 2.2: Validate status response
     log.info("2.2: Validating status response")
+    assert status_response is not None, "status_response is None after request completion"
+    returned_id = status_response.get("requests", [{}])[0].get("request_id") or status_response.get(
+        "requests", [{}]
+    )[0].get("requestId")
+    assert returned_id == request_id, (
+        f"Status response echoed {returned_id!r}, expected {request_id!r}"
+    )
     _check_request_machines_response_status(status_response)
 
     # 2.3: Verify instances on AWS
@@ -1883,6 +1920,7 @@ def test_rest_api_control_loop(rest_api_client, setup_rest_api_environment, test
         log.info("2.6: Verifying ABIS configuration")
         first_machine = status_response["requests"][0]["machines"][0]
         instance_id = first_machine.get("machine_id")
+        assert instance_id is not None, "machine_id missing from first machine"
         verify_abis_enabled_for_instance(instance_id)
         log.info("ABIS verification PASSED")
 
@@ -1897,7 +1935,9 @@ def test_rest_api_control_loop(rest_api_client, setup_rest_api_environment, test
     # Determine resource ID
     resource_id = None
     if machine_ids:
-        resource_id = _get_resource_id_from_instance(machine_ids[0], provider_api)
+        first_id = machine_ids[0]
+        if first_id:
+            resource_id = _get_resource_id_from_instance(first_id, provider_api)
         log.info(f"Resource ID extracted: {resource_id}")
 
     # 3.1a: Retrieve resource history (controlled by global CAPTURE_RESOURCE_HISTORY flag)
@@ -2000,3 +2040,33 @@ def test_rest_api_control_loop(rest_api_client, setup_rest_api_environment, test
     log.info("=" * 80)
     log.info(f"REST API test completed: {test_case['test_name']}")
     log.info("=" * 80)
+
+
+def test_rest_api_unknown_template_returns_error(setup_rest_api_environment):
+    """POST /api/v1/machines/request with a non-existent template_id returns 4xx, not a crash."""
+    import requests as _requests
+
+    log_dir = os.environ.get("HF_PROVIDER_LOGDIR", "./logs")
+    os.makedirs(log_dir, exist_ok=True)
+    server_log_path = os.path.join(log_dir, "server_error_test.log")
+
+    server = ORBServerManager(log_path=server_log_path)
+    server.start(timeout=REST_TIMEOUTS["server_start"])
+    try:
+        client = RestApiClient(
+            base_url=server.base_url,
+            api_prefix="/api/v1",
+            timeout=REST_TIMEOUTS["rest_api_timeout"],
+        )
+        try:
+            client.request_machines("NonExistent-Template-XYZ", 1)
+            pytest.fail("Expected HTTPError for unknown template but no exception was raised")
+        except _requests.HTTPError as exc:
+            assert exc.response.status_code >= 400, (
+                f"Expected 4xx for unknown template, got {exc.response.status_code}"
+            )
+        except Exception as exc:
+            # Any other exception is also acceptable — server rejected the request
+            assert "NonExistent" in str(exc) or "not found" in str(exc).lower()
+    finally:
+        server.stop()

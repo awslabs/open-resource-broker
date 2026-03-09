@@ -56,6 +56,7 @@ class EC2FleetReleaseManager:
         fleet_id: str,
         instance_ids: list[str],
         fleet_details: dict[str, Any],
+        request_id: str = "",
     ) -> None:
         """Release hosts for a single EC2 Fleet.
 
@@ -64,12 +65,21 @@ class EC2FleetReleaseManager:
         when capacity reaches zero and cleans up the associated launch
         template.
 
+        For request fleets, terminates instances then deletes the fleet
+        (AWS does not auto-delete request fleets) and cleans up the
+        associated launch template.
+
+        For instant fleets, the fleet is already deleted by AWS; only
+        instance termination and launch template cleanup are performed.
+
         Args:
             fleet_id: The EC2 Fleet ID to operate on.
             instance_ids: Specific instance IDs to terminate. When empty,
                 the entire fleet is deleted.
             fleet_details: Pre-fetched DescribeFleets entry for this fleet,
                 or an empty dict to trigger a fresh lookup.
+            request_id: ORB request ID used for launch template cleanup when
+                the fleet record is no longer available (instant fleet case).
         """
         self._logger.info("Processing EC2 Fleet %s with %d instances", fleet_id, len(instance_ids))
 
@@ -93,6 +103,8 @@ class EC2FleetReleaseManager:
                         self._request_adapter,
                         f"EC2Fleet-{fleet_id} instances",
                     )
+                    if request_id:
+                        self._cleanup_on_zero_capacity("ec2_fleet", request_id)
                     return
 
                 fleet_details = fleet_list[0]
@@ -132,14 +144,23 @@ class EC2FleetReleaseManager:
                     self._logger.info("EC2 Fleet %s capacity is zero, deleting fleet", fleet_id)
                     self._delete_fleet(fleet_id)
                     self._maybe_cleanup_launch_template(fleet_details)
-                else:
-                    self._logger.debug(
-                        "EC2 Fleet %s is non-maintain type (%s), skipping fleet deletion",
-                        fleet_id,
-                        fleet_type,
+                elif fleet_type == "request":
+                    self._logger.info(
+                        "Deleting request-type EC2 Fleet %s after instance termination", fleet_id
                     )
+                    self._retry(
+                        self._aws_client.ec2_client.delete_fleets,
+                        operation_type="critical",
+                        FleetIds=[fleet_id],
+                        TerminateInstances=False,
+                    )
+                    self._maybe_cleanup_launch_template(fleet_details)
+                elif fleet_type == "instant":
+                    # Fleet is already deleted by AWS; only clean up the launch template.
+                    self._maybe_cleanup_launch_template(fleet_details)
             else:
                 self._delete_fleet(fleet_id)
+                self._maybe_cleanup_launch_template(fleet_details)
 
         except Exception as e:
             self._logger.error("Failed to terminate EC2 fleet %s: %s", fleet_id, e)
@@ -224,5 +245,9 @@ class EC2FleetReleaseManager:
         """Delete the ORB launch template associated with this fleet, if cleanup is enabled."""
         tags = {t["Key"]: t["Value"] for t in fleet_details.get("Tags", [])}
         request_id = tags.get("orb:request-id", "")
-        if request_id:
-            self._cleanup_on_zero_capacity("ec2_fleet", request_id)
+        if not request_id:
+            self._logger.warning(
+                "EC2 Fleet has no orb:request-id tag, skipping launch template cleanup"
+            )
+            return
+        self._cleanup_on_zero_capacity("ec2_fleet", request_id)

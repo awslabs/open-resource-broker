@@ -334,37 +334,11 @@ class ConfigurationAdapter(ConfigurationPort):
             if hasattr(resource_config.prefixes, resource_type):
                 return getattr(resource_config.prefixes, resource_type)
             return resource_config.default_prefix
-        except Exception:
-            return ""
-
-    def get_cleanup_config(self) -> dict[str, Any]:
-        """Get cleanup configuration."""
-        try:
-            cleanup = self._config_manager.app_config.cleanup
-            return {
-                "enabled": cleanup.enabled,
-                "delete_launch_template": cleanup.delete_launch_template,
-                "dry_run": cleanup.dry_run,
-                "resources": {
-                    "asg": cleanup.resources.asg,
-                    "ec2_fleet": cleanup.resources.ec2_fleet,
-                    "spot_fleet": cleanup.resources.spot_fleet,
-                    "run_instances": cleanup.resources.run_instances,
-                },
-            }
         except Exception as e:
-            _logger.warning("Failed to load cleanup config, using defaults: %s", e)
-            return {
-                "enabled": True,
-                "delete_launch_template": True,
-                "dry_run": False,
-                "resources": {
-                    "asg": True,
-                    "ec2_fleet": True,
-                    "spot_fleet": True,
-                    "run_instances": True,
-                },
-            }
+            _logger.warning(
+                "Failed to get resource prefix for '%s', using empty prefix: %s", resource_type, e
+            )
+            return ""
 
     def get_active_provider_override(self) -> str | None:
         """Get current provider override from CLI."""

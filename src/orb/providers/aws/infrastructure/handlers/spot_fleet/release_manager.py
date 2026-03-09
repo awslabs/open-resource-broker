@@ -35,6 +35,7 @@ class SpotFleetReleaseManager:
         fleet_id: str,
         instance_ids: list[str],
         fleet_details: dict[str, Any],
+        request_id: str = "",
     ) -> None:
         """Release hosts for a single Spot Fleet with proper fleet management.
 
@@ -101,7 +102,19 @@ class SpotFleetReleaseManager:
                         SpotFleetRequestIds=[fleet_id],
                         TerminateInstances=False,
                     )
-                    self._maybe_cleanup_launch_template(fleet_details, fleet_config)
+                    self._maybe_cleanup_launch_template(fleet_details, fleet_config, request_id)
+                elif fleet_type == "request":
+                    self._logger.info(
+                        "Cancelling request-type Spot Fleet %s after instance termination",
+                        fleet_id,
+                    )
+                    self._retry(
+                        self._aws_client.ec2_client.cancel_spot_fleet_requests,
+                        operation_type="critical",
+                        SpotFleetRequestIds=[fleet_id],
+                        TerminateInstances=False,
+                    )
+                    self._maybe_cleanup_launch_template(fleet_details, fleet_config, request_id)
             else:
                 # No specific instances — cancel the entire fleet
                 self._retry(
@@ -111,6 +124,7 @@ class SpotFleetReleaseManager:
                     TerminateInstances=True,
                 )
                 self._logger.info("Cancelled entire Spot Fleet: %s", fleet_id)
+                self._maybe_cleanup_launch_template(fleet_details, fleet_config, request_id)
 
         except Exception as e:
             self._logger.error("Failed to terminate spot fleet %s: %s", fleet_id, e)
@@ -181,7 +195,7 @@ class SpotFleetReleaseManager:
         return paginate(client_method, result_key, **kwargs)
 
     def _maybe_cleanup_launch_template(
-        self, fleet_details: dict[str, Any], fleet_config: dict[str, Any]
+        self, fleet_details: dict[str, Any], fleet_config: dict[str, Any], request_id: str = ""
     ) -> None:
         """Delete the ORB-managed launch template associated with this fleet, if cleanup is enabled."""
         tags: dict[str, str] = {}
@@ -194,6 +208,10 @@ class SpotFleetReleaseManager:
         if not tags:
             tags = {t["Key"]: t["Value"] for t in fleet_details.get("Tags", [])}
 
-        request_id = tags.get("orb:request-id", "")
-        if request_id:
-            self._cleanup_on_zero_capacity("spot_fleet", request_id)
+        resolved_request_id = tags.get("orb:request-id", "") or request_id
+        if not resolved_request_id:
+            self._logger.warning(
+                "Spot Fleet has no orb:request-id tag, skipping launch template cleanup"
+            )
+            return
+        self._cleanup_on_zero_capacity("spot_fleet", resolved_request_id)

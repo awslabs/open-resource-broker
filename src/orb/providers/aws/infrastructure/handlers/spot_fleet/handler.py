@@ -495,7 +495,7 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
             Dictionary with ``status`` of ``"success"`` or ``"error"``.
         """
         try:
-            self._release_manager.release(resource_id, [], {})
+            self._release_manager.release(resource_id, [], {}, request_id=request_id)
             return {"status": "success", "message": f"Spot Fleet {resource_id} cancelled"}
         except Exception as e:
             self._logger.error("Failed to cancel Spot Fleet %s: %s", resource_id, e)
@@ -508,7 +508,10 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
         self, fleet_id: str, fleet_instance_ids: list[str], fleet_details: dict
     ) -> None:
         """Release hosts for a single Spot Fleet."""
-        self._release_manager.release(fleet_id, fleet_instance_ids, fleet_details)
+        request_id = fleet_details.get("request_id", "") if isinstance(fleet_details, dict) else ""
+        self._release_manager.release(
+            fleet_id, fleet_instance_ids, fleet_details, request_id=request_id
+        )
 
     @classmethod
     def get_example_templates(cls) -> list[Template]:

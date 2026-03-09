@@ -101,6 +101,17 @@
           "spot_fleet_request_expiry": 30,
           "percent_on_demand": 0,
           "root_device_volume_size": 20
+        },
+        "cleanup": {
+          "enabled": true,
+          "delete_launch_template": true,
+          "dry_run": false,
+          "resources": {
+            "asg": true,
+            "ec2_fleet": true,
+            "spot_fleet": true,
+            "run_instances": true
+          }
         }
       }
     }
@@ -392,17 +403,6 @@
       "spot_fleet": "",
       "asg": "",
       "tag": ""
-    }
-  },
-  "cleanup": {
-    "enabled": true,
-    "delete_launch_template": true,
-    "dry_run": false,
-    "resources": {
-      "asg": true,
-      "ec2_fleet": true,
-      "spot_fleet": true,
-      "run_instances": true
     }
   }
 }

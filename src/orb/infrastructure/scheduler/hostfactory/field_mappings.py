@@ -31,6 +31,7 @@ class HostFactoryFieldMappings:
             "instanceTags": "tags",  # Will be parsed from string format
             # Template metadata
             "name": "name",
+            "requestId": "request_id",
             "providerName": "provider_name",
             "providerApi": "provider_api",
             "providerType": "provider_type",
