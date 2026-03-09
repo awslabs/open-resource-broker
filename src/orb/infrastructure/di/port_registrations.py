@@ -5,10 +5,8 @@ from orb.domain.base.ports import (
     ConfigurationPort,
     ContainerPort,
     ErrorHandlingPort,
-    EventPublisherPort,
     ProviderConfigPort,
     ProviderSelectionPort,
-    SchedulerPort,
     TemplateConfigurationPort,
 )
 from orb.domain.base.ports.logging_port import LoggingPort
@@ -60,23 +58,6 @@ def register_port_adapters(container):
     # Register error handling port adapter
     container.register_singleton(ErrorHandlingAdapter, lambda c: ErrorHandlingAdapter())
     container.register_singleton(ErrorHandlingPort, lambda c: c.get(ErrorHandlingAdapter))
-
-    # Register template configuration manager with manual factory (handles
-    # optional dependencies)
-    def create_template_configuration_manager(c):
-        """Create template configuration manager with dependencies."""
-        return TemplateConfigurationManager(
-            config_manager=c.get(
-                ConfigurationManager
-            ),  # Use ConfigurationManager directly to break circular dependency
-            scheduler_strategy=c.get_optional(SchedulerPort),
-            logger=c.get(LoggingPort),
-            event_publisher=c.get_optional(EventPublisherPort),
-        )
-
-    container.register_singleton(
-        TemplateConfigurationManager, create_template_configuration_manager
-    )
 
     # Register template configuration port adapter
     from orb.infrastructure.adapters.template_configuration_adapter import (

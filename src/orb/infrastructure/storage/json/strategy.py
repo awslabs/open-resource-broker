@@ -355,8 +355,12 @@ class JSONStorageStrategy(BaseStorageStrategy):
                     full_data = self.serializer.deserialize(content)
                 else:
                     full_data = {}
-            except Exception:
-                full_data = {}
+            except Exception as e:
+                self.logger.error(
+                    "Cannot read existing storage file before save, aborting to prevent data loss: %s",
+                    e,
+                )
+                raise
 
             # Ensure full_data is a dictionary
             if not isinstance(full_data, dict):
