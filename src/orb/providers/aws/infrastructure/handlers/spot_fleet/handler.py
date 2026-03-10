@@ -140,7 +140,7 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
             }
         except Exception as e:
             self._logger.error("SpotFleet creation failed: %s", e)
-            return {"success": False, "resource_ids": [], "instances": [], "error_message": str(e)}
+            raise
 
     def _create_spot_fleet_with_response(
         self, request: Request, aws_template: AWSTemplate

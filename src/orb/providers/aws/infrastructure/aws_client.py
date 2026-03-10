@@ -33,6 +33,7 @@ class AWSClient:
         logger: LoggingPort,
         provider_name: Optional[str] = None,
         metrics: Optional[MetricsCollector] = None,
+        active_provider_name_resolver: Optional[Any] = None,
     ) -> None:
         """
         Initialize AWS client wrapper with optional metrics collection.
@@ -42,10 +43,14 @@ class AWSClient:
             logger: Logger for logging messages
             provider_name: Specific provider instance name (for multi-provider support)
             metrics: Optional metrics collector for AWS API instrumentation
+            active_provider_name_resolver: Optional callable returning the active provider
+                instance name. Replaces the service-locator pattern: when provider_name
+                is None this callable is invoked instead of get_container().
         """
         self._config_manager = config
         self._logger = logger
         self._provider_name = provider_name
+        self._active_provider_name_resolver = active_provider_name_resolver
         self._aws_config: Optional[AWSProviderConfig] = None
         # Tracks whether we've attempted provider selection; we cache failures too.
         # This avoids repeated DI lookups and log spam when selection is unavailable.
@@ -203,30 +208,30 @@ class AWSClient:
                 provider_name = self._provider_name
                 self._logger.debug("Using specific provider: %s", provider_name)
             else:
-                # Use provider registry service for provider selection
-                from orb.infrastructure.di.container import get_container
-
-                container = get_container()
-                from orb.application.services.provider_registry_service import (
-                    ProviderRegistryService,
-                )
-
-                provider_service = container.get(ProviderRegistryService)
-                selection_result = provider_service.select_active_provider()
-
-                self._logger.debug(
-                    "Provider selection result: %s, %s",
-                    selection_result.provider_type,
-                    selection_result.provider_instance,
-                )
-
-                # Ensure we have an AWS provider
-                if selection_result.provider_type != "aws":
-                    raise AWSConfigurationError(
-                        f"Selected provider is not AWS: {selection_result.provider_type}"
+                # Use injected resolver if available, otherwise fall through to legacy path
+                if self._active_provider_name_resolver is not None:
+                    try:
+                        resolved = self._active_provider_name_resolver()
+                        if resolved:
+                            provider_name = resolved
+                            self._logger.debug(
+                                "Resolved active provider name via injected resolver: %s",
+                                provider_name,
+                            )
+                        else:
+                            self._logger.debug(
+                                "Injected resolver returned no provider name; skipping primary path"
+                            )
+                            return None
+                    except Exception as e:
+                        self._logger.debug("Injected resolver raised an exception: %s", str(e))
+                        return None
+                else:
+                    # No resolver and no explicit provider_name — skip primary path
+                    self._logger.debug(
+                        "No provider_name and no resolver provided; skipping primary config path"
                     )
-
-                provider_name = selection_result.provider_instance
+                    return None
 
             # Get the provider instance configuration
             provider_config = self._config_manager.get_provider_config()

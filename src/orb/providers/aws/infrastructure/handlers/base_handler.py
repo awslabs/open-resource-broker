@@ -124,7 +124,7 @@ class AWSHandler(ABC):
         if machine_adapter:
             self._logger.debug("Machine adapter provided for AWS handler")
 
-    def acquire_hosts(self, request: Request, aws_template: AWSTemplate) -> str:
+    def acquire_hosts(self, request: Request, aws_template: AWSTemplate) -> dict[str, Any]:
         """
         Acquire hosts using the specified AWS template.
 
@@ -135,7 +135,7 @@ class AWSHandler(ABC):
             aws_template: The AWS template to use
 
         Returns:
-            str: The AWS resource ID (e.g., fleet ID, ASG name)
+            dict[str, Any]: Structured result with resource IDs and instance data
 
         Raises:
             AWSValidationError: If the template is invalid
@@ -146,7 +146,9 @@ class AWSHandler(ABC):
         return self._acquire_hosts_internal(request, aws_template)
 
     @abstractmethod
-    def _acquire_hosts_internal(self, request: Request, aws_template: AWSTemplate) -> str:
+    def _acquire_hosts_internal(
+        self, request: Request, aws_template: AWSTemplate
+    ) -> dict[str, Any]:
         """
         Handler-specific host acquisition logic.
 
@@ -158,7 +160,7 @@ class AWSHandler(ABC):
             aws_template: The AWS template to use
 
         Returns:
-            str: The AWS resource ID (e.g., fleet ID, ASG name)
+            dict[str, Any]: Structured result with resource IDs and instance data
         """
 
     @abstractmethod

@@ -1,86 +1,72 @@
 """AWS-specific event handlers."""
 
 import logging
+from typing import Any
 
 from orb.domain.base.events import DomainEvent
+from orb.infrastructure.logging.logger import get_logger
+
+_logger = get_logger(__name__)
+
+
+def _get_field(event: DomainEvent, name: str, default: Any = None) -> Any:
+    """Extract a named field from a domain event's attributes or metadata."""
+    value = getattr(event, name, None)
+    if value is not None:
+        return value
+    return event.metadata.get(name, default)
 
 
 def handle_aws_client_operation(event: DomainEvent) -> None:
     """Handle AWS client operation events."""
-    from orb.application.events.handlers.system_handlers import (
-        system_handler,  # type: ignore[attr-defined]
-    )
+    service = _get_field(event, "service", "unknown")
+    operation = _get_field(event, "operation", "unknown")
+    success = _get_field(event, "success", False)
+    region = _get_field(event, "region")
+    request_id = _get_field(event, "request_id")
 
-    fields = system_handler.extract_fields(
-        event,
-        {
-            "service": "unknown",
-            "operation": "unknown",
-            "success": False,
-            "request_id": None,
-            "region": None,
-        },
-    )
-
-    # Use list and join for better performance
-    message_parts = [
-        f"AWS operation: {fields['service']}.{fields['operation']} | Success: {fields['success']}"
-    ]
-    if fields["region"]:
-        message_parts.append(f"Region: {fields['region']}")
-    if fields["request_id"]:
-        message_parts.append(f"RequestId: {fields['request_id']}")
+    message_parts = [f"AWS operation: {service}.{operation} | Success: {success}"]
+    if region:
+        message_parts.append(f"Region: {region}")
+    if request_id:
+        message_parts.append(f"RequestId: {request_id}")
     message = " | ".join(message_parts)
 
-    log_level = logging.INFO if fields["success"] else logging.WARNING
-    system_handler.log_event(event, message, log_level)
+    log_level = logging.INFO if success else logging.WARNING
+    _logger.log(log_level, message)
 
 
 def handle_aws_rate_limit(event: DomainEvent) -> None:
     """Handle AWS rate limit events."""
-    from orb.application.events.handlers.system_handlers import (
-        system_handler,  # type: ignore[attr-defined]
-    )
+    service = _get_field(event, "service", "unknown")
+    operation = _get_field(event, "operation", "unknown")
+    retry_after = _get_field(event, "retry_after")
+    request_id = _get_field(event, "request_id")
 
-    fields = system_handler.extract_fields(
-        event,
-        {
-            "service": "unknown",
-            "operation": "unknown",
-            "retry_after": None,
-            "request_id": None,
-        },
-    )
-
-    # Use list and join for better performance
     message_parts = [
-        f"AWS RATE LIMIT: {fields['service']}.{fields['operation']}",
-        f"Retry after: {fields['retry_after']}s",
+        f"AWS RATE LIMIT: {service}.{operation}",
+        f"Retry after: {retry_after}s",
     ]
-    if fields["request_id"]:
-        message_parts.append(f"RequestId: {fields['request_id']}")
+    if request_id:
+        message_parts.append(f"RequestId: {request_id}")
     message = " | ".join(message_parts)
 
-    system_handler.log_event(event, message, logging.WARNING)
+    _logger.warning(message)
 
 
 def handle_aws_credentials_event(event: DomainEvent) -> None:
-    """Handle AWS credentials events."""
-    from orb.application.events.handlers.system_handlers import (
-        system_handler,  # type: ignore[attr-defined]
-    )
+    """Handle AWS provider auth config events."""
+    event_type = _get_field(event, "event_type", "unknown")
+    profile = _get_field(event, "profile")
+    region = _get_field(event, "region")
 
-    fields = system_handler.extract_fields(
-        event, {"event_type": "unknown", "profile": None, "region": None}
-    )
+    message = f"AWS provider auth config: {event_type}"
+    if profile:
+        message += f" | Profile: {profile}"
+    if region:
+        message += f" | Region: {region}"
 
-    message = f"AWS credentials: {fields['event_type']}"
-    if fields["profile"]:
-        message += f" | Profile: {fields['profile']}"
-    if fields["region"]:
-        message += f" | Region: {fields['region']}"
-
-    system_handler.log_event(event, message, logging.INFO)
+    _logger.info(message)
 
 
 # AWS-specific event handler registry

@@ -3,10 +3,10 @@
 from typing import Any
 
 from orb.domain.base.ports.logging_port import LoggingPort
+from orb.domain.base.ports.provider_registry_port import ProviderRegistryPort
 from orb.domain.base.results import ProviderSelectionResult, ValidationResult
 from orb.domain.services.template_validation_domain_service import TemplateValidationDomainService
 from orb.domain.template.template_aggregate import Template
-from orb.providers.registry import ProviderRegistry
 
 
 class ProviderRegistryService:
@@ -14,7 +14,7 @@ class ProviderRegistryService:
 
     def __init__(
         self,
-        registry: ProviderRegistry,
+        registry: ProviderRegistryPort,
         validation_service: TemplateValidationDomainService,
         logger: LoggingPort,
     ):

@@ -6,6 +6,7 @@ It follows the Port-Adapter pattern from Hexagonal Architecture (Ports and Adapt
 """
 
 from abc import ABC, abstractmethod
+from typing import Any
 
 from orb.domain.request.aggregate import Request
 from orb.domain.template.template_aggregate import Template
@@ -20,7 +21,7 @@ class ResourceProvisioningPort(ABC):
     """
 
     @abstractmethod
-    async def provision_resources(self, request: Request, template: Template) -> str:
+    async def provision_resources(self, request: Request, template: Template) -> dict[str, Any]:
         """
         Provision resources based on the request and template.
 
@@ -29,7 +30,7 @@ class ResourceProvisioningPort(ABC):
             template: The template to use for provisioning
 
         Returns:
-            str: Resource identifier (e.g., fleet ID, ASG name)
+            dict[str, Any]: Structured result with resource_ids, instances, and provider_data
 
         Raises:
             ValidationError: If the template is invalid

@@ -5,7 +5,12 @@ This module provides a factory for creating AWS handlers based on template types
 It follows the Factory Method pattern to create the appropriate handler for each template.
 """
 
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
+
+if TYPE_CHECKING:
+    from orb.providers.aws.infrastructure.services.aws_native_spec_service import (
+        NativeSpecServiceProtocol,
+    )
 
 from orb.domain.base.ports import ConfigurationPort, LoggingPort
 from orb.domain.template.template_aggregate import Template
@@ -24,7 +29,11 @@ class AWSHandlerFactory:
     """
 
     def __init__(
-        self, aws_client: AWSClient, logger: LoggingPort, config: Optional[ConfigurationPort] = None
+        self,
+        aws_client: AWSClient,
+        logger: LoggingPort,
+        config: Optional[ConfigurationPort] = None,
+        native_spec_service: Optional["NativeSpecServiceProtocol"] = None,
     ) -> None:
         """
         Initialize the factory.
@@ -33,10 +42,13 @@ class AWSHandlerFactory:
             aws_client: AWS client instance
             logger: Logger for logging messages
             config: Configuration port for accessing configuration (optional)
+            native_spec_service: Pre-resolved NativeSpecService instance (optional).
+                When provided, used directly instead of resolving from the DI container.
         """
         self._aws_client = aws_client
         self._logger = logger
         self._config = config
+        self._native_spec_service = native_spec_service
         self._handlers: dict[str, AWSHandler] = {}
         self._handler_classes: dict[str, type[AWSHandler]] = {}
 
@@ -98,15 +110,32 @@ class AWSHandlerFactory:
         aws_native_spec_service = None
         if config_port is not None:
             try:
-                from orb.infrastructure.di.container import get_container
-
-                container = get_container()
-                from orb.application.services.native_spec_service import NativeSpecService
-
-                aws_native_spec_service = AWSNativeSpecService(
-                    native_spec_service=container.get(NativeSpecService),
-                    config_port=config_port,
+                from orb.providers.aws.infrastructure.services.aws_native_spec_service import (
+                    AWSNativeSpecService,
                 )
+
+                if self._native_spec_service is not None:
+                    # Use pre-injected service — no container lookup needed
+                    aws_native_spec_service = AWSNativeSpecService(
+                        native_spec_service=self._native_spec_service,
+                        config_port=config_port,
+                    )
+                else:
+                    # Attempt lazy resolution via container as last resort
+                    try:
+                        from orb.infrastructure.di.container import get_container
+                        from orb.application.services.native_spec_service import NativeSpecService
+
+                        container = get_container()
+                        aws_native_spec_service = AWSNativeSpecService(
+                            native_spec_service=container.get(NativeSpecService),
+                            config_port=config_port,
+                        )
+                    except Exception as e:
+                        self._logger.warning(
+                            "AWSNativeSpecService unavailable, native spec enrichment disabled: %s",
+                            e,
+                        )
             except Exception as e:
                 self._logger.warning(
                     "AWSNativeSpecService unavailable, native spec enrichment disabled: %s", e

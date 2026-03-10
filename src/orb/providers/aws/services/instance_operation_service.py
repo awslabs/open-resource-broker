@@ -102,27 +102,22 @@ class AWSInstanceOperationService:
             )
             request.provider_api = provider_api
 
-            # Provision via adapter (includes SSM image resolution)
+            # Provision via adapter (includes SSM image resolution) — raises on failure
             adapter_result = await self._provisioning_adapter.provision_resources(
                 request, aws_template
             )
-            if isinstance(adapter_result, dict) and adapter_result.get("success", True):
-                return ProviderResult.success_result(
-                    {
-                        "resource_ids": adapter_result.get("resource_ids", []),
-                        "instances": adapter_result.get("instances", []),
-                        "provider_api": provider_api,
-                        "count": count,
-                        "template_id": aws_template.template_id,
-                    },
-                    {
-                        "method": "provisioning_adapter",
-                        "provider_data": adapter_result.get("provider_data", {}),
-                    },
-                )
-            return ProviderResult.error_result(
-                adapter_result.get("error_message", "Provisioning failed"),
-                "PROVISIONING_ERROR",
+            return ProviderResult.success_result(
+                {
+                    "resource_ids": adapter_result.get("resource_ids", []),
+                    "instances": adapter_result.get("instances", []),
+                    "provider_api": provider_api,
+                    "count": count,
+                    "template_id": aws_template.template_id,
+                },
+                {
+                    "method": "provisioning_adapter",
+                    "provider_data": adapter_result.get("provider_data", {}),
+                },
             )
 
         except Exception as e:
@@ -156,8 +151,23 @@ class AWSInstanceOperationService:
                         {"method": "provisioning_adapter"},
                     )
                 except Exception as e:
+                    provider_api = operation.parameters.get("provider_api", "RunInstances")
+                    # Fleet-based resources must not silently fall through — their
+                    # termination requires fleet-aware logic in the provisioning adapter.
+                    # Only RunInstances can safely fall back to direct EC2 termination.
+                    if provider_api not in ("RunInstances",):
+                        self._logger.error(
+                            "Provisioning adapter failed for fleet resource (%s), not falling back: %s",
+                            provider_api,
+                            e,
+                        )
+                        return ProviderResult.error_result(
+                            f"Failed to terminate {provider_api} resource: {e}",
+                            "TERMINATE_FLEET_ERROR",
+                        )
                     self._logger.warning(
-                        "Provisioning adapter failed, using direct termination: %s", e
+                        "Provisioning adapter failed for RunInstances, using direct termination: %s",
+                        e,
                     )
 
             # Fallback to direct termination

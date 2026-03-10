@@ -401,7 +401,7 @@ class ASGHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
             return {"status": "success", "message": f"Auto Scaling Group {resource_id} deleted"}
         except Exception as e:
             self._logger.error("Failed to cancel ASG %s: %s", resource_id, e)
-            return {"status": "error", "message": f"Failed to cancel ASG {resource_id}: {e!s}"}
+            raise AWSInfrastructureError(f"Failed to cancel ASG {resource_id}: {e!s}") from e
 
     def _release_hosts_for_single_asg(
         self, asg_name: str, asg_instance_ids: list[str], asg_details: dict

@@ -141,7 +141,7 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
             }
         except Exception as e:
             self._logger.error("RunInstances failed: %s", e)
-            return {"success": False, "resource_ids": [], "instances": [], "error_message": str(e)}
+            raise
 
     def _create_instances_with_response(
         self, request: Request, aws_template: AWSTemplate

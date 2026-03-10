@@ -1,9 +1,8 @@
 """AWS-specific native spec processing."""
 
 import os
-from typing import Any, Optional
+from typing import Any, Optional, Protocol, runtime_checkable
 
-from orb.application.services.native_spec_service import NativeSpecService
 from orb.domain.base.dependency_injection import injectable
 from orb.domain.base.ports.configuration_port import ConfigurationPort
 from orb.domain.request.aggregate import Request
@@ -12,11 +11,31 @@ from orb.infrastructure.utilities.file.json_utils import read_json_file
 from orb.providers.aws.domain.template.aws_template_aggregate import AWSTemplate
 
 
+@runtime_checkable
+class NativeSpecServiceProtocol(Protocol):
+    """Structural protocol matching NativeSpecService from the application layer.
+
+    Using a protocol here avoids a providers→application import while still
+    allowing type-safe usage of the service.
+    """
+
+    spec_renderer: Any
+    logger: Any
+
+    def is_native_spec_enabled(self) -> bool:
+        ...
+
+    def render_spec(self, spec: dict, context: dict) -> dict:
+        ...
+
+
 @injectable
 class AWSNativeSpecService:
     """AWS-specific native spec processing."""
 
-    def __init__(self, native_spec_service: NativeSpecService, config_port: ConfigurationPort):
+    def __init__(
+        self, native_spec_service: NativeSpecServiceProtocol, config_port: ConfigurationPort
+    ):
         self.native_spec_service = native_spec_service
         self.config_port = config_port
         self.spec_renderer = native_spec_service.spec_renderer
