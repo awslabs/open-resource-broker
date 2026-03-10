@@ -281,6 +281,14 @@ class ProviderStrategy(ABC):
             Pattern string (e.g., "{type}_{profile}_{region}")
         """
 
+    def resolve_api_alias(self, raw_api: str) -> str:
+        """Resolve provider-specific API name aliases to canonical registry keys.
+
+        Default implementation is an identity function. Providers override this
+        to map aliases (e.g. 'autoscalinggroup' -> 'ASG') to canonical keys.
+        """
+        return raw_api
+
     def get_available_credential_sources(self) -> list[dict]:
         """Get available credential sources for this provider.
 

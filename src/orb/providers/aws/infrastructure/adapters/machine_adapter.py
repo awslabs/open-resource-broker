@@ -213,8 +213,8 @@ class AWSMachineAdapter:
                         "availability_zone": aws_instance_data["Placement"]["AvailabilityZone"],
                         "subnet_id": aws_instance_data["SubnetId"],
                         "vpc_id": aws_instance_data["VpcId"],
-                        "ami_id": aws_instance_data["ImageId"],
-                        "ebs_optimized": aws_instance_data.get("EbsOptimized", False),
+                        "image_id": aws_instance_data["ImageId"],
+                        "storage_optimized": aws_instance_data.get("EbsOptimized", False),
                         "monitoring": aws_instance_data.get("Monitoring", {}).get(
                             "State", "disabled"
                         ),
@@ -659,7 +659,7 @@ class AWSMachineAdapter:
                         "security_groups": instance_info["SecurityGroups"],
                     },
                     "block_devices": instance_info["BlockDeviceMappings"],
-                    "ebs_optimized": instance_info["EbsOptimized"],
+                    "storage_optimized": instance_info["EbsOptimized"],
                     "monitoring": instance_info["Monitoring"],
                     "iam_instance_profile": instance_info.get("IamInstanceProfile", {}),
                     "tags": {tag["Key"]: tag["Value"] for tag in instance_info.get("Tags", [])},

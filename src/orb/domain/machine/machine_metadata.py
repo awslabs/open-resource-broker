@@ -226,10 +226,10 @@ class MachineMetadata(ValueObject):
 
     Attributes:
         availability_zone: The provider availability zone
-        subnet_id: The subnet ID
-        vpc_id: The VPC ID
-        ami_id: The AMI ID
-        ebs_optimized: Whether the instance is EBS optimized
+        subnet_id: The network subnet ID
+        vpc_id: The virtual private cloud / network ID
+        image_id: The machine image ID (provider-agnostic)
+        storage_optimized: Whether the instance has optimized storage I/O
         monitoring: The monitoring state
         tags: Instance tags
     """
@@ -237,13 +237,13 @@ class MachineMetadata(ValueObject):
     availability_zone: str
     subnet_id: str
     vpc_id: str
-    ami_id: str
-    ebs_optimized: bool = False
+    image_id: str
+    storage_optimized: bool = False
     monitoring: str = "disabled"
     tags: dict[str, str] = {}
 
     @model_validator(mode="after")
-    def validate_metadata(self) -> MachineMetadata:
+    def validate_metadata(self) -> "MachineMetadata":
         """Validate machine metadata."""
         if not self.availability_zone:
             raise ValueError("Availability zone is required")
@@ -251,8 +251,8 @@ class MachineMetadata(ValueObject):
             raise ValueError("Subnet ID is required")
         if not self.vpc_id:
             raise ValueError("VPC ID is required")
-        if not self.ami_id:
-            raise ValueError("AMI ID is required")
+        if not self.image_id:
+            raise ValueError("Image ID is required")
         return self
 
     def to_dict(self) -> dict[str, Any]:
@@ -261,21 +261,21 @@ class MachineMetadata(ValueObject):
             "availability_zone": self.availability_zone,
             "subnet_id": self.subnet_id,
             "vpc_id": self.vpc_id,
-            "ami_id": self.ami_id,
-            "ebs_optimized": self.ebs_optimized,
+            "image_id": self.image_id,
+            "storage_optimized": self.storage_optimized,
             "monitoring": self.monitoring,
             "tags": self.tags,
         }
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> MachineMetadata:
+    def from_dict(cls, data: dict[str, Any]) -> "MachineMetadata":
         """Create metadata from dictionary."""
         return cls(
             availability_zone=data["availability_zone"],
             subnet_id=data["subnet_id"],
             vpc_id=data["vpc_id"],
-            ami_id=data["ami_id"],
-            ebs_optimized=data.get("ebs_optimized", False),
+            image_id=data["image_id"],
+            storage_optimized=data.get("storage_optimized", False),
             monitoring=data.get("monitoring", "disabled"),
             tags=data.get("tags", {}),
         )
@@ -356,17 +356,16 @@ class ResourceTag(ValueObject):
         return self
 
     def to_dict(self) -> dict[str, str]:
-        """Convert tag to dictionary."""
-        return {"Key": self.key, "Value": self.value}
+        """Convert tag to provider-agnostic dictionary."""
+        return {"key": self.key, "value": self.value}
 
     @classmethod
-    def from_dict(cls, data: dict[str, str]) -> ResourceTag:
+    def from_dict(cls, data: dict[str, str]) -> "ResourceTag":
         """Create tag from dictionary."""
-        if "Key" in data and "Value" in data:
-            return cls(key=data["Key"], value=data["Value"])
-        else:
-            # Handle case where data is in key-value format
-            return [cls(key=k, value=v) for k, v in data.items()]  # type: ignore[return-value]
+        if "key" in data and "value" in data:
+            return cls(key=data["key"], value=data["value"])
+        # Handle flat key-value mapping
+        return [cls(key=k, value=v) for k, v in data.items()]  # type: ignore[return-value]
 
     @classmethod
     def get_default_tags(cls) -> list[ResourceTag]:

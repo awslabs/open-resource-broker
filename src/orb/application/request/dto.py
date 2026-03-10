@@ -89,8 +89,8 @@ class RequestDTO(BaseDTO):
     provider_api: Optional[str] = None
     provider_name: Optional[str] = None
     provider_type: Optional[str] = None
-    launch_template_id: Optional[str] = None
-    launch_template_version: Optional[str] = None
+    template_reference_id: Optional[str] = None
+    template_reference_version: Optional[str] = None
     metadata: dict[str, Any] = Field(default_factory=dict)
     request_type: str = "acquire"
     long: bool = False  # Flag to indicate whether to include detailed information
@@ -148,8 +148,8 @@ class RequestDTO(BaseDTO):
             provider_api=request.provider_api,
             provider_name=request.provider_name,
             provider_type=request.provider_type,
-            launch_template_id=None,  # Not available in current domain model
-            launch_template_version=None,  # Not available in current domain model
+            template_reference_id=None,  # Not available in current domain model
+            template_reference_version=None,  # Not available in current domain model
             metadata=request.metadata,
             request_type=cls.serialize_enum(request.request_type) or "",
             long=long,
@@ -194,8 +194,8 @@ class RequestDTO(BaseDTO):
             result.pop("metadata", None)
             result.pop("first_status_check", None)
             result.pop("last_status_check", None)
-            result.pop("launch_template_id", None)
-            result.pop("launch_template_version", None)
+            result.pop("template_reference_id", None)
+            result.pop("template_reference_version", None)
 
         return result
 

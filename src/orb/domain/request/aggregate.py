@@ -225,11 +225,11 @@ class Request(AggregateRoot):
         fields["version"] = self.version + 1
         return Request.model_validate(fields)
 
-    def with_launch_template_info(self, template_id: str, version: str) -> "Request":
+    def with_template_reference_info(self, template_id: str, version: str) -> "Request":
         new_provider_data = {
             **self.provider_data,
-            "launch_template_id": template_id,
-            "launch_template_version": version,
+            "template_reference_id": template_id,
+            "template_reference_version": version,
         }
         fields = self.model_dump()
         fields["provider_data"] = new_provider_data

@@ -65,14 +65,14 @@ class ProviderResourceIdentifier:
 
 
 @dataclass(frozen=True)
-class ProviderLaunchTemplate:
-    """Provider-agnostic launch template information."""
+class ProviderTemplateReference:
+    """Provider-agnostic template reference information."""
 
     template_id: str
     version: Optional[str] = None
 
     def __post_init__(self) -> None:
-        """Validate launch template."""
+        """Validate template reference."""
         if not self.template_id:
             raise ValueError("Template ID cannot be empty")
 
@@ -100,8 +100,8 @@ class ProviderResourceValidator(Protocol):
         """Validate provider-specific tag constraints."""
         ...
 
-    def validate_launch_template(self, template: ProviderLaunchTemplate) -> bool:
-        """Validate provider-specific launch template format."""
+    def validate_template_reference(self, template: ProviderTemplateReference) -> bool:
+        """Validate provider-specific template reference format."""
         ...
 
 
@@ -129,10 +129,10 @@ class ProviderAdapter(Protocol):
         """Create a provider-specific resource identifier."""
         ...
 
-    def create_launch_template(
+    def create_template_reference(
         self, template_id: str, version: Optional[str] = None
-    ) -> ProviderLaunchTemplate:
-        """Create a provider-specific launch template."""
+    ) -> ProviderTemplateReference:
+        """Create a provider-specific template reference."""
         ...
 
 

@@ -5,12 +5,6 @@ import os
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
-# Normalize legacy/alias provider API names to canonical registry keys
-PROVIDER_API_ALIASES: dict[str, str] = {
-    "AutoScalingGroup": "ASG",
-    "autoscalinggroup": "ASG",
-    "asg": "ASG",
-}
 
 if TYPE_CHECKING:
     from orb.domain.template.ports.template_defaults_port import TemplateDefaultsPort
@@ -51,6 +45,34 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
             provider_type = self._get_active_provider_type()
             self._field_mapper = HostFactoryFieldMapper(provider_type)
         return self._field_mapper
+
+    def _resolve_api_alias(self, raw_api: str) -> str:
+        """Resolve provider API name aliases via the active provider strategy.
+
+        Delegates to ProviderStrategy.resolve_api_alias so alias knowledge stays
+        in the provider layer (bounded context). Falls back to the provider
+        strategy's own alias table when no registry is available (e.g. in tests).
+        """
+        try:
+            if self._provider_registry_service is not None:
+                selection = self._provider_registry_service.select_active_provider()
+                strategy = self._provider_registry_service._registry.get_strategy(
+                    selection.provider_name
+                )
+                if strategy is not None and hasattr(strategy, "resolve_api_alias"):
+                    return strategy.resolve_api_alias(raw_api)
+        except Exception:
+            pass
+        # Fallback: instantiate a minimal AWS strategy to resolve aliases without
+        # needing a live registry.  Import is local to avoid a module-level
+        # infrastructure→providers dependency.
+        try:
+            from orb.providers.aws.strategy.aws_provider_strategy import AWSProviderStrategy
+
+            return AWSProviderStrategy._API_ALIASES.get(raw_api, raw_api)
+        except Exception:
+            pass
+        return raw_api
 
     def load_templates_from_path(
         self, template_path: str, provider_override=None
@@ -134,12 +156,10 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
             mapped["provider_api"] = self._template_defaults_service.resolve_provider_api_default(
                 template
             )
-            mapped["provider_api"] = PROVIDER_API_ALIASES.get(
-                mapped["provider_api"], mapped["provider_api"]
-            )
+            mapped["provider_api"] = self._resolve_api_alias(mapped["provider_api"])
         else:
-            raw_api = template.get("providerApi", template.get("provider_api", "EC2Fleet"))
-            mapped["provider_api"] = PROVIDER_API_ALIASES.get(raw_api, raw_api)
+            raw_api = template.get("providerApi", template.get("provider_api")) or ""
+            mapped["provider_api"] = self._resolve_api_alias(raw_api) if raw_api else None
         mapped = self._apply_template_defaults(mapped, target_provider)
 
         if "template_id" in mapped:
@@ -441,9 +461,7 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
             "tags": raw_data.get("tags", {}),
             "metadata": raw_data.get("metadata", {}),
             # Provider API
-            "provider_api": PROVIDER_API_ALIASES.get(
-                raw_data.get("providerApi", ""), raw_data.get("providerApi")
-            ),
+            "provider_api": self._resolve_api_alias(raw_data.get("providerApi") or ""),
             # Timestamps
             "created_at": raw_data.get("createdAt"),
             "updated_at": raw_data.get("updatedAt"),
@@ -578,8 +596,13 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         processed_templates = []
 
         for template in templates:
+            # Promote all metadata entries to the top level so the field mapper can
+            # translate provider-specific keys without needing to know which ones they are.
+            promoted = dict(template)
+            for key, value in promoted.pop("metadata", {}).items():
+                promoted.setdefault(key, value)
             # Convert to HostFactory format for file storage WITHOUT applying defaults
-            hf_template = self.field_mapper.format_for_generation([template])[0]
+            hf_template = self.field_mapper.format_for_generation([promoted])[0]
             processed_templates.append(hf_template)
 
         return processed_templates
@@ -901,6 +924,14 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
     def format_template_for_display(self, template: TemplateDTO) -> dict[str, Any]:
         """Format TemplateDTO for display using HostFactory field mapper."""
         internal_dict = template.to_dict()
+        # Promote all metadata entries to the top level so the field mapper can
+        # translate provider-specific keys (e.g. fleet_type → fleetType) without
+        # the HF strategy needing to know which keys are provider-specific.
+        # Use None-aware merge: metadata value wins when top-level key is absent or None.
+        metadata = internal_dict.pop("metadata", {})
+        for key, value in metadata.items():
+            if internal_dict.get(key) is None:
+                internal_dict[key] = value
         return self.field_mapper.map_output_fields(internal_dict, copy_unmapped=False)
 
     def format_template_for_provider(self, template: TemplateDTO) -> dict[str, Any]:

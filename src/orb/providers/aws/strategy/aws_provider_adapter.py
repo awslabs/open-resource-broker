@@ -7,11 +7,11 @@ from orb.domain.base.dependency_injection import injectable
 from orb.domain.base.ports import LoggingPort
 from orb.domain.base.provider_interfaces import (
     ProviderInstanceState,
-    ProviderLaunchTemplate,
     ProviderResourceIdentifier,
     ProviderResourceTag,
     ProviderResourceValidator,
     ProviderStateMapper,
+    ProviderTemplateReference,
     ProviderType,
 )
 
@@ -92,8 +92,8 @@ class AWSResourceValidator:
 
         return True
 
-    def validate_launch_template(self, template: ProviderLaunchTemplate) -> bool:
-        """Validate AWS launch template format."""
+    def validate_template_reference(self, template: ProviderTemplateReference) -> bool:
+        """Validate AWS template reference format."""
         # Validate template ID format
         if not self.validate_resource_identifier(template.template_id, "launch_template"):
             return False
@@ -149,14 +149,14 @@ class AWSProviderAdapter:
             region=region,
         )
 
-    def create_launch_template(
+    def create_template_reference(
         self, template_id: str, version: Optional[str] = None
-    ) -> ProviderLaunchTemplate:
-        """Create an AWS launch template."""
-        template = ProviderLaunchTemplate(template_id=template_id, version=version)
+    ) -> ProviderTemplateReference:
+        """Create an AWS template reference."""
+        template = ProviderTemplateReference(template_id=template_id, version=version)
 
-        if not self._resource_validator.validate_launch_template(template):
-            self._logger.warning("Invalid AWS launch template: %s", template_id)
-            raise ValueError(f"Invalid AWS launch template: {template_id}")
+        if not self._resource_validator.validate_template_reference(template):
+            self._logger.warning("Invalid AWS template reference: %s", template_id)
+            raise ValueError(f"Invalid AWS template reference: {template_id}")
 
         return template
