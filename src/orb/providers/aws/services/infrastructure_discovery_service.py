@@ -247,7 +247,9 @@ class AWSInfrastructureDiscoveryService:
             if cli_args and hasattr(cli_args, "show") and cli_args.show is not None:
                 if not cli_args.show.strip():
                     self._console.error("--show flag requires resource types")
-                    self._console.info("Available resources: vpcs, subnets, security-groups (or sg), all")
+                    self._console.info(
+                        "Available resources: vpcs, subnets, security-groups (or sg), all"
+                    )
                     return {
                         "provider": provider_config.get("name", "unknown"),
                         "error": "Invalid --show argument",

@@ -98,7 +98,9 @@ async def _discover_provider_infrastructure(provider: Dict[str, Any], args) -> D
         return provider_strategy.discover_infrastructure(provider_with_args)
 
     except Exception as e:
-        get_container().get(ConsolePort).error(f"Failed to discover infrastructure for {provider['name']}: {e}")
+        get_container().get(ConsolePort).error(
+            f"Failed to discover infrastructure for {provider['name']}: {e}"
+        )
         return {"provider": provider["name"], "error": str(e)}
 
 
@@ -147,14 +149,18 @@ async def _validate_provider_infrastructure(provider: Dict[str, Any]) -> Dict[st
         if hasattr(provider_strategy, "validate_infrastructure"):
             return provider_strategy.validate_infrastructure(provider)
         else:
-            get_container().get(ConsolePort).info(f"Infrastructure validation not supported for provider: {provider['name']}")
+            get_container().get(ConsolePort).info(
+                f"Infrastructure validation not supported for provider: {provider['name']}"
+            )
             return {
                 "provider": provider["name"],
                 "error": "Infrastructure validation not supported",
             }
 
     except Exception as e:
-        get_container().get(ConsolePort).error(f"Failed to validate infrastructure for {provider['name']}: {e}")
+        get_container().get(ConsolePort).error(
+            f"Failed to validate infrastructure for {provider['name']}: {e}"
+        )
         return {"provider": provider["name"], "error": str(e)}
 
 

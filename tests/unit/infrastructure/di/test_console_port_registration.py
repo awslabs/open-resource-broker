@@ -26,14 +26,17 @@ def test_rich_console_adapter_instantiates_without_error():
     assert adapter is not None
 
 
-@pytest.mark.parametrize("method,args", [
-    ("info",      ("msg",)),
-    ("success",   ("msg",)),
-    ("error",     ("msg",)),
-    ("warning",   ("msg",)),
-    ("command",   ("msg",)),
-    ("separator", ()),
-])
+@pytest.mark.parametrize(
+    "method,args",
+    [
+        ("info", ("msg",)),
+        ("success", ("msg",)),
+        ("error", ("msg",)),
+        ("warning", ("msg",)),
+        ("command", ("msg",)),
+        ("separator", ()),
+    ],
+)
 def test_null_console_adapter_methods_do_not_raise(method, args):
     adapter = NullConsoleAdapter()
     getattr(adapter, method)(*args)

@@ -261,35 +261,58 @@ _instance_spec_cache: dict[str, tuple[int, int]] | None = None  # {type: (vcpus,
 _cache_lock = threading.Lock()
 
 _SIZE_TO_VCPUS: dict[str, int] = {
-    "nano": 2, "micro": 2, "small": 2, "medium": 2,
-    "large": 2, "xlarge": 4, "2xlarge": 8, "4xlarge": 16,
-    "8xlarge": 32, "9xlarge": 36, "12xlarge": 48, "16xlarge": 64,
-    "18xlarge": 72, "24xlarge": 96, "32xlarge": 128, "48xlarge": 192,
-    "56xlarge": 224, "96xlarge": 384, "112xlarge": 448, "metal": 96,
+    "nano": 2,
+    "micro": 2,
+    "small": 2,
+    "medium": 2,
+    "large": 2,
+    "xlarge": 4,
+    "2xlarge": 8,
+    "4xlarge": 16,
+    "8xlarge": 32,
+    "9xlarge": 36,
+    "12xlarge": 48,
+    "16xlarge": 64,
+    "18xlarge": 72,
+    "24xlarge": 96,
+    "32xlarge": 128,
+    "48xlarge": 192,
+    "56xlarge": 224,
+    "96xlarge": 384,
+    "112xlarge": 448,
+    "metal": 96,
 }
 
 # Family letter → GiB per vCPU
 _FAMILY_MEM_RATIO: dict[str, int] = {
-    "c": 2,   # compute-optimized
-    "m": 4,   # general purpose
-    "r": 8,   # memory-optimized
-    "i": 8,   # storage-optimized
-    "d": 8,   # dense storage
-    "z": 8,   # high frequency
+    "c": 2,  # compute-optimized
+    "m": 4,  # general purpose
+    "r": 8,  # memory-optimized
+    "i": 8,  # storage-optimized
+    "d": 8,  # dense storage
+    "z": 8,  # high frequency
     "x": 16,  # extreme memory
     "p": 12,  # GPU/ML training
-    "g": 4,   # graphics/inference
+    "g": 4,  # graphics/inference
 }
 
 # t-family special cases (burstable — ratio varies by size and generation)
 _T2_SPECS: dict[str, tuple[int, int]] = {
-    "nano": (1, 512), "micro": (1, 1024), "small": (1, 2048),
-    "medium": (2, 4096), "large": (2, 8192), "xlarge": (4, 16384),
+    "nano": (1, 512),
+    "micro": (1, 1024),
+    "small": (1, 2048),
+    "medium": (2, 4096),
+    "large": (2, 8192),
+    "xlarge": (4, 16384),
     "2xlarge": (8, 32768),
 }
 _T3_SPECS: dict[str, tuple[int, int]] = {
-    "nano": (2, 512), "micro": (2, 1024), "small": (2, 2048),
-    "medium": (2, 4096), "large": (2, 8192), "xlarge": (4, 16384),
+    "nano": (2, 512),
+    "micro": (2, 1024),
+    "small": (2, 2048),
+    "medium": (2, 4096),
+    "large": (2, 8192),
+    "xlarge": (4, 16384),
     "2xlarge": (8, 32768),
 }
 _T_FAMILY_SPECS: dict[str, dict[str, tuple[int, int]]] = {

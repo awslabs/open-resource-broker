@@ -527,7 +527,9 @@ def _discover_infrastructure(
             full_config = {"type": provider_type, "config": provider_config}
             return strategy.discover_infrastructure_interactive(full_config)  # type: ignore[union-attr]
         else:
-            console.info(f"Infrastructure discovery not supported for provider type: {provider_type}")
+            console.info(
+                f"Infrastructure discovery not supported for provider type: {provider_type}"
+            )
             return {}
 
     except Exception as e:
