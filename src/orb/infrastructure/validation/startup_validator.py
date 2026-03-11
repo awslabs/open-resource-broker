@@ -10,8 +10,14 @@ from typing import Any, Optional, cast
 from pydantic import ValidationError
 
 from orb._package import DOCS_URL
-from orb.cli.console import print_command, print_error, print_info, print_warning
 from orb.config.schemas.app_schema import AppConfig
+
+
+def _get_console():
+    """Lazy import of CLI console functions to avoid infrastructure→CLI coupling at module load."""
+    from orb.cli.console import print_command, print_error, print_info, print_warning
+
+    return print_command, print_error, print_info, print_warning
 
 
 class StartupValidator:
@@ -40,6 +46,7 @@ class StartupValidator:
 
     def _validate_critical(self) -> None:
         """Critical validation - must pass to start."""
+        print_command, print_error, print_info, _ = _get_console()
         # 1. Config file exists
         if not self._find_config_file():
             print_error("Configuration file not found")
@@ -83,6 +90,7 @@ class StartupValidator:
 
     def _validate_important(self) -> None:
         """Important validation - warn but continue."""
+        print_command, _, print_info, print_warning = _get_console()
         # 1. Default config template exists
         if not self._check_default_config():
             print_info("Default config template not found")
@@ -163,6 +171,8 @@ class StartupValidator:
 
         svc = PathResolutionService()
 
+        print_command, _, print_info, _ = _get_console()
+
         print_info("")
         print_info("Configuration not found in:")
 
@@ -185,8 +195,10 @@ class StartupValidator:
 
     def _error(self, message: str) -> None:
         """Print error message to stderr."""
+        _, print_error, _, _ = _get_console()
         print_error(message)
 
     def _warn(self, message: str) -> None:
         """Print warning message to stderr."""
+        _, _, _, print_warning = _get_console()
         print_warning(message)

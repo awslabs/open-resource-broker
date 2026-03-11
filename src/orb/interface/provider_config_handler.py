@@ -331,14 +331,15 @@ async def handle_provider_show(args) -> int:
 def _test_provider_credentials(provider_type: str, credential_config: dict) -> tuple[bool, str]:
     """Test provider credentials via the provider strategy."""
     try:
-        from orb.providers.registry import get_provider_registry
+        from orb.application.services.provider_registry_service import ProviderRegistryService
+        from orb.infrastructure.di.container import get_container
 
-        registry = get_provider_registry()
+        registry_service = get_container().get(ProviderRegistryService)
 
-        if not registry.ensure_provider_type_registered(provider_type):
+        if not registry_service.ensure_provider_registered(provider_type):
             return False, f"Provider type not supported: {provider_type}"
 
-        strategy = registry.get_or_create_strategy(provider_type, credential_config)
+        strategy = registry_service.get_or_create_strategy(provider_type, credential_config)
 
         if strategy is None:
             return False, f"Failed to create strategy for provider type: {provider_type}"
@@ -354,22 +355,18 @@ def _test_provider_credentials(provider_type: str, credential_config: dict) -> t
 def _discover_infrastructure(provider_type: str, region: str, profile: str) -> Dict[str, Any]:
     """Discover infrastructure using provider strategy."""
     try:
-        from orb.providers.registry import get_provider_registry
+        from orb.application.services.provider_registry_service import ProviderRegistryService
+        from orb.infrastructure.di.container import get_container
 
-        registry = get_provider_registry()
+        registry_service = get_container().get(ProviderRegistryService)
 
-        # Ensure provider type is registered
-        if not registry.ensure_provider_type_registered(provider_type):
+        if not registry_service.ensure_provider_registered(provider_type):
             logger.warning(f"Failed to register provider type: {provider_type}", exc_info=True)
             return {}
 
-        # Create provider config for discovery
         provider_config = {"region": region, "profile": profile}
+        strategy = registry_service.get_or_create_strategy(provider_type, provider_config)
 
-        # Get strategy from registry
-        strategy = registry.get_or_create_strategy(provider_type, provider_config)
-
-        # Check if provider strategy supports infrastructure discovery
         if hasattr(strategy, "discover_infrastructure_interactive"):
             full_config = {"type": provider_type, "config": provider_config}
             return strategy.discover_infrastructure_interactive(full_config)  # type: ignore[union-attr]
@@ -387,16 +384,16 @@ def _discover_infrastructure(provider_type: str, region: str, profile: str) -> D
 def _generate_provider_name(provider_type: str, profile: str, region: str) -> str:
     """Generate provider name with proper sanitization."""
     try:
+        from orb.application.services.provider_registry_service import ProviderRegistryService
         from orb.infrastructure.di.container import get_container
-        from orb.providers.factory import ProviderStrategyFactory
 
-        container = get_container()
-        factory = container.get(ProviderStrategyFactory)
-
+        registry_service = get_container().get(ProviderRegistryService)
         temp_config = {"type": provider_type, "profile": profile, "region": region}
-        strategy = factory.create_strategy(provider_type, temp_config)  # type: ignore[attr-defined]
-        return strategy.generate_provider_name({"profile": profile, "region": region})
+        strategy = registry_service.get_or_create_strategy(provider_type, temp_config)
+        if strategy is not None:
+            return strategy.generate_provider_name({"profile": profile, "region": region})
     except Exception:
-        # Fallback to simple name generation
-        sanitized_profile = re.sub(r"[^a-zA-Z0-9\-_]", "-", profile)
-        return f"{provider_type}_{sanitized_profile}_{region}"
+        pass
+    # Fallback to simple name generation
+    sanitized_profile = re.sub(r"[^a-zA-Z0-9\-_]", "-", profile)
+    return f"{provider_type}_{sanitized_profile}_{region}"

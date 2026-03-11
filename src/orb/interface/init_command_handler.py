@@ -144,10 +144,11 @@ def _get_available_schedulers() -> list[dict[str, str]]:
 def _get_available_providers() -> list[dict[str, str]]:
     """Get available providers from provider registry."""
     try:
-        from orb.providers.registry import get_provider_registry
+        from orb.application.services.provider_registry_service import ProviderRegistryService
+        from orb.infrastructure.di.container import get_container
 
-        registry = get_provider_registry()
-        registered_types = registry.get_registered_providers()
+        registry_service = get_container().get(ProviderRegistryService)
+        registered_types = registry_service.get_registered_provider_types()
 
         providers = []
         for provider_type in sorted(registered_types):
@@ -442,11 +443,12 @@ def _configure_additional_provider() -> Optional[Dict[str, Any]]:
 def _get_provider_strategy(provider_type: str) -> Optional[Any]:
     """Get a lightweight provider strategy instance for credential/region queries."""
     try:
-        from orb.providers.registry import get_provider_registry
+        from orb.application.services.provider_registry_service import ProviderRegistryService
+        from orb.infrastructure.di.container import get_container
 
-        registry = get_provider_registry()
-        registry.ensure_provider_type_registered(provider_type)
-        return registry.get_or_create_strategy(provider_type)
+        registry_service = get_container().get(ProviderRegistryService)
+        registry_service.ensure_provider_registered(provider_type)
+        return registry_service.get_or_create_strategy(provider_type)
     except Exception:
         return None
 
@@ -528,22 +530,18 @@ def _discover_infrastructure(
 ) -> Dict[str, Any]:
     """Discover infrastructure interactively using provider strategy."""
     try:
-        from orb.providers.registry import get_provider_registry
+        from orb.application.services.provider_registry_service import ProviderRegistryService
+        from orb.infrastructure.di.container import get_container
 
-        registry = get_provider_registry()
+        registry_service = get_container().get(ProviderRegistryService)
 
-        # Ensure provider type is registered
-        if not registry.ensure_provider_type_registered(provider_type):
+        if not registry_service.ensure_provider_registered(provider_type):
             print_error(f"Failed to register provider type: {provider_type}")
             return {}
 
-        # Create provider config for discovery
         provider_config = {"region": region, "profile": profile}
+        strategy = registry_service.get_or_create_strategy(provider_type, provider_config)
 
-        # Get strategy from registry
-        strategy = registry.get_or_create_strategy(provider_type, provider_config)
-
-        # Check if provider strategy supports infrastructure discovery
         if hasattr(strategy, "discover_infrastructure_interactive"):
             full_config = {"type": provider_type, "config": provider_config}
             return strategy.discover_infrastructure_interactive(full_config)  # type: ignore[union-attr]
@@ -629,14 +627,12 @@ def _write_config_file(config_file: Path, user_config: Dict[str, Any]):
         # Generate provider name
         strategy = None
         try:
+            from orb.application.services.provider_registry_service import ProviderRegistryService
             from orb.infrastructure.di.container import get_container
-            from orb.providers.factory import ProviderStrategyFactory
 
-            container = get_container()
-            factory = container.get(ProviderStrategyFactory)
-
+            registry_service = get_container().get(ProviderRegistryService)
             temp_config = {"type": provider_type, **provider_config}
-            strategy = factory.create_strategy(provider_type, temp_config)  # type: ignore[attr-defined]
+            strategy = registry_service.get_or_create_strategy(provider_type, temp_config)
             provider_name = strategy.generate_provider_name(provider_config)
         except Exception:
             # Fallback to simple name generation

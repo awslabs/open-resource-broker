@@ -36,6 +36,7 @@ def _make_registry(provider, strategy=None):
     config_port = MagicMock()
     config_port.get_provider_config.return_value = provider_config
     registry._config_port = config_port
+    registry._logger = MagicMock()
 
     if strategy is not None:
         registry._strategy_cache[provider.name] = strategy

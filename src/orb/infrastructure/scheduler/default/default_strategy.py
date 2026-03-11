@@ -30,6 +30,7 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
         config_port: "Any | None" = None,
         logger: "Any | None" = None,
         provider_registry_service: "Any | None" = None,
+        path_resolver: "Any | None" = None,
     ) -> None:
         """Initialize the instance."""
         self._template_defaults_service = template_defaults_service
@@ -37,6 +38,7 @@ class DefaultSchedulerStrategy(BaseSchedulerStrategy):
             config_port=config_port,
             logger=logger,
             provider_registry_service=provider_registry_service,
+            path_resolver=path_resolver,
         )
         # Initialize field mapper
         self.field_mapper = DefaultFieldMapper()
