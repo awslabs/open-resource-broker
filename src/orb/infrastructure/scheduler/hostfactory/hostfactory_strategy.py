@@ -26,6 +26,7 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
         config_port: Any = None,
         logger: Any = None,
         provider_registry_service: Any = None,
+        path_resolver: Any = None,
     ) -> None:
         """Initialize the instance."""
         self._template_defaults_service = template_defaults_service
@@ -33,6 +34,7 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
             config_port=config_port,
             logger=logger,
             provider_registry_service=provider_registry_service,
+            path_resolver=path_resolver,
         )
         # Initialize field mapper lazily - will be created when first needed
         self._field_mapper = None
@@ -553,7 +555,9 @@ class HostFactorySchedulerStrategy(BaseSchedulerStrategy):
 
     def _build_hf_attributes(self, instance_type: str) -> dict[str, list[str]]:
         """Build IBM HF attributes dict from an instance type string."""
-        from orb.cli.field_mapping import derive_cpu_ram_from_instance_type
+        from orb.infrastructure.scheduler.hostfactory.instance_utils import (
+            derive_cpu_ram_from_instance_type,
+        )
 
         ncpus, nram = derive_cpu_ram_from_instance_type(instance_type)
         return {

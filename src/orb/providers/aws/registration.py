@@ -442,6 +442,8 @@ def is_aws_provider_registered() -> bool:
 
 def register_aws_services_with_di(container) -> None:
     """Register AWS utility services with DI container (not provider instances)."""
+    import logging
+
     from orb.domain.base.ports import LoggingPort
 
     logger = container.get(LoggingPort)
@@ -491,7 +493,11 @@ def register_aws_services_with_di(container) -> None:
         from orb.monitoring.health import HealthCheck
 
         container.register_singleton(
-            HealthCheck, lambda c: HealthCheck(config=c.get(ConfigurationManager))
+            HealthCheck,
+            lambda c: HealthCheck(
+                config=c.get(ConfigurationManager).get_raw_config(),
+                logger=logging.getLogger("orb.monitoring.health"),
+            ),
         )
         logger.debug("HealthCheck registered with DI container")
 

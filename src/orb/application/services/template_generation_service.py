@@ -12,6 +12,7 @@ from orb.application.dto.template_generation_dto import (
     TemplateGenerationResult,
 )
 from orb.domain.base.ports import ConfigurationPort, LoggingPort, SchedulerPort
+from orb.domain.base.ports.path_resolution_port import PathResolutionPort
 from orb.domain.base.ports.template_example_generator_port import TemplateExampleGeneratorPort
 from orb.domain.base.utils import extract_provider_type
 from orb.domain.constants import PROVIDER_TYPE_AWS
@@ -32,12 +33,14 @@ class TemplateGenerationService:
         logger: LoggingPort,
         provider_registry_service: "ProviderRegistryService",
         template_example_generator: TemplateExampleGeneratorPort,
+        path_resolver: PathResolutionPort | None = None,
     ):
         self._config_manager = config_manager
         self._scheduler_strategy = scheduler_strategy
         self._logger = logger
         self._provider_registry_service = provider_registry_service
         self._template_example_generator = template_example_generator
+        self._path_resolver = path_resolver
 
     async def generate_templates(
         self, request: TemplateGenerationRequest
@@ -217,10 +220,9 @@ class TemplateGenerationService:
 
     def _get_templates_file_path(self, filename: str) -> Path:
         """Get the full path for templates file."""
-        from orb.config.platform_dirs import get_config_location
-
-        config_dir = get_config_location()
-        return config_dir / filename
+        if self._path_resolver is not None:
+            return Path(self._path_resolver.get_config_dir()) / filename
+        raise RuntimeError("PathResolutionPort not injected; cannot resolve templates file path")
 
     def _write_templates_file(
         self, templates_file: Path, formatted_examples: List[Dict[str, Any]]

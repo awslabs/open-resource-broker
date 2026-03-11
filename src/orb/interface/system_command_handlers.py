@@ -141,10 +141,10 @@ async def handle_select_provider_strategy(args) -> dict[str, Any]:
     # Get first available provider as default
     default_provider = PROVIDER_TYPE_AWS  # Keep as fallback
     try:
-        from orb.providers.registry import get_provider_registry
+        from orb.application.services.provider_registry_service import ProviderRegistryService
 
-        registry = get_provider_registry()
-        registered_types = registry.get_registered_providers()
+        registry_service = get_container().get(ProviderRegistryService)
+        registered_types = registry_service.get_available_strategies()
         if registered_types:
             default_provider = registered_types[0]
     except Exception as e:

@@ -51,6 +51,7 @@ def _register_template_services(container: DIContainer):
         from orb.application.services.template_generation_service import (
             TemplateGenerationService,
         )
+        from orb.domain.base.ports.path_resolution_port import PathResolutionPort
         from orb.domain.base.ports.scheduler_port import SchedulerPort
         from orb.domain.base.ports.template_example_generator_port import (
             TemplateExampleGeneratorPort,
@@ -62,6 +63,7 @@ def _register_template_services(container: DIContainer):
             logger=c.get(LoggingPort),
             provider_registry_service=c.get(ProviderRegistryService),
             template_example_generator=c.get(TemplateExampleGeneratorPort),
+            path_resolver=c.get(PathResolutionPort),
         )
 
     from orb.application.services.template_generation_service import TemplateGenerationService

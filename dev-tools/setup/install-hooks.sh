@@ -10,7 +10,7 @@ HOOKS_DIR="$REPO_ROOT/.githooks"
 echo "Installing git hooks..."
 
 # Set core.hooksPath to our tracked hooks directory
-git config core.hooksPath "$HOOKS_DIR"
+git config core.hooksPath .githooks
 
 # Make all hooks executable
 chmod +x "$HOOKS_DIR"/*

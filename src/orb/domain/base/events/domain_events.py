@@ -143,3 +143,19 @@ class TemplateDeletedEvent(TemplateEvent):
 
     deletion_reason: str
     deletion_time: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+# =============================================================================
+# CLEANUP DOMAIN EVENTS
+# =============================================================================
+
+
+class ResourcesCleanedEvent(DomainEvent):
+    """Event raised when multiple resources are cleaned up."""
+
+    resource_type: str
+    resource_id: str
+    provider: str
+    resource_count: int
+    cleanup_reason: str
+    cleanup_time: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

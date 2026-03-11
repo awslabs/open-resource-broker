@@ -12,8 +12,8 @@ from .base_events import (
     TimedEvent,
 )
 
-# Domain events (Request, Machine, Template)
-from .domain_events import (  # Request Events; Machine Events; Template Events
+# Domain events (Request, Machine, Template, Cleanup)
+from .domain_events import (  # Request Events; Machine Events; Template Events; Cleanup Events
     MachineCreatedEvent,
     MachineEvent,
     MachineHealthCheckEvent,
@@ -26,6 +26,7 @@ from .domain_events import (  # Request Events; Machine Events; Template Events
     RequestFailedEvent,
     RequestStatusChangedEvent,
     RequestTimeoutEvent,
+    ResourcesCleanedEvent,
     TemplateCreatedEvent,
     TemplateDeletedEvent,
     TemplateEvent,
@@ -72,6 +73,8 @@ __all__: list[str] = [
     "ProviderOperationEvent",
     "ProviderRateLimitEvent",
     "ProviderResourceStateChangedEvent",
+    # Cleanup Events
+    "ResourcesCleanedEvent",
     # Request Events
     "RequestCompletedEvent",
     "RequestCreatedEvent",

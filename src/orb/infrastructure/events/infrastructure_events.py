@@ -6,6 +6,21 @@ from typing import Any, Optional
 from pydantic import Field
 
 from orb.domain.base.events.base_events import InfrastructureEvent
+from orb.domain.base.events.domain_events import (
+    ResourcesCleanedEvent as ResourcesCleanedEvent,
+)
+
+__all__ = [
+    "ResourcesCleanedEvent",
+    "ResourceEvent",
+    "ResourceCreatedEvent",
+    "ResourceUpdatedEvent",
+    "ResourceDeletedEvent",
+    "ResourceErrorEvent",
+    "OperationStartedEvent",
+    "OperationCompletedEvent",
+    "OperationFailedEvent",
+]
 
 # =============================================================================
 # INFRASTRUCTURE EVENTS
@@ -38,14 +53,6 @@ class ResourceDeletedEvent(ResourceEvent):
 
     deletion_reason: str
     deletion_time: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-
-
-class ResourcesCleanedEvent(ResourceEvent):
-    """Event raised when multiple resources are cleaned up."""
-
-    resource_count: int
-    cleanup_reason: str
-    cleanup_time: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class ResourceErrorEvent(ResourceEvent):

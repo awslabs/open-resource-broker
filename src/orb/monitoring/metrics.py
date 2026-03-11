@@ -1,6 +1,9 @@
 """Application metrics collection and monitoring."""
 
 import json
+
+# stdlib logging used intentionally: LoggingPort would create a monitoring->domain->infrastructure->monitoring cycle.
+import logging
 import threading
 import time
 from collections import deque
@@ -8,10 +11,6 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Optional
-
-from orb.infrastructure.logging.logger import get_logger
-
-logger = get_logger(__name__)
 
 # Module-level constant to avoid B008 warning
 DEFAULT_MAX_AGE = timedelta(days=7)
@@ -73,8 +72,9 @@ class Timer:
 class MetricsCollector:
     """Collects and manages application metrics."""
 
-    def __init__(self, config: dict[str, Any]) -> None:
+    def __init__(self, config: dict[str, Any], logger: logging.Logger | None = None) -> None:
         """Initialize metrics collector."""
+        self._logger = logger or logging.getLogger(__name__)
         self.config = config
         self.metrics: dict[str, Metric] = {}
         self.timers: dict[str, list[float]] = {}
@@ -188,7 +188,7 @@ class MetricsCollector:
         self.record_time(f"{operation}_duration", duration)
 
         if metadata:
-            logger.info(
+            self._logger.info(
                 "%s completed successfully",
                 operation,
                 extra={"duration": duration, "metadata": metadata},
@@ -206,7 +206,7 @@ class MetricsCollector:
         self.record_time(f"{operation}_error_duration", duration)
 
         if metadata:
-            logger.error(
+            self._logger.error(
                 "%s failed",
                 operation,
                 extra={"duration": duration, "metadata": metadata},
@@ -242,12 +242,12 @@ class MetricsCollector:
                     f.write(json.dumps(trace) + "\n")
 
             try:
-                logger.debug("Flushed %d traces to %s", len(traces_to_write), trace_file)
+                self._logger.debug("Flushed %d traces to %s", len(traces_to_write), trace_file)
             except ValueError:
                 pass  # logging stream closed during interpreter shutdown
 
         except Exception as e:
-            logger.error("Failed to flush traces: %s", e, exc_info=True)
+            self._logger.error("Failed to flush traces: %s", e, exc_info=True)
             # Don't re-raise - tracing failures shouldn't crash the application
 
     def _start_metrics_writer(self) -> None:
@@ -260,7 +260,7 @@ class MetricsCollector:
                     self._write_metrics_snapshot()
                     time.sleep(self.config.get("metrics_interval", 10))
                 except Exception as e:
-                    logger.error("Error writing metrics: %s", e, exc_info=True)
+                    self._logger.error("Error writing metrics: %s", e, exc_info=True)
                     time.sleep(5)  # Shorter sleep on error
 
         thread = threading.Thread(target=write_metrics, daemon=True)
@@ -291,7 +291,7 @@ class MetricsCollector:
         try:
             self._write_metrics_snapshot()
         except Exception as e:
-            logger.error("Error flushing metrics: %s", e, exc_info=True)
+            self._logger.error("Error flushing metrics: %s", e, exc_info=True)
 
     def __del__(self) -> None:
         """Best-effort flush on collector destruction."""
@@ -349,6 +349,6 @@ class MetricsCollector:
                     try:
                         file.unlink()
                     except Exception as e:
-                        logger.warning(
+                        self._logger.warning(
                             "Failed to delete old metrics file %s: %s", file, e, exc_info=True
                         )

@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Any, Callable
 from orb.application.request.dto import RequestDTO
 
 # Import from Application layer (correct Clean Architecture)
+from orb.domain.base.ports.path_resolution_port import PathResolutionPort
 from orb.domain.base.ports.scheduler_port import SchedulerPort
 from orb.domain.constants import PROVIDER_TYPE_AWS
 from orb.domain.template.ports.template_defaults_port import TemplateDefaultsPort
@@ -38,11 +39,13 @@ class BaseSchedulerStrategy(SchedulerPort, ABC):
         config_port: "ConfigurationPort | None" = None,
         logger: "LoggingPort | None" = None,
         provider_registry_service: "ProviderRegistryService | None" = None,
+        path_resolver: "PathResolutionPort | None" = None,
     ) -> None:
         """Initialise base dependencies. Call from subclass __init__."""
         self._config_manager = config_port
         self._logger = logger
         self._provider_registry_service = provider_registry_service
+        self._path_resolver = path_resolver
 
     @property
     def config_manager(self) -> Any:
@@ -223,23 +226,24 @@ class BaseSchedulerStrategy(SchedulerPort, ABC):
         """Get scheduler-specific env var. Override in subclass if needed."""
         return None
 
+    def _get_path_resolver(self) -> "PathResolutionPort":
+        if self._path_resolver is None:
+            from orb.infrastructure.adapters.path_resolution_adapter import PathResolutionAdapter
+
+            self._path_resolver = PathResolutionAdapter()
+        return self._path_resolver
+
     def _get_platform_config_dir(self) -> str:
         """Get platform default config directory."""
-        from orb.config.platform_dirs import get_config_location
-
-        return str(get_config_location())
+        return self._get_path_resolver().get_config_dir()
 
     def _get_platform_work_dir(self) -> str:
         """Get platform default work directory."""
-        from orb.config.platform_dirs import get_work_location
-
-        return str(get_work_location())
+        return self._get_path_resolver().get_work_dir()
 
     def _get_platform_logs_dir(self) -> str:
         """Get platform default logs directory."""
-        from orb.config.platform_dirs import get_logs_location
-
-        return str(get_logs_location())
+        return self._get_path_resolver().get_logs_dir()
 
     @abstractmethod
     def get_scripts_directory(self) -> Path | None:
@@ -359,6 +363,7 @@ class BaseSchedulerStrategy(SchedulerPort, ABC):
                 config_port=self._config_manager,
                 logger=self._logger,
                 provider_registry_service=self._provider_registry_service,
+                path_resolver=self._path_resolver,
             )
             return delegate.load_templates_from_path(template_path, provider_override)
         except Exception as e:

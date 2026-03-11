@@ -105,7 +105,9 @@ class ProvisioningOrchestrationService:
                 last_result = await self._dispatch_single_attempt(
                     template, request, selection_result, attempt_count
                 )
-            except CircuitBreakerOpenError as e:
+            except Exception as e:
+                if not isinstance(e, CircuitBreakerOpenError):
+                    raise
                 self._logger.warning(
                     "Circuit breaker open for provider %s — aborting retry loop: %s",
                     selection_result.provider_name,

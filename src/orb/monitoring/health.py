@@ -27,10 +27,8 @@ except ImportError:
     Histogram = None
     generate_latest = None
 
-from orb.config.managers.configuration_manager import ConfigurationManager
-from orb.infrastructure.logging.logger import get_logger
-
-logger = get_logger(__name__)
+# stdlib logging used intentionally: LoggingPort would create a monitoring->domain->infrastructure->monitoring cycle.
+import logging
 
 
 @dataclass
@@ -57,9 +55,10 @@ class HealthStatus:
 class HealthCheck:
     """Health check implementation."""
 
-    def __init__(self, config: ConfigurationManager) -> None:
+    def __init__(self, config: dict[str, Any], logger: logging.Logger | None = None) -> None:
         """Initialize health check."""
-        self.config = config.get_raw_config()
+        self._logger = logger or logging.getLogger(__name__)
+        self.config = config
         self.checks: dict[str, Callable[[], HealthStatus]] = {}
         self.status_history: dict[str, list[HealthStatus]] = {}
         self._lock = threading.Lock()
@@ -107,7 +106,7 @@ class HealthCheck:
                     self.status_history[name].pop(0)
             return status
         except Exception as e:
-            logger.error("Health check %s failed: %s", name, e, exc_info=True)
+            self._logger.error("Health check %s failed: %s", name, e, exc_info=True)
             return HealthStatus(
                 name=name,
                 status="unhealthy",
@@ -164,7 +163,7 @@ class HealthCheck:
                     time.sleep(interval)
 
                 except Exception as e:
-                    logger.error("Health checker error: %s", e, exc_info=True)
+                    self._logger.error("Health checker error: %s", e, exc_info=True)
                     time.sleep(5)  # Shorter sleep on error
 
         thread = threading.Thread(target=check_health, daemon=True)
@@ -189,7 +188,7 @@ class HealthCheck:
             with alert_file.open("w") as f:
                 json.dump(alerts, f, indent=2)
 
-            logger.error("Health check alerts", extra={"alerts": alerts})
+            self._logger.error("Health check alerts", extra={"alerts": alerts})
 
     def _check_system_health(self) -> HealthStatus:
         """Check system health."""

@@ -27,6 +27,7 @@ def create_symphony_hostfactory_strategy(config: Any) -> "SchedulerPort":
     from orb.application.services.provider_registry_service import ProviderRegistryService
     from orb.domain.base.ports.configuration_port import ConfigurationPort
     from orb.domain.base.ports.logging_port import LoggingPort
+    from orb.domain.base.ports.path_resolution_port import PathResolutionPort
     from orb.domain.template.ports.template_defaults_port import TemplateDefaultsPort
     from orb.infrastructure.scheduler.hostfactory.hostfactory_strategy import (
         HostFactorySchedulerStrategy,
@@ -36,18 +37,21 @@ def create_symphony_hostfactory_strategy(config: Any) -> "SchedulerPort":
     config_port = None
     logger = None
     provider_registry_service = None
+    path_resolver = None
 
     if hasattr(config, "get_optional"):
         template_defaults_service = config.get_optional(TemplateDefaultsPort)
         config_port = config.get_optional(ConfigurationPort)
         logger = config.get_optional(LoggingPort)
         provider_registry_service = config.get_optional(ProviderRegistryService)
+        path_resolver = config.get_optional(PathResolutionPort)
 
     return HostFactorySchedulerStrategy(
         template_defaults_service=template_defaults_service,
         config_port=config_port,
         logger=logger,
         provider_registry_service=provider_registry_service,
+        path_resolver=path_resolver,
     )
 
 
@@ -91,6 +95,7 @@ def create_default_strategy(config: Any) -> "SchedulerPort":
     from orb.application.services.provider_registry_service import ProviderRegistryService
     from orb.domain.base.ports.configuration_port import ConfigurationPort
     from orb.domain.base.ports.logging_port import LoggingPort
+    from orb.domain.base.ports.path_resolution_port import PathResolutionPort
     from orb.domain.template.ports.template_defaults_port import TemplateDefaultsPort
     from orb.infrastructure.scheduler.default.default_strategy import DefaultSchedulerStrategy
 
@@ -98,18 +103,21 @@ def create_default_strategy(config: Any) -> "SchedulerPort":
     config_port = None
     logger = None
     provider_registry_service = None
+    path_resolver = None
 
     if hasattr(config, "get_optional"):
         template_defaults_service = config.get_optional(TemplateDefaultsPort)
         config_port = config.get_optional(ConfigurationPort)
         logger = config.get_optional(LoggingPort)
         provider_registry_service = config.get_optional(ProviderRegistryService)
+        path_resolver = config.get_optional(PathResolutionPort)
 
     return DefaultSchedulerStrategy(
         template_defaults_service=template_defaults_service,
         config_port=config_port,
         logger=logger,
         provider_registry_service=provider_registry_service,
+        path_resolver=path_resolver,
     )
 
 

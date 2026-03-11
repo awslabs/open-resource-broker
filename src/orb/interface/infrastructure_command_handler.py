@@ -162,10 +162,11 @@ def _get_active_providers() -> List[Dict[str, Any]]:
     config_file = config_dir / "config.json"
 
     if not config_file.exists():
-        from orb.providers.registry import get_provider_registry
+        from orb.application.services.provider_registry_service import ProviderRegistryService
+        from orb.infrastructure.di.container import get_container
 
-        registry = get_provider_registry()
-        registered_types = registry.get_registered_providers()
+        registry_service = get_container().get(ProviderRegistryService)
+        registered_types = registry_service.get_registered_provider_types()
         default_type = registered_types[0] if registered_types else "aws"
         return [
             {
@@ -187,10 +188,11 @@ def _get_active_providers() -> List[Dict[str, Any]]:
             active_providers.append(provider)
 
     if not active_providers:
-        from orb.providers.registry import get_provider_registry
+        from orb.application.services.provider_registry_service import ProviderRegistryService
+        from orb.infrastructure.di.container import get_container
 
-        registry = get_provider_registry()
-        registered_types = registry.get_registered_providers()
+        registry_service = get_container().get(ProviderRegistryService)
+        registered_types = registry_service.get_registered_provider_types()
         default_type = registered_types[0] if registered_types else "aws"
         active_providers = [
             {

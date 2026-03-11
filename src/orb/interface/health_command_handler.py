@@ -77,12 +77,10 @@ def handle_health_check(args) -> int:
 
         # 4. Provider health check (provider-agnostic)
         try:
-            from orb.providers.registry import get_provider_registry
+            from orb.application.services.provider_registry_service import ProviderRegistryService
 
-            registry = get_provider_registry()
-            provider_types = registry.get_registered_providers()
-            provider_instances = registry.get_registered_provider_instances()
-            all_providers = provider_types + provider_instances
+            registry_service = container.get(ProviderRegistryService)
+            all_providers = registry_service.get_available_strategies()
 
             if not all_providers:
                 checks.append(
@@ -100,7 +98,7 @@ def handle_health_check(args) -> int:
 
                 for provider_name in all_providers:
                     try:
-                        health_status = cast(Any, registry).check_strategy_health(provider_name)
+                        health_status = registry_service.check_strategy_health(provider_name)
                         if health_status and health_status.is_healthy:
                             healthy_count += 1
                         elif health_status:

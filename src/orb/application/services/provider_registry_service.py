@@ -75,3 +75,15 @@ class ProviderRegistryService:
         if strategy is None:
             return raw_api
         return strategy.resolve_api_alias(raw_api)
+
+    def get_registered_provider_types(self) -> list[str]:
+        """Return registered provider type names."""
+        return self._registry.get_registered_providers()
+
+    def ensure_provider_registered(self, provider_type: str) -> bool:
+        """Ensure a provider type is registered. Returns True on success."""
+        return self._registry.ensure_provider_type_registered(provider_type)
+
+    def get_or_create_strategy(self, provider_identifier: str, config: Any = None) -> Any:
+        """Get or create a provider strategy instance."""
+        return self._registry.get_or_create_strategy(provider_identifier, config)
