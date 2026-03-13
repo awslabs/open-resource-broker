@@ -66,7 +66,9 @@ class TestRegisterCheckIdempotent:
         hc.register_check("probe", first_func)
         hc.register_check("probe", second_func)
 
-        assert hc.checks["probe"] is first_func, "Second registration should not overwrite the first"
+        assert hc.checks["probe"] is first_func, (
+            "Second registration should not overwrite the first"
+        )
 
     def test_register_check_new_name_works(self) -> None:
         """Registering a new check name adds it to self.checks."""
