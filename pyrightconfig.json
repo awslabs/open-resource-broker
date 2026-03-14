@@ -10,6 +10,6 @@
   "reportUnusedVariable": true,
   "reportUnusedImport": true,
   "reportPrivateUsage": false,
-  "venvPath": "/Users/flamurg/src/aws/symphony/open-resource-broker",
+  "venvPath": ".",
   "venv": ".venv"
 }
