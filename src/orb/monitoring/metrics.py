@@ -167,6 +167,24 @@ class MetricsCollector:
             if isinstance(metric, Gauge):
                 metric.set(value)
 
+    def increment_gauge(self, name: str, delta: float = 1.0) -> None:
+        """Increment a gauge metric by delta."""
+        with self._lock:
+            if name not in self.metrics:
+                self.register_gauge(name)
+            metric = self.metrics[name]
+            if isinstance(metric, Gauge):
+                metric.set(metric.value + delta)
+
+    def decrement_gauge(self, name: str, delta: float = 1.0) -> None:
+        """Decrement a gauge metric by delta."""
+        with self._lock:
+            if name not in self.metrics:
+                self.register_gauge(name)
+            metric = self.metrics[name]
+            if isinstance(metric, Gauge):
+                metric.set(metric.value - delta)
+
     def start_timer(self, name: str = "", labels: Optional[dict[str, str]] = None) -> Timer:
         """Start a new timer."""
         if labels is None:
