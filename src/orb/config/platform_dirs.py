@@ -5,6 +5,8 @@ import site
 import sys
 from pathlib import Path
 
+from orb.config.installation_detector import detect_install_mode
+
 
 def _get_root_dir() -> Path | None:
     """Return ORB_ROOT_DIR as a Path if set, else None."""
@@ -64,40 +66,31 @@ def get_config_location() -> Path:
     if root := _get_root_dir():
         return root / "config"
 
-    # 3. uv tool install: ~/.local/share/uv/tools/<name>/
-    #    Standard venv branch would fire (prefix != base_prefix) and return
-    #    ~/.local/share/uv/tools/config/ — wrong. Intercept before venv check.
-    if "/.local/share/uv/tools/" in str(sys.prefix):
+    # 3. Delegate to unified install-mode detector
+    mode = detect_install_mode()
+
+    if mode == "uv_tool":
         return Path.home() / ".local" / "orb" / "config"
 
-    # 3. Virtual environment (check BEFORE user install)
-    if in_virtualenv():
-        # For symlink venvs (project .venv), use executable's grandparent's sibling
-        # For standard venvs, use sys.prefix parent
-        if sys.prefix != sys.base_prefix:
-            # Standard venv: sys.prefix is the venv directory
-            return Path(sys.prefix).parent / "config"
-        else:
-            # Symlink venv: executable is .venv/bin/python, we want .venv/../config
-            # .parent = .venv/bin, .parent = .venv, .parent = parent dir
-            return Path(sys.executable).parent.parent.parent / "config"
+    if mode == "venv":
+        # Standard venv: sys.prefix is the venv directory
+        return Path(sys.prefix).parent / "config"
 
-    # 3. Development mode
-    cwd = Path.cwd()
-    for parent in [cwd] + list(cwd.parents):
-        if (parent / "pyproject.toml").exists():
-            return parent / "config"
+    if mode in ("development", "editable"):
+        cwd = Path.cwd()
+        for parent in [cwd] + list(cwd.parents):
+            if (parent / "pyproject.toml").exists():
+                return parent / "config"
+        return cwd / "config"
 
-    # 4. User installation
-    if is_user_install():
+    if mode == "user":
         return Path.home() / ".local" / "orb" / "config"
 
-    # 5. System installation
-    if is_system_install():
+    if mode == "system":
         return Path(sys.prefix) / "orb" / "config"
 
-    # 6. Fallback
-    return cwd / "config"
+    # Fallback
+    return Path.cwd() / "config"
 
 
 def get_work_location() -> Path:

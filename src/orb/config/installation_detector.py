@@ -4,7 +4,7 @@ import importlib.metadata
 import json
 import sys
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Literal, Optional, Tuple
 
 
 def detect_installation_mode(package_name: str = "orb-py") -> Tuple[str, Optional[Path]]:
@@ -68,6 +68,48 @@ def detect_installation_mode(package_name: str = "orb-py") -> Tuple[str, Optiona
     except Exception:
         # Package not installed - running from source
         return "development", None
+
+
+def detect_install_mode() -> Literal["development", "editable", "user", "uv_tool", "system", "venv"]:
+    """Detect installation mode, returning a canonical literal.
+
+    Checks uv tool install first (before venv detection would misclassify it),
+    then delegates to detect_installation_mode() for the remaining cases.
+
+    Returns one of: 'development', 'editable', 'user', 'uv_tool', 'system', 'venv'
+    """
+    import site
+
+    # uv tool installs look like a venv (prefix != base_prefix) but live under
+    # ~/.local/share/uv/tools/ — intercept before the venv branch fires.
+    if "/.local/share/uv/tools/" in str(sys.prefix):
+        return "uv_tool"
+
+    # Standard venv: prefix differs from base_prefix.
+    if sys.prefix != sys.base_prefix:
+        return "venv"
+
+    # User install: sys.prefix starts with site.USER_BASE (mirrors is_user_install()).
+    # Check this before importlib.metadata so patched sys.prefix/USER_BASE is respected.
+    user_base = getattr(site, "USER_BASE", None)
+    if user_base and str(sys.prefix).startswith(user_base):
+        return "user"
+
+    # System install: prefix under /usr or /opt (mirrors is_system_install()).
+    # Check before importlib.metadata for the same reason.
+    if str(sys.prefix).startswith(("/usr", "/opt")):
+        return "system"
+
+    mode, _ = detect_installation_mode()
+
+    if mode == "development":
+        return "development"
+    if mode == "editable":
+        return "editable"
+    if mode == "user":
+        return "user"
+
+    return "system"
 
 
 def get_template_location() -> Path:
