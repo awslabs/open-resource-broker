@@ -59,8 +59,18 @@ def register_core_services(container: DIContainer) -> None:
 
     # Register EventBus as singleton so all repositories and subscribers share one instance
     from orb.application.events.bus.event_bus import EventBus
+    from orb.application.events.handlers.metrics_event_handler import MetricsEventHandler
 
-    container.register_singleton(EventBus, lambda c: EventBus(logger=c.get(LoggingPort)))
+    def create_event_bus(c: DIContainer) -> EventBus:
+        bus = EventBus(logger=c.get(LoggingPort))
+        collector = c.get(MetricsCollector)
+        handler = MetricsEventHandler(collector=collector, logger=c.get(LoggingPort))
+        bus.register_handler("RequestCreatedEvent", handler)
+        bus.register_handler("RequestCompletedEvent", handler)
+        bus.register_handler("RequestFailedEvent", handler)
+        return bus
+
+    container.register_singleton(EventBus, create_event_bus)
 
     # Register event publisher
     from orb.infrastructure.events.publisher import ConfigurableEventPublisher
