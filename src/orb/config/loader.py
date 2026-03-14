@@ -147,7 +147,6 @@ class ConfigurationLoader:
         get_config_logger().debug("Loading default configuration")
 
         try:
-            import json
             from importlib.resources import files
 
             text = (

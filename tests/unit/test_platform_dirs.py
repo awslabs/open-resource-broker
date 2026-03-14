@@ -401,7 +401,7 @@ class TestGetLogsLocation:
             assert result == Path("/base/logs")
 
 
-class TestGetHealthLocation:
+class TestGetHealthLocationEnvFallbacks:
     """Test health directory location detection."""
 
     def test_orb_root_dir_returns_work_health(self):
