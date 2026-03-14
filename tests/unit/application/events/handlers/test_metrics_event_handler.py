@@ -19,6 +19,12 @@ def _make_collector() -> MagicMock:
     return collector
 
 
+def _gauge(value: float) -> MagicMock:
+    g = MagicMock()
+    g.value = value
+    return g
+
+
 # ---------------------------------------------------------------------------
 # RequestCompletedEvent
 # ---------------------------------------------------------------------------
@@ -157,4 +163,103 @@ async def test_unknown_event_type_is_noop():
     await handler.handle(event)
 
     collector.increment_counter.assert_not_called()
+    collector.set_gauge.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
+# Edge cases
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_completed_with_empty_machine_ids_sets_active_instances_to_zero():
+    collector = _make_collector()
+    handler = MetricsEventHandler(collector=collector)
+
+    event = RequestCompletedEvent(
+        aggregate_id="req-5",
+        aggregate_type="Request",
+        request_id="req-5",
+        request_type="provision",
+        completion_status="success",
+        machine_ids=[],
+    )
+    await handler.handle(event)
+
+    collector.set_gauge.assert_any_call("active_instances", 0.0)
+
+
+@pytest.mark.asyncio
+async def test_completed_without_prior_created_does_not_call_record_time():
+    collector = _make_collector()
+    handler = MetricsEventHandler(collector=collector)
+
+    event = RequestCompletedEvent(
+        aggregate_id="req-6",
+        aggregate_type="Request",
+        request_id="req-6",
+        request_type="provision",
+        completion_status="success",
+        machine_ids=["m1"],
+    )
+    await handler.handle(event)
+
+    collector.record_time.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_failed_decrements_pending_requests_when_nonzero():
+    collector = _make_collector()
+    collector.metrics["pending_requests"] = _gauge(2.0)
+    handler = MetricsEventHandler(collector=collector)
+
+    event = RequestFailedEvent(
+        aggregate_id="req-7",
+        aggregate_type="Request",
+        request_id="req-7",
+        request_type="provision",
+        error_message="timeout",
+        failure_reason="timeout",
+    )
+    await handler.handle(event)
+
+    collector.set_gauge.assert_any_call("pending_requests", 1.0)
+
+
+@pytest.mark.asyncio
+async def test_failed_does_not_decrement_pending_requests_when_zero():
+    collector = _make_collector()
+    collector.metrics["pending_requests"] = _gauge(0.0)
+    handler = MetricsEventHandler(collector=collector)
+
+    event = RequestFailedEvent(
+        aggregate_id="req-8",
+        aggregate_type="Request",
+        request_id="req-8",
+        request_type="provision",
+        error_message="timeout",
+        failure_reason="timeout",
+    )
+    await handler.handle(event)
+
+    for call in collector.set_gauge.call_args_list:
+        assert call.args[0] != "pending_requests"
+
+
+@pytest.mark.asyncio
+async def test_failed_does_not_decrement_pending_requests_when_absent():
+    collector = _make_collector()
+    # metrics dict is empty — no pending_requests key
+    handler = MetricsEventHandler(collector=collector)
+
+    event = RequestFailedEvent(
+        aggregate_id="req-9",
+        aggregate_type="Request",
+        request_id="req-9",
+        request_type="provision",
+        error_message="timeout",
+        failure_reason="timeout",
+    )
+    await handler.handle(event)
+
     collector.set_gauge.assert_not_called()
