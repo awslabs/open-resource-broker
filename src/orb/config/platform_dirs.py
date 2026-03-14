@@ -130,11 +130,15 @@ def get_logs_location() -> Path:
 
 def get_scripts_location() -> Path:
     """Get basic scripts directory location for bootstrap."""
-    # 1. ORB_ROOT_DIR
+    # 1. Environment override
+    if env_dir := os.environ.get("ORB_SCRIPTS_DIR"):
+        return Path(env_dir)
+
+    # 2. ORB_ROOT_DIR
     if root := _get_root_dir():
         return root / "scripts"
 
-    # 2. Relative to config
+    # 3. Relative to config
     return get_config_location().parent / "scripts"
 
 

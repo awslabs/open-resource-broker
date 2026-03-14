@@ -382,6 +382,10 @@ class TestGetScriptsLocation:
             result = get_scripts_location()
             assert result == Path("/base/scripts")
 
+    def test_scripts_dir_env_override(self, monkeypatch):
+        monkeypatch.setenv("ORB_SCRIPTS_DIR", "/custom/scripts")
+        assert get_scripts_location() == Path("/custom/scripts")
+
 
 class TestEnvironmentOverrides:
     """Test environment variable overrides."""

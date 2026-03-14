@@ -622,6 +622,7 @@ ORB_CONFIG_DIR=/opt/orb/config         # Configuration files directory (override
 ORB_WORK_DIR=/opt/orb/work             # Working directory for temporary files (overrides ORB_ROOT_DIR)
 ORB_LOG_DIR=/opt/orb/logs              # Log files directory (overrides ORB_ROOT_DIR)
 ORB_HEALTH_DIR=/opt/orb/health         # Health check output directory (overrides ORB_ROOT_DIR)
+ORB_SCRIPTS_DIR=/opt/orb/scripts       # Override scripts directory location (overrides ORB_ROOT_DIR)
 ```
 
 ### AWS Provider Variables
