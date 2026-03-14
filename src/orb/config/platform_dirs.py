@@ -70,7 +70,7 @@ def get_config_location() -> Path:
     mode = detect_install_mode()
 
     if mode == "uv_tool":
-        return Path.home() / ".local" / "orb" / "config"
+        return Path.home() / ".orb" / "config"
 
     if mode == "venv":
         # Standard venv: sys.prefix is the venv directory
@@ -84,7 +84,7 @@ def get_config_location() -> Path:
         return cwd / "config"
 
     if mode == "user":
-        return Path.home() / ".local" / "orb" / "config"
+        return Path.home() / ".orb" / "config"
 
     if mode == "system":
         return Path(sys.prefix) / "orb" / "config"

@@ -364,7 +364,7 @@ This will show:
 2. **`ORB_ROOT_DIR` environment variable** — `{ORB_ROOT_DIR}/config/`
 3. **Virtual environment** — `{venv_parent}/config/` (standard venvs and symlink venvs like uv/mise)
 4. **Development mode** — `{project_root}/config/` (detected by `pyproject.toml` in parent directories)
-5. **User install** (`pip install --user`) — `~/.local/orb/config/`
+5. **User install** (`pip install --user`) — `~/.orb/config/`
 6. **System install** — `{sys.prefix}/orb/config/`
 7. **Fallback** — `{cwd}/config/`
 

@@ -218,7 +218,7 @@ class TestGetConfigLocation:
             mock_home.return_value = Path("/home/user")
 
             result = get_config_location()
-            assert result == Path("/home/user/.local/orb/config")
+            assert result == Path("/home/user/.orb/config")
 
     def test_system_install_usr(self):
         """Test system installation in /usr."""
@@ -275,7 +275,7 @@ class TestGetConfigLocation:
             assert result == Path("/project/config")
 
     def test_uv_tool_install(self):
-        """uv tool install: prefix under ~/.local/share/uv/tools/ returns ~/.local/orb/config."""
+        """uv tool install: prefix under ~/.local/share/uv/tools/ returns ~/.orb/config."""
         uv_prefix = str(Path.home() / ".local/share/uv/tools/orb")
         with (
             patch.dict(os.environ, {}, clear=True),
@@ -286,7 +286,26 @@ class TestGetConfigLocation:
         ):
             mock_home.return_value = Path("/home/user")
             result = get_config_location()
-            assert result == Path("/home/user/.local/orb/config")
+            assert result == Path("/home/user/.orb/config")
+
+    def test_user_install_uses_dotorb(self):
+        """User install (pip install --user) returns ~/.orb/config."""
+        with (
+            patch.dict(os.environ, {}, clear=True),
+            patch("pathlib.Path.cwd") as mock_cwd,
+            patch("pathlib.Path.exists") as mock_exists,
+            patch("pathlib.Path.home") as mock_home,
+            patch.object(site, "USER_BASE", "/home/user/.local"),
+            patch.object(sys, "prefix", "/home/user/.local"),
+            patch.object(sys, "base_prefix", "/home/user/.local"),
+            patch.object(sys, "executable", "/home/user/.local/bin/python"),
+        ):
+            mock_cwd.return_value = Path("/somewhere")
+            mock_exists.return_value = False
+            mock_home.return_value = Path("/home/user")
+
+            result = get_config_location()
+            assert result == Path("/home/user/.orb/config")
 
     def test_fallback(self):
         """Test fallback to current directory."""
