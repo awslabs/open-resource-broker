@@ -150,7 +150,11 @@ class ConfigurationLoader:
             import json
             from importlib.resources import files
 
-            text = files("orb.config").joinpath(cls.DEFAULT_CONFIG_FILENAME).read_text(encoding="utf-8")
+            text = (
+                files("orb.config")
+                .joinpath(cls.DEFAULT_CONFIG_FILENAME)
+                .read_text(encoding="utf-8")
+            )
             config_data = json.loads(text)
             get_config_logger().info("Loaded default configuration from package data")
             return config_data
