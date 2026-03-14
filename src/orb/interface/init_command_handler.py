@@ -695,5 +695,3 @@ def _copy_scripts(scripts_dir: Path):
 
     except Exception as e:
         logger.warning(f"Failed to copy scripts: {e}", exc_info=True)
-
-
