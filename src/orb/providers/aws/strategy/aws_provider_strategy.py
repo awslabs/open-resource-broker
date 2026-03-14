@@ -16,6 +16,7 @@ from orb.domain.base.ports.configuration_port import ConfigurationPort
 
 # Import AWS-specific components
 from orb.providers.aws.configuration.config import AWSProviderConfig
+from orb.providers.aws.exceptions.aws_exceptions import AWSConfigurationError
 from orb.providers.aws.infrastructure.aws_client import AWSClient
 from orb.providers.aws.services.capability_service import AWSCapabilityService
 from orb.providers.aws.services.handler_registry import AWSHandlerRegistry
@@ -562,7 +563,8 @@ class AWSProviderStrategy(ProviderStrategy):
 
     def _fetch_ec2_fleet_capacity(self, resource_id: str) -> Optional[dict[str, Any]]:
         """Fetch capacity fulfillment data for an EC2Fleet resource."""
-        assert self.aws_client is not None
+        if self.aws_client is None:
+            raise AWSConfigurationError("aws_client must be injected before calling _fetch_ec2_fleet_capacity")
         response = self.aws_client.ec2_client.describe_fleets(FleetIds=[resource_id])
         fleets = response.get("Fleets", [])
         if not fleets:
@@ -583,7 +585,8 @@ class AWSProviderStrategy(ProviderStrategy):
 
     def _fetch_spot_fleet_capacity(self, resource_id: str) -> Optional[dict[str, Any]]:
         """Fetch capacity fulfillment data for a SpotFleet resource."""
-        assert self.aws_client is not None
+        if self.aws_client is None:
+            raise AWSConfigurationError("aws_client must be injected before calling _fetch_spot_fleet_capacity")
         response = self.aws_client.ec2_client.describe_spot_fleet_requests(
             SpotFleetRequestIds=[resource_id]
         )
@@ -602,7 +605,8 @@ class AWSProviderStrategy(ProviderStrategy):
 
     def _fetch_asg_capacity(self, resource_id: str) -> Optional[dict[str, Any]]:
         """Fetch capacity fulfillment data for an Auto Scaling Group resource."""
-        assert self.aws_client is not None
+        if self.aws_client is None:
+            raise AWSConfigurationError("aws_client must be injected before calling _fetch_asg_capacity")
         response = self.aws_client.autoscaling_client.describe_auto_scaling_groups(
             AutoScalingGroupNames=[resource_id]
         )
