@@ -30,7 +30,7 @@ def register_core_services(container: DIContainer) -> None:
     def create_metrics_collector(c):
         config_port = c.get(ConfigurationPort)
         metrics_config = config_port.get_metrics_config()
-        return MetricsCollector(metrics_config)
+        return MetricsCollector(metrics_config, logger=c.get(LoggingPort))
 
     # Register as singleton so the same collector instance is shared
     container.register_singleton(MetricsCollector, create_metrics_collector)
