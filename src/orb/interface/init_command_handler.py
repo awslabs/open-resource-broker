@@ -200,6 +200,7 @@ def _interactive_setup() -> Dict[str, Any]:
                 provider_config[param] = input(prompt).strip()
 
         # Step 2: select credentials
+        console.info("  Discovering credential sources...")
         credential_sources = _get_available_credential_sources(provider_type)
 
         console.info("")
@@ -360,6 +361,7 @@ def _configure_additional_provider() -> Optional[Dict[str, Any]]:
                 provider_config[param] = input(prompt).strip()
 
         # Step 2: select credentials
+        console.info("  Discovering credential sources...")
         credential_sources = _get_available_credential_sources(provider_type)
 
         console.info("")
