@@ -305,17 +305,19 @@ class ConfigurationManager:
 
     def get_loaded_config_file(self) -> str | None:
         """Get the actual config file that was loaded."""
-        # Check standard locations that exist
-        import os
+        # If a config file path is already stored (set in __init__ or reload), use it
+        if self._config_file is not None:
+            from pathlib import Path
 
-        # Get current working directory and check relative paths
-        candidates = [
-            "config/config.json",  # Relative to project root
-            "conf/config.json",  # Alternative location
-        ]
-        for path in candidates:
-            if os.path.exists(path):
-                return os.path.abspath(path)
+            if Path(self._config_file).exists():
+                return self._config_file
+
+        # Fall back to platform-resolved location
+        from orb.config.platform_dirs import get_config_location
+
+        candidate = get_config_location() / "config.json"
+        if candidate.exists():
+            return str(candidate)
         return None
 
     def get_provider_type(self) -> str:
