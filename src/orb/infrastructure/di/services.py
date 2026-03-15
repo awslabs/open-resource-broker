@@ -19,7 +19,6 @@ from orb.infrastructure.di.domain_services import register_domain_services
 from orb.infrastructure.di.infrastructure_services import register_infrastructure_services
 from orb.infrastructure.di.monitoring_services import register_monitoring_services
 from orb.infrastructure.di.provider_services import register_provider_services
-from orb.infrastructure.di.scheduler_services import register_scheduler_services
 from orb.infrastructure.di.server_services import register_server_services
 from orb.infrastructure.di.storage_services import register_storage_services
 
@@ -133,10 +132,7 @@ def _register_services_lazy(container: "DIContainer") -> "DIContainer":
     # 5. Register configured storage strategy only
     register_storage_services(container)
 
-    # 6. Register configured scheduler strategy only
-    register_scheduler_services(container)
-
-    # 7. Register registry services
+    # 6. Register registry services
     from orb.infrastructure.di.registry_services import register_registry_services
 
     register_registry_services(container)
@@ -198,28 +194,5 @@ def _register_lazy_service_factories(container: "DIContainer") -> None:
     from orb.infrastructure.logging.logger import get_logger
 
     logger = get_logger(__name__)
-
-    # Scheduler services on-demand when SchedulerPort is first accessed
-    def register_scheduler_lazy(c: "DIContainer") -> None:
-        from orb.infrastructure.scheduler.registration import register_active_scheduler_only
-
-        try:
-            from orb.config.managers.configuration_manager import ConfigurationManager
-
-            config_manager = c.get(ConfigurationManager)
-            scheduler_config = config_manager.get("scheduler", {"type": "default"})
-            scheduler_type = (
-                scheduler_config.get("type", "default")
-                if isinstance(scheduler_config, dict)
-                else str(scheduler_config)
-            )
-            register_active_scheduler_only(scheduler_type)
-        except Exception as e:
-            logger.warning("Failed to load scheduler config, falling back to default: %s", e)
-            register_active_scheduler_only("default")
-
-    from orb.application.ports.scheduler_port import SchedulerPort
-
-    container.register_on_demand(SchedulerPort, register_scheduler_lazy)
 
     logger.debug("Lazy service factories registered")
