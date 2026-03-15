@@ -654,6 +654,7 @@ class ORBClient:
                 if RequestStatus(status_str).is_terminal():
                     return result  # type: ignore[return-value]
             except ValueError:
+                # Invalid or unknown status string; treat as non-terminal and continue polling.
                 pass
 
             remaining = deadline - asyncio.get_event_loop().time()
