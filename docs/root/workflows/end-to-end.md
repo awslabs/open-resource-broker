@@ -55,17 +55,24 @@ orb init
 **Non-interactive** (for scripted or CI environments):
 
 ```bash
-# Minimal — ORB discovers subnet/security-group IDs from AWS
-orb init --non-interactive --provider aws --region us-east-1 --profile myprofile
-
-# Explicit infrastructure IDs — skips AWS discovery
-orb init --non-interactive --provider aws --region us-east-1 \
-  --subnet-ids subnet-abc,subnet-def \
-  --security-group-ids sg-123
+# Basic — provider discovers infrastructure automatically
+orb init --non-interactive --provider aws
 
 # Reinitialize over an existing config
 orb init --force
 ```
+
+Non-interactive flags available:
+
+| Flag | Description |
+|---|---|
+| `--non-interactive` | Skip the interactive wizard |
+| `--provider <type>` | Provider type (e.g. `aws`) |
+| `--scheduler <type>` | Scheduler type (`default` or `hostfactory`) |
+| `--config-dir <path>` | Custom config directory |
+| `--force` | Overwrite existing config |
+
+> **AWS-specific non-interactive flags:** `--region`, `--profile`, `--subnet-ids`, `--security-group-ids`, `--fleet-role` are AWS-only. For other providers, use the interactive wizard (`orb init`) which adapts to the selected provider's requirements.
 
 The resulting config file looks like:
 
