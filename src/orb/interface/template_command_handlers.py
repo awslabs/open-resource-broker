@@ -151,6 +151,10 @@ async def handle_get_template(args: argparse.Namespace) -> dict[str, Any]:
         template = await query_bus.execute(query)
 
         if template:
+            # Get scheduler strategy from DI container for format conversion
+            scheduler_strategy = container.get(SchedulerPort)
+            if scheduler_strategy:
+                return scheduler_strategy.format_template_for_display(template)
             return {
                 "success": True,
                 "template": (
