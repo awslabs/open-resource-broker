@@ -84,6 +84,13 @@ def reset_all_singletons() -> None:
     registry = SingletonRegistry.get_instance()
     registry.reset()
 
+    # Reset the DI container so dependency_overrides work correctly in FastAPI tests
+    try:
+        from orb.infrastructure.di.container import reset_container
+        reset_container()
+    except ImportError:
+        pass
+
     # Reset circuit breaker shared state
     _reset_circuit_breaker_states()
 
