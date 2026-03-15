@@ -240,6 +240,14 @@ async def handle_create_template(args: argparse.Namespace) -> dict[str, Any]:
             configuration=template_config,
         )
 
+        if getattr(args, "validate_only", False):
+            return {
+                "success": True,
+                "message": f"Template {template_id} is valid (not created)",
+                "template_id": template_id,
+                "validate_only": True,
+            }
+
         # Execute command through CQRS bus
         response = await command_bus.execute(cast(Any, command))
 
