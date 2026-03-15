@@ -90,6 +90,7 @@ def reset_all_singletons() -> None:
 
         reset_container()
     except ImportError:
+        # DI container module may not be present in all test environments; skip reset.
         pass
 
     # Reset circuit breaker shared state
