@@ -214,6 +214,7 @@ async def test_cli_request_machines_delegates_format_request_response():
         ),
     ):
         from orb.interface.request_command_handlers import handle_request_machines
+
         await handle_request_machines(args)
 
     scheduler.format_request_response.assert_called_once()
