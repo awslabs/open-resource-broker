@@ -151,7 +151,7 @@ class ORBClient:
                 raise ConfigurationError("CQRS buses not available")
 
             # Resolve scheduler formatting from DI container (graceful fallback if not registered)
-            from orb.domain.base.ports.scheduler_port import SchedulerPort
+            from orb.application.ports.scheduler_port import SchedulerPort
 
             scheduler_port = self._container.get_optional(SchedulerPort)
 

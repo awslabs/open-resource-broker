@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Callable, Optional, get_type_hints
 
 if TYPE_CHECKING:
-    from orb.domain.base.ports.scheduler_port import SchedulerPort
+    from orb.application.ports.scheduler_port import SchedulerPort
 
 from orb.application.decorators import (
     get_registered_command_handlers,
