@@ -146,7 +146,7 @@ class TestPerformance:
         # Measure validator creation time (same cost as factory construction)
         start_time = time.time()
 
-        validator = _make_validator(config_manager)
+        _make_validator(config_manager)
 
         end_time = time.time()
         creation_time = end_time - start_time

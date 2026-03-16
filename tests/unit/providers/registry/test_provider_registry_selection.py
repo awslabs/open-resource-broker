@@ -13,7 +13,6 @@ from orb.domain.base.ports.configuration_port import ConfigurationPort
 from orb.domain.base.results import ProviderSelectionResult
 from orb.providers.registry.provider_registry import ProviderRegistry
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
