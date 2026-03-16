@@ -131,8 +131,8 @@ def _create_storage_strategy(container: "DIContainer") -> StoragePort:
 def _create_provider_strategy(container: "DIContainer") -> ProviderPort:
     """Create provider strategy using registry pattern."""
     from orb.domain.base.ports.logging_port import LoggingPort
-    from orb.infrastructure.adapters.provider_registry_adapter import ProviderRegistryAdapter
+    from orb.infrastructure.adapters.provider_discovery_adapter import ProviderDiscoveryAdapter
     from orb.providers.registry import get_provider_registry
 
     registry = get_provider_registry()
-    return ProviderRegistryAdapter(registry, logger=container.get(LoggingPort))
+    return ProviderDiscoveryAdapter(registry, logger=container.get(LoggingPort))

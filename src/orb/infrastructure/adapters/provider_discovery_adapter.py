@@ -6,7 +6,7 @@ from orb.domain.base.ports.logging_port import LoggingPort
 from orb.providers.registry import ProviderRegistry
 
 
-class ProviderRegistryAdapter:
+class ProviderDiscoveryAdapter:
     """Adapter that wraps Provider Registry for discovery and registry operations."""
 
     def __init__(self, registry: ProviderRegistry, logger: Optional[LoggingPort] = None) -> None:
@@ -24,7 +24,7 @@ class ProviderRegistryAdapter:
     def get_provider_info(self) -> dict[str, Any]:
         """Get provider information using Provider Registry."""
         return {
-            "type": "ProviderRegistryAdapter",
+            "type": "ProviderDiscoveryAdapter",
             "strategies": self.available_strategies(),
         }
 
@@ -78,4 +78,3 @@ class ProviderRegistryAdapter:
         if strategy is None or not hasattr(strategy, "validate_infrastructure"):
             return {}
         return strategy.validate_infrastructure(provider_config)
-
