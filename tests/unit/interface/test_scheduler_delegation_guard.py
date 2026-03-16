@@ -7,6 +7,7 @@ scheduler.format_request_status_response.
 
 import argparse
 import importlib
+from functools import partial
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -46,7 +47,7 @@ def _mock_container_with_scheduler():
     [
         (
             "orb.interface.request_command_handlers.handle_get_request_status",
-            lambda: _make_namespace(all=True),
+            partial(_make_namespace, all=True),
             [],
         ),
         (

@@ -46,8 +46,7 @@ class AWSCLISpec:
             sanitized_profile = re.sub(r"[^a-zA-Z0-9\-_]", "-", profile)
             return f"aws_{sanitized_profile}_{region}"
         except Exception:
-            # Ignore registry errors; fall through to deterministic fallback name
-            pass
+            pass  # best-effort name generation; fall back to "aws_default" on any error
         return "aws_default"
 
     def format_display(self, config: dict[str, Any]) -> list[tuple[str, str]]:

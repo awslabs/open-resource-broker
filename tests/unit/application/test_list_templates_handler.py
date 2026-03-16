@@ -50,7 +50,7 @@ async def test_active_only_true_filters_inactive() -> None:
 
 @pytest.mark.asyncio
 async def test_active_only_false_returns_all() -> None:
-    handler, active_dto = _make_handler()
+    handler, _ = _make_handler()
     # Re-fetch inactive from the same mock setup
     query = ListTemplatesQuery(active_only=False)
     result = await handler.execute_query(query)
