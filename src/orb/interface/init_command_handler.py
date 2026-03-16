@@ -658,7 +658,7 @@ def _write_config_file(config_file: Path, user_config: Dict[str, Any]):
             registry = get_container().get(ProviderRegistryPort)
             strategy = registry.create_strategy_by_type(provider_type, provider_config)
         except Exception:
-            pass
+            pass  # best-effort; fall back to putting all defaults in template_defaults
         infrastructure_defaults = provider_data.get("infrastructure_defaults", {})
         if infrastructure_defaults:
             config_only_keys = (

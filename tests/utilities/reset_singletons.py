@@ -44,7 +44,7 @@ def _safe_reset_class_instance(module_name: str, class_name: str) -> None:
             if hasattr(cls, "_instance"):
                 cls._instance = None
     except (ImportError, AttributeError):
-        pass
+        pass  # module or attribute absent in this environment; skip reset
 
 
 def _safe_reset_global_variable(module_name: str, variable_name: str) -> None:
@@ -60,7 +60,7 @@ def _safe_reset_global_variable(module_name: str, variable_name: str) -> None:
         if hasattr(module, variable_name):
             setattr(module, variable_name, None)
     except (ImportError, AttributeError):
-        pass
+        pass  # module or attribute absent in this environment; skip reset
 
 
 def _reset_circuit_breaker_states() -> None:
@@ -79,7 +79,7 @@ def reset_provider_registry() -> None:
 
         BaseRegistry._instances.pop("ProviderRegistry", None)
     except ImportError:
-        pass
+        pass  # BaseRegistry not available; global variable reset below is sufficient
     _safe_reset_global_variable(
         "orb.providers.registry.provider_registry", "_provider_registry_instance"
     )
@@ -102,8 +102,7 @@ def reset_all_singletons() -> None:
 
         reset_container()
     except ImportError:
-        # DI container module may not be present in all test environments; skip reset.
-        pass
+        pass  # DI container module may not be present in all test environments; skip reset
 
     # Reset circuit breaker shared state
     _reset_circuit_breaker_states()

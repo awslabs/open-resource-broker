@@ -49,13 +49,13 @@ def register_core_services(container: DIContainer) -> None:
     # Register template format converter
 
     # Register scheduler strategy
-    container.register_factory(SchedulerPort, lambda c: _create_scheduler_strategy(c))
+    container.register_factory(SchedulerPort, _create_scheduler_strategy)
 
     # Register storage strategy
-    container.register_factory(StoragePort, lambda c: _create_storage_strategy(c))
+    container.register_factory(StoragePort, _create_storage_strategy)
 
     # Register provider strategy
-    container.register_factory(ProviderDiscoveryPort, lambda c: _create_provider_strategy(c))
+    container.register_factory(ProviderDiscoveryPort, _create_provider_strategy)
 
     # Register EventBus as singleton so all repositories and subscribers share one instance
     from orb.application.events.bus.event_bus import EventBus
