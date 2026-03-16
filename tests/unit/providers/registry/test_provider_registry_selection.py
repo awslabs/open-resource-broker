@@ -83,7 +83,6 @@ def _make_template(provider_name=None, provider_type=None, provider_api=None):
 
 @pytest.mark.unit
 class TestSelectActiveProvider:
-
     def test_single_active_provider_returns_it(self):
         p = _make_provider_instance("aws-primary")
         registry = _make_registry(providers=[p])
@@ -139,7 +138,6 @@ class TestSelectActiveProvider:
 
 @pytest.mark.unit
 class TestSelectProviderForTemplate:
-
     def test_strategy1_cli_override_takes_precedence(self):
         p = _make_provider_instance("aws-primary")
         registry = _make_registry(providers=[p])
@@ -226,7 +224,9 @@ class TestSelectProviderForTemplate:
 
         result = registry.select_provider_for_template(template)
 
-        assert result.selection_reason == "Configuration default (no provider specified in template)"
+        assert (
+            result.selection_reason == "Configuration default (no provider specified in template)"
+        )
         assert result.confidence == 0.7
 
     def test_strategy5_fallback_strategy_used_when_no_config(self):

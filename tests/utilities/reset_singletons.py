@@ -76,11 +76,12 @@ def _reset_circuit_breaker_states() -> None:
 def reset_provider_registry() -> None:
     try:
         from orb.infrastructure.registry.base_registry import BaseRegistry
-        BaseRegistry._instances.pop('ProviderRegistry', None)
+
+        BaseRegistry._instances.pop("ProviderRegistry", None)
     except ImportError:
         pass
     _safe_reset_global_variable(
-        'orb.providers.registry.provider_registry', '_provider_registry_instance'
+        "orb.providers.registry.provider_registry", "_provider_registry_instance"
     )
 
 
