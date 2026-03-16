@@ -339,7 +339,6 @@ def _inject_moto_factory(aws_client: AWSClient, logger, config_port) -> None:
     from orb.providers.registry import get_provider_registry
 
     registry = get_provider_registry()
-    registry._strategy_cache.pop("aws_moto_eu-west-2", None)
 
     container = get_container()
     cfg_port = container.get(ConfigurationPort)
