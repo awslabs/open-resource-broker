@@ -145,9 +145,9 @@ class Application:
 
             self._initialized = True
             if hasattr(self, "_provider_registry") and self._provider_registry:
-                _types = self._provider_registry.get_registered_providers()
+                _instances = self._provider_registry.get_registered_provider_instances()
                 self.logger.info(
-                    "Open Resource Broker initialized successfully with providers: %s", _types
+                    "Open Resource Broker initialized successfully with provider instances: %s", _instances
                 )
             else:
                 self.logger.info(
