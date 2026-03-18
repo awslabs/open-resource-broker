@@ -3,6 +3,7 @@
 from typing import TYPE_CHECKING, Any, Union
 
 from orb.application.ports.scheduler_port import SchedulerPort
+from orb.application.services.response_formatting_service import ResponseFormattingService
 from orb.infrastructure.di.container import get_container
 from orb.infrastructure.error.decorators import handle_interface_exceptions
 
@@ -43,11 +44,13 @@ async def handle_get_request_status(
             "message": "Use either --all or specific IDs, not both",
         }
 
+    formatter = container.get(ResponseFormattingService)
+
     if has_all:
         result = await orchestrator.execute(
             GetRequestStatusInput(all_requests=True, detailed=getattr(args, "detailed", False))
         )
-        return scheduler.format_request_status_response(result.requests)
+        return formatter.format_request_status(result.requests)
 
     # Collect request IDs from args or input_data
     if hasattr(args, "input_data") and args.input_data:
@@ -80,13 +83,13 @@ async def handle_get_request_status(
             detailed=getattr(args, "detailed", False),
         )
     )
-    return scheduler.format_request_status_response(result.requests)
+    return formatter.format_request_status(result.requests)
 
 
 @handle_interface_exceptions(context="request_machines", interface_type="cli")
 async def handle_request_machines(
     args: "argparse.Namespace",
-) -> Union[dict[str, Any], tuple[dict[str, Any], int]]:
+) -> Any:
     """
     Handle request machines operations.
 
@@ -146,9 +149,9 @@ async def handle_request_machines(
         )
     )
 
-    response = scheduler.format_request_response(result.raw)
-    exit_code = scheduler.get_exit_code_for_status(result.status)
-    return response, exit_code
+    container = get_container()
+    formatter = container.get(ResponseFormattingService)
+    return formatter.format_request_operation(result.raw, result.status)
 
 
 @handle_interface_exceptions(context="get_return_requests", interface_type="cli")
@@ -169,10 +172,10 @@ async def handle_get_return_requests(args: "argparse.Namespace") -> dict[str, An
 
     container = get_container()
     orchestrator = container.get(ListReturnRequestsOrchestrator)
-    scheduler = container.get(SchedulerPort)
+    formatter = container.get(ResponseFormattingService)
 
     result = await orchestrator.execute(ListReturnRequestsInput())
-    return scheduler.format_request_status_response(result.requests)
+    return formatter.format_request_status(result.requests)
 
 
 @handle_interface_exceptions(context="request_return_machines", interface_type="cli")
@@ -193,7 +196,7 @@ async def handle_request_return_machines(args: "argparse.Namespace") -> dict[str
 
     container = get_container()
     orchestrator = container.get(ReturnMachinesOrchestrator)
-    scheduler = container.get(SchedulerPort)
+    formatter = container.get(ResponseFormattingService)
 
     has_all = getattr(args, "all", False)
     machine_ids: list[str] = []
@@ -239,7 +242,7 @@ async def handle_request_return_machines(args: "argparse.Namespace") -> dict[str
         )
     )
 
-    return scheduler.format_request_response(result.raw)
+    return formatter.format_request_operation(result.raw, result.status)
 
 
 @handle_interface_exceptions(context="list_requests", interface_type="cli")
@@ -250,10 +253,10 @@ async def handle_list_requests(args: "argparse.Namespace") -> dict[str, Any]:
 
     container = get_container()
     orchestrator = container.get(ListRequestsOrchestrator)
-    scheduler = container.get(SchedulerPort)
+    formatter = container.get(ResponseFormattingService)
 
     result = await orchestrator.execute(ListRequestsInput())
-    return scheduler.format_request_status_response(result.requests)
+    return formatter.format_request_status(result.requests)
 
 
 @handle_interface_exceptions(context="cancel_request", interface_type="cli")
@@ -264,7 +267,7 @@ async def handle_cancel_request(args: "argparse.Namespace") -> dict[str, Any]:
 
     container = get_container()
     orchestrator = container.get(CancelRequestOrchestrator)
-    scheduler = container.get(SchedulerPort)
+    formatter = container.get(ResponseFormattingService)
 
     request_id = getattr(args, "request_id", None) or getattr(args, "flag_request_id", None)
     if not request_id:
@@ -273,4 +276,4 @@ async def handle_cancel_request(args: "argparse.Namespace") -> dict[str, Any]:
     reason = getattr(args, "reason", None) or "Cancelled via API"
     result = await orchestrator.execute(CancelRequestInput(request_id=request_id, reason=reason))
 
-    return scheduler.format_request_response(result.raw)
+    return formatter.format_request_operation(result.raw, result.status)

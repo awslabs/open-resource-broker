@@ -5,9 +5,11 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
+from orb.application.dto.interface_response import InterfaceResponse
 from orb.application.ports.scheduler_port import SchedulerPort
 from orb.application.services.orchestration.acquire_machines import AcquireMachinesOrchestrator
 from orb.application.services.orchestration.dtos import AcquireMachinesOutput
+from orb.application.services.response_formatting_service import ResponseFormattingService
 
 
 def _make_namespace(**kwargs) -> argparse.Namespace:
@@ -21,20 +23,21 @@ def _mock_container():
     container = MagicMock()
     scheduler = MagicMock(spec=SchedulerPort)
     acquire_orch = AsyncMock(spec=AcquireMachinesOrchestrator)
+    formatter = MagicMock(spec=ResponseFormattingService)
 
     scheduler.parse_request_data.return_value = {
         "template_id": "t1",
         "requested_count": 1,
     }
-    scheduler.format_request_response.return_value = {"requestId": "req-fixed"}
-    scheduler.get_exit_code_for_status.return_value = 0
+    formatter.format_request_operation.return_value = InterfaceResponse(data={"requestId": "req-fixed"}, exit_code=0)
 
     container.get.side_effect = lambda t: {
         SchedulerPort: scheduler,
         AcquireMachinesOrchestrator: acquire_orch,
+        ResponseFormattingService: formatter,
     }.get(t, MagicMock())
 
-    return container, scheduler, acquire_orch
+    return container, scheduler, acquire_orch, formatter
 
 
 @pytest.mark.unit
@@ -42,7 +45,7 @@ class TestRequestMachinesWait:
     @pytest.mark.asyncio
     async def test_no_wait_skips_polling(self):
         """wait=False → orchestrator called with wait=False."""
-        container, scheduler, acquire_orch = _mock_container()
+        container, _, acquire_orch, _ = _mock_container()
         acquire_orch.execute.return_value = AcquireMachinesOutput(
             request_id="req-fixed", status="pending"
         )
@@ -60,7 +63,7 @@ class TestRequestMachinesWait:
     @pytest.mark.asyncio
     async def test_timeout_zero_skips_polling(self):
         """wait=True but timeout=0 → orchestrator called with timeout_seconds=0."""
-        container, scheduler, acquire_orch = _mock_container()
+        container, _, acquire_orch, _ = _mock_container()
         acquire_orch.execute.return_value = AcquireMachinesOutput(
             request_id="req-fixed", status="pending"
         )
@@ -79,9 +82,12 @@ class TestRequestMachinesWait:
     @pytest.mark.asyncio
     async def test_already_terminal_returns_immediately(self):
         """wait=True, orchestrator returns 'complete' → exit_code=0."""
-        container, scheduler, acquire_orch = _mock_container()
+        container, _, acquire_orch, formatter = _mock_container()
         acquire_orch.execute.return_value = AcquireMachinesOutput(
             request_id="req-fixed", status="complete", machine_ids=[]
+        )
+        formatter.format_request_operation.return_value = InterfaceResponse(
+            data={"requestId": "req-fixed"}, exit_code=0
         )
 
         args = _make_namespace(
@@ -93,14 +99,13 @@ class TestRequestMachinesWait:
 
             result = await handle_request_machines(args)
 
-        assert isinstance(result, tuple)
-        _, exit_code = result
-        assert exit_code == 0
+        assert isinstance(result, InterfaceResponse)
+        assert result.exit_code == 0
 
     @pytest.mark.asyncio
     async def test_wait_passes_timeout_to_orchestrator(self):
         """wait=True, timeout=300 → orchestrator receives those values."""
-        container, scheduler, acquire_orch = _mock_container()
+        container, _, acquire_orch, _ = _mock_container()
         acquire_orch.execute.return_value = AcquireMachinesOutput(
             request_id="req-fixed", status="complete"
         )
@@ -117,13 +122,15 @@ class TestRequestMachinesWait:
         call_input = acquire_orch.execute.call_args[0][0]
         assert call_input.wait is True
         assert call_input.timeout_seconds == 300
-        assert isinstance(result, tuple)
+        assert isinstance(result, InterfaceResponse)
 
     @pytest.mark.asyncio
     async def test_failed_status_exit_code(self):
         """wait=True, orchestrator returns 'failed' → exit_code=1."""
-        container, scheduler, acquire_orch = _mock_container()
-        scheduler.get_exit_code_for_status.return_value = 1
+        container, _, acquire_orch, formatter = _mock_container()
+        formatter.format_request_operation.return_value = InterfaceResponse(
+            data={"requestId": "req-fixed"}, exit_code=1
+        )
         acquire_orch.execute.return_value = AcquireMachinesOutput(
             request_id="req-fixed", status="failed"
         )
@@ -137,6 +144,5 @@ class TestRequestMachinesWait:
 
             result = await handle_request_machines(args)
 
-        assert isinstance(result, tuple)
-        _, exit_code = result
-        assert exit_code == 1
+        assert isinstance(result, InterfaceResponse)
+        assert result.exit_code == 1

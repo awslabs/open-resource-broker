@@ -11,6 +11,7 @@ from orb.application.services.orchestration.get_request_status import (
     GetRequestStatusOrchestrator,
 )
 from orb.application.services.orchestration.list_templates import ListTemplatesOrchestrator
+from orb.application.services.response_formatting_service import ResponseFormattingService
 from orb.infrastructure.di.buses import QueryBus
 from orb.infrastructure.di.container import DIContainer
 from orb.interface.request_command_handlers import handle_get_request_status
@@ -29,7 +30,7 @@ class TestCLIHandlerExecution:
     async def test_handle_list_templates(self, mock_get_container):
         """Test that handle_list_templates executes correctly."""
         container = MagicMock(spec=DIContainer)
-        scheduler_strategy = MagicMock(spec=SchedulerPort)
+        formatter = MagicMock(spec=ResponseFormattingService)
 
         templates = [
             {"id": "template1", "name": "Template 1"},
@@ -38,16 +39,16 @@ class TestCLIHandlerExecution:
         orchestrator = AsyncMock(spec=ListTemplatesOrchestrator)
         orchestrator.execute.return_value = ListTemplatesOutput(templates=templates)
 
-        formatted_templates = {
-            "templates": templates,
-            "count": 2,
-            "message": "Retrieved 2 templates successfully",
-        }
-        scheduler_strategy.format_templates_response = MagicMock(return_value=formatted_templates)
+        from orb.application.dto.interface_response import InterfaceResponse
+
+        formatted_templates = InterfaceResponse(
+            data={"templates": templates, "count": 2, "message": "Retrieved 2 templates successfully"}
+        )
+        formatter.format_template_list = MagicMock(return_value=formatted_templates)
 
         container.get.side_effect = lambda x: {
             ListTemplatesOrchestrator: orchestrator,
-            SchedulerPort: scheduler_strategy,
+            ResponseFormattingService: formatter,
         }.get(x)
 
         mock_get_container.return_value = container
@@ -59,9 +60,9 @@ class TestCLIHandlerExecution:
 
         result = await handle_list_templates(args)
 
-        # handle_list_templates returns the scheduler strategy's formatted response
-        assert isinstance(result, dict)
-        assert "templates" in result
+        assert result is not None
+        assert isinstance(result, InterfaceResponse)
+        assert "templates" in result.data
 
     @pytest.mark.asyncio
     @patch("orb.interface.scheduler_command_handlers.get_container")
@@ -149,11 +150,17 @@ class TestCLIHandlerExecution:
         orchestrator.execute.return_value = GetRequestStatusOutput(
             requests=[{"request_id": "req-abc123", "status": "complete"}]
         )
+        formatter = MagicMock(spec=ResponseFormattingService)
+        from orb.application.dto.interface_response import InterfaceResponse
+        formatter.format_request_status.return_value = InterfaceResponse(
+            data={"requests": [{"requestId": "req-abc123", "status": "complete"}]}
+        )
 
         container.get.side_effect = lambda x: {
             QueryBus: query_bus,
             SchedulerPort: scheduler_strategy,
             GetRequestStatusOrchestrator: orchestrator,
+            ResponseFormattingService: formatter,
         }.get(x)
 
         mock_get_container.return_value = container
@@ -167,9 +174,9 @@ class TestCLIHandlerExecution:
 
         result = await handle_get_request_status(args)
 
-        assert isinstance(result, dict)
+        assert isinstance(result, InterfaceResponse)
         orchestrator.execute.assert_called_once()
-        scheduler_strategy.format_request_status_response.assert_called_once()
+        formatter.format_request_status.assert_called_once()
 
 
 class TestFormatConversionConsistency:
@@ -178,9 +185,9 @@ class TestFormatConversionConsistency:
     @pytest.mark.asyncio
     @patch("orb.interface.template_command_handlers.get_container")
     async def test_format_conversion_in_template_handler(self, mock_get_container):
-        """Test that format conversion is done using the scheduler strategy in template handlers."""
+        """Test that format conversion is done using ResponseFormattingService in template handlers."""
         container = MagicMock(spec=DIContainer)
-        scheduler_strategy = MagicMock(spec=SchedulerPort)
+        formatter = MagicMock(spec=ResponseFormattingService)
 
         templates = [
             {"id": "template1", "name": "Template 1"},
@@ -189,18 +196,16 @@ class TestFormatConversionConsistency:
         orchestrator = AsyncMock(spec=ListTemplatesOrchestrator)
         orchestrator.execute.return_value = ListTemplatesOutput(templates=templates)
 
-        formatted_templates = {
-            "templates": [
-                {"id": "template1", "formatted": True},
-                {"id": "template2", "formatted": True},
-            ],
-            "count": 2,
-        }
-        scheduler_strategy.format_templates_response = MagicMock(return_value=formatted_templates)
+        from orb.application.dto.interface_response import InterfaceResponse
+
+        formatted_templates = InterfaceResponse(
+            data={"templates": [{"id": "template1", "formatted": True}, {"id": "template2", "formatted": True}], "count": 2}
+        )
+        formatter.format_template_list = MagicMock(return_value=formatted_templates)
 
         container.get.side_effect = lambda x: {
             ListTemplatesOrchestrator: orchestrator,
-            SchedulerPort: scheduler_strategy,
+            ResponseFormattingService: formatter,
         }.get(x)
 
         mock_get_container.return_value = container
@@ -212,8 +217,6 @@ class TestFormatConversionConsistency:
 
         result = await handle_list_templates(args)
 
-        assert isinstance(result, dict)
-        assert "templates" in result
-
-        # Verify scheduler strategy was called for format conversion
-        scheduler_strategy.format_templates_response.assert_called_once_with(templates)
+        assert isinstance(result, InterfaceResponse)
+        assert "templates" in result.data
+        formatter.format_template_list.assert_called_once_with(templates)

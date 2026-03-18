@@ -3,7 +3,7 @@
 import asyncio
 from typing import TYPE_CHECKING, Any
 
-from orb.application.ports.scheduler_port import SchedulerPort
+from orb.application.services.response_formatting_service import ResponseFormattingService
 from orb.infrastructure.di.container import get_container
 from orb.infrastructure.error.decorators import handle_interface_exceptions
 
@@ -27,7 +27,7 @@ async def handle_get_machine_status(args: "argparse.Namespace") -> dict[str, Any
     from orb.application.services.orchestration.list_machines import ListMachinesOrchestrator
 
     container = get_container()
-    scheduler = container.get(SchedulerPort)
+    formatter = container.get(ResponseFormattingService)
 
     has_all = getattr(args, "all", False)
     machine_ids_from_args = []
@@ -48,7 +48,7 @@ async def handle_get_machine_status(args: "argparse.Namespace") -> dict[str, Any
     if has_all:
         orchestrator = container.get(ListMachinesOrchestrator)
         result = await orchestrator.execute(ListMachinesInput())
-        return scheduler.format_machine_status_response(result.machines)
+        return formatter.format_machine_list(result.machines)
 
     if not machine_ids_from_args:
         return {"error": "No machine IDs provided", "message": "Machine IDs are required"}
@@ -62,7 +62,7 @@ async def handle_get_machine_status(args: "argparse.Namespace") -> dict[str, Any
         r.machine for r in results if not isinstance(r, BaseException) and r.machine is not None
     ]
 
-    return scheduler.format_machine_status_response(machine_dtos)
+    return formatter.format_machine_list(machine_dtos)
 
 
 @handle_interface_exceptions(context="list_machines", interface_type="cli")
@@ -81,7 +81,7 @@ async def handle_list_machines(args: "argparse.Namespace") -> dict[str, Any]:
 
     container = get_container()
     orchestrator = container.get(ListMachinesOrchestrator)
-    scheduler = container.get(SchedulerPort)
+    formatter = container.get(ResponseFormattingService)
 
     result = await orchestrator.execute(
         ListMachinesInput(
@@ -90,7 +90,7 @@ async def handle_list_machines(args: "argparse.Namespace") -> dict[str, Any]:
             request_id=getattr(args, "request_id", None) or getattr(args, "template_id", None),
         )
     )
-    return scheduler.format_machine_status_response(result.machines)
+    return formatter.format_machine_list(result.machines)
 
 
 @handle_interface_exceptions(context="stop_machines", interface_type="cli")

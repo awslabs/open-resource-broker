@@ -47,6 +47,13 @@ async def execute_command(args, app, resource_parsers) -> Union[str, tuple[str, 
 
     result = await handler(args)
 
+    from orb.application.dto.interface_response import InterfaceResponse
+    from orb.cli.formatters import format_output
+
+    if isinstance(result, InterfaceResponse):
+        output_format = getattr(args, "format", "json")
+        return format_output(result.data, output_format), result.exit_code
+
     container = get_container()
     scheduler_port = container.get(SchedulerPort)
     formatter = create_cli_formatter(scheduler_port)

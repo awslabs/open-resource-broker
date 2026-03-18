@@ -1,0 +1,42 @@
+"""Response formatting service — wraps SchedulerPort with explicit per-operation methods."""
+
+from typing import Any
+
+from orb.application.dto.interface_response import InterfaceResponse
+from orb.application.ports.scheduler_port import SchedulerPort
+
+
+class ResponseFormattingService:
+    def __init__(self, scheduler: SchedulerPort) -> None:
+        self._scheduler = scheduler
+
+    def format_request_operation(self, raw: dict[str, Any], status: str) -> InterfaceResponse:
+        """Format a request creation/mutation result."""
+        data = self._scheduler.format_request_response(raw)
+        exit_code = self._scheduler.get_exit_code_for_status(status)
+        return InterfaceResponse(data=data, exit_code=exit_code)
+
+    def format_request_status(self, requests: list[Any]) -> InterfaceResponse:
+        """Format a list of request status DTOs."""
+        data = self._scheduler.format_request_status_response(requests)
+        return InterfaceResponse(data=data)
+
+    def format_machine_list(self, machines: list[Any]) -> InterfaceResponse:
+        """Format a list of machine DTOs."""
+        data = self._scheduler.format_machine_status_response(machines)
+        return InterfaceResponse(data=data)
+
+    def format_machine_detail(self, machine: dict[str, Any]) -> InterfaceResponse:
+        """Format a single machine detail dict."""
+        data = self._scheduler.format_machine_details_response(machine)
+        return InterfaceResponse(data=data)
+
+    def format_template_list(self, templates: list[Any]) -> InterfaceResponse:
+        """Format a list of template DTOs."""
+        data = self._scheduler.format_templates_response(templates)
+        return InterfaceResponse(data=data)
+
+    def format_template_mutation(self, raw: dict[str, Any]) -> InterfaceResponse:
+        """Format a template create/update/delete/validate result."""
+        data = self._scheduler.format_template_mutation_response(raw)
+        return InterfaceResponse(data=data)

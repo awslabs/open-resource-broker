@@ -9,7 +9,7 @@ from __future__ import annotations
 import json
 from typing import TYPE_CHECKING, Any
 
-from orb.application.ports.scheduler_port import SchedulerPort
+from orb.application.services.response_formatting_service import ResponseFormattingService
 from orb.domain.base.exceptions import DuplicateError, EntityNotFoundError
 from orb.infrastructure.di.container import get_container
 from orb.infrastructure.error.decorators import handle_interface_exceptions
@@ -27,7 +27,7 @@ async def handle_list_templates(args: argparse.Namespace) -> dict[str, Any]:
 
     container = get_container()
     orchestrator = container.get(ListTemplatesOrchestrator)
-    scheduler = container.get(SchedulerPort)
+    formatter = container.get(ResponseFormattingService)
 
     # Extract parameters from args or input_data (HostFactory compatibility)
     if hasattr(args, "input_data") and args.input_data:
@@ -51,7 +51,7 @@ async def handle_list_templates(args: argparse.Namespace) -> dict[str, Any]:
         console.info("")
         print_getting_started_help()
 
-    return scheduler.format_templates_response(result.templates)
+    return formatter.format_template_list(result.templates)
 
 
 @handle_interface_exceptions(context="get_template", interface_type="cli")
@@ -66,7 +66,7 @@ async def handle_get_template(args: argparse.Namespace) -> dict[str, Any]:
 
     container = get_container()
     orchestrator = container.get(GetTemplateOrchestrator)
-    scheduler = container.get(SchedulerPort)
+    formatter = container.get(ResponseFormattingService)
 
     result = await orchestrator.execute(GetTemplateInput(template_id=template_id))
 
@@ -77,7 +77,7 @@ async def handle_get_template(args: argparse.Namespace) -> dict[str, Any]:
             "template": None,
         }
 
-    return scheduler.format_template_for_display(result.template)
+    return formatter.format_template_mutation(result.template if isinstance(result.template, dict) else result.template.model_dump())
 
 
 @handle_interface_exceptions(context="create_template", interface_type="cli")
@@ -128,7 +128,7 @@ async def handle_create_template(args: argparse.Namespace) -> dict[str, Any]:
 
     container = get_container()
     orchestrator = container.get(CreateTemplateOrchestrator)
-    scheduler = container.get(SchedulerPort)
+    formatter = container.get(ResponseFormattingService)
 
     try:
         result = await orchestrator.execute(
@@ -158,7 +158,7 @@ async def handle_create_template(args: argparse.Namespace) -> dict[str, Any]:
             "template_id": template_id,
         }
 
-    return scheduler.format_template_mutation_response(result.raw)
+    return formatter.format_template_mutation(result.raw)
 
 
 @handle_interface_exceptions(context="update_template", interface_type="cli")
@@ -200,7 +200,7 @@ async def handle_update_template(args: argparse.Namespace) -> dict[str, Any]:
 
     container = get_container()
     orchestrator = container.get(UpdateTemplateOrchestrator)
-    scheduler = container.get(SchedulerPort)
+    formatter = container.get(ResponseFormattingService)
 
     try:
         result = await orchestrator.execute(
@@ -227,7 +227,7 @@ async def handle_update_template(args: argparse.Namespace) -> dict[str, Any]:
             "template_id": resolved_template_id,
         }
 
-    return scheduler.format_template_mutation_response(result.raw)
+    return formatter.format_template_mutation(result.raw)
 
 
 @handle_interface_exceptions(context="delete_template", interface_type="cli")
@@ -251,7 +251,7 @@ async def handle_delete_template(args: argparse.Namespace) -> dict[str, Any]:
 
     container = get_container()
     orchestrator = container.get(DeleteTemplateOrchestrator)
-    scheduler = container.get(SchedulerPort)
+    formatter = container.get(ResponseFormattingService)
 
     try:
         result = await orchestrator.execute(DeleteTemplateInput(template_id=template_id))
@@ -269,7 +269,7 @@ async def handle_delete_template(args: argparse.Namespace) -> dict[str, Any]:
             "template_id": template_id,
         }
 
-    return scheduler.format_template_mutation_response(result.raw)
+    return formatter.format_template_mutation(result.raw)
 
 
 @handle_interface_exceptions(context="validate_template", interface_type="cli")
@@ -282,7 +282,7 @@ async def handle_validate_template(args: argparse.Namespace) -> dict[str, Any]:
 
     container = get_container()
     orchestrator = container.get(ValidateTemplateOrchestrator)
-    scheduler = container.get(SchedulerPort)
+    formatter = container.get(ResponseFormattingService)
 
     # --all: validate every loaded template
     if hasattr(args, "all") and args.all:
@@ -337,13 +337,13 @@ async def handle_validate_template(args: argparse.Namespace) -> dict[str, Any]:
         result = await orchestrator.execute(
             ValidateTemplateInput(template_id=template_id, config=template_config)
         )
-        return scheduler.format_template_mutation_response(result.raw)
+        return formatter.format_template_mutation(result.raw)
 
     # template_id: validate a loaded template by ID
     if hasattr(args, "template_id") and args.template_id:
         template_id = args.template_id
         result = await orchestrator.execute(ValidateTemplateInput(template_id=template_id))
-        return scheduler.format_template_mutation_response(result.raw)
+        return formatter.format_template_mutation(result.raw)
 
     return {
         "success": False,
@@ -362,9 +362,9 @@ async def handle_refresh_templates(args: argparse.Namespace) -> dict[str, Any]:
 
     container = get_container()
     orchestrator = container.get(RefreshTemplatesOrchestrator)
+    formatter = container.get(ResponseFormattingService)
 
     provider_name = getattr(args, "provider_name", None) or getattr(args, "provider_api", None)
     result = await orchestrator.execute(RefreshTemplatesInput(provider_name=provider_name))
 
-    scheduler = container.get(SchedulerPort)
-    return scheduler.format_templates_response(result.templates)
+    return formatter.format_template_list(result.templates)

@@ -144,9 +144,10 @@ class TestFormatConversionInHandlers:
 
     @pytest.mark.asyncio
     async def test_format_conversion_in_cli_handler(self):
-        """Test that format conversion is done using the scheduler strategy in CLI handlers."""
+        """Test that format conversion is done using ResponseFormattingService in CLI handlers."""
         import argparse
 
+        from orb.application.services.response_formatting_service import ResponseFormattingService
         from orb.interface.template_command_handlers import handle_list_templates
 
         with patch("orb.interface.template_command_handlers.get_container") as mock_get_container:
@@ -157,15 +158,15 @@ class TestFormatConversionInHandlers:
             )
 
             container = MagicMock()
-            scheduler_strategy = MagicMock(spec=SchedulerPort)
+            formatter = MagicMock(spec=ResponseFormattingService)
             orchestrator = MagicMock(spec=ListTemplatesOrchestrator)
             orchestrator.execute = AsyncMock(return_value=MagicMock(templates=[{"id": "t1"}]))
-            scheduler_strategy.format_templates_response = MagicMock(return_value=[])
+            formatter.format_template_list = MagicMock(return_value=MagicMock())
 
             container.get.side_effect = lambda x: {
                 ListTemplatesOrchestrator: orchestrator,
-                SchedulerPort: scheduler_strategy,
-            }.get(x, MagicMock(spec=SchedulerPort))
+                ResponseFormattingService: formatter,
+            }.get(x, MagicMock())
 
             mock_get_container.return_value = container
 

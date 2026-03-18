@@ -1,8 +1,8 @@
-"""Regression guard: every list/status handler must delegate to SchedulerPort.
+"""Regression guard: every list/status handler must delegate to ResponseFormattingService.
 
-These tests catch any interface handler that bypasses SchedulerPort and builds
+These tests catch any interface handler that bypasses ResponseFormattingService and builds
 its own response format. They will fail if a handler stops calling
-scheduler.format_request_status_response.
+formatter.format_request_status or formatter.format_request_operation.
 """
 
 import argparse
@@ -12,6 +12,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
+from orb.application.dto.interface_response import InterfaceResponse
 from orb.application.ports.scheduler_port import SchedulerPort
 from orb.application.services.orchestration.acquire_machines import AcquireMachinesOrchestrator
 from orb.application.services.orchestration.cancel_request import CancelRequestOrchestrator
@@ -27,6 +28,7 @@ from orb.application.services.orchestration.list_requests import ListRequestsOrc
 from orb.application.services.orchestration.list_return_requests import (
     ListReturnRequestsOrchestrator,
 )
+from orb.application.services.response_formatting_service import ResponseFormattingService
 
 
 def _make_namespace(**kwargs) -> argparse.Namespace:
@@ -36,12 +38,15 @@ def _make_namespace(**kwargs) -> argparse.Namespace:
     return ns
 
 
-def _mock_container_with_scheduler():
-    """Return (container, scheduler) with all orchestrators pre-wired as AsyncMocks."""
+def _mock_container_with_formatter():
+    """Return (container, formatter) with all orchestrators pre-wired as AsyncMocks."""
     container = MagicMock()
     scheduler = MagicMock(spec=SchedulerPort)
-    scheduler.format_request_status_response.return_value = {"requests": []}
     scheduler.parse_request_data.return_value = []
+
+    formatter = MagicMock(spec=ResponseFormattingService)
+    formatter.format_request_status.return_value = InterfaceResponse(data={"requests": []})
+    formatter.format_request_operation.return_value = InterfaceResponse(data={"requestId": "req-1"})
 
     status_orch = AsyncMock(spec=GetRequestStatusOrchestrator)
     status_orch.execute.return_value = GetRequestStatusOutput(requests=[])
@@ -64,6 +69,7 @@ def _mock_container_with_scheduler():
 
     dispatch_map = {
         SchedulerPort: scheduler,
+        ResponseFormattingService: formatter,
         GetRequestStatusOrchestrator: status_orch,
         ListRequestsOrchestrator: list_req_orch,
         ListReturnRequestsOrchestrator: list_ret_orch,
@@ -71,11 +77,11 @@ def _mock_container_with_scheduler():
         AcquireMachinesOrchestrator: acquire_orch,
     }
     container.get.side_effect = lambda t: dispatch_map.get(t, MagicMock())
-    return container, scheduler
+    return container, formatter
 
 
 # ---------------------------------------------------------------------------
-# Parametrised guard: all list/status handlers must call format_request_status_response
+# Parametrised guard: all list/status handlers must call format_request_status
 # ---------------------------------------------------------------------------
 
 
@@ -100,18 +106,18 @@ def _mock_container_with_scheduler():
     ],
 )
 @pytest.mark.asyncio
-async def test_handler_delegates_to_scheduler(handler_fn, args_factory, query_return):
-    """Every list/status handler must call scheduler.format_request_status_response."""
+async def test_handler_delegates_to_formatter(handler_fn, args_factory, query_return):
+    """Every list/status handler must call formatter.format_request_status."""
     module_path, fn_name = handler_fn.rsplit(".", 1)
     module = importlib.import_module(module_path)
     handler = getattr(module, fn_name)
 
-    container, scheduler = _mock_container_with_scheduler()
+    container, formatter = _mock_container_with_formatter()
 
     with patch(f"{module_path}.get_container", return_value=container):
         await handler(args_factory())
 
-    scheduler.format_request_status_response.assert_called_once()
+    formatter.format_request_status.assert_called_once()
 
 
 # ---------------------------------------------------------------------------
@@ -120,20 +126,16 @@ async def test_handler_delegates_to_scheduler(handler_fn, args_factory, query_re
 
 
 @pytest.mark.asyncio
-async def test_get_request_status_single_id_delegates_to_scheduler():
-    """handle_get_request_status with a single request_id must delegate to scheduler."""
-    from orb.application.services.orchestration.dtos import GetRequestStatusOutput
+async def test_get_request_status_single_id_delegates_to_formatter():
+    """handle_get_request_status with a single request_id must delegate to formatter."""
     from orb.interface.request_command_handlers import handle_get_request_status
 
-    container, scheduler = _mock_container_with_scheduler()
-    scheduler.format_request_status_response.return_value = {"requests": []}
+    container, formatter = _mock_container_with_formatter()
 
-    # Override the status orchestrator to return a result with the request
     status_orch = AsyncMock(spec=GetRequestStatusOrchestrator)
     status_orch.execute.return_value = GetRequestStatusOutput(
         requests=[{"request_id": "req-123", "status": "complete"}]
     )
-    # Patch into the container
     original_side_effect = container.get.side_effect
     container.get.side_effect = lambda t: (
         status_orch if t is GetRequestStatusOrchestrator else original_side_effect(t)
@@ -144,78 +146,69 @@ async def test_get_request_status_single_id_delegates_to_scheduler():
     with patch("orb.interface.request_command_handlers.get_container", return_value=container):
         result = await handle_get_request_status(args)
 
-    scheduler.format_request_status_response.assert_called_once()
-    assert isinstance(result, dict)
+    formatter.format_request_status.assert_called_once()
+    assert isinstance(result, InterfaceResponse)
 
 
 # ---------------------------------------------------------------------------
-# handle_request_machines — must call format_request_response
+# handle_request_machines — must call format_request_operation
 # ---------------------------------------------------------------------------
 
 
 @pytest.mark.asyncio
-async def test_request_machines_delegates_format_request_response():
-    """handle_request_machines must call scheduler.format_request_response."""
+async def test_request_machines_delegates_format_request_operation():
+    """handle_request_machines must call formatter.format_request_operation."""
     from orb.interface.request_command_handlers import handle_request_machines
 
-    container, scheduler = _mock_container_with_scheduler()
-    scheduler.parse_request_data.return_value = {
-        "template_id": "t1",
-        "requested_count": 1,
-    }
-    scheduler.format_request_response.return_value = {"requestId": "req-1", "message": "ok"}
-    scheduler.get_exit_code_for_status.return_value = 0
+    container, formatter = _mock_container_with_formatter()
 
     args = _make_namespace(template_id="t1", machine_count=1, metadata={})
 
     with patch("orb.interface.request_command_handlers.get_container", return_value=container):
         await handle_request_machines(args)
 
-    scheduler.format_request_response.assert_called_once()
+    formatter.format_request_operation.assert_called_once()
 
 
 # ---------------------------------------------------------------------------
-# handle_cancel_request — must call format_request_response
+# handle_cancel_request — must call format_request_operation
 # ---------------------------------------------------------------------------
 
 
 @pytest.mark.asyncio
-async def test_cancel_request_delegates_format_request_response():
-    """handle_cancel_request must call scheduler.format_request_response."""
+async def test_cancel_request_delegates_format_request_operation():
+    """handle_cancel_request must call formatter.format_request_operation."""
     from orb.interface.request_command_handlers import handle_cancel_request
 
-    container, scheduler = _mock_container_with_scheduler()
-    scheduler.format_request_response.return_value = {
-        "request_id": "req-123",
-        "status": "cancelled",
-    }
+    container, formatter = _mock_container_with_formatter()
 
     args = _make_namespace(request_id="req-123")
 
     with patch("orb.interface.request_command_handlers.get_container", return_value=container):
         result = await handle_cancel_request(args)
 
-    scheduler.format_request_response.assert_called_once()
-    assert isinstance(result, dict)
+    formatter.format_request_operation.assert_called_once()
+    assert isinstance(result, InterfaceResponse)
 
 
 # ---------------------------------------------------------------------------
-# Scheduler mock is actually consulted (not bypassed via container.get fallback)
+# Formatter is actually consulted (not bypassed via container.get fallback)
 # ---------------------------------------------------------------------------
 
 
 @pytest.mark.asyncio
-async def test_scheduler_port_retrieved_from_container():
-    """Container must be asked for SchedulerPort — not bypassed."""
+async def test_formatter_retrieved_from_container():
+    """Container must be asked for ResponseFormattingService — not bypassed."""
     from orb.interface.request_command_handlers import handle_get_return_requests
 
-    container, _ = _mock_container_with_scheduler()
+    container, _ = _mock_container_with_formatter()
 
     args = _make_namespace()
 
     with patch("orb.interface.request_command_handlers.get_container", return_value=container):
         await handle_get_return_requests(args)
 
-    # Verify SchedulerPort was requested from the container
     retrieved_types = [call.args[0] for call in container.get.call_args_list]
-    assert SchedulerPort in retrieved_types, "handler must retrieve SchedulerPort from DI container"
+    assert ResponseFormattingService in retrieved_types, (
+        "handler must retrieve ResponseFormattingService from DI container"
+    )

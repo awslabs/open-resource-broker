@@ -115,3 +115,12 @@ def register_port_adapters(container):
     from orb.infrastructure.adapters.console_adapter import RichConsoleAdapter
 
     container.register_singleton(ConsolePort, lambda c: RichConsoleAdapter())
+
+    # Register response formatting service
+    from orb.application.ports.scheduler_port import SchedulerPort
+    from orb.application.services.response_formatting_service import ResponseFormattingService
+
+    container.register_singleton(
+        ResponseFormattingService,
+        lambda c: ResponseFormattingService(c.get(SchedulerPort)),
+    )
