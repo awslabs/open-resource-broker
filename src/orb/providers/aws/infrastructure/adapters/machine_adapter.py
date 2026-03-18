@@ -147,6 +147,42 @@ class AWSMachineAdapter:
                     aws_instance_data.get("InstanceId"),
                 )
 
+                # Validate State field (nested dict with Name)
+                if "State" not in aws_instance_data or "Name" not in aws_instance_data.get(
+                    "State", {}
+                ):
+                    self._logger.error("Missing required State.Name in AWS instance data")
+                    raise AWSError("Missing required State.Name in AWS instance data")
+
+                # For terminal/transitional states AWS strips most network fields —
+                # return a minimal record rather than failing validation.
+                instance_state = aws_instance_data["State"]["Name"]
+                if instance_state in ("shutting-down", "terminated", "stopping", "stopped"):
+                    return {
+                        "instance_id": aws_instance_data["InstanceId"],
+                        "request_id": request_id,
+                        "name": aws_instance_data["InstanceId"],
+                        "status": MachineStatus.from_str(instance_state).value,
+                        "instance_type": aws_instance_data.get("InstanceType", "unknown"),
+                        "image_id": aws_instance_data.get("ImageId", "unknown"),
+                        "private_ip": aws_instance_data.get("PrivateIpAddress"),
+                        "public_ip": aws_instance_data.get("PublicIpAddress"),
+                        "private_dns_name": aws_instance_data.get("PrivateDnsName"),
+                        "public_dns_name": aws_instance_data.get("PublicDnsName"),
+                        "launch_time": aws_instance_data.get("LaunchTime"),
+                        "provider_api": provider_api,
+                        "resource_id": resource_id,
+                        "price_type": PriceType.ON_DEMAND.value,
+                        "subnet_id": aws_instance_data.get("SubnetId"),
+                        "security_group_ids": [],
+                        "metadata": {
+                            "tags": {
+                                tag["Key"]: tag["Value"]
+                                for tag in aws_instance_data.get("Tags", [])
+                            },
+                        },
+                    }
+
                 # Validate required fields for PascalCase format
                 required_fields = [
                     "InstanceId",
@@ -160,13 +196,6 @@ class AWSMachineAdapter:
                     if field not in aws_instance_data:
                         self._logger.error("Missing required field in AWS instance data: %s", field)
                         raise AWSError(f"Missing required field in AWS instance data: {field}")
-
-                # Validate State field (nested dict with Name)
-                if "State" not in aws_instance_data or "Name" not in aws_instance_data.get(
-                    "State", {}
-                ):
-                    self._logger.error("Missing required State.Name in AWS instance data")
-                    raise AWSError("Missing required State.Name in AWS instance data")
 
                 # Validate AWS handler type
                 try:
