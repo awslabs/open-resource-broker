@@ -257,6 +257,9 @@ def add_provider_actions(subparsers):
 
     providers_health = subparsers.add_parser("health", help="Check provider health")
     add_global_arguments(providers_health)
+    providers_health.add_argument(
+        "--detailed", action="store_true", help="Show detailed health information"
+    )
 
     providers_add = subparsers.add_parser("add", help="Add new provider")
     add_global_arguments(providers_add)
@@ -374,11 +377,11 @@ def add_template_actions(subparsers):
     templates_generate.add_argument("--provider-type", help="Provider type (e.g., aws)")
 
 
-def parse_args() -> tuple[argparse.Namespace, dict]:
-    """Parse command line arguments with resource-action structure.
+def build_parser() -> tuple[argparse.ArgumentParser, dict]:
+    """Build the argument parser with resource-action structure.
 
     Returns:
-        tuple: (parsed_args, resource_parsers_dict)
+        tuple: (parser, resource_parsers_dict)
     """
     from orb._package import DESCRIPTION, DOCS_URL
 
@@ -657,4 +660,10 @@ For more information, visit: {DOCS_URL}
         help="Spot Fleet IAM role ARN or name for template_defaults (non-interactive only)",
     )
 
+    return parser, resource_parsers
+
+
+def parse_args() -> tuple[argparse.Namespace, dict]:
+    """Parse command line arguments. Thin wrapper around build_parser()."""
+    parser, resource_parsers = build_parser()
     return parser.parse_args(), resource_parsers

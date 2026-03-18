@@ -212,3 +212,49 @@ def test_templates_validate_accepts_template_id_flag():
     ns = _parse(sp, ["validate", "--template-id", "tmpl-1"])
     tid = getattr(ns, "template_id", None) or getattr(ns, "flag_template_id", None)
     assert tid is not None
+
+
+# ---------------------------------------------------------------------------
+# Task 2048 — build_parser() extraction + --detailed on providers health + contract
+# ---------------------------------------------------------------------------
+
+
+def test_build_parser_is_callable():
+    from orb.cli.args import build_parser
+    parser, resource_parsers = build_parser()
+    import argparse
+    assert isinstance(parser, argparse.ArgumentParser)
+    assert isinstance(resource_parsers, dict)
+
+
+def test_parse_args_uses_build_parser():
+    """parse_args must be a thin wrapper — build_parser must exist and be importable."""
+    from orb.cli.args import build_parser, parse_args
+    assert callable(build_parser)
+    assert callable(parse_args)
+
+
+@pytest.mark.parametrize("resource,subcommand,flag,short", [
+    ("machines",  "return",    "--machine-id",   "-m"),
+    ("machines",  "terminate", "--machine-id",   "-m"),
+    ("machines",  "stop",      "--machine-id",   "-m"),
+    ("machines",  "start",     "--machine-id",   "-m"),
+    ("requests",  "show",      "--request-id",   "-r"),
+    ("requests",  "cancel",    "--request-id",   "-r"),
+    ("templates", "validate",  "--template-id",  "-t"),
+    ("providers", "health",    "--detailed",      None),
+])
+def test_cli_contract_flag_exists(resource, subcommand, flag, short):
+    adder_map = {
+        "machines":  add_machine_actions,
+        "requests":  add_request_actions,
+        "templates": add_template_actions,
+        "providers": add_provider_actions,
+    }
+    sp = _make_subparsers()
+    adder_map[resource](sp)
+    sub_parser = sp.choices[subcommand]
+    all_opts = [opt for action in sub_parser._actions for opt in getattr(action, "option_strings", [])]
+    assert flag in all_opts, f"{flag} missing from {resource} {subcommand}"
+    if short:
+        assert short in all_opts, f"{short} missing from {resource} {subcommand}"
