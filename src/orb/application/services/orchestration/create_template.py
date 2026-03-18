@@ -17,7 +17,7 @@ class CreateTemplateOrchestrator(OrchestratorBase[CreateTemplateInput, CreateTem
         self, command_bus: CommandBusPort, query_bus: QueryBusPort, logger: LoggingPort
     ) -> None:
         self._command_bus = command_bus
-        self._query_bus = query_bus
+        self._query_bus = query_bus  # reserved for future query-side operations
         self._logger = logger
 
     async def execute(self, input: CreateTemplateInput) -> CreateTemplateOutput:  # type: ignore[return]
@@ -33,7 +33,7 @@ class CreateTemplateOrchestrator(OrchestratorBase[CreateTemplateInput, CreateTem
             tags=input.tags,
             configuration=input.configuration,
         )
-        await self._command_bus.execute(command)  # type: ignore[arg-type]
+        await self._command_bus.execute(command)
 
         return CreateTemplateOutput(
             template_id=input.template_id,

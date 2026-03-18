@@ -36,7 +36,7 @@ class ListRequestsOrchestrator(OrchestratorBase[ListRequestsInput, ListRequestsO
         else:
             query = ListRequestsQuery(status=input.status, limit=input.limit, offset=input.offset)  # type: ignore[assignment]
 
-        results = await self._query_bus.execute(query)  # type: ignore[arg-type]
+        results = await self._query_bus.execute(query)
         return ListRequestsOutput(requests=[self._to_dict(r) for r in (results or [])])
 
     @staticmethod

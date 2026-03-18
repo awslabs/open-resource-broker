@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import cast
-
 from orb.application.dto.queries import GetRequestQuery, ListActiveRequestsQuery
 from orb.application.ports.command_bus_port import CommandBusPort
 from orb.application.ports.query_bus_port import QueryBusPort
@@ -41,7 +39,7 @@ class GetRequestStatusOrchestrator(OrchestratorBase[GetRequestStatusInput, GetRe
                     request_id=request_id,
                     long=input.detailed,
                 )
-                result = await self._query_bus.execute(cast(object, query))  # type: ignore[arg-type]
+                result = await self._query_bus.execute(query)
                 request_dicts.append(self._to_dict(result))
             except Exception as exc:
                 self._logger.error("Failed to get status for %s: %s", request_id, exc)

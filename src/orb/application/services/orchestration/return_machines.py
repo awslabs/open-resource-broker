@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import cast
-
 from orb.application.dto.commands import CreateReturnRequestCommand
 from orb.application.dto.queries import ListMachinesQuery
 from orb.application.ports.command_bus_port import CommandBusPort
@@ -52,7 +50,7 @@ class ReturnMachinesOrchestrator(OrchestratorBase[ReturnMachinesInput, ReturnMac
             machine_ids=machine_ids,
             force_return=input.force,
         )
-        await self._command_bus.execute(cast(object, command))  # type: ignore[arg-type]
+        await self._command_bus.execute(command)
 
         if not command.created_request_ids:
             skipped = command.skipped_machines or []

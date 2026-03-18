@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import cast
-
 from orb.application.dto.queries import ListMachinesQuery
 from orb.application.machine.commands import UpdateMachineStatusCommand
 from orb.application.ports.command_bus_port import CommandBusPort
@@ -54,7 +52,7 @@ class StartMachinesOrchestrator(OrchestratorBase[StartMachinesInput, StartMachin
             parameters={"instance_ids": machine_ids},
         )
         command = ExecuteProviderOperationCommand(operation=provider_op)
-        await self._command_bus.execute(cast(object, command))  # type: ignore[arg-type]
+        await self._command_bus.execute(command)
 
         if command.result and command.result.get("success"):
             start_results: dict[str, bool] = command.result.get("data", {}).get("results", {})
@@ -67,7 +65,7 @@ class StartMachinesOrchestrator(OrchestratorBase[StartMachinesInput, StartMachin
         for machine_id, success in start_results.items():
             if success:
                 status_cmd = UpdateMachineStatusCommand(machine_id=machine_id, status="pending")
-                await self._command_bus.execute(cast(object, status_cmd))  # type: ignore[arg-type]
+                await self._command_bus.execute(status_cmd)
                 started_machines.append(machine_id)
             else:
                 failed_machines.append(machine_id)

@@ -18,7 +18,7 @@ class DeleteTemplateOrchestrator(OrchestratorBase[DeleteTemplateInput, DeleteTem
         self, command_bus: CommandBusPort, query_bus: QueryBusPort, logger: LoggingPort
     ) -> None:
         self._command_bus = command_bus
-        self._query_bus = query_bus
+        self._query_bus = query_bus  # reserved for future query-side operations
         self._logger = logger
 
     async def execute(self, input: DeleteTemplateInput) -> DeleteTemplateOutput:  # type: ignore[return]
@@ -26,7 +26,7 @@ class DeleteTemplateOrchestrator(OrchestratorBase[DeleteTemplateInput, DeleteTem
 
         command = DeleteTemplateCommand(template_id=input.template_id)
         try:
-            await self._command_bus.execute(command)  # type: ignore[arg-type]
+            await self._command_bus.execute(command)
         except EntityNotFoundError:
             return DeleteTemplateOutput(
                 template_id=input.template_id,

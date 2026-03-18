@@ -18,7 +18,7 @@ class CancelRequestOrchestrator(OrchestratorBase[CancelRequestInput, CancelReque
         self, command_bus: CommandBusPort, query_bus: QueryBusPort, logger: LoggingPort
     ) -> None:
         self._command_bus = command_bus
-        self._query_bus = query_bus
+        self._query_bus = query_bus  # reserved for future query-side operations
         self._logger = logger
 
     async def execute(self, input: CancelRequestInput) -> CancelRequestOutput:  # type: ignore[return]
@@ -29,7 +29,7 @@ class CancelRequestOrchestrator(OrchestratorBase[CancelRequestInput, CancelReque
         )
 
         command = CancelRequestCommand(request_id=input.request_id, reason=input.reason)
-        await self._command_bus.execute(command)  # type: ignore[arg-type]
+        await self._command_bus.execute(command)
 
         status = (
             command.final_status

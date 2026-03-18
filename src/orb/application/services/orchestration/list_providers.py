@@ -19,7 +19,7 @@ class ListProvidersOrchestrator(OrchestratorBase[ListProvidersInput, ListProvide
     async def execute(self, input: ListProvidersInput) -> ListProvidersOutput:  # type: ignore[return]
         self._logger.info("ListProvidersOrchestrator: provider_name=%s", input.provider_name)
         query = ListAvailableProvidersQuery(provider_name=input.provider_name)
-        result = await self._query_bus.execute(query)  # type: ignore[arg-type]
+        result = await self._query_bus.execute(query)
         if isinstance(result, dict):
             return ListProvidersOutput(
                 providers=result.get("providers", []),
