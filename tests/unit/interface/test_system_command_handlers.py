@@ -290,6 +290,7 @@ class TestHandleListProviders:
 class TestHandleSystemHealth:
     @pytest.mark.asyncio
     async def test_returns_success_when_health_check_returns_0(self):
+        from orb.application.dto.interface_response import InterfaceResponse
         from orb.interface.system_command_handlers import handle_system_health
 
         mock_response = {"success": True, "status": "healthy", "checks": []}
@@ -299,11 +300,13 @@ class TestHandleSystemHealth:
             result = await handle_system_health(_ns())
 
         mock_hc.assert_called_once()
+        assert isinstance(result, InterfaceResponse)
         assert result.data["success"] is True
         assert result.exit_code == 0
 
     @pytest.mark.asyncio
     async def test_returns_error_when_health_check_returns_nonzero(self):
+        from orb.application.dto.interface_response import InterfaceResponse
         from orb.interface.system_command_handlers import handle_system_health
 
         mock_response = {"success": False, "status": "unhealthy", "checks": []}
@@ -312,6 +315,7 @@ class TestHandleSystemHealth:
         ):
             result = await handle_system_health(_ns())
 
+        assert isinstance(result, InterfaceResponse)
         assert result.data["success"] is False
         assert result.exit_code == 1
 
