@@ -217,9 +217,10 @@ class TestHandleMcpValidate:
         ):
             result = await handle_mcp_validate(args)
 
-        assert result["valid"] is True
-        assert len(result["checks"]) >= 1
-        init_check = next(c for c in result["checks"] if "Initialization" in c["check"])
+        data = result.data if hasattr(result, "data") else result
+        assert data["valid"] is True
+        assert len(data["checks"]) >= 1
+        init_check = next(c for c in data["checks"] if "Initialization" in c["check"])
         assert init_check["status"] == "PASS"
 
     @pytest.mark.asyncio
@@ -238,8 +239,9 @@ class TestHandleMcpValidate:
         ):
             result = await handle_mcp_validate(args)
 
-        assert result["valid"] is False
-        fail_check = next(c for c in result["checks"] if c["status"] == "FAIL")
+        data = result.data if hasattr(result, "data") else result
+        assert data["valid"] is False
+        fail_check = next(c for c in data["checks"] if c["status"] == "FAIL")
         assert "init failed" in fail_check["details"]
 
     @pytest.mark.asyncio
@@ -263,8 +265,9 @@ class TestHandleMcpValidate:
         ):
             result = await handle_mcp_validate(args)
 
+        data = result.data if hasattr(result, "data") else result
         config_check = next(
-            (c for c in result["checks"] if "Configuration File" in c["check"]), None
+            (c for c in data["checks"] if "Configuration File" in c["check"]), None
         )
         assert config_check is not None
         assert config_check["status"] == "PASS"
@@ -288,8 +291,9 @@ class TestHandleMcpValidate:
         ):
             result = await handle_mcp_validate(args)
 
-        assert result["valid"] is False
-        fail_check = next(c for c in result["checks"] if c["status"] == "FAIL")
+        data = result.data if hasattr(result, "data") else result
+        assert data["valid"] is False
+        fail_check = next(c for c in data["checks"] if c["status"] == "FAIL")
         assert (
             "not found" in fail_check["details"].lower()
             or "File not found" in fail_check["details"]
@@ -313,5 +317,6 @@ class TestHandleMcpValidate:
         ):
             result = await handle_mcp_validate(args)
 
-        assert "validation_table" in result
-        assert "summary" in result
+        data = result.data if hasattr(result, "data") else result
+        assert "validation_table" in data
+        assert "summary" in data

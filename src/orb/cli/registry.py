@@ -145,11 +145,19 @@ def build_registry() -> None:
     register("providers", "get-default", handle_provider_get_default)
     register("providers", "get", handle_provider_get)
     register("providers", "show", handle_provider_show)
-    register("providers", "list", _make_bus_handler("list_available_providers"))
-    register("providers", "health", _make_bus_handler("get_provider_health"))
-    register("providers", "metrics", _make_bus_handler("get_provider_metrics"))
-    register("providers", "exec", _make_bus_handler("execute_provider_operation"))
-    register("providers", "select", _make_bus_handler("get_provider_strategy_config"))
+    from orb.interface.system_command_handlers import (
+        handle_execute_provider_operation,
+        handle_list_providers,
+        handle_provider_health,
+        handle_provider_metrics,
+        handle_select_provider_strategy,
+    )
+
+    register("providers", "list", handle_list_providers)
+    register("providers", "health", handle_provider_health)
+    register("providers", "metrics", handle_provider_metrics)
+    register("providers", "exec", handle_execute_provider_operation)
+    register("providers", "select", handle_select_provider_strategy)
 
     # --- system ---
     from orb.interface.serve_command_handler import handle_serve_api

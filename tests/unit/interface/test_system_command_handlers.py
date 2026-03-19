@@ -340,7 +340,7 @@ class TestHandleSystemMetrics:
         with patch("orb.interface.system_command_handlers.get_container", return_value=container):
             result = await handle_system_metrics(_ns())
 
-        assert result["metrics"] == {"requests_total": 5}
+        assert result.data["metrics"] == {"requests_total": 5}
 
     @pytest.mark.asyncio
     async def test_returns_empty_metrics_when_collector_unavailable(self):
@@ -352,7 +352,7 @@ class TestHandleSystemMetrics:
         with patch("orb.interface.system_command_handlers.get_container", return_value=container):
             result = await handle_system_metrics(_ns())
 
-        assert result["metrics"] == {}
+        assert result.data["metrics"] == {}
 
     @pytest.mark.asyncio
     async def test_returns_error_dict_when_get_metrics_raises(self):
@@ -367,8 +367,8 @@ class TestHandleSystemMetrics:
         with patch("orb.interface.system_command_handlers.get_container", return_value=container):
             result = await handle_system_metrics(_ns())
 
-        assert result["metrics"] == {}
-        assert "error" in result
+        assert result.data["metrics"] == {}
+        assert "error" in result.data
 
 
 # ---------------------------------------------------------------------------

@@ -162,7 +162,7 @@ async def handle_system_status(args) -> Union[dict[str, Any], InterfaceResponse]
 
 
 @handle_interface_exceptions(context="system_metrics", interface_type="cli")
-async def handle_system_metrics(args) -> dict[str, Any]:
+async def handle_system_metrics(args) -> InterfaceResponse:
     """Handle get system metrics operations."""
     container = get_container()
     try:
@@ -171,12 +171,20 @@ async def handle_system_metrics(args) -> dict[str, Any]:
         metrics = None
 
     if not metrics:
-        return {"metrics": {}, "message": "MetricsCollector not available"}
+        return InterfaceResponse(
+            data={"metrics": {}, "message": "MetricsCollector not available"}, exit_code=0
+        )
 
     try:
-        return {
-            "metrics": metrics.get_metrics(),
-            "message": "System metrics retrieved successfully",
-        }
+        return InterfaceResponse(
+            data={
+                "metrics": metrics.get_metrics(),
+                "message": "System metrics retrieved successfully",
+            },
+            exit_code=0,
+        )
     except Exception as e:
-        return {"metrics": {}, "error": str(e), "message": "Failed to retrieve system metrics"}
+        return InterfaceResponse(
+            data={"metrics": {}, "error": str(e), "message": "Failed to retrieve system metrics"},
+            exit_code=1,
+        )
