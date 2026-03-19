@@ -21,7 +21,6 @@ from orb.domain.machine.machine_identifiers import MachineId
 from orb.domain.request.aggregate import Request
 from orb.domain.request.request_types import RequestStatus, RequestType
 from orb.domain.request.value_objects import RequestId
-from orb.providers.aws.domain.template.aws_template_aggregate import AWSTemplate
 from orb.infrastructure.storage.repositories.machine_repository import (
     MachineRepositoryImpl,
 )
@@ -31,6 +30,7 @@ from orb.infrastructure.storage.repositories.request_repository import (
 from orb.infrastructure.storage.repositories.template_repository import (
     TemplateRepositoryImpl,
 )
+from orb.providers.aws.domain.template.aws_template_aggregate import AWSTemplate
 from orb.providers.aws.infrastructure.handlers.ec2_fleet.handler import EC2FleetHandler
 from orb.providers.aws.infrastructure.handlers.spot_fleet.handler import SpotFleetHandler
 from orb.providers.aws.infrastructure.launch_template.manager import (
