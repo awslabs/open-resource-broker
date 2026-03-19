@@ -203,9 +203,7 @@ def add_request_actions(subparsers):
     requests_status.add_argument(
         "--request-id", "-r", action="append", dest="flag_request_ids", help="Request ID to check"
     )
-    requests_status.add_argument(
-        "--detailed", action="store_true", help="Show detailed request information"
-    )
+
 
     requests_list_returns = subparsers.add_parser("list-returns", help="List return requests")
     add_global_arguments(requests_list_returns)
@@ -255,10 +253,6 @@ def add_provider_actions(subparsers):
         description="List providers with filtering support.",
     )
     add_global_arguments(providers_list)
-    providers_list.add_argument(
-        "--detailed", action="store_true", help="Show detailed provider information"
-    )
-
     providers_show = subparsers.add_parser("show", help="Show provider details")
     add_global_arguments(providers_show)
     providers_show.add_argument("provider_name", nargs="?", help="Provider name to show")
@@ -489,10 +483,6 @@ For more information, visit: {DOCS_URL}
 
     system_health = system_subparsers.add_parser("health", help="Check system health")
     add_global_arguments(system_health)
-    system_health.add_argument(
-        "--detailed", action="store_true", help="Show detailed health information"
-    )
-
     system_metrics = system_subparsers.add_parser("metrics", help="Show system metrics")
     add_global_arguments(system_metrics)
 
@@ -584,10 +574,6 @@ For more information, visit: {DOCS_URL}
 
     storage_health = storage_subparsers.add_parser("health", help="Check storage health")
     add_global_arguments(storage_health)
-    storage_health.add_argument(
-        "--detailed", action="store_true", help="Show detailed health information"
-    )
-
     storage_metrics = storage_subparsers.add_parser("metrics", help="Show storage metrics")
     add_global_arguments(storage_metrics)
     storage_metrics.add_argument("--strategy", help="Show metrics for specific storage strategy")
