@@ -48,6 +48,9 @@ class ORBClientProtocol(Protocol):
         pass
 
     # --- Request operations ---
+    async def get_request_status(self, request_ids: list[str], **kwargs: Any) -> dict[str, Any]:  # type: ignore[return]
+        pass
+
     async def get_request(self, *, request_id: str, **kwargs: Any) -> dict[str, Any]:  # type: ignore[return]
         pass
 
@@ -128,6 +131,25 @@ class ORBClientProtocol(Protocol):
         pass
 
     async def convert_batch_machine_status(self, **kwargs: Any) -> None:
+        pass
+
+    async def stop_machines(
+        self,
+        machine_ids: list[str],
+        *,
+        all_machines: bool = False,
+        force: bool = False,
+        **kwargs: Any,
+    ) -> dict[str, Any]:  # type: ignore[return]
+        pass
+
+    async def start_machines(
+        self,
+        machine_ids: list[str],
+        *,
+        all_machines: bool = False,
+        **kwargs: Any,
+    ) -> dict[str, Any]:  # type: ignore[return]
         pass
 
     async def cleanup_machine_resources(self, **kwargs: Any) -> None:
