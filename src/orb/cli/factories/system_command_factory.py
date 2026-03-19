@@ -44,7 +44,7 @@ class SystemCommandFactory:
         """Create query to get system status."""
         return GetSystemStatusQuery(
             include_provider_health=include_health,
-            detailed=include_metrics or include_config,
+            verbose=include_metrics or include_config,
         )
 
     def create_get_provider_config_query(
@@ -68,10 +68,10 @@ class SystemCommandFactory:
         return GetProviderMetricsQuery(provider_name=provider_name, timeframe=timeframe)
 
     def create_validate_provider_config_query(
-        self, detailed: bool = False, **kwargs: Any
+        self, verbose: bool = False, **kwargs: Any
     ) -> ValidateProviderConfigQuery:
         """Create query to validate provider configuration."""
-        return ValidateProviderConfigQuery(detailed=detailed)
+        return ValidateProviderConfigQuery(verbose=verbose)
 
     def create_test_storage_query(self) -> ValidateStorageQuery:
         """Create query to test storage."""

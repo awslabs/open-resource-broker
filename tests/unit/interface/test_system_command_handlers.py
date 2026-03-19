@@ -185,13 +185,13 @@ class TestHandleSystemStatus:
         )
 
         with patch("orb.interface.system_command_handlers.get_container", return_value=container):
-            result = await handle_system_status(_ns(detailed=True))
+            result = await handle_system_status(_ns(verbose=True))
 
         query_bus.execute.assert_awaited_once()
         q = query_bus.execute.call_args[0][0]
         assert isinstance(q, GetSystemStatusQuery)
         assert q.include_provider_health is True
-        assert q.detailed is True
+        assert q.verbose is True
         assert isinstance(result, InterfaceResponse)
         assert "system_status" in result.data
 
@@ -214,7 +214,7 @@ class TestHandleSystemStatus:
 
         q = query_bus.execute.call_args[0][0]
         assert isinstance(q, GetSystemStatusQuery)
-        assert q.detailed is False
+        assert q.verbose is False
 
 
 # ---------------------------------------------------------------------------

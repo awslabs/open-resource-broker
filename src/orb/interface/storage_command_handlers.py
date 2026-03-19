@@ -97,7 +97,7 @@ async def handle_test_storage(
 
 @handle_interface_exceptions(context="storage_health", interface_type="cli")
 async def handle_storage_health(
-    _args: "argparse.Namespace",
+    args: "argparse.Namespace",
 ) -> "Union[dict[str, Any], InterfaceResponse]":
     """Handle storage health operations."""
     container = get_container()

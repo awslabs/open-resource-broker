@@ -13,7 +13,7 @@ class GetSystemStatusQuery(Query, BaseModel):
     model_config = ConfigDict(frozen=True)
 
     include_provider_health: bool = True
-    detailed: bool = False
+    verbose: bool = False
 
 
 class GetProviderConfigQuery(Query, BaseModel):
@@ -39,7 +39,7 @@ class ValidateProviderConfigQuery(Query, BaseModel):
 
     model_config = ConfigDict(frozen=True)
 
-    detailed: bool = True
+    verbose: bool = True
 
 
 class GetSystemConfigQuery(Query, BaseModel):

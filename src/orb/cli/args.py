@@ -259,9 +259,6 @@ def add_provider_actions(subparsers):
 
     providers_health = subparsers.add_parser("health", help="Check provider health")
     add_global_arguments(providers_health)
-    providers_health.add_argument(
-        "--detailed", action="store_true", help="Show detailed health information"
-    )
 
     providers_add = subparsers.add_parser("add", help="Add new provider")
     add_global_arguments(providers_add)

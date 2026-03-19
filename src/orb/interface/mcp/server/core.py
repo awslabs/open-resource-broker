@@ -419,7 +419,7 @@ class OpenResourceBrokerMCPServer:
             "properties": {
                 "request_id": {"type": "string"},
                 "all": {"type": "boolean"},
-                "detailed": {"type": "boolean"},
+                "verbose": {"type": "boolean"},
             },
             "required": [],
         },

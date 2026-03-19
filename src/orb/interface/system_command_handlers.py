@@ -162,7 +162,7 @@ async def handle_system_status(args) -> Union[dict[str, Any], InterfaceResponse]
     from orb.application.queries.system import GetSystemStatusQuery
 
     query = GetSystemStatusQuery(
-        include_provider_health=True, detailed=getattr(args, "detailed", False)
+        include_provider_health=True, verbose=getattr(args, "verbose", False)
     )
     status = await query_bus.execute(query)
 

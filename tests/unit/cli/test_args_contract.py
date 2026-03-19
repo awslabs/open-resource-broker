@@ -263,7 +263,6 @@ def test_parse_args_uses_build_parser():
         ("requests", "show", "--request-id", "-r"),
         ("requests", "cancel", "--request-id", "-r"),
         ("templates", "validate", "--template-id", "-t"),
-        ("providers", "health", "--detailed", None),
     ],
 )
 def test_cli_contract_flag_exists(resource, subcommand, flag, short):

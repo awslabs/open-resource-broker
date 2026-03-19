@@ -29,11 +29,11 @@ class StorageCommandFactory:
     def create_get_storage_health_query(
         self,
         strategy_name: Optional[str] = None,
-        detailed: bool = False,
+        verbose: bool = False,
         **kwargs: Any,
     ) -> GetStorageHealthQuery:
         """Create query to get storage health."""
-        return GetStorageHealthQuery(strategy_name=strategy_name, detailed=detailed)
+        return GetStorageHealthQuery(strategy_name=strategy_name, verbose=verbose)
 
     def create_get_storage_metrics_query(
         self,
