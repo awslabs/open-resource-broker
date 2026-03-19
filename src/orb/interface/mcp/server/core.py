@@ -253,7 +253,7 @@ class OpenResourceBrokerMCPServer:
                 "inputSchema": {
                     "type": "object",
                     "properties": self._get_tool_schema(tool_name),
-                    "required": [],
+                    "required": self._TOOL_SCHEMAS.get(tool_name, {}).get("required", []),
                 },
             }
             tools_list.append(tool_def)
@@ -369,27 +369,73 @@ class OpenResourceBrokerMCPServer:
             "messages": [{"role": "user", "content": {"type": "text", "text": content}}],
         }
 
-    def _get_tool_schema(self, tool_name: str) -> dict[str, Any]:
-        """Get JSON schema for tool parameters."""
-        # Basic schema - could be improved with actual parameter introspection
-        common_props = {
-            "template_id": {"type": "string", "description": "Template identifier"},
-            "request_id": {"type": "string", "description": "Request identifier"},
-            "count": {"type": "integer", "description": "Number of instances"},
-            "provider": {"type": "string", "description": "Provider name"},
-        }
+    _TOOL_SCHEMAS: dict[str, dict[str, Any]] = {
+        "check_provider_health": {"properties": {}, "required": []},
+        "list_providers": {"properties": {}, "required": []},
+        "get_provider_config": {"properties": {}, "required": []},
+        "get_provider_metrics": {
+            "properties": {"provider": {"type": "string"}},
+            "required": [],
+        },
+        "list_templates": {
+            "properties": {
+                "provider_name": {"type": "string"},
+                "active_only": {"type": "boolean"},
+                "limit": {"type": "integer"},
+                "offset": {"type": "integer"},
+                "provider_api": {"type": "string"},
+            },
+            "required": [],
+        },
+        "get_template": {
+            "properties": {"template_id": {"type": "string"}},
+            "required": ["template_id"],
+        },
+        "validate_template": {
+            "properties": {
+                "template_id": {"type": "string"},
+                "file": {"type": "string"},
+                "all": {"type": "boolean"},
+            },
+            "required": [],
+        },
+        "get_request_status": {
+            "properties": {
+                "request_id": {"type": "string"},
+                "all": {"type": "boolean"},
+                "detailed": {"type": "boolean"},
+            },
+            "required": [],
+        },
+        "list_requests": {
+            "properties": {
+                "status": {"type": "string"},
+                "limit": {"type": "integer"},
+                "offset": {"type": "integer"},
+            },
+            "required": [],
+        },
+        "request_machines": {
+            "properties": {
+                "template_id": {"type": "string"},
+                "machine_count": {"type": "integer"},
+            },
+            "required": ["template_id", "machine_count"],
+        },
+        "list_return_requests": {"properties": {}, "required": []},
+        "return_machines": {
+            "properties": {
+                "machine_ids": {"type": "array", "items": {"type": "string"}},
+                "all": {"type": "boolean"},
+                "force": {"type": "boolean"},
+            },
+            "required": [],
+        },
+    }
 
-        if "template" in tool_name:
-            return {"template_id": common_props["template_id"]}
-        elif "machine" in tool_name:
-            return {
-                "template_id": common_props["template_id"],
-                "count": common_props["count"],
-            }
-        elif "request" in tool_name:
-            return {"request_id": common_props["request_id"]}
-        else:
-            return {"provider": common_props["provider"]}
+    def _get_tool_schema(self, tool_name: str) -> dict[str, Any]:
+        """Get JSON schema properties for tool parameters."""
+        return self._TOOL_SCHEMAS.get(tool_name, {}).get("properties", {})
 
     async def _get_templates_resource(self, uri: str) -> dict[str, Any]:
         """Get templates resource data."""
