@@ -106,7 +106,9 @@ async def handle_storage_health(
         from orb.infrastructure.di.buses import QueryBus
 
         query_bus = container.get(QueryBus)
-        from orb.application.queries.storage import GetStorageHealthQuery  # type: ignore[attr-defined]
+        from orb.application.queries.storage import (
+            GetStorageHealthQuery,  # type: ignore[attr-defined]
+        )
 
         query = GetStorageHealthQuery()
         health = await query_bus.execute(query)
@@ -127,7 +129,9 @@ async def handle_storage_metrics(
         from orb.infrastructure.di.buses import QueryBus
 
         query_bus = container.get(QueryBus)
-        from orb.application.queries.storage import GetStorageMetricsQuery  # type: ignore[attr-defined]
+        from orb.application.queries.storage import (
+            GetStorageMetricsQuery,  # type: ignore[attr-defined]
+        )
 
         query = GetStorageMetricsQuery()
         metrics = await query_bus.execute(query)
