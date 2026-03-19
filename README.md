@@ -397,10 +397,6 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the full development guide.
 <details>
 <summary>Documentation & CI</summary>
 
-[![Test Matrix](https://github.com/awslabs/open-resource-broker/workflows/Test%20Matrix/badge.svg)](https://github.com/awslabs/open-resource-broker/actions/workflows/test-matrix.yml)
-[![Quality Checks](https://github.com/awslabs/open-resource-broker/workflows/Quality%20Checks/badge.svg)](https://github.com/awslabs/open-resource-broker/actions/workflows/ci-quality.yml)
-[![Security Scanning](https://github.com/awslabs/open-resource-broker/workflows/Security%20Scanning/badge.svg)](https://github.com/awslabs/open-resource-broker/actions/workflows/security-code.yml)
-
 - [Quick Start](docs/root/getting_started/quick_start.md)
 - [CLI Reference](docs/root/cli/cli-reference.md)
 - [Configuration Guide](docs/root/user_guide/configuration.md)
