@@ -100,7 +100,7 @@ class TestHandleRequestMachines:
         """template_id + machine_count → AcquireMachinesOrchestrator called, InterfaceResponse returned."""
         from orb.application.dto.interface_response import InterfaceResponse
 
-        container, scheduler, acquire_orch, *_ = _mock_container()
+        container, _scheduler, acquire_orch, *_ = _mock_container()
         # get formatter from dispatch map via container
         from orb.application.services.response_formatting_service import ResponseFormattingService
 
@@ -200,7 +200,7 @@ class TestHandleRequestReturnMachines:
         """machine_ids provided → ReturnMachinesOrchestrator called."""
         from orb.application.dto.interface_response import InterfaceResponse
 
-        container, scheduler, _, _, _, _, _, return_orch, formatter = _mock_container()
+        container, _scheduler, _, _, _, _, _, return_orch, formatter = _mock_container()
         return_orch.execute.return_value = ReturnMachinesOutput(
             request_id="ret-1", status="pending"
         )
@@ -221,7 +221,7 @@ class TestHandleRequestReturnMachines:
     @pytest.mark.asyncio
     async def test_from_input_data(self):
         """input_data with machineId keys → IDs extracted correctly."""
-        container, scheduler, _, _, _, _, _, return_orch, _ = _mock_container()
+        container, _scheduler, _, _, _, _, _, return_orch, _ = _mock_container()
         return_orch.execute.return_value = ReturnMachinesOutput(
             request_id="ret-1", status="pending"
         )
@@ -265,7 +265,7 @@ class TestHandleRequestReturnMachines:
     @pytest.mark.asyncio
     async def test_all_with_force(self):
         """all=True, force=True → ReturnMachinesOrchestrator called with all_machines=True."""
-        container, scheduler, _, _, _, _, _, return_orch, _ = _mock_container()
+        container, _scheduler, _, _, _, _, _, return_orch, _ = _mock_container()
         return_orch.execute.return_value = ReturnMachinesOutput(
             request_id="ret-1", status="pending"
         )
@@ -292,7 +292,7 @@ class TestHandleCancelRequest:
         """request_id provided → CancelRequestOrchestrator called, InterfaceResponse returned."""
         from orb.application.dto.interface_response import InterfaceResponse
 
-        container, scheduler, _, cancel_orch, *_, formatter = _mock_container()
+        container, _scheduler, _, cancel_orch, *_, formatter = _mock_container()
         cancel_orch.execute.return_value = CancelRequestOutput(
             request_id="req-123",
             status="cancelled",
@@ -357,7 +357,7 @@ class TestHandleGetReturnRequests:
         """No input_data → ListReturnRequestsOrchestrator called."""
         from orb.application.dto.interface_response import InterfaceResponse
 
-        container, scheduler, _, _, _, _, list_ret_orch, _, formatter = _mock_container()
+        container, _scheduler, _, _, _, _, list_ret_orch, _, formatter = _mock_container()
         list_ret_orch.execute.return_value = ListReturnRequestsOutput(requests=[])
         formatter.format_request_status.return_value = InterfaceResponse(data={"requests": []})
 
@@ -382,7 +382,7 @@ class TestHandleGetRequestStatus:
         """request_id provided → GetRequestStatusOrchestrator called with that ID."""
         from orb.application.dto.interface_response import InterfaceResponse
 
-        container, scheduler, _, _, status_orch, *_, formatter = _mock_container()
+        container, _scheduler, _, _, status_orch, *_, formatter = _mock_container()
         status_orch.execute.return_value = GetRequestStatusOutput(
             requests=[{"request_id": "req-123", "status": "complete"}]
         )
@@ -442,7 +442,7 @@ class TestHandleGetRequestStatusDetailed:
         """No --detailed on args → orchestrator receives detailed=False."""
         from orb.application.dto.interface_response import InterfaceResponse
 
-        container, scheduler, _, _, status_orch, *_, formatter = _mock_container()
+        container, _scheduler, _, _, status_orch, *_, formatter = _mock_container()
         status_orch.execute.return_value = GetRequestStatusOutput(requests=[])
         formatter.format_request_status.return_value = InterfaceResponse(data={"requests": []})
 
@@ -510,7 +510,7 @@ class TestHandleGetRequestStatusMultiId:
         """args.request_ids=['req-1','req-2'] → both IDs forwarded."""
         from orb.application.dto.interface_response import InterfaceResponse
 
-        container, scheduler, _, _, status_orch, *_, formatter = _mock_container()
+        container, _scheduler, _, _, status_orch, *_, formatter = _mock_container()
         status_orch.execute.return_value = GetRequestStatusOutput(requests=[])
         formatter.format_request_status.return_value = InterfaceResponse(data={"requests": []})
 
@@ -636,7 +636,7 @@ class TestHandleListRequests:
         """handle_list_requests → ListRequestsOrchestrator called."""
         from orb.application.dto.interface_response import InterfaceResponse
 
-        container, scheduler, _, _, _, list_req_orch, *_, formatter = _mock_container()
+        container, _scheduler, _, _, _, list_req_orch, *_, formatter = _mock_container()
         list_req_orch.execute.return_value = ListRequestsOutput(requests=[])
         formatter.format_request_status.return_value = InterfaceResponse(data={"requests": []})
 
