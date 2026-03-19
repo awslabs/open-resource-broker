@@ -303,7 +303,7 @@ async def test_stop_machines_uses_machine_ids_flag():
         success=True, message="ok", stopped_machines=["i-flag1"], failed_machines=[]
     )
     formatter = MagicMock(spec=ResponseFormattingService)
-    formatter.format_machine_operation.return_value = MagicMock()
+    formatter.format_success.return_value = MagicMock()
     container = MagicMock()
     container.get.side_effect = lambda t: {
         StopMachinesOrchestrator: orch,
@@ -333,7 +333,7 @@ async def test_start_machines_uses_machine_ids_flag():
         success=True, message="ok", started_machines=["i-flag2"], failed_machines=[]
     )
     formatter = MagicMock(spec=ResponseFormattingService)
-    formatter.format_machine_operation.return_value = MagicMock()
+    formatter.format_success.return_value = MagicMock()
     container = MagicMock()
     container.get.side_effect = lambda t: {
         StartMachinesOrchestrator: orch,
