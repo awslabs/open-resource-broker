@@ -52,7 +52,9 @@ async def handle_show_scheduler_config(
 
 
 @handle_interface_exceptions(context="validate_scheduler_config", interface_type="cli")
-async def handle_validate_scheduler_config(args: "argparse.Namespace") -> dict[str, Any]:
+async def handle_validate_scheduler_config(
+    args: "argparse.Namespace",
+) -> Union[dict[str, Any], InterfaceResponse]:
     """Handle validate scheduler configuration operations."""
     from orb.infrastructure.di.buses import QueryBus
 
@@ -64,7 +66,13 @@ async def handle_validate_scheduler_config(args: "argparse.Namespace") -> dict[s
     query = ValidateSchedulerConfigurationQuery()
     validation = await query_bus.execute(query)
 
-    return {
-        "validation": validation,
-        "message": "Scheduler configuration validated successfully",
-    }
+    raw = {"validation": validation, "message": "Scheduler configuration validated successfully"}
+    if isinstance(validation, dict):
+        is_valid = validation.get("valid", True)
+    elif hasattr(validation, "model_dump"):
+        is_valid = validation.model_dump().get("valid", True)
+    elif hasattr(validation, "__dict__"):
+        is_valid = vars(validation).get("valid", True)
+    else:
+        is_valid = True
+    return InterfaceResponse(data=raw, exit_code=0 if is_valid else 1)

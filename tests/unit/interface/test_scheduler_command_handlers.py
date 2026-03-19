@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
+from orb.application.dto.interface_response import InterfaceResponse
 from orb.interface.scheduler_command_handlers import (
     handle_list_scheduler_strategies,
     handle_show_scheduler_config,
@@ -101,8 +102,8 @@ class TestSchedulerCommandHandlers:
 
             result = await handle_validate_scheduler_config(args)
 
-            assert isinstance(result, dict)
-            assert "validation" in result
+            assert isinstance(result, InterfaceResponse)
+            assert "validation" in result.data
 
 
 class TestSchedulerHandlerImports:

@@ -41,7 +41,7 @@ async def handle_mcp_tools_list(args) -> dict[str, Any]:
                     filtered_tools.append(tool)
             tool_list = filtered_tools
 
-        if args.format == "table":
+        if getattr(args, "format", "json") == "table":
             return _format_tools_table(tool_list)
         else:
             return {"tools": tool_list}
@@ -87,7 +87,7 @@ async def handle_mcp_tools_call(args) -> dict[str, Any]:
     async with OpenResourceBrokerMCPTools() as tools:
         result = await tools.call_tool(args.tool_name, tool_args)
 
-        if args.format == "table" and "data" in result:
+        if getattr(args, "format", "json") == "table" and "data" in result:
             return _format_result_table(result, args.tool_name)
         else:
             return result
@@ -126,7 +126,7 @@ async def handle_mcp_tools_info(args) -> dict[str, Any]:
                 }
             )
 
-        if args.format == "table":
+        if getattr(args, "format", "json") == "table":
             return _format_tool_info_table(info)
         else:
             return info
@@ -225,7 +225,7 @@ async def handle_mcp_validate(args) -> dict[str, Any]:
                 }
             )
 
-    if args.format == "table":
+    if getattr(args, "format", "json") == "table":
         return _format_validation_table(validation_result)
     else:
         return validation_result
