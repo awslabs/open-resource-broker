@@ -110,7 +110,7 @@ async def handle_storage_health(
             GetStorageHealthQuery,  # type: ignore[attr-defined]
         )
 
-        query = GetStorageHealthQuery()
+        query = GetStorageHealthQuery(verbose=getattr(args, "verbose", False))
         health = await query_bus.execute(query)
         raw = health if isinstance(health, dict) else {"health": health}
         return formatter.format_config(raw)

@@ -1,5 +1,7 @@
 """Storage query handlers for administrative operations."""
 
+import time as _time
+
 from orb.application.base.handlers import BaseQueryHandler
 from orb.application.decorators import query_handler
 from orb.application.dto.system import (
@@ -14,6 +16,7 @@ from orb.application.queries.storage import (
     ListStorageStrategiesQuery,
 )
 from orb.application.services.storage_registry_service import StorageRegistryService
+from orb.domain.base import UnitOfWorkFactory
 from orb.domain.base.ports import ContainerPort, ErrorHandlingPort, LoggingPort
 from orb.domain.services.generic_filter_service import GenericFilterService
 
@@ -99,9 +102,11 @@ class GetStorageHealthHandler(BaseQueryHandler[GetStorageHealthQuery, StorageHea
         logger: LoggingPort,
         error_handler: ErrorHandlingPort,
         storage_service: StorageRegistryService,
+        uow_factory: UnitOfWorkFactory,
     ):
         super().__init__(logger, error_handler)
         self._storage_service = storage_service
+        self._uow_factory = uow_factory
 
     async def execute_query(self, query: GetStorageHealthQuery) -> StorageHealthResponse:
         """
@@ -123,11 +128,20 @@ class GetStorageHealthHandler(BaseQueryHandler[GetStorageHealthQuery, StorageHea
             healthy = True
             status = "operational"
 
+        if query.verbose:
+            t0 = _time.perf_counter()
+            with self._uow_factory.create_unit_of_work() as uow:
+                uow.requests.list_all(limit=1)
+            latency_ms = round((_time.perf_counter() - t0) * 1000, 2)
+            details: dict = {"latency_ms": latency_ms, "connection_status": "active"}
+        else:
+            details = {}
+
         return StorageHealthResponse(
             strategy_name=strategy_name,
             healthy=healthy,
             status=status,
-            details=({} if not query.detailed else {"connections": "active", "latency": "low"}),
+            details=details,
         )
 
 

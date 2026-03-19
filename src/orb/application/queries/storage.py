@@ -23,7 +23,7 @@ class GetStorageHealthQuery(Query, BaseModel):
     model_config = ConfigDict(frozen=True)
 
     strategy_name: Optional[str] = None
-    detailed: bool = False
+    verbose: bool = False
 
 
 class GetStorageMetricsQuery(Query, BaseModel):
