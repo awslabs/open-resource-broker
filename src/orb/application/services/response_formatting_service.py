@@ -89,6 +89,14 @@ class ResponseFormattingService:
         exit_code = 0 if data.get("success") else 1
         return InterfaceResponse(data=data, exit_code=exit_code)
 
+    def format_config(self, raw: dict[str, Any]) -> InterfaceResponse:
+        """Format a generic config/info dict as a successful response."""
+        return InterfaceResponse(data=raw)
+
+    def format_success(self, data: dict[str, Any]) -> InterfaceResponse:
+        """Format a generic success response."""
+        return InterfaceResponse(data={**data, "success": True}, exit_code=0)
+
     def format_error(self, message: str, exit_code: int = 1) -> InterfaceResponse:
         """Format an error response."""
         return InterfaceResponse(data={"success": False, "error": message}, exit_code=exit_code)

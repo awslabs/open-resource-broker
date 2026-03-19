@@ -70,13 +70,34 @@ class TestProviderConfigHandlers:
 
     @pytest.mark.asyncio
     async def test_handle_reload_provider_config(self):
-        """Test handle_reload_provider_config function - takes only args, no app param."""
+        """Test handle_reload_provider_config returns InterfaceResponse when reload unsupported."""
+        from orb.application.dto.interface_response import InterfaceResponse
+        from orb.application.services.provider_registry_service import ProviderRegistryService
+        from orb.application.services.response_formatting_service import ResponseFormattingService
+
         args = Namespace(resource="provider", action="reload")
 
-        # handle_reload_provider_config takes only args (no app parameter)
-        result = await handle_reload_provider_config(args)
+        mock_registry = Mock(spec=ProviderRegistryService)
+        # spec=ProviderRegistryService means hasattr(mock_registry, "reload") is False
+        # unless ProviderRegistryService has a reload method — formatter.format_error path
+        mock_formatter = Mock(spec=ResponseFormattingService)
+        mock_formatter.format_error.return_value = InterfaceResponse(
+            data={"success": False, "error": "Reload not supported by current provider registry"},
+            exit_code=1,
+        )
+        mock_formatter.format_success.return_value = InterfaceResponse(
+            data={"message": "Provider configuration reloaded", "success": True}, exit_code=0
+        )
 
-        assert isinstance(result, dict)
+        mock_container = Mock()
+        mock_container.get.side_effect = lambda t: (
+            mock_formatter if t is ResponseFormattingService else mock_registry
+        )
+
+        with patch("orb.interface.system_command_handlers.get_container", return_value=mock_container):
+            result = await handle_reload_provider_config(args)
+
+        assert isinstance(result, InterfaceResponse)
 
 
 class TestConfigurationHandlerImports:

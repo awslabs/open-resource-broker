@@ -48,13 +48,27 @@ class TestStubHandlers:
         assert result.get("error") == "Not implemented"
 
     @pytest.mark.asyncio
-    async def test_handle_reload_provider_config_returns_not_implemented(self):
+    async def test_handle_reload_provider_config_returns_interface_response(self):
+        from orb.application.dto.interface_response import InterfaceResponse
+        from orb.application.services.provider_registry_service import ProviderRegistryService
+        from orb.application.services.response_formatting_service import ResponseFormattingService
         from orb.interface.system_command_handlers import handle_reload_provider_config
 
-        result = await handle_reload_provider_config(_ns())
+        mock_formatter = MagicMock(spec=ResponseFormattingService)
+        mock_formatter.format_error.return_value = InterfaceResponse(
+            data={"success": False, "error": "Reload not supported by current provider registry"},
+            exit_code=1,
+        )
+        mock_registry = MagicMock(spec=ProviderRegistryService)
+        mock_container = MagicMock()
+        mock_container.get.side_effect = lambda t: (
+            mock_formatter if t is ResponseFormattingService else mock_registry
+        )
 
-        assert isinstance(result, dict)
-        assert result.get("error") == "Not implemented"
+        with patch("orb.interface.system_command_handlers.get_container", return_value=mock_container):
+            result = await handle_reload_provider_config(_ns())
+
+        assert isinstance(result, InterfaceResponse)
 
     @pytest.mark.asyncio
     async def test_handle_execute_provider_operation_returns_not_implemented(self):
