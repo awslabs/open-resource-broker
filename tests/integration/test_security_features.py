@@ -589,17 +589,23 @@ class TestInputValidatorIntegration:
     # --- AWS region validation ---
 
     def test_valid_aws_region_passes(self):
-        assert InputValidator.validate_aws_region("us-east-1") == "us-east-1"
-        assert InputValidator.validate_aws_region("eu-west-2") == "eu-west-2"
-        assert InputValidator.validate_aws_region("ap-southeast-1") == "ap-southeast-1"
+        from orb.providers.aws.validation.region_validator import validate_aws_region
+
+        assert validate_aws_region("us-east-1") == "us-east-1"
+        assert validate_aws_region("eu-west-2") == "eu-west-2"
+        assert validate_aws_region("ap-southeast-1") == "ap-southeast-1"
 
     def test_invalid_aws_region_blocked(self):
+        from orb.providers.aws.validation.region_validator import validate_aws_region
+
         with pytest.raises(ValidationError, match="Invalid AWS region"):
-            InputValidator.validate_aws_region("not-a-region")
+            validate_aws_region("not-a-region")
 
     def test_aws_region_injection_attempt_blocked(self):
+        from orb.providers.aws.validation.region_validator import validate_aws_region
+
         with pytest.raises(ValidationError):
-            InputValidator.validate_aws_region("us-east-1; DROP TABLE")
+            validate_aws_region("us-east-1; DROP TABLE")
 
     # --- Integer validation ---
 
