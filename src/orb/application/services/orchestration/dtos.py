@@ -292,3 +292,49 @@ class ListProvidersOutput:
     count: int = 0
     selection_policy: str = ""
     message: str = ""
+
+
+@dataclasses.dataclass(frozen=True)
+class ListSchedulerStrategiesInput:
+    pass
+
+
+@dataclasses.dataclass(frozen=True)
+class ListSchedulerStrategiesOutput:
+    strategies: list[dict[str, Any]] = dataclasses.field(default_factory=list)
+    current_strategy: str = ""
+    count: int = 0
+
+
+@dataclasses.dataclass(frozen=True)
+class GetSchedulerConfigInput:
+    pass
+
+
+@dataclasses.dataclass(frozen=True)
+class GetSchedulerConfigOutput:
+    config: dict[str, Any] = dataclasses.field(default_factory=dict)
+    message: str = ""
+
+
+@dataclasses.dataclass(frozen=True)
+class ListStorageStrategiesInput:
+    pass
+
+
+@dataclasses.dataclass(frozen=True)
+class ListStorageStrategiesOutput:
+    strategies: list[dict[str, Any]] = dataclasses.field(default_factory=list)
+    current_strategy: str = ""
+    count: int = 0
+
+
+@dataclasses.dataclass(frozen=True)
+class GetStorageConfigInput:
+    pass
+
+
+@dataclasses.dataclass(frozen=True)
+class GetStorageConfigOutput:
+    config: dict[str, Any] = dataclasses.field(default_factory=dict)
+    message: str = ""

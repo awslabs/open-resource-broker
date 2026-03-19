@@ -21,6 +21,18 @@ def register_orchestrators(container: DIContainer) -> None:
     from orb.application.services.orchestration.get_provider_metrics import (
         GetProviderMetricsOrchestrator,
     )
+    from orb.application.services.orchestration.get_scheduler_config import (
+        GetSchedulerConfigOrchestrator,
+    )
+    from orb.application.services.orchestration.get_storage_config import (
+        GetStorageConfigOrchestrator,
+    )
+    from orb.application.services.orchestration.list_scheduler_strategies import (
+        ListSchedulerStrategiesOrchestrator,
+    )
+    from orb.application.services.orchestration.list_storage_strategies import (
+        ListStorageStrategiesOrchestrator,
+    )
     from orb.application.services.orchestration.get_request_status import (
         GetRequestStatusOrchestrator,
     )
@@ -224,6 +236,38 @@ def register_orchestrators(container: DIContainer) -> None:
         container.register_singleton(
             GetProviderMetricsOrchestrator,
             lambda c: GetProviderMetricsOrchestrator(
+                query_bus=c.get(QueryBus),
+                logger=c.get(LoggingPort),
+            ),
+        )
+    if not container.is_registered(ListSchedulerStrategiesOrchestrator):
+        container.register_singleton(
+            ListSchedulerStrategiesOrchestrator,
+            lambda c: ListSchedulerStrategiesOrchestrator(
+                query_bus=c.get(QueryBus),
+                logger=c.get(LoggingPort),
+            ),
+        )
+    if not container.is_registered(GetSchedulerConfigOrchestrator):
+        container.register_singleton(
+            GetSchedulerConfigOrchestrator,
+            lambda c: GetSchedulerConfigOrchestrator(
+                query_bus=c.get(QueryBus),
+                logger=c.get(LoggingPort),
+            ),
+        )
+    if not container.is_registered(ListStorageStrategiesOrchestrator):
+        container.register_singleton(
+            ListStorageStrategiesOrchestrator,
+            lambda c: ListStorageStrategiesOrchestrator(
+                query_bus=c.get(QueryBus),
+                logger=c.get(LoggingPort),
+            ),
+        )
+    if not container.is_registered(GetStorageConfigOrchestrator):
+        container.register_singleton(
+            GetStorageConfigOrchestrator,
+            lambda c: GetStorageConfigOrchestrator(
                 query_bus=c.get(QueryBus),
                 logger=c.get(LoggingPort),
             ),

@@ -2,67 +2,56 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any, Union
 
-from orb.infrastructure.di.buses import QueryBus
+from orb.application.dto.interface_response import InterfaceResponse
+from orb.application.services.response_formatting_service import ResponseFormattingService
 from orb.infrastructure.di.container import get_container
 from orb.infrastructure.error.decorators import handle_interface_exceptions
 
+if TYPE_CHECKING:
+    import argparse
+
 
 @handle_interface_exceptions(context="list_storage_strategies", interface_type="cli")
-async def handle_list_storage_strategies(args) -> dict[str, Any]:
+async def handle_list_storage_strategies(args: "argparse.Namespace") -> Union[dict[str, Any], InterfaceResponse]:
     """Handle list storage strategies operations."""
+    from orb.application.services.orchestration.dtos import ListStorageStrategiesInput
+    from orb.application.services.orchestration.list_storage_strategies import (
+        ListStorageStrategiesOrchestrator,
+    )
+
     container = get_container()
-    query_bus = container.get(QueryBus)
+    orchestrator = container.get(ListStorageStrategiesOrchestrator)
+    formatter = container.get(ResponseFormattingService)
 
-    from orb.application.queries.storage import ListStorageStrategiesQuery
-
-    query = ListStorageStrategiesQuery()
-    strategies = await query_bus.execute(query)
-
-    return {
-        "strategies": strategies.strategies,
-        "count": strategies.total_count,
-        "current_strategy": strategies.current_strategy,
-        "message": "Storage strategies retrieved successfully",
-    }
+    result = await orchestrator.execute(ListStorageStrategiesInput())
+    return formatter.format_storage_strategy_list(
+        result.strategies, result.current_strategy, result.count
+    )
 
 
 @handle_interface_exceptions(context="show_storage_config", interface_type="cli")
-async def handle_show_storage_config(args) -> dict[str, Any]:
-    """
-    Handle show storage configuration operations.
-
-    Args:
-        args: Argument namespace with resource/action structure
-
-    Returns:
-        Storage configuration
-    """
-    container = get_container()
-    query_bus = container.get(QueryBus)
-
-    from orb.application.queries.system import (
-        GetConfigurationSectionQuery as GetStorageConfigQuery,  # type: ignore[attr-defined]
+async def handle_show_storage_config(args: "argparse.Namespace") -> Union[dict[str, Any], InterfaceResponse]:
+    """Handle show storage configuration operations."""
+    from orb.application.services.orchestration.dtos import GetStorageConfigInput
+    from orb.application.services.orchestration.get_storage_config import (
+        GetStorageConfigOrchestrator,
     )
 
-    query = GetStorageConfigQuery(section="storage")
-    config = await query_bus.execute(query)
+    container = get_container()
+    orchestrator = container.get(GetStorageConfigOrchestrator)
+    formatter = container.get(ResponseFormattingService)
 
-    return {"config": config, "message": "Storage configuration retrieved successfully"}
+    result = await orchestrator.execute(GetStorageConfigInput())
+    return formatter.format_storage_config(result.config)
 
 
 @handle_interface_exceptions(context="validate_storage_config", interface_type="cli")
-async def handle_validate_storage_config(args) -> dict[str, Any]:
-    """
-    Handle validate storage configuration operations.
+async def handle_validate_storage_config(args: "argparse.Namespace") -> dict[str, Any]:
+    """Handle validate storage configuration operations."""
+    from orb.infrastructure.di.buses import QueryBus
 
-    Args:
-        args: Argument namespace with resource/action structure
-
-    Returns:
-        Validation results
-    """
     container = get_container()
     query_bus = container.get(QueryBus)
 
@@ -80,16 +69,10 @@ async def handle_validate_storage_config(args) -> dict[str, Any]:
 
 
 @handle_interface_exceptions(context="test_storage", interface_type="cli")
-async def handle_test_storage(args) -> dict[str, Any]:
-    """
-    Handle test storage operations.
+async def handle_test_storage(args: "argparse.Namespace") -> dict[str, Any]:
+    """Handle test storage operations."""
+    from orb.infrastructure.di.buses import QueryBus
 
-    Args:
-        args: Argument namespace with resource/action structure
-
-    Returns:
-        Test results
-    """
     container = get_container()
     query_bus = container.get(QueryBus)
 
@@ -102,16 +85,10 @@ async def handle_test_storage(args) -> dict[str, Any]:
 
 
 @handle_interface_exceptions(context="storage_health", interface_type="cli")
-async def handle_storage_health(args) -> dict[str, Any]:
-    """
-    Handle storage health operations.
+async def handle_storage_health(args: "argparse.Namespace") -> dict[str, Any]:
+    """Handle storage health operations."""
+    from orb.infrastructure.di.buses import QueryBus
 
-    Args:
-        args: Argument namespace with resource/action structure
-
-    Returns:
-        Health status
-    """
     container = get_container()
     query_bus = container.get(QueryBus)
 
@@ -124,16 +101,10 @@ async def handle_storage_health(args) -> dict[str, Any]:
 
 
 @handle_interface_exceptions(context="storage_metrics", interface_type="cli")
-async def handle_storage_metrics(args) -> dict[str, Any]:
-    """
-    Handle storage metrics operations.
+async def handle_storage_metrics(args: "argparse.Namespace") -> dict[str, Any]:
+    """Handle storage metrics operations."""
+    from orb.infrastructure.di.buses import QueryBus
 
-    Args:
-        args: Argument namespace with resource/action structure
-
-    Returns:
-        Storage metrics
-    """
     container = get_container()
     query_bus = container.get(QueryBus)
 

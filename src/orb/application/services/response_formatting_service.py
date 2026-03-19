@@ -40,3 +40,23 @@ class ResponseFormattingService:
         """Format a template create/update/delete/validate result."""
         data = self._scheduler.format_template_mutation_response(raw)
         return InterfaceResponse(data=data)
+
+    def format_scheduler_strategy_list(self, strategies: list, current_strategy: str, count: int) -> InterfaceResponse:
+        """Format a scheduler strategies list."""
+        data = {"strategies": strategies, "current_strategy": current_strategy, "count": count}
+        return InterfaceResponse(data=data)
+
+    def format_scheduler_config(self, config: dict) -> InterfaceResponse:
+        """Format scheduler configuration."""
+        data = {"config": config}
+        return InterfaceResponse(data=data)
+
+    def format_storage_strategy_list(self, strategies: list, current_strategy: str, count: int) -> InterfaceResponse:
+        """Format a storage strategies list."""
+        data = {"strategies": strategies, "current_strategy": current_strategy, "count": count}
+        return InterfaceResponse(data=data)
+
+    def format_storage_config(self, config: dict) -> InterfaceResponse:
+        """Format storage configuration."""
+        data = {"config": config}
+        return InterfaceResponse(data=data)

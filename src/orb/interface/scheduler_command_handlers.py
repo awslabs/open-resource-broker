@@ -2,77 +2,56 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any, Union
 
-from orb.application.ports.scheduler_port import SchedulerPort
-from orb.infrastructure.di.buses import QueryBus
+from orb.application.dto.interface_response import InterfaceResponse
+from orb.application.services.response_formatting_service import ResponseFormattingService
 from orb.infrastructure.di.container import get_container
 from orb.infrastructure.error.decorators import handle_interface_exceptions
 
+if TYPE_CHECKING:
+    import argparse
+
 
 @handle_interface_exceptions(context="list_scheduler_strategies", interface_type="cli")
-async def handle_list_scheduler_strategies(args) -> dict[str, Any]:
-    """
-    Handle list scheduler strategies operations.
+async def handle_list_scheduler_strategies(args: "argparse.Namespace") -> Union[dict[str, Any], InterfaceResponse]:
+    """Handle list scheduler strategies operations."""
+    from orb.application.services.orchestration.dtos import ListSchedulerStrategiesInput
+    from orb.application.services.orchestration.list_scheduler_strategies import (
+        ListSchedulerStrategiesOrchestrator,
+    )
 
-    Args:
-        args: Argument namespace with resource/action structure
-
-    Returns:
-        Scheduler strategies list
-    """
     container = get_container()
-    query_bus = container.get(QueryBus)
-    container.get(SchedulerPort)
+    orchestrator = container.get(ListSchedulerStrategiesOrchestrator)
+    formatter = container.get(ResponseFormattingService)
 
-    from orb.application.queries.scheduler import ListSchedulerStrategiesQuery
-
-    query = ListSchedulerStrategiesQuery()
-    strategies = await query_bus.execute(query)
-
-    return {
-        "strategies": strategies,
-        "count": len(strategies),
-        "message": "Scheduler strategies retrieved successfully",
-    }
+    result = await orchestrator.execute(ListSchedulerStrategiesInput())
+    return formatter.format_scheduler_strategy_list(
+        result.strategies, result.current_strategy, result.count
+    )
 
 
 @handle_interface_exceptions(context="show_scheduler_config", interface_type="cli")
-async def handle_show_scheduler_config(args) -> dict[str, Any]:
-    """
-    Handle show scheduler configuration operations.
+async def handle_show_scheduler_config(args: "argparse.Namespace") -> Union[dict[str, Any], InterfaceResponse]:
+    """Handle show scheduler configuration operations."""
+    from orb.application.services.orchestration.dtos import GetSchedulerConfigInput
+    from orb.application.services.orchestration.get_scheduler_config import (
+        GetSchedulerConfigOrchestrator,
+    )
 
-    Args:
-        args: Argument namespace with resource/action structure
-
-    Returns:
-        Scheduler configuration
-    """
     container = get_container()
-    query_bus = container.get(QueryBus)
+    orchestrator = container.get(GetSchedulerConfigOrchestrator)
+    formatter = container.get(ResponseFormattingService)
 
-    from orb.application.queries.scheduler import GetSchedulerConfigurationQuery
-
-    query = GetSchedulerConfigurationQuery()
-    config = await query_bus.execute(query)
-
-    return {
-        "config": config,
-        "message": "Scheduler configuration retrieved successfully",
-    }
+    result = await orchestrator.execute(GetSchedulerConfigInput())
+    return formatter.format_scheduler_config(result.config)
 
 
 @handle_interface_exceptions(context="validate_scheduler_config", interface_type="cli")
-async def handle_validate_scheduler_config(args) -> dict[str, Any]:
-    """
-    Handle validate scheduler configuration operations.
+async def handle_validate_scheduler_config(args: "argparse.Namespace") -> dict[str, Any]:
+    """Handle validate scheduler configuration operations."""
+    from orb.infrastructure.di.buses import QueryBus
 
-    Args:
-        args: Argument namespace with resource/action structure
-
-    Returns:
-        Validation results
-    """
     container = get_container()
     query_bus = container.get(QueryBus)
 
