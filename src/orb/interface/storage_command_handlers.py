@@ -112,7 +112,7 @@ async def handle_storage_health(
 
         query = GetStorageHealthQuery(verbose=getattr(args, "verbose", False))
         health = await query_bus.execute(query)
-        raw = health if isinstance(health, dict) else {"health": health}
+        raw = health if isinstance(health, dict) else health.model_dump() if hasattr(health, "model_dump") else {"health": str(health)}
         return formatter.format_config(raw)
     except ImportError:
         return formatter.format_error("Storage health query not available")
@@ -135,7 +135,7 @@ async def handle_storage_metrics(
 
         query = GetStorageMetricsQuery()
         metrics = await query_bus.execute(query)
-        raw = metrics if isinstance(metrics, dict) else {"metrics": metrics}
+        raw = metrics if isinstance(metrics, dict) else metrics.model_dump() if hasattr(metrics, "model_dump") else {"metrics": str(metrics)}
         return formatter.format_config(raw)
     except ImportError:
         return formatter.format_error("Storage metrics query not available")
