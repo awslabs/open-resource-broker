@@ -35,14 +35,6 @@ repos:
         pass_filenames: false
         description: "Check Python type annotations with pyright"
 
-      - id: mypy
-        name: mypy (Type Checking)
-        entry: make ci-quality-mypy
-        language: system
-        files: \.(py)$
-        pass_filenames: false
-        description: "Check Python type annotations with mypy"
-        stages: [manual]  # Optional check - run as warning only
 
       - id: bandit
         name: bandit (Security Analysis)

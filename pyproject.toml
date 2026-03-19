@@ -374,7 +374,6 @@ exclude = [
     ".eggs",
     ".git",
     ".hg",
-    ".mypy_cache",
     ".tox",
     ".venv",
     "build",
