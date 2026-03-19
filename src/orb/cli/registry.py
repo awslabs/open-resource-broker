@@ -203,6 +203,7 @@ def build_registry() -> None:
 
     # --- machines ---
     from orb.interface.machine_command_handlers import (
+        handle_get_machine,
         handle_get_machine_status,
         handle_list_machines,
         handle_start_machines,
@@ -210,7 +211,7 @@ def build_registry() -> None:
     )
 
     register("machines", "list", handle_list_machines)
-    register("machines", "show", _make_bus_handler("get_machine"))
+    register("machines", "show", handle_get_machine)
     register("machines", "status", handle_get_machine_status)
     register("machines", "request", handle_request_machines)
     register("machines", "return", handle_request_return_machines)
@@ -247,8 +248,15 @@ def build_registry() -> None:
     register("storage", "validate", handle_validate_storage_config)
 
     # --- config ---
-    register("config", "show", _make_bus_handler("get_system_config"))
-    register("config", "get", _make_bus_handler("get_configuration"))
-    register("config", "set", _make_bus_handler("set_configuration"))
-    register("config", "validate", _make_bus_handler("validate_provider_config"))
+    from orb.interface.config_command_handlers import (
+        handle_get_configuration,
+        handle_get_system_config,
+        handle_set_configuration,
+        handle_validate_provider_config,
+    )
+
+    register("config", "show", handle_get_system_config)
+    register("config", "get", handle_get_configuration)
+    register("config", "set", handle_set_configuration)
+    register("config", "validate", handle_validate_provider_config)
     register("config", "reload", handle_reload_provider_config)
