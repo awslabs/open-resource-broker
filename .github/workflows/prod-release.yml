@@ -14,7 +14,6 @@ permissions:
   contents: read
   packages: write
   pages: write
-  id-token: write
 
 concurrency:
   group: production-release-${{ github.event.release.tag_name || inputs.version }}

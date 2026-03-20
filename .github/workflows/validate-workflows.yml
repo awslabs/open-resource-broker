@@ -62,8 +62,8 @@ jobs:
     - name: Validate workflows with actionlint
       run: |
         echo "::add-matcher::.github/actionlint-matcher.json"
-        bash <(curl https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
-        ./actionlint -color
+        pip install actionlint-py
+        actionlint .github/workflows/*.yml
       shell: bash
 
     - name: Validate shell scripts with shellcheck

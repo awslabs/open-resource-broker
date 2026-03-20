@@ -29,7 +29,6 @@ on:
 
 permissions:
   contents: write
-  id-token: write
   packages: write
 
 concurrency:
@@ -40,6 +39,10 @@ jobs:
   release:
     name: Semantic Release
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+      id-token: write
     if: |
       (github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, 'release:')) ||
       github.event_name == 'workflow_dispatch' ||
