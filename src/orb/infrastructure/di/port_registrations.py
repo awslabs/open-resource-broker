@@ -125,12 +125,3 @@ def register_port_adapters(container):
         lambda c: ResponseFormattingService(c.get(SchedulerPort)),
     )
 
-    # Register CLIResponseFormatter as a singleton so handlers can resolve it
-    # from the container instead of constructing it ad-hoc on every invocation.
-    from orb.cli.response_formatter import CLIResponseFormatter
-
-    if not container.is_registered(CLIResponseFormatter):
-        container.register_singleton(
-            CLIResponseFormatter,
-            lambda c: CLIResponseFormatter(scheduler_strategy=c.get(SchedulerPort)),
-        )

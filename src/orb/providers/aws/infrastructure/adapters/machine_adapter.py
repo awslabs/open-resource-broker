@@ -57,25 +57,37 @@ class AWSMachineAdapter:
         3. Private IP
         4. Instance ID (fallback)
         """
-        # 1. Check AWS Name tag
-        tags = aws_instance_data.get("Tags", [])
-        for tag in tags:
-            if tag.get("Key") == "Name" and tag.get("Value"):
-                self._logger.info("Using AWS Name tag for machine: %s", tag["Value"])
-                return tag["Value"]
+        # 1. Check AWS Name tag (snake_case: list of dicts with Key/Value, or dict)
+        tags = aws_instance_data.get("tags") or aws_instance_data.get("Tags", [])
+        if isinstance(tags, dict):
+            name = tags.get("Name")
+            if name:
+                self._logger.info("Using AWS Name tag for machine: %s", name)
+                return name
+        else:
+            for tag in tags:
+                if tag.get("Key") == "Name" and tag.get("Value"):
+                    self._logger.info("Using AWS Name tag for machine: %s", tag["Value"])
+                    return tag["Value"]
 
         # 2. Use private DNS name (more readable than IP)
-        if private_dns := aws_instance_data.get("PrivateDnsName"):
+        if private_dns := (
+            aws_instance_data.get("private_dns_name") or aws_instance_data.get("PrivateDnsName")
+        ):
             self._logger.info("Using private DNS name for machine: %s", private_dns)
             return private_dns
 
         # 3. Use private IP
-        if private_ip := aws_instance_data.get("PrivateIpAddress"):
+        if private_ip := (
+            aws_instance_data.get("private_ip") or aws_instance_data.get("PrivateIpAddress")
+        ):
             self._logger.info("Using private IP for machine: %s", private_ip)
             return private_ip
 
         # 4. Fallback to instance ID
-        instance_id = aws_instance_data.get("InstanceId", "")
+        instance_id = (
+            aws_instance_data.get("instance_id") or aws_instance_data.get("InstanceId", "")
+        )
         self._logger.info("Using instance ID fallback for machine: %s", instance_id)
         return instance_id
 
@@ -128,8 +140,12 @@ class AWSMachineAdapter:
 
                 # Add smart machine naming and DNS fields
                 machine_data["name"] = self._resolve_machine_name(aws_instance_data)
-                machine_data["private_dns_name"] = aws_instance_data.get("PrivateDnsName")
-                machine_data["public_dns_name"] = aws_instance_data.get("PublicDnsName")
+                machine_data["private_dns_name"] = aws_instance_data.get(
+                    "private_dns_name"
+                ) or aws_instance_data.get("PrivateDnsName")
+                machine_data["public_dns_name"] = aws_instance_data.get(
+                    "public_dns_name"
+                ) or aws_instance_data.get("PublicDnsName")
                 machine_data["status_reason"] = self._extract_status_reason(aws_instance_data)
 
                 # Log DNS data for debugging
@@ -295,7 +311,8 @@ class AWSMachineAdapter:
 
         # Detect format and extract fields accordingly
         if "instance_id" in aws_instance_data:
-            # snake_case format
+            # snake_case format — always populate cloud_host_id with the instance ID
+            provider_data["cloud_host_id"] = aws_instance_data.get("instance_id")
             field_mappings = {
                 "network_interfaces": "network_interfaces",
                 "block_device_mappings": "block_device_mappings",
@@ -312,7 +329,8 @@ class AWSMachineAdapter:
                 "private_dns_name": "private_dns_name",
             }
         else:
-            # PascalCase format
+            # PascalCase format — always populate cloud_host_id with the instance ID
+            provider_data["cloud_host_id"] = aws_instance_data.get("InstanceId")
             field_mappings = {
                 "network_interfaces": "NetworkInterfaces",
                 "block_device_mappings": "BlockDeviceMappings",

@@ -488,24 +488,31 @@ class OpenResourceBrokerMCPServer:
         """Get JSON schema properties for tool parameters."""
         return self._TOOL_SCHEMAS.get(tool_name, {}).get("properties", {})
 
+    @staticmethod
+    def _unwrap_result(result: Any) -> dict[str, Any]:
+        """Unwrap an InterfaceResponse or plain dict for JSON serialisation."""
+        if hasattr(result, "data"):
+            return result.data  # type: ignore[no-any-return]
+        return result  # type: ignore[return-value]
+
     async def _get_templates_resource(self, uri: str) -> dict[str, Any]:
         """Get templates resource data."""
         # Use the list_templates tool to get data
         args = type("Args", (), {})()
         result = await self.tools["list_templates"](args)
-        return result
+        return self._unwrap_result(result)
 
     async def _get_requests_resource(self, uri: str) -> dict[str, Any]:
         """Get requests resource data."""
         args = type("Args", (), {})()
         result = await self.tools["list_requests"](args)
-        return result
+        return self._unwrap_result(result)
 
     async def _get_machines_resource(self, uri: str) -> dict[str, Any]:
         """Get machines resource data."""
         args = type("Args", (), {})()
         result = await self.tools["list_machines"](args)
-        return result
+        return self._unwrap_result(result)
 
     async def _get_providers_resource(self, uri: str) -> dict[str, Any]:
         """Get providers resource data."""

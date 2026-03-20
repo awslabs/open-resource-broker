@@ -1,6 +1,8 @@
 """System-related command handlers for the interface layer."""
 
-from typing import Any, Union, cast
+from typing import Any, cast
+
+import asyncio
 
 from orb.application.dto.interface_response import InterfaceResponse
 from orb.infrastructure.di.container import get_container
@@ -13,7 +15,8 @@ async def handle_system_health(args) -> InterfaceResponse:
     """Handle system health check."""
     from orb.interface.health_command_handler import handle_health_check
 
-    result = handle_health_check(args)
+    loop = asyncio.get_event_loop()
+    result = cast(dict[str, Any], await loop.run_in_executor(None, handle_health_check, args))
     return InterfaceResponse(data=result, exit_code=0 if result.get("success") else 1)
 
 
@@ -124,7 +127,7 @@ async def handle_provider_metrics(args) -> dict[str, Any]:
 
 
 @handle_interface_exceptions(context="reload_provider_config", interface_type="cli")
-async def handle_reload_provider_config(args) -> Union[dict[str, Any], InterfaceResponse]:
+async def handle_reload_provider_config(args) -> InterfaceResponse:
     """Handle reload provider config operations."""
     from orb.application.services.provider_registry_service import ProviderRegistryService
     from orb.application.services.response_formatting_service import ResponseFormattingService
@@ -142,7 +145,7 @@ async def handle_reload_provider_config(args) -> Union[dict[str, Any], Interface
 
 
 @handle_interface_exceptions(context="system_status", interface_type="cli")
-async def handle_system_status(args) -> Union[dict[str, Any], InterfaceResponse]:
+async def handle_system_status(args) -> InterfaceResponse:
     """Handle system status query."""
     from orb.application.services.response_formatting_service import ResponseFormattingService
     from orb.infrastructure.di.buses import QueryBus
