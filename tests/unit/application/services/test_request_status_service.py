@@ -29,8 +29,8 @@ class TestReturnRequestCompletion:
         self.svc = _make_service()
         self.req = _make_request("return")
 
-    def test_return_request_with_shutting_down_machine_is_complete(self):
-        """1 shutting-down + 1 terminated → COMPLETED (shutting-down counts as terminal)."""
+    def test_return_request_with_shutting_down_machine_is_not_complete(self):
+        """1 shutting-down + 1 terminated → IN_PROGRESS (shutting-down is not terminal)."""
         machines = [
             _make_machine(MachineStatus.SHUTTING_DOWN),
             _make_machine(MachineStatus.TERMINATED),
@@ -41,10 +41,10 @@ class TestReturnRequestCompletion:
             request=self.req,
             provider_metadata={},
         )
-        assert status == RequestStatus.COMPLETED.value
+        assert status == RequestStatus.IN_PROGRESS.value
 
-    def test_return_request_with_all_shutting_down_is_complete(self):
-        """All shutting-down → COMPLETED (shutting-down counts as terminal)."""
+    def test_return_request_with_all_shutting_down_is_not_complete(self):
+        """All shutting-down → IN_PROGRESS (shutting-down is not terminal)."""
         machines = [
             _make_machine(MachineStatus.SHUTTING_DOWN),
             _make_machine(MachineStatus.SHUTTING_DOWN),
@@ -55,7 +55,7 @@ class TestReturnRequestCompletion:
             request=self.req,
             provider_metadata={},
         )
-        assert status == RequestStatus.COMPLETED.value
+        assert status == RequestStatus.IN_PROGRESS.value
 
     def test_return_request_with_all_terminated_is_complete(self):
         """All terminated → COMPLETED (regression guard)."""
