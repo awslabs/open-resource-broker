@@ -1,8 +1,7 @@
 """System-related command handlers for the interface layer."""
 
-from typing import Any, cast
-
 import asyncio
+from typing import Any, cast
 
 from orb.application.dto.interface_response import InterfaceResponse
 from orb.infrastructure.di.container import get_container
