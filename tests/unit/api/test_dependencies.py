@@ -19,9 +19,7 @@ class TestGetResponseFormattingService:
         singleton = MagicMock(spec=ResponseFormattingService)
         mock_container = MagicMock()
         mock_container.get.return_value = singleton
-        monkeypatch.setattr(
-            "orb.api.dependencies.get_di_container", lambda: mock_container
-        )
+        monkeypatch.setattr("orb.api.dependencies.get_di_container", lambda: mock_container)
 
         first = get_response_formatting_service()
         second = get_response_formatting_service()
