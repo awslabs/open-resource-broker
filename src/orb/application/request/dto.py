@@ -24,6 +24,8 @@ class MachineReferenceDTO(BaseDTO):
     instance_tags: Optional[str] = None
     cloud_host_id: Optional[str] = None
     launch_time: Optional[int] = None
+    request_id: Optional[str] = None
+    return_request_id: Optional[str] = None
     message: str = ""
 
     @classmethod
