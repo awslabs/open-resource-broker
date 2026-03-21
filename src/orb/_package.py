@@ -65,8 +65,8 @@ if not config:
             # CI builds will override this with dynamic versions like "0.1.0.dev20250822145030+abc1234"
             "version": "0.1.0.dev0",
             "description": "Open Resource Broker (ORB) — dynamic cloud resource provisioning via CLI and REST API",
-            "author": "AWS Professional Services",
-            "email": "aws-proserve@amazon.com",
+            "author": "AWS ORB Maintainers",
+            "email": "aws-orb-maintainers@amazon.com",
             "license": "Apache-2.0",
         },
         "repository": {

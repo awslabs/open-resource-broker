@@ -2,25 +2,25 @@
 # These users will be automatically requested for review when PRs are opened
 
 # Default owners for everything in the repo
-* @fgogolli @kirillsc @canonicalname
+* @awslabs/orb-maintainers
 
 # Specific ownership for critical files
-/.github/ @fgogolli @kirillsc @canonicalname
-/pyproject.toml @fgogolli @kirillsc @canonicalname
-/Dockerfile @fgogolli @kirillsc @canonicalname
-/src/_version.py @fgogolli @kirillsc @canonicalname
-/src/_package.py @fgogolli @kirillsc @canonicalname
+/.github/ @awslabs/orb-maintainers
+/pyproject.toml @awslabs/orb-maintainers
+/Dockerfile @awslabs/orb-maintainers
+/src/_version.py @awslabs/orb-maintainers
+/src/_package.py @awslabs/orb-maintainers
 
 # Documentation
-/docs/ @fgogolli @kirillsc @canonicalname
-/README.md @fgogolli @kirillsc @canonicalname
+/docs/ @awslabs/orb-maintainers
+/README.md @awslabs/orb-maintainers
 
 # Security and CI/CD
-/.github/workflows/ @fgogolli @kirillsc @canonicalname
-/.github/dependabot.yml @fgogolli @kirillsc @canonicalname
-/dev-tools/security/ @fgogolli @kirillsc @canonicalname
+/.github/workflows/ @awslabs/orb-maintainers
+/.github/dependabot.yml @awslabs/orb-maintainers
+/dev-tools/security/ @awslabs/orb-maintainers
 
 # Container and deployment
-/Dockerfile @fgogolli @kirillsc @canonicalname
-/deployment/ @fgogolli @kirillsc @canonicalname
-/dev-tools/container/container_build.sh @fgogolli @kirillsc @canonicalname
+/Dockerfile @awslabs/orb-maintainers
+/deployment/ @awslabs/orb-maintainers
+/dev-tools/container/container_build.sh @awslabs/orb-maintainers

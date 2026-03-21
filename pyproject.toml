@@ -9,10 +9,10 @@ description = "Open Resource Broker (ORB) — dynamic cloud resource provisionin
 readme = "README.md"
 license = "Apache-2.0"
 authors = [
-    {name = "AWS Professional Services", email = "aws-proserve@amazon.com"},
+    {name = "AWS ORB Maintainers", email = "aws-orb-maintainers@amazon.com"},
 ]
 maintainers = [
-    {name = "AWS Professional Services", email = "aws-proserve@amazon.com"},
+    {name = "AWS ORB Maintainers", email = "aws-orb-maintainers@amazon.com"},
 ]
 keywords = [
     "aws",
