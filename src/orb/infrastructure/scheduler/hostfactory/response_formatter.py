@@ -263,9 +263,19 @@ class HostFactoryResponseFormatter:
                 "launchtime": launchtime,
                 "message": message,
                 "cloudHostId": machine.get("cloud_host_id") or None,
-                "requestId": machine.get("request_id"),
-                "returnRequestId": machine.get("return_request_id"),
             }
+
+            if request_type == "return":
+                formatted_machine["requestId"] = machine.get("request_id")
+            elif request_type in ("acquire", "provision"):
+                if machine.get("return_request_id"):
+                    formatted_machine["returnRequestId"] = machine.get("return_request_id")
+            else:
+                # neutral context (machine list/show) — show both when present
+                if machine.get("request_id"):
+                    formatted_machine["requestId"] = machine.get("request_id")
+                if machine.get("return_request_id"):
+                    formatted_machine["returnRequestId"] = machine.get("return_request_id")
 
             formatted_machine["publicIpAddress"] = (
                 machine.get("public_ip_address") or machine.get("public_ip") or None
