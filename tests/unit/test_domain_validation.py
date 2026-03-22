@@ -35,7 +35,7 @@ def test_domain_validation():
         try:
             test_aws_template_basic()
             results["aws_template_basic"] = True
-        except Exception as e:
+        except Exception as e:  # expected: sub-test failure is recorded, not propagated
             print(f"   FAIL: Basic AWSTemplate creation failed: {e!s}")
             traceback.print_exc()
 
@@ -44,7 +44,7 @@ def test_domain_validation():
         try:
             test_aws_template_spot_fleet()
             results["aws_template_spot_fleet"] = True
-        except Exception as e:
+        except Exception as e:  # expected: sub-test failure is recorded, not propagated
             print(f"   FAIL: SpotFleet AWSTemplate creation failed: {e!s}")
             traceback.print_exc()
 
@@ -53,7 +53,7 @@ def test_domain_validation():
         try:
             test_request_creation()
             results["request_creation"] = True
-        except Exception as e:
+        except Exception as e:  # expected: sub-test failure is recorded, not propagated
             print(f"   FAIL: Request creation failed: {e!s}")
             traceback.print_exc()
 
@@ -62,7 +62,7 @@ def test_domain_validation():
         try:
             test_base_handler_validation()
             results["base_handler_validation"] = True
-        except Exception as e:
+        except Exception as e:  # expected: sub-test failure is recorded, not propagated
             print(f"   FAIL: Base handler validation failed: {e!s}")
             traceback.print_exc()
 
@@ -75,16 +75,16 @@ def test_domain_validation():
         total = len(results)
 
         for test_name, result in results.items():
-            status = "PASS: PASS" if result else "FAIL: FAIL"
+            status = "PASS" if result else "FAIL"
             print(f"{test_name.replace('_', ' ').title()}: {status}")
 
         print(f"\nOverall: {passed}/{total} tests passed")
 
-        if passed == total:
-            print("ALL DOMAIN VALIDATION TESTS PASSED!")
-        else:
+        if passed < total:
             print("WARN: Some domain validation tests failed")
             pytest.fail(f"Only {passed}/{total} domain validation tests passed")
+        else:
+            print("ALL DOMAIN VALIDATION TESTS PASSED!")
 
     except Exception as e:
         print(f"FAIL: Test execution failed: {e!s}")

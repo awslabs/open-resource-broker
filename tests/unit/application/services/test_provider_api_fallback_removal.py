@@ -161,22 +161,36 @@ class TestMachineGroupingServiceSkipsMissingProviderApi:
 
         self._setup_uow({"i-aaa": m1, "i-bbb": m2})
 
-        with pytest.raises(ValueError, match="no provider_api"):
-            self.svc.group_by_resource(["i-aaa", "i-bbb"])
+        result = self.svc.group_by_resource(["i-aaa", "i-bbb"])
+
+        # m2 skipped — only m1 appears in any group
+        all_machines = [m for group in result.values() for m in group]
+        assert m1 in all_machines
+        assert m2 not in all_machines
+        self.logger.warning.assert_called_once()
+        assert "i-bbb" in str(self.logger.warning.call_args)
 
     def test_machine_with_no_provider_api_raises_single(self):
         m = self._make_machine("i-bbb", "aws-prod", None, "asg-1")
         self._setup_uow({"i-bbb": m})
 
-        with pytest.raises(ValueError, match="no provider_api"):
-            self.svc.group_by_resource(["i-bbb"])
+        result = self.svc.group_by_resource(["i-bbb"])
+
+        # sole machine skipped — result is empty
+        assert result == {}
+        self.logger.warning.assert_called_once()
+        assert "i-bbb" in str(self.logger.warning.call_args)
 
     def test_machine_with_no_provider_api_raises_on_single(self):
         m = self._make_machine("i-bbb", "aws-prod", None, "asg-1")
         self._setup_uow({"i-bbb": m})
 
-        with pytest.raises(ValueError, match="no provider_api"):
-            self.svc.group_by_resource(["i-bbb"])
+        result = self.svc.group_by_resource(["i-bbb"])
+
+        # sole machine skipped — result is empty
+        assert result == {}
+        self.logger.warning.assert_called_once()
+        assert "i-bbb" in str(self.logger.warning.call_args)
 
     def test_mixed_machines_raise_on_missing_provider_api(self):
         m1 = self._make_machine("i-aaa", "aws-prod", "RunInstances", "asg-1")
@@ -185,8 +199,15 @@ class TestMachineGroupingServiceSkipsMissingProviderApi:
 
         self._setup_uow({"i-aaa": m1, "i-bbb": m2, "i-ccc": m3})
 
-        with pytest.raises(ValueError, match="no provider_api"):
-            self.svc.group_by_resource(["i-aaa", "i-bbb", "i-ccc"])
+        result = self.svc.group_by_resource(["i-aaa", "i-bbb", "i-ccc"])
+
+        # m2 skipped — m1 and m3 present in their respective groups
+        all_machines = [m for group in result.values() for m in group]
+        assert m1 in all_machines
+        assert m3 in all_machines
+        assert m2 not in all_machines
+        self.logger.warning.assert_called_once()
+        assert "i-bbb" in str(self.logger.warning.call_args)
 
 
 # ---------------------------------------------------------------------------

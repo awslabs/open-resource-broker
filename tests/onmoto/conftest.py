@@ -267,6 +267,10 @@ def _make_config_port(prefix: str = ""):
     provider_config = MagicMock()
     provider_config.provider_defaults = {"aws": provider_defaults}
     config_port.get_provider_config.return_value = provider_config
+    # Set app_config to None so that accessing .circuit_breaker on it raises
+    # AttributeError, causing _get_circuit_breaker_config to use integer defaults
+    # instead of a MagicMock (which breaks int comparisons in the circuit breaker)
+    config_port.app_config = None
     return config_port
 
 

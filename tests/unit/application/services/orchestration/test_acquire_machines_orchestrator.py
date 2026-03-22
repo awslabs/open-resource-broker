@@ -300,6 +300,8 @@ class TestAcquireMachinesOrchestrator:
             )
 
         assert result.machine_ids == ["m-111", "m-222"]
+        assert result.status == "completed"
+        assert result.request_id == "req-005"
 
     @pytest.mark.asyncio
     async def test_poll_consecutive_errors_abort(

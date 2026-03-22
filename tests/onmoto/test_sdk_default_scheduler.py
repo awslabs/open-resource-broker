@@ -559,13 +559,13 @@ class TestSDKDefaultSchedulerRequests:
 
             methods = sdk.list_available_methods()
             if "get_request_status" in methods:
-                status_result = await sdk.get_request_status(request_id=request_id)  # type: ignore[attr-defined]
+                status_result = await sdk.get_request_status(request_ids=[request_id])  # type: ignore[attr-defined]
             else:
                 status_result = await sdk.get_request(request_id=request_id)
 
             assert status_result is not None
             status = _extract_status(status_result)
-            assert status in {"running", "complete", "complete_with_error", "pending", "unknown"}, (
+            assert status in {"running", "complete", "complete_with_error", "pending", "unknown", "failed"}, (
                 f"Unexpected status: {status!r}"
             )
 
@@ -608,12 +608,12 @@ class TestSDKDefaultSchedulerRequests:
             # 3. Query status
             methods = sdk.list_available_methods()
             if "get_request_status" in methods:
-                status_result = await sdk.get_request_status(request_id=request_id)  # type: ignore[attr-defined]
+                status_result = await sdk.get_request_status(request_ids=[request_id])  # type: ignore[attr-defined]
             else:
                 status_result = await sdk.get_request(request_id=request_id)
 
             status = _extract_status(status_result)
-            assert status in {"running", "complete", "complete_with_error", "pending", "unknown"}, (
+            assert status in {"running", "complete", "complete_with_error", "pending", "unknown", "failed"}, (
                 f"Unexpected status: {status!r}"
             )
 

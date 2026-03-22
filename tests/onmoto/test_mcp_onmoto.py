@@ -55,26 +55,6 @@ async def mcp_server(orb_config_dir, moto_aws):
     logger = _make_logger()
     _inject_moto_factory(aws_client, logger, None)
 
-    # All interface handlers take only (args,) — wrap each tool so the server's
-    # _handle_tools_call convention of tool_func(args, self.app) still works.
-    import functools
-
-    wrapped: dict = {}
-    for name, fn in server.tools.items():
-        import inspect
-
-        sig = inspect.signature(fn)
-        if len(sig.parameters) == 1:
-
-            async def _wrap(args, _app, _fn=fn):
-                return await _fn(args)
-
-            functools.update_wrapper(_wrap, fn)
-            wrapped[name] = _wrap
-        else:
-            wrapped[name] = fn
-    server.tools = wrapped
-
     yield server
 
 

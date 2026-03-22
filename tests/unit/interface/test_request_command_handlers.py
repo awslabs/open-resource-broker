@@ -30,7 +30,6 @@ from orb.interface.request_command_handlers import (
     handle_request_machines,
     handle_request_return_machines,
 )
-from orb.interface.response_formatting_service import ResponseFormattingService
 
 
 def _make_namespace(**kwargs) -> argparse.Namespace:
@@ -101,8 +100,7 @@ class TestHandleRequestMachines:
         """template_id + machine_count → AcquireMachinesOrchestrator called, InterfaceResponse returned."""
         from orb.application.dto.interface_response import InterfaceResponse
 
-        container, _scheduler, acquire_orch, *_ = _mock_container()
-        formatter = container.get(ResponseFormattingService)
+        container, _scheduler, acquire_orch, _, _, _, _, _, formatter = _mock_container()
 
         acquire_orch.execute.return_value = AcquireMachinesOutput(
             request_id="req-abc", status="pending", machine_ids=["r-1"]
@@ -125,10 +123,8 @@ class TestHandleRequestMachines:
     async def test_from_input_data(self):
         """input_data dict is passed to scheduler.parse_request_data."""
         from orb.application.dto.interface_response import InterfaceResponse
-        from orb.interface.response_formatting_service import ResponseFormattingService
 
-        container, scheduler, acquire_orch, *_ = _mock_container()
-        formatter = container.get(ResponseFormattingService)
+        container, scheduler, acquire_orch, _, _, _, _, _, formatter = _mock_container()
 
         scheduler.parse_request_data.return_value = {
             "template_id": "t1",

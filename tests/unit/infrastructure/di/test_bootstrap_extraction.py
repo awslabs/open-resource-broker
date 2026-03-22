@@ -34,8 +34,8 @@ def test_container_factory_hook():
     set_container_factory(mock_fn)
     try:
         get_container()
-    except Exception:  # mock_fn may raise — we only care it was called
-        pass
+    except Exception:
+        pass  # mock_fn may raise — we only care it was called
     mock_fn.assert_called_once()
     # Restore real factory explicitly (re-import is a no-op if already cached)
     set_container_factory(register_all_services)
