@@ -156,18 +156,6 @@ class Template(BaseModel):
 
         return self
 
-    # Provider configuration (multi-provider support)
-    provider_type: Optional[str] = None
-    provider_name: Optional[str] = None
-    provider_api: Optional[str] = None
-
-    # Timestamps for tracking
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
-
-    # Active status flag
-    is_active: bool = True
-
     @property
     def subnet_id(self) -> Optional[str]:
         """Convenience property for single subnet access."""
