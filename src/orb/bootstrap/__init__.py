@@ -17,11 +17,10 @@ from orb.infrastructure.di.container import set_container_factory
 set_container_factory(register_all_services)
 
 # Import configuration
-from orb.config.schemas.app_schema import AppConfig
-
 # Import logging
-from orb.infrastructure.logging.logger import get_logger, setup_logging
 from orb.cli.console import print_console
+from orb.config.schemas.app_schema import AppConfig
+from orb.infrastructure.logging.logger import get_logger, setup_logging
 
 
 class Application:
