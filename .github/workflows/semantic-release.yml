@@ -45,19 +45,22 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Setup Python and UV
-        uses: ./.github/actions/setup-uv-cached
-        with:
-          fail-on-cache-miss: false
+      - name: Setup UV
+        uses: astral-sh/setup-uv@v6
+
+      - name: Install dependencies
+        run: uv sync
 
       - name: Compute next version (dry run)
         id: next_version
         run: |
           NEXT=$(uv run semantic-release version --print 2>/dev/null || echo "no-release")
           echo "next_version=$NEXT" >> "$GITHUB_OUTPUT"
-          echo "## Semantic Release Preview" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "Next version: **$NEXT**" >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo "## Semantic Release Preview"
+            echo ""
+            echo "Next version: **$NEXT**"
+          } >> "$GITHUB_STEP_SUMMARY"
 
   release:
     name: Semantic Release
