@@ -66,7 +66,7 @@ jobs:
         id: next_version
         run: |
           FORCE_FLAG=${{ inputs.force_level != 'auto' && format('--{0}', inputs.force_level) || '' }}
-          NEXT=$(uv run semantic-release version --print $FORCE_FLAG 2>/dev/null || echo "no-release")
+          NEXT=$(uv run semantic-release version --print $FORCE_FLAG || echo "no-release")
           echo "next_version=$NEXT" >> "$GITHUB_OUTPUT"
           {
             echo "## Semantic Release Preview"
