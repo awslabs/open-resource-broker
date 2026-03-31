@@ -109,7 +109,9 @@ def _make_launch_template_manager(aws_client: AWSClient, logger: Any) -> AWSLaun
     return lt_manager
 
 
-def _make_run_instances_handler(aws_client: AWSClient, logger: Any, config_port: Any) -> RunInstancesHandler:
+def _make_run_instances_handler(
+    aws_client: AWSClient, logger: Any, config_port: Any
+) -> RunInstancesHandler:
     aws_ops = AWSOperations(aws_client, logger, config_port)
     lt_manager = _make_launch_template_manager(aws_client, logger)
     return RunInstancesHandler(
@@ -345,12 +347,22 @@ class TestMultiASGBatchReturn:
         handler_b = _make_asg_handler(aws_client, logger, config_port)
 
         asg_name_a, instance_ids_a = self._acquire_and_attach(
-            handler_a, asg_client, ec2_client, vpc,
-            request_id="multi-asg-a", template_id="tpl-asg-a", count=1,
+            handler_a,
+            asg_client,
+            ec2_client,
+            vpc,
+            request_id="multi-asg-a",
+            template_id="tpl-asg-a",
+            count=1,
         )
         asg_name_b, instance_ids_b = self._acquire_and_attach(
-            handler_b, asg_client, ec2_client, vpc,
-            request_id="multi-asg-b", template_id="tpl-asg-b", count=1,
+            handler_b,
+            asg_client,
+            ec2_client,
+            vpc,
+            request_id="multi-asg-b",
+            template_id="tpl-asg-b",
+            count=1,
         )
 
         # Confirm both ASGs exist with DesiredCapacity==1 before release

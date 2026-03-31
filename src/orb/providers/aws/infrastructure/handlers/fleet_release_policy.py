@@ -10,8 +10,8 @@ from dataclasses import dataclass
 @dataclass(frozen=True)
 class FleetReleaseDecision:
     requires_capacity_reduction: bool  # True for both maintain and request types
-    has_fleet_record: bool             # True for fleet types, False for RunInstances
-    is_full_return: bool               # True when all instances are being returned
+    has_fleet_record: bool  # True for fleet types, False for RunInstances
+    is_full_return: bool  # True when all instances are being returned
 
 
 def compute_fleet_release_decision(

@@ -101,9 +101,7 @@ class SpotFleetReleaseManager:
                 self._logger.info("Terminated Spot Fleet %s instances: %s", fleet_id, instance_ids)
 
                 if decision.is_full_return and decision.has_fleet_record:
-                    self._logger.info(
-                        "Spot Fleet %s capacity is zero, cancelling fleet", fleet_id
-                    )
+                    self._logger.info("Spot Fleet %s capacity is zero, cancelling fleet", fleet_id)
                     self._retry(
                         self._aws_client.ec2_client.cancel_spot_fleet_requests,
                         operation_type="critical",

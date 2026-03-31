@@ -510,27 +510,21 @@ class TestSDKRequestLifecycle:
             _inject_moto_factory(aws_client, logger, None)
 
             # Arrange: acquire 1 machine via RunInstances
-            create_result = await sdk.create_request(
-                template_id="RunInstances-OnDemand", count=1
-            )
+            create_result = await sdk.create_request(template_id="RunInstances-OnDemand", count=1)
             request_id = _extract_request_id(create_result)
             assert request_id, f"No request_id in create response: {create_result}"
 
             # Poll until the acquire request reaches a terminal status.
             # wait_for_request returns requests[0] — a single request dict, not the
             # full envelope — so extract machine IDs directly from that dict.
-            terminal = await sdk.wait_for_request(
-                request_id, timeout=30.0, poll_interval=0.5
-            )
+            terminal = await sdk.wait_for_request(request_id, timeout=30.0, poll_interval=0.5)
             machines = terminal.get("machines", []) if isinstance(terminal, dict) else []
             machine_ids: list[str] = [
                 str(m["machineId"] if m.get("machineId") else m["machine_id"])
                 for m in machines
                 if isinstance(m, dict) and (m.get("machineId") or m.get("machine_id"))
             ]
-            assert machine_ids, (
-                f"No machine_ids after acquire completed. Status result: {terminal}"
-            )
+            assert machine_ids, f"No machine_ids after acquire completed. Status result: {terminal}"
 
             # Act: create a return request
             return_result = await sdk.create_return_request(machine_ids=machine_ids)

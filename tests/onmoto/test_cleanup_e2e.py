@@ -728,9 +728,7 @@ class TestCleanupViaOrchestrator:
         query_bus = cqrs_buses["query_bus"]
 
         # --- Arrange: acquire one RunInstances machine ---
-        create_cmd = CreateRequestCommand(
-            template_id=run_instances_template_id, requested_count=1
-        )
+        create_cmd = CreateRequestCommand(template_id=run_instances_template_id, requested_count=1)
         asyncio.run(command_bus.execute(create_cmd))
         assert create_cmd.created_request_id, "CreateRequestCommand did not set created_request_id"
         request_id = create_cmd.created_request_id
@@ -743,9 +741,7 @@ class TestCleanupViaOrchestrator:
         if not machine_ids:
             refs = getattr(request_dto, "machine_references", None) or []
             for m in refs:
-                mid = (
-                    m.get("machine_id") if isinstance(m, dict) else getattr(m, "machine_id", None)
-                )
+                mid = m.get("machine_id") if isinstance(m, dict) else getattr(m, "machine_id", None)
                 if mid:
                     machine_ids.append(mid)
         assert machine_ids, f"No machine IDs found in request {request_id} after acquire"
@@ -753,9 +749,7 @@ class TestCleanupViaOrchestrator:
 
         # Verify instance is running before return
         pre_resp = ec2_client.describe_instances(InstanceIds=[instance_id])
-        pre_states = [
-            i["State"]["Name"] for r in pre_resp["Reservations"] for i in r["Instances"]
-        ]
+        pre_states = [i["State"]["Name"] for r in pre_resp["Reservations"] for i in r["Instances"]]
         assert all(s in ("pending", "running") for s in pre_states), (
             f"Instance not running before return: {pre_states}"
         )
@@ -777,14 +771,12 @@ class TestCleanupViaOrchestrator:
         return_request_id = return_cmd.created_request_ids[0]
 
         # Poll return request status
-        return_dto = asyncio.run(
-            query_bus.execute(GetRequestQuery(request_id=return_request_id))
-        )
+        return_dto = asyncio.run(query_bus.execute(GetRequestQuery(request_id=return_request_id)))
         assert return_dto is not None
         return_status = getattr(return_dto, "status", None)
-        assert return_status in (
-            "complete", "completed", "failed", "running", "in_progress"
-        ), f"Unexpected return request status: {return_status}"
+        assert return_status in ("complete", "completed", "failed", "running", "in_progress"), (
+            f"Unexpected return request status: {return_status}"
+        )
 
         # --- Assert: instance terminated ---
         post_resp = ec2_client.describe_instances(InstanceIds=[instance_id])

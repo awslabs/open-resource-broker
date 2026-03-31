@@ -279,7 +279,6 @@ class TestCLIFullLifecycle:
                         break
                     time.sleep(0.5)
 
-
     def test_cli_output_is_valid_json_with_narrow_terminal(self, orb_config_dir, moto_aws):
         """CLI produces valid JSON even when COLUMNS=40 simulates a narrow terminal.
 

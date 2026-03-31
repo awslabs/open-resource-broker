@@ -424,7 +424,9 @@ class TestMCPRequestLifecycle:
             list_resp = await _send(
                 mcp_server, "tools/call", {"name": "list_return_requests", "arguments": {}}
             )
-            assert not _has_error(list_resp), f"list_return_requests error: {list_resp.get('error')}"
+            assert not _has_error(list_resp), (
+                f"list_return_requests error: {list_resp.get('error')}"
+            )
             entries = _tool_text(list_resp).get("requests", [])
             for entry in entries:
                 if isinstance(entry, dict):

@@ -369,7 +369,9 @@ class TestListMachinesPagination:
                     f"GET /api/v1/machines/ returned {all_resp.status_code} — skipping pagination check"
                 )
         except Exception as exc:
-            pytest.skip(f"GET /api/v1/machines/ raised an exception — skipping pagination check: {exc}")
+            pytest.skip(
+                f"GET /api/v1/machines/ raised an exception — skipping pagination check: {exc}"
+            )
         all_body = all_resp.json()
         all_machines = all_body if isinstance(all_body, list) else all_body.get("machines", [])
         total = len(all_machines)

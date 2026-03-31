@@ -24,7 +24,9 @@ from orb.providers.aws.infrastructure.handlers.asg.handler import ASGHandler
 from orb.providers.aws.infrastructure.handlers.ec2_fleet.handler import EC2FleetHandler
 from orb.providers.aws.infrastructure.handlers.run_instances.handler import RunInstancesHandler
 from orb.providers.aws.infrastructure.handlers.spot_fleet.handler import SpotFleetHandler
-from orb.providers.aws.infrastructure.handlers.spot_fleet.config_builder import SpotFleetConfigBuilder
+from orb.providers.aws.infrastructure.handlers.spot_fleet.config_builder import (
+    SpotFleetConfigBuilder,
+)
 from orb.providers.aws.infrastructure.launch_template.manager import (
     AWSLaunchTemplateManager,
     LaunchTemplateResult,
@@ -315,7 +317,9 @@ class _MotoSpotFleetConfigBuilder(SpotFleetConfigBuilder):
         lt_id: str,
         lt_version: str,
     ) -> dict[str, Any]:
-        config = super().build(template=template, request=request, lt_id=lt_id, lt_version=lt_version)
+        config = super().build(
+            template=template, request=request, lt_id=lt_id, lt_version=lt_version
+        )
         config["TagSpecifications"] = [
             ts for ts in config.get("TagSpecifications", []) if ts.get("ResourceType") != "instance"
         ]
@@ -463,9 +467,7 @@ class TestPartialReturnCapacityReduction:
         assert resp["AutoScalingGroups"], "ASG should still exist after partial release"
         assert resp["AutoScalingGroups"][0]["DesiredCapacity"] == 1
 
-    def test_ec2_fleet_maintain_partial_return_decrements_target_capacity(
-        self, moto_vpc_resources
-    ):
+    def test_ec2_fleet_maintain_partial_return_decrements_target_capacity(self, moto_vpc_resources):
         """release_hosts with resource_mapping for 1 unit calls modify_fleet with TotalTargetCapacity=1.
 
         moto does not implement modify_fleet, so we patch it and assert the call args.
@@ -533,9 +535,7 @@ class TestPartialReturnCapacityReduction:
         new_capacity = modify_calls[0]["TargetCapacitySpecification"]["TotalTargetCapacity"]
         assert new_capacity == 1
 
-    def test_spot_fleet_maintain_partial_return_reduces_target_capacity(
-        self, moto_vpc_resources
-    ):
+    def test_spot_fleet_maintain_partial_return_reduces_target_capacity(self, moto_vpc_resources):
         """release_hosts for 1 unit calls modify_spot_fleet_request with TargetCapacity decremented.
 
         We patch modify_spot_fleet_request on the ec2 client to capture the call,
@@ -590,12 +590,18 @@ class TestPartialReturnCapacityReduction:
             modify_calls.append(kwargs)
             return real_modify(**kwargs)
 
-        def _fake_terminate_with_fallback(instance_ids: list[str], *args: Any, **kwargs: Any) -> None:
+        def _fake_terminate_with_fallback(
+            instance_ids: list[str], *args: Any, **kwargs: Any
+        ) -> None:
             pass
 
         with (
             patch.object(ec2, "modify_spot_fleet_request", side_effect=_capturing_modify),
-            patch.object(aws_ops, "terminate_instances_with_fallback", side_effect=_fake_terminate_with_fallback),
+            patch.object(
+                aws_ops,
+                "terminate_instances_with_fallback",
+                side_effect=_fake_terminate_with_fallback,
+            ),
         ):
             handler._release_manager.release(
                 fleet_id=fleet_id,
