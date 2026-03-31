@@ -280,6 +280,66 @@ class TestCLIFullLifecycle:
                     time.sleep(0.5)
 
 
+    def test_cli_output_is_valid_json_with_narrow_terminal(self, orb_config_dir, moto_aws):
+        """CLI produces valid JSON even when COLUMNS=40 simulates a narrow terminal.
+
+        Regression test for the Rich line-wrapping bug: if Console() ever reverts
+        to auto-detecting terminal width, Rich will wrap long JSON lines and break
+        json.loads().  The fix in console.py sets width=2**31-1 when stdout is not
+        a TTY, so COLUMNS has no effect.
+        """
+        import os
+
+        original_columns = os.environ.get("COLUMNS")
+        os.environ["COLUMNS"] = "40"
+        try:
+            result = _run_orb_cli(["templates", "list"])
+        finally:
+            if original_columns is None:
+                os.environ.pop("COLUMNS", None)
+            else:
+                os.environ["COLUMNS"] = original_columns
+
+        # _run_orb_cli already asserts valid JSON internally; re-assert here to
+        # make the regression intent explicit.
+        assert isinstance(result, (dict, list)), (
+            f"Expected dict or list from JSON parse, got {type(result)}: {result}"
+        )
+
+        # templates list must have a top-level 'templates' key (or be a list itself)
+        if isinstance(result, dict):
+            assert "templates" in result, f"Missing 'templates' key in response: {result}"
+            templates = result["templates"]
+        else:
+            templates = result
+
+        assert isinstance(templates, list), f"'templates' value is not a list: {templates}"
+
+    def test_cli_output_is_valid_json_with_very_narrow_terminal(self, orb_config_dir, moto_aws):
+        """CLI produces valid JSON even when COLUMNS=20 (extremely narrow terminal).
+
+        Extra coverage for the same Rich line-wrapping regression.
+        """
+        import os
+
+        original_columns = os.environ.get("COLUMNS")
+        os.environ["COLUMNS"] = "20"
+        try:
+            result = _run_orb_cli(["templates", "list"])
+        finally:
+            if original_columns is None:
+                os.environ.pop("COLUMNS", None)
+            else:
+                os.environ["COLUMNS"] = original_columns
+
+        assert isinstance(result, (dict, list)), (
+            f"Expected dict or list from JSON parse, got {type(result)}: {result}"
+        )
+
+        if isinstance(result, dict):
+            assert "templates" in result, f"Missing 'templates' key in response: {result}"
+
+
 class TestCLIErrorHandling:
     def test_cli_machines_request_unknown_template(self, orb_config_dir, moto_aws):
         """'orb machines request' with a non-existent template returns an error (non-zero exit or error in output)."""

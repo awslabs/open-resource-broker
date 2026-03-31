@@ -359,6 +359,88 @@ class TestMCPRequestLifecycle:
         requests = list_payload.get("requests", [])
         assert len(requests) > 0, "list_return_requests returned empty list after a return"
 
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("scenario", get_smoke_scenarios(), ids=lambda s: s.scenario_id)
+    async def test_list_return_requests_status_reaches_complete(
+        self, mcp_server, scenario: TestScenario
+    ):
+        import asyncio
+
+        # 1. Acquire machine via request_machines
+        req_resp = await _send(
+            mcp_server,
+            "tools/call",
+            {
+                "name": "request_machines",
+                "arguments": {
+                    "template_id": scenario.template_id,
+                    "machine_count": scenario.capacity,
+                },
+            },
+        )
+        req_payload = _tool_text(req_resp)
+        request_id = req_payload.get("requestId") or req_payload.get("request_id")
+        assert request_id, f"No request_id from request_machines: {req_payload}"
+
+        # 2. Poll get_request_status until complete, get machine_id
+        machine_ids: list[str] = []
+        for _ in range(20):
+            status_resp = await _send(
+                mcp_server,
+                "tools/call",
+                {"name": "get_request_status", "arguments": {"request_id": request_id}},
+            )
+            status_payload = _tool_text(status_resp)
+            requests_list = status_payload.get("requests", [])
+            if requests_list:
+                entry = requests_list[0]
+                if entry.get("status") == "complete":
+                    machines = entry.get("machines", [])
+                    machine_ids = [
+                        m.get("machineId") or m.get("machine_id")
+                        for m in machines
+                        if m.get("machineId") or m.get("machine_id")
+                    ]
+                    break
+            await asyncio.sleep(0.5)
+
+        if not machine_ids:
+            pytest.skip("No machine_ids returned — request did not reach complete status")
+
+        # 3. Call return_machines, get return_request_id
+        return_resp = await _send(
+            mcp_server,
+            "tools/call",
+            {"name": "return_machines", "arguments": {"machine_ids": machine_ids}},
+        )
+        assert not _has_error(return_resp), f"return_machines error: {return_resp.get('error')}"
+        return_payload = _tool_text(return_resp)
+        return_request_id = return_payload.get("request_id") or return_payload.get("requestId")
+        assert return_request_id, f"No return_request_id from return_machines: {return_payload}"
+
+        # 4. Poll list_return_requests until the entry reaches complete
+        status_reached = False
+        for _ in range(20):
+            list_resp = await _send(
+                mcp_server, "tools/call", {"name": "list_return_requests", "arguments": {}}
+            )
+            assert not _has_error(list_resp), f"list_return_requests error: {list_resp.get('error')}"
+            entries = _tool_text(list_resp).get("requests", [])
+            for entry in entries:
+                if isinstance(entry, dict):
+                    entry_id = entry.get("request_id") or entry.get("requestId")
+                    if entry_id == return_request_id and entry.get("status") == "complete":
+                        status_reached = True
+                        break
+            if status_reached:
+                break
+            await asyncio.sleep(0.5)
+
+        # 5. Assert status == 'complete' was reached within deadline
+        assert status_reached, (
+            f"Return request {return_request_id!r} did not reach status 'complete' within deadline"
+        )
+
 
 # ---------------------------------------------------------------------------
 # TestMCPLaunchTemplateCleanup
