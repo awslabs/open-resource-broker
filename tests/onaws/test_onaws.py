@@ -11,6 +11,16 @@ from jsonschema import ValidationError, validate as validate_json_schema
 
 from hfmock import HostFactoryMock
 from tests.onaws import plugin_io_schemas, scenarios
+
+# EC2Fleet + maintain combinations are now stable and re-enabled here.
+# They were previously commented out in scenarios.DEFAULT_ATTRIBUTE_COMBINATIONS.
+_EC2FLEET_MAINTAIN_COMBINATIONS = {
+    "providerApi": ["EC2Fleet"],
+    "fleetType": ["maintain"],
+    "priceType": ["ondemand", "spot"],
+    "scheduler": ["default", "hostfactory"],
+}
+scenarios.DEFAULT_ATTRIBUTE_COMBINATIONS.append(_EC2FLEET_MAINTAIN_COMBINATIONS)
 from tests.onaws.cleanup_helpers import (
     cleanup_launch_templates_for_request,
     wait_for_instances_terminated,
@@ -1658,7 +1668,14 @@ def test_get_available_templates_with_overrides(setup_host_factory_mock):
 
 
 def _partial_return_cases():
-    """Pick maintain fleets and ASG scenarios with capacity > 1."""
+    """Pick maintain/request fleets and ASG scenarios with capacity > 1.
+
+    For maintain fleets (EC2Fleet, SpotFleet) and ASGs, a partial return should
+    reduce the backing resource's target capacity.
+
+    For request fleets (EC2Fleet, SpotFleet), returning one instance should NOT
+    cancel the fleet — the remaining instances must stay running.
+    """
     if not scenarios.RUN_PARTIAL_RETURN_TESTS:
         return []
     cases = []
@@ -1671,6 +1688,9 @@ def _partial_return_cases():
         if provider_api in ("EC2Fleet", "SpotFleet") and str(fleet_type).lower() == "maintain":
             cases.append(tc)
         elif provider_api == "ASG":
+            cases.append(tc)
+        # request fleet type: return 1 instance, assert fleet is NOT cancelled
+        elif provider_api in ("EC2Fleet", "SpotFleet") and str(fleet_type).lower() == "request":
             cases.append(tc)
     return cases
 
