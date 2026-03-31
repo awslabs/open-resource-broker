@@ -32,57 +32,42 @@ class TestTemplateDefaultsService:
     @pytest.fixture
     def sample_provider_config(self):
         """Sample provider configuration with hierarchical defaults."""
-        return MagicMock(
-            **{
-                "provider_defaults": {
-                    "aws": MagicMock(
-                        **{
-                            "template_defaults": {
-                                "image_id": "ami-aws-default",
-                                "machine_types": {"t2.micro": 1},
-                                "provider_api": "EC2Fleet",
-                                "price_type": "ondemand",
-                                "security_group_ids": ["sg-aws-default"],
-                                "subnet_ids": ["subnet-aws-default"],
-                            }
-                        }
-                    )
-                },
-                "providers": [
-                    MagicMock(
-                        **{
-                            "name": "aws-primary",
-                            "type": "aws",
-                            "template_defaults": {
-                                "provider_api": "SpotFleet",  # Override provider type default
-                                "machine_types": {"t3.medium": 1},  # Override provider type default
-                            },
-                        }
-                    ),
-                    MagicMock(
-                        **{
-                            "name": "aws-secondary",
-                            "type": "aws",
-                            "template_defaults": None,  # No instance-specific defaults
-                        }
-                    ),
-                ],
-            }
-        )
+        aws_defaults = MagicMock()
+        aws_defaults.template_defaults = {
+            "image_id": "ami-aws-default",
+            "machine_types": {"t2.micro": 1},
+            "provider_api": "EC2Fleet",
+            "price_type": "ondemand",
+            "security_group_ids": ["sg-aws-default"],
+            "subnet_ids": ["subnet-aws-default"],
+        }
+        aws_primary = MagicMock()
+        aws_primary.name = "aws-primary"
+        aws_primary.type = "aws"
+        aws_primary.template_defaults = {
+            "provider_api": "SpotFleet",  # Override provider type default
+            "machine_types": {"t3.medium": 1},  # Override provider type default
+        }
+        aws_secondary = MagicMock()
+        aws_secondary.name = "aws-secondary"
+        aws_secondary.type = "aws"
+        aws_secondary.template_defaults = None  # No instance-specific defaults
+        mock = MagicMock()
+        mock.provider_defaults = {"aws": aws_defaults}
+        mock.providers = [aws_primary, aws_secondary]
+        return mock
 
     @pytest.fixture
     def sample_template_config(self):
         """Sample template configuration."""
-        return MagicMock(
-            **{
-                "model_dump.return_value": {
-                    "max_number": 10,
-                    "ami_resolution": {"enabled": True},
-                    "default_price_type": "ondemand",
-                    "default_allocation_strategy": "capacity_optimized",
-                }
-            }
-        )
+        mock = MagicMock()
+        mock.model_dump.return_value = {
+            "max_number": 10,
+            "ami_resolution": {"enabled": True},
+            "default_price_type": "ondemand",
+            "default_allocation_strategy": "capacity_optimized",
+        }
+        return mock
 
     def test_resolve_template_defaults_hierarchy(
         self,
@@ -108,8 +93,8 @@ class TestTemplateDefaultsService:
         # Verify hierarchical resolution
         assert result["template_id"] == "test-template"
         assert result["image_id"] == "ami-specific"  # Template value (highest priority)
-        assert result["provider_api"] == "EC2Fleet"  # Provider type default
-        assert result["machine_types"] == {"t2.micro": 1}  # Provider type default
+        assert result["provider_api"] == "SpotFleet"  # Provider instance default (overrides type default)
+        assert result["machine_types"] == {"t3.medium": 1}  # Provider instance default (overrides type default)
         assert result["security_group_ids"] == ["sg-aws-default"]  # Provider type default
         assert result["price_type"] == "ondemand"  # Global default
 
@@ -161,7 +146,7 @@ class TestTemplateDefaultsService:
         result = template_defaults_service.resolve_provider_api_default(
             template_dict, "aws-primary"
         )
-        assert result == "EC2Fleet"  # From provider type defaults
+        assert result == "SpotFleet"  # Provider instance default (overrides type default)
 
         # Provider instance has no override, use provider type default
         result = template_defaults_service.resolve_provider_api_default(
@@ -187,8 +172,8 @@ class TestTemplateDefaultsService:
         # Should have merged defaults with correct precedence
         assert result["price_type"] == "ondemand"  # Global default
         assert result["image_id"] == "ami-aws-default"  # Provider type default
-        assert result["provider_api"] == "EC2Fleet"  # Provider type default
-        assert result["machine_types"] == {"t2.micro": 1}  # Provider type default
+        assert result["provider_api"] == "SpotFleet"  # Provider instance default (overrides type default)
+        assert result["machine_types"] == {"t3.medium": 1}  # Provider instance default (overrides type default)
         assert result["security_group_ids"] == ["sg-aws-default"]  # Provider type default
 
     def test_validate_template_defaults(

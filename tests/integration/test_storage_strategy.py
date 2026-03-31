@@ -181,7 +181,7 @@ def test_machine_repository_enhancements():
         deserialized = serializer.from_dict(serialized)
 
         print("PASS: Machine deserialization successful")
-        print(f"   - Instance ID: {deserialized.instance_id}")
+        print(f"   - Instance ID: {deserialized.machine_id}")
         print(f"   - Provider type: {deserialized.provider_type}")
         print(f"   - Network: {deserialized.private_ip}/{deserialized.public_ip}")
         print(f"   - Tags: {dict(deserialized.tags.tags)}")

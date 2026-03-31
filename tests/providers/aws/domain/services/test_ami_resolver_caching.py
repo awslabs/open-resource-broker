@@ -249,6 +249,7 @@ class TestAWSAMIResolver:
             # Create resolver and add cache entry
             cache_service1 = AMICacheService()
             resolver1 = AWSAMIResolver(config, cache_service=cache_service1)
+            assert resolver1._cache is not None
             resolver1._cache.set("test-key", "ami-persistent123")
             resolver1._save_persistent_cache()
 
@@ -270,6 +271,7 @@ class TestAWSAMIResolver:
         assert stats["hit_rate"] == 0
 
         # Add some cache activity
+        assert resolver._cache is not None
         resolver._cache.set("key1", "ami-1")
         resolver._cache.get("key1")  # Hit
         resolver._cache.get("key2")  # Miss
@@ -286,6 +288,7 @@ class TestAWSAMIResolver:
         resolver = AWSAMIResolver(cache_service=cache_service)
 
         # Add cache entries
+        assert resolver._cache is not None
         resolver._cache.set("key1", "ami-1")
         resolver._cache.set("key2", "ami-2")
 

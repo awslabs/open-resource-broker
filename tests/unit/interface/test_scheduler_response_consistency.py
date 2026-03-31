@@ -258,7 +258,7 @@ async def test_cli_request_machines_delegates_format_request_response():
 async def test_cli_passes_scheduler_return_value_through():
     """The return value from formatter.format_request_status must be the handler result."""
     sentinel_data = {"requests": [{"requestId": "sentinel-value", "status": "complete"}]}
-    container, formatter, _, _ = _mock_container(sentinel_data, status_orch_requests=[])
+    container, _, _, _ = _mock_container(sentinel_data, status_orch_requests=[])
 
     args = _make_namespace(all=True)
 

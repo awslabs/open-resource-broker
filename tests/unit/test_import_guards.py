@@ -314,7 +314,7 @@ console.print("test message")
 
             def api_function():
                 try:
-                    from fastapi import FastAPI  # noqa: F401
+                    from fastapi import FastAPI  # noqa: F401  # type: ignore[reportUnusedImport]
 
                     return "FASTAPI_AVAILABLE"
                 except ImportError:

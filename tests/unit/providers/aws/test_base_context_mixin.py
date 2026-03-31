@@ -1,5 +1,6 @@
 """Tests for BaseContextMixin."""
 
+from typing import Any
 from unittest.mock import Mock, patch
 
 from orb.providers.aws.domain.template.aws_template_aggregate import AWSTemplate
@@ -17,7 +18,7 @@ class TestBaseContextMixin:
 
     def setup_method(self):
         """Set up test fixtures."""
-        self.mixin = TestableContextMixin()
+        self.mixin: Any = TestableContextMixin()
 
         # Mock template
         self.template = Mock(spec=AWSTemplate)

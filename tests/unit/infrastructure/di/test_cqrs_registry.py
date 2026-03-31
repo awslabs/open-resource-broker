@@ -344,7 +344,7 @@ class TestCQRSHandlerRegistry:
         assert handlers2[0] == TestEventHandler2
 
         # Modifying one list shouldn't affect the other
-        handlers1.append("should_not_affect_registry")
+        handlers1.append("should_not_affect_registry")  # type: ignore[arg-type]
         handlers2_after = self.registry.get_event_handler_types(TestEvent2)
         assert len(handlers2_after) == 1
         assert handlers2_after[0] == TestEventHandler2
@@ -361,9 +361,9 @@ class TestCQRSHandlerRegistryEdgeCases:
         """Test behavior when registering with None types."""
         # This should not crash but also shouldn't create valid registrations
         try:
-            self.registry.register_command_handler(None, None)
-            self.registry.register_query_handler(None, None)
-            self.registry.register_event_handler(None, None)
+            self.registry.register_command_handler(None, None)  # type: ignore[arg-type]
+            self.registry.register_query_handler(None, None)  # type: ignore[arg-type]
+            self.registry.register_event_handler(None, None)  # type: ignore[arg-type]
         except Exception:  # nosec B110
             # It's acceptable for this to raise an exception
             pass

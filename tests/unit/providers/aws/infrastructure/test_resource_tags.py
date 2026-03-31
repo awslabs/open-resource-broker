@@ -1,5 +1,6 @@
 """Tests verifying consistent orb: tag application across all AWS resource creation paths."""
 
+from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
@@ -166,8 +167,8 @@ class TestMergeTags:
 
 
 class TestASGHandlerTags:
-    def _make_handler(self):
-        handler = ASGHandler(
+    def _make_handler(self) -> Any:
+        handler: Any = ASGHandler(
             aws_client=MagicMock(),
             logger=MagicMock(),
             aws_ops=MagicMock(),

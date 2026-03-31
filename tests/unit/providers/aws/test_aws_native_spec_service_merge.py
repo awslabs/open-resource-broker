@@ -83,6 +83,7 @@ class TestAWSNativeSpecServiceMerge:
         )
 
         # Verify merge happened correctly
+        assert result is not None
         # From native spec
         assert result["TargetCapacitySpecification"]["TotalTargetCapacity"] == 10
         # From default
@@ -177,6 +178,7 @@ class TestAWSNativeSpecServiceMerge:
             )
 
             # Verify merge happened
+            assert result is not None
             assert result["Type"] == "maintain"  # From default
             # From spec file
             assert result["SpotOptions"]["AllocationStrategy"] == "diversified"

@@ -46,7 +46,7 @@ class TestEntitySerializerComponent:
     def test_serializer_interface(self):
         """Test that EntitySerializer is abstract."""
         with pytest.raises(TypeError):
-            EntitySerializer()
+            EntitySerializer()  # type: ignore[abstract]
 
     def test_base_serializer_initialization(self):
         """Test BaseEntitySerializer initialization."""

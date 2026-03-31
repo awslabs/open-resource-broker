@@ -4,6 +4,8 @@ These tests define the contract for getAvailableTemplates output. They are expec
 against the current implementation and should be made green by fixing the field filtering logic.
 """
 
+from typing import Any
+
 import pytest
 
 from orb.infrastructure.template.dtos import TemplateDTO
@@ -43,7 +45,7 @@ def _make_template(**kwargs) -> TemplateDTO:
     abis_instance_requirements) are routed into the metadata dict because
     TemplateDTO no longer declares them as top-level attributes.
     """
-    defaults = dict(
+    defaults: dict[str, Any] = dict(
         template_id="tpl-test",
         name="Test Template",
         provider_api="EC2Fleet",
@@ -61,7 +63,7 @@ def _make_template(**kwargs) -> TemplateDTO:
         existing_meta = defaults.get("metadata", {})
         defaults["metadata"] = {**existing_meta, **aws_vals}
 
-    return TemplateDTO(**defaults)
+    return TemplateDTO.model_validate(defaults)
 
 
 class TestOndemandTemplateFields:
@@ -271,7 +273,7 @@ class TestEmptyFieldSuppression:
 
     @pytest.mark.parametrize("price_type", ["ondemand", "spot", "heterogeneous"])
     def test_empty_list_fields_not_emitted(self, hf_strategy, price_type):
-        kwargs = dict(price_type=price_type, subnet_ids=[], security_group_ids=[])
+        kwargs: dict[str, Any] = dict(price_type=price_type, subnet_ids=[], security_group_ids=[])
         if price_type in ("spot", "heterogeneous"):
             kwargs["max_price"] = 0.05
         if price_type == "heterogeneous":

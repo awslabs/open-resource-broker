@@ -1,3 +1,4 @@
+from orb.config.managers.configuration_manager import ConfigurationManager
 from orb.config.schemas.metrics_schema import MetricsConfig
 from orb.infrastructure.adapters.configuration_adapter import ConfigurationAdapter
 from orb.infrastructure.adapters.logging_adapter import LoggingAdapter
@@ -5,12 +6,12 @@ from orb.infrastructure.adapters.logging_adapter import LoggingAdapter
 _logger = LoggingAdapter(__name__)
 
 
-class FakeConfigManager:
+class FakeConfigManager(ConfigurationManager):
     def __init__(self, raw: dict):
-        self._raw = raw
+        super().__init__(config_dict=raw)
 
     def _ensure_raw_config(self):
-        return self._raw
+        return self._config_dict or {}
 
 
 def test_metrics_config_defaults_when_missing_section():

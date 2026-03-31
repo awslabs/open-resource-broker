@@ -24,7 +24,7 @@ def _make_command(
     return cmd
 
 
-def _make_template(provider_api="EC2Fleet"):
+def _make_template(provider_api: str | None = "EC2Fleet"):
     t = MagicMock()
     t.provider_api = provider_api
     return t

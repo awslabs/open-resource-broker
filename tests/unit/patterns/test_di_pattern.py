@@ -53,7 +53,7 @@ class TestDIPattern:
 
         # Test container disposal
         if hasattr(container, "dispose"):
-            container.dispose()
+            getattr(container, "dispose")()
 
     def test_circular_dependency_detection(self):
         """Validate circular dependency detection."""
@@ -343,7 +343,7 @@ class TestDIPattern:
 
         # Create child container
         if hasattr(DIContainer, "create_child"):
-            child_container = parent_container.create_child()
+            child_container = getattr(parent_container, "create_child")()
 
             # Child should resolve parent services
             service = child_container.get(ParentService)
@@ -438,7 +438,7 @@ class TestDIPattern:
 
         # Dispose container
         if hasattr(container, "dispose"):
-            container.dispose()
+            getattr(container, "dispose")()
 
             # Service should be disposed
             assert service.disposed

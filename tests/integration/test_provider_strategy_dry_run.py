@@ -182,14 +182,14 @@ class TestProviderStrategyDryRun:
         assert result.metadata["dry_run"] is True
         assert result.metadata["provider"] == "aws"
         assert "execution_time_ms" in result.metadata
-        assert "Test error" in result.error_message
+        assert result.error_message is not None and "Test error" in result.error_message
 
     @pytest.mark.asyncio
     async def test_unsupported_operation_with_dry_run(self):
         """Test unsupported operation handling with dry-run context."""
         # Create operation with unsupported type
         operation = ProviderOperation(
-            operation_type="UNSUPPORTED_OPERATION",  # Invalid operation type
+            operation_type="UNSUPPORTED_OPERATION",  # type: ignore[arg-type]  # Invalid operation type
             parameters={},
             context={"dry_run": True},
         )
@@ -201,7 +201,7 @@ class TestProviderStrategyDryRun:
         assert result.success is False
         assert result.metadata["dry_run"] is True
         assert result.metadata["provider"] == "aws"
-        assert "Unsupported operation" in result.error_message
+        assert result.error_message is not None and "Unsupported operation" in result.error_message
 
     @pytest.mark.asyncio
     @patch("orb.providers.aws.infrastructure.dry_run_adapter.aws_dry_run_context")

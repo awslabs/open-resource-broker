@@ -26,7 +26,7 @@ class TestEventPublisherInterface:
     def test_event_publisher_interface_is_abstract(self):
         """Test that EventPublisher is abstract."""
         with pytest.raises(TypeError):
-            EventPublisher()
+            EventPublisher()  # type: ignore[abstract]
 
 
 class TestLoggingEventPublisher:

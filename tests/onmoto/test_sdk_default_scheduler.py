@@ -510,7 +510,7 @@ class TestSDKDefaultSchedulerTemplates:
             } - {None}
             assert len(known_ids) > 0
             assert "RunInstances-OnDemand" in known_ids, (
-                f"'RunInstances-OnDemand' not found. Got: {sorted(known_ids)}"
+                f"'RunInstances-OnDemand' not found. Got: {sorted(str(x) for x in known_ids)}"
             )
 
 
@@ -599,7 +599,7 @@ class TestSDKDefaultSchedulerRequests:
                 for tpl in _extract_templates(templates_result)
             } - {None}
             assert "RunInstances-OnDemand" in known_ids, (
-                f"'RunInstances-OnDemand' not in templates: {sorted(known_ids)}"
+                f"'RunInstances-OnDemand' not in templates: {sorted(str(x) for x in known_ids)}"
             )
 
             # 2. Create request

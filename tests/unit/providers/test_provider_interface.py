@@ -70,7 +70,7 @@ class TestProviderPort:
             region="test-region",
             custom_field="custom_value",  # type: ignore[call-arg]
         )
-        assert config_with_extras.custom_field == "custom_value"
+        assert getattr(config_with_extras, "custom_field") == "custom_value"
 
     def test_mock_provider_functionality(self):
         """Test mock provider works correctly for testing."""
@@ -112,8 +112,8 @@ class TestProviderPort:
         provider.set_response("create_instances", custom_instances)
 
         custom_status = {
-            MachineId(value="custom-001"): "running",
-            MachineId(value="custom-002"): "stopped",
+            MachineId(value="custom-001"): "running",  # type: ignore[dict-item]
+            MachineId(value="custom-002"): "stopped",  # type: ignore[dict-item]
         }
         provider.set_response("get_instance_status", custom_status)
 
@@ -229,7 +229,7 @@ class TestProviderErrorHandling:
 
         # Test with None config - mock provider should handle gracefully
         # Note: Mock provider is designed to be robust for testing
-        result = provider.initialize(None)
+        result = provider.initialize(None)  # type: ignore[arg-type]
         # Mock provider should handle this gracefully, not raise exception
         assert result is not None
 

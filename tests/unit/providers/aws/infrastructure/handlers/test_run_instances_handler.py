@@ -1,5 +1,6 @@
 """Unit tests for RunInstancesHandler.check_hosts_status."""
 
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -9,12 +10,12 @@ from orb.providers.aws.exceptions.aws_exceptions import AWSInfrastructureError
 from orb.providers.aws.infrastructure.handlers.run_instances.handler import RunInstancesHandler
 
 
-def _make_handler():
+def _make_handler() -> Any:
     aws_client = MagicMock()
     logger = MagicMock()
     aws_ops = MagicMock()
     launch_template_manager = MagicMock()
-    handler = RunInstancesHandler(aws_client, logger, aws_ops, launch_template_manager)
+    handler: Any = RunInstancesHandler(aws_client, logger, aws_ops, launch_template_manager)
     handler._machine_adapter = None
     return handler
 
@@ -267,7 +268,7 @@ class TestRunInstancesHandlerMachineAdapterContext:
         resource_id = "r-find-res"
         request = _make_request(resource_ids=[resource_id])
 
-        handler.aws_client.ec2_client.describe_instances = MagicMock(
+        handler.aws_client.ec2_client.configure_mock(describe_instances=MagicMock(
             return_value={
                 "Reservations": [
                     {
@@ -276,7 +277,7 @@ class TestRunInstancesHandlerMachineAdapterContext:
                     }
                 ]
             }
-        )
+        ))
 
         with patch.object(handler, "_get_instance_details", return_value=[]) as mock_details:
             with patch.object(handler, "_format_instance_data", return_value=[]):

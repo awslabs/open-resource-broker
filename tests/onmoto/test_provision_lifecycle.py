@@ -185,7 +185,7 @@ def _make_factory(aws_client: AWSClient, logger: Any, config_port: Any) -> AWSHa
         ]
         return config
 
-    spot_handler._config_builder.build = _patched_build
+    spot_handler._config_builder.build = _patched_build  # type: ignore[method-assign]
     factory._handlers[ProviderApi.SPOT_FLEET.value] = spot_handler
 
     return factory

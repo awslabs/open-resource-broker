@@ -52,7 +52,7 @@ class ErrorMiddleware(SDKMiddleware):
 class TestSDKMiddlewareBase:
     def test_cannot_instantiate_abstract(self):
         with pytest.raises(TypeError):
-            SDKMiddleware()
+            SDKMiddleware()  # type: ignore[abstract]
 
 
 # ---------------------------------------------------------------------------

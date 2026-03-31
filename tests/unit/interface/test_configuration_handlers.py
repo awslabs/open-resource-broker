@@ -1,6 +1,7 @@
 """Unit tests for configuration management CLI handlers."""
 
 from argparse import Namespace
+from typing import Any
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
@@ -17,9 +18,15 @@ class GetProviderConfigCLIHandler:
     def __init__(self, *args, **kwargs):
         pass
 
+    def handle(self, command: Any) -> Any:
+        pass
+
 
 class ValidateProviderConfigCLIHandler:
     def __init__(self, *args, **kwargs):
+        pass
+
+    def handle(self, command: Any) -> Any:
         pass
 
 
@@ -27,9 +34,15 @@ class ReloadProviderConfigCLIHandler:
     def __init__(self, *args, **kwargs):
         pass
 
+    def handle(self, command: Any) -> Any:
+        pass
+
 
 class MigrateProviderConfigCLIHandler:
     def __init__(self, *args, **kwargs):
+        pass
+
+    def handle(self, command: Any) -> Any:
         pass
 
 

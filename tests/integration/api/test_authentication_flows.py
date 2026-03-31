@@ -164,7 +164,7 @@ class TestAuthenticationFlows:
 
         # Test context creation
         request = MockRequest()
-        context = middleware._create_auth_context(request)
+        context = middleware._create_auth_context(request)  # type: ignore[arg-type]
 
         assert context.method == "GET"
         assert context.path == "/api/v1/templates"

@@ -17,7 +17,7 @@ def test_bootstrap_package_exists():
 @pytest.mark.unit
 def test_infrastructure_di_no_longer_has_registration_modules():
     with pytest.raises(ModuleNotFoundError):
-        import orb.infrastructure.di.services  # noqa: F401
+        import orb.infrastructure.di.services  # noqa: F401  # type: ignore[import]
 
 
 @pytest.mark.unit
@@ -55,7 +55,8 @@ def test_arch_checker_passes():
 
 @pytest.mark.unit
 def test_get_container_still_works_after_move():
-    import orb.bootstrap  # ensure factory registered  # noqa: F401
+    import orb.bootstrap  # ensure factory registered
+    assert orb.bootstrap is not None
     from orb.infrastructure.di.container import get_container, reset_container
 
     reset_container()

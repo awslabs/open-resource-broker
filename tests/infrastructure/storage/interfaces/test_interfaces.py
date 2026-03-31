@@ -100,7 +100,7 @@ class TestStorageReader:
     def test_interface_is_abstract(self):
         """Test that StorageReader cannot be instantiated directly."""
         with pytest.raises(TypeError):
-            StorageReader()
+            StorageReader()  # type: ignore[abstract]
 
 
 class TestStorageWriter:
@@ -114,7 +114,7 @@ class TestStorageWriter:
     def test_interface_is_abstract(self):
         """Test that StorageWriter cannot be instantiated directly."""
         with pytest.raises(TypeError):
-            StorageWriter()
+            StorageWriter()  # type: ignore[abstract]
 
 
 class TestBatchStorage:
@@ -128,7 +128,7 @@ class TestBatchStorage:
     def test_interface_is_abstract(self):
         """Test that BatchStorage cannot be instantiated directly."""
         with pytest.raises(TypeError):
-            BatchStorage()
+            BatchStorage()  # type: ignore[abstract]
 
 
 class TestTransactionalStorage:
@@ -143,7 +143,7 @@ class TestTransactionalStorage:
     def test_interface_is_abstract(self):
         """Test that TransactionalStorage cannot be instantiated directly."""
         with pytest.raises(TypeError):
-            TransactionalStorage()
+            TransactionalStorage()  # type: ignore[abstract]
 
 
 class TestStorageStrategyAdapter:

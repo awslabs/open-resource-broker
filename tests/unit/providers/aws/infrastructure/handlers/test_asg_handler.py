@@ -1,5 +1,6 @@
 """Unit tests for ASGHandler.check_hosts_status."""
 
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 from botocore.exceptions import ClientError
@@ -8,12 +9,12 @@ from orb.providers.aws.exceptions.aws_exceptions import AWSInfrastructureError
 from orb.providers.aws.infrastructure.handlers.asg.handler import ASGHandler
 
 
-def _make_handler():
+def _make_handler() -> Any:
     aws_client = MagicMock()
     logger = MagicMock()
     aws_ops = MagicMock()
     launch_template_manager = MagicMock()
-    handler = ASGHandler(aws_client, logger, aws_ops, launch_template_manager)
+    handler: Any = ASGHandler(aws_client, logger, aws_ops, launch_template_manager)
     handler._machine_adapter = None
     return handler
 

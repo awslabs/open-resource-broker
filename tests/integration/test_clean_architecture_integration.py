@@ -80,7 +80,7 @@ class TestCleanArchitectureIntegration:
             config_manager=mock_config_manager,
             logger=mock_logger,
             template_factory=template_factory,
-            extension_registry=TemplateExtensionRegistry,
+            extension_registry=TemplateExtensionRegistry,  # type: ignore[arg-type]
         )
 
     def test_aws_extension_registration(self):

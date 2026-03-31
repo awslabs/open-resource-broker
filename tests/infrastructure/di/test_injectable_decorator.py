@@ -61,6 +61,7 @@ class TestInjectableDecorator:
         # Test manual instantiation still works
         manual_port = MockAdapter("manual")
         service = BasicService(port=manual_port)
+        assert isinstance(service.port, MockAdapter)
         assert service.port.name == "manual"
 
     def test_injectable_with_container_resolution(self):

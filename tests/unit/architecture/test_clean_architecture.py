@@ -182,6 +182,8 @@ class TestCleanArchitecture:
 
         for module in domain_modules:
             module_file = module.__file__
+            if module_file is None:
+                continue
             violations = self._check_forbidden_imports(
                 module_file, ["boto3", "fastapi", "sqlalchemy", "orb.infrastructure"]
             )

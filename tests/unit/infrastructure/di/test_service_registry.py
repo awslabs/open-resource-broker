@@ -47,6 +47,7 @@ class TestServiceRegistry:
 
         assert self.registry.is_registered(TestClass)
         cached_instance = self.registry.get_singleton_instance(TestClass)
+        assert cached_instance is not None
         assert cached_instance is instance
         assert cached_instance.value == "singleton_instance"
 
@@ -64,6 +65,7 @@ class TestServiceRegistry:
 
         assert self.registry.is_registered(TestClass)
         registration = self.registry.get_registration(TestClass)
+        assert registration is not None
         assert registration.factory is factory
 
     def test_register_factory(self):
@@ -79,6 +81,7 @@ class TestServiceRegistry:
 
         assert self.registry.is_registered(TestClass)
         registration = self.registry.get_registration(TestClass)
+        assert registration is not None
         assert registration.scope == DIScope.TRANSIENT
         assert registration.factory is factory
 
@@ -94,6 +97,7 @@ class TestServiceRegistry:
 
         assert self.registry.is_registered(TestClass)
         registration = self.registry.get_registration(TestClass)
+        assert registration is not None
         assert registration.scope == DIScope.SINGLETON
         assert registration.instance is instance
 
@@ -113,6 +117,7 @@ class TestServiceRegistry:
 
         assert self.registry.is_registered(IInterface)
         registration = self.registry.get_registration(IInterface)
+        assert registration is not None
         assert registration.dependency_type == IInterface
         assert registration.implementation_type == Implementation
         assert registration.scope == DIScope.TRANSIENT
@@ -134,6 +139,7 @@ class TestServiceRegistry:
 
         assert self.registry.is_registered(TestClass)
         retrieved_registration = self.registry.get_registration(TestClass)
+        assert retrieved_registration is not None
         assert retrieved_registration.scope == DIScope.SINGLETON
         assert retrieved_registration.lifecycle == DILifecycle.EAGER
 
@@ -147,6 +153,7 @@ class TestServiceRegistry:
 
         assert self.registry.is_registered(TestClass)
         registration = self.registry.get_registration(TestClass)
+        assert registration is not None
         assert registration.dependency_type == TestClass
         assert registration.implementation_type == TestClass
 
@@ -199,6 +206,7 @@ class TestServiceRegistry:
         self.registry.set_singleton_instance(TestClass, instance)
 
         retrieved_instance = self.registry.get_singleton_instance(TestClass)
+        assert retrieved_instance is not None
         assert retrieved_instance is instance
         assert retrieved_instance.value == "cached"
 
@@ -250,11 +258,12 @@ class TestServiceRegistry:
 
                 # Retrieve and verify
                 retrieved = self.registry.get_singleton_instance(key)
-                if retrieved and retrieved.value == thread_id:
+                retrieved_value = getattr(retrieved, "value", None)
+                if retrieved and retrieved_value == thread_id:
                     results.append(thread_id)
                 else:
                     errors.append(
-                        f"Thread {thread_id}: Expected {thread_id}, got {retrieved.value if retrieved else None}"
+                        f"Thread {thread_id}: Expected {thread_id}, got {retrieved_value}"
                     )
             except Exception as e:
                 errors.append(f"Thread {thread_id}: {e!s}")
@@ -287,6 +296,7 @@ class TestServiceRegistry:
         self.registry.register_instance(TestClass, instance1)
 
         retrieved1 = self.registry.get_singleton_instance(TestClass)
+        assert retrieved1 is not None
         assert retrieved1.value == "first"
 
         # Second registration should overwrite
@@ -294,6 +304,7 @@ class TestServiceRegistry:
         self.registry.register_instance(TestClass, instance2)
 
         retrieved2 = self.registry.get_singleton_instance(TestClass)
+        assert retrieved2 is not None
         assert retrieved2.value == "second"
         assert retrieved2 is not retrieved1
 
@@ -347,7 +358,8 @@ class TestServiceRegistryEdgeCases:
 
         singleton_reg = self.registry.get_registration(SingletonClass)
         transient_reg = self.registry.get_registration(TransientClass)
-
+        assert singleton_reg is not None
+        assert transient_reg is not None
         assert singleton_reg.scope == DIScope.SINGLETON
         assert transient_reg.scope == DIScope.TRANSIENT
 

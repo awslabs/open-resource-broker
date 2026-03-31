@@ -1,5 +1,6 @@
 """Tests for native spec error handling scenarios."""
 
+from typing import Any, cast
 from unittest.mock import Mock
 
 import pytest
@@ -89,7 +90,9 @@ class TestNativeSpecErrorHandling:
         """Test error handling during spec renderer initialization."""
         # Test with None renderer
         service_with_none_renderer = NativeSpecService(
-            config_port=self.mock_config_port, spec_renderer=None, logger=self.mock_logger
+            config_port=self.mock_config_port,
+            spec_renderer=cast(SpecRenderingPort, None),
+            logger=self.mock_logger,
         )
 
         spec = {"InstanceType": "t3.micro"}
@@ -111,7 +114,7 @@ class TestNativeSpecErrorHandling:
 
     def test_none_spec_handling(self):
         """Test handling of None specifications."""
-        spec = None
+        spec = cast(dict[str, Any], None)
         context = {"instance_type": "t3.micro"}
 
         # Should handle None gracefully or raise appropriate error
@@ -133,7 +136,7 @@ class TestNativeSpecErrorHandling:
     def test_none_context_handling(self):
         """Test handling of None context."""
         spec = {"InstanceType": "t3.micro"}
-        context = None
+        context = cast(dict[str, Any], None)
 
         # Should handle None context gracefully or raise appropriate error
         with pytest.raises((TypeError, AttributeError)):
