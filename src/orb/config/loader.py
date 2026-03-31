@@ -152,6 +152,40 @@ class ConfigurationLoader:
         return config
 
     @classmethod
+    def _build_raw_config_from_dict(
+        cls,
+        config_dict: dict[str, Any],
+        config_manager: Optional["ConfigurationManager"] = None,
+    ) -> dict[str, Any]:
+        """
+        Apply the full normalisation pipeline to an in-memory dict.
+        Mirrors ConfigurationLoader.load() but starts from a dict instead of a file.
+        Pipeline: package defaults -> strategy defaults -> user dict -> env vars -> env expansion.
+        """
+        from orb.config.utils.env_expansion import expand_config_env_vars
+
+        base = cls._load_default_config()
+
+        strategy_defaults = cls._load_strategy_defaults(config_manager)
+        if strategy_defaults:
+            cls._merge_config(base, strategy_defaults)
+
+        cls._merge_config(base, config_dict)
+
+        cls._load_from_env(base, config_manager)
+        result = expand_config_env_vars(base)
+
+        # Hoist provider.provider_defaults to the top level so callers can
+        # inspect strategy defaults without navigating the nested provider key.
+        # Only hoist if not already present at the top level (e.g. from a mock or explicit dict).
+        if "provider_defaults" not in result:
+            provider_section = result.get("provider", {})
+            if "provider_defaults" in provider_section:
+                result["provider_defaults"] = provider_section["provider_defaults"]
+
+        return result
+
+    @classmethod
     def _load_strategy_defaults(cls, config_manager=None) -> dict[str, Any]:
         merged: dict[str, Any] = {}
         try:

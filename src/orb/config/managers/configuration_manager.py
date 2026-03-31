@@ -96,9 +96,7 @@ class ConfigurationManager:
     def _load_app_config(self) -> AppConfig:
         """Load application configuration from loader or in-memory dict."""
         try:
-            if self._config_dict is not None:
-                return self.loader.create_app_config(self._config_dict)
-            raw_config = self.loader.load(self._config_file, config_manager=self)
+            raw_config = self._ensure_raw_config()
             return self.loader.create_app_config(raw_config)
         except Exception as e:
             logger.error("Failed to load app config: %s", e, exc_info=True)
@@ -108,13 +106,11 @@ class ConfigurationManager:
         """Ensure raw configuration is loaded."""
         if self._raw_config is None:
             if self._config_dict is not None:
-                # Merge provided dict on top of package defaults so that
-                # provider_defaults (supports_spot etc.) are always present.
                 from orb.config.loader import ConfigurationLoader
 
-                base = ConfigurationLoader._load_default_config()
-                ConfigurationLoader._merge_config(base, self._config_dict)
-                self._raw_config = base
+                self._raw_config = ConfigurationLoader._build_raw_config_from_dict(
+                    self._config_dict, config_manager=self
+                )
             else:
                 self._raw_config = self.loader.load(self._config_file, config_manager=self)
         return self._raw_config
@@ -169,10 +165,8 @@ class ConfigurationManager:
     def reload(self) -> None:
         """Reload configuration from sources."""
         try:
-            # Re-derive config file path in case ORB_CONFIG_DIR changed between tests
-            from orb.config.platform_dirs import get_config_location
-
-            self._config_file = str(get_config_location() / "config.json")
+            # Do NOT re-derive _config_file — preserve construction parameters (_config_dict, _config_file)
+            # Only reset cached derived state
 
             # Clear all caches
             self._cache_manager.clear_cache()
