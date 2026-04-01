@@ -28,7 +28,8 @@ class TestStorageDeprecationWarning:
             ConfigurationLoader.load(config_path=str(config_file))
 
         deprecation_warnings = [
-            w for w in caught
+            w
+            for w in caught
             if issubclass(w.category, DeprecationWarning)
             and "storage.dynamodb_strategy" in str(w.message)
         ]
@@ -70,7 +71,8 @@ class TestStorageDeprecationWarning:
             ConfigurationLoader.load(config_path=str(config_file))
 
         deprecation_warnings = [
-            w for w in caught
+            w
+            for w in caught
             if issubclass(w.category, DeprecationWarning)
             and "storage.dynamodb_strategy" in str(w.message)
         ]
