@@ -7,6 +7,7 @@ import pytest
 from fastapi.testclient import TestClient
 from starlette.datastructures import URL
 
+import orb.api.dependencies as deps
 from orb.api.server import create_fastapi_app
 from orb.config.schemas.server_schema import AuthConfig, ServerConfig
 from orb.infrastructure.auth.strategy.bearer_token_strategy import BearerTokenStrategy
@@ -67,6 +68,10 @@ class TestAuthenticationFlows:
 
         # Create FastAPI app
         app = create_fastapi_app(server_config)
+        from unittest.mock import MagicMock
+        mock_health_port = MagicMock()
+        mock_health_port.get_status.return_value = {"status": "healthy"}
+        app.dependency_overrides[deps.get_health_check_port] = lambda: mock_health_port
         client = TestClient(app, raise_server_exceptions=False)
 
         # Test health endpoint (should work without auth - excluded path)
