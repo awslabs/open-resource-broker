@@ -414,7 +414,9 @@ class TestCQRSMigrationValidation:
             assert GetTemplateHandler is not None
         except ImportError:
             # Query handlers might be in different location
-            from orb.application.template.query_handlers import GetTemplateHandler  # type: ignore[import]
+            from orb.application.template.query_handlers import (
+                GetTemplateHandler,  # type: ignore[import]
+            )
 
             assert GetTemplateHandler is not None
 
@@ -479,13 +481,17 @@ class TestApplicationEventsComprehensive:
     def test_event_bus_exists(self):
         """Test that event bus exists."""
         try:
-            from orb.application.events.bus.event_bus import EventBus as _EventBus  # type: ignore[import]
+            from orb.application.events.bus.event_bus import (
+                EventBus as _EventBus,  # type: ignore[import]
+            )
 
             assert _EventBus is not None
         except ImportError:
             # Event bus might be in different location
             try:
-                from orb.infrastructure.di.buses import EventBus as _EventBus2  # type: ignore[import]
+                from orb.infrastructure.di.buses import (
+                    EventBus as _EventBus2,  # type: ignore[import]
+                )
 
                 assert _EventBus2 is not None
             except ImportError:

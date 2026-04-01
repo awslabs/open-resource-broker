@@ -21,7 +21,6 @@ from orb.providers.aws.infrastructure.handlers.spot_fleet.release_manager import
     SpotFleetReleaseManager,
 )
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

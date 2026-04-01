@@ -1,10 +1,9 @@
 """Unit tests for Template aggregate."""
 
 from datetime import datetime, timezone
+from typing import Any
 
 import pytest
-
-from typing import Any
 
 from orb.domain.template.exceptions import TemplateNotFoundError, TemplateValidationError
 from orb.domain.template.template_aggregate import Template

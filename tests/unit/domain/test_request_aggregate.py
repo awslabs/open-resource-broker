@@ -1,10 +1,9 @@
 """Unit tests for Request aggregate."""
 
 from datetime import datetime, timezone
+from typing import Any
 
 import pytest
-
-from typing import Any
 
 from orb.domain.request.aggregate import Request
 from orb.domain.request.exceptions import (

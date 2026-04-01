@@ -23,10 +23,10 @@ from orb.providers.aws.infrastructure.aws_client import AWSClient
 from orb.providers.aws.infrastructure.handlers.asg.handler import ASGHandler
 from orb.providers.aws.infrastructure.handlers.ec2_fleet.handler import EC2FleetHandler
 from orb.providers.aws.infrastructure.handlers.run_instances.handler import RunInstancesHandler
-from orb.providers.aws.infrastructure.handlers.spot_fleet.handler import SpotFleetHandler
 from orb.providers.aws.infrastructure.handlers.spot_fleet.config_builder import (
     SpotFleetConfigBuilder,
 )
+from orb.providers.aws.infrastructure.handlers.spot_fleet.handler import SpotFleetHandler
 from orb.providers.aws.infrastructure.launch_template.manager import (
     AWSLaunchTemplateManager,
     LaunchTemplateResult,

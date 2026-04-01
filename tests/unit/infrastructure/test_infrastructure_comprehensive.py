@@ -451,7 +451,9 @@ class TestTemplateInfrastructureComprehensive:
     def test_format_converter_exists(self):
         """Test that format converter exists."""
         try:
-            from orb.infrastructure.template.format_converter import FormatConverter  # type: ignore[import]
+            from orb.infrastructure.template.format_converter import (
+                FormatConverter,  # type: ignore[import]
+            )
 
             assert FormatConverter is not None
         except ImportError:
