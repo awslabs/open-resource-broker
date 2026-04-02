@@ -6,6 +6,7 @@ Tests that templates get appropriate defaults from configuration when fields are
 
 import os
 import sys
+from typing import cast
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
 
@@ -19,6 +20,8 @@ def test_template_defaults_integration():
             TemplateDefaultsService,
         )
         from orb.config.manager import ConfigurationManager
+        from orb.domain.base.ports.configuration_port import ConfigurationPort
+        from orb.domain.base.ports.logging_port import LoggingPort
         from orb.infrastructure.logging.logger import get_logger
         from orb.infrastructure.storage.repositories.template_repository import (
             TemplateSerializer,
@@ -27,7 +30,10 @@ def test_template_defaults_integration():
         # Create configuration manager and defaults service
         config_manager = ConfigurationManager()
         logger = get_logger(__name__)
-        defaults_service = TemplateDefaultsService(config_manager, logger)
+        defaults_service = TemplateDefaultsService(
+            cast(ConfigurationPort, config_manager),
+            cast(LoggingPort, logger),
+        )
 
         # Create serializer with defaults service
         serializer = TemplateSerializer(defaults_service=defaults_service)
@@ -80,6 +86,8 @@ def test_template_defaults_precedence():
             TemplateDefaultsService,
         )
         from orb.config.manager import ConfigurationManager
+        from orb.domain.base.ports.configuration_port import ConfigurationPort
+        from orb.domain.base.ports.logging_port import LoggingPort
         from orb.infrastructure.logging.logger import get_logger
         from orb.infrastructure.storage.repositories.template_repository import (
             TemplateSerializer,
@@ -88,7 +96,10 @@ def test_template_defaults_precedence():
         # Create configuration manager and defaults service
         config_manager = ConfigurationManager()
         logger = get_logger(__name__)
-        defaults_service = TemplateDefaultsService(config_manager, logger)
+        defaults_service = TemplateDefaultsService(
+            cast(ConfigurationPort, config_manager),
+            cast(LoggingPort, logger),
+        )
 
         # Create serializer with defaults service
         serializer = TemplateSerializer(defaults_service=defaults_service)
@@ -146,12 +157,17 @@ def test_defaults_service_directly():
             TemplateDefaultsService,
         )
         from orb.config.manager import ConfigurationManager
+        from orb.domain.base.ports.configuration_port import ConfigurationPort
+        from orb.domain.base.ports.logging_port import LoggingPort
         from orb.infrastructure.logging.logger import get_logger
 
         # Create service
         config_manager = ConfigurationManager()
         logger = get_logger(__name__)
-        defaults_service = TemplateDefaultsService(config_manager, logger)
+        defaults_service = TemplateDefaultsService(
+            cast(ConfigurationPort, config_manager),
+            cast(LoggingPort, logger),
+        )
 
         # Test minimal template data
         minimal_data = {"template_id": "test-direct", "image_id": "ami-123456"}

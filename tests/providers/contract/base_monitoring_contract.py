@@ -24,14 +24,14 @@ class BaseMonitoringContract:
     @pytest.mark.provider_contract
     def test_status_returns_list(self, provisioned_resource_ids):
         """check_hosts_status must return a list."""
-        handler, resource_ids, status_request = provisioned_resource_ids
+        handler, _resource_ids, status_request = provisioned_resource_ids
         result = handler.check_hosts_status(status_request)
         assert isinstance(result, list), "check_hosts_status must return a list"
 
     @pytest.mark.provider_contract
     def test_status_entries_have_required_keys(self, provisioned_resource_ids):
         """Each status entry must have instance_id and status keys."""
-        handler, resource_ids, status_request = provisioned_resource_ids
+        handler, _resource_ids, status_request = provisioned_resource_ids
         result = handler.check_hosts_status(status_request)
         # moto simulators may return empty list for some provider APIs (e.g. ASG)
         # — the contract only asserts shape when entries are present

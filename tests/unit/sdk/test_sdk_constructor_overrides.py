@@ -102,7 +102,7 @@ class TestORBClientSchedulerOverride:
 
     async def test_scheduler_kwarg_calls_override(self):
         """Top-level scheduler= kwarg must reach override_scheduler_strategy."""
-        mock_app, mock_container, mock_config_port, mock_cm = _make_initialize_mocks()
+        mock_app, mock_container, _, mock_cm = _make_initialize_mocks()
 
         with (
             patch("orb.sdk.client.create_container", return_value=mock_container),

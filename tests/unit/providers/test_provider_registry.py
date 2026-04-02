@@ -1,5 +1,6 @@
 """Tests for ProviderRegistry._provider_supports_api — no hardcoded AWS API list."""
 
+from typing import cast
 from unittest.mock import MagicMock
 
 import pytest
@@ -18,16 +19,22 @@ def _make_provider(name="aws-us-east-1", provider_type="aws", capabilities=None,
     return p
 
 
-def _make_registry(provider, strategy=None):
+def _make_registry(provider, strategy=None) -> ProviderRegistry:
     """Build a ProviderRegistry with a minimal config_port and optional cached strategy."""
-    registry = ProviderRegistry.__new__(ProviderRegistry)
+    registry = cast(ProviderRegistry, ProviderRegistry.__new__(ProviderRegistry))
+    # Initialise BaseRegistry internals that __init__ would normally set
+    registry._type_registrations = {}
+    registry._instance_registrations = {}
+    registry._registry_lock = __import__("threading").RLock()
+    registry.mode = __import__(
+        "orb.infrastructure.registry.base_registry", fromlist=["RegistryMode"]
+    ).RegistryMode.MULTI_CHOICE
+    registry._factory = None
+    registry._initialized = True
+    # Initialise ProviderRegistry-specific internals
     registry._strategy_cache = {}
     registry._health_states = {}
     registry._fallback_strategy = None
-    registry._lock = __import__("threading").Lock()
-    registry._registrations = {}
-    registry._instance_registrations = {}
-    registry._mode = MagicMock()
 
     provider_config = MagicMock()
     provider_config.providers = [provider]

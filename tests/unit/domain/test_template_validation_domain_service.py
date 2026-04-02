@@ -12,7 +12,7 @@ from orb.domain.services.template_validation_domain_service import (
 
 
 def _make_template(
-    provider_api="RunInstances",
+    provider_api: str | None = "RunInstances",
     price_type="ondemand",
     fleet_type=None,
     max_instances=10,

@@ -510,7 +510,7 @@ class TestSDKDefaultSchedulerTemplates:
             } - {None}
             assert len(known_ids) > 0
             assert "RunInstances-OnDemand" in known_ids, (
-                f"'RunInstances-OnDemand' not found. Got: {sorted(known_ids)}"
+                f"'RunInstances-OnDemand' not found. Got: {sorted(str(x) for x in known_ids)}"
             )
 
 
@@ -599,7 +599,7 @@ class TestSDKDefaultSchedulerRequests:
                 for tpl in _extract_templates(templates_result)
             } - {None}
             assert "RunInstances-OnDemand" in known_ids, (
-                f"'RunInstances-OnDemand' not in templates: {sorted(known_ids)}"
+                f"'RunInstances-OnDemand' not in templates: {sorted(str(x) for x in known_ids)}"
             )
 
             # 2. Create request
@@ -647,11 +647,9 @@ class TestSDKDefaultSchedulerRequests:
 
                 return_result = await sdk.create_return_request(machine_ids=machine_ids)
                 assert return_result is not None
-                message = (
-                    return_result.get("message")
-                    if isinstance(return_result, dict)
-                    else getattr(return_result, "message", None)
+                assert isinstance(return_result, dict), (
+                    f"create_return_request response is not a dict: {return_result}"
                 )
-                assert message is not None, (
-                    f"create_return_request response missing 'message': {return_result}"
+                assert "created_request_ids" in return_result, (
+                    f"create_return_request response missing 'created_request_ids': {return_result}"
                 )

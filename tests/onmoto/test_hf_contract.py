@@ -288,9 +288,13 @@ def default_strat(orb_config_dir):
     from orb.application.ports.scheduler_port import SchedulerPort
     from orb.infrastructure.di.container import get_container
     from orb.infrastructure.scheduler.default.default_strategy import DefaultSchedulerStrategy
+    from orb.infrastructure.scheduler.hostfactory.hostfactory_strategy import (
+        HostFactorySchedulerStrategy,
+    )
 
     container = get_container()
     hf = container.get(SchedulerPort)
+    assert isinstance(hf, HostFactorySchedulerStrategy)
     return DefaultSchedulerStrategy(
         template_defaults_service=hf._template_defaults_service,
     )
@@ -461,7 +465,7 @@ class TestGetRequestStatusSchema:
         """HF getRequestStatus with RunInstances machines validates against schema."""
         subnet_id = moto_vpc_resources["subnet_ids"][0]
         sg_id = moto_vpc_resources["sg_id"]
-        handler, request, instance_ids, reservation_id = _acquire_run_instances(subnet_id, sg_id)
+        handler, _request, instance_ids, reservation_id = _acquire_run_instances(subnet_id, sg_id)
         dto = _build_request_dto_from_run_instances(
             handler, "req-a1b2c3d4-e5f6-7890-abcd-ef1234567890", instance_ids, reservation_id
         )
@@ -474,7 +478,7 @@ class TestGetRequestStatusSchema:
         """Default getRequestStatus with RunInstances machines validates against default schema."""
         subnet_id = moto_vpc_resources["subnet_ids"][0]
         sg_id = moto_vpc_resources["sg_id"]
-        handler, request, instance_ids, reservation_id = _acquire_run_instances(subnet_id, sg_id)
+        handler, _request, instance_ids, reservation_id = _acquire_run_instances(subnet_id, sg_id)
 
         status_request = _make_request(
             request_id="req-a1b2c3d4-e5f6-7890-abcd-ef1234567890",
@@ -513,7 +517,7 @@ class TestGetRequestStatusSchema:
         """privateIpAddress in HF machine entries is a valid IP or null — never empty string."""
         subnet_id = moto_vpc_resources["subnet_ids"][0]
         sg_id = moto_vpc_resources["sg_id"]
-        handler, request, instance_ids, reservation_id = _acquire_run_instances(subnet_id, sg_id)
+        handler, _request, instance_ids, reservation_id = _acquire_run_instances(subnet_id, sg_id)
         dto = _build_request_dto_from_run_instances(
             handler, "req-a1b2c3d4-e5f6-7890-abcd-ef1234567890", instance_ids, reservation_id
         )
@@ -537,7 +541,7 @@ class TestGetRequestStatusSchema:
         """launchtime in HF machine entries is an integer."""
         subnet_id = moto_vpc_resources["subnet_ids"][0]
         sg_id = moto_vpc_resources["sg_id"]
-        handler, request, instance_ids, reservation_id = _acquire_run_instances(subnet_id, sg_id)
+        handler, _request, instance_ids, reservation_id = _acquire_run_instances(subnet_id, sg_id)
         dto = _build_request_dto_from_run_instances(
             handler, "req-a1b2c3d4-e5f6-7890-abcd-ef1234567890", instance_ids, reservation_id
         )
@@ -554,7 +558,7 @@ class TestGetRequestStatusSchema:
         """cloudHostId in HF machine entries is null."""
         subnet_id = moto_vpc_resources["subnet_ids"][0]
         sg_id = moto_vpc_resources["sg_id"]
-        handler, request, instance_ids, reservation_id = _acquire_run_instances(subnet_id, sg_id)
+        handler, _request, instance_ids, reservation_id = _acquire_run_instances(subnet_id, sg_id)
         dto = _build_request_dto_from_run_instances(
             handler, "req-a1b2c3d4-e5f6-7890-abcd-ef1234567890", instance_ids, reservation_id
         )

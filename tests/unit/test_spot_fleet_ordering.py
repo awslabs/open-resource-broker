@@ -5,6 +5,7 @@ validation failed with "Fleet role ARN is required" even when a fleet_role was
 available in config.
 """
 
+from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
@@ -40,7 +41,7 @@ def _make_template(fleet_role=None, **kwargs) -> AWSTemplate:
     return AWSTemplate(**defaults)
 
 
-def _make_handler(config_port=None, validator=None) -> SpotFleetHandler:
+def _make_handler(config_port=None, validator=None) -> Any:
     """Build a SpotFleetHandler with all AWS dependencies mocked."""
     aws_client = MagicMock()
     aws_client.sts_client.get_caller_identity.return_value = {"Account": "123456789012"}

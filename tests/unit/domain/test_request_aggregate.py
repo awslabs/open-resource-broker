@@ -1,6 +1,7 @@
 """Unit tests for Request aggregate."""
 
 from datetime import datetime, timezone
+from typing import Any
 
 import pytest
 
@@ -17,33 +18,39 @@ from orb.domain.request.value_objects import (
     RequestType,
 )
 
-# Try to import optional classes - create mocks if not available
+# Try to import optional classes - use fallback implementations if not available
+PRIORITY_AVAILABLE = False
+MACHINE_COUNT_AVAILABLE = False
+Priority: Any
+MachineCount: Any
+
 try:
-    from orb.domain.request.value_objects import Priority
+    from orb.domain.request.value_objects import Priority  # type: ignore[attr-defined]
 
     PRIORITY_AVAILABLE = True
 except ImportError:
-    PRIORITY_AVAILABLE = False
 
-    class Priority:
-        def __init__(self, value):
+    class _Priority:
+        def __init__(self, value: int | str):
             if not isinstance(value, (int, str)):
                 raise ValueError("Invalid priority")
             self.value = value
 
+    Priority = _Priority
 
 try:
     from orb.domain.request.request_metadata import MachineCount
 
     MACHINE_COUNT_AVAILABLE = True
 except ImportError:
-    MACHINE_COUNT_AVAILABLE = False
 
-    class MachineCount:
-        def __init__(self, value):
+    class _MachineCount:
+        def __init__(self, value: int):
             if not isinstance(value, int) or value < 0:
                 raise ValueError("Invalid machine count")
             self.value = value
+
+    MachineCount = _MachineCount
 
 
 # ---------------------------------------------------------------------------

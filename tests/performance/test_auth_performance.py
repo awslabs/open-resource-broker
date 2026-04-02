@@ -18,11 +18,18 @@ class TestAuthenticationPerformance:
     @pytest.fixture
     def no_auth_client(self):
         """Client with no authentication."""
+        from unittest.mock import MagicMock
+
+        from orb.api.dependencies import get_health_check_port
+
         server_config = ServerConfig(  # type: ignore[call-arg]
             enabled=True,
             auth=AuthConfig(enabled=False, strategy="replace"),  # type: ignore[call-arg]
         )
         app = create_fastapi_app(server_config)
+        mock_health_port = MagicMock()
+        mock_health_port.get_status.return_value = {"status": "healthy"}
+        app.dependency_overrides[get_health_check_port] = lambda: mock_health_port
         return TestClient(app)
 
     @pytest.fixture

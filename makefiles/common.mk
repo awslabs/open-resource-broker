@@ -42,7 +42,10 @@ TESTS := tests
 TESTS_UNIT := $(TESTS)/unit
 TESTS_INTEGRATION := $(TESTS)/integration
 TESTS_E2E := $(TESTS)/e2e
+TESTS_ONMOTO := $(TESTS)/onmoto
 TESTS_PERFORMANCE := $(TESTS)/performance
+TESTS_INFRASTRUCTURE := $(TESTS)/infrastructure
+TESTS_PROVIDERS := $(TESTS)/providers
 CONFIG := config/config.json
 
 # Coverage settings
@@ -51,7 +54,7 @@ COVERAGE_HTML := htmlcov
 
 # Test settings
 PYTEST_ARGS := -v --tb=short --durations=10
-PYTEST_COV_ARGS := --cov=$(PACKAGE_ROOT) --cov-report=term-missing --cov-branch --no-cov-on-fail
+PYTEST_COV_ARGS := --cov=$(PACKAGE_ROOT) --cov-report=term-missing --cov-branch
 PYTEST_TIMEOUT := --timeout=300
 PYTEST_MAXFAIL := --maxfail=5
 

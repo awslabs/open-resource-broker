@@ -1,7 +1,7 @@
 """REST API-specific test scenarios for AWS integration tests."""
 
 import itertools
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from tests.onaws.scenarios import (
     CUSTOM_TEST_CASES as CUSTOM_TEST_CASES,
@@ -200,7 +200,7 @@ def _make_large_scale_tests() -> List[Dict[str, Any]]:
 
 def generate_scenarios_from_attributes(
     attribute_combinations: Dict[str, List[Any]],
-    base_template: Dict[str, Any] = None,
+    base_template: Optional[Dict[str, Any]] = None,
 ) -> List[Dict[str, Any]]:
     """
     Generate test scenarios from all combinations of provided attributes.

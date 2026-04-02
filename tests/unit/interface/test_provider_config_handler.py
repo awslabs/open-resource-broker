@@ -7,9 +7,12 @@ reflect current behaviour and include TODO markers where the violation exists.
 
 import argparse
 import json
+from typing import Any, Union
 from unittest.mock import patch
 
 import pytest
+
+from orb.application.dto.interface_response import InterfaceResponse
 
 
 @pytest.fixture(autouse=True)
@@ -22,6 +25,13 @@ def register_aws_cli_spec():
     yield
     # Clean up after test
     CLISpecRegistry._specs.clear()
+
+
+def exit_code(result: Union[dict[str, Any], InterfaceResponse]) -> int:
+    """Extract exit_code from either a dict or InterfaceResponse."""
+    if isinstance(result, InterfaceResponse):
+        return result.exit_code
+    return result.get("exit_code", 0)  # type: ignore[return-value]
 
 
 def _ns(**kwargs) -> argparse.Namespace:
@@ -461,7 +471,7 @@ class TestHandleProviderShow:
         ):
             result = await handle_provider_show(_ns(provider_name="aws-default"))
 
-        assert result.exit_code == 0
+        assert exit_code(result) == 0
 
     @pytest.mark.asyncio
     async def test_specific_provider_not_found_returns_1(self, tmp_path):
@@ -475,7 +485,7 @@ class TestHandleProviderShow:
         ):
             result = await handle_provider_show(_ns(provider_name="nonexistent"))
 
-        assert result.exit_code == 1
+        assert exit_code(result) == 1
 
     @pytest.mark.asyncio
     async def test_default_provider_returns_0(self, tmp_path):
@@ -491,7 +501,7 @@ class TestHandleProviderShow:
         ):
             result = await handle_provider_show(_ns(provider_name=None))
 
-        assert result.exit_code == 0
+        assert exit_code(result) == 0
 
     @pytest.mark.asyncio
     async def test_no_providers_returns_1(self, tmp_path):
@@ -505,4 +515,4 @@ class TestHandleProviderShow:
         ):
             result = await handle_provider_show(_ns(provider_name=None))
 
-        assert result.exit_code == 1
+        assert exit_code(result) == 1

@@ -27,9 +27,13 @@ class TestStorageDeprecationWarning:
             warnings.simplefilter("always")
             ConfigurationLoader.load(config_path=str(config_file))
 
-        deprecation_warnings = [w for w in caught if issubclass(w.category, DeprecationWarning)]
+        deprecation_warnings = [
+            w
+            for w in caught
+            if issubclass(w.category, DeprecationWarning)
+            and "storage.dynamodb_strategy" in str(w.message)
+        ]
         assert len(deprecation_warnings) >= 1
-        assert "storage.dynamodb_strategy" in str(deprecation_warnings[0].message)
         assert "deprecated" in str(deprecation_warnings[0].message)
 
     def test_new_format_no_deprecation_warning(self, tmp_path):
@@ -66,7 +70,12 @@ class TestStorageDeprecationWarning:
             warnings.simplefilter("always")
             ConfigurationLoader.load(config_path=str(config_file))
 
-        deprecation_warnings = [w for w in caught if issubclass(w.category, DeprecationWarning)]
+        deprecation_warnings = [
+            w
+            for w in caught
+            if issubclass(w.category, DeprecationWarning)
+            and "storage.dynamodb_strategy" in str(w.message)
+        ]
         assert len(deprecation_warnings) == 0
 
     def test_old_format_still_loads_correctly(self, tmp_path):

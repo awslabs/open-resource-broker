@@ -571,3 +571,151 @@ async def test_cleanup_e2e(setup_cleanup_e2e, test_case):
     config_path, tracked_request_ids = setup_cleanup_e2e
     async with OpenResourceBroker(config_path=config_path) as sdk:
         await _run_cleanup_verification(sdk, test_case, tracked_request_ids)
+
+
+# ---------------------------------------------------------------------------
+# RunInstances cleanup E2E
+# ---------------------------------------------------------------------------
+
+_RUN_INSTANCES_CLEANUP_CASE = {
+    "test_name": "cleanup_e2e.RunInstances.ondemand",
+    "template_id": None,
+    "capacity_to_request": 2,
+    "overrides": {
+        "providerApi": "RunInstances",
+        "priceType": "ondemand",
+        "scheduler": "hostfactory",
+    },
+}
+_RUN_INSTANCES_CLEANUP_CASE["template_id"] = scenarios.resolve_template_id(
+    _RUN_INSTANCES_CLEANUP_CASE["overrides"]
+)
+
+
+class TestRunInstancesCleanupE2E:
+    """Cleanup verification for RunInstances-provisioned machines.
+
+    Acquires machines via the RunInstances handler, returns all of them, then
+    asserts that no instances remain in a running state via describe_instances.
+    RunInstances has no backing fleet/ASG resource, so only instance-level
+    termination is verified (no fleet-deletion check).
+    """
+
+    @pytest.mark.slow
+    @pytest.mark.asyncio
+    async def test_run_instances_cleanup(self, setup_cleanup_e2e):
+        """After returning all RunInstances machines, assert no instances remain running."""
+        from orb.sdk import OpenResourceBroker
+
+        config_path, tracked_request_ids = setup_cleanup_e2e
+        test_case = _RUN_INSTANCES_CLEANUP_CASE
+
+        async with OpenResourceBroker(config_path=config_path) as sdk:
+            template_id = test_case["template_id"]
+            capacity = test_case["capacity_to_request"]
+
+            log.info(
+                "RunInstances cleanup: requesting %d machines with template %s",
+                capacity,
+                template_id,
+            )
+
+            # 1. Request machines
+            request_result = await sdk.request_machines(template_id=template_id, count=capacity)  # type: ignore[attr-defined]
+            request_id = _extract_request_id(request_result)
+            assert request_id, f"No request_id in response: {request_result}"
+            assert REQUEST_ID_RE.match(request_id), (
+                f"request_id {request_id!r} does not match expected format"
+            )
+            tracked_request_ids.append(request_id)
+            log.info("Got request_id: %s", request_id)
+
+            # 2. Poll until provisioning complete
+            deadline = time.time() + SDK_TIMEOUTS["request_completion"]
+            terminal = {"complete", "complete_with_error", "failed", "cancelled", "timeout"}
+            status_response = None
+            while True:
+                status_response = await sdk.get_request_status(request_id=request_id)  # type: ignore[attr-defined]
+                status = _extract_request_status(status_response)
+                log.debug("provisioning status: %s", status)
+                if status in terminal:
+                    if status != "complete":
+                        pytest.fail(f"Request ended with non-success status: {status}")
+                    break
+                if time.time() > deadline:
+                    pytest.fail("Timed out waiting for RunInstances request to complete")
+                await asyncio.sleep(SDK_TIMEOUTS["poll_interval"])
+
+            # 3. Assert instances provisioned
+            machine_ids = _extract_machine_ids(status_response)
+            assert len(machine_ids) == capacity, (
+                f"Expected {capacity} machines, got {len(machine_ids)}: {machine_ids}"
+            )
+            for machine_id in machine_ids:
+                state = get_instance_state(machine_id)
+                assert state["exists"], f"Instance {machine_id} not found in AWS"
+                assert state["state"] in ("running", "pending"), (
+                    f"Instance {machine_id} in unexpected state: {state['state']}"
+                )
+            log.info("All %d RunInstances instances provisioned: %s", capacity, machine_ids)
+
+            # 4. Return ALL machines
+            return_result = await sdk.create_return_request(machine_ids=machine_ids)  # type: ignore[attr-defined]
+            return_request_id = _extract_request_id(return_result)
+
+            # 5. Poll return completion
+            if return_request_id:
+                deadline = time.time() + SDK_TIMEOUTS["return_completion"]
+                while True:
+                    ret_status = await sdk.list_return_requests()  # type: ignore[attr-defined]
+                    requests = (
+                        ret_status.get("requests", [])
+                        if isinstance(ret_status, dict)
+                        else ret_status or []
+                    )
+                    done = False
+                    for req in requests:
+                        rid = (
+                            req.get("requestId") or req.get("request_id")
+                            if isinstance(req, dict)
+                            else getattr(req, "request_id", None)
+                        )
+                        s = (
+                            req.get("status")
+                            if isinstance(req, dict)
+                            else getattr(req, "status", None)
+                        )
+                        if rid == return_request_id and s == "complete":
+                            done = True
+                            break
+                    if done:
+                        break
+                    if time.time() > deadline:
+                        pytest.fail("Timed out waiting for RunInstances return request to complete")
+                    await asyncio.sleep(SDK_TIMEOUTS["poll_interval"])
+
+            # 6. Wait for instance termination
+            wait_for_instances_terminated(machine_ids, ec2_client, timeout=300)
+
+            # 7. Assert no instances remain in running state via describe_instances
+            resp = ec2_client.describe_instances(
+                InstanceIds=machine_ids,
+                Filters=[{"Name": "instance-state-name", "Values": ["running", "pending"]}],
+            )
+            still_running = [
+                inst["InstanceId"]
+                for r in resp.get("Reservations", [])
+                for inst in r.get("Instances", [])
+            ]
+            assert not still_running, (
+                f"Expected 0 running instances after return, "
+                f"but {len(still_running)} still running: {still_running}"
+            )
+            log.info("RunInstances cleanup verified: all %d instances terminated", capacity)
+
+            # 8. Assert launch templates deleted
+            _assert_launch_templates_deleted(request_id)
+
+            # Remove from tracked list — cleanup succeeded
+            tracked_request_ids.remove(request_id)
+            log.info("RunInstances cleanup E2E passed for request %s", request_id)

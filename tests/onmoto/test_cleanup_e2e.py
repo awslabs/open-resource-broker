@@ -616,3 +616,174 @@ def test_spot_fleet_request_cleanup_cancels_fleet_and_deletes_lt(aws_client, sub
 
     # Assert LT gone
     _assert_no_lt_for_request(ec2, req_id)
+
+
+# ---------------------------------------------------------------------------
+# Fixtures for CQRS-based tests
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def orb_config_dir_cqrs(orb_config_dir):
+    """Extend orb_config_dir with moto-compatible patches for CQRS tests.
+
+    Removes the AWS profile so boto3 uses env-var credentials (intercepted by
+    moto) and replaces any SSM-path image_id with a literal AMI ID.
+    """
+    import json as _json
+
+    config_path = orb_config_dir / "config.json"
+    if config_path.exists():
+        cfg = _json.loads(config_path.read_text())
+        try:
+            for provider in cfg["provider"]["providers"]:
+                provider.get("config", {}).pop("profile", None)
+        except (KeyError, TypeError):
+            pass  # config structure may vary; profile removal is best-effort
+
+    default_cfg_path = orb_config_dir / "default_config.json"
+    if default_cfg_path.exists():
+        cfg = _json.loads(default_cfg_path.read_text())
+        try:
+            cfg["provider"]["provider_defaults"]["aws"]["template_defaults"]["image_id"] = (
+                "ami-12345678"
+            )
+        except (KeyError, TypeError):
+            pass  # default config may not have this path; image_id override is best-effort
+
+    return orb_config_dir
+
+
+@pytest.fixture
+def cqrs_buses(orb_config_dir_cqrs):
+    """Resolve CommandBusPort and QueryBusPort from the booted DI container."""
+    from orb.infrastructure.di.container import get_container
+
+    container = get_container()
+
+    from orb.domain.base.ports.configuration_port import ConfigurationPort
+    from orb.providers.registry import get_provider_registry
+
+    registry = get_provider_registry()
+    registry._config_port = container.get(ConfigurationPort)
+    try:
+        provider_config = registry._config_port.get_provider_config()
+        if provider_config:
+            for instance in provider_config.get_active_providers():
+                registry.ensure_provider_instance_registered_from_config(instance)
+    except Exception:
+        pass  # provider registration is best-effort in test setup; missing config is non-fatal
+
+    from orb.application.ports.command_bus_port import CommandBusPort
+    from orb.application.ports.query_bus_port import QueryBusPort
+
+    command_bus = container.get(CommandBusPort)
+    query_bus = container.get(QueryBusPort)
+    return {"command_bus": command_bus, "query_bus": query_bus}
+
+
+@pytest.fixture
+def run_instances_template_id(orb_config_dir_cqrs):
+    """Return the template_id of the first RunInstances template in the config."""
+    import asyncio as _asyncio
+
+    from orb.infrastructure.di.container import get_container
+    from orb.infrastructure.template.configuration_manager import TemplateConfigurationManager
+
+    container = get_container()
+    manager = container.get(TemplateConfigurationManager)
+    templates = _asyncio.run(manager.get_all_templates())
+    run_templates = [
+        t for t in templates if str(getattr(t, "provider_api", "")).upper() == "RUNINSTANCES"
+    ]
+    assert run_templates, "No RunInstances template found in test config"
+    return str(run_templates[0].template_id)
+
+
+# ---------------------------------------------------------------------------
+# Full return via CQRS (RunInstances)
+# ---------------------------------------------------------------------------
+
+
+class TestCleanupViaOrchestrator:
+    """Verify that the full acquire -> return cycle via CQRS buses terminates
+    instances and deletes the associated launch template in moto."""
+
+    def test_full_return_via_cqrs_deletes_lt_run_instances(
+        self,
+        cqrs_buses,
+        run_instances_template_id,
+        ec2_client,
+    ):
+        """Acquire via CreateRequestCommand, return via CreateReturnRequestCommand,
+        then assert the instance is terminated and its LT is deleted."""
+        import asyncio
+
+        from orb.application.dto.commands import CreateRequestCommand, CreateReturnRequestCommand
+        from orb.application.dto.queries import GetRequestQuery
+
+        command_bus = cqrs_buses["command_bus"]
+        query_bus = cqrs_buses["query_bus"]
+
+        # --- Arrange: acquire one RunInstances machine ---
+        create_cmd = CreateRequestCommand(template_id=run_instances_template_id, requested_count=1)
+        asyncio.run(command_bus.execute(create_cmd))
+        assert create_cmd.created_request_id, "CreateRequestCommand did not set created_request_id"
+        request_id = create_cmd.created_request_id
+
+        # --- Act: poll request to get machine IDs ---
+        request_dto = asyncio.run(query_bus.execute(GetRequestQuery(request_id=request_id)))
+        assert request_dto is not None
+
+        machine_ids = getattr(request_dto, "machine_ids", None) or []
+        if not machine_ids:
+            refs = getattr(request_dto, "machine_references", None) or []
+            for m in refs:
+                mid = m.get("machine_id") if isinstance(m, dict) else getattr(m, "machine_id", None)
+                if mid:
+                    machine_ids.append(mid)
+        assert machine_ids, f"No machine IDs found in request {request_id} after acquire"
+        instance_id = machine_ids[0]
+
+        # Verify instance is running before return
+        pre_resp = ec2_client.describe_instances(InstanceIds=[instance_id])
+        pre_states = [i["State"]["Name"] for r in pre_resp["Reservations"] for i in r["Instances"]]
+        assert all(s in ("pending", "running") for s in pre_states), (
+            f"Instance not running before return: {pre_states}"
+        )
+
+        # Verify LT exists before return (tagged with orb:request-id)
+        lt_before = ec2_client.describe_launch_templates(
+            Filters=[{"Name": "tag:orb:request-id", "Values": [request_id]}]
+        )
+        assert len(lt_before.get("LaunchTemplates", [])) >= 1, (
+            f"Expected at least one LT tagged orb:request-id={request_id} before return"
+        )
+
+        # --- Act: dispatch return request ---
+        return_cmd = CreateReturnRequestCommand(machine_ids=[instance_id])
+        asyncio.run(command_bus.execute(return_cmd))
+        assert return_cmd.created_request_ids, (
+            "CreateReturnRequestCommand produced no return request IDs"
+        )
+        return_request_id = return_cmd.created_request_ids[0]
+
+        # Poll return request status
+        return_dto = asyncio.run(query_bus.execute(GetRequestQuery(request_id=return_request_id)))
+        assert return_dto is not None
+        return_status = getattr(return_dto, "status", None)
+        assert return_status in ("complete", "completed", "failed", "running", "in_progress"), (
+            f"Unexpected return request status: {return_status}"
+        )
+
+        # --- Assert: instance terminated ---
+        post_resp = ec2_client.describe_instances(InstanceIds=[instance_id])
+        post_states = [
+            i["State"]["Name"] for r in post_resp["Reservations"] for i in r["Instances"]
+        ]
+        assert all(s in ("shutting-down", "terminated") for s in post_states), (
+            f"Instance {instance_id!r} not terminated after return: {post_states}"
+        )
+
+        # --- Assert: LT deleted ---
+        _assert_no_lt_for_request(ec2_client, request_id)

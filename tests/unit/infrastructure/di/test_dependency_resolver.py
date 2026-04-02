@@ -381,7 +381,7 @@ class TestDependencyResolverEdgeCases:
     def test_resolve_with_none_type(self):
         """Test behavior when trying to resolve None type."""
         with pytest.raises((DependencyResolutionError, AttributeError)):
-            self.resolver.resolve(None)
+            self.resolver.resolve(None)  # type: ignore[arg-type]
 
     def test_resolve_builtin_types(self):
         """Test resolving built-in types (returns empty instance)."""

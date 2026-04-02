@@ -15,7 +15,7 @@ class TestEntityCacheInterface:
     def test_cache_interface_is_abstract(self):
         """Test that EntityCache is abstract."""
         with pytest.raises(TypeError):
-            EntityCache()
+            EntityCache()  # type: ignore[abstract]
 
 
 class TestMemoryEntityCache:

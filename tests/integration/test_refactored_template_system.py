@@ -367,6 +367,7 @@ class TestRefactoredTemplateSystem:
 
             # This should work without async/await
             template = config_manager.get_template("test-template-1")
+            assert template is not None
             assert template.template_id == "test-template-1"
 
 

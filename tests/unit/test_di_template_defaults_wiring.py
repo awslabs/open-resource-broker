@@ -2,6 +2,10 @@
 
 from unittest.mock import MagicMock
 
+from orb.infrastructure.scheduler.default.default_strategy import DefaultSchedulerStrategy
+from orb.infrastructure.scheduler.hostfactory.hostfactory_strategy import (
+    HostFactorySchedulerStrategy,
+)
 from orb.infrastructure.scheduler.registration import (
     create_default_strategy,
     create_symphony_hostfactory_strategy,
@@ -38,6 +42,7 @@ class TestTemplateDefaultsWiring:
 
         strategy = create_symphony_hostfactory_strategy(container)
 
+        assert isinstance(strategy, HostFactorySchedulerStrategy)
         assert strategy._template_defaults_service is not None
         assert strategy._template_defaults_service is mock_defaults
 
@@ -47,6 +52,7 @@ class TestTemplateDefaultsWiring:
 
         strategy = create_default_strategy(container)
 
+        assert isinstance(strategy, DefaultSchedulerStrategy)
         assert strategy._template_defaults_service is not None
         assert strategy._template_defaults_service is mock_defaults
 
@@ -54,12 +60,14 @@ class TestTemplateDefaultsWiring:
         """When no DI container is provided, template_defaults_service is None."""
         strategy = create_symphony_hostfactory_strategy({})
 
+        assert isinstance(strategy, HostFactorySchedulerStrategy)
         assert strategy._template_defaults_service is None
 
     def test_default_strategy_template_defaults_none_without_container(self):
         """When no DI container is provided, template_defaults_service is None."""
         strategy = create_default_strategy({})
 
+        assert isinstance(strategy, DefaultSchedulerStrategy)
         assert strategy._template_defaults_service is None
 
     def test_hostfactory_strategy_type(self):

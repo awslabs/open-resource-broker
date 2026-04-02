@@ -14,7 +14,7 @@ import sys
 
 # Re-export for backward compatibility
 from orb.cli.args import parse_args
-from orb.cli.console import print_error, print_info, print_success, print_warning
+from orb.cli.console import print_error, print_success, print_warning
 from orb.cli.router import execute_command
 from orb.infrastructure.logging.logger import get_logger
 
@@ -230,7 +230,7 @@ async def main() -> None:
                 if not args.quiet:
                     print_success(f"Output written to {args.output}")
             else:
-                print_info(formatted_output)
+                print(formatted_output)
 
             if exit_code != 0:
                 sys.exit(exit_code)

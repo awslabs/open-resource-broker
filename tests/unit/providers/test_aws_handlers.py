@@ -1,6 +1,7 @@
 """Tests for AWS handler implementations."""
 
 from types import SimpleNamespace
+from typing import Any, cast
 from unittest.mock import Mock
 
 import boto3
@@ -20,6 +21,8 @@ except ImportError:
 
 # Import AWS components
 try:
+    from orb.domain.request.aggregate import Request
+    from orb.providers.aws.domain.template.aws_template_aggregate import AWSTemplate
     from orb.providers.aws.domain.template.value_objects import AWSFleetType
     from orb.providers.aws.exceptions.aws_exceptions import AWSInfrastructureError
     from orb.providers.aws.infrastructure.handlers.asg.handler import ASGHandler
@@ -275,9 +278,12 @@ class TestEC2FleetHandler:
         handler = EC2FleetHandler(Mock(), Mock(), Mock(), Mock(), config_port=mock_config_port)
         handler.aws_native_spec_service = None
 
+        from orb.domain.request.aggregate import Request
+        from orb.providers.aws.domain.template.aws_template_aggregate import AWSTemplate
+
         config = handler._create_fleet_config(
-            template=template,
-            request=request,
+            template=cast(AWSTemplate, template),
+            request=cast(Request, request),
             launch_template_id="lt-maintain",
             launch_template_version="1",
         )
@@ -445,8 +451,11 @@ class TestEC2FleetHandler:
         )
         template = SimpleNamespace(template_id="tmpl-123", fleet_type=AWSFleetType.INSTANT)
 
+        from orb.domain.request.aggregate import Request
+        from orb.providers.aws.domain.template.aws_template_aggregate import AWSTemplate
+
         with pytest.raises(AWSInfrastructureError):
-            handler._create_fleet_internal(request, template)
+            handler._create_fleet_internal(cast(Request, request), cast(AWSTemplate, template))
 
     def test_ec2_fleet_instant_errors_with_instances_marks_partial_success(self):
         """Instant fleet errors with instances should preserve errors and instance IDs without raising."""
@@ -496,7 +505,12 @@ class TestEC2FleetHandler:
         )
         template = SimpleNamespace(template_id="tmpl-789", fleet_type=AWSFleetType.INSTANT)
 
-        fleet_response = handler._create_fleet_internal(request, template)
+        from orb.domain.request.aggregate import Request
+        from orb.providers.aws.domain.template.aws_template_aggregate import AWSTemplate
+
+        fleet_response = handler._create_fleet_internal(
+            cast(Request, request), cast(AWSTemplate, template)
+        )
         fleet_id = fleet_response["fleet_id"]
 
         assert fleet_id == "fleet-789"
@@ -533,7 +547,12 @@ class TestEC2FleetHandler:
         )
         template = SimpleNamespace(template_id="tmpl-456", fleet_type=AWSFleetType.INSTANT)
 
-        fleet_response = handler._create_fleet_internal(request, template)
+        from orb.domain.request.aggregate import Request
+        from orb.providers.aws.domain.template.aws_template_aggregate import AWSTemplate
+
+        fleet_response = handler._create_fleet_internal(
+            cast(Request, request), cast(AWSTemplate, template)
+        )
         fleet_id = fleet_response["fleet_id"]
 
         assert fleet_id == "fleet-456"
@@ -856,8 +875,10 @@ class TestEC2FleetHandler:
         handler._retry_with_backoff = lambda func, **kwargs: func(
             **{k: v for k, v in kwargs.items() if k != "operation_type"}
         )
-        handler.aws_client.ec2_client.modify_fleet = Mock()
-        handler.aws_client.ec2_client.delete_fleets = Mock()
+        from typing import Any
+
+        cast(Any, handler.aws_client.ec2_client).modify_fleet = Mock()
+        cast(Any, handler.aws_client.ec2_client).delete_fleets = Mock()
 
         # Mock the AWS operations for termination
         aws_ops.terminate_instances_with_fallback = Mock()
@@ -869,7 +890,7 @@ class TestEC2FleetHandler:
         }
 
         # Stub grouping to include fleet details to avoid describe_fleets call on moto
-        handler._group_instances_by_fleet_from_mapping = Mock(
+        cast(Any, handler)._group_instances_by_fleet_from_mapping = Mock(
             return_value={
                 fleet_id: {
                     "instance_ids": instance_ids,
@@ -1269,9 +1290,12 @@ class TestSpotFleetHandler:
         handler = SpotFleetHandler(aws_client, Mock(), Mock(), Mock(), config_port=Mock())
         handler.aws_native_spec_service = None
 
+        from orb.domain.request.aggregate import Request
+        from orb.providers.aws.domain.template.aws_template_aggregate import AWSTemplate
+
         config = handler._config_builder.build(
-            template=template,
-            request=request,
+            template=cast(AWSTemplate, template),
+            request=cast(Request, request),
             lt_id="lt-spot-maintain",
             lt_version="1",
         )
@@ -1364,8 +1388,8 @@ class TestSpotFleetHandler:
 
         cfg = handler._config_builder._build_legacy(
             asg_name="asg-spot",
-            template=template,
-            request=request,
+            template=cast(AWSTemplate, template),  # type: ignore[arg-type]
+            request=cast(Request, request),  # type: ignore[arg-type]
             lt_id="lt-spot",
             lt_version="1",
         )
@@ -1397,8 +1421,8 @@ class TestSpotFleetHandler:
 
         cfg = handler._config_builder._build_legacy(
             asg_name="asg-ondemand",
-            template=template,
-            request=request,
+            template=cast(AWSTemplate, template),  # type: ignore[arg-type]
+            request=cast(Request, request),  # type: ignore[arg-type]
             lt_id="lt-ondemand",
             lt_version="1",
         )
@@ -1429,8 +1453,8 @@ class TestSpotFleetHandler:
 
         cfg = handler._config_builder._build_legacy(
             asg_name="asg-hetero",
-            template=template,
-            request=request,
+            template=cast(AWSTemplate, template),  # type: ignore[arg-type]
+            request=cast(Request, request),  # type: ignore[arg-type]
             lt_id="lt-hetero",
             lt_version="1",
         )
@@ -1612,8 +1636,10 @@ class TestSpotFleetHandler:
         handler._retry_with_backoff = lambda func, **kwargs: func(
             **{k: v for k, v in kwargs.items() if k != "operation_type"}
         )
-        handler.aws_client.ec2_client.modify_spot_fleet_request = Mock()
-        handler.aws_client.ec2_client.cancel_spot_fleet_requests = Mock()
+        from typing import Any
+
+        cast(Any, handler.aws_client.ec2_client).modify_spot_fleet_request = Mock()  # type: ignore[misc]
+        cast(Any, handler.aws_client.ec2_client).cancel_spot_fleet_requests = Mock()  # type: ignore[misc]
         handler._group_instances_by_spot_fleet_from_mapping = Mock(
             return_value={
                 "sfr-12345": {
@@ -1720,8 +1746,8 @@ class TestSpotFleetHandler:
         handler._retry_with_backoff = lambda func, **kwargs: func(
             **{k: v for k, v in kwargs.items() if k != "operation_type"}
         )
-        handler.aws_client.ec2_client.modify_spot_fleet_request = Mock()
-        handler.aws_client.ec2_client.cancel_spot_fleet_requests = Mock()
+        cast(Any, handler.aws_client.ec2_client).modify_spot_fleet_request = Mock()  # type: ignore[misc]
+        cast(Any, handler.aws_client.ec2_client).cancel_spot_fleet_requests = Mock()  # type: ignore[misc]
 
         # Create resource mapping with incomplete information
         # This tests the scenario where some instances have missing fleet IDs or desired capacity
@@ -1781,8 +1807,12 @@ class TestSpotFleetHandler:
             request_adapter=Mock(),
         )
 
-        handler._release_manager._retry = lambda func, **kwargs: func(
-            **{k: v for k, v in kwargs.items() if k != "operation_type"}
+        object.__setattr__(
+            handler._release_manager,
+            "_retry",
+            lambda func, **kwargs: func(
+                **{k: v for k, v in kwargs.items() if k != "operation_type"}
+            ),
         )
 
         fleet_details = {
@@ -2136,7 +2166,7 @@ class TestRunInstancesHandler:
         aws_ops.terminate_instances_with_fallback = Mock()
 
         # Create resource mapping (should be ignored by RunInstances handler)
-        resource_mapping = {
+        resource_mapping: dict[str, tuple[str | None, int]] = {
             instance_ids[0]: ("r-1234567890abcdef0", 2),  # RunInstances resource mapping
             instance_ids[1]: ("r-1234567890abcdef0", 2),  # Same reservation
         }
@@ -2403,8 +2433,8 @@ class TestABISOverrides:
         handler.aws_native_spec_service = None  # Force legacy path for deterministic config
 
         config = handler._create_fleet_config(
-            template=template,
-            request=request,
+            template=cast(AWSTemplate, template),  # type: ignore[arg-type]
+            request=cast(Request, request),  # type: ignore[arg-type]
             launch_template_id="lt-abis",
             launch_template_version="1",
         )
@@ -2425,8 +2455,8 @@ class TestABISOverrides:
         handler.aws_native_spec_service = None
 
         config = handler._config_builder.build(
-            template=template,
-            request=request,
+            template=cast(AWSTemplate, template),  # type: ignore[arg-type]
+            request=cast(Request, request),  # type: ignore[arg-type]
             lt_id="lt-abis",
             lt_version="1",
         )
@@ -2446,8 +2476,8 @@ class TestABISOverrides:
 
         config = handler._config_builder.build(
             asg_name="asg-abis",
-            template=template,
-            request=request,
+            template=cast(AWSTemplate, template),  # type: ignore[arg-type]
+            request=cast(Request, request),  # type: ignore[arg-type]
             lt_id="lt-abis",
             lt_version="1",
         )
@@ -2495,8 +2525,8 @@ class TestMultiInstanceOverrides:
         handler.aws_native_spec_service = None
 
         config = handler._fleet_config_builder._build_legacy(
-            template=template,
-            request=request,
+            template=cast(AWSTemplate, template),  # type: ignore[arg-type]
+            request=cast(Request, request),  # type: ignore[arg-type]
             launch_template_id="lt-multi",
             launch_template_version="1",
         )
@@ -2518,8 +2548,8 @@ class TestMultiInstanceOverrides:
         handler.aws_native_spec_service = None
 
         config = handler._config_builder.build(
-            template=template,
-            request=request,
+            template=cast(AWSTemplate, template),  # type: ignore[arg-type]
+            request=cast(Request, request),  # type: ignore[arg-type]
             lt_id="lt-spot",
             lt_version="1",
         )
@@ -2538,8 +2568,8 @@ class TestMultiInstanceOverrides:
 
         config = handler._config_builder._build_legacy(
             asg_name="asg-multi",
-            template=template,
-            request=request,
+            template=cast(AWSTemplate, template),  # type: ignore[arg-type]
+            request=cast(Request, request),  # type: ignore[arg-type]
             lt_id="lt-asg",
             lt_version="1",
         )
@@ -2565,4 +2595,4 @@ class TestMultiInstanceOverrides:
 
         handler = EC2FleetHandler(Mock(), Mock(), Mock(), Mock(), config_port=Mock())
         # Conflicting values are now tolerated; should not raise
-        handler._validate_prerequisites(template)
+        handler._validate_prerequisites(cast(AWSTemplate, template))  # type: ignore[arg-type]

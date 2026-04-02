@@ -100,7 +100,7 @@ def _run_handler_with_requests(all_requests, query):
 
         import asyncio
 
-        return asyncio.get_event_loop().run_until_complete(handler.execute_query(query))
+        return asyncio.run(handler.execute_query(query))
 
 
 @pytest.mark.unit

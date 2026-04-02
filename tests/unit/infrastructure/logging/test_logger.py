@@ -22,17 +22,33 @@ def reset_logging():
 
 def test_setup_logging_uses_format_from_config():
     custom_fmt = "%(levelname)s %(message)s"
-    config = LoggingConfig(level="DEBUG", format=custom_fmt, file_path=None, console_enabled=True)
+    config = LoggingConfig(
+        level="DEBUG",
+        format=custom_fmt,
+        file_path=None,
+        console_enabled=True,
+        max_size=10485760,
+        backup_count=5,
+    )
     logger_module.setup_logging(config)
     root = logging.getLogger()
     console_handlers = [h for h in root.handlers if isinstance(h, logging.StreamHandler)]
     assert console_handlers, "expected a console handler"
+    assert console_handlers[0].formatter is not None
     assert console_handlers[0].formatter._fmt == custom_fmt
 
 
 def test_setup_logging_fallback_on_empty_format():
-    config = LoggingConfig(level="INFO", format="", file_path=None, console_enabled=True)
+    config = LoggingConfig(
+        level="INFO",
+        format="",
+        file_path=None,
+        console_enabled=True,
+        max_size=10485760,
+        backup_count=5,
+    )
     logger_module.setup_logging(config)
     root = logging.getLogger()
     console_handlers = [h for h in root.handlers if isinstance(h, logging.StreamHandler)]
+    assert console_handlers[0].formatter is not None
     assert console_handlers[0].formatter._fmt != ""

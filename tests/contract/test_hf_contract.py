@@ -251,7 +251,7 @@ def test_hf_request_status_status_enum(hf_strategy):
 
 def test_hf_request_status_machine_result_enum(hf_strategy):
     """Machine result values in HF status response are in the allowed enum set."""
-    for machine_status, expected_result in [
+    for machine_status, _expected_result in [
         ("running", "succeed"),
         ("pending", "executing"),
         ("terminated", "fail"),

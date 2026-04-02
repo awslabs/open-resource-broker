@@ -294,7 +294,7 @@ class TestSDKRequestLifecycle:
             # get_request or get_request_status depending on what was discovered
             methods = sdk.list_available_methods()
             if "get_request_status" in methods:
-                status_result = await sdk.get_request_status(request_id=request_id)  # type: ignore[attr-defined]
+                status_result = await sdk.get_request_status(request_ids=[request_id])  # type: ignore[attr-defined]
             else:
                 status_result = await sdk.get_request(request_id=request_id)
 
@@ -365,7 +365,7 @@ class TestSDKRequestLifecycle:
             # 3. Query status — must echo back the same request_id
             methods = sdk.list_available_methods()
             if "get_request_status" in methods:
-                status_result = await sdk.get_request_status(request_id=request_id)  # type: ignore[attr-defined]
+                status_result = await sdk.get_request_status(request_ids=[request_id])  # type: ignore[attr-defined]
             else:
                 status_result = await sdk.get_request(request_id=request_id)
 
@@ -393,20 +393,27 @@ class TestSDKRequestLifecycle:
                         f"machineId {mid!r} does not look like an EC2 instance ID"
                     )
 
-                # 5. Return machines — response must have a message field
+                # 5. Return machines — response must have created_request_ids
                 return_result = await sdk.create_return_request(machine_ids=machine_ids)
                 assert return_result is not None
-
-                fields = _extract_return_result_fields(return_result)
-                assert fields["message"] is not None, (
-                    f"create_return_request response missing 'message' field: {return_result}"
+                created_ids = (
+                    return_result.get("created_request_ids")
+                    if isinstance(return_result, dict)
+                    else getattr(return_result, "created_request_ids", None)
+                )
+                assert created_ids is not None and len(created_ids) > 0, (
+                    f"create_return_request response missing 'created_request_ids' field: {return_result}"
                 )
 
                 # Poll for return completion
                 import asyncio
                 import time
 
-                return_request_id = fields.get("request_id")
+                return_request_id = (
+                    return_result.get("created_request_ids", [None])[0]
+                    if isinstance(return_result, dict)
+                    else None
+                )
                 if return_request_id:
                     deadline = time.time() + 10
                     while time.time() < deadline:
@@ -428,7 +435,7 @@ class TestSDKRequestLifecycle:
 
                 # 6. After return, status should not be 'running' (machines were released)
                 if "get_request_status" in methods:
-                    post_return_result = await sdk.get_request_status(request_id=request_id)  # type: ignore[attr-defined]
+                    post_return_result = await sdk.get_request_status(request_ids=[request_id])  # type: ignore[attr-defined]
                 else:
                     post_return_result = await sdk.get_request(request_id=request_id)
 
@@ -488,6 +495,169 @@ class TestSDKRequestLifecycle:
             assert request_id in found_ids, (
                 f"Created request {request_id} not found in list. Got: {found_ids}"
             )
+
+    @pytest.mark.asyncio
+    async def test_get_request_status_with_return_request_id(
+        self, orb_config_dir, moto_aws, moto_vpc_resources
+    ):
+        """get_request_status() works correctly when called with a ret- prefixed return request ID.
+
+        Regression guard for KeyError: 'requests' when passing a return request ID.
+        Uses RunInstances (the only moto-supported provider that creates real instances).
+        """
+        import json
+
+        from orb.sdk.client import ORBClient
+
+        config_data = json.loads((orb_config_dir / "config.json").read_text())
+
+        async with ORBClient(app_config=config_data) as sdk:
+            aws_client = _make_moto_aws_client()
+            logger = _make_logger()
+            _inject_moto_factory(aws_client, logger, None)
+
+            # Arrange: acquire 1 machine via RunInstances
+            create_result = await sdk.create_request(template_id="RunInstances-OnDemand", count=1)
+            request_id = _extract_request_id(create_result)
+            assert request_id, f"No request_id in create response: {create_result}"
+
+            # Poll until the acquire request reaches a terminal status.
+            # wait_for_request returns requests[0] — a single request dict, not the
+            # full envelope — so extract machine IDs directly from that dict.
+            terminal = await sdk.wait_for_request(request_id, timeout=30.0, poll_interval=0.5)
+            machines = terminal.get("machines", []) if isinstance(terminal, dict) else []
+            machine_ids: list[str] = [
+                str(m["machineId"] if m.get("machineId") else m["machine_id"])
+                for m in machines
+                if isinstance(m, dict) and (m.get("machineId") or m.get("machine_id"))
+            ]
+            assert machine_ids, f"No machine_ids after acquire completed. Status result: {terminal}"
+
+            # Act: create a return request
+            return_result = await sdk.create_return_request(machine_ids=machine_ids)
+            assert return_result is not None
+
+            # create_return_request may return request_id, requestId, or created_request_ids
+            return_request_id: str | None = None
+            if isinstance(return_result, dict):
+                return_request_id = (
+                    return_result.get("request_id")
+                    or return_result.get("requestId")
+                    or (return_result.get("created_request_ids") or [None])[0]
+                )
+            assert return_request_id, (
+                f"create_return_request did not return a request_id: {return_result}"
+            )
+            assert return_request_id.startswith("ret-"), (
+                f"Return request ID {return_request_id!r} does not have 'ret-' prefix"
+            )
+
+            # Act: call get_request_status with the ret- prefixed ID
+            status_result = await sdk.get_request_status(request_ids=[return_request_id])
+
+            # Assert: response has 'requests' key (regression guard for KeyError: 'requests')
+            assert isinstance(status_result, dict), (
+                f"get_request_status returned non-dict: {type(status_result)}"
+            )
+            assert "requests" in status_result, (
+                f"KeyError regression: 'requests' key missing from response. Got keys: {list(status_result.keys())}"
+            )
+
+            # Assert: requests list is non-empty
+            requests_list = status_result["requests"]
+            assert isinstance(requests_list, list) and len(requests_list) > 0, (
+                f"'requests' is empty or not a list: {requests_list!r}"
+            )
+
+            # Assert: first entry has an accessible 'status' field
+            first = requests_list[0]
+            assert isinstance(first, dict), f"requests[0] is not a dict: {type(first)}"
+            assert "status" in first, (
+                f"'status' key missing from requests[0]. Got keys: {list(first.keys())}"
+            )
+
+            # Assert: request_id in response matches the return_request_id we created
+            returned_id = first.get("request_id") or first.get("requestId")
+            assert returned_id == return_request_id, (
+                f"Response request_id {returned_id!r} != expected {return_request_id!r}"
+            )
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "scenario",
+        [
+            TestScenario(
+                "ec2fleet-instant-ondemand",
+                "EC2Fleet-Instant-OnDemand",
+                "EC2Fleet",
+                1,
+                tags=frozenset({"extended"}),
+            ),
+            TestScenario(
+                "ec2fleet-request-ondemand",
+                "EC2Fleet-Request-OnDemand",
+                "EC2Fleet",
+                1,
+                tags=frozenset({"extended"}),
+            ),
+            TestScenario(
+                "asg-ondemand",
+                "ASG-OnDemand",
+                "ASG",
+                1,
+                tags=frozenset({"extended"}),
+            ),
+            TestScenario(
+                "spotfleet-request-spot",
+                "SpotFleet-Request-LowestPrice",
+                "SpotFleet",
+                1,
+                tags=frozenset({"extended"}),
+            ),
+        ],
+        ids=lambda s: s.scenario_id,
+    )
+    async def test_create_request_extended_provider_apis(
+        self, orb_config_dir, moto_aws, moto_vpc_resources, scenario: TestScenario
+    ):
+        """Request lifecycle completes for EC2Fleet, ASG, and SpotFleet provider APIs.
+
+        Verifies that create_request() returns a valid req- prefixed request_id and
+        that polling get_request_status() does not raise within 10 iterations.
+        """
+        import json
+
+        from orb.sdk.client import ORBClient
+
+        config_data = json.loads((orb_config_dir / "config.json").read_text())
+
+        async with ORBClient(app_config=config_data) as sdk:
+            aws_client = _make_moto_aws_client()
+            logger = _make_logger()
+            _inject_moto_factory(aws_client, logger, None)
+
+            # 1. Create request
+            result = await sdk.create_request(
+                template_id=scenario.template_id, count=scenario.capacity
+            )
+            request_id = _extract_request_id(result)
+
+            assert request_id, f"No request_id in response: {result}"
+            assert request_id.startswith("req-"), (
+                f"request_id {request_id!r} does not start with 'req-'"
+            )
+
+            # 2. Poll get_request_status until not 'pending' (max 10 iterations)
+            methods = sdk.list_available_methods()
+            for _ in range(10):
+                if "get_request_status" in methods:
+                    status_result = await sdk.get_request_status(request_ids=[request_id])  # type: ignore[attr-defined]
+                else:
+                    status_result = await sdk.get_request(request_id=request_id)
+
+                status = _extract_status(status_result)
+                if status != "pending":
+                    break
 
     @pytest.mark.asyncio
     async def test_create_request_unknown_template_returns_error(self, orb_config_dir, moto_aws):

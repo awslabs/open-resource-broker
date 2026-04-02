@@ -20,8 +20,8 @@ class ProviderScenarios:
                     MachineId(value="test-002"),
                 ],
                 "instance_status": {
-                    MachineId(value="test-001"): "running",
-                    MachineId(value="test-002"): "running",
+                    MachineId(value="test-001").value: "running",
+                    MachineId(value="test-002").value: "running",
                 },
                 "expected_request_status": "complete",
                 "expected_machine_results": ["succeed", "succeed"],
@@ -35,12 +35,12 @@ class ProviderScenarios:
                 ],
                 "status_progression": [
                     {
-                        MachineId(value="test-003"): "pending",
-                        MachineId(value="test-004"): "pending",
+                        MachineId(value="test-003").value: "pending",
+                        MachineId(value="test-004").value: "pending",
                     },
                     {
-                        MachineId(value="test-003"): "running",
-                        MachineId(value="test-004"): "running",
+                        MachineId(value="test-003").value: "running",
+                        MachineId(value="test-004").value: "running",
                     },
                 ],
                 "expected_request_status": "complete",
@@ -65,8 +65,8 @@ class ProviderScenarios:
                 "description": "Some instances succeed, others fail",
                 "create_instances": [MachineId(value="test-005")],
                 "instance_status": {
-                    MachineId(value="test-005"): "running",
-                    MachineId(value="test-006"): "terminated",  # Failed to start
+                    MachineId(value="test-005").value: "running",
+                    MachineId(value="test-006").value: "terminated",  # Failed to start
                 },
                 "expected_request_status": "complete_with_error",
                 "expected_machine_results": ["succeed", "fail"],

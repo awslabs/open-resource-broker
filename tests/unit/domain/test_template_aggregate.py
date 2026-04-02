@@ -1,37 +1,47 @@
 """Unit tests for Template aggregate."""
 
 from datetime import datetime, timezone
+from typing import Any
 
 import pytest
 
 from orb.domain.template.exceptions import TemplateNotFoundError, TemplateValidationError
 from orb.domain.template.template_aggregate import Template
 
-# Try to import optional value objects - create mocks if not available
+# Try to import optional value objects - use fallback implementations if not available
+TEMPLATE_VALUE_OBJECTS_AVAILABLE = False
+TemplateId: Any
+TemplateName: Any
+
 try:
-    from orb.domain.template.value_objects import TemplateId, TemplateName
+    from orb.domain.template.value_objects import TemplateId
 
     TEMPLATE_VALUE_OBJECTS_AVAILABLE = True
 except ImportError:
-    TEMPLATE_VALUE_OBJECTS_AVAILABLE = False
 
-    class TemplateId:
-        def __init__(self, value):
+    class _TemplateId:
+        def __init__(self, value: str):
             if not isinstance(value, str) or len(value.strip()) == 0:
                 raise ValueError("Invalid template ID")
             self.value = value.strip()
 
-        def __str__(self):
+        def __str__(self) -> str:
             return self.value
 
-    class TemplateName:
-        def __init__(self, value):
-            if not isinstance(value, str) or len(value.strip()) == 0:
-                raise ValueError("Invalid template name")
-            self.value = value.strip()
+    TemplateId = _TemplateId
 
-        def __str__(self):
-            return self.value
+
+class _TemplateName:
+    def __init__(self, value: str):
+        if not isinstance(value, str) or len(value.strip()) == 0:
+            raise ValueError("Invalid template name")
+        self.value = value.strip()
+
+    def __str__(self) -> str:
+        return self.value
+
+
+TemplateName = _TemplateName
 
 
 # ---------------------------------------------------------------------------
@@ -76,7 +86,7 @@ class TestTemplateAggregate:
         assert template.machine_types == {"t2.micro": 1}
         assert template.subnet_ids == ["subnet-12345678"]
         assert template.security_group_ids == ["sg-12345678"]
-        assert "Hello World" in template.user_data
+        assert template.user_data is not None and "Hello World" in template.user_data
         assert template.tags["Environment"] == "test"
         assert template.tags["Project"] == "hostfactory"
 
@@ -342,7 +352,7 @@ class TestTemplateValueObjects:
 
     def test_template_id_creation(self):
         """Test TemplateId creation."""
-        template_id = TemplateId("template-001")
+        template_id = TemplateId(value="template-001")
         assert str(template_id) == "template-001"
         assert template_id.value == "template-001"
 
@@ -351,7 +361,7 @@ class TestTemplateValueObjects:
         valid_ids = ["template-001", "tpl-123", "t-456", "my-template-789"]
 
         for valid_id in valid_ids:
-            template_id = TemplateId(valid_id)
+            template_id = TemplateId(value=valid_id)
             assert template_id.value == valid_id
 
     def test_template_id_invalid(self):
@@ -360,7 +370,7 @@ class TestTemplateValueObjects:
 
         for invalid_id in invalid_ids:
             with pytest.raises((ValueError, TemplateValidationError)):
-                TemplateId(invalid_id)
+                TemplateId(value=invalid_id)
 
     def test_template_name_creation(self):
         """Test TemplateName creation."""

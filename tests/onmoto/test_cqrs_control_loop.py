@@ -262,7 +262,7 @@ def _inject_moto_factory_into_strategy(aws_client: Any, logger: Any, config_port
         ]
         return config
 
-    spot_handler._config_builder.build = _patched_build
+    spot_handler._config_builder.build = _patched_build  # type: ignore[method-assign]
     factory._handlers[ProviderApi.SPOT_FLEET.value] = spot_handler
 
     # Inject the moto-backed aws_client into the strategy before anything else.
@@ -386,7 +386,7 @@ def _patch_spot_fleet_tag_specs(factory: Any) -> None:
         ]
         return config
 
-    spot_handler._config_builder.build = _patched_build
+    spot_handler._config_builder.build = _patched_build  # type: ignore[method-assign]
 
 
 # ---------------------------------------------------------------------------

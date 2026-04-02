@@ -508,6 +508,7 @@ class TestNativeSpecAllProviders:
         result_small = self.aws_native_spec_service.process_provider_api_spec(
             template, request_small
         )
+        assert result_small is not None
         # max(1, 4*0.5)
         assert result_small["TargetCapacitySpecification"]["OnDemandTargetCapacity"] == "2"
         # 4 - 2
@@ -527,6 +528,7 @@ class TestNativeSpecAllProviders:
         result_large = self.aws_native_spec_service.process_provider_api_spec(
             template, request_large
         )
+        assert result_large is not None
         # max(1, 20*0.5)
         assert result_large["TargetCapacitySpecification"]["OnDemandTargetCapacity"] == "10"
         # 20 - 10
@@ -595,6 +597,7 @@ class TestNativeSpecAllProviders:
 
         result = self.aws_native_spec_service.process_provider_api_spec(template, request)
 
+        assert result is not None
         context_test = result["ContextTest"]
         assert context_test["RequestId"] == str(request.request_id)
         assert context_test["RequestedCount"] == "3"

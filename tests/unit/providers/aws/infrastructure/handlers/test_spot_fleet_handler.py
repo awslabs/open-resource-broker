@@ -1,5 +1,6 @@
 """Unit tests for SpotFleetHandler."""
 
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 from botocore.exceptions import ClientError
@@ -9,12 +10,12 @@ from orb.providers.aws.exceptions.aws_exceptions import AWSInfrastructureError
 from orb.providers.aws.infrastructure.handlers.spot_fleet.handler import SpotFleetHandler
 
 
-def _make_handler():
+def _make_handler() -> Any:
     aws_client = MagicMock()
     logger = MagicMock()
     aws_ops = MagicMock()
     launch_template_manager = MagicMock()
-    handler = SpotFleetHandler(aws_client, logger, aws_ops, launch_template_manager)
+    handler: Any = SpotFleetHandler(aws_client, logger, aws_ops, launch_template_manager)
     handler._machine_adapter = None
     return handler
 
@@ -428,6 +429,7 @@ class TestResolveFleetRole:
 
         result = handler._resolve_fleet_role(template)
 
+        assert result.fleet_role is not None
         assert "spotfleet.amazonaws.com/AWSServiceRoleForEC2SpotFleet" in result.fleet_role
         assert "123456789012" in result.fleet_role
 
@@ -443,6 +445,7 @@ class TestResolveFleetRole:
 
         result = handler._resolve_fleet_role(template)
 
+        assert result.fleet_role is not None
         assert result.fleet_role.startswith("arn:aws:iam::")
         assert "spotfleet.amazonaws.com/AWSServiceRoleForEC2SpotFleet" in result.fleet_role
 

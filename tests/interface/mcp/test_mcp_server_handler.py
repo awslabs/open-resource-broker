@@ -72,7 +72,7 @@ class TestMCPServerHandler:
         with (
             patch("sys.stdin"),
             patch("builtins.print") as mock_print,
-            patch("asyncio.get_event_loop") as mock_loop,
+            patch("asyncio.get_running_loop") as mock_loop,
         ):
             # Mock readline to return a test message then EOF
             mock_executor = AsyncMock()

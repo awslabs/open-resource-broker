@@ -5,6 +5,7 @@ ConfigurationPort and a directly constructed ProviderRegistry (not the global si
 """
 
 import threading
+from typing import cast
 from unittest.mock import MagicMock
 
 import pytest
@@ -47,15 +48,16 @@ def _make_config_port(providers, selection_policy="FIRST_AVAILABLE"):
     return config_port
 
 
-def _make_registry(providers=None, config_port=None, selection_policy="FIRST_AVAILABLE"):
-    registry = ProviderRegistry.__new__(ProviderRegistry)
+def _make_registry(
+    providers=None, config_port=None, selection_policy="FIRST_AVAILABLE"
+) -> ProviderRegistry:
+    registry = cast(ProviderRegistry, ProviderRegistry())
     registry._strategy_cache = {}
     registry._health_states = {}
     registry._fallback_strategy = None
-    registry._lock = threading.Lock()
-    registry._registrations = {}
+    registry._registry_lock = threading.RLock()
+    registry._type_registrations = {}
     registry._instance_registrations = {}
-    registry._mode = MagicMock()
     registry._logger = MagicMock()
 
     if config_port is not None:

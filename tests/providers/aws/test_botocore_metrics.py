@@ -220,7 +220,7 @@ class TestBotocoreMetrics:
         ec2 = session.client("ec2", region_name="us-east-1")
 
         # Make multiple concurrent calls
-        for i in range(5):
+        for _ in range(5):
             ec2.describe_instances()
 
         # Verify all calls were tracked
@@ -260,7 +260,7 @@ class TestBotocoreMetrics:
 
         # Create multiple threads
         threads = []
-        for i in range(10):
+        for _ in range(10):
             thread = threading.Thread(target=add_request)
             threads.append(thread)
             thread.start()
@@ -324,7 +324,7 @@ class TestIntegrationWithMoto:
     @mock_aws
     def test_ec2_operations_with_metrics(self, instrumented_session):
         """Test EC2 operations with metrics collection."""
-        session, handler, metrics, logger = instrumented_session
+        session, _handler, metrics, _logger = instrumented_session
 
         ec2 = session.client("ec2", region_name="us-east-1")
 
@@ -342,7 +342,7 @@ class TestIntegrationWithMoto:
     @mock_aws
     def test_error_scenarios_with_moto(self, instrumented_session):
         """Test error scenarios using moto."""
-        session, handler, metrics, logger = instrumented_session
+        session, _handler, metrics, _logger = instrumented_session
 
         ec2 = session.client("ec2", region_name="us-east-1")
 
@@ -357,7 +357,7 @@ class TestIntegrationWithMoto:
     @mock_aws
     def test_timing_metrics_with_moto(self, instrumented_session):
         """Test timing metrics collection with moto."""
-        session, handler, metrics, logger = instrumented_session
+        session, _handler, metrics, _logger = instrumented_session
 
         ec2 = session.client("ec2", region_name="us-east-1")
 
@@ -387,7 +387,7 @@ class TestAWSMetricsIntegration:
 
     def test_metrics_configuration_loading(self):
         """Test loading of AWS metrics configuration."""
-        from orb.config.metrics_config import (
+        from orb.config.metrics_config import (  # type: ignore[import]
             DEFAULT_AWS_METRICS_CONFIG,
             TEST_AWS_METRICS_CONFIG,
             create_aws_metrics_config,
@@ -411,7 +411,7 @@ class TestAWSMetricsIntegration:
 
     def test_aws_metrics_definitions(self):
         """Test AWS metrics definitions."""
-        from orb.monitoring.aws_metrics import (
+        from orb.monitoring.aws_metrics import (  # type: ignore[import]
             AWS_METRICS,
             get_metric_definition,
             get_service_metrics,

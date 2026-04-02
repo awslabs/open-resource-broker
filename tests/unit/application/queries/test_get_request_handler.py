@@ -117,7 +117,7 @@ async def test_get_request_falls_back_to_stored_state_on_sync_error():
     request = _make_request(_ID_FALLBACK)
     sync_error = RuntimeError("provider unreachable")
 
-    handler, mock_query_service, mock_cache_service = _make_handler(
+    handler, _mock_query_service, mock_cache_service = _make_handler(
         request, sync_side_effect=sync_error
     )
 

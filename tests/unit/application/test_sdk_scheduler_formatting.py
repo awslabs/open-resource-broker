@@ -77,9 +77,7 @@ def test_sdk_discovery_with_scheduler_port():
     # SchedulerPort is a cross-cutting concern, not a CQRS handler — it must
     # not cause discovery to fail.
     discovery = SDKMethodDiscovery()
-    methods = asyncio.get_event_loop().run_until_complete(
-        discovery.discover_cqrs_methods(query_bus, command_bus)
-    )
+    methods = asyncio.run(discovery.discover_cqrs_methods(query_bus, command_bus))
     assert isinstance(methods, dict)
 
 

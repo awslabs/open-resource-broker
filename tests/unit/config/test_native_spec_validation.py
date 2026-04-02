@@ -23,7 +23,7 @@ class TestNativeSpecValidation:
         valid_modes = ["merge", "replace"]
 
         for mode in valid_modes:
-            config = NativeSpecConfig(enabled=True, merge_mode=mode)
+            config = NativeSpecConfig(enabled=True, merge_mode=mode)  # type: ignore[arg-type]
             assert config.merge_mode == mode
 
     def test_native_spec_config_invalid_merge_mode(self):

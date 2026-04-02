@@ -80,7 +80,7 @@ def orb_config_dir_default(tmp_path, moto_vpc_resources):
     return _write_orb_config(tmp_path, moto_vpc_resources, scheduler_type="default")
 
 
-def _write_orb_config(tmp_path: Path, vpc_resources: dict, scheduler_type: str) -> Path:
+def _write_orb_config(tmp_path: Path, vpc_resources: dict, scheduler_type: str):  # type: ignore[return-value]
     config_dir = tmp_path / "config"
     config_dir.mkdir(parents=True, exist_ok=True)
 

@@ -89,7 +89,7 @@ class TestProviderDefaultsInheritance:
 
         effective_handlers = provider.get_effective_handlers(aws_defaults)
         ec2_handler = effective_handlers.get("EC2Fleet")
-
+        assert ec2_handler is not None
         handler_dict = ec2_handler.model_dump()
         assert handler_dict.get("supports_spot") is False  # Overridden
         assert handler_dict.get("supports_ondemand") is True  # Inherited

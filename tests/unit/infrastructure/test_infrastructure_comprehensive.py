@@ -15,16 +15,16 @@ class TestDependencyInjectionComprehensive:
     def test_di_container_exists(self):
         """Test that DI container exists."""
         try:
-            from orb.infrastructure.di.container import Container
+            from orb.infrastructure.di.container import get_container  # type: ignore[attr-defined]
 
-            assert Container is not None
+            assert get_container is not None
         except ImportError:
             pytest.skip("DI Container not available")
 
     def test_di_container_initialization(self):
         """Test DI container initialization."""
         try:
-            from orb.infrastructure.di.container import Container
+            from orb.infrastructure.di.container import Container  # type: ignore[attr-defined]
 
             container = Container()
             assert container is not None
@@ -40,7 +40,7 @@ class TestDependencyInjectionComprehensive:
     def test_di_container_registration(self):
         """Test DI container service registration."""
         try:
-            from orb.infrastructure.di.container import Container
+            from orb.infrastructure.di.container import Container  # type: ignore[attr-defined]
 
             container = Container()
 
@@ -66,7 +66,7 @@ class TestDependencyInjectionComprehensive:
     def test_di_container_resolution(self):
         """Test DI container service resolution."""
         try:
-            from orb.infrastructure.di.container import Container
+            from orb.infrastructure.di.container import Container  # type: ignore[attr-defined]
 
             container = Container()
             mock_service = Mock()
@@ -130,21 +130,21 @@ class TestDependencyInjectionComprehensive:
             # Test CommandBus send
             command_bus = CommandBus(Mock(), Mock())
 
-            if hasattr(command_bus, "send"):
+            if hasattr(command_bus, "execute"):
                 try:
                     mock_command = Mock()
-                    await command_bus.send(mock_command)
+                    await command_bus.execute(mock_command)
                 except Exception:  # nosec B110
-                    # Send might require registered handlers
+                    # Execute might require registered handlers
                     pass
 
-            # Test QueryBus send
+            # Test QueryBus execute
             query_bus = QueryBus(Mock(), Mock())
 
-            if hasattr(query_bus, "send"):
+            if hasattr(query_bus, "execute"):
                 try:
                     mock_query = Mock()
-                    result = await query_bus.send(mock_query)
+                    result = await query_bus.execute(mock_query)
                     assert result is not None or result is None  # Both are valid
                 except Exception:  # nosec B110
                     # Send might require registered handlers
@@ -380,7 +380,7 @@ class TestLoggingComprehensive:
     def test_logger_exists(self):
         """Test that logger exists."""
         try:
-            from orb.infrastructure.logging.logger import Logger
+            from orb.infrastructure.logging.logger import Logger  # type: ignore[attr-defined]
 
             assert Logger is not None
         except ImportError:
@@ -389,7 +389,7 @@ class TestLoggingComprehensive:
     def test_logger_initialization(self):
         """Test logger initialization."""
         try:
-            from orb.infrastructure.logging.logger import Logger
+            from orb.infrastructure.logging.logger import Logger  # type: ignore[attr-defined]
 
             try:
                 logger = Logger()
@@ -420,7 +420,7 @@ class TestTemplateInfrastructureComprehensive:
     def test_template_loader_exists(self):
         """Test that template loader exists."""
         try:
-            from orb.infrastructure.template.loader import TemplateLoader
+            from orb.infrastructure.template.loader import TemplateLoader  # type: ignore[import]
 
             assert TemplateLoader is not None
         except ImportError:
@@ -429,7 +429,7 @@ class TestTemplateInfrastructureComprehensive:
     def test_template_configuration_store_exists(self):
         """Test that template configuration store exists."""
         try:
-            from orb.infrastructure.template.configuration_store import (
+            from orb.infrastructure.template.configuration_store import (  # type: ignore[import]
                 TemplateConfigurationStore,
             )
 
@@ -451,7 +451,9 @@ class TestTemplateInfrastructureComprehensive:
     def test_format_converter_exists(self):
         """Test that format converter exists."""
         try:
-            from orb.infrastructure.template.format_converter import FormatConverter
+            from orb.infrastructure.template.format_converter import (
+                FormatConverter,  # type: ignore[import]
+            )
 
             assert FormatConverter is not None
         except ImportError:

@@ -140,8 +140,14 @@ class TestDDDComplianceFixed:
         assert hash(id1) == hash(id2)
 
         # Test value objects can be used as dictionary keys
-        value_dict = {id1: "first", id3: "second"}
-        assert value_dict[id2] == "first"  # id2 should map to same value as id1
+        # frozen=True pydantic models are hashable at runtime; cast to satisfy pyright
+        from typing import Hashable, cast
+
+        hk1 = cast(Hashable, id1)
+        hk2 = cast(Hashable, id2)
+        hk3 = cast(Hashable, id3)
+        value_dict: dict[Hashable, str] = {hk1: "first", hk3: "second"}
+        assert value_dict[hk2] == "first"  # id2 should map to same value as id1
 
     def test_domain_invariants_enforcement(self):
         """Test that domain invariants are properly enforced."""

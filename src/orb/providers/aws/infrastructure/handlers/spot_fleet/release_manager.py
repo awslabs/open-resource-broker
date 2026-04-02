@@ -8,8 +8,10 @@ from typing import Any, Callable, Optional
 
 from orb.domain.base.ports import LoggingPort
 from orb.infrastructure.adapters.ports.request_adapter_port import RequestAdapterPort
-from orb.providers.aws.domain.template.value_objects import AWSFleetType
 from orb.providers.aws.infrastructure.aws_client import AWSClient
+from orb.providers.aws.infrastructure.handlers.fleet_release_policy import (
+    compute_fleet_release_decision,
+)
 from orb.providers.aws.utilities.aws_operations import AWSOperations
 
 
@@ -62,18 +64,24 @@ class SpotFleetReleaseManager:
                 fleet_details = fleet_configs[0] if fleet_configs else {}
 
             fleet_config = fleet_details.get("SpotFleetRequestConfig", {}) if fleet_details else {}
-            fleet_type = str(fleet_config.get("Type", "maintain")).lower()
+            fleet_type = fleet_config.get("Type", "maintain")
             target_capacity = int(fleet_config.get("TargetCapacity", len(instance_ids or [])) or 0)
             on_demand_capacity = int(fleet_config.get("OnDemandTargetCapacity", 0) or 0)
-            new_target_capacity = None
 
             if instance_ids:
-                if fleet_type == AWSFleetType.MAINTAIN:
+                decision = compute_fleet_release_decision(
+                    fleet_type=fleet_type,
+                    current_capacity=target_capacity,
+                    instances_to_return=len(instance_ids),
+                )
+
+                if decision.requires_capacity_reduction:
                     new_target_capacity = max(0, target_capacity - len(instance_ids))
                     new_on_demand_capacity = min(on_demand_capacity, new_target_capacity)
 
                     self._logger.info(
-                        "Reducing maintain Spot Fleet %s capacity from %s to %s before terminating instances",
+                        "Reducing %s Spot Fleet %s capacity from %s to %s before terminating instances",
+                        fleet_type,
                         fleet_id,
                         target_capacity,
                         new_target_capacity,
@@ -92,22 +100,8 @@ class SpotFleetReleaseManager:
                 )
                 self._logger.info("Terminated Spot Fleet %s instances: %s", fleet_id, instance_ids)
 
-                if fleet_type == AWSFleetType.MAINTAIN and new_target_capacity == 0:
-                    self._logger.info(
-                        "Maintain Spot Fleet %s capacity is zero, cancelling fleet", fleet_id
-                    )
-                    self._retry(
-                        self._aws_client.ec2_client.cancel_spot_fleet_requests,
-                        operation_type="critical",
-                        SpotFleetRequestIds=[fleet_id],
-                        TerminateInstances=False,
-                    )
-                    self._maybe_cleanup_launch_template(fleet_details, fleet_config, request_id)
-                elif fleet_type == "request":
-                    self._logger.info(
-                        "Cancelling request-type Spot Fleet %s after instance termination",
-                        fleet_id,
-                    )
+                if decision.is_full_return and decision.has_fleet_record:
+                    self._logger.info("Spot Fleet %s capacity is zero, cancelling fleet", fleet_id)
                     self._retry(
                         self._aws_client.ec2_client.cancel_spot_fleet_requests,
                         operation_type="critical",

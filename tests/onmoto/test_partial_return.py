@@ -1,14 +1,17 @@
-"""Partial return tests for RunInstances.
+"""Partial return tests for RunInstances, ASG, EC2Fleet, and SpotFleet.
 
 Validates that returning a subset of acquired instances terminates only the
 specified instances and leaves the remainder running. RunInstances is used
 because moto fully supports instance lifecycle (launch, describe, terminate).
+
+TestPartialReturnCapacityReduction covers capacity decrement behaviour for
+ASG, EC2Fleet (maintain), and SpotFleet (maintain) handlers.
 """
 
 import sys
 from pathlib import Path
 from typing import Any
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import boto3
 import pytest
@@ -17,7 +20,13 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 from orb.providers.aws.domain.template.aws_template_aggregate import AWSTemplate
 from orb.providers.aws.infrastructure.aws_client import AWSClient
+from orb.providers.aws.infrastructure.handlers.asg.handler import ASGHandler
+from orb.providers.aws.infrastructure.handlers.ec2_fleet.handler import EC2FleetHandler
 from orb.providers.aws.infrastructure.handlers.run_instances.handler import RunInstancesHandler
+from orb.providers.aws.infrastructure.handlers.spot_fleet.config_builder import (
+    SpotFleetConfigBuilder,
+)
+from orb.providers.aws.infrastructure.handlers.spot_fleet.handler import SpotFleetHandler
 from orb.providers.aws.infrastructure.launch_template.manager import (
     AWSLaunchTemplateManager,
     LaunchTemplateResult,
@@ -291,3 +300,314 @@ class TestPartialReturnRunInstances:
 
         states = _instance_states(ec2_client, instance_ids)
         assert all(s in ("shutting-down", "terminated") for s in states)
+
+
+# ---------------------------------------------------------------------------
+# Capacity reduction tests for ASG, EC2Fleet, and SpotFleet
+# ---------------------------------------------------------------------------
+
+
+class _MotoSpotFleetConfigBuilder(SpotFleetConfigBuilder):
+    """Strip the 'instance' TagSpecification entry that moto rejects."""
+
+    def build(  # type: ignore[override]
+        self,
+        template: AWSTemplate,
+        request: Any,
+        lt_id: str,
+        lt_version: str,
+    ) -> dict[str, Any]:
+        config = super().build(
+            template=template, request=request, lt_id=lt_id, lt_version=lt_version
+        )
+        config["TagSpecifications"] = [
+            ts for ts in config.get("TagSpecifications", []) if ts.get("ResourceType") != "instance"
+        ]
+        return config
+
+
+def _make_capacity_aws_client() -> AWSClient:
+    aws_client = MagicMock(spec=AWSClient)
+    aws_client.ec2_client = boto3.client("ec2", region_name=REGION)
+    aws_client.autoscaling_client = boto3.client("autoscaling", region_name=REGION)
+    aws_client.sts_client = boto3.client("sts", region_name=REGION)
+    aws_client.ssm_client = boto3.client("ssm", region_name=REGION)
+    return aws_client
+
+
+def _make_capacity_config_port() -> Any:
+    from orb.config.schemas.cleanup_schema import CleanupConfig
+    from orb.config.schemas.provider_strategy_schema import ProviderDefaults
+
+    config_port = MagicMock()
+    config_port.get_resource_prefix.return_value = ""
+    provider_defaults = ProviderDefaults(cleanup=CleanupConfig(enabled=False).model_dump())
+    provider_config = MagicMock()
+    provider_config.provider_defaults = {"aws": provider_defaults}
+    config_port.get_provider_config.return_value = provider_config
+    config_port.app_config = None
+    return config_port
+
+
+def _make_capacity_lt_manager(aws_client: AWSClient) -> AWSLaunchTemplateManager:
+    lt_manager = MagicMock(spec=AWSLaunchTemplateManager)
+
+    def _create_or_update(template: AWSTemplate, request: Any) -> LaunchTemplateResult:
+        lt_name = f"orb-lt-cap-{request.request_id}"
+        try:
+            resp = aws_client.ec2_client.create_launch_template(
+                LaunchTemplateName=lt_name,
+                LaunchTemplateData={
+                    "ImageId": template.image_id or "ami-12345678",
+                    "InstanceType": (
+                        next(iter(template.machine_types.keys()))
+                        if template.machine_types
+                        else "t3.micro"
+                    ),
+                    "NetworkInterfaces": [
+                        {
+                            "DeviceIndex": 0,
+                            "SubnetId": template.subnet_ids[0] if template.subnet_ids else "",
+                            "Groups": template.security_group_ids or [],
+                            "AssociatePublicIpAddress": False,
+                        }
+                    ],
+                },
+            )
+            lt_id = resp["LaunchTemplate"]["LaunchTemplateId"]
+            version = str(resp["LaunchTemplate"]["LatestVersionNumber"])
+        except Exception:
+            lt_id = "lt-mock"
+            version = "1"
+        return LaunchTemplateResult(
+            template_id=lt_id,
+            version=version,
+            template_name=lt_name,
+            is_new_template=True,
+        )
+
+    lt_manager.create_or_update_launch_template.side_effect = _create_or_update
+    return lt_manager
+
+
+def _make_capacity_request(request_id: str, requested_count: int) -> Any:
+    req = MagicMock()
+    req.request_id = request_id
+    req.requested_count = requested_count
+    req.template_id = "tpl-cap-reduction"
+    req.metadata = {}
+    req.resource_ids = []
+    req.provider_data = {}
+    req.provider_api = None
+    return req
+
+
+SPOT_FLEET_ROLE = (
+    "arn:aws:iam::123456789012:role/aws-service-role/"
+    "spotfleet.amazonaws.com/AWSServiceRoleForEC2SpotFleet"
+)
+
+
+class TestPartialReturnCapacityReduction:
+    def test_asg_partial_return_decrements_desired_capacity(self, moto_vpc_resources):
+        """release_hosts([one_instance_id]) decrements ASG DesiredCapacity from 2 to 1."""
+        subnet_id = moto_vpc_resources["subnet_ids"][0]
+        sg_id = moto_vpc_resources["sg_id"]
+
+        aws_client = _make_capacity_aws_client()
+        logger = _make_logger()
+        config_port = _make_capacity_config_port()
+        lt_manager = _make_capacity_lt_manager(aws_client)
+        aws_ops = AWSOperations(aws_client, logger, config_port)
+        handler = ASGHandler(
+            aws_client=aws_client,
+            logger=logger,
+            aws_ops=aws_ops,
+            launch_template_manager=lt_manager,
+            config_port=config_port,
+        )
+
+        template = AWSTemplate(
+            template_id="tpl-asg-cap",
+            name="test-asg-cap",
+            provider_api="ASG",
+            machine_types={"t3.micro": 1},
+            image_id="ami-12345678",
+            max_instances=2,
+            price_type="ondemand",
+            subnet_ids=[subnet_id],
+            security_group_ids=[sg_id],
+        )
+        request = _make_capacity_request("req-asg-cap-001", requested_count=2)
+        result = handler.acquire_hosts(request, template)
+        assert result["success"] is True
+        asg_name = result["resource_ids"][0]
+
+        # Run 2 real instances in moto and attach them to the ASG
+        ec2 = aws_client.ec2_client
+        asg = aws_client.autoscaling_client
+        run_resp = ec2.run_instances(
+            ImageId="ami-12345678",
+            MinCount=2,
+            MaxCount=2,
+            InstanceType="t3.micro",
+            SubnetId=subnet_id,
+        )
+        instance_ids = [i["InstanceId"] for i in run_resp["Instances"]]
+        asg.attach_instances(InstanceIds=instance_ids, AutoScalingGroupName=asg_name)
+        # Reset DesiredCapacity to exactly 2 (attach_instances increments on top)
+        asg.update_auto_scaling_group(AutoScalingGroupName=asg_name, DesiredCapacity=2)
+
+        resource_mapping = {
+            instance_ids[0]: (asg_name, 2),
+        }
+        handler.release_hosts([instance_ids[0]], resource_mapping=resource_mapping)
+
+        resp = asg.describe_auto_scaling_groups(AutoScalingGroupNames=[asg_name])
+        assert resp["AutoScalingGroups"], "ASG should still exist after partial release"
+        assert resp["AutoScalingGroups"][0]["DesiredCapacity"] == 1
+
+    def test_ec2_fleet_maintain_partial_return_decrements_target_capacity(self, moto_vpc_resources):
+        """release_hosts with resource_mapping for 1 unit calls modify_fleet with TotalTargetCapacity=1.
+
+        moto does not implement modify_fleet, so we patch it and assert the call args.
+        """
+        subnet_id = moto_vpc_resources["subnet_ids"][0]
+        sg_id = moto_vpc_resources["sg_id"]
+
+        aws_client = _make_capacity_aws_client()
+        logger = _make_logger()
+        config_port = _make_capacity_config_port()
+        lt_manager = _make_capacity_lt_manager(aws_client)
+        aws_ops = AWSOperations(aws_client, logger, config_port)
+        handler = EC2FleetHandler(
+            aws_client=aws_client,
+            logger=logger,
+            aws_ops=aws_ops,
+            launch_template_manager=lt_manager,
+            config_port=config_port,
+        )
+        handler.aws_native_spec_service = None  # force legacy config-builder path
+
+        template = AWSTemplate(
+            template_id="tpl-ec2fleet-cap",
+            name="test-ec2fleet-cap",
+            provider_api="EC2Fleet",
+            machine_types={"t3.micro": 1},
+            image_id="ami-12345678",
+            max_instances=2,
+            price_type="ondemand",
+            fleet_type="maintain",
+            subnet_ids=[subnet_id],
+            security_group_ids=[sg_id],
+        )
+        request = _make_capacity_request("req-ec2fleet-cap-001", requested_count=2)
+        result = handler.acquire_hosts(request, template)
+        assert result["success"] is True
+        fleet_id = result["resource_ids"][0]
+
+        # Confirm initial capacity
+        ec2 = aws_client.ec2_client
+        resp = ec2.describe_fleets(FleetIds=[fleet_id])
+        assert resp["Fleets"][0]["TargetCapacitySpecification"]["TotalTargetCapacity"] == 2
+
+        modify_calls: list[dict] = []
+
+        def _fake_modify_fleet(**kwargs: Any) -> dict:
+            modify_calls.append(kwargs)
+            return {}
+
+        def _fake_terminate(**_kwargs: Any) -> dict:
+            return {"TerminatingInstances": []}
+
+        fleet_details = resp["Fleets"][0]
+        with (
+            patch.object(ec2, "modify_fleet", side_effect=_fake_modify_fleet),
+            patch.object(ec2, "terminate_instances", side_effect=_fake_terminate),
+        ):
+            handler._fleet_release_manager.release(
+                fleet_id=fleet_id,
+                instance_ids=["i-fake000000000001"],
+                fleet_details=fleet_details,
+            )
+
+        assert len(modify_calls) == 1
+        new_capacity = modify_calls[0]["TargetCapacitySpecification"]["TotalTargetCapacity"]
+        assert new_capacity == 1
+
+    def test_spot_fleet_maintain_partial_return_reduces_target_capacity(self, moto_vpc_resources):
+        """release_hosts for 1 unit calls modify_spot_fleet_request with TargetCapacity decremented.
+
+        We patch modify_spot_fleet_request on the ec2 client to capture the call,
+        since moto does not auto-fulfil spot fleet instances.
+        """
+        subnet_id = moto_vpc_resources["subnet_ids"][0]
+        sg_id = moto_vpc_resources["sg_id"]
+
+        aws_client = _make_capacity_aws_client()
+        logger = _make_logger()
+        config_port = _make_capacity_config_port()
+        lt_manager = _make_capacity_lt_manager(aws_client)
+        aws_ops = AWSOperations(aws_client, logger, config_port)
+        config_builder = _MotoSpotFleetConfigBuilder(None, config_port, logger)
+        handler = SpotFleetHandler(
+            aws_client=aws_client,
+            logger=logger,
+            aws_ops=aws_ops,
+            launch_template_manager=lt_manager,
+            config_port=config_port,
+            config_builder=config_builder,
+        )
+
+        template = AWSTemplate(
+            template_id="tpl-spot-cap",
+            name="test-spot-cap",
+            provider_api="SpotFleet",
+            machine_types={"t3.micro": 1},
+            image_id="ami-12345678",
+            max_instances=2,
+            price_type="spot",
+            fleet_type="maintain",
+            fleet_role=SPOT_FLEET_ROLE,
+            allocation_strategy="lowestPrice",
+            subnet_ids=[subnet_id],
+            security_group_ids=[sg_id],
+        )
+        request = _make_capacity_request("req-spot-cap-001", requested_count=2)
+        result = handler.acquire_hosts(request, template)
+        assert result["success"] is True
+        fleet_id = result["resource_ids"][0]
+
+        ec2 = aws_client.ec2_client
+        resp = ec2.describe_spot_fleet_requests(SpotFleetRequestIds=[fleet_id])
+        fleet_details = resp["SpotFleetRequestConfigs"][0]
+        assert fleet_details["SpotFleetRequestConfig"]["TargetCapacity"] == 2
+
+        modify_calls: list[dict] = []
+        real_modify = ec2.modify_spot_fleet_request
+
+        def _capturing_modify(**kwargs: Any) -> Any:
+            modify_calls.append(kwargs)
+            return real_modify(**kwargs)
+
+        def _fake_terminate_with_fallback(
+            instance_ids: list[str], *args: Any, **kwargs: Any
+        ) -> None:
+            pass
+
+        with (
+            patch.object(ec2, "modify_spot_fleet_request", side_effect=_capturing_modify),
+            patch.object(
+                aws_ops,
+                "terminate_instances_with_fallback",
+                side_effect=_fake_terminate_with_fallback,
+            ),
+        ):
+            handler._release_manager.release(
+                fleet_id=fleet_id,
+                instance_ids=["i-fake000000000001"],
+                fleet_details=fleet_details,
+            )
+
+        assert len(modify_calls) >= 1
+        assert modify_calls[0]["TargetCapacity"] == 1

@@ -95,7 +95,7 @@ def test_format_request_status_response_both_schedulers(any_scheduler):
 @pytest.mark.integration
 def test_format_request_status_response_empty_list_both_schedulers(any_scheduler):
     """Both schedulers must handle empty request list without error."""
-    scheduler_type, strategy = any_scheduler
+    _, strategy = any_scheduler
     result = strategy.format_request_status_response([])
     assert "requests" in result
     assert result["requests"] == []
@@ -105,7 +105,7 @@ def test_format_request_status_response_empty_list_both_schedulers(any_scheduler
 @pytest.mark.parametrize("status", ["pending", "in_progress", "complete", "failed", "partial"])
 def test_format_request_status_all_statuses_both_schedulers(any_scheduler, status):
     """Both schedulers must handle all domain statuses without raising."""
-    scheduler_type, strategy = any_scheduler
+    _, strategy = any_scheduler
     dto = _make_dto(status)
     result = strategy.format_request_status_response([dto])
     assert "requests" in result
@@ -165,7 +165,7 @@ def test_format_templates_response_both_schedulers(any_scheduler):
 @pytest.mark.integration
 def test_format_templates_response_empty_both_schedulers(any_scheduler):
     """Both schedulers must handle empty template list."""
-    scheduler_type, strategy = any_scheduler
+    _, strategy = any_scheduler
     result = strategy.format_templates_response([])
     assert "templates" in result
     assert result["templates"] == []

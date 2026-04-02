@@ -6,6 +6,7 @@ import pytest
 from fastapi import APIRouter
 from fastapi.testclient import TestClient
 
+import orb.api.dependencies as deps
 from orb._package import __version__
 from orb.api.server import create_fastapi_app
 from orb.config.schemas.server_schema import AuthConfig, ServerConfig
@@ -36,6 +37,8 @@ class TestAPIEndpoints:
     @pytest.fixture
     def client(self):
         """Create test client with no authentication."""
+        from unittest.mock import MagicMock
+
         server_config = ServerConfig(  # type: ignore[call-arg]
             enabled=True,
             auth=AuthConfig(enabled=False, strategy="replace"),  # type: ignore[call-arg]
@@ -43,11 +46,16 @@ class TestAPIEndpoints:
         with patch("orb.api.server._register_routers") as mock_register:
             mock_register.side_effect = self._install_stub_routes
             app = create_fastapi_app(server_config)
+        mock_health_port = MagicMock()
+        mock_health_port.get_status.return_value = {"status": "healthy"}
+        app.dependency_overrides[deps.get_health_check_port] = lambda: mock_health_port
         return TestClient(app)
 
     @pytest.fixture
     def auth_client(self):
         """Create test client with authentication."""
+        from unittest.mock import MagicMock
+
         server_config = ServerConfig(  # type: ignore[call-arg]
             enabled=True,
             auth=AuthConfig(  # type: ignore[call-arg]
@@ -59,11 +67,23 @@ class TestAPIEndpoints:
         with patch("orb.api.server._register_routers") as mock_register:
             mock_register.side_effect = self._install_stub_routes
             app = create_fastapi_app(server_config)
+        mock_health_port = MagicMock()
+        mock_health_port.get_status.return_value = {"status": "healthy"}
+        app.dependency_overrides[deps.get_health_check_port] = lambda: mock_health_port
         return TestClient(app, raise_server_exceptions=False)
 
     def test_health_endpoint(self, client):
         """Test health check endpoint."""
-        response = client.get("/health")
+        from unittest.mock import MagicMock
+
+        mock_health_port = MagicMock()
+        mock_health_port.get_status.return_value = {"status": "healthy"}
+        client.app.dependency_overrides[deps.get_health_check_port] = lambda: mock_health_port
+
+        try:
+            response = client.get("/health")
+        finally:
+            client.app.dependency_overrides.pop(deps.get_health_check_port, None)
 
         assert response.status_code == 200
         data = response.json()
@@ -142,7 +162,16 @@ class TestAPIEndpoints:
 
     def test_request_id_header(self, client):
         """Test that request ID header is added to responses."""
-        response = client.get("/health")
+        from unittest.mock import MagicMock
+
+        mock_health_port = MagicMock()
+        mock_health_port.get_status.return_value = {"status": "healthy"}
+        client.app.dependency_overrides[deps.get_health_check_port] = lambda: mock_health_port
+
+        try:
+            response = client.get("/health")
+        finally:
+            client.app.dependency_overrides.pop(deps.get_health_check_port, None)
 
         assert response.status_code == 200
         assert "X-Request-ID" in response.headers
@@ -209,7 +238,16 @@ class TestAPIEndpoints:
 
     def test_security_headers(self, client):
         """Test security headers are present."""
-        response = client.get("/health")
+        from unittest.mock import MagicMock
+
+        mock_health_port = MagicMock()
+        mock_health_port.get_status.return_value = {"status": "healthy"}
+        client.app.dependency_overrides[deps.get_health_check_port] = lambda: mock_health_port
+
+        try:
+            response = client.get("/health")
+        finally:
+            client.app.dependency_overrides.pop(deps.get_health_check_port, None)
 
         assert response.status_code == 200
 

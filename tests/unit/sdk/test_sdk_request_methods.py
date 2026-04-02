@@ -1,5 +1,6 @@
 """Unit tests for orchestrator-backed request and machine list methods on ORBClient."""
 
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -27,8 +28,10 @@ def _mock_container(sdk: ORBClient, orchestrator_class, orchestrator, scheduler=
             return orchestrator
         raise KeyError(cls)
 
-    sdk._container.get.side_effect = _get
-    sdk._container.get_optional.return_value = scheduler
+    assert sdk._container is not None
+    container: Any = sdk._container
+    container.get.side_effect = _get
+    container.get_optional.return_value = scheduler
 
 
 # ---------------------------------------------------------------------------

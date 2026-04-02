@@ -1,12 +1,14 @@
 """Tests for fleet capacity metadata extraction."""
 
-from unittest.mock import Mock
+from unittest.mock import MagicMock, Mock
 
 import pytest
 
+from orb.domain.base.ports.logging_port import LoggingPort
 
-class _NoopLogger:
-    debug = info = warning = error = lambda *args, **kwargs: None
+
+def _make_logger() -> LoggingPort:
+    return MagicMock(spec=LoggingPort)
 
 
 @pytest.mark.unit
@@ -29,7 +31,7 @@ def test_ec2_fleet_capacity_data_extraction():
 
     EC2FleetHandler(
         aws_client=mock_aws_client,
-        logger=_NoopLogger(),
+        logger=_make_logger(),
         aws_ops=Mock(),
         launch_template_manager=Mock(),
     )
@@ -61,7 +63,7 @@ def test_spot_fleet_capacity_data_extraction():
 
     SpotFleetHandler(
         aws_client=mock_aws_client,
-        logger=_NoopLogger(),
+        logger=_make_logger(),
         aws_ops=Mock(),
         launch_template_manager=Mock(),
     )
@@ -99,7 +101,7 @@ def test_asg_capacity_data_extraction():
 
     ASGHandler(
         aws_client=mock_aws_client,
-        logger=_NoopLogger(),
+        logger=_make_logger(),
         aws_ops=Mock(),
         launch_template_manager=Mock(),
     )

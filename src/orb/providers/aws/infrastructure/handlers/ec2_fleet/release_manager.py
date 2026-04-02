@@ -11,6 +11,9 @@ from orb.domain.base.ports import LoggingPort
 from orb.domain.base.ports.configuration_port import ConfigurationPort
 from orb.infrastructure.adapters.ports.request_adapter_port import RequestAdapterPort
 from orb.providers.aws.infrastructure.aws_client import AWSClient
+from orb.providers.aws.infrastructure.handlers.fleet_release_policy import (
+    compute_fleet_release_decision,
+)
 from orb.providers.aws.utilities.aws_operations import AWSOperations
 
 
@@ -110,22 +113,26 @@ class EC2FleetReleaseManager:
                 fleet_details = fleet_list[0]
 
             fleet_type = fleet_details.get("Type", "maintain")
+            current_capacity = fleet_details.get("TargetCapacitySpecification", {}).get(
+                "TotalTargetCapacity", len(instance_ids)
+            )
 
             if instance_ids:
-                new_capacity = 0
-                if fleet_type == "maintain":
-                    current_capacity = fleet_details["TargetCapacitySpecification"][
-                        "TotalTargetCapacity"
-                    ]
-                    new_capacity = max(0, current_capacity - len(instance_ids))
+                decision = compute_fleet_release_decision(
+                    fleet_type=fleet_type,
+                    current_capacity=current_capacity,
+                    instances_to_return=len(instance_ids),
+                )
 
+                if decision.requires_capacity_reduction:
+                    new_capacity = max(0, current_capacity - len(instance_ids))
                     self._logger.info(
-                        "Reducing maintain fleet %s capacity from %s to %s before terminating instances",
+                        "Reducing %s fleet %s capacity from %s to %s before terminating instances",
+                        fleet_type,
                         fleet_id,
                         current_capacity,
                         new_capacity,
                     )
-
                     self._retry(
                         self._aws_client.ec2_client.modify_fleet,
                         operation_type="critical",
@@ -140,23 +147,22 @@ class EC2FleetReleaseManager:
                 )
                 self._logger.info("Terminated EC2 Fleet %s instances: %s", fleet_id, instance_ids)
 
-                if fleet_type == "maintain" and new_capacity == 0:
+                if decision.is_full_return and decision.has_fleet_record:
                     self._logger.info("EC2 Fleet %s capacity is zero, deleting fleet", fleet_id)
-                    self._delete_fleet(fleet_id)
+                    if decision.requires_capacity_reduction:
+                        # maintain fleet — use _delete_fleet (TerminateInstances=True)
+                        self._delete_fleet(fleet_id)
+                    else:
+                        # request fleet — instances already terminated, delete without terminating
+                        self._retry(
+                            self._aws_client.ec2_client.delete_fleets,
+                            operation_type="critical",
+                            FleetIds=[fleet_id],
+                            TerminateInstances=False,
+                        )
                     self._maybe_cleanup_launch_template(fleet_details)
-                elif fleet_type == "request":
-                    self._logger.info(
-                        "Deleting request-type EC2 Fleet %s after instance termination", fleet_id
-                    )
-                    self._retry(
-                        self._aws_client.ec2_client.delete_fleets,
-                        operation_type="critical",
-                        FleetIds=[fleet_id],
-                        TerminateInstances=False,
-                    )
-                    self._maybe_cleanup_launch_template(fleet_details)
-                elif fleet_type == "instant":
-                    # Fleet is already deleted by AWS; only clean up the launch template.
+                elif not decision.has_fleet_record:
+                    # instant fleet — already deleted by AWS; only clean up the launch template.
                     self._maybe_cleanup_launch_template(fleet_details)
             else:
                 self._delete_fleet(fleet_id)

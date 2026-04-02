@@ -102,8 +102,9 @@ class TestRequestMachinesAsync:
 
         assert response.status_code == 202
         body = response.json()
-        assert "request_id" in body
-        assert body["request_id"] == fake_request_id
+        # Accept both camelCase (HostFactory scheduler) and snake_case (default scheduler)
+        actual_id = body.get("requestId") or body.get("request_id")
+        assert actual_id == fake_request_id
 
     def test_request_id_has_req_prefix(self, client, machines_orchestrator):
         """requestId in response must start with 'req-'."""
@@ -116,7 +117,10 @@ class TestRequestMachinesAsync:
         )
 
         body = response.json()
-        assert body["request_id"].startswith("req-")
+        # Accept both camelCase (HostFactory scheduler) and snake_case (default scheduler)
+        actual_id = body.get("requestId") or body.get("request_id")
+        assert actual_id is not None
+        assert actual_id.startswith("req-")
 
     def test_missing_template_id_returns_error(self, client):
         """Missing templateId must be rejected before reaching the orchestrator."""

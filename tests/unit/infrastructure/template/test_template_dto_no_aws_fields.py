@@ -7,6 +7,7 @@ from orb.infrastructure.template.dtos import TemplateDTO
 from orb.providers.aws.domain.template.aws_template_aggregate import (
     ABISInstanceRequirements,
     AWSFleetType,
+    AWSRequiredIntegerRange,
     AWSTemplate,
 )
 
@@ -110,8 +111,8 @@ class TestFromDomainPacksAWSFieldsIntoMetadata:
 
     def test_abis_instance_requirements_in_metadata(self):
         abis = ABISInstanceRequirements(
-            VCpuCount={"Min": 2, "Max": 8},
-            MemoryMiB={"Min": 4096, "Max": 16384},
+            VCpuCount=AWSRequiredIntegerRange(Min=2, Max=8),
+            MemoryMiB=AWSRequiredIntegerRange(Min=4096, Max=16384),
         )
         template = _make_aws_template(abis_instance_requirements=abis)
         dto = TemplateDTO.from_domain(template)
@@ -175,8 +176,8 @@ class TestAWSTemplateRoundTrip:
 
     def test_abis_roundtrip(self):
         abis = ABISInstanceRequirements(
-            VCpuCount={"Min": 4, "Max": 16},
-            MemoryMiB={"Min": 8192, "Max": 32768},
+            VCpuCount=AWSRequiredIntegerRange(Min=4, Max=16),
+            MemoryMiB=AWSRequiredIntegerRange(Min=8192, Max=32768),
         )
         original = _make_aws_template(abis_instance_requirements=abis)
         dto = TemplateDTO.from_domain(original)

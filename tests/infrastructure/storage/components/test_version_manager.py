@@ -15,7 +15,7 @@ class TestVersionManagerInterface:
     def test_version_manager_interface_is_abstract(self):
         """Test that VersionManager is abstract."""
         with pytest.raises(TypeError):
-            VersionManager()
+            VersionManager()  # type: ignore[abstract]
 
 
 class TestMemoryVersionManager:

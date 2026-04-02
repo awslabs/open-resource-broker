@@ -7,6 +7,7 @@ import pytest
 from fastapi.testclient import TestClient
 from starlette.datastructures import URL
 
+import orb.api.dependencies as deps
 from orb.api.server import create_fastapi_app
 from orb.config.schemas.server_schema import AuthConfig, ServerConfig
 from orb.infrastructure.auth.strategy.bearer_token_strategy import BearerTokenStrategy
@@ -18,6 +19,8 @@ class TestAuthenticationFlows:
 
     def test_no_auth_flow(self):
         """Test API access with no authentication."""
+        from unittest.mock import MagicMock
+
         # Create server config with no auth
         server_config = ServerConfig(  # type: ignore[call-arg]
             enabled=True,
@@ -26,6 +29,11 @@ class TestAuthenticationFlows:
 
         # Create FastAPI app
         app = create_fastapi_app(server_config)
+
+        mock_health_port = MagicMock()
+        mock_health_port.get_status.return_value = {"status": "healthy"}
+        app.dependency_overrides[deps.get_health_check_port] = lambda: mock_health_port
+
         client = TestClient(app)
 
         # Test health endpoint (should work without auth)
@@ -58,6 +66,11 @@ class TestAuthenticationFlows:
 
         # Create FastAPI app
         app = create_fastapi_app(server_config)
+        from unittest.mock import MagicMock
+
+        mock_health_port = MagicMock()
+        mock_health_port.get_status.return_value = {"status": "healthy"}
+        app.dependency_overrides[deps.get_health_check_port] = lambda: mock_health_port
         client = TestClient(app, raise_server_exceptions=False)
 
         # Test health endpoint (should work without auth - excluded path)
@@ -164,7 +177,7 @@ class TestAuthenticationFlows:
 
         # Test context creation
         request = MockRequest()
-        context = middleware._create_auth_context(request)
+        context = middleware._create_auth_context(request)  # type: ignore[arg-type]
 
         assert context.method == "GET"
         assert context.path == "/api/v1/templates"

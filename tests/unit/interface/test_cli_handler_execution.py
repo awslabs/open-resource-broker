@@ -116,7 +116,7 @@ class TestCLIHandlerExecution:
         container = MagicMock(spec=DIContainer)
         mock_orch = AsyncMock(spec=ListStorageStrategiesOrchestrator)
         mock_orch.execute.return_value = ListStorageStrategiesOutput(
-            strategies=["json", "sqlite"], current_strategy="json", count=2
+            strategies=[{"name": "json"}, {"name": "sqlite"}], current_strategy="json", count=2
         )
         mock_formatter = MagicMock(spec=ResponseFormattingService)
         mock_formatter.format_storage_strategy_list.return_value = InterfaceResponse(

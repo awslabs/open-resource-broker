@@ -183,8 +183,8 @@ class TestSystemValidation:
         provider_config = config_manager.get_provider_config()
 
         # Handle both success and error states for legacy config
-        if provider_config and hasattr(provider_config, "type"):
-            assert provider_config.type == "aws"
+        if provider_config and hasattr(provider_config, "default_provider_type"):
+            assert provider_config.default_provider_type == "aws"
         else:
             # Fallback verification through basic config access
             provider_data = config_manager.get("provider", {})
@@ -466,8 +466,8 @@ class TestSystemValidation:
         if provider_config and hasattr(provider_config, "get_active_providers"):
             active_providers = provider_config.get_active_providers()
             if len(active_providers) >= 2:
-                primary_capabilities = active_providers[0].capabilities
-                secondary_capabilities = active_providers[1].capabilities
+                primary_capabilities = active_providers[0].capabilities or []
+                secondary_capabilities = active_providers[1].capabilities or []
 
                 assert "monitoring" in primary_capabilities
                 assert "monitoring" not in secondary_capabilities

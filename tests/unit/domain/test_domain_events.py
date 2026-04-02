@@ -184,7 +184,7 @@ class TestDomainEventProperties:
 
         # Should be able to convert to dict
         if hasattr(event, "to_dict"):
-            event_dict = event.to_dict()
+            event_dict = event.to_dict()  # type: ignore[union-attr]
             assert isinstance(event_dict, dict)
             assert "request_id" in event_dict
             assert "event_id" in event_dict

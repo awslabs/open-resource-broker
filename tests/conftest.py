@@ -46,19 +46,18 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 # Import moto for AWS mocking
 try:
-    from moto import mock_aws
+    from moto import mock_aws  # type: ignore[assignment]
 
     MOTO_AVAILABLE = True
 except ImportError:
-    # Fallback if moto is not available
-    def mock_aws():
-        def decorator(func):
-            """No-op decorator when moto is not available."""
-            return func
-
-        return decorator
-
     MOTO_AVAILABLE = False
+
+    import contextlib
+
+    @contextlib.contextmanager
+    def mock_aws():  # type: ignore[misc]
+        yield
+
 
 import boto3
 
@@ -191,8 +190,7 @@ def test_config_file(temp_dir: Path, test_config_dict: dict[str, Any]) -> Path:
 @pytest.fixture
 def config_manager(test_config_dict: dict[str, Any]) -> ConfigurationManager:
     """Create a test configuration manager."""
-    manager = ConfigurationManager()
-    manager._config = test_config_dict
+    manager = ConfigurationManager(config_dict=test_config_dict)
     return manager
 
 
