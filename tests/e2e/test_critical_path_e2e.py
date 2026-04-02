@@ -343,7 +343,9 @@ class TestRequestLifecycle:
 
         assert return_resp.status_code == 200
         return_data = return_resp.json()
-        assert (return_data.get("requestId") or return_data.get("request_id")) == "req-return-lifecycle-001"
+        assert (
+            return_data.get("requestId") or return_data.get("request_id")
+        ) == "req-return-lifecycle-001"
 
         # Step 4: poll original request - now completed
         mock_status_result2 = Mock()
@@ -606,7 +608,9 @@ class TestTemplateManagement:
             app.dependency_overrides.clear()
 
         assert get_resp.status_code == 200
-        assert (get_resp.json().get("templateId") or get_resp.json().get("template_id")) == "tpl-flow-001"
+        assert (
+            get_resp.json().get("templateId") or get_resp.json().get("template_id")
+        ) == "tpl-flow-001"
 
     def test_template_refresh_returns_count(self, app, client: TestClient):
         """POST /api/v1/templates/refresh returns refreshed template count."""
@@ -708,7 +712,9 @@ class TestTemplateManagement:
         finally:
             app.dependency_overrides.clear()
         assert get_resp.status_code == 200
-        assert (get_resp.json().get("templateId") or get_resp.json().get("template_id")) == template_id
+        assert (
+            get_resp.json().get("templateId") or get_resp.json().get("template_id")
+        ) == template_id
 
         # Step 3: use the template_id in a machines request
         request_id = "req-acquire-tpl-use-001"
@@ -872,7 +878,9 @@ class TestMachineLifecycle:
 
         assert return_resp.status_code == 200
         return_data = return_resp.json()
-        assert (return_data.get("requestId") or return_data.get("request_id")) == "req-return-term-001"
+        assert (
+            return_data.get("requestId") or return_data.get("request_id")
+        ) == "req-return-term-001"
 
     def test_return_orchestrator_receives_correct_machine_ids(self, app, client: TestClient):
         """Return orchestrator is called with the machine IDs from the request body."""
