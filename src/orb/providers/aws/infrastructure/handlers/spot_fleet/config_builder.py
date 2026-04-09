@@ -237,6 +237,7 @@ class SpotFleetConfigBuilder(BaseConfigBuilder):
             resource_prefix_key="spot_fleet",
             provider_api="SpotFleet",
             template_tags=template.tags,
+            logger=self._logger,
         )
 
         fleet_type_value = (

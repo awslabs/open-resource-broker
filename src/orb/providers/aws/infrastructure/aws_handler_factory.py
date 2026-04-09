@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     from orb.providers.aws.infrastructure.services.aws_native_spec_service import (
+        AWSNativeSpecService,
         NativeSpecServiceProtocol,
     )
 
@@ -48,12 +49,56 @@ class AWSHandlerFactory:
         self._aws_client = aws_client
         self._logger = logger
         self._config = config
-        self._native_spec_service = native_spec_service
         self._handlers: dict[str, AWSHandler] = {}
         self._handler_classes: dict[str, type[AWSHandler]] = {}
 
+        # Resolve AWSNativeSpecService once at init time so the availability
+        # check (and any warning) fires exactly once, not once per handler type.
+        self._aws_native_spec_service = self._resolve_native_spec_service(
+            native_spec_service, config
+        )
+
         # Register handler classes
         self._register_handler_classes()
+
+    def _resolve_native_spec_service(
+        self,
+        native_spec_service: Optional["NativeSpecServiceProtocol"],
+        config_port: Optional[ConfigurationPort],
+    ) -> Optional["AWSNativeSpecService"]:  # type: ignore[name-defined]
+        """Resolve AWSNativeSpecService once at factory init time.
+
+        Emits at most one warning if jinja2 / the DI container is unavailable.
+        """
+        if config_port is None:
+            return None
+
+        from orb.providers.aws.infrastructure.services.aws_native_spec_service import (
+            AWSNativeSpecService,
+        )
+
+        if native_spec_service is not None:
+            return AWSNativeSpecService(
+                native_spec_service=native_spec_service,
+                config_port=config_port,
+            )
+
+        # Lazy container resolution as last resort
+        try:
+            from orb.application.services.native_spec_service import NativeSpecService
+            from orb.infrastructure.di.container import get_container
+
+            container = get_container()
+            return AWSNativeSpecService(
+                native_spec_service=container.get(NativeSpecService),
+                config_port=config_port,
+            )
+        except Exception as e:
+            self._logger.warning(
+                "AWSNativeSpecService unavailable, native spec enrichment disabled: %s",
+                e,
+            )
+            return None
 
     @property
     def aws_client(self) -> AWSClient:
@@ -99,47 +144,9 @@ class AWSHandlerFactory:
         from orb.providers.aws.infrastructure.launch_template.manager import (
             AWSLaunchTemplateManager,
         )
-        from orb.providers.aws.infrastructure.services.aws_native_spec_service import (
-            AWSNativeSpecService,
-        )
         from orb.providers.aws.utilities.aws_operations import AWSOperations
 
         config_port = self._config
-
-        # Construct AWSNativeSpecService if application services are available
-        aws_native_spec_service = None
-        if config_port is not None:
-            try:
-                from orb.providers.aws.infrastructure.services.aws_native_spec_service import (
-                    AWSNativeSpecService,
-                )
-
-                if self._native_spec_service is not None:
-                    # Use pre-injected service — no container lookup needed
-                    aws_native_spec_service = AWSNativeSpecService(
-                        native_spec_service=self._native_spec_service,
-                        config_port=config_port,
-                    )
-                else:
-                    # Attempt lazy resolution via container as last resort
-                    try:
-                        from orb.application.services.native_spec_service import NativeSpecService
-                        from orb.infrastructure.di.container import get_container
-
-                        container = get_container()
-                        aws_native_spec_service = AWSNativeSpecService(
-                            native_spec_service=container.get(NativeSpecService),
-                            config_port=config_port,
-                        )
-                    except Exception as e:
-                        self._logger.warning(
-                            "AWSNativeSpecService unavailable, native spec enrichment disabled: %s",
-                            e,
-                        )
-            except Exception as e:
-                self._logger.warning(
-                    "AWSNativeSpecService unavailable, native spec enrichment disabled: %s", e
-                )
 
         machine_adapter = AWSMachineAdapter(
             aws_client=self._aws_client,
@@ -149,7 +156,7 @@ class AWSHandlerFactory:
             aws_client=self._aws_client,
             logger=self._logger,
             config_port=config_port,
-            aws_native_spec_service=aws_native_spec_service,
+            aws_native_spec_service=self._aws_native_spec_service,
         )
         aws_ops = AWSOperations(
             aws_client=self._aws_client,

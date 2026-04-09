@@ -4,7 +4,7 @@ This module provides utilities for network operations with proper timeout
 configuration and error handling.
 """
 
-from typing import Any, Optional
+from typing import Optional
 
 from orb.infrastructure.constants import (
     DEFAULT_CONNECT_TIMEOUT_SECONDS,
@@ -54,37 +54,6 @@ class TimeoutConfig:
 QUICK_TIMEOUT = TimeoutConfig(connect=5, read=10)
 STANDARD_TIMEOUT = TimeoutConfig(connect=DEFAULT_CONNECT_TIMEOUT, read=DEFAULT_READ_TIMEOUT)
 LONG_TIMEOUT = TimeoutConfig(connect=15, read=MAX_REQUEST_TIMEOUT_SECONDS)
-
-
-def get_boto3_config(
-    timeout: Optional[TimeoutConfig] = None, max_retries: int = 3, **kwargs: Any
-) -> Any:
-    """Get boto3 Config object with timeout settings.
-
-    Args:
-        timeout: Timeout configuration
-        max_retries: Maximum number of retries
-        **kwargs: Additional config parameters
-
-    Returns:
-        boto3.Config object
-    """
-    try:
-        from botocore.config import Config
-    except ImportError:
-        logger.warning("botocore not available, returning None config", exc_info=True)
-        return None
-
-    timeout_config = timeout or STANDARD_TIMEOUT
-
-    config_params = {
-        "connect_timeout": timeout_config.connect,
-        "read_timeout": timeout_config.read,
-        "retries": {"max_attempts": max_retries, "mode": "adaptive"},
-        **kwargs,
-    }
-
-    return Config(**config_params)
 
 
 def get_requests_timeout(timeout: Optional[TimeoutConfig] = None) -> tuple[float, float]:

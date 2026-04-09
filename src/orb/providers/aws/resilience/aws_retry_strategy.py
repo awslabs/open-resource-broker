@@ -11,7 +11,15 @@ from orb.providers.aws.resilience.aws_retry_errors import (
     is_retryable_aws_error,
 )
 
-# Module-level logger replaced with injected logger
+_NON_RETRYABLE_ERROR_CODES = frozenset(
+    {
+        "UnauthorizedOperation",
+        "AccessDenied",
+        "AuthFailure",
+        "InvalidClientTokenId",
+        "OptInRequired",
+    }
+)
 
 
 @injectable
@@ -66,6 +74,13 @@ class AWSRetryStrategy(RetryStrategy):
         # Check attempt limit first
         if attempt >= self.max_attempts:
             return False
+
+        # Never retry permanent IAM/auth denials — duck-type the botocore ClientError shape.
+        response = getattr(exception, "response", None)
+        if isinstance(response, dict):
+            error_code = response.get("Error", {}).get("Code", "")
+            if error_code in _NON_RETRYABLE_ERROR_CODES:
+                return False
 
         # Check if it's a retryable AWS error
         if is_retryable_aws_error(exception, self.service):
