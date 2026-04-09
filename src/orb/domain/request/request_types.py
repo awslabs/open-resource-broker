@@ -133,8 +133,18 @@ class RequestStatus(str, Enum):
         Returns:
             True if transition is valid, False otherwise
         """
+        # Idempotent transitions are always valid (same status → same status)
+        if new_status == self:
+            return True
+
         valid_transitions = {
-            RequestStatus.PENDING: [RequestStatus.IN_PROGRESS, RequestStatus.CANCELLED],
+            RequestStatus.PENDING: [
+                RequestStatus.IN_PROGRESS,
+                RequestStatus.CANCELLED,
+                RequestStatus.FAILED,
+                RequestStatus.COMPLETED,  # instant provisioning (e.g. RunInstances)
+                RequestStatus.PARTIAL,  # instant provisioning with partial fulfillment
+            ],
             RequestStatus.IN_PROGRESS: [
                 RequestStatus.COMPLETED,
                 RequestStatus.PARTIAL,

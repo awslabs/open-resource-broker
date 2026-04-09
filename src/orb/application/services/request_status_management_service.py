@@ -51,7 +51,7 @@ class RequestStatusManagementService:
 
         # Store provider-specific data
         if provider_data:
-            request.provider_data.update(provider_data)
+            request = request.set_provider_data({**request.provider_data, **provider_data})
 
         # Handle provider errors for partial success
         provider_errors = (
@@ -60,7 +60,7 @@ class RequestStatusManagementService:
         has_api_errors = bool(provider_errors)
 
         if has_api_errors and not request.metadata.get("fleet_errors"):
-            request.metadata["fleet_errors"] = provider_errors
+            request = request.update_metadata({"fleet_errors": provider_errors})
 
         # Create and save machine aggregates
         if instances:
@@ -91,8 +91,9 @@ class RequestStatusManagementService:
             RequestStatus.FAILED, f"Provisioning failed: {error_message}"
         )
 
-        request.metadata["error_message"] = error_message
-        request.metadata["error_type"] = "ProvisioningFailure"
+        request = request.update_metadata(
+            {"error_message": error_message, "error_type": "ProvisioningFailure"}
+        )
 
         return request
 
@@ -139,10 +140,15 @@ class RequestStatusManagementService:
                     RequestStatus.PARTIAL,
                     f"Partially fulfilled: {instance_count}/{requested_count} instances",
                 )
-        else:
+        elif request.resource_ids:
             request = request.update_status(
                 RequestStatus.IN_PROGRESS,
                 "Resources created, instances pending",
+            )
+        else:
+            request = request.update_status(
+                RequestStatus.FAILED,
+                "No instances provisioned and no cloud resources created",
             )
 
         return request

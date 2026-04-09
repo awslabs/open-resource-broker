@@ -529,17 +529,26 @@ class Request(AggregateRoot):
 
         return Request.model_validate(fields)
 
-    def update_status(self, status: RequestStatus, message: Optional[str] = None) -> "Request":
+    def update_status(
+        self, status: RequestStatus, message: Optional[str] = None, force: bool = False
+    ) -> "Request":
         """
         Update request status.
 
         Args:
             status: New status
             message: Optional status message
+            force: If True, bypass state machine guard (admin operations only)
 
         Returns:
             Updated Request instance
+
+        Raises:
+            InvalidRequestStateError: If the transition is not valid and force is False
         """
+        if not force and not self.status.can_transition_to(status):
+            raise InvalidRequestStateError(self.status.value, status.value)
+
         fields = self.model_dump()
         fields["status"] = status
         fields["status_message"] = message
@@ -549,6 +558,8 @@ class Request(AggregateRoot):
             RequestStatus.COMPLETED,
             RequestStatus.FAILED,
             RequestStatus.CANCELLED,
+            RequestStatus.PARTIAL,
+            RequestStatus.TIMEOUT,
         ]:
             fields["completed_at"] = datetime.now(timezone.utc)
 
