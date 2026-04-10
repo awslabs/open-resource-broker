@@ -372,10 +372,32 @@ class BaseSchedulerStrategy(SchedulerPort, ABC):
 
         registry = get_scheduler_registry()
         if not registry.is_registered(scheduler_type):
-            self.logger.warning(
-                "Scheduler type '%s' not registered, cannot delegate template loading",
-                scheduler_type,
-            )
+            mismatch_action = "warn"
+            if self._config_manager is not None:
+                try:
+                    mismatch_action = getattr(
+                        self._config_manager.app_config.scheduler,
+                        "on_scheduler_mismatch",
+                        "warn",
+                    )
+                except Exception as e:
+                    # Config unavailable — default to warn so mismatch doesn't hard-fail
+                    self.logger.debug("Could not read on_scheduler_mismatch config: %s", e)
+
+            if mismatch_action == "fail":
+                from orb.infrastructure.template.configuration_manager import (
+                    TemplateConfigurationError,
+                )
+
+                raise TemplateConfigurationError(
+                    f"Scheduler type '{scheduler_type}' not registered and on_scheduler_mismatch=fail"
+                )
+            elif mismatch_action == "warn":
+                self.logger.warning(
+                    "Scheduler type '%s' not registered, cannot delegate template loading",
+                    scheduler_type,
+                )
+            # "ignore" — suppress the warning entirely
             return None
 
         try:

@@ -225,7 +225,10 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                 f"spotfleet.amazonaws.com/AWSServiceRoleForEC2SpotFleet"
             )
             self._logger.info("Converted EC2Fleet role to SpotFleet role: %s", resolved)
-        elif fleet_role == "AWSServiceRoleForEC2SpotFleet":
+        elif fleet_role in (
+            "AWSServiceRoleForEC2SpotFleet",
+            "AmazonEC2SpotFleetTaggingRole",
+        ):
             account_id = self.aws_client.sts_client.get_caller_identity()["Account"]
             resolved = (
                 f"arn:aws:iam::{account_id}:role/aws-service-role/"

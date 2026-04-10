@@ -581,6 +581,33 @@ class TemplateConfigurationManager:
                 "Max instances is very high (>1000), consider if this is intentional"
             )
 
+        # Check scheduler_type metadata mismatch
+        template_scheduler_type = (
+            template.metadata.get("scheduler_type") if isinstance(template.metadata, dict) else None
+        )
+        if template_scheduler_type is not None:
+            active_scheduler_type = None
+            mismatch_action = "warn"
+            try:
+                active_scheduler_type = self.config_manager.app_config.scheduler.type
+                mismatch_action = getattr(
+                    self.config_manager.app_config.scheduler, "on_scheduler_mismatch", "warn"
+                )
+            except Exception as e:
+                self.logger.debug("Could not read scheduler config for mismatch check: %s", e)
+
+            if active_scheduler_type and template_scheduler_type != active_scheduler_type:
+                msg = (
+                    f"Template '{template.template_id}' has scheduler_type "
+                    f"'{template_scheduler_type}' but active scheduler is '{active_scheduler_type}'"
+                )
+                if mismatch_action == "fail":
+                    result["is_valid"] = False
+                    result["errors"].append(msg)
+                elif mismatch_action == "warn":
+                    result["warnings"].append(msg)
+                # "ignore" — add nothing
+
         self.logger.debug("Basic validation completed for template %s", template.template_id)
 
     async def _validate_with_provider_registry(

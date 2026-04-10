@@ -457,7 +457,9 @@ class ConfigurationLoader:
 
             # Propagate scripts_dir written by `orb init` back into the config model
             if "scripts_dir" in config and config["scripts_dir"]:
-                get_config_logger().debug("scripts_dir from config: %s", config["scripts_dir"])
+                scripts_dir = config["scripts_dir"]
+                get_config_logger().debug("scripts_dir from config: %s", scripts_dir)
+                os.environ.setdefault("ORB_SCRIPTS_DIR", scripts_dir)
 
             # Set up storage paths
             if scheduler_dir:
