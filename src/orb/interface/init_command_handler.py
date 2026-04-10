@@ -66,8 +66,20 @@ async def handle_init(args) -> int:
         # Create directories
         _create_directories(config_dir, work_dir, logs_dir)
 
+        # Determine which dirs differ from platform defaults (came from env vars or --config-dir)
+        default_logs = get_logs_location()
+        default_work = get_work_location()
+        default_scripts = get_scripts_location()
+        extra_paths: dict = {}
+        if logs_dir != default_logs:
+            extra_paths["logs_dir"] = logs_dir
+        if work_dir != default_work:
+            extra_paths["work_dir"] = work_dir
+        if scripts_dir != default_scripts:
+            extra_paths["scripts_dir"] = scripts_dir
+
         # Write config file
-        _write_config_file(config_file, config)
+        _write_config_file(config_file, config, extra_paths)
 
         # Copy platform-specific scripts
         _copy_scripts(scripts_dir)
@@ -617,20 +629,10 @@ def _create_directories(config_dir: Path, work_dir: Path, logs_dir: Path):
         logger.info("Created directory: %s", dir_path)
 
 
-def _write_config_file(config_file: Path, user_config: Dict[str, Any]):
+def _write_config_file(
+    config_file: Path, user_config: Dict[str, Any], extra_paths: Optional[Dict[str, Any]] = None
+):
     """Write configuration file with multiple provider support."""
-    from importlib.resources import files
-
-    try:
-        full_config = json.loads(files("orb.config").joinpath("default_config.json").read_text())
-    except Exception as e:
-        raise FileNotFoundError(f"Could not find default_config.json template: {e}")
-
-    # Copy default_config.json to runtime config directory
-    default_config_file = config_file.parent / "default_config.json"
-    with open(default_config_file, "w") as f:
-        json.dump(full_config, f, indent=2)
-
     # Process all providers
     providers_list = []
     default_provider_name: str | None = None
@@ -690,7 +692,7 @@ def _write_config_file(config_file: Path, user_config: Dict[str, Any]):
     if default_provider_name:
         provider_section["default_provider_instance"] = default_provider_name
 
-    config = {
+    config: dict[str, Any] = {
         "scheduler": {"type": user_config["scheduler_type"]},
         "provider": provider_section,
     }
@@ -700,6 +702,17 @@ def _write_config_file(config_file: Path, user_config: Dict[str, Any]):
     registry = get_scheduler_registry()
     extra = registry.get_extra_config_for_type(user_config["scheduler_type"])
     config["scheduler"].update(extra)
+
+    # Persist non-default dir paths so the runtime picks them up without env vars
+    if extra_paths:
+        if "logs_dir" in extra_paths:
+            config.setdefault("logging", {})["file_path"] = str(extra_paths["logs_dir"] / "orb.log")
+        if "work_dir" in extra_paths:
+            config.setdefault("storage", {}).setdefault("json_strategy", {})["base_path"] = str(
+                extra_paths["work_dir"]
+            )
+        if "scripts_dir" in extra_paths:
+            config["scripts_dir"] = str(extra_paths["scripts_dir"])
 
     with open(config_file, "w") as f:
         json.dump(config, f, indent=2)

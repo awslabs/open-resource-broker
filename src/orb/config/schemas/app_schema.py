@@ -42,6 +42,7 @@ class AppConfig(BaseModel):
     native_spec: NativeSpecConfig = Field(default_factory=lambda: NativeSpecConfig())  # type: ignore[call-arg]
     environment: str = Field("development", description="Environment")
     debug: bool = Field(False, description="Debug mode")
+    scripts_dir: Optional[str] = Field(None, description="Path to ORB provider scripts directory")
 
     @model_validator(mode="after")
     def ensure_template_config(self) -> "AppConfig":

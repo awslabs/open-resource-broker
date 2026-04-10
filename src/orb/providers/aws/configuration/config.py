@@ -1,7 +1,7 @@
 """AWS provider configuration - single source of truth."""
 
 import json
-from typing import Any, Optional
+from typing import Any, Literal, Optional
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -50,6 +50,17 @@ class LaunchTemplateConfiguration(BaseModel):
     reuse_existing: bool = Field(True, description="Reuse existing launch templates")
     cleanup_old_versions: bool = Field(False, description="Cleanup old launch template versions")
     max_versions_per_template: int = Field(10, description="Maximum versions per launch template")
+    on_update_failure: Literal["fail", "warn"] = Field(
+        "fail", description="Behaviour when creating a new LT version fails: fail or warn"
+    )
+
+
+class TaggingConfiguration(BaseModel):
+    """Tagging configuration."""
+
+    on_tag_failure: Literal["warn", "fail"] = Field(
+        "warn", description="Behaviour when resource tagging fails: warn or fail"
+    )
 
 
 class HandlersConfig(BaseModel):
@@ -134,6 +145,11 @@ class AWSProviderConfig(BaseSettings, BaseProviderConfig):  # type: ignore[misc]
     # Launch template configuration
     launch_template: LaunchTemplateConfiguration = Field(
         default_factory=LaunchTemplateConfiguration  # type: ignore[call-arg]
+    )
+
+    # Tagging configuration
+    tagging: TaggingConfiguration = Field(
+        default_factory=TaggingConfiguration  # type: ignore[call-arg]
     )
 
     # AWS-specific batch sizes configuration

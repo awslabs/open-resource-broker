@@ -229,6 +229,7 @@ class PathsSectionDTO(BaseDTO):
     config_dir: str
     work_dir: str
     log_dir: str
+    scripts_dir: Optional[str] = None
     loaded_config_file: Optional[str] = None
     loaded_templates_file: Optional[str] = None
     template_search_paths: Optional[list[str]] = Field(default=None)

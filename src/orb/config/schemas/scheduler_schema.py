@@ -24,6 +24,10 @@ class SchedulerConfig(BaseModel):
     templates_filename: Optional[str] = Field(
         None, description="Override templates filename (null = use scheduler default)"
     )
+    on_scheduler_mismatch: Literal["ignore", "warn", "fail"] = Field(
+        "warn",
+        description="Behaviour when a template's scheduler_type doesn't match the active scheduler",
+    )
 
     def get_config_root(self) -> str:
         """Get config root with automatic environment variable expansion."""

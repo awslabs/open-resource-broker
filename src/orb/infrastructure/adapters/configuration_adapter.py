@@ -91,7 +91,8 @@ class ConfigurationAdapter(ConfigurationPort):
                 "max_machines_per_request": getattr(
                     request_config, "max_machines_per_request", 100
                 ),
-                "default_timeout": getattr(request_config, "default_timeout", 300),
+                "default_timeout": getattr(request_config, "default_timeout", 3600),
+                "default_grace_period": getattr(request_config, "default_grace_period", 300),
                 "min_timeout": getattr(request_config, "min_timeout", 30),
                 "max_timeout": getattr(request_config, "max_timeout", 3600),
                 "fulfillment_max_retries": request_config.fulfillment_max_retries,
@@ -103,7 +104,8 @@ class ConfigurationAdapter(ConfigurationPort):
             self._logger.warning("Failed to load request config, using defaults: %s", e)
             return {
                 "max_machines_per_request": 100,
-                "default_timeout": 300,
+                "default_timeout": 3600,
+                "default_grace_period": 300,
                 "min_timeout": 30,
                 "max_timeout": 3600,
                 "fulfillment_max_retries": 3,
@@ -177,23 +179,52 @@ class ConfigurationAdapter(ConfigurationPort):
 
         return str(get_root_location())
 
+    def get_scripts_dir(self) -> str:
+        """Get the scripts directory path."""
+        from orb.config.platform_dirs import get_scripts_location
+
+        return str(get_scripts_location())
+
     def get_storage_config(self) -> dict[str, Any]:
         """Get storage configuration."""
         try:
+            from pathlib import Path
+
             storage_config = self._config_manager.get("storage", {})
             strategy = storage_config.get("strategy", storage_config.get("type", "json"))
             if strategy == "json":
                 json_cfg = storage_config.get("json_strategy", {})
-                data_path = json_cfg.get("base_path")
+                raw_data_path = json_cfg.get("base_path")
                 backup_enabled = json_cfg.get("backup_enabled", True)
+                raw_backup_path = json_cfg.get("backup_path") or storage_config.get("backup_path")
             elif strategy == "sql":
                 sql_cfg = storage_config.get("sql_strategy", {})
-                data_path = sql_cfg.get("name")
+                raw_data_path = sql_cfg.get("name")
                 backup_enabled = False
+                raw_backup_path = storage_config.get("backup_path")
+            else:
+                raw_data_path = None
+                backup_enabled = storage_config.get("backup_enabled", True)
+                raw_backup_path = storage_config.get("backup_path")
+
+            work_dir = Path(self._config_manager.get_work_dir())
+
+            # Resolve data_path to absolute
+            if raw_data_path:
+                p = Path(raw_data_path)
+                data_path = str(p if p.is_absolute() else work_dir / p)
             else:
                 data_path = None
-                backup_enabled = storage_config.get("backup_enabled", True)
-            backup_path = storage_config.get("backup_path")
+
+            # Resolve backup_path; default to work_dir/backups
+            if raw_backup_path:
+                bp = Path(raw_backup_path)
+                backup_path = str(bp if bp.is_absolute() else work_dir / bp)
+            elif backup_enabled:
+                backup_path = str(work_dir / "backups")
+            else:
+                backup_path = None
+
             return {
                 "strategy": strategy,
                 "data_path": data_path,
@@ -231,6 +262,7 @@ class ConfigurationAdapter(ConfigurationPort):
                 "format": logging_config.get(
                     "format", "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
                 ),
+                "file_path": logging_config.get("file_path"),
                 "file_enabled": logging_config.get("file_enabled", True),
                 "console_enabled": logging_config.get("console_enabled", True),
             }
@@ -239,6 +271,7 @@ class ConfigurationAdapter(ConfigurationPort):
             return {
                 "level": "INFO",
                 "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+                "file_path": None,
                 "file_enabled": True,
                 "console_enabled": True,
             }

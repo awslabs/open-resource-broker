@@ -109,7 +109,12 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
             aws_native_spec_service, config_port, logger
         )
         self._release_manager = release_manager or SpotFleetReleaseManager(
-            aws_client, aws_ops, request_adapter, self._cleanup_on_zero_capacity, logger
+            aws_client,
+            aws_ops,
+            request_adapter,
+            self._cleanup_on_zero_capacity,
+            logger,
+            retry_fn=getattr(aws_ops, "_retry_with_backoff", None),
         )
 
     @handle_infrastructure_exceptions(context="spot_fleet_creation")
@@ -220,7 +225,10 @@ class SpotFleetHandler(AWSHandler, BaseContextMixin, FleetGroupingMixin):
                 f"spotfleet.amazonaws.com/AWSServiceRoleForEC2SpotFleet"
             )
             self._logger.info("Converted EC2Fleet role to SpotFleet role: %s", resolved)
-        elif fleet_role == "AWSServiceRoleForEC2SpotFleet":
+        elif fleet_role in (
+            "AWSServiceRoleForEC2SpotFleet",
+            "AmazonEC2SpotFleetTaggingRole",
+        ):
             account_id = self.aws_client.sts_client.get_caller_identity()["Account"]
             resolved = (
                 f"arn:aws:iam::{account_id}:role/aws-service-role/"

@@ -92,7 +92,7 @@ jobs:
       test-type: onmoto
       python-version: ${{ needs.config.outputs.default-python-version }}
       default-python-version: ${{ needs.config.outputs.default-python-version }}
-      continue-on-error: true
+      continue-on-error: false
       aws-region: ${{ needs.config.outputs.aws-region }}
       aws-access-key: ${{ needs.config.outputs.aws-access-key }}
       aws-secret-key: ${{ needs.config.outputs.aws-secret-key }}

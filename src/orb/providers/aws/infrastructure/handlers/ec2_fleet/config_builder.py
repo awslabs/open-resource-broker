@@ -122,6 +122,7 @@ class EC2FleetConfigBuilder(BaseConfigBuilder):
             resource_prefix_key="fleet",
             provider_api="EC2Fleet",
             template_tags=template.tags,
+            logger=self._logger,
         )
         tag_specs = [{"ResourceType": "fleet", "Tags": fleet_tags}]
         if template.fleet_type == AWSFleetType.INSTANT:

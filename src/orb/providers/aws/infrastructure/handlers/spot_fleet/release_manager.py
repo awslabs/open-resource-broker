@@ -25,12 +25,14 @@ class SpotFleetReleaseManager:
         request_adapter: Optional[RequestAdapterPort],
         cleanup_on_zero_capacity_fn: Callable[[str, str], None],
         logger: LoggingPort,
+        retry_fn: Optional[Callable[..., Any]] = None,
     ) -> None:
         self._aws_client = aws_client
         self._aws_ops = aws_ops
         self._request_adapter = request_adapter
         self._cleanup_on_zero_capacity = cleanup_on_zero_capacity_fn
         self._logger = logger
+        self._retry_fn = retry_fn or getattr(aws_ops, "_retry_with_backoff", None)
 
     def release(
         self,
@@ -176,10 +178,9 @@ class SpotFleetReleaseManager:
     # ------------------------------------------------------------------
 
     def _retry(self, func: Any, operation_type: str = "standard", **kwargs: Any) -> Any:
-        """Delegate to AWSOperations retry if available, else call directly."""
-        retry_method = getattr(self._aws_ops, "_retry_with_backoff", None)
-        if retry_method is not None:
-            return retry_method(func, operation_type=operation_type, **kwargs)
+        """Delegate to the injected retry function if available, else call directly."""
+        if self._retry_fn is not None:
+            return self._retry_fn(func, operation_type=operation_type, **kwargs)
         return func(**kwargs)
 
     def _paginate(self, client_method: Any, result_key: str, **kwargs: Any) -> list[dict[str, Any]]:

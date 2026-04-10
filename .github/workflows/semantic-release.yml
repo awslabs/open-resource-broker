@@ -98,6 +98,12 @@ jobs:
           fetch-depth: 0
           token: ${{ steps.app-token.outputs.token }}
 
+      - name: Setup UV
+        uses: astral-sh/setup-uv@v7
+
+      - name: Install ORB
+        run: uv sync --all-extras
+
       - name: Python Semantic Release
         id: release
         uses: python-semantic-release/python-semantic-release@v10.5.3

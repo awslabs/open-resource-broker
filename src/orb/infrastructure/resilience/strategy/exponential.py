@@ -47,8 +47,6 @@ class ExponentialBackoffStrategy:
         if attempt >= self.max_attempts:
             return False
 
-        # Generic retry logic - provider-specific logic should be in provider layer
-        # For now, retry on any exception (can be overridden by provider strategies)
         return True
 
     def get_delay(self, attempt: int) -> float:
@@ -79,8 +77,12 @@ class ExponentialBackoffStrategy:
         """
         Handle retry event (logging, metrics).
 
+        This is a hook for subclasses to override — e.g. AWSRetryStrategy
+        logs the attempt number and exception details here.
+
         Args:
             attempt: Current attempt number (0-based)
             exception: Exception that occurred
         """
-        # This method can be extended for metrics collection in the future
+        # Base implementation is intentionally empty — subclasses override this
+        # to add logging, metrics, or other side effects on each retry.

@@ -176,6 +176,10 @@ class ConfigurationPort(ProviderConfigPort):
         """Get the root directory path."""
         return ""
 
+    def get_scripts_dir(self) -> str:
+        """Get the scripts directory path."""
+        return ""
+
     @property
     def app_config(self) -> Any:
         """Get the full application configuration."""

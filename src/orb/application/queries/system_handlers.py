@@ -489,8 +489,7 @@ class GetSystemConfigHandler(BaseQueryHandler[GetSystemConfigQuery, SystemConfig
                     loaded_templates_file = path
                     break
 
-            if query.verbose:
-                template_search_paths = all_paths
+            template_search_paths = all_paths
         except Exception:  # noqa: BLE001 — template path resolution is best-effort; fall back to None
             pass
 
@@ -499,6 +498,7 @@ class GetSystemConfigHandler(BaseQueryHandler[GetSystemConfigQuery, SystemConfig
             config_dir=cfg.get_config_dir() if hasattr(cfg, "get_config_dir") else "",
             work_dir=cfg.get_work_dir() if hasattr(cfg, "get_work_dir") else "",
             log_dir=cfg.get_log_dir() if hasattr(cfg, "get_log_dir") else "",
+            scripts_dir=cfg.get_scripts_dir() if hasattr(cfg, "get_scripts_dir") else None,
             loaded_config_file=cast(Any, cfg).get_loaded_config_file()
             if hasattr(cfg, "get_loaded_config_file")
             else None,
@@ -554,35 +554,43 @@ class GetSystemConfigHandler(BaseQueryHandler[GetSystemConfigQuery, SystemConfig
                 port=server_cfg.get("port"),
             )
 
-        # --- verbose sections ---
+        # --- always-shown sections ---
+        log_cfg = cfg.get_logging_config() if hasattr(cfg, "get_logging_config") else {}
         logging_section: LoggingSectionDTO | None = None
+        if isinstance(log_cfg, dict):
+            logging_section = LoggingSectionDTO(
+                level=str(log_cfg.get("level", "INFO")),
+                log_file=log_cfg.get("file_path"),
+                console_enabled=bool(log_cfg.get("console_enabled", True)),
+            )
+
+        req_cfg = cfg.get_request_config() if hasattr(cfg, "get_request_config") else {}
         request_limits: RequestLimitsSectionDTO | None = None
+        if isinstance(req_cfg, dict):
+            request_limits = RequestLimitsSectionDTO(
+                max_machines=req_cfg.get("max_machines_per_request"),
+                default_timeout=req_cfg.get("default_timeout"),
+                grace_period=req_cfg.get("default_grace_period"),
+            )
+
+        # --- verbose-only sections ---
         circuit_breaker: CircuitBreakerSectionDTO | None = None
-
         if query.verbose:
-            log_cfg = cfg.get_logging_config() if hasattr(cfg, "get_logging_config") else {}
-            if isinstance(log_cfg, dict):
-                logging_section = LoggingSectionDTO(
-                    level=str(log_cfg.get("level", "INFO")),
-                    log_file=log_cfg.get("file"),
-                    console_enabled=bool(log_cfg.get("console_enabled", True)),
-                )
-
-            req_cfg = cfg.get_request_config() if hasattr(cfg, "get_request_config") else {}
-            if isinstance(req_cfg, dict):
-                request_limits = RequestLimitsSectionDTO(
-                    max_machines=req_cfg.get("max_machines_per_request"),
-                    default_timeout=req_cfg.get("default_timeout"),
-                    grace_period=req_cfg.get("grace_period"),
-                )
-
-            cb_cfg = cfg.get("circuit_breaker", {})
-            if isinstance(cb_cfg, dict):
+            try:
+                cb = cfg.app_config.circuit_breaker  # type: ignore[union-attr]
                 circuit_breaker = CircuitBreakerSectionDTO(
-                    enabled=bool(cb_cfg.get("enabled", False)),
-                    failure_threshold=cb_cfg.get("failure_threshold"),
-                    recovery_timeout=cb_cfg.get("recovery_timeout"),
+                    enabled=cb.enabled,
+                    failure_threshold=cb.failure_threshold,
+                    recovery_timeout=cb.recovery_timeout,
                 )
+            except Exception:  # noqa: BLE001
+                cb_cfg = cfg.get("circuit_breaker", {})
+                if isinstance(cb_cfg, dict):
+                    circuit_breaker = CircuitBreakerSectionDTO(
+                        enabled=bool(cb_cfg.get("enabled", True)),
+                        failure_threshold=cb_cfg.get("failure_threshold", 5),
+                        recovery_timeout=cb_cfg.get("recovery_timeout", 60),
+                    )
 
         return SystemConfigDTO(
             paths=paths,
