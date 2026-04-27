@@ -401,9 +401,7 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
                 return True
             provider_config = self.config_port.get_provider_config()
             if provider_config and hasattr(provider_config, "launch_template"):
-                return bool(
-                    getattr(provider_config.launch_template, "respect_lt_networking", True)
-                )
+                return bool(getattr(provider_config.launch_template, "respect_lt_networking", True))
         except Exception as e:
             self._logger.debug("Could not read respect_lt_networking from config: %s", e)
         return True
