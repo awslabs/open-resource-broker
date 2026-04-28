@@ -61,6 +61,17 @@ class LaunchTemplateConfiguration(BaseModel):
             "Set False to let template-level subnet/SG values override the LT."
         ),
     )
+    do_not_override: bool = Field(
+        False,
+        description=(
+            "When True and the template specifies launch_template_id, use the LT "
+            "exactly as it exists in AWS: skip describe validation and skip minting "
+            "a new LT version with template-level overrides. Fleet handlers "
+            "(SpotFleet/EC2Fleet/ASG) still apply their native per-request Overrides. "
+            "Enables minimal IAM (no ec2:CreateLaunchTemplateVersion, no "
+            "ec2:DescribeLaunchTemplates)."
+        ),
+    )
 
 
 class TaggingConfiguration(BaseModel):

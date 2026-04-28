@@ -69,7 +69,8 @@
           "reuse_existing": true,
           "cleanup_old_versions": false,
           "max_versions_per_template": 10,
-          "respect_lt_networking": true
+          "respect_lt_networking": true,
+          "do_not_override": false
         },
         "extensions": {
           "ami_resolution": {
