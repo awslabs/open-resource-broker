@@ -99,6 +99,20 @@ class AWSLaunchTemplateManager:
         try:
             # Check if template specifies existing launch template to use
             if aws_template.launch_template_id:
+                if self._do_not_override():
+                    # Use LT as-is: no describe, no version mint. Fleet handlers
+                    # still apply their native per-request Overrides downstream.
+                    self._logger.info(
+                        "Using launch template %s as-is (do_not_override=true)",
+                        aws_template.launch_template_id,
+                    )
+                    return LaunchTemplateResult(
+                        template_id=aws_template.launch_template_id,
+                        version=aws_template.launch_template_version or "$Default",
+                        template_name="",
+                        is_new_template=False,
+                        is_new_version=False,
+                    )
                 if self._has_overrides(aws_template):
                     return self._handle_existing_lt_with_overrides(aws_template, request)
                 return self._use_existing_template_strategy(aws_template)
@@ -268,6 +282,24 @@ class AWSLaunchTemplateManager:
         except Exception as e:
             self._logger.debug("Could not read on_update_failure from config: %s", e)
         return "fail"
+
+    def _do_not_override(self) -> bool:
+        """Read do_not_override from the AWS launch_template config, default False.
+
+        When True, treat the LT as immutable: no describe, no version mint.
+        Safe fallback keeps current behavior when config is unavailable.
+        """
+        try:
+            aws_cfg = None
+            if self.aws_client is not None and hasattr(
+                self.aws_client, "_get_selected_aws_provider_config"
+            ):
+                aws_cfg = self.aws_client._get_selected_aws_provider_config()
+            if aws_cfg and hasattr(aws_cfg, "launch_template"):
+                return bool(getattr(aws_cfg.launch_template, "do_not_override", False))
+        except Exception as e:
+            self._logger.debug("Could not read do_not_override from config: %s", e)
+        return False
 
     def _create_new_lt_version(
         self, aws_template: AWSTemplate, request: Request

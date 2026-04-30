@@ -331,23 +331,19 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
             # Use first machine type for RunInstances (single instance type only)
             params["InstanceType"] = next(iter(aws_template.machine_types.keys()))
 
-        # Handle networking overrides based on launch template source
-        if aws_template.launch_template_id:
-            # Using existing launch template - need to check what it contains
-            # For now, assume we can override (this should be improved to inspect the
-            # LT)
-            if aws_template.subnet_id:
+        # Networking override policy is config-driven. When respect_lt_networking
+        # is True (default), the LT owns networking and we never pass
+        # SubnetId/SecurityGroupIds at the API level — AWS rejects combining
+        # instance-level subnet with NetworkInterfaces inside the LT.
+        # Set launch_template.respect_lt_networking=false to opt in to overrides.
+        if not self._respect_lt_networking() and aws_template.launch_template_id:
+            if getattr(aws_template, "subnet_id", None):
                 params["SubnetId"] = aws_template.subnet_id
             elif aws_template.subnet_ids and len(aws_template.subnet_ids) == 1:
                 params["SubnetId"] = aws_template.subnet_ids[0]
 
             if aws_template.security_group_ids:
                 params["SecurityGroupIds"] = aws_template.security_group_ids
-        else:
-            # We created the launch template ourselves with NetworkInterfaces
-            # Don't override networking at API level - AWS will reject it
-            # The launch template already contains all networking configuration
-            pass
 
         # Add spot instance configuration if needed
         if aws_template.price_type == "spot":
@@ -392,6 +388,23 @@ class RunInstancesHandler(AWSHandler, BaseContextMixin):
         params["TagSpecifications"] = tag_specifications
 
         return params
+
+    def _respect_lt_networking(self) -> bool:
+        """Return the launch_template.respect_lt_networking config flag.
+
+        Defaults to True (LT owns networking) when the flag, config_port, or
+        provider config are unavailable — safe default that matches AWS's
+        preference for no API-level subnet/SG override alongside LT NICs.
+        """
+        try:
+            if self.config_port is None:
+                return True
+            provider_config = self.config_port.get_provider_config()
+            if provider_config and hasattr(provider_config, "launch_template"):
+                return bool(getattr(provider_config.launch_template, "respect_lt_networking", True))
+        except Exception as e:
+            self._logger.debug("Could not read respect_lt_networking from config: %s", e)
+        return True
 
     def check_hosts_status(self, request: Request) -> list[dict[str, Any]]:
         """Check the status of instances created by RunInstances."""
