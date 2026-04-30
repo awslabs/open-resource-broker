@@ -21,11 +21,13 @@ class MachineReferenceDTO(BaseDTO):
     public_ip_address: Optional[str] = None  # Already using the expected API field name
     instance_type: Optional[str] = None
     price_type: Optional[str] = None
+    vcpus: Optional[int] = None
     instance_tags: Optional[str] = None
     cloud_host_id: Optional[str] = None
     launch_time: Optional[int] = None
     request_id: Optional[str] = None
     return_request_id: Optional[str] = None
+    availability_zone: Optional[str] = None
     message: str = ""
 
     @classmethod

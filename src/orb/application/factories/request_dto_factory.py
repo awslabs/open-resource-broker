@@ -35,13 +35,15 @@ class RequestDTOFactory:
                 status=machine.status.value,
                 private_ip_address=machine.private_ip or "",
                 public_ip_address=machine.public_ip,
+                instance_type=str(machine.instance_type) if machine.instance_type else None,
+                price_type=machine.price_type,
+                vcpus=machine.metadata.get("vcpus"),
                 launch_time=int(machine.launch_time.timestamp() if machine.launch_time else 0),
                 cloud_host_id=machine.provider_data.get("cloud_host_id")
                 or str(machine.machine_id.value),
                 request_id=machine.request_id,
                 return_request_id=machine.return_request_id,
-                instance_type=machine.instance_type.value or None,
-                price_type=machine.price_type,
+                availability_zone=machine.metadata.get("availability_zone"),
                 instance_tags=(
                     json.dumps(machine.tags.tags, sort_keys=True) if machine.tags.tags else None
                 ),

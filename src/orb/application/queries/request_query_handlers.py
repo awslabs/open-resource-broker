@@ -54,7 +54,11 @@ class GetRequestHandler(BaseQueryHandler[GetRequestQuery, RequestDTO]):
         self.logger.info("Getting request details for: %s", query.request_id)
 
         try:
-            if self._cache_service and self._cache_service.is_caching_enabled():
+            if (
+                not query.skip_cache
+                and self._cache_service
+                and self._cache_service.is_caching_enabled()
+            ):
                 cached_result = self._cache_service.get_cached_request(query.request_id)
                 if cached_result:
                     self.logger.info("Cache hit for request: %s", query.request_id)

@@ -49,6 +49,17 @@ class AWSMachineAdapter:
             or None
         )
 
+    @staticmethod
+    def _get_vcpus(instance_type: str) -> int:
+        """Get vCPU count for an instance type."""
+        from orb.providers.aws.utilities.ec2.instances import derive_cpu_ram_from_instance_type
+
+        try:
+            vcpus_str, _ = derive_cpu_ram_from_instance_type(instance_type)
+            return int(vcpus_str)
+        except (ValueError, TypeError):
+            return 0
+
     def _resolve_machine_name(self, aws_instance_data: dict) -> str:
         """
         Resolve machine name using priority order:
@@ -274,6 +285,7 @@ class AWSMachineAdapter:
                     },
                     "metadata": {
                         "availability_zone": aws_instance_data["Placement"]["AvailabilityZone"],
+                        "vcpus": self._get_vcpus(aws_instance_data["InstanceType"]),
                         "subnet_id": aws_instance_data["SubnetId"],
                         "vpc_id": aws_instance_data["VpcId"],
                         "ami_id": aws_instance_data["ImageId"],

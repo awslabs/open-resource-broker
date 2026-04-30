@@ -83,6 +83,29 @@ class TestMachineSerializerLegacyProviderType:
         machine = _machine_repo_mod.MachineSerializer().from_dict(data)
         assert machine.provider_type == "gcp"
 
+    def test_price_type_round_trip(self):
+        """price_type survives to_dict -> from_dict round trip."""
+        data = self._make_minimal_machine_data(provider_type="aws", price_type="spot")
+        serializer = _machine_repo_mod.MachineSerializer()
+        machine = serializer.from_dict(data)
+        assert machine.price_type == "spot"
+        serialized = serializer.to_dict(machine)
+        assert serialized["price_type"] == "spot"
+
+    def test_price_type_none_when_absent(self):
+        """Records without price_type deserialize to None."""
+        data = self._make_minimal_machine_data(provider_type="aws")
+        machine = _machine_repo_mod.MachineSerializer().from_dict(data)
+        assert machine.price_type is None
+
+    def test_price_type_ondemand(self):
+        """on-demand price_type round trips correctly."""
+        data = self._make_minimal_machine_data(provider_type="aws", price_type="on-demand")
+        serializer = _machine_repo_mod.MachineSerializer()
+        machine = serializer.from_dict(data)
+        serialized = serializer.to_dict(machine)
+        assert serialized["price_type"] == "on-demand"
+
 
 @pytest.mark.unit
 @pytest.mark.infrastructure
