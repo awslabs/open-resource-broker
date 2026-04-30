@@ -215,12 +215,12 @@ class AWSMachineAdapter:
                         "price_type": PriceType.ON_DEMAND.value,
                         "subnet_id": aws_instance_data.get("SubnetId"),
                         "security_group_ids": [],
-                        "metadata": {
-                            "tags": {
-                                tag["Key"]: tag["Value"]
-                                for tag in aws_instance_data.get("Tags", [])
-                            },
+                        "tags": {
+                            tag["Key"]: tag["Value"]
+                            for tag in aws_instance_data.get("Tags", [])
+                            if "Key" in tag
                         },
+                        "metadata": {},
                     }
 
                 # Validate required fields for PascalCase format
@@ -278,6 +278,11 @@ class AWSMachineAdapter:
                     "security_group_ids": [
                         sg["GroupId"] for sg in aws_instance_data.get("SecurityGroups", [])
                     ],
+                    "tags": {
+                        tag["Key"]: tag["Value"]
+                        for tag in aws_instance_data.get("Tags", [])
+                        if "Key" in tag
+                    },
                     "metadata": {
                         "availability_zone": aws_instance_data["Placement"]["AvailabilityZone"],
                         "vcpus": self._get_vcpus(aws_instance_data["InstanceType"]),
@@ -288,9 +293,6 @@ class AWSMachineAdapter:
                         "monitoring": aws_instance_data.get("Monitoring", {}).get(
                             "State", "disabled"
                         ),
-                        "tags": {
-                            tag["Key"]: tag["Value"] for tag in aws_instance_data.get("Tags", [])
-                        },
                     },
                 }
 
