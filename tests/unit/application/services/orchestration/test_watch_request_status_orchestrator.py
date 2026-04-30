@@ -66,9 +66,7 @@ def _make_machine_ref(instance_type="t3.large", price_type="ondemand", vcpus=2, 
 @pytest.mark.application
 class TestWatchRequestStatusOrchestrator:
     @pytest.mark.asyncio
-    async def test_dispatches_get_request_query_with_skip_cache(
-        self, orchestrator, mock_query_bus
-    ):
+    async def test_dispatches_get_request_query_with_skip_cache(self, orchestrator, mock_query_bus):
         mock_query_bus.execute.return_value = _make_request_dto()
         await orchestrator.execute(WatchRequestStatusInput(request_id="req-123"))
         query = mock_query_bus.execute.call_args_list[0][0][0]
@@ -182,7 +180,8 @@ class TestWatchRequestStatusOrchestrator:
         await orchestrator.execute(WatchRequestStatusInput(request_id="req-123"))
         # Template query should only be called once (cached)
         template_calls = [
-            c for c in mock_query_bus.execute.call_args_list
+            c
+            for c in mock_query_bus.execute.call_args_list
             if isinstance(c[0][0], GetTemplateQuery)
         ]
         assert len(template_calls) == 1
