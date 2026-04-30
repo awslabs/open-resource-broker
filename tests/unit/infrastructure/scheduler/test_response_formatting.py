@@ -294,6 +294,49 @@ def test_hf_format_request_status_response_machine_keys():
         assert key in m, f"HF machine item missing key '{key}'"
 
 
+def test_hf_format_request_status_response_hf_extended_fields_present():
+    """instanceType/priceType/instanceTags appear when the DTO carries them."""
+    strategy = make_hf_strategy()
+    machine_ref = MachineReferenceDTO(
+        machine_id=_VALID_INSTANCE_ID,
+        name=_VALID_INSTANCE_ID,
+        result="succeed",
+        status="running",
+        private_ip_address="10.0.1.5",
+        launch_time=1700000000,
+        message="",
+        cloud_host_id=None,
+        instance_type="m5.large",
+        price_type="ondemand",
+        instance_tags='{"Environment":"prod"}',
+    )
+    dto = RequestDTO(
+        request_id=_VALID_REQUEST_ID,
+        status="pending",
+        requested_count=1,
+        created_at=datetime.now(timezone.utc),
+        machine_references=[machine_ref],
+        request_type="acquire",
+    )
+    result = strategy.format_request_status_response([dto])
+    m = result["requests"][0]["machines"][0]
+    assert m["instanceType"] == "m5.large"
+    assert m["priceType"] == "ondemand"
+    assert m["instanceTags"] == '{"Environment":"prod"}'
+
+
+def test_hf_format_request_status_response_hf_extended_fields_absent_when_empty():
+    """Omit the three extended fields when upstream didn't populate them."""
+    strategy = make_hf_strategy()
+    machine = _make_machine_ref_dict(status="running", result="succeed")
+    dto = _make_request_dto(status="pending", machines=[machine])
+    result = strategy.format_request_status_response([dto])
+    m = result["requests"][0]["machines"][0]
+    assert "instanceType" not in m
+    assert "priceType" not in m
+    assert "instanceTags" not in m
+
+
 def test_hf_format_request_status_response_result_values():
     """result must be one of executing/succeed/fail."""
     strategy = make_hf_strategy()

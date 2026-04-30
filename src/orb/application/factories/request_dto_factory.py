@@ -1,5 +1,7 @@
 """Request DTO factory for data transformation."""
 
+import json
+
 from orb.application.request.dto import MachineReferenceDTO, RequestDTO
 from orb.domain.machine.aggregate import Machine
 from orb.domain.request.aggregate import Request
@@ -38,6 +40,11 @@ class RequestDTOFactory:
                 or str(machine.machine_id.value),
                 request_id=machine.request_id,
                 return_request_id=machine.return_request_id,
+                instance_type=machine.instance_type.value or None,
+                price_type=machine.price_type,
+                instance_tags=(
+                    json.dumps(machine.tags.tags, sort_keys=True) if machine.tags.tags else None
+                ),
             )
             for machine in machines
         ]

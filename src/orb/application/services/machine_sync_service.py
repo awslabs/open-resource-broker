@@ -173,7 +173,7 @@ class MachineSyncService:
     ) -> Machine:
         from datetime import datetime
 
-        from orb.domain.base.value_objects import InstanceType
+        from orb.domain.base.value_objects import InstanceType, Tags
         from orb.domain.machine.machine_identifiers import MachineId
         from orb.domain.machine.machine_status import MachineStatus
 
@@ -204,6 +204,7 @@ class MachineSyncService:
             launch_time=launch_time,
             subnet_id=processed_data.get("subnet_id"),
             security_group_ids=processed_data.get("security_group_ids", []),
+            tags=Tags(tags=processed_data.get("tags") or {}),
             metadata=processed_data.get("metadata", {}),
         )
 
@@ -246,6 +247,7 @@ class MachineSyncService:
                         or existing.private_dns_name != provider_machine.private_dns_name
                         or existing.public_dns_name != provider_machine.public_dns_name
                         or existing.price_type != provider_machine.price_type
+                        or existing.tags != provider_machine.tags
                         or existing.subnet_id != provider_machine.subnet_id
                         or existing.security_group_ids != provider_machine.security_group_ids
                         or existing.vpc_id != provider_machine.vpc_id
@@ -274,6 +276,7 @@ class MachineSyncService:
                         machine_data["security_group_ids"] = provider_machine.security_group_ids
                         machine_data["vpc_id"] = provider_machine.vpc_id
                         machine_data["version"] = existing.version + 1
+                        machine_data["tags"] = provider_machine.tags
 
                         updated_machine = Machine.model_validate(machine_data)
                         to_upsert.append(updated_machine)

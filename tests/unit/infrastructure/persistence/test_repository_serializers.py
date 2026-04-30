@@ -116,3 +116,66 @@ class TestRequestSerializerLegacyProviderType:
         data = self._make_minimal_request_data(provider_type="azure")
         request = _request_repo_mod.RequestSerializer().from_dict(data)
         assert request.provider_type == "azure"
+
+
+@pytest.mark.unit
+@pytest.mark.infrastructure
+class TestMachineSerializerPriceType:
+    """MachineSerializer round-trips Machine.price_type through JSON storage."""
+
+    def _make_minimal_machine_data(self, **overrides):
+        base = {
+            "machine_id": "m-001",
+            "name": "test-machine",
+            "template_id": "tpl-1",
+            "provider_name": "test-provider",
+            "instance_type": "t3.micro",
+            "image_id": "ami-12345678",
+            "status": "pending",
+        }
+        base.update(overrides)
+        return base
+
+    def _make_machine(self, **overrides):
+        from orb.domain.base.value_objects import InstanceType
+        from orb.domain.machine.aggregate import Machine
+        from orb.domain.machine.machine_identifiers import MachineId
+        from orb.domain.machine.machine_status import MachineStatus
+
+        defaults = dict(
+            machine_id=MachineId(value="i-1234567890abcdef0"),
+            template_id="tpl-1",
+            provider_type="aws",
+            provider_name="aws-us-east-1",
+            instance_type=InstanceType(value="m5.large"),
+            image_id="ami-12345678",
+            status=MachineStatus.RUNNING,
+        )
+        defaults.update(overrides)
+        return Machine(**defaults)
+
+    def test_from_dict_reads_price_type(self):
+        """Stored price_type is restored onto the Machine aggregate."""
+        data = self._make_minimal_machine_data(price_type="spot")
+        machine = _machine_repo_mod.MachineSerializer().from_dict(data)
+        assert machine.price_type == "spot"
+
+    def test_from_dict_defaults_missing_price_type_to_none(self):
+        """Legacy records without price_type deserialize with price_type=None."""
+        data = self._make_minimal_machine_data()
+        assert "price_type" not in data
+        machine = _machine_repo_mod.MachineSerializer().from_dict(data)
+        assert machine.price_type is None
+
+    def test_to_dict_writes_price_type(self):
+        """Machine.price_type appears in the serialized dict."""
+        machine = self._make_machine(price_type="ondemand")
+        serialized = _machine_repo_mod.MachineSerializer().to_dict(machine)
+        assert serialized["price_type"] == "ondemand"
+
+    def test_round_trip_preserves_price_type(self):
+        """Machine → to_dict → from_dict preserves price_type end-to-end."""
+        machine = self._make_machine(price_type="spot")
+        serializer = _machine_repo_mod.MachineSerializer()
+        restored = serializer.from_dict(serializer.to_dict(machine))
+        assert restored.price_type == "spot"

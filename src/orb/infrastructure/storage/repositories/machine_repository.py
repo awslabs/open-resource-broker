@@ -40,6 +40,7 @@ class MachineSerializer(BaseEntitySerializer):
                 # Machine configuration
                 "instance_type": str(machine.instance_type.value),
                 "image_id": machine.image_id,
+                "price_type": machine.price_type,
                 # Network configuration
                 "private_ip": machine.private_ip,
                 "public_ip": machine.public_ip,
@@ -98,6 +99,7 @@ class MachineSerializer(BaseEntitySerializer):
                 # Machine configuration
                 "instance_type": InstanceType(value=data["instance_type"]),
                 "image_id": data["image_id"],
+                "price_type": data.get("price_type"),
                 # Network configuration
                 "private_ip": data.get("private_ip"),
                 "public_ip": data.get("public_ip"),
