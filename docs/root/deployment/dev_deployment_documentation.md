@@ -10,132 +10,158 @@ This document describes how to configure the Open Resource Broker (ORB) as a pro
 - Virtual environment support
 
 ### Installation Steps
+<details>
+<summary>Development Install from Repository</summary>
 
-1. **Navigate to the provider plugins directory:**
-```bash
-cd /opt/ibm/spectrumcomputing/hostfactory/1.2/providerplugins
-```
+Note: initial installation paths of IBM Symphony and Host Factory along with the exact ersions might be different.
 
-2. **Clone the repository:**
 ```bash
+#Navigate to the provider plugins directory
+export EGO_TOP=/opt/ibm/spectrumcomputing
+cd ${EGO_TOP}/hostfactory/1.2/providerplugins
+
+#Clone the repository
 mkdir -p orb
 git clone https://github.com/awslabs/open-resource-broker.git ./orb
 cd orb
-```
 
-3. **Set up Python virtual environment:**
-```bash
+#Follow ORB development installation steps from the documentation e.g.,
 python3 -m venv .venv
 source .venv/bin/activate
-```
 
-4. **Install dependencies:**
-
-**Option A: Fast installation with uv (recommended):**
-```bash
-pip install uv
-make dev-install-uv
-```
-
-**Option B: Traditional pip installation:**
-```bash
-make dev-install-pip
-# Or manually:
 pip install -e ".[dev]"
-```
 
-5. **Verify installation:**
-```bash
 orb --version
-orb --help
+
 ```
 
+</details>
 
 
 
+## Debug Logging
 
+HostFactory logging splits into two layers: the HostFactory core daemon and the ORB provider plugin. Turn both on during first-time bring-up; turn them off once the deployment is stable.
 
-## Configuration of ORB
+<details>
+<summary>More</summary>
 
-There are 2 ways to configure ORB:
+### HostFactory core
 
-1. **Define a new provider altogether** (this document)
-2. **Define a new plugin for the existing provider**
+The HostFactory daemon writes its own log independently of any provider plugin. To raise verbosity, edit the HostFactory configuration file:
 
-
-## Step 1: Define New Provider
-
-### 1.1 Create Provider Directory
-
-Navigate to the providers folder and create a folder for the new provider.
 ```bash
-cd /opt/ibm/spectrumcomputing/hostfactory/conf/providers
-mkdir aws_orb_provider
+vi /opt/ibm/spectrumcomputing/hostfactory/conf/hostfactoryconf.json
+
+Set:
+
+"HF_LOGLEVEL": "LOG_DEBUG"
+
 ```
 
-Note: Due to current configuration, actual config files need to be placed into work directory instead of plugin config dir.
+### ORB provider plugin
 
-Copy these 3 configuration files from the ORB repository:
+Depending on the installation location and configuration
 
-- `default_config.json`
-  - Base configuration containing defaults for ORB. Does not need to be changed
-
-
-- `config.json`
-  - Change according to your setup. See example in the appendix. Needs to use existing key pair.
-
-- `awsprov_templates.json`
-  - Templates configuration for AWS resources. Needs to be updated
-
-**Base Configuration:**
 ```bash
-cp /opt/ibm/spectrumcomputing/hostfactory/1.2/providerplugins/orb/config/default_config.json opt/ibm/spectrumcomputing/hostfactory/work/config/
-cp /opt/ibm/spectrumcomputing/hostfactory/1.2/providerplugins/orb/config/config.json opt/ibm/spectrumcomputing/hostfactory/work/config/
-cp /opt/ibm/spectrumcomputing/hostfactory/1.2/providerplugins/orb/config/awsprov_templates.json opt/ibm/spectrumcomputing/hostfactory/work/config/
+vi /opt/ibm/spectrumcomputing/hostfactory/work/config/config.json
+
+  "logging": {
+    "level": "DEBUG",
+    "file_path": "logs/app.log",
+    "console_enabled": false
+  }
+
+```
+
+### Where the output goes
+
+  - {HF_LOGDIR}/hostfactory.hostname.log — HostFactory core log.
+  - ${HF_LOGDIR}/scripts.log - raw wire-format I/O: the JSON HostFactory sent in, and the JSON the plugin sent back, one block per call. Shows the exact communication between the plugin and the HhostFactory.
+  - /opt/ibm/spectrumcomputing/hostfactory/1.2/providerplugins/orb/logs/orb.log — structured per-line JSON log for full ORB tracing.
+
+
+### Other Settings
+
+Set host_return_policy: immediate for debugging fo requestor plugin, then restart HostFactory. Default lazy returns hosts only at the 60-min billing boundary. Immediate returns any idle host within ~1 minute. This provides fast feedback during debugging and testings. Revert to lazy before production.
+
+```bash
+vim ${EGO_TOP}/hostfactory/conf/requestors/symAinst/symAinstreq_config.json
+
+"host_return_policy": "immediate"
+
 ```
 
 
-### 1.2 Register Provider in Host Factory
+</details>
+
+
+## Configuration of Host Factory to use ORB as a new provider plugin
+
+### Step 1: Register ORB provider with HostFactory
 
 Edit the provider configuration file:
 ```bash
-vi /opt/ibm/spectrumcomputing/hostfactory/conf/providers/hostProviders.json
+vim ${HF_TOP}/hostfactory/conf/providers/hostProviders.json
 ```
 
-Add the new provider configuration:
+Add the ORB provider configuration, (optionally) disable other providers:
 ```json
 {
-    "name": "aws_orb_provider",
-    "enabled": 1,
-    "plugin": "orb",
-    "confPath": "${HF_CONFDIR}/providers/aws_orb_provider/",
-    "workPath": "${HF_WORKDIR}/providers/aws_orb_provider/",
-    "logPath": "${HF_LOGDIR}/"
+  "version": 2,
+  "providers": [
+    {
+			"name":	"orb",
+			"enabled":	1,
+			"plugin":	"orb",
+			"confPath":	"${HF_CONFDIR}/providers/orb/",
+			"workPath":	"${HF_WORKDIR}/providers/orb/",
+			"logPath":	"${HF_LOGDIR}/"
+		},
+    ...
+  ]
 }
 ```
 
-
-## Step 2: Configure Provider Plugin
+## Step 2: Register ORB provider plugin with HostFactory
 
 Edit the provider plugins configuration:
 ```bash
-vi /opt/ibm/spectrumcomputing/hostfactory/conf/providerplugins/hostProviderPlugins.json
+vim ${HF_TOP}/hostfactory/conf/providerplugins/hostProviderPlugins.json
 ```
 
 Add the ORB plugin configuration and disable other plugins:
 ```json
 {
-    "name": "orb",
-    "enabled": 1,
-    "scriptPath": "${HF_TOP}/${HF_VERSION}/providerplugins/orb/scripts/"
+    "version": 2,
+    "providerplugins":[
+        {
+            "name": "orb",
+            "enabled": 1,
+            "scriptPath": "${HF_TOP}/${HF_VERSION}/providerplugins/orb/scripts/"
+        },
+        ...
+    ]
 }
 ```
 
-## Step 3: Configure Requestor
+
+
+### Step 3: Create provider directory
+
+Navigate to the providers folder and create a folder for the new provider. HostFactory will check for the presence of this path, however, actual configuration of ORB will not be kept here.
+```bash
+# create directory
+mkdir vim ${HF_TOP}/hostfactory/conf/providers/orb
+
+```
+
+
+## Step 4: Configure Requestor
 
 Configure the requestor to recognize the new provider:
 ```bash
-vi /opt/ibm/spectrumcomputing/hostfactory/conf/requestors/hostRequestors.json
+vim ${HF_TOP}/hostfactory/conf/requestors/hostRequestors.json
 ```
 
 Update the requestor configuration:
@@ -150,28 +176,50 @@ Update the requestor configuration:
             "confPath": "${HF_CONFDIR}/requestors/symAinst/",
             "workPath": "${HF_WORKDIR}/requestors/symAinst/",
             "logPath": "${HF_LOGDIR}/",
-            "providers": ["aws_orb_provider"],
+            "providers": ["orb"],         # <-----
             "requestMode": "POLL"
         },
         {
             "name": "admin",
             "enabled": 1,
-            "providers": ["aws_orb_provider"],
+            "providers": ["orb"],         # <-----
             "requestMode": "REST_MANUAL"
         }
     ]
 }
 ```
 
-## Set Environment Variables in invoke_provider.sh
+### Set HostFactory Environmental Variables for ORB
+
+HostFactory does not pick up variables from .bashrc, instead it has its own environmental files. One way to set it is by editing the following file.
+
+```bash
+
+vim ${HF_TOP}/hostfactory/conf/profile.hf
+
+# runs ORB without system wide installation
+export USE_LOCAL_DEV=true
+
+# records complete scripts I/O between HostFactory and ORB
+export LOG_SCRIPTS=true
 
 ```
-/opt/ibm/spectrumcomputing/hostfactory/1.2/providerplugins/orb/scripts/invoke_provider.sh
-export USE_LOCAL_DEV="true"         # Set true for this type of deployment
-export LOG_CONSOLE_ENABLED=false    # STDOUT will interfere with HF expected output.
-export LOG_SCRIPTS="true"           # For debug purposes log raw IO between HF and the plugin
-export LOG_LEVEL=DEBUG              # Enable for plugin logging
+
+
+
+
+## Configure ORB
+
+This step will set defaults for ORB in current AWS account. It will also move scripts directory under orb/ path to match configuration above.
+```bash
+orb init
+orb templates generate
 ```
+
+export USE_LOCAL_DEV="true"         # Set true for this type of deployment
+
+
+
 
 
 ## Directory Structure
@@ -250,81 +298,3 @@ rm /opt/ibm/spectrumcomputing/hostfactory/1.2/providerplugins/orb/awscpinst/data
 
 Note: symAinst-requestor.log is visible only if plugin successfully started and returned list of available templates.
 
-# Appendix
-
-
-### Sample config.json
-```json
-{
-  "version": "2.0.0",
-  "provider": {
-    "active_provider": "aws-default",
-    "providers": [
-      {
-        "name": "aws-default",
-        "type": "aws",
-        "enabled": true,
-        "config": {
-          "region": "us-east-1",
-          "profile": "default",
-          "max_retries": 3,
-          "timeout": 30
-        }
-      }
-    ],
-    "selection_policy": "FIRST_AVAILABLE",
-    "provider_defaults": {
-      "aws": {
-        "template_defaults": {
-          "image_id": "ami-XXXXXXXXXXXXXXXXX",
-          "instance_type": "t2.micro",
-          "security_group_ids": [
-            "sg-XXXXXXXXX"
-          ],
-          "subnet_ids": [
-            "subnet-XXXXXXXXX"
-          ],
-          "key_name": "my-key-pair",
-          "provider_api": "EC2Fleet",
-          "price_type": "ondemand",
-          "tags": {
-            "Environment": "development",
-            "Project": "hostfactory"
-          }
-        },
-        "extensions": {
-          "ami_resolution": {
-            "enabled": true
-          }
-        }
-      }
-    }
-  },
-  "scheduler": {
-    "type": "hostfactory",
-    "config_root": "$HF_PROVIDER_CONFDIR"
-  },
-  "logging": {
-    "level": "INFO",
-    "file_path": "logs/app.log",
-    "console_enabled": true
-  },
-  "storage": {
-    "strategy": "json",
-    "default_storage_path": "data",
-    "json_strategy": {
-      "storage_type": "single_file",
-      "base_path": "data",
-      "filenames": {
-        "single_file": "request_database.json",
-        "split_files": {
-          "templates": "templates.json",
-          "requests": "requests.json",
-          "machines": "machines.json"
-        }
-      }
-    }
-  }
-
-}
-```
