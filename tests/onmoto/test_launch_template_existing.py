@@ -444,9 +444,7 @@ class TestExistingLTWithOverridePermissionFailure:
         with pytest.raises((BotoCE, InfrastructureError)):
             manager.create_or_update_launch_template(template, _make_request())
 
-    def test_on_update_failure_warn_propagates_non_clienterror(
-        self, moto_aws, moto_vpc_resources
-    ):
+    def test_on_update_failure_warn_propagates_non_clienterror(self, moto_aws, moto_vpc_resources):
         """on_update_failure='warn' must propagate non-AWS exceptions (ORB bugs).
 
         The outer create_or_update_launch_template wraps any Exception in

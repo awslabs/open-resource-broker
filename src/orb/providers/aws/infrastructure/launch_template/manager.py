@@ -431,9 +431,7 @@ class AWSLaunchTemplateManager:
                 if mode in ("fail", "warn", "warn_on_iam_denial"):
                     return mode
                 if mode is not None:
-                    self._logger.warning(
-                        "Unknown on_update_failure %r; using default", mode
-                    )
+                    self._logger.warning("Unknown on_update_failure %r; using default", mode)
         except Exception as e:
             self._logger.debug("Could not read on_update_failure from config: %s", e)
         return "warn_on_iam_denial"
