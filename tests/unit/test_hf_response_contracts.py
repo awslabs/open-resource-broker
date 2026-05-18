@@ -256,5 +256,3 @@ class TestFormatRequestStatusResponseShape:
         entry = result["requests"][0]
         assert "status" in entry
         assert "machines" in entry
-
-
