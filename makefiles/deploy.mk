@@ -80,8 +80,12 @@ build-with-version: clean dev-install  ## Build package with explicit version (s
 	@sed -i.bak "s/^version = .*/version = \"$$VERSION\"/" pyproject.toml && rm -f pyproject.toml.bak
 	@BUILD_ARGS="$(BUILD_ARGS)" ./dev-tools/package/build.sh
 
-semantic-release-build:  ## Build package for semantic-release (minimal dependencies)
-	./dev-tools/package/build.sh
+semantic-release-build:  ## Build package for semantic-release (runs inside the action's container; bypasses run_tool.sh)
+	rm -rf dist/ build/ ./*.egg-info/
+	python3 -m pip install --quiet build
+	python3 -m build --no-isolation
+	@echo "SUCCESS: Package built. Files:"
+	@ls -1 dist/
 
 build-test: build  ## Build and test package installation
 	@echo "Testing package installation..."
