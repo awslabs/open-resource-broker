@@ -33,7 +33,7 @@ jobs:
       pypi-name: ${{ steps.config.outputs.pypi-name }}
     steps:
     - name: Checkout code
-      uses: actions/checkout@v6
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
 
     - name: Get project configuration
       id: config
@@ -58,15 +58,15 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v6
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
 
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v4
+      uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5  # v4
       with:
         platforms: linux/amd64,linux/arm64
 
     - name: Log in to Container Registry
-      uses: docker/login-action@v4
+      uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee  # v4
       with:
         registry: ${{ needs.config.outputs.container-registry }}
         username: ${{ github.actor }}
@@ -105,10 +105,10 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v6
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
 
     - name: Log in to Container Registry
-      uses: docker/login-action@v4
+      uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee  # v4
       with:
         registry: ${{ needs.config.outputs.container-registry }}
         username: ${{ github.actor }}
@@ -159,7 +159,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v6
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
 
     - name: Setup Python and UV
       uses: ./.github/actions/setup-uv-cached
@@ -171,7 +171,7 @@ jobs:
       run: make build
 
     - name: Publish to PyPI
-      uses: pypa/gh-action-pypi-publish@release/v1
+      uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b  # release/v1
       with:
         print-hash: true
         verbose: true
@@ -190,7 +190,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v6
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
 
     - name: Setup Python and UV
       uses: ./.github/actions/setup-uv-cached
@@ -203,13 +203,13 @@ jobs:
 
     - name: Upload Pages artifact
       id: upload
-      uses: actions/upload-pages-artifact@v5
+      uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9  # v5
       with:
         path: docs/site
 
     - name: Deploy to GitHub Pages
       id: deployment
-      uses: actions/deploy-pages@v5
+      uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128  # v5
 
   container-cleanup:
     name: Cleanup Old Container Images
@@ -221,7 +221,7 @@ jobs:
 
     steps:
     - name: Delete untagged container images
-      uses: actions/delete-package-versions@v5
+      uses: actions/delete-package-versions@25ad4af5be03aef10e0b3376b248688b7a44c40b  # v5
       with:
         package-name: ${{ github.event.repository.name }}
         package-type: container
@@ -237,7 +237,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v6
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
 
     - name: Setup Python and UV
       uses: ./.github/actions/setup-uv-cached

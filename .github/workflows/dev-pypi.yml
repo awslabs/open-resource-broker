@@ -49,7 +49,7 @@ jobs:
       pypi-name: ${{ steps.config.outputs.pypi-name }}
     steps:
     - name: Checkout code
-      uses: actions/checkout@v6
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
 
     - name: Get project configuration
       id: config
@@ -68,7 +68,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v6
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
       with:
         ref: ${{ github.sha }}
 
@@ -95,7 +95,7 @@ jobs:
         make test-install-only
 
     - name: Publish to Test PyPI
-      uses: pypa/gh-action-pypi-publish@release/v1
+      uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b  # release/v1
       with:
         repository-url: https://test.pypi.org/legacy/
         verbose: true
@@ -126,7 +126,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v6
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
 
     - name: Setup Python and UV
       uses: ./.github/actions/setup-uv-cached
@@ -139,7 +139,7 @@ jobs:
         make ci-build-sbom
 
     - name: Upload SBOM artifacts
-      uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7
       with:
         name: reports-sbom-${{ needs.config.outputs.package-version }}
         path: |
@@ -148,7 +148,7 @@ jobs:
         retention-days: 180
 
     - name: Upload SBOM to GitHub dependency graph
-      uses: advanced-security/spdx-dependency-submission-action@v0.2.0
+      uses: advanced-security/spdx-dependency-submission-action@169d22427d74f3faf93504e70b03eede8dab272a  # v0.2.0
       if: always()
       with:
         filePath: "."

@@ -8,33 +8,86 @@ set -e
 TOOL_NAME="$1"
 shift  # Remove tool name from arguments
 
-setup_environment() {
-    # UV-first approach (fastest and most reliable)
-    if command -v uv >/dev/null 2>&1; then
-        # Check if we're in a UV project (current dir or parent dirs)
-        current_dir="$PWD"
-        while [ "$current_dir" != "/" ]; do
-            if [ -f "$current_dir/pyproject.toml" ] || [ -f "$current_dir/uv.lock" ]; then
-                echo "Using UV-managed environment..."
-                return 0
-            fi
-            current_dir=$(dirname "$current_dir")
-        done
-    fi
-
-    # Fallback to .venv if it exists (check parent dirs too)
-    current_dir="$PWD"
-    while [ "$current_dir" != "/" ]; do
-        if [ -f "$current_dir/.venv/bin/activate" ]; then
-            echo "Using existing .venv environment..."
-            # shellcheck disable=SC1091
-            source "$current_dir/.venv/bin/activate"
+# Walk upward from $PWD looking for a UV/Python project root.
+# Prints the path on success; prints nothing and returns 1 if not found.
+find_project_root() {
+    dir="$PWD"
+    while [ "$dir" != "/" ]; do
+        if [ -f "$dir/pyproject.toml" ] || [ -f "$dir/uv.lock" ]; then
+            echo "$dir"
             return 0
         fi
-        current_dir=$(dirname "$current_dir")
+        dir=$(dirname "$dir")
+    done
+    return 1
+}
+
+# True if `uv` is on PATH AND functional in the given project root.
+# Defends against `uv` being installed but unusable (e.g. broken Python pin).
+uv_available() {
+    project_root="$1"
+    command -v uv >/dev/null 2>&1 || return 1
+    [ -f "$project_root/pyproject.toml" ] || return 1
+    (cd "$project_root" && uv --version >/dev/null 2>&1)
+}
+
+# True if .venv at the given path is usable in the current process
+# (interpreter shebang/symlink resolves and runs). A `.venv/` mounted into a
+# container from a different host will pass `[ -f activate ]` but fail this.
+venv_usable() {
+    venv_dir="$1"
+    [ -f "$venv_dir/bin/activate" ] || return 1
+    "$venv_dir/bin/python" -c '' 2>/dev/null
+}
+
+# When run_tool is invoked from a subdirectory, relative path arguments must be
+# rewritten relative to the project root before being handed to `uv run`.
+# Echoes the (space-separated, single-line) adjusted argv.
+adjust_relative_args() {
+    project_root="$1"
+    shift
+    out=""
+    for arg in "$@"; do
+        case "$arg" in
+            .*)
+                rel=$(realpath --relative-to="$project_root" "$PWD/$arg" 2>/dev/null \
+                    || python3 -c "import os; print(os.path.relpath(os.path.join('$PWD', '$arg'), '$project_root'))")
+                out="$out $rel"
+                ;;
+            *)
+                out="$out $arg"
+                ;;
+        esac
+    done
+    echo "$out"
+}
+
+setup_environment() {
+    project_root=$(find_project_root || true)
+
+    if [ -n "$project_root" ] && uv_available "$project_root"; then
+        echo "Using UV-managed environment..."
+        return 0
+    fi
+
+    # Walk upward looking for a usable .venv. A .venv whose interpreter is
+    # not executable (e.g. mounted into a container) is skipped, not used.
+    dir="$PWD"
+    while [ "$dir" != "/" ]; do
+        if [ -d "$dir/.venv" ]; then
+            if venv_usable "$dir/.venv"; then
+                echo "Using existing .venv environment..."
+                # shellcheck disable=SC1091
+                source "$dir/.venv/bin/activate"
+                return 0
+            fi
+            if [ -f "$dir/.venv/bin/activate" ]; then
+                echo "Ignoring unusable .venv at $dir/.venv (interpreter not executable)..."
+            fi
+        fi
+        dir=$(dirname "$dir")
     done
 
-    # Use system environment as last resort
     echo "Using system environment..."
 }
 
@@ -43,35 +96,13 @@ run_tool() {
 
     echo "Running ${TOOL_NAME}..."
 
-    # Find project root for UV
-    project_root="$PWD"
-    while [ "$project_root" != "/" ]; do
-        if [ -f "$project_root/pyproject.toml" ] || [ -f "$project_root/uv.lock" ]; then
-            break
-        fi
-        project_root=$(dirname "$project_root")
-    done
+    project_root=$(find_project_root || echo "")
 
-    # Try different execution methods in order of preference
-    if command -v uv >/dev/null 2>&1 && [ -f "$project_root/pyproject.toml" ]; then
+    if [ -n "$project_root" ] && uv_available "$project_root"; then
         echo "Executing with UV..."
-        # If we're in a subdirectory of the project, adjust paths for UV
         if [ "$PWD" != "$project_root" ]; then
-            # We're in a subdirectory (like src/), need to adjust paths
-            adjusted_args=""
-            for arg in "$@"; do
-                case "$arg" in
-                    .*)
-                        # Relative path - adjust it relative to project root
-                        rel_to_root=$(realpath --relative-to="$project_root" "$PWD/$arg" 2>/dev/null || python3 -c "import os; print(os.path.relpath(os.path.join('$PWD', '$arg'), '$project_root'))")
-                        adjusted_args="$adjusted_args $rel_to_root"
-                        ;;
-                    *)
-                        # Other arguments - keep as is
-                        adjusted_args="$adjusted_args $arg"
-                        ;;
-                esac
-            done
+            # shellcheck disable=SC2086
+            adjusted_args=$(adjust_relative_args "$project_root" "$@")
             if [ -n "$adjusted_args" ]; then
                 # shellcheck disable=SC2086
                 (cd "$project_root" && uv run "${TOOL_NAME}" $adjusted_args)
@@ -79,10 +110,9 @@ run_tool() {
                 (cd "$project_root" && uv run "${TOOL_NAME}")
             fi
         else
-            # We're in project root
             uv run "${TOOL_NAME}" "$@"
         fi
-    elif [ -f ".venv/bin/${TOOL_NAME}" ]; then
+    elif [ -f ".venv/bin/${TOOL_NAME}" ] && venv_usable ".venv"; then
         echo "Executing with venv..."
         .venv/bin/"${TOOL_NAME}" "$@"
     elif command -v "${TOOL_NAME}" >/dev/null 2>&1; then
@@ -90,27 +120,15 @@ run_tool() {
         "${TOOL_NAME}" "$@"
     else
         echo "Executing as Python module..."
-        if command -v uv >/dev/null 2>&1 && [ -f "$project_root/pyproject.toml" ]; then
-            # Same path adjustment for python -m
+        if [ -n "$project_root" ] && uv_available "$project_root"; then
             if [ "$PWD" != "$project_root" ]; then
-                adjusted_args=""
-                for arg in "$@"; do
-                    case "$arg" in
-                        .*)
-                            rel_to_root=$(realpath --relative-to="$project_root" "$PWD/$arg" 2>/dev/null || python3 -c "import os; print(os.path.relpath(os.path.join('$PWD', '$arg'), '$project_root'))")
-                            adjusted_args="$adjusted_args $rel_to_root"
-                            ;;
-                        *)
-                            adjusted_args="$adjusted_args $arg"
-                            ;;
-                    esac
-                done
-            if [ -n "$adjusted_args" ]; then
-                # shellcheck disable=SC2086
-                (cd "$project_root" && uv run python -m "${TOOL_NAME}" $adjusted_args)
-            else
-                (cd "$project_root" && uv run python -m "${TOOL_NAME}")
-            fi
+                adjusted_args=$(adjust_relative_args "$project_root" "$@")
+                if [ -n "$adjusted_args" ]; then
+                    # shellcheck disable=SC2086
+                    (cd "$project_root" && uv run python -m "${TOOL_NAME}" $adjusted_args)
+                else
+                    (cd "$project_root" && uv run python -m "${TOOL_NAME}")
+                fi
             else
                 uv run python -m "${TOOL_NAME}" "$@"
             fi

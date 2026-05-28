@@ -13,11 +13,11 @@ runs:
   using: 'composite'
   steps:
     - name: Install UV
-      uses: astral-sh/setup-uv@v6
+      uses: astral-sh/setup-uv@94527f2e458b27549849d47d273a16bec83a01e9  # v7
 
     - name: Restore UV environment
       id: restore-cache
-      uses: actions/cache/restore@v5.0.0
+      uses: actions/cache/restore@a7833574556fa59680c1b7cb190c1735db73ebf0  # v5.0.0
       with:
         path: |
           .venv

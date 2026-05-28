@@ -59,7 +59,7 @@ jobs:
       python-tags: ${{ steps.tags.outputs.python-tags }}
     steps:
     - name: Checkout code
-      uses: actions/checkout@v6
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
 
     - name: Calculate container tags
       id: tags
@@ -97,15 +97,15 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v6
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
 
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v4
+      uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5  # v4
       with:
         platforms: linux/amd64,linux/arm64
 
     - name: Log in to Container Registry
-      uses: docker/login-action@v4
+      uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee  # v4
       with:
         registry: ${{ needs.config.outputs.container-registry }}
         username: ${{ github.actor }}
@@ -161,7 +161,7 @@ jobs:
         fi
 
     - name: Run Trivy security scan
-      uses: aquasecurity/trivy-action@v0.36.0
+      uses: aquasecurity/trivy-action@a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8  # v0.36.0
       with:
         image-ref: "${{ needs.config.outputs.container-registry }}/${{ needs.config.outputs.container-image }}:${{ needs.config.outputs.package-version }}-python${{ matrix.python-version }}"
         format: 'sarif'
@@ -170,14 +170,14 @@ jobs:
         severity: ${{ env.SCAN_LEVEL == 'full' && 'CRITICAL,HIGH,MEDIUM' || 'CRITICAL,HIGH' }}
 
     - name: Upload Trivy scan results
-      uses: github/codeql-action/upload-sarif@v4
+      uses: github/codeql-action/upload-sarif@dc73d59c2d7bd4f8194098a91219eeee6d8a1719  # v4
       if: always()
       with:
         sarif_file: 'trivy-results-py${{ matrix.python-version }}.sarif'
 
     - name: Run Hadolint Dockerfile scan
       if: matrix.python-version == needs.config.outputs.default-python-version
-      uses: hadolint/hadolint-action@v3.3.0
+      uses: hadolint/hadolint-action@2332a7b74a6de0dda2e2221d575162eba76ba5e5  # v3.3.0
       with:
         dockerfile: Dockerfile
         format: sarif
@@ -186,7 +186,7 @@ jobs:
 
     - name: Upload Hadolint scan results
       if: matrix.python-version == needs.config.outputs.default-python-version
-      uses: github/codeql-action/upload-sarif@v4
+      uses: github/codeql-action/upload-sarif@dc73d59c2d7bd4f8194098a91219eeee6d8a1719  # v4
       with:
         sarif_file: hadolint-dockerfile.sarif
 
@@ -204,7 +204,7 @@ jobs:
 
     steps:
     - name: Log in to Container Registry
-      uses: docker/login-action@v4
+      uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee  # v4
       with:
         registry: ${{ needs.config.outputs.container-registry }}
         username: ${{ github.actor }}
@@ -254,7 +254,7 @@ jobs:
 
     steps:
     - name: Log in to Container Registry
-      uses: docker/login-action@v4
+      uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee  # v4
       with:
         registry: ${{ needs.config.outputs.container-registry }}
         username: ${{ github.actor }}
@@ -321,7 +321,7 @@ jobs:
 
     steps:
     - name: Delete old untagged container images
-      uses: actions/delete-package-versions@v5
+      uses: actions/delete-package-versions@25ad4af5be03aef10e0b3376b248688b7a44c40b  # v5
       with:
         package-name: ${{ github.event.repository.name }}
         package-type: container
@@ -329,7 +329,7 @@ jobs:
         delete-only-untagged-versions: true
 
     - name: Delete old tagged versions (preserve releases and special tags)
-      uses: actions/delete-package-versions@v5
+      uses: actions/delete-package-versions@25ad4af5be03aef10e0b3376b248688b7a44c40b  # v5
       with:
         package-name: ${{ github.event.repository.name }}
         package-type: container

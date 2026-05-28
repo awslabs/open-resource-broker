@@ -26,7 +26,7 @@ runs:
   using: 'composite'
   steps:
     - name: Install yq
-      uses: mikefarah/yq@v4.50.1
+      uses: mikefarah/yq@065b200af9851db0d5132f50bc10b1406ea5c0a8  # v4.50.1
 
     - name: Get configuration from project config
       id: config
